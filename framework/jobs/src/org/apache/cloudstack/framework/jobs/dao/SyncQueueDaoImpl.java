@@ -22,7 +22,8 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.TimeZone;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.impl.SyncQueueVO;
 
@@ -33,7 +34,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
 public class SyncQueueDaoImpl extends GenericDaoBase<SyncQueueVO, Long> implements SyncQueueDao {
-    private static final Logger s_logger = Logger.getLogger(SyncQueueDaoImpl.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(SyncQueueDaoImpl.class.getName());
 
     SearchBuilder<SyncQueueVO> TypeIdSearch = createSearchBuilder();
 

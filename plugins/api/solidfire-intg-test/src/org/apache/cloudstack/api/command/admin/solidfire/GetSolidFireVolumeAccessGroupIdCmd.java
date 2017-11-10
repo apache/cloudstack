@@ -20,7 +20,8 @@ import com.cloud.user.Account;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.APICommand;
@@ -34,7 +35,7 @@ import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
 @APICommand(name = "getSolidFireVolumeAccessGroupId", responseObject = ApiSolidFireVolumeAccessGroupIdResponse.class, description = "Get the SF Volume Access Group ID",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetSolidFireVolumeAccessGroupIdCmd extends BaseCmd {
-    private static final Logger LOGGER = Logger.getLogger(GetSolidFireVolumeAccessGroupIdCmd.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(GetSolidFireVolumeAccessGroupIdCmd.class.getName());
     private static final String NAME = "getsolidfirevolumeaccessgroupidresponse";
 
     @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.STRING, description = "Cluster UUID", required = true)

@@ -85,7 +85,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -101,7 +102,7 @@ import java.util.concurrent.TimeoutException;
 
 @Component
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
-    private static final Logger LOGGER = Logger.getLogger(StorageSystemDataMotionStrategy.class);
+    private static final Logger LOGGER = LogManager.getLogger(StorageSystemDataMotionStrategy.class);
     private static final Random RANDOM = new Random(System.nanoTime());
 
     @Inject private AgentManager _agentMgr;

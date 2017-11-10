@@ -28,7 +28,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -80,7 +81,7 @@ import com.globo.globodns.cloudstack.resource.GloboDnsResource;
 @Component
 public class GloboDnsElement extends AdapterBase implements ResourceStateAdapter, NetworkElement, GloboDnsElementService, Configurable {
 
-    private static final Logger s_logger = Logger.getLogger(GloboDnsElement.class);
+    private static final Logger s_logger = LogManager.getLogger(GloboDnsElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 

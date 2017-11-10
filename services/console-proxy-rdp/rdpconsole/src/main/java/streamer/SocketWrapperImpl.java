@@ -32,7 +32,8 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManager;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
@@ -43,7 +44,7 @@ import streamer.ssl.SSLState;
 import streamer.ssl.TrustAllX509TrustManager;
 
 public class SocketWrapperImpl extends PipelineImpl implements SocketWrapper {
-    private static final Logger s_logger = Logger.getLogger(SocketWrapperImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(SocketWrapperImpl.class);
 
     protected InputStreamSource source;
     protected OutputStreamSink sink;

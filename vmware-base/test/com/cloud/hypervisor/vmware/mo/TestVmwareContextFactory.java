@@ -17,7 +17,8 @@
 
 package com.cloud.hypervisor.vmware.mo;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.hypervisor.vmware.util.VmwareClient;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -26,7 +27,7 @@ import com.cloud.utils.StringUtils;
 
 public class TestVmwareContextFactory {
 
-    private static final Logger s_logger = Logger.getLogger(TestVmwareContextFactory.class);
+    private static final Logger s_logger = LogManager.getLogger(TestVmwareContextFactory.class);
 
     private static volatile int s_seq = 1;
     private static VmwareContextPool s_pool;

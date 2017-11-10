@@ -27,7 +27,8 @@ import java.util.regex.Pattern;
 import javax.naming.ConfigurationException;
 
 import com.google.common.base.Strings;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
@@ -40,7 +41,7 @@ import com.cloud.utils.script.Script;
 
 public class BridgeVifDriver extends VifDriverBase {
 
-    private static final Logger s_logger = Logger.getLogger(BridgeVifDriver.class);
+    private static final Logger s_logger = LogManager.getLogger(BridgeVifDriver.class);
     private int _timeout;
 
     private final Object _vnetBridgeMonitor = new Object();

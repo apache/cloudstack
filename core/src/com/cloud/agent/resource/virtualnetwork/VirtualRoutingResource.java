@@ -40,7 +40,8 @@ import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 import org.apache.cloudstack.ca.SetupKeystoreAnswer;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -70,7 +71,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
  **/
 public class VirtualRoutingResource {
 
-    private static final Logger s_logger = Logger.getLogger(VirtualRoutingResource.class);
+    private static final Logger s_logger = LogManager.getLogger(VirtualRoutingResource.class);
     private VirtualRouterDeployer _vrDeployer;
     private Map<String, Queue<NetworkElementCommand>> _vrAggregateCommandsSet;
     protected Map<String, Lock> _vrLockMap = new HashMap<String, Lock>();

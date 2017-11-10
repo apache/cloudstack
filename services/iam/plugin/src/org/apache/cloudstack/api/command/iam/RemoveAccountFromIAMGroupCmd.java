@@ -20,7 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.iam.IAMApiService;
 import org.apache.cloudstack.api.ACL;
@@ -44,7 +45,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "removeAccountFromIAMGroup", description = "remove accounts from an iam group", responseObject = IAMGroupResponse.class)
 public class RemoveAccountFromIAMGroupCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveAccountFromIAMGroupCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(RemoveAccountFromIAMGroupCmd.class.getName());
     private static final String s_name = "removeaccountfromiamgroupresponse";
 
     @Inject

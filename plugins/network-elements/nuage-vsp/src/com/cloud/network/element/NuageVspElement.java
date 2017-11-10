@@ -35,7 +35,8 @@ import net.nuage.vsp.acs.client.api.model.VspNetwork;
 import net.nuage.vsp.acs.client.api.model.VspStaticNat;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
@@ -133,7 +134,7 @@ import com.cloud.vm.dao.NicDao;
 public class NuageVspElement extends AdapterBase implements ConnectivityProvider, IpDeployer, SourceNatServiceProvider, StaticNatServiceProvider, FirewallServiceProvider,
         DhcpServiceProvider, ResourceStateAdapter, VpcProvider, NetworkACLServiceProvider {
 
-    private static final Logger s_logger = Logger.getLogger(NuageVspElement.class);
+    private static final Logger s_logger = LogManager.getLogger(NuageVspElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 

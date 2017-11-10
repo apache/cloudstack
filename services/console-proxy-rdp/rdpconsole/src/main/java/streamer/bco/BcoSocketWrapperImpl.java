@@ -16,7 +16,8 @@
 // under the License.
 package streamer.bco;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.crypto.tls.Certificate;
 import org.bouncycastle.crypto.tls.DefaultTlsClient;
 import org.bouncycastle.crypto.tls.ServerOnlyTlsAuthentication;
@@ -36,7 +37,7 @@ import java.security.Security;
 
 @SuppressWarnings("deprecation")
 public class BcoSocketWrapperImpl extends SocketWrapperImpl {
-    private static final Logger s_logger = Logger.getLogger(BcoSocketWrapperImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(BcoSocketWrapperImpl.class);
 
     static {
         Security.addProvider(new BouncyCastleProvider());

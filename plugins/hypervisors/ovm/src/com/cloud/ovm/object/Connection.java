@@ -20,7 +20,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.TimeZone;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 import org.apache.xmlrpc.client.TimingOutCallback;
 import org.apache.xmlrpc.client.XmlRpcClient;
@@ -29,7 +30,7 @@ import org.apache.xmlrpc.client.XmlRpcClientConfigImpl;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Connection {
-    private static final Logger s_logger = Logger.getLogger(Connection.class);
+    private static final Logger s_logger = LogManager.getLogger(Connection.class);
     private XmlRpcClientConfigImpl _config = new XmlRpcClientConfigImpl();
     XmlRpcClient _client;
     String _username;

@@ -28,14 +28,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 public class Upgrade442to450 implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade442to450.class);
+    final static Logger s_logger = LogManager.getLogger(Upgrade442to450.class);
 
     @Override
     public String[] getUpgradableVersionRange() {

@@ -23,7 +23,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -44,7 +45,7 @@ import com.cloud.user.Account;
 @APICommand(name = "createNetworkOffering", description = "Creates a network offering.", responseObject = NetworkOfferingResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkOfferingCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateNetworkOfferingCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(CreateNetworkOfferingCmd.class.getName());
     private static final String s_name = "createnetworkofferingresponse";
 
     /////////////////////////////////////////////////////

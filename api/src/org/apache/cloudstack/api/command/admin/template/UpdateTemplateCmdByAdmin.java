@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.template;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -30,7 +31,7 @@ import com.cloud.template.VirtualMachineTemplate;
 @APICommand(name = "updateTemplate", description = "Updates attributes of a template.", responseObject = TemplateResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateTemplateCmdByAdmin extends UpdateTemplateCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateTemplateCmdByAdmin.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UpdateTemplateCmdByAdmin.class.getName());
 
     @Override
     public void execute(){

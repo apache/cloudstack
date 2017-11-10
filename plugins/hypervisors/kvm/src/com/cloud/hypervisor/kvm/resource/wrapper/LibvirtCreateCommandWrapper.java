@@ -19,7 +19,8 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -39,7 +40,7 @@ import com.cloud.vm.DiskProfile;
 @ResourceWrapper(handles =  CreateCommand.class)
 public final class LibvirtCreateCommandWrapper extends CommandWrapper<CreateCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtCreateCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtCreateCommandWrapper.class);
 
     @Override
     public Answer execute(final CreateCommand command, final LibvirtComputingResource libvirtComputingResource) {

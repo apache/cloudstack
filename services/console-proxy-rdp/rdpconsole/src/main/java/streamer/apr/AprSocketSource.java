@@ -16,7 +16,8 @@
 // under the License.
 package streamer.apr;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.jni.Socket;
 
 import streamer.BaseElement;
@@ -30,7 +31,7 @@ import streamer.Link;
  * Source element, which reads data from InputStream.
  */
 public class AprSocketSource extends BaseElement {
-    private static final Logger s_logger = Logger.getLogger(AprSocketSource.class);
+    private static final Logger s_logger = LogManager.getLogger(AprSocketSource.class);
 
     protected AprSocketWrapperImpl socketWrapper;
     protected Long socket;

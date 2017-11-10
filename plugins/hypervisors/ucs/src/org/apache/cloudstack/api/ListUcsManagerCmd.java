@@ -27,7 +27,8 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
@@ -44,7 +45,7 @@ import com.cloud.user.Account;
 @APICommand(name = "listUcsManagers", description = "List ucs manager", responseObject = UcsManagerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListUcsManagerCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListUcsManagerCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(ListUcsManagerCmd.class);
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, description = "the zone id", entityType = ZoneResponse.class)
     private Long zoneId;

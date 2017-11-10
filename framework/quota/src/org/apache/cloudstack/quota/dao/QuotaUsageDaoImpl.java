@@ -26,7 +26,8 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
@@ -39,7 +40,7 @@ import java.util.List;
 @Component
 @Local(value = {QuotaUsageDao.class})
 public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implements QuotaUsageDao {
-    private static final Logger s_logger = Logger.getLogger(QuotaUsageDaoImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(QuotaUsageDaoImpl.class);
 
     public BigDecimal findTotalQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
         List<QuotaUsageVO> quotaUsage = findQuotaUsage(accountId, domainId, null, startDate, endDate);

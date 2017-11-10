@@ -28,7 +28,8 @@ import javax.inject.Inject;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.db.EntityManager;
 import org.apache.cloudstack.api.Identity;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
 import org.apache.cloudstack.context.CallContext;
@@ -49,7 +50,7 @@ import com.cloud.projects.Project;
 import com.cloud.utils.component.ComponentContext;
 
 public class ActionEventUtils {
-    private static final Logger s_logger = Logger.getLogger(ActionEventUtils.class);
+    private static final Logger s_logger = LogManager.getLogger(ActionEventUtils.class);
 
     private static EventDao s_eventDao;
     private static AccountDao s_accountDao;

@@ -28,8 +28,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.apache.log4j.NDC;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContext;
@@ -78,6 +78,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.logging.log4j.ThreadContext;
 
 /**
  * HighAvailabilityManagerImpl coordinates the HA process. VMs are registered with the HA Manager for HA. The request is stored
@@ -103,7 +104,7 @@ import com.cloud.vm.dao.VMInstanceDao;
  **/
 public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvailabilityManager, ClusterManagerListener {
 
-    protected static final Logger s_logger = Logger.getLogger(HighAvailabilityManagerImpl.class);
+    protected static final Logger s_logger = LogManager.getLogger(HighAvailabilityManagerImpl.class);
     WorkerThread[] _workers;
     boolean _stopped;
     long _timeToSleep;
@@ -957,14 +958,14 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
                     }
                 }
 
-                NDC.push("work-" + work.getId());
+                ThreadContext.push("work-" + work.getId());
                 s_logger.info("Processing work " + work);
                 processWork(work);
             } catch (final Throwable th) {
                 s_logger.error("Caught this throwable, ", th);
             } finally {
                 if (work != null) {
-                    NDC.pop();
+                    ThreadContext.pop();
                 }
             }
         }

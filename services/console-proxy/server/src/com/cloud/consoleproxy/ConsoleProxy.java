@@ -33,21 +33,19 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.xml.DOMConfigurator;
-
+import com.cloud.utils.PropertiesUtil;
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
-
-import com.cloud.consoleproxy.util.Logger;
-import com.cloud.utils.PropertiesUtil;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  *
  * ConsoleProxy, singleton class that manages overall activities in console proxy process. To make legacy code work, we still
  */
 public class ConsoleProxy {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxy.class);
+    private static final Logger s_logger = LogManager.getLogger(ConsoleProxy.class);
 
     public static final int KEYBOARD_RAW = 0;
     public static final int KEYBOARD_COOKED = 1;
@@ -110,11 +108,12 @@ public class ConsoleProxy {
                 File file = new File(configUrl.toURI());
 
                 System.out.println("Log4j configuration from : " + file.getAbsolutePath());
-                DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
+                org.apache.logging.log4j.core.config.Configurator.initialize("cloud", file.getAbsolutePath());
+                // TODO watch interval must be set in an updated log4j xml*/
+// TODO remove this line            DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
             } catch (URISyntaxException e) {
                 System.out.println("Unable to convert log4j configuration Url to URI");
             }
-            // DOMConfigurator.configure(configUrl);
         } else {
             System.out.println("Configure log4j with default properties");
         }
@@ -258,7 +257,6 @@ public class ConsoleProxy {
         }
 
         configLog4j();
-        Logger.setFactory(new ConsoleProxyLoggerFactory());
 
         // Using reflection to setup private/secure communication channel towards management server
         ConsoleProxy.context = context;
@@ -382,7 +380,6 @@ public class ConsoleProxy {
     public static void main(String[] argv) {
         standaloneStart = true;
         configLog4j();
-        Logger.setFactory(new ConsoleProxyLoggerFactory());
 
         InputStream confs = ConsoleProxy.class.getResourceAsStream("/conf/consoleproxy.properties");
         Properties conf = new Properties();

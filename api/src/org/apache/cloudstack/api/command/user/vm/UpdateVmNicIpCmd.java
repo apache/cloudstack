@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.user.vm;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -49,7 +50,7 @@ import com.cloud.vm.Nic;
 
 @APICommand(name = "updateVmNicIp", description = "Update the default Ip of a VM Nic", responseObject = UserVmResponse.class)
 public class UpdateVmNicIpCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(AddIpToVmNicCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(AddIpToVmNicCmd.class.getName());
     private static final String s_name = "updatevmnicipresponse";
 
     /////////////////////////////////////////////////////

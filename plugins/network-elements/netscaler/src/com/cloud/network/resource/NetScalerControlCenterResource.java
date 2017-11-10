@@ -49,7 +49,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -117,7 +118,7 @@ public class NetScalerControlCenterResource implements ServerResource {
     private String _sessionid;
     public static final int DEFAULT_PORT = 443;
     private static final Gson s_gson = GsonHelper.getGson();
-    private static final Logger s_logger = Logger.getLogger(NetScalerControlCenterResource.class);
+    private static final Logger s_logger = LogManager.getLogger(NetScalerControlCenterResource.class);
     protected Gson _gson;
     private final String _objectNamePathSep = "-";
     final String protocol="https";

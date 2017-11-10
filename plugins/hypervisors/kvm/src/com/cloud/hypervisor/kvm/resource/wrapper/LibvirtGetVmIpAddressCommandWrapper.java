@@ -26,12 +26,13 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @ResourceWrapper(handles =  GetVmIpAddressCommand.class)
 public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<GetVmIpAddressCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtGetVmIpAddressCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtGetVmIpAddressCommandWrapper.class);
 
     @Override
     public Answer execute(final GetVmIpAddressCommand command, final LibvirtComputingResource libvirtComputingResource) {

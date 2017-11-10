@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.admin.template;
 import java.net.URISyntaxException;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,7 +36,7 @@ import com.cloud.template.VirtualMachineTemplate;
 @APICommand(name = "registerTemplate", description = "Registers an existing template into the CloudStack cloud.", responseObject = TemplateResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class RegisterTemplateCmdByAdmin extends RegisterTemplateCmd {
-    public static final Logger s_logger = Logger.getLogger(RegisterTemplateCmdByAdmin.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(RegisterTemplateCmdByAdmin.class.getName());
 
     @Override
     public void execute() throws ResourceAllocationException{

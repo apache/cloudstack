@@ -20,7 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.cloudstack.ha.HAManager;
 
 import com.cloud.agent.AgentManager;
@@ -42,7 +43,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 
 public class SimulatorInvestigator extends AdapterBase implements Investigator {
-    private final static Logger s_logger = Logger.getLogger(SimulatorInvestigator.class);
+    private final static Logger s_logger = LogManager.getLogger(SimulatorInvestigator.class);
     @Inject
     AgentManager _agentMgr;
     @Inject

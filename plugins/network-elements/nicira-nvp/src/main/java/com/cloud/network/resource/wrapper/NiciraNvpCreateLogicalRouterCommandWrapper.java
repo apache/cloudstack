@@ -25,7 +25,8 @@ import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateLogicalRouterAnswer;
@@ -50,7 +51,7 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  CreateLogicalRouterCommand.class)
 public final class NiciraNvpCreateLogicalRouterCommandWrapper extends CommandWrapper<CreateLogicalRouterCommand, Answer, NiciraNvpResource> {
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpCreateLogicalRouterCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(NiciraNvpCreateLogicalRouterCommandWrapper.class);
 
     @Override
     public Answer execute(final CreateLogicalRouterCommand command, final NiciraNvpResource niciraNvpResource) {

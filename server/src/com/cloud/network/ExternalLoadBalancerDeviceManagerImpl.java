@@ -27,7 +27,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.response.ExternalLoadBalancerResponse;
@@ -215,7 +216,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
     VirtualRouterProviderDao _vrProviderDao;
 
     private long _defaultLbCapacity;
-    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
 
     @Override
     @DB

@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -29,7 +30,7 @@ import com.cloud.host.Status;
 import com.cloud.utils.Profiler;
 
 public class SynchronousListener implements Listener {
-    private static final Logger s_logger = Logger.getLogger(SynchronousListener.class);
+    private static final Logger s_logger = LogManager.getLogger(SynchronousListener.class);
 
     protected Answer[] _answers;
     protected boolean _disconnected;

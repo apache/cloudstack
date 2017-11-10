@@ -36,7 +36,8 @@ import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 import org.apache.cloudstack.ca.SetupKeystoreAnswer;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -76,7 +77,7 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 public class MockAgentManagerImpl extends ManagerBase implements MockAgentManager {
-    private static final Logger s_logger = Logger.getLogger(MockAgentManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(MockAgentManagerImpl.class);
     @Inject
     HostPodDao _podDao = null;
     @Inject

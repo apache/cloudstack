@@ -18,7 +18,8 @@ package org.apache.cloudstack.api.command.user.firewall;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -54,7 +55,7 @@ import com.cloud.vm.VirtualMachine;
         VirtualMachine.class, IpAddress.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements PortForwardingRule {
-    public static final Logger s_logger = Logger.getLogger(CreatePortForwardingRuleCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(CreatePortForwardingRuleCmd.class.getName());
 
     private static final String s_name = "createportforwardingruleresponse";
 

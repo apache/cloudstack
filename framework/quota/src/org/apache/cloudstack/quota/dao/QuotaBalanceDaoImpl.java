@@ -26,7 +26,8 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
@@ -40,7 +41,7 @@ import java.util.List;
 @Component
 @Local(value = {QuotaBalanceDao.class})
 public class QuotaBalanceDaoImpl extends GenericDaoBase<QuotaBalanceVO, Long> implements QuotaBalanceDao {
-    private static final Logger s_logger = Logger.getLogger(QuotaBalanceDaoImpl.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(QuotaBalanceDaoImpl.class.getName());
 
     public QuotaBalanceVO findLastBalanceEntry(final Long accountId, final Long domainId, final Date beforeThis) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaBalanceVO>() {

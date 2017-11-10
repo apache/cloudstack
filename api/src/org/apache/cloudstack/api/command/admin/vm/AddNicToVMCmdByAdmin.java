@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.admin.vm;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -37,7 +38,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class AddNicToVMCmdByAdmin extends AddNicToVMCmd {
-    public static final Logger s_logger = Logger.getLogger(AddNicToVMCmdByAdmin.class);
+    public static final Logger s_logger = LogManager.getLogger(AddNicToVMCmdByAdmin.class);
 
     @Override
     public void execute(){

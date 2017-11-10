@@ -22,7 +22,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
@@ -53,7 +54,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class ControlNetworkGuru extends PodBasedNetworkGuru implements NetworkGuru {
-    private static final Logger s_logger = Logger.getLogger(ControlNetworkGuru.class);
+    private static final Logger s_logger = LogManager.getLogger(ControlNetworkGuru.class);
     @Inject
     DataCenterDao _dcDao;
     @Inject

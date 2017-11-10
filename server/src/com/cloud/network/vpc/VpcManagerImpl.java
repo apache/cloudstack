@@ -46,7 +46,8 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
@@ -137,7 +138,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
 
 public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
-    private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(VpcManagerImpl.class);
 
     public static final String SERVICE = "service";
     public static final String CAPABILITYTYPE = "capabilitytype";

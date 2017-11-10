@@ -33,7 +33,8 @@ import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.region.RegionManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.ConfigurationManager;
@@ -80,7 +81,7 @@ import com.google.common.base.Strings;
 
 @Component
 public class DomainManagerImpl extends ManagerBase implements DomainManager, DomainService {
-    public static final Logger s_logger = Logger.getLogger(DomainManagerImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(DomainManagerImpl.class);
 
     @Inject
     private DomainDao _domainDao;

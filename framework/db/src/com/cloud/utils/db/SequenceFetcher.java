@@ -29,7 +29,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.persistence.TableGenerator;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
@@ -42,7 +43,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
  *
  */
 public class SequenceFetcher {
-    private final static Logger s_logger = Logger.getLogger(SequenceFetcher.class);
+    private final static Logger s_logger = LogManager.getLogger(SequenceFetcher.class);
     ExecutorService _executors;
     private final static Random random = new Random();
 

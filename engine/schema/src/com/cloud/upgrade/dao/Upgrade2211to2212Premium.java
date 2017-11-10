@@ -19,13 +19,14 @@ package com.cloud.upgrade.dao;
 import java.io.File;
 import java.sql.Connection;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 
 public class Upgrade2211to2212Premium extends Upgrade2211to2212 {
-    final static Logger s_logger = Logger.getLogger(Upgrade2211to2212Premium.class);
+    final static Logger s_logger = LogManager.getLogger(Upgrade2211to2212Premium.class);
 
     @Override
     public File[] getPrepareScripts() {

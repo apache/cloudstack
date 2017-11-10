@@ -25,7 +25,8 @@ import java.util.Map;
 import java.util.List;
 
 import com.google.gson.Gson;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateWithStorageReceiveAnswer;
@@ -49,7 +50,7 @@ import com.xensource.xenapi.SR;
 @ResourceWrapper(handles =  MigrateWithStorageReceiveCommand.class)
 public final class XenServer610MigrateWithStorageReceiveCommandWrapper extends CommandWrapper<MigrateWithStorageReceiveCommand, Answer, XenServer610Resource> {
 
-    private static final Logger s_logger = Logger.getLogger(XenServer610MigrateWithStorageReceiveCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(XenServer610MigrateWithStorageReceiveCommandWrapper.class);
 
     @Override
     public Answer execute(final MigrateWithStorageReceiveCommand command, final XenServer610Resource xenServer610Resource) {

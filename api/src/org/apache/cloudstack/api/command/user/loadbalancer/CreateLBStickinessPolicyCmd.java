@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -44,7 +45,7 @@ import com.cloud.user.Account;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class CreateLBStickinessPolicyCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateLBStickinessPolicyCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(CreateLBStickinessPolicyCmd.class.getName());
 
     private static final String s_name = "createLBStickinessPolicy";
 

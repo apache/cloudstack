@@ -18,7 +18,8 @@ package org.apache.cloudstack.api.command.admin.template;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,7 +36,7 @@ import com.cloud.template.VirtualMachineTemplate;
 @APICommand(name = "copyTemplate", description = "Copies a template from one zone to another.", responseObject = TemplateResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CopyTemplateCmdByAdmin extends CopyTemplateCmd {
-    public static final Logger s_logger = Logger.getLogger(CopyTemplateCmdByAdmin.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(CopyTemplateCmdByAdmin.class.getName());
 
     @Override
     public void execute() throws ResourceAllocationException{

@@ -16,10 +16,11 @@
 // under the License.
 package com.cloud.utils;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AutoCloseableUtil {
-    private final static Logger s_logger = Logger.getLogger(AutoCloseableUtil.class);
+    private final static Logger s_logger = LogManager.getLogger(AutoCloseableUtil.class);
 
     public static void closeAutoCloseable(AutoCloseable ac, String message) {
         try {

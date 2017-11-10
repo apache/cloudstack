@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.user.snapshot;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -37,7 +38,7 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.", responseObject = SnapshotResponse.class, entityType = {
         Snapshot.class }, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListSnapshotsCmd.class.getName());
 
     private static final String s_name = "listsnapshotsresponse";
 

@@ -81,10 +81,11 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
-    private static final Logger LOGGER = Logger.getLogger(SolidFirePrimaryDataStoreDriver.class);
+    private static final Logger LOGGER = LogManager.getLogger(SolidFirePrimaryDataStoreDriver.class);
     private static final int LOCK_TIME_IN_SECONDS = 300;
     private static final int LOWEST_HYPERVISOR_SNAPSHOT_RESERVE = 10;
     private static final long MIN_IOPS_FOR_TEMPLATE_VOLUME = 100L;

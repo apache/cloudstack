@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vpn;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -35,7 +36,7 @@ import com.cloud.network.Site2SiteCustomerGateway;
 @APICommand(name = "createVpnCustomerGateway", description = "Creates site to site vpn customer gateway", responseObject = Site2SiteCustomerGatewayResponse.class, entityType = {Site2SiteCustomerGateway.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVpnCustomerGatewayCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateVpnCustomerGatewayCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(CreateVpnCustomerGatewayCmd.class.getName());
 
     private static final String s_name = "createvpncustomergatewayresponse";
 

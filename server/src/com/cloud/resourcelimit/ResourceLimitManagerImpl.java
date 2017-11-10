@@ -32,7 +32,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -111,7 +112,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 @Component
 @Local(value = {ResourceLimitService.class})
 public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService, Configurable{
-    public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(ResourceLimitManagerImpl.class);
 
     @Inject
     private DomainDao _domainDao;

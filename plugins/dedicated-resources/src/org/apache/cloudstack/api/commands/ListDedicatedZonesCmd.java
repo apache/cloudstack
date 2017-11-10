@@ -21,7 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.APICommand;
@@ -43,7 +44,7 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listDedicatedZones", description = "List dedicated zones.", responseObject = DedicateZoneResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListDedicatedZonesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListDedicatedZonesCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListDedicatedZonesCmd.class.getName());
 
     private static final String s_name = "listdedicatedzonesresponse";
     @Inject

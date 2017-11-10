@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import javax.inject.Inject;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Created by frank on 9/17/14.
@@ -37,7 +38,7 @@ import org.apache.log4j.Logger;
 @APICommand(name = "notifyBaremetalProvisionDone", description = "Notify provision has been done on a host. This api is for baremetal virtual router service, not for end user", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.User})
 public class BaremetalProvisionDoneNotificationCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(BaremetalProvisionDoneNotificationCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(BaremetalProvisionDoneNotificationCmd.class);
     private static final String s_name = "baremetalprovisiondone";
 
     @Inject

@@ -30,7 +30,8 @@ import java.util.concurrent.Executors;
 import javax.naming.ConfigurationException;
 
 import com.cloud.agent.api.Answer;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 
@@ -93,7 +94,7 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
     }
 
-    public static final Logger s_logger = Logger.getLogger(UploadManagerImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(UploadManagerImpl.class);
     private ExecutorService threadPool;
     private final Map<String, UploadJob> jobs = new ConcurrentHashMap<String, UploadJob>();
     private String parentDir;

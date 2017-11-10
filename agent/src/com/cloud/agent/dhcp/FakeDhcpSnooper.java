@@ -27,14 +27,15 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.net.NetUtils;
 
 @Local(value = {DhcpSnooper.class})
 public class FakeDhcpSnooper implements DhcpSnooper {
-    private static final Logger s_logger = Logger.getLogger(FakeDhcpSnooper.class);
+    private static final Logger s_logger = LogManager.getLogger(FakeDhcpSnooper.class);
     private Queue<String> _ipAddresses = new ConcurrentLinkedQueue<String>();
     private Map<String, String> _macIpMap = new ConcurrentHashMap<String, String>();
     private Map<String, InetAddress> _vmIpMap = new ConcurrentHashMap<String, InetAddress>();

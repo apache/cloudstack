@@ -23,7 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.LibvirtException;
@@ -40,7 +41,7 @@ import com.cloud.vm.VirtualMachine;
 @ResourceWrapper(handles =  RestoreVMSnapshotCommand.class)
 public final class LibvirtRestoreVMSnapshotCommandWrapper extends CommandWrapper<RestoreVMSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtRestoreVMSnapshotCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtRestoreVMSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final RestoreVMSnapshotCommand cmd, final LibvirtComputingResource libvirtComputingResource) {

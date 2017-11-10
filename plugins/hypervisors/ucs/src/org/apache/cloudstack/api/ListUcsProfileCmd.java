@@ -19,7 +19,8 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.UcsManagerResponse;
@@ -36,7 +37,7 @@ import com.cloud.user.Account;
 @APICommand(name = "listUcsProfiles", description = "List profile in ucs manager", responseObject = UcsProfileResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListUcsProfileCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListUcsProfileCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(ListUcsProfileCmd.class);
 
     @Inject
     UcsManager mgr;

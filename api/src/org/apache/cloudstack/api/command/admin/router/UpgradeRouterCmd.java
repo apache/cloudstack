@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.router;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,7 +35,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "changeServiceForRouter", description = "Upgrades domain router to a new service offering", responseObject = DomainRouterResponse.class, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpgradeRouterCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpgradeRouterCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UpgradeRouterCmd.class.getName());
     private static final String s_name = "changeserviceforrouterresponse";
 
     /////////////////////////////////////////////////////

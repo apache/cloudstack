@@ -30,7 +30,8 @@ import org.apache.cloudstack.api.response.IdpResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAMLProviderMetadata;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -43,7 +44,7 @@ import java.util.Map;
 
 @APICommand(name = "listIdps", description = "Returns list of discovered SAML Identity Providers", responseObject = IdpResponse.class, entityType = {})
 public class ListIdpsCmd extends BaseCmd implements APIAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(ListIdpsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListIdpsCmd.class.getName());
     private static final String s_name = "listidpsresponse";
 
     @Inject

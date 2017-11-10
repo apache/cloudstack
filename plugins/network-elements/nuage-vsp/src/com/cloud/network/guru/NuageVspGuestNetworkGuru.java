@@ -34,8 +34,6 @@ import net.nuage.vsp.acs.client.api.model.VspNic;
 import net.nuage.vsp.acs.client.api.model.VspStaticNat;
 import net.nuage.vsp.acs.client.api.model.VspVm;
 
-import org.apache.log4j.Logger;
-
 import com.google.common.base.Strings;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.LinkedListMultimap;
@@ -44,6 +42,8 @@ import com.google.common.collect.Maps;
 
 import org.apache.cloudstack.resourcedetail.VpcDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -101,7 +101,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
-    public static final Logger s_logger = Logger.getLogger(NuageVspGuestNetworkGuru.class);
+    public static final Logger s_logger = LogManager.getLogger(NuageVspGuestNetworkGuru.class);
 
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;

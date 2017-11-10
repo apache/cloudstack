@@ -39,7 +39,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
@@ -128,7 +129,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class NetworkModelImpl extends ManagerBase implements NetworkModel, Configurable {
-    static final Logger s_logger = Logger.getLogger(NetworkModelImpl.class);
+    static final Logger s_logger = LogManager.getLogger(NetworkModelImpl.class);
     @Inject
     EntityManager _entityMgr;
     @Inject

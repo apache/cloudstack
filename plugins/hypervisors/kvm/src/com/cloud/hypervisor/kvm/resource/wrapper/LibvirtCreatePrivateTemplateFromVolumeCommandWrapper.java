@@ -34,7 +34,8 @@ import org.apache.cloudstack.utils.qemu.QemuImg;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.qemu.QemuImgException;
 import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreatePrivateTemplateFromVolumeCommand;
@@ -59,7 +60,7 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  CreatePrivateTemplateFromVolumeCommand.class)
 public final class LibvirtCreatePrivateTemplateFromVolumeCommandWrapper extends CommandWrapper<CreatePrivateTemplateFromVolumeCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtCreatePrivateTemplateFromVolumeCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtCreatePrivateTemplateFromVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(final CreatePrivateTemplateFromVolumeCommand command, final LibvirtComputingResource libvirtComputingResource) {

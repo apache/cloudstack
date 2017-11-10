@@ -65,7 +65,8 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
@@ -115,7 +116,7 @@ import com.cloud.utils.net.NetUtils;
  **/
 @DB
 public abstract class GenericDaoBase<T, ID extends Serializable> extends ComponentLifecycleBase implements GenericDao<T, ID>, ComponentMethodInterceptable {
-    private final static Logger s_logger = Logger.getLogger(GenericDaoBase.class);
+    private final static Logger s_logger = LogManager.getLogger(GenericDaoBase.class);
 
     protected final static TimeZone s_gmtTimeZone = TimeZone.getTimeZone("GMT");
 

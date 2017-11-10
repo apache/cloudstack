@@ -20,7 +20,8 @@ package org.apache.cloudstack.api.command.admin.storage;
 
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -40,7 +41,7 @@ import com.cloud.exception.ResourceUnavailableException;
 @APICommand(name = "listStorageProviders", description = "Lists storage providers.", responseObject = StorageProviderResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListStorageProvidersCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListStorageProvidersCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListStorageProvidersCmd.class.getName());
     private static final String s_name = "liststorageprovidersresponse";
 
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the type of storage provider: either primary or image", required = true)

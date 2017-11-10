@@ -28,7 +28,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -39,7 +40,7 @@ import javax.inject.Inject;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class DeleteBaremetalRctCmd extends BaseAsyncCmd {
     private static final String s_name = "deletebaremetalrctresponse";
-    public static final Logger s_logger = Logger.getLogger(DeleteBaremetalRctCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(DeleteBaremetalRctCmd.class);
 
     @Parameter(name = ApiConstants.ID,  type = BaseCmd.CommandType.UUID, description = "RCT id", required = true, entityType = BaremetalRctResponse.class)
     private Long id;

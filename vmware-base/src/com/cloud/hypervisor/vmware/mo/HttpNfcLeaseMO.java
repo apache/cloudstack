@@ -22,7 +22,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Element;
 
 import com.vmware.vim25.HttpNfcLeaseInfo;
@@ -36,7 +37,7 @@ import com.vmware.vim25.OvfFileItem;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class HttpNfcLeaseMO extends BaseMO {
-    private static final Logger s_logger = Logger.getLogger(HttpNfcLeaseMO.class);
+    private static final Logger s_logger = LogManager.getLogger(HttpNfcLeaseMO.class);
 
     public HttpNfcLeaseMO(VmwareContext context, ManagedObjectReference morHttpNfcLease) {
         super(context, morHttpNfcLease);

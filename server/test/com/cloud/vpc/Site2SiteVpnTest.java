@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.vpc;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -27,7 +28,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/VpcTestContext.xml")
 public class Site2SiteVpnTest {
-    private final static Logger s_logger = Logger.getLogger(Site2SiteVpnTest.class);
+    private final static Logger s_logger = LogManager.getLogger(Site2SiteVpnTest.class);
 
 //    private static void addDaos(MockComponentLocator locator) {
 //        locator.addDao("AccountDao", AccountDaoImpl.class);

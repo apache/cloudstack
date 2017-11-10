@@ -18,7 +18,8 @@ package org.apache.cloudstack.api.command.admin.config;
 
 import com.google.common.base.Strings;
 import org.apache.cloudstack.acl.RoleService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
@@ -39,7 +40,7 @@ import com.cloud.user.Account;
 @APICommand(name = "updateConfiguration", description = "Updates a configuration.", responseObject = ConfigurationResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateCfgCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateCfgCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UpdateCfgCmd.class.getName());
     private static final String s_name = "updateconfigurationresponse";
 
     /////////////////////////////////////////////////////

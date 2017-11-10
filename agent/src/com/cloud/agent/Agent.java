@@ -37,16 +37,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.ca.SetupCertificateAnswer;
-import org.apache.cloudstack.ca.SetupCertificateCommand;
-import org.apache.cloudstack.ca.SetupKeyStoreCommand;
-import org.apache.cloudstack.ca.SetupKeystoreAnswer;
-import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.log4j.Logger;
-import org.slf4j.MDC;
-
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
@@ -77,6 +67,16 @@ import com.cloud.utils.nio.Task;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.google.common.base.Strings;
+import org.apache.cloudstack.ca.SetupCertificateAnswer;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.ca.SetupKeyStoreCommand;
+import org.apache.cloudstack.ca.SetupKeystoreAnswer;
+import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 
 /**
  * @config
@@ -92,7 +92,7 @@ import com.google.common.base.Strings;
  *
  **/
 public class Agent implements HandlerFactory, IAgentControl {
-    private static final Logger s_logger = Logger.getLogger(Agent.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(Agent.class.getName());
 
     public enum ExitStatus {
         Normal(0), // Normal status = 0.
@@ -499,7 +499,7 @@ public class Agent implements HandlerFactory, IAgentControl {
                 Answer answer;
                 try {
                     if (cmd.getContextParam("logid") != null) {
-                        MDC.put("logcontextid", cmd.getContextParam("logid"));
+                        ThreadContext.put("logcontextid", cmd.getContextParam("logid"));
                     }
                     if (s_logger.isDebugEnabled()) {
                         if (!requestLogged) // ensures request is logged only once per method call
@@ -738,7 +738,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             final Request req = (Request)obj;
             final Command command = req.getCommand();
             if (command.getContextParam("logid") != null) {
-                MDC.put("logcontextid", command.getContextParam("logid"));
+                ThreadContext.put("logcontextid", command.getContextParam("logid"));
             }
             Answer answer = null;
             _inProgress.incrementAndGet();

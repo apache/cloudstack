@@ -33,7 +33,8 @@ import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.LoginCmdResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
@@ -46,7 +47,7 @@ import java.net.InetAddress;
 @APICommand(name = "login", description = "Logs a user into the CloudStack. A successful login attempt will generate a JSESSIONID cookie value that can be passed in subsequent Query command calls until the \"logout\" command has been issued or the session has expired.", requestHasSensitiveInfo = true, responseObject = LoginCmdResponse.class, entityType = {})
 public class DefaultLoginAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
 
-    public static final Logger s_logger = Logger.getLogger(DefaultLoginAPIAuthenticatorCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DefaultLoginAPIAuthenticatorCmd.class.getName());
     private static final String s_name = "loginresponse";
 
     /////////////////////////////////////////////////////

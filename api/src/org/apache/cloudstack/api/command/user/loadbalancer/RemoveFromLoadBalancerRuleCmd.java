@@ -24,7 +24,8 @@ import java.util.Iterator;
 import java.util.ArrayList;
 
 import com.cloud.vm.VirtualMachine;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -49,7 +50,7 @@ import com.cloud.utils.StringUtils;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class RemoveFromLoadBalancerRuleCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveFromLoadBalancerRuleCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(RemoveFromLoadBalancerRuleCmd.class.getName());
 
     private static final String s_name = "removefromloadbalancerruleresponse";
 

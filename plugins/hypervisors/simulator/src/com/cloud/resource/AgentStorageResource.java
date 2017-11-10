@@ -21,7 +21,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
 
@@ -40,7 +41,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.vm.SecondaryStorageVm;
 
 public class AgentStorageResource extends AgentResourceBase implements SecondaryStorageResource {
-    private static final Logger s_logger = Logger.getLogger(AgentStorageResource.class);
+    private static final Logger s_logger = LogManager.getLogger(AgentStorageResource.class);
 
     final protected String _parent = "/mnt/SecStorage";
     protected String _role;

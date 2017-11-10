@@ -33,7 +33,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
 import org.apache.http.auth.InvalidCredentialsException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.naming.ServiceUnavailableException;
 import javax.net.ssl.HostnameVerifier;
@@ -54,7 +55,7 @@ import java.util.HashMap;
 
 public class ElastistorUtil {
 
-    private static final Logger s_logger = Logger.getLogger(ElastistorUtil.class);
+    private static final Logger s_logger = LogManager.getLogger(ElastistorUtil.class);
 
     private static ConfigurationDao configurationDao;
 

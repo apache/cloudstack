@@ -58,7 +58,8 @@ import org.apache.cloudstack.framework.security.keystore.KeystoreVO;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.xml.SAMLConstants;
@@ -94,7 +95,7 @@ import com.cloud.utils.component.AdapterBase;
 
 @Component
 public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManager, Configurable {
-    private static final Logger s_logger = Logger.getLogger(SAML2AuthManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(SAML2AuthManagerImpl.class);
 
     private SAMLProviderMetadata _spMetadata = new SAMLProviderMetadata();
     private Map<String, SAMLProviderMetadata> _idpMetadataMap = new HashMap<String, SAMLProviderMetadata>();

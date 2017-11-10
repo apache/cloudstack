@@ -26,7 +26,8 @@ import java.util.UUID;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -46,7 +47,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import org.reflections.Reflections;
 
 public class KVMStoragePoolManager {
-    private static final Logger s_logger = Logger.getLogger(KVMStoragePoolManager.class);
+    private static final Logger s_logger = LogManager.getLogger(KVMStoragePoolManager.class);
 
     private class StoragePoolInformation {
         String name;

@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.ActionEvent;
@@ -64,7 +65,7 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLService {
-    private static final Logger s_logger = Logger.getLogger(NetworkACLServiceImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(NetworkACLServiceImpl.class);
 
     @Inject
     AccountManager _accountMgr;

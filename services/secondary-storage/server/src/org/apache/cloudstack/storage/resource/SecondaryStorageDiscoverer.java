@@ -29,7 +29,8 @@ import java.util.Random;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.host.HostVO;
@@ -53,7 +54,7 @@ import com.cloud.utils.script.Script;
  * correct.
  */
 public class SecondaryStorageDiscoverer extends DiscovererBase implements Discoverer {
-    private static final Logger s_logger = Logger.getLogger(SecondaryStorageDiscoverer.class);
+    private static final Logger s_logger = LogManager.getLogger(SecondaryStorageDiscoverer.class);
 
     long _timeout = 2 * 60 * 1000; // 2 minutes
     String _mountParent;

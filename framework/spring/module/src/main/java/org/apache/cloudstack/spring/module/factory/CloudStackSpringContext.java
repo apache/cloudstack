@@ -24,20 +24,19 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.io.Resource;
-
 import org.apache.cloudstack.spring.module.locator.ModuleDefinitionLocator;
 import org.apache.cloudstack.spring.module.locator.impl.ClasspathModuleDefinitionLocator;
 import org.apache.cloudstack.spring.module.model.ModuleDefinition;
 import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.io.Resource;
 
 public class CloudStackSpringContext {
 
-    private static final Logger log = LoggerFactory.getLogger(CloudStackSpringContext.class);
+    private static final Logger log = LogManager.getLogger(CloudStackSpringContext.class);
 
     public static final String CLOUDSTACK_CONTEXT_SERVLET_KEY = CloudStackSpringContext.class.getSimpleName();
     public static final String CLOUDSTACK_CONTEXT = "META-INF/cloudstack";

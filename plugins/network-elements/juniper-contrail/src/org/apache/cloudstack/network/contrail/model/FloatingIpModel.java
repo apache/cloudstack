@@ -22,7 +22,8 @@ import java.io.IOException;
 import net.juniper.contrail.api.ApiConnector;
 import net.juniper.contrail.api.types.FloatingIp;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
 
@@ -34,7 +35,7 @@ import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 
 public class FloatingIpModel extends ModelObjectBase {
-    private static final Logger s_logger = Logger.getLogger(FloatingIpModel.class);
+    private static final Logger s_logger = LogManager.getLogger(FloatingIpModel.class);
 
     private String _uuid;
     private long _id;

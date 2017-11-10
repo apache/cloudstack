@@ -19,7 +19,8 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cxf.common.util.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.user.User;
@@ -30,7 +31,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 
 public class SAML2UserAuthenticator extends AdapterBase implements UserAuthenticator {
-    public static final Logger s_logger = Logger.getLogger(SAML2UserAuthenticator.class);
+    public static final Logger s_logger = LogManager.getLogger(SAML2UserAuthenticator.class);
 
     @Inject
     private UserAccountDao _userAccountDao;

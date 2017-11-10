@@ -19,7 +19,8 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.OvsSetupBridgeCommand;
@@ -30,7 +31,7 @@ import com.cloud.resource.ResourceWrapper;
 @ResourceWrapper(handles =  OvsSetupBridgeCommand.class)
 public final class LibvirtOvsSetupBridgeCommandWrapper extends CommandWrapper<OvsSetupBridgeCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtOvsSetupBridgeCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtOvsSetupBridgeCommandWrapper.class);
 
     @Override
     public Answer execute(final OvsSetupBridgeCommand command, final LibvirtComputingResource libvirtComputingResource) {

@@ -28,7 +28,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.fsm.StateMachine2;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -102,7 +103,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 public class CapacityManagerImpl extends ManagerBase implements CapacityManager, StateListener<State, VirtualMachine.Event, VirtualMachine>, Listener, ResourceListener,
         Configurable {
-    private static final Logger s_logger = Logger.getLogger(CapacityManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(CapacityManagerImpl.class);
     @Inject
     CapacityDao _capacityDao;
     @Inject

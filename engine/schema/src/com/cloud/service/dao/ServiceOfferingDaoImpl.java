@@ -24,7 +24,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.UsageEventVO;
@@ -42,7 +43,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 @Component
 @DB()
 public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Long> implements ServiceOfferingDao {
-    protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
+    protected static final Logger s_logger = LogManager.getLogger(ServiceOfferingDaoImpl.class);
 
     @Inject
     protected ServiceOfferingDetailsDao detailsDao;

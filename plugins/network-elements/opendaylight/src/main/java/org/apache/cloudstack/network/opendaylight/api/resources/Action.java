@@ -40,11 +40,12 @@ import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.methods.PutMethod;
 import org.apache.commons.httpclient.methods.StringRequestEntity;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public abstract class Action {
 
-    private static final Logger s_logger = Logger.getLogger(Action.class);
+    private static final Logger s_logger = LogManager.getLogger(Action.class);
     private static final int BODY_RESP_MAX_LEN = 1024;
 
     // private static final String DEFAULT

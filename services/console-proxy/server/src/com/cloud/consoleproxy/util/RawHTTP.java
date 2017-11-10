@@ -16,14 +16,6 @@
 // under the License.
 package com.cloud.consoleproxy.util;
 
-import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
-
-import javax.net.SocketFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -38,6 +30,17 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 //
 // This file is originally from XenConsole with modifications
 //
@@ -48,7 +51,7 @@ import java.util.regex.Pattern;
  * connections and import/export operations.
  */
 public final class RawHTTP {
-    private static final Logger s_logger = Logger.getLogger(RawHTTP.class);
+    private static final Logger s_logger = LogManager.getLogger(RawHTTP.class);
 
     private static final Pattern END_PATTERN = Pattern.compile("^\r\n$");
     private static final Pattern HEADER_PATTERN = Pattern.compile("^([A-Z_a-z0-9-]+):\\s*(.*)\r\n$");

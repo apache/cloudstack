@@ -17,9 +17,10 @@
 
 package org.apache.cloudstack.alert.snmp;
 
+import java.io.Serializable;
 import java.util.Date;
 
-public class SnmpTrapInfo {
+public class SnmpTrapInfo implements Serializable {
     private String message;
     private long podId;
     private long dataCenterId;

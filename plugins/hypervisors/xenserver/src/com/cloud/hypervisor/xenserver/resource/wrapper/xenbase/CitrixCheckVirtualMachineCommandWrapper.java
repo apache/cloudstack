@@ -19,7 +19,8 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
@@ -33,7 +34,7 @@ import com.xensource.xenapi.Connection;
 @ResourceWrapper(handles =  CheckVirtualMachineCommand.class)
 public final class CitrixCheckVirtualMachineCommandWrapper extends CommandWrapper<CheckVirtualMachineCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixCheckVirtualMachineCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixCheckVirtualMachineCommandWrapper.class);
 
     @Override
     public Answer execute(final CheckVirtualMachineCommand command, final CitrixResourceBase citrixResourceBase) {

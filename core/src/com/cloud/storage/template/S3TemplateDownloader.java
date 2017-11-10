@@ -38,7 +38,8 @@ import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -56,7 +57,7 @@ import static java.util.Arrays.asList;
  * Execution of the instance is started when runInContext() is called.
  */
 public class S3TemplateDownloader extends ManagedContextRunnable implements TemplateDownloader {
-    private static final Logger LOGGER = Logger.getLogger(S3TemplateDownloader.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(S3TemplateDownloader.class.getName());
 
     private final String downloadUrl;
     private final String s3Key;

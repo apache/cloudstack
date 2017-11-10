@@ -25,7 +25,8 @@ import java.util.Set;
 import javax.ejb.Local;
 
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.to.DiskTO;
@@ -43,7 +44,7 @@ import com.xensource.xenapi.VM;
 @Local(value = ServerResource.class)
 public class XenServer610Resource extends XenServer600Resource {
 
-    private static final Logger s_logger = Logger.getLogger(XenServer610Resource.class);
+    private static final Logger s_logger = LogManager.getLogger(XenServer610Resource.class);
 
     public List<VolumeObjectTO> getUpdatedVolumePathsOfMigratedVm(final Connection connection, final VM migratedVm, final DiskTO[] volumes) throws CloudRuntimeException {
         final List<VolumeObjectTO> volumeToList = new ArrayList<VolumeObjectTO>();

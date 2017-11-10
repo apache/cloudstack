@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,11 +29,13 @@ import java.util.Map;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-import com.cloud.consoleproxy.util.Logger;
+import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
 
 public class ConsoleProxyAjaxHandler implements HttpHandler {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyAjaxHandler.class);
+    private static final Logger s_logger = LogManager.getLogger(ConsoleProxyAjaxHandler.class);
 
     public ConsoleProxyAjaxHandler() {
     }

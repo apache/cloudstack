@@ -32,7 +32,8 @@ import org.apache.cloudstack.engine.orchestration.VolumeOrchestrator;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.List;
 
@@ -41,7 +42,7 @@ import java.util.List;
  */
 public class CleanupFullyClonedTemplatesTask extends ManagedContextRunnable {
 
-    private static final Logger s_logger = Logger.getLogger(CleanupFullyClonedTemplatesTask.class);
+    private static final Logger s_logger = LogManager.getLogger(CleanupFullyClonedTemplatesTask.class);
 
     private PrimaryDataStoreDao primaryStorageDao;
     private VMTemplatePoolDao templateDataStoreDao;

@@ -38,7 +38,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.cloud.utils.storage.S3.ClientOptions;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -59,7 +60,7 @@ import com.cloud.storage.ImageStore;
 @APICommand(name = "addImageStoreS3", description = "Adds S3 Image Store", responseObject = ImageStoreResponse.class, since = "4.7.0",
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public final class AddImageStoreS3CMD extends BaseCmd implements ClientOptions {
-    public static final Logger s_logger = Logger.getLogger(AddImageStoreS3CMD.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(AddImageStoreS3CMD.class.getName());
 
     private static final String s_name = "addImageStoreS3Response";
 

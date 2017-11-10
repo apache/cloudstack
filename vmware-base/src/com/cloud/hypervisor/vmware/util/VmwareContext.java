@@ -31,7 +31,8 @@ import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VimPortType;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.cloudstack.utils.security.SecureSSLSocketFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.HttpsURLConnection;
@@ -58,7 +59,7 @@ import java.util.List;
 import java.util.Map;
 
 public class VmwareContext {
-    private static final Logger s_logger = Logger.getLogger(VmwareContext.class);
+    private static final Logger s_logger = LogManager.getLogger(VmwareContext.class);
 
     private static final int MAX_CONNECT_RETRY = 5;
     private static final int CONNECT_RETRY_INTERVAL = 1000;

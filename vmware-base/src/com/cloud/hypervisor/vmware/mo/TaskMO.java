@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.vmware.vim25.LocalizableMessage;
 import com.vmware.vim25.LocalizedMethodFault;
@@ -27,7 +28,7 @@ import com.vmware.vim25.TaskInfoState;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class TaskMO extends BaseMO {
-    private static final Logger s_logger = Logger.getLogger(TaskMO.class);
+    private static final Logger s_logger = LogManager.getLogger(TaskMO.class);
     public TaskMO(VmwareContext context, ManagedObjectReference morTask) {
         super(context, morTask);
     }

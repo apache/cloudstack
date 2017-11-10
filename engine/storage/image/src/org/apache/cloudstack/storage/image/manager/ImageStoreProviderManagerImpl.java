@@ -28,7 +28,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -49,7 +50,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 
 @Component
 public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager {
-    private static final Logger s_logger = Logger.getLogger(ImageStoreProviderManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(ImageStoreProviderManagerImpl.class);
     @Inject
     ImageStoreDao dataStoreDao;
     @Inject

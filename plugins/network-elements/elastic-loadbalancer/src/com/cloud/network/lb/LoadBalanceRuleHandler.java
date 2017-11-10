@@ -30,7 +30,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.command.user.loadbalancer.CreateLoadBalancerRuleCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.configuration.ConfigurationManagerImpl;
 import com.cloud.dc.DataCenter;
@@ -100,7 +101,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 
 public class LoadBalanceRuleHandler {
 
-    private static final Logger s_logger = Logger.getLogger(LoadBalanceRuleHandler.class);
+    private static final Logger s_logger = LogManager.getLogger(LoadBalanceRuleHandler.class);
 
     @Inject
     private IPAddressDao _ipAddressDao;

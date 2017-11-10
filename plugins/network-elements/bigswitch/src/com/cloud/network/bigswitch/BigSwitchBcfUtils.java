@@ -26,7 +26,8 @@ import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.net.util.SubnetUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.util.IPAddress;
 
 import com.cloud.agent.AgentManager;
@@ -76,7 +77,7 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class BigSwitchBcfUtils {
-    private static final Logger s_logger = Logger.getLogger(BigSwitchBcfUtils.class);
+    private static final Logger s_logger = LogManager.getLogger(BigSwitchBcfUtils.class);
 
     private final NetworkDao _networkDao;
     private final NicDao _nicDao;

@@ -21,7 +21,8 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
@@ -35,7 +36,7 @@ import com.xensource.xenapi.Connection;
 @ResourceWrapper(handles =  CreateStoragePoolCommand.class)
 public final class CitrixCreateStoragePoolCommandWrapper extends CommandWrapper<CreateStoragePoolCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixCreateStoragePoolCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixCreateStoragePoolCommandWrapper.class);
 
     @Override
     public Answer execute(final CreateStoragePoolCommand command, final CitrixResourceBase citrixResourceBase) {

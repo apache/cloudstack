@@ -23,7 +23,8 @@ import java.util.Date;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.LaunchPermissionVO;
@@ -39,7 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class LaunchPermissionDaoImpl extends GenericDaoBase<LaunchPermissionVO, Long> implements LaunchPermissionDao {
-    private static final Logger s_logger = Logger.getLogger(LaunchPermissionDaoImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(LaunchPermissionDaoImpl.class);
     private static final String REMOVE_LAUNCH_PERMISSION = "DELETE FROM `cloud`.`launch_permission`" + "  WHERE template_id = ? AND account_id = ?";
 
     private static final String LIST_PERMITTED_TEMPLATES =

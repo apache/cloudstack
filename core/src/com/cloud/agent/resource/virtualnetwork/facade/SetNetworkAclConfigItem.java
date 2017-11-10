@@ -22,7 +22,8 @@ package com.cloud.agent.resource.virtualnetwork.facade;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.routing.SetNetworkACLCommand;
@@ -41,7 +42,7 @@ import com.cloud.utils.net.NetUtils;
 
 public class SetNetworkAclConfigItem extends AbstractConfigItemFacade {
 
-    public static final Logger s_logger = Logger.getLogger(SetNetworkAclConfigItem.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(SetNetworkAclConfigItem.class.getName());
 
     @Override
     public List<ConfigItem> generateConfig(final NetworkElementCommand cmd) {

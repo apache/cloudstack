@@ -33,7 +33,8 @@ import net.juniper.contrail.api.ApiObjectBase;
 import net.juniper.contrail.api.types.VirtualMachineInterface;
 import net.juniper.contrail.api.types.VirtualNetwork;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -60,7 +61,7 @@ import com.cloud.utils.mgmt.JmxUtil;
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/publicNetworkContext.xml")
 public class PublicNetworkTest extends TestCase {
-    private static final Logger s_logger = Logger.getLogger(PublicNetworkTest.class);
+    private static final Logger s_logger = LogManager.getLogger(PublicNetworkTest.class);
 
     @Inject
     public ContrailManager _contrailMgr;

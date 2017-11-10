@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.vmware.vim25.HostDiskDimensionsChs;
 import com.vmware.vim25.ManagedObjectReference;
@@ -26,7 +27,7 @@ import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class VirtualDiskManagerMO extends BaseMO {
     @SuppressWarnings("unused")
-    private static final Logger s_logger = Logger.getLogger(VirtualDiskManagerMO.class);
+    private static final Logger s_logger = LogManager.getLogger(VirtualDiskManagerMO.class);
 
     public VirtualDiskManagerMO(VmwareContext context) {
         super(context, context.getServiceContent().getVirtualDiskManager());

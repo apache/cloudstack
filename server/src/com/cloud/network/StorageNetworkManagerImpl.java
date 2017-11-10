@@ -23,7 +23,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;
@@ -59,7 +60,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 @Component
 public class StorageNetworkManagerImpl extends ManagerBase implements StorageNetworkManager, StorageNetworkService {
-    private static final Logger s_logger = Logger.getLogger(StorageNetworkManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(StorageNetworkManagerImpl.class);
 
     @Inject
     StorageNetworkIpAddressDao _sNwIpDao;

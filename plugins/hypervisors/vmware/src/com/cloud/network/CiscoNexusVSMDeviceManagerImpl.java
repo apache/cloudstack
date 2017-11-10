@@ -20,7 +20,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.dc.ClusterDetailsDao;
@@ -65,7 +66,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     @Inject
     PortProfileDao _ppDao;
 
-    private static final org.apache.log4j.Logger s_logger = Logger.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
+    private static final org.apache.log4j.Logger s_logger = LogManager.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
 
     @DB
     //public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, ServerResource resource, String vsmName) {

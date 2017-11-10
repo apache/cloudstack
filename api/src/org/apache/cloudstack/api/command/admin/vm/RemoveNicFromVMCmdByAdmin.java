@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.admin.vm;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -36,7 +37,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "removeNicFromVirtualMachine", description = "Removes VM from specified network by deleting a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class RemoveNicFromVMCmdByAdmin extends RemoveNicFromVMCmd {
-    public static final Logger s_logger = Logger.getLogger(RemoveNicFromVMCmdByAdmin.class);
+    public static final Logger s_logger = LogManager.getLogger(RemoveNicFromVMCmdByAdmin.class);
 
     @Override
     public void execute(){

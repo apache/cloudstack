@@ -88,7 +88,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
@@ -224,7 +225,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
-    public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(ConfigurationManagerImpl.class);
 
     @Inject
     EntityManager _entityMgr;

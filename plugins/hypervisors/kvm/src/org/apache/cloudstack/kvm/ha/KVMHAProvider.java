@@ -33,14 +33,15 @@ import org.apache.cloudstack.ha.provider.HARecoveryException;
 import org.apache.cloudstack.ha.provider.host.HAAbstractHostProvider;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement.PowerOperation;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
 
 import javax.inject.Inject;
 import java.security.InvalidParameterException;
 
 public final class KVMHAProvider extends HAAbstractHostProvider implements HAProvider<Host>, Configurable {
-    private final static Logger LOG = Logger.getLogger(KVMHAProvider.class);
+    private final static Logger LOG = LogManager.getLogger(KVMHAProvider.class);
 
     @Inject
     protected KVMHostActivityChecker hostActivityChecker;

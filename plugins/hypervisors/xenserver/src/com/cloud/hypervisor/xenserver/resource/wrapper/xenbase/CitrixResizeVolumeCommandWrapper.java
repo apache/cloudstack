@@ -19,7 +19,8 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.ResizeVolumeAnswer;
@@ -38,7 +39,7 @@ import java.util.Set;
 
 @ResourceWrapper(handles =  ResizeVolumeCommand.class)
 public final class CitrixResizeVolumeCommandWrapper extends CommandWrapper<ResizeVolumeCommand, Answer, CitrixResourceBase> {
-    private static final Logger s_logger = Logger.getLogger(CitrixResizeVolumeCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixResizeVolumeCommandWrapper.class);
 
     @Override
     public Answer execute(final ResizeVolumeCommand command, final CitrixResourceBase citrixResourceBase) {

@@ -45,7 +45,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.lang.ObjectUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -173,7 +174,7 @@ import com.google.gson.Gson;
 
 @Component
 public class ResourceManagerImpl extends ManagerBase implements ResourceManager, ResourceService, Manager {
-    private static final Logger s_logger = Logger.getLogger(ResourceManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(ResourceManagerImpl.class);
 
     Gson _gson;
 

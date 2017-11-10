@@ -16,14 +16,15 @@
 // under the License.
 package streamer;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * Link to transfer data in bounds of single thread (synchronized transfer).
  * Must not be used to send data to elements served in different threads.
  */
 public class SyncLink implements Link {
-    private static final Logger s_logger = Logger.getLogger(SyncLink.class);
+    private static final Logger s_logger = LogManager.getLogger(SyncLink.class);
 
     /**
      * When null packet is pulled from source element, then make slight delay to

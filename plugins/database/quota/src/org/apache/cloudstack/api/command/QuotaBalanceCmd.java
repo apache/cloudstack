@@ -21,7 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -36,7 +37,7 @@ import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
 @APICommand(name = "quotaBalance", responseObject = QuotaStatementItemResponse.class, description = "Create a quota balance statement", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaBalanceCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(QuotaBalanceCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(QuotaBalanceCmd.class);
 
     private static final String s_name = "quotabalanceresponse";
 

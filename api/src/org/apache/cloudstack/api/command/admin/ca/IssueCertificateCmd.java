@@ -36,7 +36,8 @@ import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.utils.security.CertUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.google.common.base.Strings;
@@ -49,7 +50,7 @@ import com.google.common.base.Strings;
         since = "4.11.0",
         authorized = {RoleType.Admin})
 public class IssueCertificateCmd extends BaseAsyncCmd {
-    private static final Logger LOG = Logger.getLogger(IssueCertificateCmd.class);
+    private static final Logger LOG = LogManager.getLogger(IssueCertificateCmd.class);
 
     public static final String APINAME = "issueCertificate";
 

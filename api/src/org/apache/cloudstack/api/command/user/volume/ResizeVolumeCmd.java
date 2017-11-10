@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 import org.apache.cloudstack.api.BaseAsyncCmd;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -43,7 +44,7 @@ import com.cloud.user.Account;
 @APICommand(name = "resizeVolume", description = "Resizes a volume", responseObject = VolumeResponse.class, responseView = ResponseView.Restricted, entityType = {Volume.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ResizeVolumeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(ResizeVolumeCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ResizeVolumeCmd.class.getName());
 
     private static final String s_name = "resizevolumeresponse";
 

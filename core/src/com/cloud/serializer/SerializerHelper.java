@@ -27,7 +27,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
 
@@ -38,7 +39,7 @@ import com.cloud.utils.Pair;
  * Note: toPairList and appendPairList only support simple POJO objects currently
  */
 public class SerializerHelper {
-    public static final Logger s_logger = Logger.getLogger(SerializerHelper.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(SerializerHelper.class.getName());
     public static final String token = "/";
 
     public static String toSerializedStringOld(Object result) {

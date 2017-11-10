@@ -19,7 +19,8 @@ package com.cloud.netapp.dao;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.netapp.NetappVolumeVO;
@@ -30,7 +31,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component(value = "netappVolumeDaoImpl")
 public class VolumeDaoImpl extends GenericDaoBase<NetappVolumeVO, Long> implements VolumeDao {
-    private static final Logger s_logger = Logger.getLogger(VolumeDaoImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(VolumeDaoImpl.class);
 
     protected final SearchBuilder<NetappVolumeVO> NetappVolumeSearch;
     protected final SearchBuilder<NetappVolumeVO> NetappListVolumeSearch;

@@ -17,6 +17,18 @@
 
 package org.apache.cloudstack.api;
 
+import java.lang.reflect.Field;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import javax.inject.Inject;
+
 import com.cloud.configuration.ConfigurationService;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -69,21 +81,11 @@ import org.apache.cloudstack.network.lb.ApplicationLoadBalancerService;
 import org.apache.cloudstack.network.lb.InternalLoadBalancerVMService;
 import org.apache.cloudstack.query.QueryService;
 import org.apache.cloudstack.usage.UsageService;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.lang.reflect.Field;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 
 public abstract class BaseCmd {
-    private static final Logger s_logger = Logger.getLogger(BaseCmd.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(BaseCmd.class.getName());
     public static final String RESPONSE_SUFFIX = "response";
     public static final String RESPONSE_TYPE_XML = HttpUtils.RESPONSE_TYPE_XML;
     public static final String RESPONSE_TYPE_JSON = HttpUtils.RESPONSE_TYPE_JSON;

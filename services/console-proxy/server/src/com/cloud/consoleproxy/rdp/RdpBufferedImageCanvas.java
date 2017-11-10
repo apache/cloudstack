@@ -25,18 +25,18 @@ import java.util.List;
 
 import com.cloud.consoleproxy.ConsoleProxyRdpClient;
 import com.cloud.consoleproxy.util.ImageHelper;
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.util.TileInfo;
 import com.cloud.consoleproxy.vnc.FrameBufferCanvas;
-
 import common.BufferedImageCanvas;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RdpBufferedImageCanvas extends BufferedImageCanvas implements FrameBufferCanvas {
     /**
      *
      */
     private static final long serialVersionUID = 1L;
-    private static final Logger s_logger = Logger.getLogger(RdpBufferedImageCanvas.class);
+    private static final Logger s_logger = LogManager.getLogger(RdpBufferedImageCanvas.class);
 
     private final ConsoleProxyRdpClient _rdpClient;
 

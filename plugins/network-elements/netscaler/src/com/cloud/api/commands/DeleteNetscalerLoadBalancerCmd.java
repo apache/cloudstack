@@ -17,7 +17,8 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +43,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(DeleteNetscalerLoadBalancerCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DeleteNetscalerLoadBalancerCmd.class.getName());
     private static final String s_name = "deletenetscalerloadbalancerresponse";
     @Inject
     NetscalerLoadBalancerElementService _netsclarLbService;

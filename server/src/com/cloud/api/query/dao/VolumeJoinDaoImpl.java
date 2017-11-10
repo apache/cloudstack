@@ -24,7 +24,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiDBUtils;
@@ -41,7 +42,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJoinVO, VolumeResponse> implements VolumeJoinDao {
-    public static final Logger s_logger = Logger.getLogger(VolumeJoinDaoImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(VolumeJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao  _configDao;

@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.admin.vm;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -36,7 +37,7 @@ import com.cloud.vm.VirtualMachine;
 @APICommand(name = "updateDefaultNicForVirtualMachine", description = "Changes the default NIC on a VM", responseObject = UserVmResponse.class, responseView = ResponseView.Full, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
 public class UpdateDefaultNicForVMCmdByAdmin extends UpdateDefaultNicForVMCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateDefaultNicForVMCmdByAdmin.class);
+    public static final Logger s_logger = LogManager.getLogger(UpdateDefaultNicForVMCmdByAdmin.class);
 
 
     @Override

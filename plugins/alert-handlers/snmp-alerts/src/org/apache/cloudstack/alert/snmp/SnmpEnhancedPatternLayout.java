@@ -20,15 +20,20 @@ package org.apache.cloudstack.alert.snmp;
 import java.util.Date;
 import java.util.StringTokenizer;
 
-import org.apache.log4j.EnhancedPatternLayout;
-import org.apache.log4j.spi.LoggingEvent;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.layout.AbstractLayout;
 
-public class SnmpEnhancedPatternLayout extends EnhancedPatternLayout {
+public class SnmpEnhancedPatternLayout extends AbstractLayout<SnmpTrapInfo> {
     private String _pairDelimiter = "//";
     private String _keyValueDelimiter = "::";
 
     private static final int LENGTH_OF_STRING_MESSAGE_AND_KEY_VALUE_DELIMITER = 9;
     private static final int LENGTH_OF_STRING_MESSAGE = 8;
+
+    public SnmpEnhancedPatternLayout(Configuration configuration, byte[] header, byte[] footer) {
+        super(configuration, header, footer);
+    }
 
     public String getKeyValueDelimeter() {
         return _keyValueDelimiter;
@@ -46,10 +51,10 @@ public class SnmpEnhancedPatternLayout extends EnhancedPatternLayout {
         this._pairDelimiter = pairDelimiter;
     }
 
-    public SnmpTrapInfo parseEvent(LoggingEvent event) {
+    public SnmpTrapInfo parseEvent(LogEvent event) {
         SnmpTrapInfo snmpTrapInfo = null;
 
-        final String message = event.getRenderedMessage();
+        final String message = event.getMessage().getFormattedMessage();
         if (message.contains("alertType") && message.contains("message")) {
             snmpTrapInfo = new SnmpTrapInfo();
             final StringTokenizer messageSplitter = new StringTokenizer(message, _pairDelimiter);
@@ -84,7 +89,7 @@ public class SnmpEnhancedPatternLayout extends EnhancedPatternLayout {
                 }
             }
 
-            snmpTrapInfo.setGenerationTime(new Date(event.getTimeStamp()));
+            snmpTrapInfo.setGenerationTime(new Date(event.getTimeMillis()));
         }
         return snmpTrapInfo;
     }
@@ -100,5 +105,20 @@ public class SnmpEnhancedPatternLayout extends EnhancedPatternLayout {
         }
 
         return message.substring(message.lastIndexOf("message" + _keyValueDelimiter) + LENGTH_OF_STRING_MESSAGE_AND_KEY_VALUE_DELIMITER).trim();
+    }
+
+    @Override
+    public byte[] toByteArray(LogEvent logEvent) {
+        return new byte[0];
+    }
+
+    @Override
+    public SnmpTrapInfo toSerializable(LogEvent logEvent) {
+        return parseEvent(logEvent);
+    }
+
+    @Override
+    public String getContentType() {
+        return "application/snmp";
     }
 }

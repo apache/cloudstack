@@ -21,7 +21,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.cluster.ClusterManager;
@@ -36,7 +37,7 @@ import com.cloud.utils.events.SubscriptionMgr;
 @Component
 public class ClusterAlertAdapter extends AdapterBase implements AlertAdapter {
 
-    private static final Logger s_logger = Logger.getLogger(ClusterAlertAdapter.class);
+    private static final Logger s_logger = LogManager.getLogger(ClusterAlertAdapter.class);
 
     @Inject
     private AlertManager _alertMgr;

@@ -25,7 +25,8 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.hypervisor.ovm3.objects.Network;
 import com.cloud.utils.NumbersUtil;
@@ -33,8 +34,7 @@ import com.cloud.utils.net.NetUtils;
 
 /* holds config data for the Ovm3 Hypervisor */
 public class Ovm3Configuration {
-    private static final Logger LOGGER = Logger
-            .getLogger(Ovm3Configuration.class);
+    private static final Logger LOGGER = LogManager.getLogger(Ovm3Configuration.class);
     private String agentIp;
     private Long agentZoneId;
     private Long agentPodId;

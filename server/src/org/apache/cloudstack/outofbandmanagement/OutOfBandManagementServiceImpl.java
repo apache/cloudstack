@@ -52,7 +52,8 @@ import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDrive
 import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -69,7 +70,7 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOfBandManagementService, Manager, Configurable {
-    public static final Logger LOG = Logger.getLogger(OutOfBandManagementServiceImpl.class);
+    public static final Logger LOG = LogManager.getLogger(OutOfBandManagementServiceImpl.class);
 
     @Inject
     private ClusterDetailsDao clusterDetailsDao;

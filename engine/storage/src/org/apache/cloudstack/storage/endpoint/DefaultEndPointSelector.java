@@ -40,7 +40,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.LocalHostEndpoint;
 import org.apache.cloudstack.storage.RemoteHostEndPoint;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.capacity.CapacityManager;
@@ -61,7 +62,7 @@ import com.cloud.vm.VirtualMachine;
 
 @Component
 public class DefaultEndPointSelector implements EndPointSelector {
-    private static final Logger s_logger = Logger.getLogger(DefaultEndPointSelector.class);
+    private static final Logger s_logger = LogManager.getLogger(DefaultEndPointSelector.class);
     @Inject
     private HostDao hostDao;
     private final String findOneHostOnPrimaryStorage = "select t.id from "

@@ -35,10 +35,11 @@ import javax.naming.ldap.PagedResultsResponseControl;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class OpenLdapUserManagerImpl implements LdapUserManager {
-    private static final Logger s_logger = Logger.getLogger(OpenLdapUserManagerImpl.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(OpenLdapUserManagerImpl.class.getName());
 
     @Inject
     protected LdapConfiguration _ldapConfiguration;

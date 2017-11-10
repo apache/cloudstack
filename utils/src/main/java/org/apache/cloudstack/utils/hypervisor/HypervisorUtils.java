@@ -20,7 +20,8 @@
 package org.apache.cloudstack.utils.hypervisor;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +30,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.concurrent.TimeUnit;
 
 public class HypervisorUtils {
-    public static final Logger s_logger = Logger.getLogger(HypervisorUtils.class);
+    public static final Logger s_logger = LogManager.getLogger(HypervisorUtils.class);
 
     public static void checkVolumeFileForActivity(final String filePath, int timeoutSeconds, long inactiveThresholdMilliseconds, long minimumFileSize) throws IOException {
         File file = new File(filePath);

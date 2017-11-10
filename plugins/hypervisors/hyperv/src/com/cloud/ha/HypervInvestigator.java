@@ -22,7 +22,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -36,7 +37,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.utils.component.AdapterBase;
 
 public class HypervInvestigator extends AdapterBase implements Investigator {
-    private final static Logger s_logger = Logger.getLogger(HypervInvestigator.class);
+    private final static Logger s_logger = LogManager.getLogger(HypervInvestigator.class);
     @Inject HostDao _hostDao;
     @Inject AgentManager _agentMgr;
     @Inject ResourceManager _resourceMgr;

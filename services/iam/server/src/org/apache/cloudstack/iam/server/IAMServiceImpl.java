@@ -27,7 +27,8 @@ import net.sf.ehcache.Cache;
 import net.sf.ehcache.CacheManager;
 import net.sf.ehcache.Element;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.PermissionScope;
 import org.apache.cloudstack.iam.api.IAMGroup;
@@ -63,7 +64,7 @@ import com.cloud.utils.db.TransactionStatus;
 
 public class IAMServiceImpl extends ManagerBase implements IAMService, Manager {
 
-    public static final Logger s_logger = Logger.getLogger(IAMServiceImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(IAMServiceImpl.class);
     private String _name;
 
     @Inject

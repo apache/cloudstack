@@ -30,7 +30,8 @@ import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDrive
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverCommand;
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverPowerCommand;
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
 
 import java.util.Arrays;
@@ -39,7 +40,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public final class IpmitoolOutOfBandManagementDriver extends AdapterBase implements OutOfBandManagementDriver, Configurable {
-    public static final Logger LOG = Logger.getLogger(IpmitoolOutOfBandManagementDriver.class);
+    public static final Logger LOG = LogManager.getLogger(IpmitoolOutOfBandManagementDriver.class);
 
     private static volatile boolean isDriverEnabled = false;
     private static boolean isIpmiToolBinAvailable = false;

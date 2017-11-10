@@ -41,7 +41,8 @@ import org.apache.cloudstack.ha.provider.HACheckerException;
 import org.apache.cloudstack.ha.provider.HealthCheckerInterface;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -50,7 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 
 public class KVMHostActivityChecker extends AdapterBase implements ActivityCheckerInterface<Host>, HealthCheckerInterface<Host> {
-    private final static Logger LOG = Logger.getLogger(KVMHostActivityChecker.class);
+    private final static Logger LOG = LogManager.getLogger(KVMHostActivityChecker.class);
 
     @Inject
     private VolumeDao volumeDao;

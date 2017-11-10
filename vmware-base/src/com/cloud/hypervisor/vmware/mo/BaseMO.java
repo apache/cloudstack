@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.vmware.vim25.CustomFieldDef;
 import com.vmware.vim25.CustomFieldStringValue;
@@ -25,7 +26,7 @@ import com.vmware.vim25.ManagedObjectReference;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 
 public class BaseMO {
-    private static final Logger s_logger = Logger.getLogger(BaseMO.class);
+    private static final Logger s_logger = LogManager.getLogger(BaseMO.class);
 
     protected VmwareContext _context;
     protected ManagedObjectReference _mor;

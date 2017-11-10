@@ -20,7 +20,8 @@ import java.util.Date;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -36,7 +37,7 @@ import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class VolumeHostDaoImpl extends GenericDaoBase<VolumeHostVO, Long> implements VolumeHostDao {
-    private static final Logger s_logger = Logger.getLogger(VolumeHostDaoImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(VolumeHostDaoImpl.class);
     protected final SearchBuilder<VolumeHostVO> HostVolumeSearch;
     protected final SearchBuilder<VolumeHostVO> ZoneVolumeSearch;
     protected final SearchBuilder<VolumeHostVO> VolumeSearch;

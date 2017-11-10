@@ -44,7 +44,8 @@ import com.cloud.hypervisor.Hypervisor;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
@@ -202,7 +203,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class StorageManagerImpl extends ManagerBase implements StorageManager, ClusterManagerListener, Configurable {
-    private static final Logger s_logger = Logger.getLogger(StorageManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(StorageManagerImpl.class);
 
     protected String _name;
     @Inject

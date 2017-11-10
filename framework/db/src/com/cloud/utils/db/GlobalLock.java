@@ -22,7 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.Profiler;
 
@@ -43,7 +44,7 @@ import com.cloud.utils.Profiler;
 //        lock.releaseRef();
 //
 public class GlobalLock {
-    protected final static Logger s_logger = Logger.getLogger(GlobalLock.class);
+    protected final static Logger s_logger = LogManager.getLogger(GlobalLock.class);
 
     private String name;
     private int lockCount = 0;

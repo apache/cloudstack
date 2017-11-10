@@ -32,7 +32,8 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.AddBaremetalPxeCmd;
 import org.apache.cloudstack.api.AddBaremetalPxePingServerCmd;
 import org.apache.cloudstack.api.ListBaremetalPxeServersCmd;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.baremetal.IpmISetBootDevCommand;
@@ -68,7 +69,7 @@ import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class BareMetalPingServiceImpl extends BareMetalPxeServiceBase implements BaremetalPxeService {
-    private static final Logger s_logger = Logger.getLogger(BareMetalPingServiceImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(BareMetalPingServiceImpl.class);
     @Inject
     ResourceManager _resourceMgr;
     @Inject

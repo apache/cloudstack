@@ -16,7 +16,8 @@
 // under the License.
 package com.cloud.storage.secondary;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -31,7 +32,7 @@ import com.cloud.host.Status;
 import com.cloud.storage.Storage;
 
 public class SecondaryStorageListener implements Listener {
-    private final static Logger s_logger = Logger.getLogger(SecondaryStorageListener.class);
+    private final static Logger s_logger = LogManager.getLogger(SecondaryStorageListener.class);
 
     SecondaryStorageVmManager _ssVmMgr = null;
 

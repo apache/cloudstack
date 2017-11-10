@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.user.autoscale;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -50,7 +51,7 @@ import com.cloud.user.User;
             responseHasSensitiveInfo = false)
 @SuppressWarnings("rawtypes")
 public class CreateAutoScaleVmProfileCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateAutoScaleVmProfileCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(CreateAutoScaleVmProfileCmd.class.getName());
 
     private static final String s_name = "autoscalevmprofileresponse";
 

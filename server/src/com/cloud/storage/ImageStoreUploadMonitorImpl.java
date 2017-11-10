@@ -29,7 +29,8 @@ import com.cloud.configuration.Resource;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.user.ResourceLimitService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -80,7 +81,7 @@ import com.cloud.utils.fsm.StateMachine2;
 @Component
 public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageStoreUploadMonitor, Listener, Configurable {
 
-    static final Logger s_logger = Logger.getLogger(ImageStoreUploadMonitorImpl.class);
+    static final Logger s_logger = LogManager.getLogger(ImageStoreUploadMonitorImpl.class);
 
     @Inject
     private VolumeDao _volumeDao;

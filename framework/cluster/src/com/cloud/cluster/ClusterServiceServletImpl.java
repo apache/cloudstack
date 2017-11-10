@@ -25,13 +25,14 @@ import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.methods.PostMethod;
 import org.apache.commons.httpclient.params.HttpClientParams;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.Profiler;
 
 public class ClusterServiceServletImpl implements ClusterService {
     private static final long serialVersionUID = 4574025200012566153L;
-    private static final Logger s_logger = Logger.getLogger(ClusterServiceServletImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(ClusterServiceServletImpl.class);
 
     private String _serviceUrl;
 

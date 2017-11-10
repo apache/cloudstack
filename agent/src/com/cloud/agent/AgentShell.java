@@ -32,13 +32,6 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.daemon.Daemon;
-import org.apache.commons.daemon.DaemonContext;
-import org.apache.commons.daemon.DaemonInitException;
-import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
-import org.apache.log4j.xml.DOMConfigurator;
-
 import com.cloud.agent.Agent.ExitStatus;
 import com.cloud.agent.dao.StorageComponent;
 import com.cloud.agent.dao.impl.PropertiesStorage;
@@ -50,9 +43,15 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.daemon.Daemon;
+import org.apache.commons.daemon.DaemonContext;
+import org.apache.commons.daemon.DaemonInitException;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AgentShell implements IAgentShell, Daemon {
-    private static final Logger s_logger = Logger.getLogger(AgentShell.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(AgentShell.class.getName());
 
     private final Properties _properties = new Properties();
     private final Map<String, Object> _cmdLineProperties = new HashMap<String, Object>();
@@ -316,7 +315,17 @@ public class AgentShell implements IAgentShell, Daemon {
         }
 
         if (null != file) {
-            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
+            org.apache.logging.log4j.core.config.Configurator.initialize("cloud", file.getAbsolutePath());
+            // TODO watch interval must be set in an updated log4j xml*/
+
+/*
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Configuration monitorInterval="30">
+...
+</Configuration>
+ */
+//            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
 
             s_logger.info("Agent started");
         } else {

@@ -31,7 +31,8 @@ import org.apache.cloudstack.api.response.LoadBalancerResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.utils.Pair;
@@ -39,7 +40,7 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listLoadBalancerRules", description = "Lists load balancer rules.", responseObject = LoadBalancerResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListLoadBalancerRulesCmd extends BaseListTaggedResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListLoadBalancerRulesCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListLoadBalancerRulesCmd.class.getName());
 
     private static final String s_name = "listloadbalancerrulesresponse";
 

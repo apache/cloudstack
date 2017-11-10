@@ -36,7 +36,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
@@ -72,7 +73,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 @Component("consoleServlet")
 public class ConsoleProxyServlet extends HttpServlet {
     private static final long serialVersionUID = -5515382620323808168L;
-    public static final Logger s_logger = Logger.getLogger(ConsoleProxyServlet.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ConsoleProxyServlet.class.getName());
     private static final int DEFAULT_THUMBNAIL_WIDTH = 144;
     private static final int DEFAULT_THUMBNAIL_HEIGHT = 110;
 

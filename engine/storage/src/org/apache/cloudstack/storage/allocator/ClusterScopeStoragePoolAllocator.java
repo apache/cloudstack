@@ -25,7 +25,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;
@@ -39,7 +40,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 @Component
 public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocator {
-    private static final Logger s_logger = Logger.getLogger(ClusterScopeStoragePoolAllocator.class);
+    private static final Logger s_logger = LogManager.getLogger(ClusterScopeStoragePoolAllocator.class);
 
     @Inject
     DiskOfferingDao _diskOfferingDao;

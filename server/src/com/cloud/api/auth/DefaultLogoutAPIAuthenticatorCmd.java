@@ -26,7 +26,8 @@ import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.auth.APIAuthenticator;
 import org.apache.cloudstack.api.auth.PluggableAPIAuthenticator;
 import org.apache.cloudstack.api.response.LogoutCmdResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,7 +39,7 @@ import java.net.InetAddress;
 @APICommand(name = "logout", description = "Logs out the user", responseObject = LogoutCmdResponse.class, entityType = {})
 public class DefaultLogoutAPIAuthenticatorCmd extends BaseCmd implements APIAuthenticator {
 
-    public static final Logger s_logger = Logger.getLogger(DefaultLoginAPIAuthenticatorCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DefaultLoginAPIAuthenticatorCmd.class.getName());
     private static final String s_name = "logoutresponse";
 
     /////////////////////////////////////////////////////

@@ -26,14 +26,15 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.ResourceLimitResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.configuration.ResourceLimit;
 
 @APICommand(name = "updateResourceLimit", description = "Updates resource limits for an account or domain.", responseObject = ResourceLimitResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateResourceLimitCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateResourceLimitCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UpdateResourceLimitCmd.class.getName());
 
     private static final String s_name = "updateresourcelimitresponse";
 

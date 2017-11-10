@@ -29,7 +29,8 @@ import javax.persistence.EntityExistsException;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -92,7 +93,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManager, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine> {
-    public static final Logger s_logger = Logger.getLogger(OvsTunnelManagerImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(OvsTunnelManagerImpl.class.getName());
 
     // boolean _isEnabled;
     ScheduledExecutorService _executorPool;

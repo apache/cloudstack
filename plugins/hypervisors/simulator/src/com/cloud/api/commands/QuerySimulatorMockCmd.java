@@ -31,14 +31,15 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 
 
 @APICommand(name = "querySimulatorMock", description="query simulator mock", responseObject=MockResponse.class)
 public class QuerySimulatorMockCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(QuerySimulatorMockCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(QuerySimulatorMockCmd.class.getName());
     private static final String s_name = "querysimulatormockresponse";
 
     @Inject SimulatorManager _simMgr;

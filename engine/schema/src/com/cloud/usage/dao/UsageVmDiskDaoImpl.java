@@ -23,7 +23,8 @@ import java.util.List;
 import java.util.Map;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVmDiskVO;
@@ -33,7 +34,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class UsageVmDiskDaoImpl extends GenericDaoBase<UsageVmDiskVO, Long> implements UsageVmDiskDao {
-    private static final Logger s_logger = Logger.getLogger(UsageVmDiskDaoImpl.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(UsageVmDiskDaoImpl.class.getName());
     private static final String SELECT_LATEST_STATS =
         "SELECT uvd.account_id, uvd.zone_id, uvd.vm_id, uvd.volume_id, uvd.io_read, uvd.io_write, uvd.agg_io_read, uvd.agg_io_write, "
             + "uvd.bytes_read, uvd.bytes_write, uvd.agg_bytes_read, uvd.agg_bytes_write, uvd.event_time_millis "

@@ -25,7 +25,8 @@ import java.util.Map;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -36,7 +37,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.script.Script;
 
 public class OVAProcessor extends AdapterBase implements Processor {
-    private static final Logger s_logger = Logger.getLogger(OVAProcessor.class);
+    private static final Logger s_logger = LogManager.getLogger(OVAProcessor.class);
 
     StorageLayer _storage;
 

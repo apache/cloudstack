@@ -28,7 +28,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -52,7 +53,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     private static final String GRAPHICS_ELEM_END = "/graphics>";
     private static final String GRAPHICS_ELEM_START = "<graphics";
     private static final String CONTENTS_WILDCARD = "(?s).*";
-    private static final Logger s_logger = Logger.getLogger(LibvirtMigrateCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtMigrateCommandWrapper.class);
 
     @Override
     public Answer execute(final MigrateCommand command, final LibvirtComputingResource libvirtComputingResource) {

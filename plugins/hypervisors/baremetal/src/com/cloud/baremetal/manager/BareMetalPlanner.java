@@ -23,7 +23,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.dc.ClusterDetailsDao;
@@ -50,7 +51,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public class BareMetalPlanner extends AdapterBase implements DeploymentPlanner {
-    private static final Logger s_logger = Logger.getLogger(BareMetalPlanner.class);
+    private static final Logger s_logger = LogManager.getLogger(BareMetalPlanner.class);
     @Inject
     protected DataCenterDao _dcDao;
     @Inject

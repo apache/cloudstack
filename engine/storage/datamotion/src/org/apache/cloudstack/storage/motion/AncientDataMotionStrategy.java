@@ -46,7 +46,8 @@ import org.apache.cloudstack.storage.RemoteHostEndPoint;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
@@ -73,7 +74,7 @@ import com.cloud.vm.VirtualMachineManager;
 
 @Component
 public class AncientDataMotionStrategy implements DataMotionStrategy {
-    private static final Logger s_logger = Logger.getLogger(AncientDataMotionStrategy.class);
+    private static final Logger s_logger = LogManager.getLogger(AncientDataMotionStrategy.class);
     @Inject
     EndPointSelector selector;
     @Inject

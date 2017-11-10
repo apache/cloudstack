@@ -40,7 +40,8 @@ import org.apache.cloudstack.quota.dao.QuotaUsageDao;
 import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.commons.lang3.text.StrSubstitutor;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
@@ -66,7 +67,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 @Local(value = QuotaAlertManager.class)
 public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertManager {
-    private static final Logger s_logger = Logger.getLogger(QuotaAlertManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(QuotaAlertManagerImpl.class);
 
     @Inject
     private AccountDao _accountDao;

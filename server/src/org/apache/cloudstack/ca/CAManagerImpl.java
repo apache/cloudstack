@@ -56,7 +56,8 @@ import org.apache.cloudstack.poll.BackgroundPollManager;
 import org.apache.cloudstack.poll.BackgroundPollTask;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.security.CertUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -76,7 +77,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Strings;
 
 public class CAManagerImpl extends ManagerBase implements CAManager {
-    public static final Logger LOG = Logger.getLogger(CAManagerImpl.class);
+    public static final Logger LOG = LogManager.getLogger(CAManagerImpl.class);
 
     @Inject
     private CrlDao crlDao;

@@ -27,7 +27,8 @@ import com.cloud.utils.component.AdapterBase;
 import org.apache.commons.compress.compressors.CompressorException;
 import org.apache.commons.compress.compressors.CompressorInputStream;
 import org.apache.commons.compress.compressors.CompressorStreamFactory;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.naming.ConfigurationException;
 import java.io.BufferedInputStream;
@@ -46,7 +47,7 @@ import java.util.Map;
  */
 public class VhdProcessor extends AdapterBase implements Processor {
 
-    private static final Logger s_logger = Logger.getLogger(VhdProcessor.class);
+    private static final Logger s_logger = LogManager.getLogger(VhdProcessor.class);
     StorageLayer _storage;
     private int vhdFooterSize = 512;
     private int vhdCookieOffset = 8;

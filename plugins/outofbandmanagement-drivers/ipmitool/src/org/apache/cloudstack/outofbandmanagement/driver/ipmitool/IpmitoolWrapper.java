@@ -26,7 +26,8 @@ import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.outofbandmanagement.driver.OutOfBandManagementDriverResponse;
 import org.apache.cloudstack.utils.process.ProcessResult;
 import org.apache.cloudstack.utils.process.ProcessRunner;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.Duration;
 
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 public final class IpmitoolWrapper {
-    public static final Logger LOG = Logger.getLogger(IpmitoolWrapper.class);
+    public static final Logger LOG = LogManager.getLogger(IpmitoolWrapper.class);
 
     private final ProcessRunner RUNNER;
 

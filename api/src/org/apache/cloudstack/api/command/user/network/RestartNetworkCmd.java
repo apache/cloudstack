@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.network;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
@@ -44,7 +45,7 @@ import com.cloud.network.Network;
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = false)
 public class RestartNetworkCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(RestartNetworkCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(RestartNetworkCmd.class.getName());
     private static final String s_name = "restartnetworkresponse";
 
     /////////////////////////////////////////////////////

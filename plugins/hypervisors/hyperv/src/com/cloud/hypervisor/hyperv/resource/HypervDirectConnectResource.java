@@ -62,7 +62,8 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.http.util.EntityUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -165,7 +166,7 @@ import com.google.gson.reflect.TypeToken;
 public class HypervDirectConnectResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer {
     public static final int DEFAULT_AGENT_PORT = 8250;
     public static final String HOST_VM_STATE_REPORT_COMMAND = "org.apache.cloudstack.HostVmStateReportCommand";
-    private static final Logger s_logger = Logger.getLogger(HypervDirectConnectResource.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(HypervDirectConnectResource.class.getName());
 
     private static final Gson s_gson = GsonHelper.getGson();
     private String _zoneId;

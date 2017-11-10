@@ -22,7 +22,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.to.NicTO;
@@ -35,7 +36,7 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class OvsVifDriver extends VifDriverBase {
-    private static final Logger s_logger = Logger.getLogger(OvsVifDriver.class);
+    private static final Logger s_logger = LogManager.getLogger(OvsVifDriver.class);
     private int _timeout;
 
     @Override

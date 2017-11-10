@@ -22,7 +22,8 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Preconditions;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +32,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 public final class BackgroundPollManagerImpl extends ManagerBase implements BackgroundPollManager, Manager {
-    public static final Logger LOG = Logger.getLogger(BackgroundPollManagerImpl.class);
+    public static final Logger LOG = LogManager.getLogger(BackgroundPollManagerImpl.class);
 
     private ScheduledExecutorService backgroundPollTaskScheduler;
     private List<BackgroundPollTask> submittedTasks = new ArrayList<>();

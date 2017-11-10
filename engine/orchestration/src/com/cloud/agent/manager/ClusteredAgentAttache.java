@@ -25,7 +25,8 @@ import java.util.LinkedList;
 
 import javax.net.ssl.SSLEngine;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.Command;
@@ -35,7 +36,7 @@ import com.cloud.host.Status;
 import com.cloud.utils.nio.Link;
 
 public class ClusteredAgentAttache extends ConnectedAgentAttache implements Routable {
-    private final static Logger s_logger = Logger.getLogger(ClusteredAgentAttache.class);
+    private final static Logger s_logger = LogManager.getLogger(ClusteredAgentAttache.class);
     private static ClusteredAgentManagerImpl s_clusteredAgentMgr;
     protected ByteBuffer _buffer = ByteBuffer.allocate(2048);
     private boolean _forward = false;

@@ -19,7 +19,8 @@ package com.cloud.hypervisor.kvm.resource;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 
@@ -27,7 +28,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 
 public class LibvirtConnection {
-    private static final Logger s_logger = Logger.getLogger(LibvirtConnection.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtConnection.class);
     static private Map<String, Connect> s_connections = new HashMap<String, Connect>();
 
     static private Connect s_connection;

@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.vlan;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,7 +37,7 @@ import com.cloud.user.Account;
 @APICommand(name = "dedicatePublicIpRange", description = "Dedicates a Public IP range to an account", responseObject = VlanIpRangeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DedicatePublicIpRangeCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DedicatePublicIpRangeCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DedicatePublicIpRangeCmd.class.getName());
 
     private static final String s_name = "dedicatepubliciprangeresponse";
 

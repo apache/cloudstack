@@ -23,12 +23,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade218to224DomainVlans implements DbUpgrade {
-    final static Logger s_logger = Logger.getLogger(Upgrade218to224DomainVlans.class);
+    final static Logger s_logger = LogManager.getLogger(Upgrade218to224DomainVlans.class);
 
     @Override
     public File[] getPrepareScripts() {

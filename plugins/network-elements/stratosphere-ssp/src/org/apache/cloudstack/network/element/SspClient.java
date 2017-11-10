@@ -40,7 +40,8 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.PoolingClientConnectionManager;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.params.CoreConnectionPNames;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
@@ -49,7 +50,7 @@ import com.google.gson.annotations.SerializedName;
  * Stratosphere sdn platform api client
  */
 public class SspClient {
-    private static final Logger s_logger = Logger.getLogger(SspClient.class);
+    private static final Logger s_logger = LogManager.getLogger(SspClient.class);
     private static final HttpClient s_client = new DefaultHttpClient(
             new PoolingClientConnectionManager());
     static {

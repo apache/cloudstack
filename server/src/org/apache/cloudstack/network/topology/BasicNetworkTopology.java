@@ -22,7 +22,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -73,7 +74,7 @@ import com.cloud.vm.VirtualMachineProfile;
 @Component
 public class BasicNetworkTopology implements NetworkTopology {
 
-    private static final Logger s_logger = Logger.getLogger(BasicNetworkTopology.class);
+    private static final Logger s_logger = LogManager.getLogger(BasicNetworkTopology.class);
 
     @Autowired
     @Qualifier("basicNetworkVisitor")

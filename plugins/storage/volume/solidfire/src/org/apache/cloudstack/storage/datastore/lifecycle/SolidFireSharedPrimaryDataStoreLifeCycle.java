@@ -26,7 +26,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -74,7 +75,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStoreLifeCycle {
-    private static final Logger s_logger = Logger.getLogger(SolidFireSharedPrimaryDataStoreLifeCycle.class);
+    private static final Logger s_logger = LogManager.getLogger(SolidFireSharedPrimaryDataStoreLifeCycle.class);
 
     @Inject private AccountDao _accountDao;
     @Inject private AccountDetailsDao _accountDetailsDao;

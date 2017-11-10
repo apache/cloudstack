@@ -23,8 +23,9 @@ import java.util.Iterator;
 import java.util.Properties;
 import java.util.Set;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.cloud.utils.component.Registry;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.ApplicationContext;
@@ -32,11 +33,9 @@ import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.SmartLifecycle;
 import org.springframework.util.StringUtils;
 
-import com.cloud.utils.component.Registry;
-
 public class RegistryLifecycle implements BeanPostProcessor, SmartLifecycle, ApplicationContextAware {
 
-    private static final Logger log = LoggerFactory.getLogger(RegistryLifecycle.class);
+    private static final Logger log = LogManager.getLogger(RegistryLifecycle.class);
 
     public static final String EXTENSION_EXCLUDE = "extensions.exclude";
     public static final String EXTENSION_INCLUDE_PREFIX = "extensions.include.";

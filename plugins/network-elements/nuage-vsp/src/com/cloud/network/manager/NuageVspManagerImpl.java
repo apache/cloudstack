@@ -43,7 +43,8 @@ import net.nuage.vsp.acs.client.common.NuageVspConstants;
 import net.nuage.vsp.acs.client.exception.NuageVspException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
@@ -153,7 +154,7 @@ import static com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand.SyncType;
 
 public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager, Configurable, StateListener<Status, Status.Event, Host> {
 
-    private static final Logger s_logger = Logger.getLogger(NuageVspManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(NuageVspManagerImpl.class);
 
     public static final Multimap<Network.Service, Network.Provider> NUAGE_VSP_VPC_SERVICE_MAP;
     private static final ConfigKey[] NUAGE_VSP_CONFIG_KEYS = new ConfigKey<?>[] { NuageVspConfigDns, NuageVspDnsExternal, NuageVspConfigGateway,

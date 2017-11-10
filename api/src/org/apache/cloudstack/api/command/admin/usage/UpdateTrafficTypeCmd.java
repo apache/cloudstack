@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.usage;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -34,7 +35,7 @@ import com.cloud.user.Account;
 @APICommand(name = "updateTrafficType", description = "Updates traffic type of a physical network", responseObject = TrafficTypeResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateTrafficTypeCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateTrafficTypeCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UpdateTrafficTypeCmd.class.getName());
 
     private static final String s_name = "updatetraffictyperesponse";
 

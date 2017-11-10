@@ -60,7 +60,8 @@ import org.apache.cloudstack.storage.command.SnapshotAndCopyAnswer;
 import org.apache.cloudstack.storage.command.SnapshotAndCopyCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -73,7 +74,7 @@ import java.util.Random;
 
 @Component
 public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
-    private static final Logger s_logger = Logger.getLogger(StorageSystemSnapshotStrategy.class);
+    private static final Logger s_logger = LogManager.getLogger(StorageSystemSnapshotStrategy.class);
 
     @Inject private AgentManager agentMgr;
     @Inject private ClusterDao clusterDao;

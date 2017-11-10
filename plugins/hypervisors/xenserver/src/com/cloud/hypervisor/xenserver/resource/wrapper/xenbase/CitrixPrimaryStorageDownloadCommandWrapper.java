@@ -23,7 +23,8 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadAnswer;
@@ -38,7 +39,7 @@ import com.xensource.xenapi.VDI;
 @ResourceWrapper(handles =  PrimaryStorageDownloadCommand.class)
 public final class CitrixPrimaryStorageDownloadCommandWrapper extends CommandWrapper<PrimaryStorageDownloadCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixPrimaryStorageDownloadCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixPrimaryStorageDownloadCommandWrapper.class);
 
     @Override
     public Answer execute(final PrimaryStorageDownloadCommand command, final CitrixResourceBase citrixResourceBase) {

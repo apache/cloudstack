@@ -30,7 +30,8 @@ import net.juniper.contrail.api.types.VirtualMachine;
 
 import org.apache.cloudstack.network.contrail.management.ContrailManager;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.exception.InternalErrorException;
 import com.cloud.network.dao.NetworkDao;
@@ -45,7 +46,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 public class VirtualMachineModel extends ModelObjectBase {
-    private static final Logger s_logger = Logger.getLogger(VirtualMachineModel.class);
+    private static final Logger s_logger = LogManager.getLogger(VirtualMachineModel.class);
 
     private final String _uuid;
     private long _instanceId;

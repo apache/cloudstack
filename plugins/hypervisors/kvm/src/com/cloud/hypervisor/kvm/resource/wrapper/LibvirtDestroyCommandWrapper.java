@@ -19,7 +19,8 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.storage.DestroyCommand;
@@ -34,7 +35,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @ResourceWrapper(handles =  DestroyCommand.class)
 public final class LibvirtDestroyCommandWrapper extends CommandWrapper<DestroyCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtDestroyCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtDestroyCommandWrapper.class);
 
     @Override
     public Answer execute(final DestroyCommand command, final LibvirtComputingResource libvirtComputingResource) {

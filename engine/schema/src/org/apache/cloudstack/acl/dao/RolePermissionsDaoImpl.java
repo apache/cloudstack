@@ -31,7 +31,8 @@ import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
 import org.apache.cloudstack.acl.RolePermission.Permission;
 import org.apache.cloudstack.acl.RolePermissionVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
@@ -44,7 +45,7 @@ import java.util.Set;
 @Component
 @Local(value = {RolePermissionsDao.class})
 public class RolePermissionsDaoImpl extends GenericDaoBase<RolePermissionVO, Long> implements RolePermissionsDao {
-    protected static final Logger LOGGER = Logger.getLogger(RolePermissionsDaoImpl.class);
+    protected static final Logger LOGGER = LogManager.getLogger(RolePermissionsDaoImpl.class);
 
     private final SearchBuilder<RolePermissionVO> RolePermissionsSearch;
     private Attribute sortOrderAttribute;

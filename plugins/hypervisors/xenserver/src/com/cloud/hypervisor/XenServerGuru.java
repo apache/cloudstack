@@ -32,7 +32,8 @@ import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DataObjectType;
@@ -58,7 +59,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.UserVmDao;
 
 public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
-    private final Logger LOGGER = Logger.getLogger(XenServerGuru.class);
+    private final Logger LOGGER = LogManager.getLogger(XenServerGuru.class);
     @Inject
     private GuestOSDao _guestOsDao;
     @Inject

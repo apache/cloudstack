@@ -27,7 +27,8 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.QuotaTariffResponse;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 
@@ -35,7 +36,7 @@ import java.util.Date;
 
 @APICommand(name = "quotaTariffUpdate", responseObject = QuotaTariffResponse.class, description = "Update the tariff plan for a resource", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaTariffUpdateCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(QuotaTariffUpdateCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(QuotaTariffUpdateCmd.class);
     private static final String s_name = "quotatariffupdateresponse";
 
     @Inject

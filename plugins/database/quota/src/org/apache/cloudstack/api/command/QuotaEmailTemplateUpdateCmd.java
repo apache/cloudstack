@@ -25,14 +25,15 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.quota.constant.QuotaConfig;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.Arrays;
 
 @APICommand(name = "quotaEmailTemplateUpdate", responseObject = SuccessResponse.class, description = "Updates existing email templates for quota alerts", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaEmailTemplateUpdateCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(QuotaEmailTemplateUpdateCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(QuotaEmailTemplateUpdateCmd.class);
     private static final String s_name = "quotaemailtemplateupdateresponse";
 
     @Inject

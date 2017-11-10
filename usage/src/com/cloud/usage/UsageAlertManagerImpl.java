@@ -32,7 +32,8 @@ import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
@@ -46,8 +47,8 @@ import com.sun.mail.smtp.SMTPTransport;
 
 @Component
 public class UsageAlertManagerImpl extends ManagerBase implements AlertManager {
-    private static final Logger s_logger = Logger.getLogger(UsageAlertManagerImpl.class.getName());
-    private static final Logger s_alertsLogger = Logger.getLogger("org.apache.cloudstack.alerts");
+    private static final Logger s_logger = LogManager.getLogger(UsageAlertManagerImpl.class.getName());
+    private static final Logger s_alertsLogger = LogManager.getLogger("org.apache.cloudstack.alerts");
 
     private EmailAlert _emailAlert;
     @Inject

@@ -20,7 +20,8 @@ import java.rmi.ServerException;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -41,7 +42,7 @@ import com.cloud.server.api.response.netapp.DeleteLUNCmdResponse;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DestroyLunCmd extends BaseCmd {
 
-    public static final Logger s_logger = Logger.getLogger(DestroyLunCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DestroyLunCmd.class.getName());
     private static final String s_name = "destroylunresponse";
 
     @Parameter(name = ApiConstants.PATH, type = CommandType.STRING, required = true, description = "LUN path.")

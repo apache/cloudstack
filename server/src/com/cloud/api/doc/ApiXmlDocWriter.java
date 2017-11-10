@@ -37,7 +37,8 @@ import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -64,7 +65,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 public class ApiXmlDocWriter {
-    public static final Logger s_logger = Logger.getLogger(ApiXmlDocWriter.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ApiXmlDocWriter.class.getName());
 
     private static String s_dirName = "";
     private static Map<String, Class<?>> s_apiNameCmdClassMap = new HashMap<String, Class<?>>();

@@ -23,7 +23,8 @@ import javax.naming.ConfigurationException;
 
 import net.nuage.vsp.acs.client.exception.NuageVspException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -32,7 +33,7 @@ import com.cloud.resource.CommandWrapper;
 
 public abstract class NuageVspCommandWrapper<T extends Command> extends CommandWrapper<T, Answer, NuageVspResource> {
 
-    private static final Logger s_logger = Logger.getLogger(NuageVspResource.class);
+    private static final Logger s_logger = LogManager.getLogger(NuageVspResource.class);
 
     @Override
     public final Answer execute(final T command, final NuageVspResource nuageVspResource) {

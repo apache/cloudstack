@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.storage;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,7 +35,7 @@ import com.cloud.user.Account;
 @APICommand(name = "deleteStoragePool", description = "Deletes a storage pool.", responseObject = SuccessResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeletePoolCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(DeletePoolCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DeletePoolCmd.class.getName());
     private static final String s_name = "deletestoragepoolresponse";
 
     // ///////////////////////////////////////////////////

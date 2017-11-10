@@ -29,7 +29,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -125,7 +126,7 @@ import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmService;
 
 public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScaleManager, AutoScaleService {
-    private static final Logger s_logger = Logger.getLogger(AutoScaleManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(AutoScaleManagerImpl.class);
     private ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1);
 
     @Inject

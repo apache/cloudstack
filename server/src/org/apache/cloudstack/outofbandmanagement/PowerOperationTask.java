@@ -18,10 +18,11 @@
 package org.apache.cloudstack.outofbandmanagement;
 
 import com.cloud.host.Host;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class PowerOperationTask implements Runnable {
-    public static final Logger LOG = Logger.getLogger(PowerOperationTask.class);
+    public static final Logger LOG = LogManager.getLogger(PowerOperationTask.class);
 
     final private OutOfBandManagementService service;
     final private Host host;

@@ -18,7 +18,8 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -42,7 +43,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "deleteSrxFirewall", responseObject = SuccessResponse.class, description = " delete a SRX firewall device",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteSrxFirewallCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteSrxFirewallCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DeleteSrxFirewallCmd.class.getName());
     private static final String s_name = "deletesrxfirewallresponse";
     @Inject
     JuniperSRXFirewallElementService _srxElementService;

@@ -25,7 +25,8 @@ import java.util.TimeZone;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.Vlan;
@@ -42,7 +43,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class UsageEventDaoImpl extends GenericDaoBase<UsageEventVO, Long> implements UsageEventDao {
-    public static final Logger s_logger = Logger.getLogger(UsageEventDaoImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UsageEventDaoImpl.class.getName());
 
     private final SearchBuilder<UsageEventVO> latestEventsSearch;
     private final SearchBuilder<UsageEventVO> IpeventsSearch;

@@ -31,7 +31,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -82,7 +83,7 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 @Component
 public class UploadMonitorImpl extends ManagerBase implements UploadMonitor {
 
-    static final Logger s_logger = Logger.getLogger(UploadMonitorImpl.class);
+    static final Logger s_logger = LogManager.getLogger(UploadMonitorImpl.class);
 
     @Inject
     private UploadDao _uploadDao;

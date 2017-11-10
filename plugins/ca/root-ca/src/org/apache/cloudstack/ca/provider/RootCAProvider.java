@@ -54,7 +54,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jce.PKCS10CertificationRequest;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -69,7 +70,7 @@ import com.cloud.utils.net.NetUtils;
 import com.google.common.base.Strings;
 
 public final class RootCAProvider extends AdapterBase implements CAProvider, Configurable {
-    private static final Logger LOG = Logger.getLogger(RootCAProvider.class);
+    private static final Logger LOG = LogManager.getLogger(RootCAProvider.class);
 
     public static final Integer caValidityYears = 30;
     public static final String caAlias = "root";

@@ -21,7 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +36,7 @@ import org.apache.cloudstack.region.RegionService;
 @APICommand(name = "listRegions", description = "Lists Regions", responseObject = RegionResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListRegionsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListRegionsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListRegionsCmd.class.getName());
 
     private static final String s_name = "listregionsresponse";
 

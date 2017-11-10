@@ -16,7 +16,8 @@
 // under the License.
 package streamer.debug;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import streamer.BaseElement;
 import streamer.ByteBuffer;
@@ -27,7 +28,7 @@ import streamer.Link;
 import streamer.SyncLink;
 
 public class FakeSource extends BaseElement {
-    private static final Logger s_logger = Logger.getLogger(FakeSource.class);
+    private static final Logger s_logger = LogManager.getLogger(FakeSource.class);
 
     /**
      * Delay for null packets in poll method when blocking is requested, in

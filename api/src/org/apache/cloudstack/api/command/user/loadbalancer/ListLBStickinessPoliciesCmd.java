@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.network.rules.LoadBalancer;
 import com.cloud.network.rules.StickinessPolicy;
@@ -38,7 +39,7 @@ import com.cloud.user.Account;
 @APICommand(name = "listLBStickinessPolicies", description = "Lists load balancer stickiness policies.", responseObject = LBStickinessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListLBStickinessPoliciesCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListLBStickinessPoliciesCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListLBStickinessPoliciesCmd.class.getName());
 
     private static final String s_name = "listlbstickinesspoliciesresponse";
 

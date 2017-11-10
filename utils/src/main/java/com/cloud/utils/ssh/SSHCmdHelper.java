@@ -23,14 +23,15 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.common.base.Strings;
 import com.trilead.ssh2.ChannelCondition;
 import com.trilead.ssh2.Session;
 
 public class SSHCmdHelper {
-    private static final Logger s_logger = Logger.getLogger(SSHCmdHelper.class);
+    private static final Logger s_logger = LogManager.getLogger(SSHCmdHelper.class);
     private static final int DEFAULT_CONNECT_TIMEOUT = 180000;
     private static final int DEFAULT_KEX_TIMEOUT = 60000;
 

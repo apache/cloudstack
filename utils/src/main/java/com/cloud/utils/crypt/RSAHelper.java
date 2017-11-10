@@ -34,11 +34,12 @@ import java.security.spec.RSAPublicKeySpec;
 import javax.crypto.Cipher;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class RSAHelper {
-    final static Logger s_logger = Logger.getLogger(RSAHelper.class);
+    final static Logger s_logger = LogManager.getLogger(RSAHelper.class);
 
     static {
         BouncyCastleProvider provider = new BouncyCastleProvider();

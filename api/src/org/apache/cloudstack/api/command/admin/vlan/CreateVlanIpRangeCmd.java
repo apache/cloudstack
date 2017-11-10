@@ -17,7 +17,8 @@
 package org.apache.cloudstack.api.command.admin.vlan;
 
 import com.cloud.utils.net.NetUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,7 +44,7 @@ import com.cloud.user.Account;
 @APICommand(name = "createVlanIpRange", description = "Creates a VLAN IP range.", responseObject = VlanIpRangeResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateVlanIpRangeCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateVlanIpRangeCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(CreateVlanIpRangeCmd.class.getName());
 
     private static final String s_name = "createvlaniprangeresponse";
 

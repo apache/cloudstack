@@ -20,7 +20,8 @@ package org.apache.cloudstack.storage.datastore;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -42,7 +43,7 @@ import com.cloud.utils.fsm.NoTransitionException;
 
 @Component
 public class DataObjectManagerImpl implements DataObjectManager {
-    private static final Logger s_logger = Logger.getLogger(DataObjectManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(DataObjectManagerImpl.class);
     @Inject
     ObjectInDataStoreManager objectInDataStoreMgr;
     @Inject

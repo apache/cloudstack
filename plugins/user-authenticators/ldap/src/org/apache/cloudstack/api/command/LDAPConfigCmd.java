@@ -22,7 +22,8 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -53,7 +54,7 @@ import com.cloud.utils.Pair;
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 
 public class LDAPConfigCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(LDAPConfigCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(LDAPConfigCmd.class.getName());
 
     private static final String s_name = "ldapconfigresponse";
 

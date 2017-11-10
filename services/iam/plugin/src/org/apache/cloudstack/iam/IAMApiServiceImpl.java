@@ -25,7 +25,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.bouncycastle.util.IPAddress;
 
 import com.amazonaws.auth.policy.Condition;
@@ -117,7 +118,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 
 public class IAMApiServiceImpl extends ManagerBase implements IAMApiService, Manager {
 
-    public static final Logger s_logger = Logger.getLogger(IAMApiServiceImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(IAMApiServiceImpl.class);
     private String _name;
 
     @Inject

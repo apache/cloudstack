@@ -20,7 +20,8 @@ import java.util.Date;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.event.Event.State;
@@ -34,7 +35,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class EventDaoImpl extends GenericDaoBase<EventVO, Long> implements EventDao {
-    public static final Logger s_logger = Logger.getLogger(EventDaoImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(EventDaoImpl.class.getName());
     protected final SearchBuilder<EventVO> CompletedEventSearch;
     protected final SearchBuilder<EventVO> ToArchiveOrDeleteEventSearch;
 

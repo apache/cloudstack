@@ -23,9 +23,8 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.log4j.xml.DOMConfigurator;
-
-import com.cloud.consoleproxy.util.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 //
 //
@@ -33,7 +32,7 @@ import com.cloud.consoleproxy.util.Logger;
 // itself and the shell script will re-launch console proxy
 //
 public class ConsoleProxyMonitor {
-    private static final Logger s_logger = Logger.getLogger(ConsoleProxyMonitor.class);
+    private static final Logger s_logger = LogManager.getLogger(ConsoleProxyMonitor.class);
 
     private String[] _argv;
     private Map<String, String> _argMap = new HashMap<String, String>();
@@ -136,7 +135,9 @@ public class ConsoleProxyMonitor {
                 File file = new File(configUrl.toURI());
 
                 System.out.println("Log4j configuration from : " + file.getAbsolutePath());
-                DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
+                org.apache.logging.log4j.core.config.Configurator.initialize("cloud", file.getAbsolutePath());
+                // TODO watch interval must be set in an updated log4j xml*/
+// TODO remove this line            DOMConfigurator.configureAndWatch(file.getAbsolutePath(), 10000);
             } catch (URISyntaxException e) {
                 System.out.println("Unable to convert log4j configuration Url to URI");
             }

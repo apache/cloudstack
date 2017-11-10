@@ -18,7 +18,8 @@ package com.cloud.api.commands;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -41,7 +42,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 @APICommand(name = "deleteCiscoVnmcResource", responseObject = SuccessResponse.class, description = "Deletes a Cisco Vnmc controller",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteCiscoVnmcResourceCmd extends BaseCmd {
-    private static final Logger s_logger = Logger.getLogger(DeleteCiscoVnmcResourceCmd.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(DeleteCiscoVnmcResourceCmd.class.getName());
     private static final String s_name = "deleteCiscoVnmcResource";
     @Inject
     CiscoVnmcElementService _ciscoVnmcElementService;

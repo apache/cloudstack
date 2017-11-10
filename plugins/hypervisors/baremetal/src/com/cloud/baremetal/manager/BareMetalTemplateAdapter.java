@@ -44,14 +44,15 @@ import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
 import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.Date;
 import java.util.List;
 
 public class BareMetalTemplateAdapter extends TemplateAdapterBase implements TemplateAdapter {
-    private final static Logger s_logger = Logger.getLogger(BareMetalTemplateAdapter.class);
+    private final static Logger s_logger = LogManager.getLogger(BareMetalTemplateAdapter.class);
     @Inject
     HostDao _hostDao;
     @Inject

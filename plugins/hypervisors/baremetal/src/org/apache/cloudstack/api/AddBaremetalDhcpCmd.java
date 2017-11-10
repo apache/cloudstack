@@ -20,7 +20,8 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -39,7 +40,7 @@ import com.cloud.exception.ResourceUnavailableException;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddBaremetalDhcpCmd extends BaseAsyncCmd {
     private static final String s_name = "addbaremetaldhcpresponse";
-    public static final Logger s_logger = Logger.getLogger(AddBaremetalDhcpCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(AddBaremetalDhcpCmd.class);
 
     @Inject
     BaremetalDhcpManager mgr;

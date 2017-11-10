@@ -21,7 +21,8 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
@@ -68,7 +69,7 @@ public class GloboDnsResource extends ManagerBase implements ServerResource {
     private static final String REVERSE_DOMAIN_SUFFIX = "in-addr.arpa";
     private static final String DEFAULT_AUTHORITY_TYPE = "M";
 
-    private static final Logger s_logger = Logger.getLogger(GloboDnsResource.class);
+    private static final Logger s_logger = LogManager.getLogger(GloboDnsResource.class);
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {

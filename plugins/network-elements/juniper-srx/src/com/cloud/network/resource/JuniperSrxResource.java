@@ -34,7 +34,8 @@ import java.util.Set;
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -105,7 +106,7 @@ public class JuniperSrxResource implements ServerResource {
     private UsageFilter _usageFilterVlanOutput;
     private UsageFilter _usageFilterIPInput;
     private UsageFilter _usageFilterIPOutput;
-    private static final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
+    private static final Logger s_logger = LogManager.getLogger(JuniperSrxResource.class);
 
     private enum SrxXml {
         LOGIN("login.xml"),
@@ -174,7 +175,7 @@ public class JuniperSrxResource implements ServerResource {
 
         private final String scriptsDir = "scripts/network/juniper";
         private final String xml;
-        private static final Logger s_logger = Logger.getLogger(JuniperSrxResource.class);
+        private static final Logger s_logger = LogManager.getLogger(JuniperSrxResource.class);
 
         private SrxXml(String filename) {
             xml = getXml(filename);

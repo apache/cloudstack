@@ -20,7 +20,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -52,7 +53,7 @@ import com.cloud.vm.VirtualMachine;
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 public class DeployNetscalerVpxCmd extends BaseAsyncCmd {
 
-    public static final Logger s_logger = Logger.getLogger(DeployNetscalerVpxCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DeployNetscalerVpxCmd.class.getName());
     private static final String s_name = "deployNetscalerVpx";
     @Inject
     NetscalerLoadBalancerElementService _netsclarLbService;

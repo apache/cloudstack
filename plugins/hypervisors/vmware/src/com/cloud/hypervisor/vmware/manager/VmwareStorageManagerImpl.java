@@ -29,7 +29,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.vmware.vim25.FileInfo;
 import com.vmware.vim25.FileQueryFlags;
@@ -129,7 +130,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         command.execute();
     }
 
-    private static final Logger s_logger = Logger.getLogger(VmwareStorageManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(VmwareStorageManagerImpl.class);
 
     private final VmwareStorageMount _mountService;
     private final StorageLayer _storage = new JavaStorageLayer();

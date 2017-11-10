@@ -28,7 +28,8 @@ import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;
@@ -48,7 +49,7 @@ import com.cloud.utils.PropertiesUtil;
  */
 @Component
 public class ManagementNetworkGuru extends ContrailGuru {
-    private static final Logger s_logger = Logger.getLogger(ManagementNetworkGuru.class);
+    private static final Logger s_logger = LogManager.getLogger(ManagementNetworkGuru.class);
     private static final TrafficType[] TrafficTypes = {TrafficType.Management};
 
     private final String configuration = "contrail.properties";

@@ -49,7 +49,8 @@ import org.apache.cloudstack.quota.vo.QuotaAccountVO;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
@@ -67,7 +68,7 @@ import java.util.TimeZone;
 @Component
 @Local(value = QuotaService.class)
 public class QuotaServiceImpl extends ManagerBase implements QuotaService, Configurable, QuotaConfig {
-    private static final Logger s_logger = Logger.getLogger(QuotaServiceImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(QuotaServiceImpl.class);
 
     @Inject
     private AccountDao _accountDao;

@@ -32,7 +32,8 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.utils.fsm.StateMachine2;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
@@ -135,7 +136,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class DeploymentPlanningManagerImpl extends ManagerBase implements DeploymentPlanningManager, Manager, Listener,
 StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
-    private static final Logger s_logger = Logger.getLogger(DeploymentPlanningManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(DeploymentPlanningManagerImpl.class);
     @Inject
     AgentManager _agentMgr;
     @Inject

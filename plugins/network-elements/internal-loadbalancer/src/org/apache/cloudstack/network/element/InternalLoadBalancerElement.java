@@ -28,7 +28,8 @@ import javax.inject.Inject;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.command.admin.internallb.ConfigureInternalLoadBalancerElementCmd;
 import org.apache.cloudstack.api.command.admin.internallb.CreateInternalLoadBalancerElementCmd;
@@ -86,7 +87,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.network.router.NetworkHelper;
 
 public class InternalLoadBalancerElement extends AdapterBase implements LoadBalancingServiceProvider, InternalLoadBalancerElementService, IpDeployer {
-    private static final Logger s_logger = Logger.getLogger(InternalLoadBalancerElement.class);
+    private static final Logger s_logger = LogManager.getLogger(InternalLoadBalancerElement.class);
     protected static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
     private static InternalLoadBalancerElement internalLbElement = null;
 

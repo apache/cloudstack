@@ -26,7 +26,8 @@ import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.FirewallResponse;
 import org.apache.cloudstack.api.response.FirewallRuleResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -37,7 +38,7 @@ import com.cloud.network.rules.FirewallRule.TrafficType;
 @APICommand(name = "updateEgressFirewallRule", description = "Updates egress firewall rule ", responseObject = FirewallResponse.class, since = "4.4",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateEgressFirewallRuleCmd extends BaseAsyncCustomIdCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateEgressFirewallRuleCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UpdateEgressFirewallRuleCmd.class.getName());
 
     private static final String s_name = "updateegressfirewallruleresponse";
 

@@ -28,7 +28,8 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.host.HostVO;
@@ -64,7 +65,7 @@ import com.cloud.vm.VirtualMachine.Type;
 @Component
 public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implements VMInstanceDao {
 
-    public static final Logger s_logger = Logger.getLogger(VMInstanceDaoImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(VMInstanceDaoImpl.class);
     private static final int MAX_CONSECUTIVE_SAME_STATE_UPDATE_COUNT = 3;
 
     protected SearchBuilder<VMInstanceVO> VMClusterSearch;

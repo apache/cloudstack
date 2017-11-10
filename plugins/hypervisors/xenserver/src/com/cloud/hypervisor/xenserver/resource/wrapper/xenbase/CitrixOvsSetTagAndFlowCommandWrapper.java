@@ -19,7 +19,8 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.Answer;
@@ -36,7 +37,7 @@ import com.xensource.xenapi.Types.XenAPIException;
 @ResourceWrapper(handles =  OvsSetTagAndFlowCommand.class)
 public final class CitrixOvsSetTagAndFlowCommandWrapper extends CommandWrapper<OvsSetTagAndFlowCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixOvsSetTagAndFlowCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixOvsSetTagAndFlowCommandWrapper.class);
 
     @Override
     public Answer execute(final OvsSetTagAndFlowCommand command, final CitrixResourceBase citrixResourceBase) {

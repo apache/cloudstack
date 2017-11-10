@@ -20,7 +20,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -37,7 +38,7 @@ public class SystemVmLoadScanner<T> {
         nop, expand, shrink
     }
 
-    private static final Logger s_logger = Logger.getLogger(SystemVmLoadScanner.class);
+    private static final Logger s_logger = LogManager.getLogger(SystemVmLoadScanner.class);
 
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;   // 3 seconds
 

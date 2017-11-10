@@ -45,7 +45,8 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
@@ -68,7 +69,7 @@ import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.utils.net.NetUtils;
 
 public class ClusterManagerImpl extends ManagerBase implements ClusterManager, Configurable {
-    private static final Logger s_logger = Logger.getLogger(ClusterManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(ClusterManagerImpl.class);
 
     private static final int EXECUTOR_SHUTDOWN_TIMEOUT = 1000; // 1 second
     private static final int DEFAULT_OUTGOING_WORKERS = 5;

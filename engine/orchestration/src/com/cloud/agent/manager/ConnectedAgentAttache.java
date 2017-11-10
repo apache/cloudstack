@@ -18,7 +18,8 @@ package com.cloud.agent.manager;
 
 import java.nio.channels.ClosedChannelException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.transport.Request;
 import com.cloud.exception.AgentUnavailableException;
@@ -29,7 +30,7 @@ import com.cloud.utils.nio.Link;
  * ConnectedAgentAttache implements an direct connection to this management server.
  */
 public class ConnectedAgentAttache extends AgentAttache {
-    private static final Logger s_logger = Logger.getLogger(ConnectedAgentAttache.class);
+    private static final Logger s_logger = LogManager.getLogger(ConnectedAgentAttache.class);
 
     protected Link _link;
 

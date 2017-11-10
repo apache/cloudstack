@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.project;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,7 +36,7 @@ import com.cloud.projects.Project;
 @APICommand(name = "deleteProject", description = "Deletes a project", responseObject = SuccessResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class DeleteProjectCmd extends BaseAsyncCmd {
-    public static final Logger s_logger = Logger.getLogger(DeleteProjectCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(DeleteProjectCmd.class.getName());
 
     private static final String s_name = "deleteprojectresponse";
 

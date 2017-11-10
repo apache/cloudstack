@@ -25,7 +25,8 @@ import org.apache.cloudstack.api.response.DomainRouterResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.api.ApiResponseHelper;
@@ -42,7 +43,7 @@ import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, Long> implements DomainRouterJoinDao {
-    public static final Logger s_logger = Logger.getLogger(DomainRouterJoinDaoImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(DomainRouterJoinDaoImpl.class);
 
     @Inject
     private ConfigurationDao  _configDao;

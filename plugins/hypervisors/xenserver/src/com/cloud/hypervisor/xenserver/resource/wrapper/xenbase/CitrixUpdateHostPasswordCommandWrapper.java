@@ -21,7 +21,8 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import static com.cloud.hypervisor.xenserver.resource.wrapper.xenbase.XenServerUtilitiesHelper.SCRIPT_CMD_PATH;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
@@ -34,7 +35,7 @@ import com.cloud.utils.Pair;
 @ResourceWrapper(handles =  UpdateHostPasswordCommand.class)
 public final class CitrixUpdateHostPasswordCommandWrapper extends CommandWrapper<UpdateHostPasswordCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixUpdateHostPasswordCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixUpdateHostPasswordCommandWrapper.class);
 
     @Override
     public Answer execute(final UpdateHostPasswordCommand command, final CitrixResourceBase citrixResourceBase) {

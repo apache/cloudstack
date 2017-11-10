@@ -30,12 +30,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @APICommand(name = "getUploadParamsForVolume", description = "Upload a data disk to the cloudstack cloud.", responseObject = GetUploadParamsResponse.class, since = "4.6.0",
     requestHasSensitiveInfo= false, responseHasSensitiveInfo = false)
 public class GetUploadParamsForVolumeCmd extends AbstractGetUploadParamsCmd {
-    public static final Logger s_logger = Logger.getLogger(GetUploadParamsForVolumeCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(GetUploadParamsForVolumeCmd.class.getName());
 
     private static final String s_name = "postuploadvolumeresponse";
 

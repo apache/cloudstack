@@ -25,7 +25,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
@@ -56,7 +57,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class SolidFireHostListener implements HypervisorHostListener {
-    private static final Logger s_logger = Logger.getLogger(SolidFireHostListener.class);
+    private static final Logger s_logger = LogManager.getLogger(SolidFireHostListener.class);
 
     @Inject private AgentManager _agentMgr;
     @Inject private AlertManager _alertMgr;

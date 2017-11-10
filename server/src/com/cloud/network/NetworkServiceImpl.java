@@ -58,7 +58,8 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
@@ -203,7 +204,7 @@ import com.cloud.network.dao.LoadBalancerDao;
  * NetworkServiceImpl implements NetworkService.
  */
 public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
-    private static final Logger s_logger = Logger.getLogger(NetworkServiceImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(NetworkServiceImpl.class);
 
     private static final long MIN_VLAN_ID = 0L;
     private static final long MAX_VLAN_ID = 4095L; // 2^12 - 1

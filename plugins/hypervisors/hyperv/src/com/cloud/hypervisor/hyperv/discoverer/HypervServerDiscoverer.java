@@ -29,7 +29,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -72,7 +73,7 @@ import com.cloud.storage.StorageLayer;
  * hypervisor and manages its lifecycle.
  */
 public class HypervServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
-    private static final Logger s_logger = Logger.getLogger(HypervServerDiscoverer.class);
+    private static final Logger s_logger = LogManager.getLogger(HypervServerDiscoverer.class);
     Random _rand = new Random(System.currentTimeMillis());
 
     Map<String, String> _storageMounts = new HashMap<String, String>();

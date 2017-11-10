@@ -20,7 +20,8 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
@@ -35,7 +36,7 @@ import com.cloud.utils.db.DB;
 
 @DB()
 public class MockNetworkOfferingDaoImpl extends NetworkOfferingDaoImpl implements NetworkOfferingDao {
-    private static final Logger s_logger = Logger.getLogger(MockNetworkOfferingDaoImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(MockNetworkOfferingDaoImpl.class);
 
     /* (non-Javadoc)
      * @see com.cloud.offerings.dao.NetworkOfferingDao#findByUniqueName(java.lang.String)

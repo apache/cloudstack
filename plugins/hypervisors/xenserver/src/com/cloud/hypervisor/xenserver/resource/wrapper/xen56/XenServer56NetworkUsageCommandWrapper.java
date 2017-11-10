@@ -19,7 +19,8 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xen56;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.NetworkUsageAnswer;
@@ -33,7 +34,7 @@ import com.xensource.xenapi.Connection;
 @ResourceWrapper(handles =  NetworkUsageCommand.class)
 public final class XenServer56NetworkUsageCommandWrapper extends CommandWrapper<NetworkUsageCommand, Answer, XenServer56Resource> {
 
-    private static final Logger s_logger = Logger.getLogger(XenServer56NetworkUsageCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(XenServer56NetworkUsageCommandWrapper.class);
 
     @Override
     public Answer execute(final NetworkUsageCommand command, final XenServer56Resource xenServer56) {

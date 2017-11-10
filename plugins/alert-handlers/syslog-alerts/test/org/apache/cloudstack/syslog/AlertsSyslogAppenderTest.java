@@ -17,21 +17,22 @@
 
 package org.apache.cloudstack.syslog;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.PatternLayout;
+import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.Before;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class AlertsSyslogAppenderTest {
-    AlertsSyslogAppender _appender = new AlertsSyslogAppender();
+    AlertsSyslogAppender _appender = new AlertsSyslogAppender("testAppender",
+        PatternLayout.newBuilder().withPattern("%-5p [%c{3}] (%t:%x) %m%n").build());
+    // laste param pattern was new PatternLayout(,"%-5p [%c{3}] (%t:%x) %m%n"));
 
     @Before
     public void setUp() throws ConfigurationException {
-        _appender.setLayout(new PatternLayout("%-5p [%c{3}] (%t:%x) %m%n"));
         _appender.setFacility("LOCAL6");
     }
 

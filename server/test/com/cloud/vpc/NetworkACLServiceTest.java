@@ -27,7 +27,8 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.test.utils.SpringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -97,7 +98,7 @@ public class NetworkACLServiceTest extends TestCase {
     private NetworkACLVO acl;
     private NetworkACLItemVO aclItem;
 
-    private static final Logger s_logger = Logger.getLogger(NetworkACLServiceTest.class);
+    private static final Logger s_logger = LogManager.getLogger(NetworkACLServiceTest.class);
 
     @Override
     @Before

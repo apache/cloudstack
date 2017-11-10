@@ -21,7 +21,8 @@ import java.util.List;
 import java.util.Map;
 
 import com.cloud.storage.Storage;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
@@ -35,7 +36,7 @@ import com.cloud.utils.script.Script;
 
 @StorageAdaptorInfo(storagePoolType=StoragePoolType.Iscsi)
 public class IscsiAdmStorageAdaptor implements StorageAdaptor {
-    private static final Logger s_logger = Logger.getLogger(IscsiAdmStorageAdaptor.class);
+    private static final Logger s_logger = LogManager.getLogger(IscsiAdmStorageAdaptor.class);
 
     private static final Map<String, KVMStoragePool> MapStorageUuidToStoragePool = new HashMap<String, KVMStoragePool>();
 

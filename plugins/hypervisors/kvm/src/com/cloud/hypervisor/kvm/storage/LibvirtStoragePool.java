@@ -20,7 +20,8 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.StoragePool;
 
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
@@ -30,7 +31,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class LibvirtStoragePool implements KVMStoragePool {
-    private static final Logger s_logger = Logger.getLogger(LibvirtStoragePool.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtStoragePool.class);
     protected String uuid;
     protected long capacity;
     protected long used;

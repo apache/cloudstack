@@ -39,7 +39,8 @@ import org.apache.cloudstack.api.response.ExceptionResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -52,7 +53,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ApiResponseSerializer {
-    private static final Logger s_logger = Logger.getLogger(ApiResponseSerializer.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(ApiResponseSerializer.class.getName());
 
     public static String toSerializedString(ResponseObject result, String responseType) {
         s_logger.trace("===Serializing Response===");

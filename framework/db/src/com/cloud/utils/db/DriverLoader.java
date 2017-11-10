@@ -17,7 +17,8 @@
 package com.cloud.utils.db;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,7 +27,7 @@ import java.util.Map;
 
 public class DriverLoader {
 
-    private static final Logger LOGGER = Logger.getLogger(DriverLoader.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger(DriverLoader.class.getName());
     private static final List<String> LOADED_DRIVERS;
     private static final Map<String, String> DRIVERS;
 

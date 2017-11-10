@@ -29,7 +29,8 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.dao.DataCenterDao;
@@ -63,7 +64,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implements VMTemplateDao {
-    private static final Logger s_logger = Logger.getLogger(VMTemplateDaoImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(VMTemplateDaoImpl.class);
 
     @Inject
     VMTemplateZoneDao _templateZoneDao;

@@ -32,9 +32,12 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.Stack;
 
+import org.apache.cloudstack.spring.module.context.ResourceApplicationContext;
+import org.apache.cloudstack.spring.module.model.ModuleDefinition;
+import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
@@ -43,13 +46,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.util.StringUtils;
 
-import org.apache.cloudstack.spring.module.context.ResourceApplicationContext;
-import org.apache.cloudstack.spring.module.model.ModuleDefinition;
-import org.apache.cloudstack.spring.module.model.ModuleDefinitionSet;
-
 public class DefaultModuleDefinitionSet implements ModuleDefinitionSet {
 
-    private static final Logger log = LoggerFactory.getLogger(DefaultModuleDefinitionSet.class);
+    private static final Logger log = LogManager.getLogger(DefaultModuleDefinitionSet.class);
 
     public static final String DEFAULT_CONFIG_RESOURCES = "DefaultConfigResources";
     public static final String DEFAULT_CONFIG_PROPERTIES = "DefaultConfigProperties";

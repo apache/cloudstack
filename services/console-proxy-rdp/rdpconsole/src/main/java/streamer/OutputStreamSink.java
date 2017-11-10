@@ -20,12 +20,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import streamer.debug.FakeSource;
 
 public class OutputStreamSink extends BaseElement {
-    private static final Logger s_logger = Logger.getLogger(OutputStreamSink.class);
+    private static final Logger s_logger = LogManager.getLogger(OutputStreamSink.class);
 
     protected OutputStream os;
     protected SocketWrapperImpl socketWrapper;

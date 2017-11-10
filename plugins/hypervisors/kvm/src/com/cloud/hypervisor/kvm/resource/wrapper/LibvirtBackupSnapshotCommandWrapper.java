@@ -25,7 +25,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.MessageFormat;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
@@ -54,7 +55,7 @@ import com.cloud.utils.script.Script;
 @ResourceWrapper(handles =  BackupSnapshotCommand.class)
 public final class LibvirtBackupSnapshotCommandWrapper extends CommandWrapper<BackupSnapshotCommand, Answer, LibvirtComputingResource> {
 
-    private static final Logger s_logger = Logger.getLogger(LibvirtBackupSnapshotCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtBackupSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final BackupSnapshotCommand command, final LibvirtComputingResource libvirtComputingResource) {

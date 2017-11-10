@@ -20,7 +20,8 @@ package org.apache.cloudstack.api;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
 import org.apache.cloudstack.api.response.PodResponse;
@@ -38,7 +39,7 @@ import com.cloud.exception.ResourceUnavailableException;
 
 public class AddBaremetalPxeCmd extends BaseAsyncCmd {
     private static final String s_name = "addbaremetalpxeresponse";
-    public static final Logger s_logger = Logger.getLogger(AddBaremetalPxeCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(AddBaremetalPxeCmd.class);
 
     @Inject
     BaremetalPxeManager pxeMgr;

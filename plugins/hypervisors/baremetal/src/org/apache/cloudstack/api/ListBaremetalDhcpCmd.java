@@ -27,7 +27,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -35,7 +36,7 @@ import java.util.List;
 @APICommand(name = "listBaremetalDhcp", description = "list baremetal dhcp servers", responseObject = BaremetalDhcpResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListBaremetalDhcpCmd extends BaseListCmd {
-    private static final Logger s_logger = Logger.getLogger(ListBaremetalDhcpCmd.class);
+    private static final Logger s_logger = LogManager.getLogger(ListBaremetalDhcpCmd.class);
     private static final String s_name = "listbaremetaldhcpresponse";
     @Inject
     BaremetalDhcpManager _dhcpMgr;

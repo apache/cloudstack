@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -29,7 +30,7 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 @APICommand(name = "listServiceOfferings", description = "Lists all available service offerings.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListServiceOfferingsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListServiceOfferingsCmd.class.getName());
 
     private static final String s_name = "listserviceofferingsresponse";
 

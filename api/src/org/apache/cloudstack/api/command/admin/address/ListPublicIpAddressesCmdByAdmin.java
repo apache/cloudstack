@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.admin.address;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -33,7 +34,7 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listPublicIpAddresses", description = "Lists all public ip addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Full,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = {IpAddress.class})
 public class ListPublicIpAddressesCmdByAdmin extends ListPublicIpAddressesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmdByAdmin.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListPublicIpAddressesCmdByAdmin.class.getName());
 
     @Override
     public void execute(){

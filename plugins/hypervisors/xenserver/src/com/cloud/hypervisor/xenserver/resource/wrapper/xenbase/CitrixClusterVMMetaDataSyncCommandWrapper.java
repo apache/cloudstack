@@ -21,7 +21,8 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
@@ -36,7 +37,7 @@ import com.xensource.xenapi.Pool;
 @ResourceWrapper(handles =  ClusterVMMetaDataSyncCommand.class)
 public final class CitrixClusterVMMetaDataSyncCommandWrapper extends CommandWrapper<ClusterVMMetaDataSyncCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixClusterVMMetaDataSyncCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixClusterVMMetaDataSyncCommandWrapper.class);
 
     @Override
     public Answer execute(final ClusterVMMetaDataSyncCommand command, final CitrixResourceBase citrixResourceBase) {

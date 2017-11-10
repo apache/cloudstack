@@ -60,7 +60,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainBlockStats;
@@ -194,7 +195,7 @@ import com.cloud.vm.VmDetailConstants;
  **/
 @Local(value = {ServerResource.class})
 public class LibvirtComputingResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer {
-    private static final Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
+    private static final Logger s_logger = LogManager.getLogger(LibvirtComputingResource.class);
 
     private String _modifyVlanPath;
     private String _versionstringpath;

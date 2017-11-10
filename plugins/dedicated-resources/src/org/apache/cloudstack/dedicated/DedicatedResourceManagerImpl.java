@@ -24,7 +24,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.affinity.AffinityGroup;
@@ -86,7 +87,7 @@ import com.cloud.vm.dao.UserVmDao;
 @Component
 @Local({DedicatedService.class})
 public class DedicatedResourceManagerImpl implements DedicatedService {
-    private static final Logger s_logger = Logger.getLogger(DedicatedResourceManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(DedicatedResourceManagerImpl.class);
 
     @Inject
     AccountDao _accountDao;

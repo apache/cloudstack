@@ -24,12 +24,13 @@ import java.util.Map;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.test.stress.TestClientWithAPI;
 
 public class VirtualMachine {
-    public static final Logger s_logger = Logger.getLogger(VirtualMachine.class.getClass());
+    public static final Logger s_logger = LogManager.getLogger(VirtualMachine.class.getClass());
 
     private String privateIp;
     private String userId;

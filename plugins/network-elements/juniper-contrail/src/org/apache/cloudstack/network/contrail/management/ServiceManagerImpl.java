@@ -35,7 +35,8 @@ import org.apache.cloudstack.network.contrail.api.response.ServiceInstanceRespon
 import org.apache.cloudstack.network.contrail.model.ServiceInstanceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.dc.DataCenter;
@@ -65,7 +66,7 @@ import com.google.gson.Gson;
 
 @Local(value = {ServiceManager.class})
 public class ServiceManagerImpl implements ServiceManager {
-    private static final Logger s_logger = Logger.getLogger(ServiceManager.class);
+    private static final Logger s_logger = LogManager.getLogger(ServiceManager.class);
 
     @Inject
     UserDao _userDao;

@@ -35,7 +35,8 @@ import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Strings;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.google.gson.Gson;
 import com.vmware.vim25.HostHostBusAdapter;
@@ -128,7 +129,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
+    private static final Logger s_logger = LogManager.getLogger(VmwareStorageProcessor.class);
     private static final int DEFAULT_NFS_PORT = 2049;
 
     private final VmwareHostService hostService;

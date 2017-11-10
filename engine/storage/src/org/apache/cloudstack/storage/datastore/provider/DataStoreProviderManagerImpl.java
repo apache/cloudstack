@@ -30,7 +30,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.response.StorageProviderResponse;
@@ -48,7 +49,7 @@ import com.cloud.utils.component.Registry;
 
 @Component
 public class DataStoreProviderManagerImpl extends ManagerBase implements DataStoreProviderManager, Registry<DataStoreProvider> {
-    private static final Logger s_logger = Logger.getLogger(DataStoreProviderManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(DataStoreProviderManagerImpl.class);
 
     List<DataStoreProvider> providers;
     protected Map<String, DataStoreProvider> providerMap = new ConcurrentHashMap<String, DataStoreProvider>();

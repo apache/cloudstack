@@ -44,7 +44,8 @@ import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand.RequestType;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.resource.SecondaryStorageResource;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.utils.net.Proxy;
@@ -219,7 +220,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
     }
 
-    public static final Logger s_logger = Logger.getLogger(DownloadManagerImpl.class);
+    public static final Logger s_logger = LogManager.getLogger(DownloadManagerImpl.class);
     private String _templateDir;
     private String _volumeDir;
     private String createTmpltScr;

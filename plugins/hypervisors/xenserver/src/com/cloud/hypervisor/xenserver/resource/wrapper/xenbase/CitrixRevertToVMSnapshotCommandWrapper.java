@@ -25,7 +25,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
@@ -44,7 +45,7 @@ import com.xensource.xenapi.VM;
 @ResourceWrapper(handles =  RevertToVMSnapshotCommand.class)
 public final class CitrixRevertToVMSnapshotCommandWrapper extends CommandWrapper<RevertToVMSnapshotCommand, Answer, CitrixResourceBase> {
 
-    private static final Logger s_logger = Logger.getLogger(CitrixRevertToVMSnapshotCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(CitrixRevertToVMSnapshotCommandWrapper.class);
 
     @Override
     public Answer execute(final RevertToVMSnapshotCommand command, final CitrixResourceBase citrixResourceBase) {

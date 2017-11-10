@@ -33,7 +33,8 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
@@ -61,7 +62,7 @@ import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
 
 public class BareMetalDiscoverer extends DiscovererBase implements Discoverer, ResourceStateAdapter {
-    protected static final Logger s_logger = Logger.getLogger(BareMetalDiscoverer.class);
+    protected static final Logger s_logger = LogManager.getLogger(BareMetalDiscoverer.class);
     @Inject
     protected VMInstanceDao _vmDao = null;
 

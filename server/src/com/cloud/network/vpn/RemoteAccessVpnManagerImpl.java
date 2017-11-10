@@ -24,7 +24,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.vpn.ListRemoteAccessVpnsCmd;
@@ -93,7 +94,7 @@ import com.cloud.utils.net.NetUtils;
 import org.apache.commons.collections.CollectionUtils;
 
 public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAccessVpnService, Configurable {
-    private final static Logger s_logger = Logger.getLogger(RemoteAccessVpnManagerImpl.class);
+    private final static Logger s_logger = LogManager.getLogger(RemoteAccessVpnManagerImpl.class);
 
     static final ConfigKey<String> RemoteAccessVpnClientIpRange = new ConfigKey<String>("Network", String.class, RemoteAccessVpnClientIpRangeCK, "10.1.2.1-10.1.2.8",
         "The range of ips to be allocated to remote access vpn clients. The first ip in the range is used by the VPN server", false, ConfigKey.Scope.Account);

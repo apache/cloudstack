@@ -46,8 +46,9 @@ import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
-import org.slf4j.MDC;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.ThreadContext;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -120,8 +121,8 @@ import com.cloud.utils.time.InaccurateClock;
  * Implementation of the Agent Manager. This class controls the connection to the agents.
  **/
 public class AgentManagerImpl extends ManagerBase implements AgentManager, HandlerFactory, Configurable {
-    protected static final Logger s_logger = Logger.getLogger(AgentManagerImpl.class);
-    protected static final Logger status_logger = Logger.getLogger(Status.class);
+    protected static final Logger s_logger = LogManager.getLogger(AgentManagerImpl.class);
+    protected static final Logger status_logger = LogManager.getLogger(Status.class);
 
     /**
      * _agents is a ConcurrentHashMap, but it is used from within a synchronized block. This will be reported by findbugs as JLM_JSR166_UTILCONCURRENT_MONITORENTER. Maybe a
@@ -397,8 +398,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 cmd.setContextParam("job", "job-" + job.getId());
             }
         }
-        if (MDC.get("logcontextid") != null && !MDC.get("logcontextid").isEmpty()) {
-            cmd.setContextParam("logid", MDC.get("logcontextid"));
+        if (ThreadContext.get("logcontextid") != null && !ThreadContext.get("logcontextid").isEmpty()) {
+            cmd.setContextParam("logid", ThreadContext.get("logcontextid"));
         }
     }
 

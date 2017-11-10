@@ -31,7 +31,8 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.db.UpdateBuilder;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.sql.PreparedStatement;
@@ -41,7 +42,7 @@ import java.util.List;
 @DB
 @Component
 public class OutOfBandManagementDaoImpl extends GenericDaoBase<OutOfBandManagementVO, Long> implements OutOfBandManagementDao {
-    private static final Logger LOG = Logger.getLogger(OutOfBandManagementDaoImpl.class);
+    private static final Logger LOG = LogManager.getLogger(OutOfBandManagementDaoImpl.class);
 
     private SearchBuilder<OutOfBandManagementVO> HostSearch;
     private SearchBuilder<OutOfBandManagementVO> ManagementServerSearch;

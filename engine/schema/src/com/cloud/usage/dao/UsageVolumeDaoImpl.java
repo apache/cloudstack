@@ -26,7 +26,8 @@ import java.util.TimeZone;
 
 
 import com.cloud.exception.CloudException;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.usage.UsageVolumeVO;
@@ -36,7 +37,7 @@ import com.cloud.utils.db.TransactionLegacy;
 
 @Component
 public class UsageVolumeDaoImpl extends GenericDaoBase<UsageVolumeVO, Long> implements UsageVolumeDao {
-    public static final Logger s_logger = Logger.getLogger(UsageVolumeDaoImpl.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UsageVolumeDaoImpl.class.getName());
 
     protected static final String REMOVE_BY_USERID_VOLID = "DELETE FROM usage_volume WHERE account_id = ? AND id = ?";
     protected static final String UPDATE_DELETED = "UPDATE usage_volume SET deleted = ? WHERE account_id = ? AND id = ? and deleted IS NULL";

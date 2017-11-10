@@ -25,7 +25,8 @@ import java.util.Set;
 
 import javax.ejb.Local;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.StartCommand;
@@ -46,7 +47,7 @@ import com.xensource.xenapi.VM;
 @Local(value=ServerResource.class)
 public class XenServer620SP1Resource extends XenServer620Resource {
 
-    private static final Logger s_logger = Logger.getLogger(XenServer620SP1Resource.class);
+    private static final Logger s_logger = LogManager.getLogger(XenServer620SP1Resource.class);
 
     @Override
     protected void fillHostInfo(final Connection conn, final StartupRoutingCommand cmd) {

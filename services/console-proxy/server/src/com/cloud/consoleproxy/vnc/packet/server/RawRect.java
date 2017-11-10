@@ -23,11 +23,12 @@ import java.awt.image.DataBufferInt;
 import java.io.DataInputStream;
 import java.io.IOException;
 
-import com.cloud.consoleproxy.util.Logger;
 import com.cloud.consoleproxy.vnc.VncScreenDescription;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RawRect extends AbstractRect {
-    private static final Logger s_logger = Logger.getLogger(RawRect.class);
+    private static final Logger s_logger = LogManager.getLogger(RawRect.class);
     private final int[] buf;
 
     public RawRect(VncScreenDescription screen, int x, int y, int width, int height, DataInputStream is) throws IOException {

@@ -18,28 +18,34 @@
  */
 package org.apache.cloudstack.storage.resource;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.StringWriter;
+
 import com.cloud.test.TestAppender;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.log4j.Level;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
-
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.StringWriter;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.spy;
 
 @RunWith(PowerMockRunner.class)
+@PowerMockIgnore({"org.apache.logging.log4j.*"})
 public class NfsSecondaryStorageResourceTest {
 
     private NfsSecondaryStorageResource resource;
@@ -75,6 +81,12 @@ public class NfsSecondaryStorageResourceTest {
         appenderBuilder.addExpectedPattern(Level.DEBUG, "Failed to clean up staging area:");
         TestAppender testLogAppender = appenderBuilder.build();
         TestAppender.safeAddAppender(NfsSecondaryStorageResource.s_logger, testLogAppender);
+
+        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+        Configuration config = ctx.getConfiguration();
+        LoggerConfig loggerConfig = config.getLoggerConfig(NfsSecondaryStorageResource.s_logger.getName());
+        loggerConfig.setLevel(Level.DEBUG);
+        ctx.updateLoggers();
 
         spyResource.cleanupStagingNfs(mockTemplate);
 

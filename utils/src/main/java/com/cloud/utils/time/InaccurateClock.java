@@ -25,7 +25,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.management.StandardMBean;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.mgmt.JmxUtil;
@@ -34,7 +35,7 @@ import com.cloud.utils.mgmt.JmxUtil;
  */
 
 public class InaccurateClock extends StandardMBean implements InaccurateClockMBean {
-    private static final Logger s_logger = Logger.getLogger(InaccurateClock.class);
+    private static final Logger s_logger = LogManager.getLogger(InaccurateClock.class);
     static ScheduledExecutorService s_executor = null;
     static final InaccurateClock s_timer = new InaccurateClock();
     private static long time;

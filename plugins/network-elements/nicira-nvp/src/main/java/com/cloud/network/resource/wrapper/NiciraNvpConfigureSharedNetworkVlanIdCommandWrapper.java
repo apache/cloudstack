@@ -25,7 +25,8 @@ import static com.cloud.network.resource.NiciraNvpResource.NUM_RETRIES;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.ConfigureSharedNetworkVlanIdAnswer;
@@ -44,7 +45,7 @@ import com.cloud.utils.rest.HttpStatusCodeHelper;
 @ResourceWrapper(handles =  ConfigureSharedNetworkVlanIdCommand.class)
 public class NiciraNvpConfigureSharedNetworkVlanIdCommandWrapper extends CommandWrapper<ConfigureSharedNetworkVlanIdCommand, Answer, NiciraNvpResource>{
 
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpConfigureSharedNetworkVlanIdCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(NiciraNvpConfigureSharedNetworkVlanIdCommandWrapper.class);
 
     @Override
     public Answer execute(ConfigureSharedNetworkVlanIdCommand command, NiciraNvpResource niciraNvpResource) {

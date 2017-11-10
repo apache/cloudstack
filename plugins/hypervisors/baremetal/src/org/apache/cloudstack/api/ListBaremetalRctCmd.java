@@ -27,7 +27,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ import java.util.List;
 @APICommand(name = "listBaremetalRct", description = "list baremetal rack configuration", responseObject = BaremetalRctResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin})
 public class ListBaremetalRctCmd extends BaseListCmd {
-    private static final Logger s_logger = Logger.getLogger(ListBaremetalRctCmd.class);
+    private static final Logger s_logger = LogManager.getLogger(ListBaremetalRctCmd.class);
     private static final String s_name = "listbaremetalrctresponse";
     @Inject
     BaremetalVlanManager vlanMgr;

@@ -25,7 +25,8 @@ import java.util.Timer;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -65,7 +66,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor {
-    static final Logger s_logger = Logger.getLogger(DownloadMonitorImpl.class);
+    static final Logger s_logger = LogManager.getLogger(DownloadMonitorImpl.class);
 
     @Inject
     private TemplateDataStoreDao _vmTemplateStoreDao;

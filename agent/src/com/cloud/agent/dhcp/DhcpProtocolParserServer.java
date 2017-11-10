@@ -25,12 +25,13 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.utils.concurrency.NamedThreadFactory;
 
 public class DhcpProtocolParserServer extends Thread {
-    private static final Logger s_logger = Logger.getLogger(DhcpProtocolParserServer.class);;
+    private static final Logger s_logger = LogManager.getLogger(DhcpProtocolParserServer.class);;
     protected ExecutorService _executor;
     private int dhcpServerPort = 67;
     private int bufferSize = 300;

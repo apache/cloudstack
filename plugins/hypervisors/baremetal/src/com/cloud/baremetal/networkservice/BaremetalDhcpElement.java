@@ -24,7 +24,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.baremetal.database.BaremetalDhcpVO;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -56,7 +57,7 @@ import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
 public class BaremetalDhcpElement extends AdapterBase implements DhcpServiceProvider {
-    private static final Logger s_logger = Logger.getLogger(BaremetalDhcpElement.class);
+    private static final Logger s_logger = LogManager.getLogger(BaremetalDhcpElement.class);
     private static final Map<Service, Map<Capability, String>> capabilities;
 
     @Inject

@@ -19,7 +19,8 @@ package org.apache.cloudstack.api.command.user.address;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -42,7 +43,7 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listPublicIpAddresses", description = "Lists all public IP addresses", responseObject = IPAddressResponse.class, responseView = ResponseView.Restricted,
  requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, entityType = { IpAddress.class })
 public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListPublicIpAddressesCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListPublicIpAddressesCmd.class.getName());
 
     private static final String s_name = "listpublicipaddressesresponse";
 

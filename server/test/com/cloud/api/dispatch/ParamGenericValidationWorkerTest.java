@@ -16,25 +16,9 @@
 // under the License.
 package com.cloud.api.dispatch;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
-import org.junit.Test;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -45,6 +29,25 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.message.Message;
+import org.apache.logging.log4j.spi.AbstractLogger;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class ParamGenericValidationWorkerTest {
 
@@ -52,16 +55,105 @@ public class ParamGenericValidationWorkerTest {
 
     protected static final String FAKE_CMD_ROLE_NAME = "fakecmdrolename";
 
-    protected String loggerOutput;
+    protected String loggerOutput;// = "";
 
     protected void driveTest(final BaseCmd cmd, final Map<String, String> params) {
         final ParamGenericValidationWorker genValidationWorker = new ParamGenericValidationWorker();
 
         // We create a mock logger to verify the result
-        ParamGenericValidationWorker.s_logger = new Logger("") {
+        // TODO replace by a real mocked logger and verify by when'ing the warn call (, or so)
+        Logger logger = ParamGenericValidationWorker.s_logger;
+
+        ParamGenericValidationWorker.s_logger = new AbstractLogger("ParamGenericValidationWorker") {
             @Override
-            public void warn(final Object msg) {
-                loggerOutput = msg.toString();
+            public boolean isEnabled(Level level, Marker marker, Message message, Throwable throwable) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, CharSequence charSequence, Throwable throwable) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, Object o, Throwable throwable) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s, Throwable throwable) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s, Object... objects) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s, Object o) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4, Object o5) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4, Object o5, Object o6) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4, Object o5, Object o6, Object o7) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4, Object o5, Object o6, Object o7, Object o8) {
+                return true;
+            }
+
+            @Override
+            public boolean isEnabled(Level level, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4, Object o5, Object o6, Object o7, Object o8,
+                                     Object o9) {
+                return true;
+            }
+
+            @Override
+            public void logMessage(String s, Level level, Marker marker, Message message, Throwable throwable) {
+                loggerOutput = message.toString();
+            }
+
+            @Override
+            public Level getLevel() {
+                return Level.TRACE;
             }
         };
 

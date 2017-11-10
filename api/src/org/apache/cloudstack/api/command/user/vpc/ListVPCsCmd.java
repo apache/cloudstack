@@ -29,7 +29,8 @@ import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.network.vpc.Vpc;
 import com.cloud.utils.Pair;
@@ -38,7 +39,7 @@ import com.cloud.utils.Pair;
 @APICommand(name = "listVPCs", description = "Lists VPCs", responseObject = VpcResponse.class, responseView = ResponseView.Restricted, entityType = {Vpc.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListVPCsCmd extends BaseListTaggedResourcesCmd {
-    public static final Logger s_logger = Logger.getLogger(ListVPCsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(ListVPCsCmd.class.getName());
     private static final String s_name = "listvpcsresponse";
 
     /////////////////////////////////////////////////////

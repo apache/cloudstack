@@ -34,7 +34,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -59,7 +60,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class HypervStorageMotionStrategy implements DataMotionStrategy {
-    private static final Logger s_logger = Logger.getLogger(HypervStorageMotionStrategy.class);
+    private static final Logger s_logger = LogManager.getLogger(HypervStorageMotionStrategy.class);
     @Inject AgentManager agentMgr;
     @Inject VolumeDao volDao;
     @Inject VolumeDataFactory volFactory;

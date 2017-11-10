@@ -23,7 +23,8 @@ import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -32,7 +33,7 @@ import com.cloud.network.RemoteAccessVpn;
 @APICommand(name = "updateRemoteAccessVpn", description = "Updates remote access vpn", responseObject = RemoteAccessVpnResponse.class, since = "4.4",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateRemoteAccessVpnCmd extends BaseAsyncCustomIdCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateRemoteAccessVpnCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UpdateRemoteAccessVpnCmd.class.getName());
 
     private static final String s_name = "updateremoteaccessvpnresponse";
 

@@ -26,7 +26,8 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -109,7 +110,7 @@ import static org.mockito.Mockito.when;
 
 public class ConfigurationManagerTest {
 
-    private static final Logger s_logger = Logger.getLogger(ConfigurationManagerTest.class);
+    private static final Logger s_logger = LogManager.getLogger(ConfigurationManagerTest.class);
 
     @InjectMocks
     ConfigurationManagerImpl configurationMgr = new ConfigurationManagerImpl();

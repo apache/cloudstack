@@ -28,7 +28,8 @@ import org.apache.cloudstack.api.response.SnapshotResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -43,7 +44,7 @@ import com.cloud.vm.snapshot.VMSnapshot;
 @APICommand(name = "createSnapshotFromVMSnapshot", description = "Creates an instant snapshot of a volume from existing vm snapshot.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class}, since = "4.10.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateSnapshotFromVMSnapshotCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(CreateSnapshotFromVMSnapshotCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(CreateSnapshotFromVMSnapshotCmd.class.getName());
     private static final String s_name = "createsnapshotfromvmsnapshotresponse";
 
     // ///////////////////////////////////////////////////

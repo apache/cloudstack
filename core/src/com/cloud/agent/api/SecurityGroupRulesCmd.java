@@ -27,7 +27,8 @@ import java.util.zip.DeflaterOutputStream;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 import com.cloud.utils.net.NetUtils;
@@ -38,7 +39,7 @@ public class SecurityGroupRulesCmd extends Command {
     private static final char RULE_COMMAND_SEPARATOR = ':';
     protected static final String EGRESS_RULE = "E:";
     protected static final String INGRESS_RULE = "I:";
-    private static final Logger LOGGER = Logger.getLogger(SecurityGroupRulesCmd.class);
+    private static final Logger LOGGER = LogManager.getLogger(SecurityGroupRulesCmd.class);
 
     private final String guestIp;
     private final String guestIp6;

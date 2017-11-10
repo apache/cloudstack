@@ -17,58 +17,67 @@
 
 package org.apache.cloudstack.alert.snmp;
 
+import javax.naming.ConfigurationException;
+
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.DefaultConfiguration;
+import org.apache.logging.log4j.message.Message;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertNull;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.spi.LoggingEvent;
-import org.junit.Before;
-import org.junit.Test;
-
 public class SnmpEnhancedPatternLayoutTest {
-    SnmpEnhancedPatternLayout _snmpEnhancedPatternLayout = new SnmpEnhancedPatternLayout();
+    Configuration configuration = new DefaultConfiguration();
+    SnmpEnhancedPatternLayout _snmpEnhancedPatternLayout = new SnmpEnhancedPatternLayout(configuration, null, null);
+    @Mock
+    LogEvent event;
+    @Mock
+    Message messageObject;
 
     @Before
     public void setUp() throws ConfigurationException {
+        MockitoAnnotations.initMocks(this);
+
+        when(event.getMessage()).thenReturn(messageObject);
+
         _snmpEnhancedPatternLayout.setKeyValueDelimiter("::");
         _snmpEnhancedPatternLayout.setPairDelimiter("//");
     }
 
     @Test
     public void parseAlertTest() {
-        LoggingEvent event = mock(LoggingEvent.class);
         setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management"
-            + " network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
+            + " network CIDR is not configured originally. Set it default to 10.102.192.0/22");
         SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(event);
         commonAssertions(info, "Management network CIDR is not configured originally. Set it default to 10.102.192" + ".0/22");
     }
 
     @Test
     public void ParseAlertWithPairDelimeterInMessageTest() {
-        LoggingEvent event = mock(LoggingEvent.class);
         setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management"
-            + " //network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
+            + " //network CIDR is not configured originally. Set it default to 10.102.192.0/22");
         SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(event);
         commonAssertions(info, "Management //network CIDR is not configured originally. Set it default to 10.102.192" + ".0/22");
     }
 
     @Test
     public void ParseAlertWithKeyValueDelimeterInMessageTest() {
-        LoggingEvent event = mock(LoggingEvent.class);
         setMessage(" alertType:: 14 // dataCenterId:: 1 // podId:: 1 // " + "clusterId:: null // message:: Management"
-            + " ::network CIDR is not configured originally. Set it default to 10.102.192.0/22", event);
+            + " ::network CIDR is not configured originally. Set it default to 10.102.192.0/22");
         SnmpTrapInfo info = _snmpEnhancedPatternLayout.parseEvent(event);
         commonAssertions(info, "Management ::network CIDR is not configured originally. Set it default to 10.102.192" + ".0/22");
     }
 
     @Test
     public void parseRandomTest() {
-        LoggingEvent event = mock(LoggingEvent.class);
-        when(event.getRenderedMessage()).thenReturn("Problem clearing email alert");
+        when(event.getMessage().getFormattedMessage()).thenReturn("Problem clearing email alert");
         assertNull(" Null value was expected ", _snmpEnhancedPatternLayout.parseEvent(event));
     }
 
@@ -81,7 +90,7 @@ public class SnmpEnhancedPatternLayoutTest {
         assertEquals(" message is not as expected ", message, info.getMessage());
     }
 
-    private void setMessage(String message, LoggingEvent event) {
-        when(event.getRenderedMessage()).thenReturn(message);
+    private void setMessage(String message) {
+        when(messageObject.getFormattedMessage()).thenReturn(message);
     }
 }

@@ -17,8 +17,11 @@
 package org.apache.cloudstack.api.command.admin.router;
 
 import java.util.List;
-import java.util.logging.Logger;
 
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,16 +37,13 @@ import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @APICommand(name = "upgradeRouterTemplate", description = "Upgrades router to use newer template", responseObject = BaseResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpgradeRouterTemplateCmd extends org.apache.cloudstack.api.BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpgradeRouterTemplateCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UpgradeRouterTemplateCmd.class.getName());
     private static final String s_name = "upgraderoutertemplateresponse";
 
     /////////////////////////////////////////////////////

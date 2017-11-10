@@ -21,7 +21,8 @@ package com.cloud.hypervisor.xenserver.resource.wrapper.xen620sp1;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.GetGPUStatsAnswer;
@@ -35,7 +36,7 @@ import com.xensource.xenapi.Connection;
 @ResourceWrapper(handles =  GetGPUStatsCommand.class)
 public final class XenServer620SP1GetGPUStatsCommandWrapper extends CommandWrapper<GetGPUStatsCommand, Answer, XenServer620SP1Resource> {
 
-    private static final Logger s_logger = Logger.getLogger(XenServer620SP1GetGPUStatsCommandWrapper.class);
+    private static final Logger s_logger = LogManager.getLogger(XenServer620SP1GetGPUStatsCommandWrapper.class);
 
     @Override
     public Answer execute(final GetGPUStatsCommand command, final XenServer620SP1Resource xenServer620SP1Resource) {

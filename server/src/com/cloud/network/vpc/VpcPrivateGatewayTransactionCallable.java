@@ -21,7 +21,8 @@ import java.util.concurrent.Callable;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.vpc.dao.PrivateIpDao;
@@ -33,7 +34,7 @@ import com.cloud.utils.db.TransactionStatus;
 @Component
 public class VpcPrivateGatewayTransactionCallable implements Callable<Boolean> {
 
-    private static final Logger s_logger = Logger.getLogger(VpcPrivateGatewayTransactionCallable.class);
+    private static final Logger s_logger = LogManager.getLogger(VpcPrivateGatewayTransactionCallable.class);
 
     @Inject
     private VpcGatewayDao _vpcGatewayDao;

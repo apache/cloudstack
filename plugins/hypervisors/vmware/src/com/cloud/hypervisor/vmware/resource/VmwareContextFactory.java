@@ -19,7 +19,8 @@ package com.cloud.hypervisor.vmware.resource;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.cluster.ClusterManager;
@@ -31,7 +32,7 @@ import com.cloud.utils.StringUtils;
 
 @Component
 public class VmwareContextFactory {
-    private static final Logger s_logger = Logger.getLogger(VmwareContextFactory.class);
+    private static final Logger s_logger = LogManager.getLogger(VmwareContextFactory.class);
 
     private static volatile int s_seq = 1;
     private static VmwareManager s_vmwareMgr;

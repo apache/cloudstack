@@ -22,13 +22,14 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.QuotaEmailTemplateResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.inject.Inject;
 
 @APICommand(name = "quotaEmailTemplateList", responseObject = QuotaEmailTemplateResponse.class, description = "Lists all quota email templates", since = "4.7.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class QuotaEmailTemplateListCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(QuotaEmailTemplateListCmd.class);
+    public static final Logger s_logger = LogManager.getLogger(QuotaEmailTemplateListCmd.class);
     private static final String s_name = "quotaemailtemplatelistresponse";
 
     @Inject

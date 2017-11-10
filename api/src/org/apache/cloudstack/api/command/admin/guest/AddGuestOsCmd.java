@@ -16,7 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.guest;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -41,7 +42,7 @@ import java.util.Map;
 @APICommand(name = "addGuestOs", description = "Add a new guest OS type", responseObject = GuestOSResponse.class,
         since = "4.4.0", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class AddGuestOsCmd extends BaseAsyncCreateCmd {
-    public static final Logger s_logger = Logger.getLogger(AddGuestOsCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(AddGuestOsCmd.class.getName());
 
     private static final String s_name = "addguestosresponse";
 

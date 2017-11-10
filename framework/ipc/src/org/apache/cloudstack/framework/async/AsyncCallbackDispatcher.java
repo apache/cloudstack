@@ -29,11 +29,12 @@ import net.sf.cglib.proxy.Factory;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @SuppressWarnings("rawtypes")
 public class AsyncCallbackDispatcher<T, R> implements AsyncCompletionCallback {
-    private static final Logger s_logger = Logger.getLogger(AsyncCallbackDispatcher.class);
+    private static final Logger s_logger = LogManager.getLogger(AsyncCallbackDispatcher.class);
 
     private Method _callbackMethod;
     private final T _targetObject;

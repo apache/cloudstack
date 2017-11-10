@@ -31,7 +31,8 @@ import org.apache.cloudstack.network.contrail.model.InstanceIpModel;
 import org.apache.cloudstack.network.contrail.model.VMInterfaceModel;
 import org.apache.cloudstack.network.contrail.model.VirtualMachineModel;
 import org.apache.cloudstack.network.contrail.model.VirtualNetworkModel;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeployDestination;
@@ -83,7 +84,7 @@ public class ContrailElementImpl extends AdapterBase
     NicDao _nicDao;
     @Inject
     ServerDBSync _dbSync;
-    private static final Logger s_logger = Logger.getLogger(ContrailElement.class);
+    private static final Logger s_logger = LogManager.getLogger(ContrailElement.class);
 
     // PluggableService
     @Override

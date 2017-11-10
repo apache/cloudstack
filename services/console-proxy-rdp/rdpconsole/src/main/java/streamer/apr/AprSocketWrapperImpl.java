@@ -23,7 +23,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.tomcat.jni.Address;
 import org.apache.tomcat.jni.Error;
 import org.apache.tomcat.jni.Library;
@@ -47,7 +48,7 @@ import streamer.ssl.SSLState;
 import sun.security.x509.X509CertImpl;
 
 public class AprSocketWrapperImpl extends PipelineImpl implements SocketWrapper {
-    private static final Logger s_logger = Logger.getLogger(AprSocketWrapperImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(AprSocketWrapperImpl.class);
 
     static {
         try {

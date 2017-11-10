@@ -21,7 +21,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,7 +39,7 @@ import com.cloud.user.Account;
 @APICommand(name = "updateCloudToUseObjectStore", description = "Migrate current NFS secondary storages to use object store.", responseObject = ImageStoreResponse.class, since = "4.3.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateCloudToUseObjectStoreCmd extends BaseCmd {
-    public static final Logger s_logger = Logger.getLogger(UpdateCloudToUseObjectStoreCmd.class.getName());
+    public static final Logger s_logger = LogManager.getLogger(UpdateCloudToUseObjectStoreCmd.class.getName());
     private static final String s_name = "updatecloudtouseobjectstoreresponse";
 
     /////////////////////////////////////////////////////

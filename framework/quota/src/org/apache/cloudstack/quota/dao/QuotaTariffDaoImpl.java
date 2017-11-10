@@ -26,7 +26,8 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import javax.ejb.Local;
@@ -38,7 +39,7 @@ import java.util.List;
 @Component
 @Local(value = {QuotaTariffDao.class})
 public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> implements QuotaTariffDao {
-    private static final Logger s_logger = Logger.getLogger(QuotaTariffDaoImpl.class.getName());
+    private static final Logger s_logger = LogManager.getLogger(QuotaTariffDaoImpl.class.getName());
 
     private final SearchBuilder<QuotaTariffVO> searchUsageType;
     private final SearchBuilder<QuotaTariffVO> listAllIncludedUsageType;

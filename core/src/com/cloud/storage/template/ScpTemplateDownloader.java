@@ -23,7 +23,8 @@ import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.trilead.ssh2.SCPClient;
 
@@ -31,7 +32,7 @@ import com.cloud.storage.StorageLayer;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ScpTemplateDownloader extends TemplateDownloaderBase implements TemplateDownloader {
-    private static final Logger s_logger = Logger.getLogger(ScpTemplateDownloader.class);
+    private static final Logger s_logger = LogManager.getLogger(ScpTemplateDownloader.class);
 
     public ScpTemplateDownloader(StorageLayer storageLayer, String downloadUrl, String toDir, long maxTemplateSizeInBytes, DownloadCompleteCallback callback) {
         super(storageLayer, downloadUrl, toDir, maxTemplateSizeInBytes, callback);
