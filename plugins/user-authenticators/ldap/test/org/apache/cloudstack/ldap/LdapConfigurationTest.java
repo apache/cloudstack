@@ -25,6 +25,7 @@ import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -38,12 +39,22 @@ public class LdapConfigurationTest {
     private void overrideConfigValue(final String configKeyName, final Object o) throws IllegalAccessException, NoSuchFieldException {
         Field configKey = LdapConfiguration.class.getDeclaredField(configKeyName);
         configKey.setAccessible(true);
-        Field dynamic = ConfigKey.class.getDeclaredField("_isDynamic");
-        dynamic.setAccessible(true);
-        dynamic.set(configKey, false);
+
+        ConfigKey key = (ConfigKey)configKey.get(ldapConfiguration);
+
+        Field modifiersField = Field.class.getDeclaredField("modifiers");
+        modifiersField.setAccessible(true);
+        modifiersField.setInt(configKey, configKey.getModifiers() & ~Modifier.FINAL);
+
         Field f = ConfigKey.class.getDeclaredField("_value");
         f.setAccessible(true);
-        f.set(configKey, o);
+        modifiersField.setInt(f, f.getModifiers() & ~Modifier.FINAL);
+        f.set(key, o);
+
+        Field dynamic = ConfigKey.class.getDeclaredField("_isDynamic");
+        dynamic.setAccessible(true);
+        modifiersField.setInt(dynamic, dynamic.getModifiers() & ~Modifier.FINAL);
+        dynamic.setBoolean(key, false);
     }
 
     @Before
