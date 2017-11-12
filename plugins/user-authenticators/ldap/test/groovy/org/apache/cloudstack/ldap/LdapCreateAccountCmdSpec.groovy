@@ -35,35 +35,6 @@ import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
 import javax.naming.NamingException
 
 class LdapCreateAccountCmdSpec extends spock.lang.Specification {
-
-    def "Test failure to retrive LDAP user"() {
-        given: "We have an LdapManager, AccountService and LdapCreateAccountCmd and LDAP user that doesn't exist"
-        LdapManager ldapManager = Mock(LdapManager)
-        ldapManager.getUser(_) >> { throw new NoLdapUserMatchingQueryException() }
-        AccountService accountService = Mock(AccountService)
-        def ldapCreateAccountCmd = Spy(LdapCreateAccountCmd, constructorArgs: [ldapManager, accountService])
-        ldapCreateAccountCmd.getCurrentContext() >> Mock(CallContext)
-        CallContext context = ldapCreateAccountCmd.getCurrentContext()
-        when: "An an account is created"
-        ldapCreateAccountCmd.execute()
-        then: "It fails and an exception is thrown"
-        thrown ServerApiException
-    }
-
-    def "Test failed creation due to a null response from cloudstack account creater"() {
-        given: "We have an LdapManager, AccountService and LdapCreateAccountCmd"
-        LdapManager ldapManager = Mock(LdapManager)
-        ldapManager.getUser(_) >> new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false)
-        AccountService accountService = Mock(AccountService)
-        def ldapCreateAccountCmd = Spy(LdapCreateAccountCmd, constructorArgs: [ldapManager, accountService])
-        ldapCreateAccountCmd.getCurrentContext() >> Mock(CallContext)
-        ldapCreateAccountCmd.createCloudstackUserAccount(_, _, _) >> null
-        when: "Cloudstack fail to create the user"
-        ldapCreateAccountCmd.execute()
-        then: "An exception is thrown"
-        thrown ServerApiException
-    }
-
     def "Test command name"() {
         given: "We have an LdapManager, AccountService and LdapCreateAccountCmd"
         LdapManager ldapManager = Mock(LdapManager)

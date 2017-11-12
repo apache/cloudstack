@@ -128,40 +128,6 @@ class LinkDomainToLdapCmdSpec extends Specification {
         result.getAdminId() == null
     }
 
-    def "test with valid params and with admin who doesnt exist in cloudstack"() {
-        def domainId = 1;
-        def type = "GROUP";
-        def name = "CN=test,DC=ccp,DC=Citrix,DC=com"
-        def accountType = 2;
-        def username = "admin"
-        def accountId = 24
-
-        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId, type, name, (short)accountType)
-        _ldapManager.linkDomainToLdap(_,_,_,_) >> response
-        _ldapManager.getUser(username, type, name) >> new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", false)
-
-        _accountService.getActiveAccountByName(username, domainId) >> null
-        UserAccount userAccount = Mock(UserAccount)
-        userAccount.getAccountId() >> 24
-        _accountService.createUserAccount(username, "", "Admin", "Admin", "admin@ccp.citrix.com", null, username, Account.ACCOUNT_TYPE_DOMAIN_ADMIN, domainId,
-                username, null, _, _, User.Source.LDAP) >> userAccount
-
-        linkDomainToLdapCmd.admin = username
-        linkDomainToLdapCmd.type = type
-        linkDomainToLdapCmd.name = name
-        linkDomainToLdapCmd.domainId = domainId
-
-        when:
-        linkDomainToLdapCmd.execute()
-        then:
-        LinkDomainToLdapResponse result = (LinkDomainToLdapResponse)linkDomainToLdapCmd.getResponseObject()
-        result.getObjectName() == "LinkDomainToLdap"
-        result.getResponseName() == linkDomainToLdapCmd.getCommandName()
-        result.getDomainId() == domainId
-        result.getType() == type
-        result.getName() == name
-        result.getAdminId() == String.valueOf(accountId)
-    }
 
     def "test when admin doesnt exist in ldap"() {
         def domainId = 1;
