@@ -35,13 +35,13 @@ public class LdapConfigurationTest {
     LdapConfigurationDao ldapConfigurationDao;
     LdapConfiguration ldapConfiguration;
 
-    private void overrideDefaultConfigValue(final String configKeyName, final String name, final Object o) throws IllegalAccessException, NoSuchFieldException {
+    private void overrideConfigValue(final String configKeyName, final Object o) throws IllegalAccessException, NoSuchFieldException {
         Field configKey = LdapConfiguration.class.getDeclaredField(configKeyName);
         configKey.setAccessible(true);
         Field dynamic = ConfigKey.class.getDeclaredField("_isDynamic");
         dynamic.setAccessible(true);
         dynamic.set(configKey, false);
-        Field f = ConfigKey.class.getDeclaredField(name);
+        Field f = ConfigKey.class.getDeclaredField("_value");
         f.setAccessible(true);
         f.set(configKey, o);
     }
@@ -54,8 +54,8 @@ public class LdapConfigurationTest {
 
     @Test
     public void getAuthenticationReturnsSimple() throws Exception {
-        overrideDefaultConfigValue("ldapBindPrincipal", "_value", "cn=bla");
-        overrideDefaultConfigValue("ldapBindPassword", "_value", "pw");
+        overrideConfigValue("ldapBindPrincipal", "cn=bla");
+        overrideConfigValue("ldapBindPassword", "pw");
         String authentication = ldapConfiguration.getAuthentication();
         assertEquals("authentication should be set to simple", "simple", authentication);
     }
@@ -63,7 +63,7 @@ public class LdapConfigurationTest {
 
     @Test
     public void getBaseDnReturnsABaseDn() throws Exception {
-        overrideDefaultConfigValue("ldapBaseDn", "_value", "dc=cloudstack,dc=org");
+        overrideConfigValue("ldapBaseDn", "dc=cloudstack,dc=org");
         String baseDn = ldapConfiguration.getBaseDn();
         assertEquals("The set baseDn should be returned","dc=cloudstack,dc=org", baseDn);
     }
@@ -72,7 +72,7 @@ public class LdapConfigurationTest {
     public void getGroupUniqueMemberAttribute() throws Exception {
         String [] groupNames = {"bla", "uniquemember", "memberuid", "", null};
         for (String groupObject: groupNames) {
-            overrideDefaultConfigValue("ldapGroupUniqueMemberAttribute", "_value", groupObject);
+            overrideConfigValue("ldapGroupUniqueMemberAttribute", groupObject);
             String expectedResult = null;
             if(groupObject == null) {
                 expectedResult = "uniquemember";
@@ -87,15 +87,15 @@ public class LdapConfigurationTest {
     @Test
     public void getSSLStatusCanBeTrue() throws Exception {
 //        given: "We have a ConfigDao with values for truststore and truststore password set"
-        overrideDefaultConfigValue("ldapTrustStore", "_value", "/tmp/ldap.ts");
-        overrideDefaultConfigValue("ldapTrustStorePassword", "_value", "password");
+        overrideConfigValue("ldapTrustStore", "/tmp/ldap.ts");
+        overrideConfigValue("ldapTrustStorePassword", "password");
 
         assertTrue("A request is made to get the status of SSL should result in true", ldapConfiguration.getSSLStatus());
     }
     @Test
     public void getSearchGroupPrincipleReturnsSuccessfully() throws Exception {
         // We have a ConfigDao with a value for ldap.search.group.principle and an LdapConfiguration
-        overrideDefaultConfigValue("ldapSearchGroupPrinciple", "_value", "cn=cloudstack,cn=users,dc=cloudstack,dc=org");
+        overrideConfigValue("ldapSearchGroupPrinciple", "cn=cloudstack,cn=users,dc=cloudstack,dc=org");
         String result = ldapConfiguration.getSearchGroupPrinciple();
 
         assertEquals("The result holds the same value configDao did", "cn=cloudstack,cn=users,dc=cloudstack,dc=org",result);
@@ -104,7 +104,7 @@ public class LdapConfigurationTest {
     @Test
     public void  getTrustStorePasswordResopnds() throws Exception {
         // We have a ConfigDao with a value for truststore password
-        overrideDefaultConfigValue("ldapTrustStorePassword", "_value", "password");
+        overrideConfigValue("ldapTrustStorePassword", "password");
 
         String result = ldapConfiguration.getTrustStorePassword();
 
@@ -116,7 +116,7 @@ public class LdapConfigurationTest {
     public void getGroupObject() throws Exception {
         String [] groupNames = {"bla", "groupOfUniqueNames", "groupOfNames", "", null};
         for (String groupObject: groupNames) {
-            overrideDefaultConfigValue("ldapGroupObject", "_value", groupObject);
+            overrideConfigValue("ldapGroupObject", groupObject);
             String expectedResult = null;
             if(groupObject == null) {
                 expectedResult = "groupOfUniqueNames";
