@@ -35,6 +35,15 @@ case "$1" in
             done
         fi
 
+        BR_NETFILTER_MODULE=br_netfilter
+        MODULES_FILE=/etc/modules
+        if /sbin/modinfo $BR_NETFILTER_MODULE >/dev/null 2>&1; then
+            /sbin/modprobe $BR_NETFILTER_MODULE
+            if ! grep $BR_NETFILTER_MODULE $MODULES_FILE >/dev/null 2>&1; then
+                echo "$BR_NETFILTER_MODULE" >> $MODULES_FILE
+            fi
+        fi
+
         # Running cloudstack-agent-upgrade to update bridge name for upgrade from CloudStack 4.0.x (and before) to CloudStack 4.1 (and later)
         /usr/bin/cloudstack-agent-upgrade
         if [ ! -d "/etc/libvirt/hooks" ] ; then
