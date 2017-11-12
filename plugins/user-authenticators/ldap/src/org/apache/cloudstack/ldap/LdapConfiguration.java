@@ -175,7 +175,7 @@ public class LdapConfiguration implements Configurable{
     }
 
     public String getBaseDn() {
-        return ldapBaseDn.defaultValue();
+        return ldapBaseDn.value();
     }
 
     public String getBaseDn(long domain) {
