@@ -304,10 +304,12 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         return listBy(sc);
     }
 
-    @Override
-    public List<UserVmVO> listByNetworkIdAndStates(long networkId, State... states) {
-        NetworkVO network = networkDao.findById(networkId);
-        if (UserVmSearch == null && network != null) {
+    /**
+     * Recreates UserVmSearch depending on network type, as nics on L2 networks have no ip addresses
+     * @param network network
+     */
+    private void recreateUserVmSeach(NetworkVO network) {
+        if (network != null) {
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
             nicSearch.and("removed", nicSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
@@ -322,6 +324,12 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             UserVmSearch.join("nicSearch", nicSearch, UserVmSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
             UserVmSearch.done();
         }
+    }
+
+    @Override
+    public List<UserVmVO> listByNetworkIdAndStates(long networkId, State... states) {
+        NetworkVO network = networkDao.findById(networkId);
+        recreateUserVmSeach(network);
 
         SearchCriteria<UserVmVO> sc = UserVmSearch.create();
         if (states != null && states.length != 0) {
