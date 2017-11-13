@@ -23,8 +23,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -39,7 +37,6 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component
 public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
     @Inject
     SnapshotDao snapshotDao;
