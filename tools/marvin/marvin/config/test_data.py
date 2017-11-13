@@ -190,6 +190,10 @@ test_data = {
         "displaytext": "Test Network",
         "acltype": "Account",
     },
+    "l2-network": {
+        "name": "Test L2 Network",
+        "displaytext": "Test L2 Network"
+    },
     "network2": {
         "name": "Test Network Shared",
         "displaytext": "Test Network Shared",
@@ -199,6 +203,14 @@ test_data = {
         "startip": "172.16.15.21",
         "endip": "172.16.15.41",
         "acltype": "Account",
+    },
+    "l2-network_offering": {
+        "name": 'Test L2 - Network offering',
+        "displaytext": 'Test L2 - Network offering',
+        "guestiptype": 'L2',
+        "supportedservices": '',
+        "traffictype": 'GUEST',
+        "availability": 'Optional'
     },
     "network_offering": {
         "name": 'Test Network offering',
