@@ -37,15 +37,9 @@
             <configuration>
               <sources>
                 <fileset>
-                  <directory>test/groovy</directory>
-                  <includes>
-                    <include>**/*.groovy</include>
-                  </includes>
-                </fileset>
-                <fileset>
                   <directory>test</directory>
                   <includes>
-                    <include>**/*.java</include>
+                    <include>groovy/**/*.groovy</include>
                   </includes>
                 </fileset>
               </sources>
@@ -76,7 +70,8 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <includes>
-            <include>**/*Spec*</include>
+            <include>**/*Spec.groovy</include>
+            <include>**/*Test.java</include>
           </includes>
         </configuration>
       </plugin>
@@ -96,6 +91,7 @@
       </plugin>
 
     </plugins>
+    <testSourceDirectory>test</testSourceDirectory>
   </build>
   <dependencies>
     <!-- Mandatory dependencies for using Spock -->
@@ -112,10 +108,5 @@
       <artifactId>cglib-nodep</artifactId>
       <scope>test</scope>
     </dependency>
-      <dependency>
-          <groupId>org.spockframework</groupId>
-          <artifactId>spock-core</artifactId>
-          <version>1.0-groovy-2.4</version>
-      </dependency>
   </dependencies>
 </project>
