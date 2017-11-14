@@ -1427,11 +1427,11 @@ class TestL2Networks(cloudstackTestCase):
 
     @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
     def test_l2network_restart(self):
-        """It verifies the user is not able to delete network which has running vms"""
+        """This test covers a few scenarios around restarting a network"""
 
         # Validate the following:
         # 1. Creates a l2 network
-        # 2. Tries to restart a nerwork with no VMs, which trows error 'not in the right state'
+        # 2. Tries to restart a network with no VMs, which trows error 'not in the right state'
         # 3. Deploys a VM
         # 4. Restarts the network without cleanup
         # 5. Restarts the network with cleanup
