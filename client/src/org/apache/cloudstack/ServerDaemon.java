@@ -43,8 +43,10 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
+import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlets.GzipFilter;
+import org.eclipse.jetty.servlets.gzip.GzipHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
@@ -222,12 +224,12 @@ public class ServerDaemon implements Daemon {
         webApp.setContextPath(contextPath);
         webApp.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
 
-        final FilterHolder filter = webApp.addFilter(GzipFilter.class, "/*", EnumSet.of(DispatcherType.REQUEST));
-        final Map<String, String> params = new HashMap<>();
-        params.put("mimeTypes", "text/html,text/xml,text/css,text/plain,text/javascript,application/javascript,application/json,application/xml");
-        params.put("methods", "GET,POST");
-        params.put("deflateCompressionLevel", "9");
-        filter.setInitParameters(params);
+        // Configure GZIP
+        final GzipHandler gzipHandler = new GzipHandler();
+        gzipHandler.addIncludedMimeTypes("text/html", "text/xml", "text/css", "text/plain", "text/javascript", "application/javascript", "application/json", "application/xml");
+        gzipHandler.setIncludedMethods("GET", "POST");
+        gzipHandler.setCompressionLevel(9);
+        gzipHandler.setHandler(webApp);
 
         if (Strings.isNullOrEmpty(webAppLocation)) {
             webApp.setWar(getShadedWarUrl());
@@ -240,7 +242,7 @@ public class ServerDaemon implements Daemon {
 
         final HandlerCollection handlerCollection = new HandlerCollection();
         handlerCollection.addHandler(log);
-        handlerCollection.addHandler(webApp);
+        handlerCollection.addHandler(gzipHandler);
 
         return handlerCollection;
     }
