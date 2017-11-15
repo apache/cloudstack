@@ -168,7 +168,7 @@ class CsNetfilters(object):
                     cpy = cpy.replace('-A', '-I')
                 if isinstance(fw[1], int):
                     # if the rule is for ACLs, we want to insert them in order, right before the DROP all
-                    if rule_chain.startswith("ACL_INBOUND"):
+                    if rule_chain.startswith("ACL_INBOUND") or rule_chain.startswith("ACL_OUTBOUND"):
                         rule_count = self.chain.get_count(rule_chain)
                         cpy = cpy.replace("-A %s" % new_rule.get_chain(), '-I %s %s' % (new_rule.get_chain(), rule_count))
                     else:
