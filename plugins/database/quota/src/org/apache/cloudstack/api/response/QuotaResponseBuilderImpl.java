@@ -16,15 +16,22 @@
 //under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+
+import javax.inject.Inject;
 
 import org.apache.cloudstack.api.command.QuotaBalanceCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
@@ -53,24 +60,17 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.ListIterator;
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.User;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
 
 @Component
-@Local(value = QuotaResponseBuilderImpl.class)
 public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     private static final Logger s_logger = Logger.getLogger(QuotaResponseBuilderImpl.class);
 
@@ -141,7 +141,9 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         } else {
             for (final QuotaAccountVO quotaAccount : _quotaAccountDao.listAllQuotaAccount()) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
-                if (account == null) continue;
+                if (account == null) {
+                    continue;
+                }
                 QuotaSummaryResponse qr = getQuotaSummaryResponse(account);
                 result.add(qr);
             }
@@ -181,6 +183,7 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
             throw new InvalidParameterValueException("The request period does not contain balance entries.");
         }
         Collections.sort(quotaBalance, new Comparator<QuotaBalanceVO>() {
+            @Override
             public int compare(QuotaBalanceVO o1, QuotaBalanceVO o2) {
                 o1 = o1 == null ? new QuotaBalanceVO() : o1;
                 o2 = o2 == null ? new QuotaBalanceVO() : o2;
@@ -287,13 +290,15 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug(
                     "createQuotaStatementResponse Type=" + quotaUsage.get(0).getUsageType() + " usage=" + quotaUsage.get(0).getQuotaUsed().setScale(2, RoundingMode.HALF_EVEN)
-                            + " rec.id=" + quotaUsage.get(0).getUsageItemId() + " SD=" + quotaUsage.get(0).getStartDate() + " ED=" + quotaUsage.get(0).getEndDate());
+                    + " rec.id=" + quotaUsage.get(0).getUsageItemId() + " SD=" + quotaUsage.get(0).getStartDate() + " ED=" + quotaUsage.get(0).getEndDate());
         }
 
         Collections.sort(quotaUsage, new Comparator<QuotaUsageVO>() {
+            @Override
             public int compare(QuotaUsageVO o1, QuotaUsageVO o2) {
-                if (o1.getUsageType() == o2.getUsageType())
+                if (o1.getUsageType() == o2.getUsageType()) {
                     return 0;
+                }
                 return o1.getUsageType() < o2.getUsageType() ? -1 : 1;
             }
         });
@@ -508,29 +513,21 @@ public class QuotaResponseBuilderImpl implements QuotaResponseBuilder {
     public List<QuotaBalanceVO> getQuotaBalance(QuotaBalanceCmd cmd) {
         return _quotaService.findQuotaBalanceVO(cmd.getAccountId(), cmd.getAccountName(), cmd.getDomainId(), cmd.getStartDate(), cmd.getEndDate());
     }
-
     @Override
-    public Date startOfNextDay(Date dt) {
-        Calendar c = Calendar.getInstance();
-        c.setTime(dt);
-        c.add(Calendar.DATE, 1);
-        c.set(Calendar.HOUR, 0);
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        c.set(Calendar.MILLISECOND, 0);
-        return c.getTime();
+    public Date startOfNextDay(Date date) {
+        LocalDate localDate = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+        return createDateAtTheStartOfNextDay(localDate);
     }
 
     @Override
     public Date startOfNextDay() {
-        Calendar c = Calendar.getInstance();
-        c.setTime(new Date());
-        c.add(Calendar.DATE, 1);
-        c.set(Calendar.HOUR, 0);
-        c.set(Calendar.MINUTE, 0);
-        c.set(Calendar.SECOND, 0);
-        c.set(Calendar.MILLISECOND, 0);
-        return c.getTime();
+        LocalDate localDate = LocalDate.now();
+        return createDateAtTheStartOfNextDay(localDate);
+    }
+
+    private Date createDateAtTheStartOfNextDay(LocalDate localDate) {
+        LocalDate nextDayLocalDate = localDate.plusDays(1);
+        return Date.from(nextDayLocalDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
     }
 
 }
