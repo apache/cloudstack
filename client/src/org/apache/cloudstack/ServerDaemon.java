@@ -22,12 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.net.URL;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
-
-import javax.servlet.DispatcherType;
 
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
@@ -42,11 +37,9 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.server.handler.MovedContextHandler;
 import org.eclipse.jetty.server.handler.RequestLogHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
-import org.eclipse.jetty.servlet.FilterHolder;
-import org.eclipse.jetty.servlets.GzipFilter;
-import org.eclipse.jetty.servlets.gzip.GzipHandler;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.eclipse.jetty.util.thread.ScheduledExecutorScheduler;
@@ -240,11 +233,13 @@ public class ServerDaemon implements Daemon {
         final RequestLogHandler log = new RequestLogHandler();
         log.setRequestLog(createRequestLog());
 
-        final HandlerCollection handlerCollection = new HandlerCollection();
-        handlerCollection.addHandler(log);
-        handlerCollection.addHandler(gzipHandler);
+        // Rewrite handler for root
+        MovedContextHandler rootRedirect = new MovedContextHandler();
+        rootRedirect.setContextPath("/");
+        rootRedirect.setNewContextURL(contextPath);
+        rootRedirect.setPermanent(true);
 
-        return handlerCollection;
+        return new HandlerCollection(log, gzipHandler, rootRedirect);
     }
 
     private RequestLog createRequestLog() {
