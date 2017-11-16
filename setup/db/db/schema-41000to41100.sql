@@ -19,6 +19,22 @@
 -- Schema upgrade from 4.10.0.0 to 4.11.0.0
 --;
 
+-- Add For VPC flag
+ALTER TABLE cloud.network_offerings ADD COLUMN for_vpc INT(1) NOT NULL DEFAULT 0;
+UPDATE cloud.network_offerings o
+SET for_vpc = 1
+where
+  o.conserve_mode = 0
+  and o.guest_type = 'Isolated'
+  and exists(
+    SELECT id
+    from cloud.ntwk_offering_service_map
+    where network_offering_id = o.id and (
+      provider in ('VpcVirtualRouter', 'InternalLbVm', 'JuniperContrailVpcRouter')
+      or service in ('NetworkACL')
+    )
+  );
+  
 --Alter view template_view
  
 DROP VIEW IF EXISTS `cloud`.`template_view`;
