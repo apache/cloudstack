@@ -65,6 +65,7 @@ public class ServerDaemon implements Daemon {
 
     private static final String BIND_INTERFACE = "bind.interface";
     private static final String CONTEXT_PATH = "context.path";
+    private static final String SESSION_TIMEOUT = "session.timeout";
     private static final String HTTP_PORT = "http.port";
     private static final String HTTPS_ENABLE = "https.enable";
     private static final String HTTPS_PORT = "https.port";
@@ -81,6 +82,7 @@ public class ServerDaemon implements Daemon {
 
     private int httpPort = 8080;
     private int httpsPort = 8443;
+    private int sessionTimeout = 10;
     private boolean httpsEnable = false;
     private String accessLogFile = "access.log";
     private String bindInterface = "";
@@ -124,6 +126,7 @@ public class ServerDaemon implements Daemon {
             setKeystorePassword(properties.getProperty(KEYSTORE_PASSWORD));
             setWebAppLocation(properties.getProperty(WEBAPP_DIR));
             setAccessLogFile(properties.getProperty(ACCESS_LOG, "access.log"));
+            setSessionTimeout(Integer.valueOf(properties.getProperty(SESSION_TIMEOUT, "10")));
         } catch (final IOException e) {
             LOG.warn("Failed to load configuration from server.properties file", e);
         }
@@ -216,8 +219,9 @@ public class ServerDaemon implements Daemon {
         final WebAppContext webApp = new WebAppContext();
         webApp.setContextPath(contextPath);
         webApp.setInitParameter("org.eclipse.jetty.servlet.Default.dirAllowed", "false");
+        webApp.getSessionHandler().setMaxInactiveInterval(sessionTimeout * 60);
 
-        // Configure GZIP
+        // GZIP handler
         final GzipHandler gzipHandler = new GzipHandler();
         gzipHandler.addIncludedMimeTypes("text/html", "text/xml", "text/css", "text/plain", "text/javascript", "application/javascript", "application/json", "application/xml");
         gzipHandler.setIncludedMethods("GET", "POST");
@@ -230,15 +234,17 @@ public class ServerDaemon implements Daemon {
             webApp.setWar(webAppLocation);
         }
 
+        // Request log handler
         final RequestLogHandler log = new RequestLogHandler();
         log.setRequestLog(createRequestLog());
 
-        // Rewrite handler for root
+        // Redirect root context handler
         MovedContextHandler rootRedirect = new MovedContextHandler();
         rootRedirect.setContextPath("/");
         rootRedirect.setNewContextURL(contextPath);
         rootRedirect.setPermanent(true);
 
+        // Put rootRedirect at the end!
         return new HandlerCollection(log, gzipHandler, rootRedirect);
     }
 
@@ -303,5 +309,9 @@ public class ServerDaemon implements Daemon {
 
     public void setWebAppLocation(String webAppLocation) {
         this.webAppLocation = webAppLocation;
+    }
+
+    public void setSessionTimeout(int sessionTimeout) {
+        this.sessionTimeout = sessionTimeout;
     }
 }
