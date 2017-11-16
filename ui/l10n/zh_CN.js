@@ -636,6 +636,7 @@ var dictionary = {
     "label.devices": "设备",
     "label.dhcp": "DHCP",
     "label.direct.attached.public.ip": "直连公用 IP",
+    "label.direct.download":"Direct Download",
     "label.direct.ips": "共享网络 IP",
     "label.disable.autoscale": "禁用自动缩放",
     "label.disable.host": "禁用主机",

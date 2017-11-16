@@ -1167,6 +1167,10 @@ cloudStack.docs = {
         desc: 'The Management Server will download the file from the specified URL, such as http://my.web.server/filename.iso',
         externalLink: ''
     },
+    helpRegisterISODirectDownload: {
+        desc: 'KVM Only: Secondary Storage is bypassed and ISO is downloaded to Primary Storage on deployment',
+        externalLink: ''
+    },
     helpRegisterISOZone: {
         desc: 'Choose the zone where you want the ISO to be available, or All Zones to make it available throughout the cloud',
         externalLink: ''
@@ -1202,6 +1206,10 @@ cloudStack.docs = {
     },
     helpRegisterTemplateURL: {
         desc: 'The Management Server will download the file from the specified URL, such as http://my.web.server/filename.vhd.gz',
+        externalLink: ''
+    },
+    helpRegisterTemplateDirectDownload: {
+        desc: 'KVM Only: Secondary Storage is bypassed and template/ISO is downloaded to Primary Storage on deployment',
         externalLink: ''
     },
     helpRegisterTemplateZone: {

@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.template;
 
+import com.cloud.hypervisor.Hypervisor;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -51,6 +52,11 @@ public class RegisterTemplateCmdByAdmin extends RegisterTemplateCmd {
             if (zoneIds != null && zoneIds.size() > 1 && zoneIds.contains(-1L))
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                         "Parameter zoneids cannot combine all zones (-1) option with other zones");
+
+            if (isDirectDownload() && !hypervisor.equals(Hypervisor.HypervisorType.KVM.toString())) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                        "Parameter directdownload is only allowed for KVM templates");
+            }
 
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null){

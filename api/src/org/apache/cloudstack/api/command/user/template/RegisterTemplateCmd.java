@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import com.cloud.hypervisor.Hypervisor;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -70,7 +71,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     private String format;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "the target hypervisor for the template")
-    private String hypervisor;
+    protected String hypervisor;
 
     @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true if this template is a featured template, false otherwise")
     private Boolean featured;
@@ -154,6 +155,11 @@ public class RegisterTemplateCmd extends BaseCmd {
                     "Passing only -1 to this will cause the template to be registered as a cross " +
                     "zone template and will be copied to all zones. ")
     protected List<Long> zoneIds;
+
+    @Parameter(name=ApiConstants.DIRECT_DOWNLOAD,
+                type = CommandType.BOOLEAN,
+                description = "true if template should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
+    private Boolean directDownload;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -263,6 +269,10 @@ public class RegisterTemplateCmd extends BaseCmd {
         return isRoutingType;
     }
 
+    public boolean isDirectDownload() {
+        return directDownload == null ? false : directDownload;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -300,6 +310,11 @@ public class RegisterTemplateCmd extends BaseCmd {
             if (zoneIds != null && zoneIds.size() > 1 && zoneIds.contains(-1L))
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                         "Parameter zoneids cannot combine all zones (-1) option with other zones");
+
+            if (isDirectDownload() && !hypervisor.equals(Hypervisor.HypervisorType.KVM.toString())) {
+                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                        "Parameter directdownload is only allowed for KVM templates");
+            }
 
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null) {

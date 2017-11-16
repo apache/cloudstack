@@ -2200,8 +2200,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             KVMStoragePool pool = null;
             final DataTO data = volume.getData();
             if (volume.getType() == Volume.Type.ISO && data.getPath() != null) {
-                final NfsTO nfsStore = (NfsTO)data.getDataStore();
-                final String volPath = nfsStore.getUrl() + File.separator + data.getPath();
+                DataStoreTO dataStore = data.getDataStore();
+                String dataStoreUrl = null;
+                if (dataStore instanceof NfsTO) {
+                    NfsTO nfsStore = (NfsTO)data.getDataStore();
+                    dataStoreUrl = nfsStore.getUrl();
+                } else if (dataStore instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO) dataStore).getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+                    //In order to support directly downloaded ISOs
+                    String psHost = ((PrimaryDataStoreTO) dataStore).getHost();
+                    String psPath = ((PrimaryDataStoreTO) dataStore).getPath();
+                    dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+                }
+                final String volPath = dataStoreUrl + File.separator + data.getPath();
                 final int index = volPath.lastIndexOf("/");
                 final String volDir = volPath.substring(0, index);
                 final String volName = volPath.substring(index + 1);

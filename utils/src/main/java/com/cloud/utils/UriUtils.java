@@ -34,7 +34,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
+import java.util.Map;
+import java.util.HashMap;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
@@ -55,6 +59,10 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.google.common.base.Strings;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 public class UriUtils {
 
@@ -289,6 +297,94 @@ public class UriUtils {
         }
     }
 
+    protected static Map<String, List<String>> getMultipleValuesFromXML(InputStream is, String[] tagNames) {
+        Map<String, List<String>> returnValues = new HashMap<String, List<String>>();
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = factory.newDocumentBuilder();
+            Document doc = docBuilder.parse(is);
+            Element rootElement = doc.getDocumentElement();
+            for (int i = 0; i < tagNames.length; i++) {
+                NodeList targetNodes = rootElement.getElementsByTagName(tagNames[i]);
+                if (targetNodes.getLength() <= 0) {
+                    s_logger.error("no " + tagNames[i] + " tag in XML response...returning null");
+                } else {
+                    List<String> valueList = new ArrayList<String>();
+                    for (int j = 0; j < targetNodes.getLength(); j++) {
+                        Node node = targetNodes.item(j);
+                        valueList.add(node.getTextContent());
+                    }
+                    returnValues.put(tagNames[i], valueList);
+                }
+            }
+        } catch (Exception ex) {
+            s_logger.error(ex);
+        }
+        return returnValues;
+    }
+
+    /**
+     * Check if there is at least one existent URL defined on metalink
+     * @param url metalink url
+     * @return true if at least one existent URL defined on metalink, false if not
+     */
+    protected static boolean checkUrlExistenceMetalink(String url) {
+        HttpClient httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());
+        GetMethod getMethod = new GetMethod(url);
+        try {
+            if (httpClient.executeMethod(getMethod) == HttpStatus.SC_OK) {
+                InputStream is = getMethod.getResponseBodyAsStream();
+                Map<String, List<String>> metalinkUrls = getMultipleValuesFromXML(is, new String[] {"url"});
+                if (metalinkUrls.containsKey("url")) {
+                    List<String> urls = metalinkUrls.get("url");
+                    boolean validUrl = false;
+                    for (String u : urls) {
+                        if (url.endsWith("torrent")) {
+                            continue;
+                        }
+                        try {
+                            UriUtils.checkUrlExistence(u);
+                            validUrl = true;
+                            break;
+                        }
+                        catch (IllegalArgumentException e) {
+                            s_logger.warn(e.getMessage());
+                        }
+                    }
+                    return validUrl;
+                }
+            }
+        } catch (IOException e) {
+            s_logger.warn(e.getMessage());
+        }
+        return false;
+    }
+
+    /**
+     * Get list of urls on metalink
+     * @param metalinkUrl
+     * @return
+     */
+    public static List<String> getMetalinkUrls(String metalinkUrl) {
+        HttpClient httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());
+        GetMethod getMethod = new GetMethod(metalinkUrl);
+        List<String> urls = new ArrayList<>();
+        try (
+                InputStream is = getMethod.getResponseBodyAsStream()
+        ) {
+            if (httpClient.executeMethod(getMethod) == HttpStatus.SC_OK) {
+                Map<String, List<String>> metalinkUrlsMap = getMultipleValuesFromXML(is, new String[] {"url"});
+                if (metalinkUrlsMap.containsKey("url")) {
+                    List<String> metalinkUrls = metalinkUrlsMap.get("url");
+                    urls.addAll(metalinkUrls);
+                }
+            }
+        } catch (IOException e) {
+            s_logger.warn(e.getMessage());
+        }
+        return urls;
+    }
+
     // use http HEAD method to validate url
     public static void checkUrlExistence(String url) {
         if (url.toLowerCase().startsWith("http") || url.toLowerCase().startsWith("https")) {
@@ -297,6 +393,9 @@ public class UriUtils {
             try {
                 if (httpClient.executeMethod(httphead) != HttpStatus.SC_OK) {
                     throw new IllegalArgumentException("Invalid URL: " + url);
+                }
+                if (url.endsWith("metalink") && !checkUrlExistenceMetalink(url)) {
+                    throw new IllegalArgumentException("Invalid URLs defined on metalink: " + url);
                 }
             } catch (HttpException hte) {
                 throw new IllegalArgumentException("Cannot reach URL: " + url);
@@ -320,7 +419,8 @@ public class UriUtils {
                 (!uripath.toLowerCase().endsWith("img.gz")) && (!uripath.toLowerCase().endsWith("img.zip")) && (!uripath.toLowerCase().endsWith("img.bz2")) &&
                 (!uripath.toLowerCase().endsWith("raw")) && (!uripath.toLowerCase().endsWith("raw.gz")) && (!uripath.toLowerCase().endsWith("raw.bz2")) &&
                 (!uripath.toLowerCase().endsWith("raw.zip")) && (!uripath.toLowerCase().endsWith("iso")) && (!uripath.toLowerCase().endsWith("iso.zip"))
-                && (!uripath.toLowerCase().endsWith("iso.bz2")) && (!uripath.toLowerCase().endsWith("iso.gz"))) {
+                && (!uripath.toLowerCase().endsWith("iso.bz2")) && (!uripath.toLowerCase().endsWith("iso.gz"))
+                && (!uripath.toLowerCase().endsWith("metalink"))) {
             throw new IllegalArgumentException("Please specify a valid " + format.toLowerCase());
         }
 
@@ -338,7 +438,8 @@ public class UriUtils {
                 && (!uripath.toLowerCase().endsWith("qcow2")
                         && !uripath.toLowerCase().endsWith("qcow2.zip")
                         && !uripath.toLowerCase().endsWith("qcow2.bz2")
-                        && !uripath.toLowerCase().endsWith("qcow2.gz")))
+                        && !uripath.toLowerCase().endsWith("qcow2.gz"))
+                        && !uripath.toLowerCase().endsWith("metalink"))
                 || (format.equalsIgnoreCase("ova")
                 && (!uripath.toLowerCase().endsWith("ova")
                         && !uripath.toLowerCase().endsWith("ova.zip")

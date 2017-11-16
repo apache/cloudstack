@@ -1108,7 +1108,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         //if (vm.getType() == VirtualMachine.Type.User && vm.getTemplate().getFormat() == ImageFormat.ISO) {
         if (vm.getType() == VirtualMachine.Type.User) {
-            _tmpltMgr.prepareIsoForVmProfile(vm);
+            _tmpltMgr.prepareIsoForVmProfile(vm, dest);
             //DataTO dataTO = tmplFactory.getTemplate(vm.getTemplate().getId(), DataStoreRole.Image, vm.getVirtualMachine().getDataCenterId()).getTO();
             //DiskTO iso = new DiskTO(dataTO, 3L, null, Volume.Type.ISO);
             //vm.addDisk(iso);
@@ -1287,9 +1287,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 TemplateInfo templ = tmplFactory.getReadyTemplateOnImageStore(templateId, dest.getDataCenter().getId());
 
                 if (templ == null) {
-                    s_logger.debug("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
-
-                    throw new CloudRuntimeException("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
+                    if (tmplFactory.isTemplateMarkedForDirectDownload(templateId)) {
+                        // Template is marked for direct download bypassing Secondary Storage
+                        templ = tmplFactory.getReadyBypassedTemplateOnPrimaryStore(templateId, destPool.getId(), dest.getHost().getId());
+                    } else {
+                        s_logger.debug("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
+                        throw new CloudRuntimeException("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
+                    }
                 }
 
                 PrimaryDataStore primaryDataStore = (PrimaryDataStore)destPool;

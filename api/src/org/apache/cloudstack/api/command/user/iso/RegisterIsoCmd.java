@@ -108,6 +108,11 @@ public class RegisterIsoCmd extends BaseCmd {
                description = "true if ISO contains XS/VMWare tools inorder to support dynamic scaling of VM CPU/memory")
     protected Boolean isDynamicallyScalable;
 
+    @Parameter(name=ApiConstants.DIRECT_DOWNLOAD,
+            type = CommandType.BOOLEAN,
+            description = "true if ISO should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
+    private Boolean directDownload;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -166,6 +171,10 @@ public class RegisterIsoCmd extends BaseCmd {
 
     public Boolean isDynamicallyScalable() {
         return isDynamicallyScalable ==  null ? Boolean.FALSE : isDynamicallyScalable;
+    }
+
+    public boolean isDirectDownload() {
+        return directDownload == null ? false : directDownload;
     }
 
     /////////////////////////////////////////////////////

@@ -636,6 +636,7 @@ var dictionary = {
     "label.devices": "Devices",
     "label.dhcp": "DHCP",
     "label.direct.attached.public.ip": "Direct Attached Public IP",
+    "label.direct.download":"Direct Download",
     "label.direct.ips": "Shared Network IPs",
     "label.disable.autoscale": "Disable Autoscale",
     "label.disable.host": "Disable Host",

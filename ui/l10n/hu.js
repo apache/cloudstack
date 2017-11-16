@@ -636,6 +636,7 @@ var dictionary = {
     "label.devices": "Eszközök",
     "label.dhcp": "DHCP",
     "label.direct.attached.public.ip": "Direct Attached Public IP",
+    "label.direct.download":"Direct Download",
     "label.direct.ips": "Osztott hálózati IP címek",
     "label.disable.autoscale": "Automatikus skálázás kikapcsolása",
     "label.disable.host": "Kiszolgáló kikapcsolása",

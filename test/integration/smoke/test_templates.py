@@ -1197,3 +1197,163 @@ class TestCopyDeleteTemplate(cloudstackTestCase):
             "Removed state is not correct."
         )
         return
+
+class TestCreateTemplateWithDirectDownload(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(self):
+        self.testClient = super(TestCreateTemplateWithDirectDownload, self).getClsTestClient()
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self._cleanup = []
+        self.templates = []
+
+        self.services = self.testClient.getParsedTestDataConfig()
+        self.unsupportedHypervisor = False
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() not in ['kvm']:
+            # Direct Download is only available for KVM hypervisor
+            self.unsupportedHypervisor = True
+            self.skipTest("Skipping test because unsupported hypervisor\
+                            %s" % self.hypervisor)
+            return
+
+        # Get Zone, Domain and templates
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+        self.services["mode"] = self.zone.networktype
+        self.services["virtual_machine"]["zoneid"] = self.zone.id
+        self.account = Account.create(
+            self.apiclient,
+            self.services["account"],
+            admin=True,
+            domainid=self.domain.id
+        )
+        self._cleanup.append(self.account)
+        self.user = Account.create(
+            self.apiclient,
+            self.services["account"],
+            domainid=self.domain.id
+        )
+        self._cleanup.append(self.user)
+        self.service_offering = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offerings"]["tiny"]
+        )
+        self._cleanup.append(self.service_offering)
+
+        self.template = {
+            "name": "tiny-kvm",
+            "displaytext": "tiny kvm",
+            "format": "QCOW2",
+            "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "True",
+            "checksum": "{SHA-1}" + "6952e58f39b470bd166ace11ffd20bf479bed936",
+            "hypervisor": self.hypervisor,
+            "zoneid": self.zone.id,
+            "ostype": "Other Linux (64-bit)",
+            "directdownload": True
+        }
+
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                        %s" % self.hypervisor)
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created templates
+            cleanup_resources(self.apiclient, self.cleanup)
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_01_register_template_direct_download_flag(self):
+        """
+        Register a template using Direct Download flag
+        """
+        self.bypassed_template = Template.register(self.apiclient, self.template, zoneid=self.zone.id, hypervisor=self.hypervisor, randomize_name=False)
+        self._cleanup.append(self.bypassed_template)
+        self.templates.append(self.bypassed_template)
+
+        tmplt = self.dbclient.execute("select id, direct_download from vm_template where uuid='%s';" % self.bypassed_template.id)
+        det = tmplt[0]
+
+        self.assertEqual(det[1],
+                         1,
+                         "Template should be marked as Direct Download"
+                         )
+        qresultset = self.dbclient.execute("select download_state, state from template_store_ref where template_id='%s' and store_id is NULL;"
+                                           % det[0])
+        ref = qresultset[0]
+        self.assertEqual(ref[0],
+                         "BYPASSED",
+                         "Template store ref download state should be marked as BYPASSED"
+                         )
+        self.assertEqual(ref[1],
+                         "Ready",
+                         "Template store ref state should be marked as Ready"
+                         )
+        return
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_02_deploy_vm_from_direct_download_template(self):
+        """
+        Deploy a VM from a Direct Download registered template
+        """
+        bp = self.templates[0]
+        virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=bp.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id
+        )
+        self.cleanup.append(virtual_machine)
+        return
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_03_deploy_vm_wrong_checksum(self):
+        """
+        Deploy a VM from a Direct Download registered template with wrong checksum
+        """
+        self.template["checksum"]="{MD5}XXXXXXX"
+        tmpl = Template.register(self.apiclient, self.template, zoneid=self.zone.id, hypervisor=self.hypervisor, randomize_name=False)
+
+        try:
+            virtual_machine = VirtualMachine.create(
+                self.apiclient,
+                self.services["virtual_machine"],
+                templateid=tmpl.id,
+                accountid=self.account.name,
+                domainid=self.account.domainid,
+                serviceofferingid=self.service_offering.id
+            )
+            self.cleanup.append(tmpl)
+            self.fail("Expected to fail deployment")
+        except Exception as e:
+            self.debug("Expected exception")
+
+        self.cleanup.append(virtual_machine)
+        self.cleanup.append(tmpl)
+        return
