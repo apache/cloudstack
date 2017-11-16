@@ -29,9 +29,19 @@
     var mapRouterType = function (index, router) {
         var routerType = _l('label.menu.system');
 
-        if (router.projectid) routerType = _l('label.project');
-        if (router.vpcid) routerType = _l('label.vpc');
-        if ("isredundantrouter" in router && router.isredundantrouter) routerType = routerType + " (" + router.redundantstate + ")";
+        if (router.projectid) {
+            routerType = _l('label.project');
+            router.account = router.project;
+        }
+
+        if (router.vpcid) {
+            routerType = _l('label.vpc');
+            router.guestnetworkname = router.vpcname;
+        }
+
+        if ("isredundantrouter" in router && router.isredundantrouter) {
+            router.guestnetworkname = router.guestnetworkname + " (" + router.redundantstate + ")";
+        }
 
         return $.extend(router, {
             routerType: routerType
@@ -9478,6 +9488,12 @@
                                 },
                                 publicip: {
                                     label: 'label.public.ip'
+                                },
+                                account: {
+                                    label: 'label.account'
+                                },
+                                guestnetworkname: {
+                                    label: 'label.network'
                                 },
                                 routerType: {
                                     label: 'label.type'
