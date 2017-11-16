@@ -200,10 +200,27 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
             }
         }
 
-        sendModifierEvents(modifiers);
-        client.sendClientMouseEvent(lastPointerMask, x, y, code, modifiers);
-        if (lastPointerMask == 0)
-            sendModifierEvents(0);
+        if (event == InputEventType.MOUSE_DBLCLICK) {
+            if (code == 0) {
+                sendModifierEvents(modifiers);
+                client.sendClientMouseEvent(1, x, y, code, modifiers);
+                sendModifierEvents(modifiers);
+                client.sendClientMouseEvent(0, x, y, code, modifiers);
+                sendModifierEvents(0);
+                sendModifierEvents(modifiers);
+                client.sendClientMouseEvent(1, x, y, code, modifiers);
+                sendModifierEvents(modifiers);
+                client.sendClientMouseEvent(0, x, y, code, modifiers);
+                sendModifierEvents(0);
+            }
+        }
+
+        if (event != InputEventType.MOUSE_DBLCLICK) {
+            sendModifierEvents(modifiers);
+            client.sendClientMouseEvent(lastPointerMask, x, y, code, modifiers);
+            if (lastPointerMask == 0)
+                sendModifierEvents(0);
+        }
     }
 
     @Override

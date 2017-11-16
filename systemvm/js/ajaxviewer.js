@@ -1189,6 +1189,17 @@ AjaxViewer.prototype = {
 	installMouseHook: function() {
 		var ajaxViewer = this;
 		var target = $(document.body);
+
+		target.mousedblclick(function(e) {
+            if(!ajaxViewer.ptInPanel(e.pageX, e.pageY))
+                return true;
+
+            var pt = ajaxViewer.pageToPanel(e.pageX, e.pageY);
+            ajaxViewer.onMouseDblClick(pt.x, pt.y);
+
+            e.stopPropagation();
+            return false;
+        });
 		
 		target.mousemove(function(e) {
 			if(!ajaxViewer.ptInPanel(e.pageX, e.pageY))
@@ -1347,9 +1358,9 @@ AjaxViewer.prototype = {
 	onMouseUp: function(x, y, whichButton, modifiers) {
 		this.sendMouseEvent(AjaxViewer.MOUSE_UP, x, y, whichButton, modifiers);
 		
-		var curTick = new Date().getTime();
+		/*var curTick = new Date().getTime();
 		if(this.lastClickEvent.time && (curTick - this.lastClickEvent.time < 300)) {
-			this.onMouseDblClick(this.lastClickEvent.x, this.lastClickEvent.y, 
+			this.onMouseDblClick(this.lastClickEvent.x, this.lastClickEvent.y,
 				this.lastClickEvent.button, this.lastClickEvent.modifiers);
 		}
 		
@@ -1357,7 +1368,7 @@ AjaxViewer.prototype = {
 		this.lastClickEvent.y = y;
 		this.lastClickEvent.button = whichButton;
 		this.lastClickEvent.modifiers = modifiers;
-		this.lastClickEvent.time = curTick;
+		this.lastClickEvent.time = curTick;*/
 	},
 	
 	onMouseDblClick: function(x, y, whichButton, modifiers) {
