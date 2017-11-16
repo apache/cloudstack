@@ -25,7 +25,7 @@ context.path=/client
 http.port=8080
 
 # Max inactivity time in minutes for the session
-session.timeout=10
+session.timeout=30
 
 # Options to configure and enable HTTPS on management server
 #
