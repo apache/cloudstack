@@ -2365,12 +2365,18 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     private void populateAccount(ControlledEntityResponse response, long accountId) {
         Account account = ApiDBUtils.findAccountById(accountId);
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account == null) {
+            s_logger.debug("Unable to find account with id: " + accountId);
+        } else if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             // find the project
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
-            response.setProjectId(project.getUuid());
-            response.setProjectName(project.getName());
-            response.setAccountName(account.getAccountName());
+            if (project != null) {
+                response.setProjectId(project.getUuid());
+                response.setProjectName(project.getName());
+                response.setAccountName(account.getAccountName());
+            } else {
+                s_logger.debug("Unable to find project with id: " + account.getId());
+            }
         } else {
             response.setAccountName(account.getAccountName());
         }
