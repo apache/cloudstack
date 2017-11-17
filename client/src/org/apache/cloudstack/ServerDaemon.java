@@ -82,7 +82,7 @@ public class ServerDaemon implements Daemon {
 
     private int httpPort = 8080;
     private int httpsPort = 8443;
-    private int sessionTimeout = 10;
+    private int sessionTimeout = 30;
     private boolean httpsEnable = false;
     private String accessLogFile = "access.log";
     private String bindInterface = "";
@@ -126,7 +126,7 @@ public class ServerDaemon implements Daemon {
             setKeystorePassword(properties.getProperty(KEYSTORE_PASSWORD));
             setWebAppLocation(properties.getProperty(WEBAPP_DIR));
             setAccessLogFile(properties.getProperty(ACCESS_LOG, "access.log"));
-            setSessionTimeout(Integer.valueOf(properties.getProperty(SESSION_TIMEOUT, "10")));
+            setSessionTimeout(Integer.valueOf(properties.getProperty(SESSION_TIMEOUT, "30")));
         } catch (final IOException e) {
             LOG.warn("Failed to load configuration from server.properties file", e);
         }
