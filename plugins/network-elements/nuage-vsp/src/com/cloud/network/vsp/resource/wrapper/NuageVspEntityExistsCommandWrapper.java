@@ -27,6 +27,7 @@ import net.nuage.vsp.acs.client.exception.NuageVspException;
 import com.cloud.agent.api.manager.EntityExistsCommand;
 import com.cloud.dc.Vlan;
 import com.cloud.network.resource.NuageVspResource;
+import com.cloud.network.vpc.VpcVO;
 import com.cloud.resource.ResourceWrapper;
 
 @ResourceWrapper(handles =  EntityExistsCommand.class)
@@ -43,6 +44,9 @@ public final class NuageVspEntityExistsCommandWrapper extends NuageVspCommandWra
 
         if (Vlan.class.isAssignableFrom(clazz)) {
             entityType = NuageVspEntity.SHARED_NETWORK;
+        }
+        else if(VpcVO.class.isAssignableFrom(clazz)){
+            entityType = NuageVspEntity.ZONE;
         }
 
         return entityType;

@@ -166,6 +166,21 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             throw new ConcurrentOperationException("Unable to acquire lock on network " + networkId);
         }
 
+        /* Check if an acl template is used in combination with a pre-configured DT. -> show an error if there is
+        Rollback of the network fails in core CS -> networkOrchestrator. */
+        if(network.getVpcId() != null) {
+            VpcDetailVO detail = _vpcDetailsDao.findDetail(network.getVpcId(), NuageVspManager.nuageDomainTemplateDetailName);
+            if (detail != null && network.getNetworkACLId() != null) {
+                s_logger.error("Pre-configured DT are used in combination with ACL lists. Which is not supported.");
+                throw new IllegalArgumentException("CloudStack ACLs are not supported with Nuage Preconfigured Domain Template");
+            }
+
+            if(detail != null && !_nuageVspManager.checkIfDomainTemplateExist(network.getDomainId(),detail.getValue(),network.getDataCenterId(),null)){
+                s_logger.error("The provided domain template does not exist on the VSD.");
+                throw new IllegalArgumentException("The provided domain template does not exist on the VSD anymore.");
+            }
+        }
+
         NetworkVO implemented = null;
         try {
             if (offering.getGuestType() == GuestType.Isolated && network.getState() != State.Implementing) {

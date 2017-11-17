@@ -23,10 +23,12 @@ import javax.naming.ConfigurationException;
 
 import net.nuage.vsp.acs.client.exception.NuageVspException;
 
+import net.nuage.vsp.acs.client.exception.NuageVspUnsupportedRequestException;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.UnsupportedAnswer;
 import com.cloud.network.resource.NuageVspResource;
 import com.cloud.resource.CommandWrapper;
 
@@ -40,6 +42,9 @@ public abstract class NuageVspCommandWrapper<T extends Command> extends CommandW
             boolean success = executeNuageVspCommand(command, nuageVspResource);
             String detail = fillDetail(new StringBuilder(), command).append(" on ").append(nuageVspResource.getName()).toString();
             return new Answer(command, success, detail);
+        } catch (NuageVspUnsupportedRequestException e) {
+            s_logger.error("Failure during " + command + " on " + nuageVspResource.getName(), e);
+            return new UnsupportedAnswer(command, e.getMessage()); //New Exception so there is no stacktrace showed in the UI when changing ACL lists.
         } catch (NuageVspException | ConfigurationException e) {
             s_logger.error("Failure during " + command + " on " + nuageVspResource.getName(), e);
             return new Answer(command, e);
