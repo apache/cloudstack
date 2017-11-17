@@ -219,6 +219,20 @@ public interface ConfigurationManager {
 
     void createDefaultSystemNetworks(long zoneId) throws ConcurrentOperationException;
 
+    /**
+     * Release dedicated virtual ip ranges of a domain.
+     *
+     * @param domainId
+     * @return success/failure
+     */
+    boolean releaseDomainSpecificVirtualRanges(long domainId);
+
+    /**
+     * Release dedicated virtual ip ranges of an account.
+     *
+     * @param accountId
+     * @return success/failure
+     */
     boolean releaseAccountSpecificVirtualRanges(long accountId);
 
     /**

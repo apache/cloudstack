@@ -15,17 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.outofbandmanagement.dao;
+package org.apache.cloudstack.poll;
 
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.fsm.StateDao;
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
-import org.apache.cloudstack.outofbandmanagement.OutOfBandManagementVO;
-
-import java.util.List;
-
-public interface OutOfBandManagementDao extends GenericDao<OutOfBandManagementVO, Long>, StateDao<OutOfBandManagement.PowerState, OutOfBandManagement.PowerState.Event, OutOfBandManagement> {
-    OutOfBandManagement findByHost(long hostId);
-    List<OutOfBandManagementVO> findAllByManagementServer(long serverId);
-    void expireServerOwnership(long serverId);
+public interface BackgroundPollManager {
+    /**
+     * Submits a background poll task that need to run continuously in the background
+     * to poll external resources, update states, trigger actions etc.
+     * Tasks must be submitted by a manager in configure-phase, the list of submitted tasks
+     * are then submitted to the internal executor service during start-phase.
+     * @param task periodic background task
+     * @since 4.11
+     */
+    void submitTask(final BackgroundPollTask task);
 }

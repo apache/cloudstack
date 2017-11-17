@@ -19,10 +19,6 @@
 
 package com.cloud.network.guru;
 
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.deploy.DeployDestination;
@@ -42,6 +38,11 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.ejb.Local;
+import javax.inject.Inject;
 
 @Component
 public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
@@ -52,7 +53,7 @@ public class MidoNetGuestNetworkGuru extends GuestNetworkGuru {
 
     public MidoNetGuestNetworkGuru() {
         super();
-        _isolationMethods = new PhysicalNetwork.IsolationMethod[] {PhysicalNetwork.IsolationMethod.MIDO};
+        _isolationMethods = new PhysicalNetwork.IsolationMethod[] {new PhysicalNetwork.IsolationMethod("MIDO")};
     }
 
     @Override

@@ -30,9 +30,6 @@ public interface OutOfBandManagementService {
     ConfigKey<Long> ActionTimeout = new ConfigKey<Long>("Advanced", Long.class, "outofbandmanagement.action.timeout", "60",
                     "The out of band management action timeout in seconds, configurable by cluster", true, ConfigKey.Scope.Cluster);
 
-    ConfigKey<Long> SyncThreadInterval = new ConfigKey<Long>("Advanced", Long.class, "outofbandmanagement.sync.interval", "300000",
-            "The interval (in milliseconds) when the out-of-band management background sync are retrieved", true, ConfigKey.Scope.Global);
-
     ConfigKey<Integer> SyncThreadPoolSize = new ConfigKey<Integer>("Advanced", Integer.class, "outofbandmanagement.sync.poolsize", "50",
             "The out of band management background sync thread pool size", true, ConfigKey.Scope.Global);
 
@@ -49,7 +46,7 @@ public interface OutOfBandManagementService {
     OutOfBandManagementResponse disableOutOfBandManagement(Cluster cluster);
     OutOfBandManagementResponse disableOutOfBandManagement(Host host);
 
-    OutOfBandManagementResponse configureOutOfBandManagement(Host host, ImmutableMap<OutOfBandManagement.Option, String> options);
-    OutOfBandManagementResponse executeOutOfBandManagementPowerOperation(Host host, OutOfBandManagement.PowerOperation operation, Long timeout);
-    OutOfBandManagementResponse changeOutOfBandManagementPassword(Host host, String password);
+    OutOfBandManagementResponse configure(Host host, ImmutableMap<OutOfBandManagement.Option, String> options);
+    OutOfBandManagementResponse executePowerOperation(Host host, OutOfBandManagement.PowerOperation operation, Long timeout);
+    OutOfBandManagementResponse changePassword(Host host, String password);
 }

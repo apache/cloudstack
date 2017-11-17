@@ -16,16 +16,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-. /etc/default/cloud-passwd-srvr
-addr=$1;
-while [ "$ENABLED" == "1" ]
-do
-    python /opt/cloud/bin/passwd_server_ip.py $addr >/dev/null 2>/dev/null
-    rc=$?
-    if [ $rc -ne 0 ]
-    then
-        logger -t cloud "Password server failed with error code $rc. Restarting it..."
-        sleep 3
-    fi
-    . /etc/default/cloud-passwd-srvr
-done
+# Version @VERSION@
+#
+# script to perform logrotation on xenserver 6.0.2 and later
+
+/usr/sbin/logrotate  /etc/logrotate.d/cloudlog
+EXITVALUE=$?
+if [ $EXITVALUE != 0 ]; then
+/usr/bin/logger -t logrotate "ALERT exited abnormally with [$EXITVALUE]"
+fi
+[ -f /opt/xensource/bin/delete_old_logs_by_space ] && /opt/xensource/bin/delete_old_logs_by_space
+exit 0

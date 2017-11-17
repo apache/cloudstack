@@ -1706,6 +1706,11 @@
                                             array1.push("&maxiops=" + todb(maxIops));
                                         }
                                     }
+                                    //if original disk size  > new disk size
+                                    if ((args.context.volumes[0].type == "ROOT")
+                                    && (args.context.volumes[0].size > (newSize * (1024 * 1024 * 1024)))) {
+                                        return args.response.error('message.volume.root.shrink.disk.size');
+                                    }
 
 
                                     $.ajax({
