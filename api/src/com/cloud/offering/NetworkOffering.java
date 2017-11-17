@@ -78,6 +78,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
      */
     Integer getMulticastRateMbps();
 
+    boolean getForVpc();
+
     TrafficType getTrafficType();
 
     boolean getSpecifyVlan();

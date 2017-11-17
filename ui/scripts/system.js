@@ -29,8 +29,19 @@
     var mapRouterType = function (index, router) {
         var routerType = _l('label.menu.system');
 
-        if (router.projectid) routerType = _l('label.project');
-        if (router.vpcid) routerType = _l('label.vpc');
+        if (router.projectid) {
+            routerType = _l('label.project');
+            router.account = router.project;
+        }
+
+        if (router.vpcid) {
+            routerType = _l('label.vpc');
+            router.guestnetworkname = router.vpcname;
+        }
+
+        if ("isredundantrouter" in router && router.isredundantrouter) {
+            router.guestnetworkname = router.guestnetworkname + " (" + router.redundantstate + ")";
+        }
 
         return $.extend(router, {
             routerType: routerType
@@ -9478,6 +9489,12 @@
                                 publicip: {
                                     label: 'label.public.ip'
                                 },
+                                account: {
+                                    label: 'label.account'
+                                },
+                                guestnetworkname: {
+                                    label: 'label.network'
+                                },
                                 routerType: {
                                     label: 'label.type'
                                 },
@@ -9599,6 +9616,23 @@
                             },
                             detailView: {
                                 name: 'label.virtual.appliance.details',
+                                viewAll: [{
+                                    label: 'label.account',
+                                    path: 'accounts',
+                                    preFilter: function(args) {
+                                        if (args.context.routers[0].projectid)
+                                            return false;
+                                        if (args.context.routers[0].account == 'system')
+                                            return false;
+                                        return true;
+                                    }
+                                }, {
+                                    label: 'label.networks',
+                                    path: 'network',
+                                }, {
+                                    label: 'label.instances',
+                                    path: 'instances'
+                                }],
                                 actions: {
                                     start: {
                                         label: 'label.action.start.router',

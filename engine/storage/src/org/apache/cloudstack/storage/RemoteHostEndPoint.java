@@ -18,17 +18,15 @@
  */
 package org.apache.cloudstack.storage;
 
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -54,9 +52,11 @@ import com.cloud.vm.dao.SecondaryStorageVmDao;
 
 public class RemoteHostEndPoint implements EndPoint {
     private static final Logger s_logger = Logger.getLogger(RemoteHostEndPoint.class);
+
     private long hostId;
     private String hostAddress;
     private String publicAddress;
+
     @Inject
     AgentManager agentMgr;
     @Inject
@@ -65,10 +65,10 @@ public class RemoteHostEndPoint implements EndPoint {
     protected SecondaryStorageVmDao vmDao;
     @Inject
     protected HostDao _hostDao;
-    private ScheduledExecutorService executor;
+
+    private static ExecutorService executorService = Executors.newCachedThreadPool(new NamedThreadFactory("RemoteHostEndPoint"));
 
     public RemoteHostEndPoint() {
-        executor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("RemoteHostEndPoint"));
     }
 
     private void configure(Host host) {
@@ -134,17 +134,17 @@ public class RemoteHostEndPoint implements EndPoint {
     }
 
     private class CmdRunner extends ManagedContextRunnable implements Listener {
-        final AsyncCompletionCallback<Answer> callback;
-        Answer answer;
+        private final AsyncCompletionCallback<Answer> callback;
+        private Answer answer;
 
-        public CmdRunner(AsyncCompletionCallback<Answer> callback) {
+        CmdRunner(final AsyncCompletionCallback<Answer> callback) {
             this.callback = callback;
         }
 
         @Override
         public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-            answer = answers[0];
-            executor.schedule(this, 10, TimeUnit.SECONDS);
+            this.answer = answers[0];
+            RemoteHostEndPoint.executorService.submit(this);
             return true;
         }
 
@@ -204,7 +204,7 @@ public class RemoteHostEndPoint implements EndPoint {
 
         @Override
         protected void runInContext() {
-            callback.complete(answer);
+            this.callback.complete(this.answer);
         }
     }
 

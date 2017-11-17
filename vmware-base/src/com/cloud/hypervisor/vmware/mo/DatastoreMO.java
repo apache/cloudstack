@@ -24,7 +24,9 @@ import org.apache.log4j.Logger;
 import com.vmware.vim25.DatastoreHostMount;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.FileInfo;
+import com.vmware.vim25.FileQueryFlags;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
+import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.HostMountInfo;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
@@ -337,6 +339,36 @@ public class DatastoreMO extends BaseMO {
 
         s_logger.info("File " + fileFullPath + " does not exist on datastore");
         return false;
+    }
+
+    public long fileDiskSize(String fileFullPath) throws Exception {
+        long size = 0;
+        DatastoreFile file = new DatastoreFile(fileFullPath);
+        DatastoreFile dirFile = new DatastoreFile(file.getDatastoreName(), file.getDir());
+
+        HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
+
+        HostDatastoreBrowserSearchSpec searchSpec = new HostDatastoreBrowserSearchSpec();
+        FileQueryFlags fqf = new FileQueryFlags();
+        fqf.setFileSize(true);
+        fqf.setFileOwner(true);
+        fqf.setModification(true);
+        searchSpec.setDetails(fqf);
+        searchSpec.setSearchCaseInsensitive(false);
+        searchSpec.getMatchPattern().add(file.getFileName());
+        s_logger.debug("Search file " + file.getFileName() + " on " + dirFile.getPath()); //ROOT-2.vmdk, [3ecf7a579d3b3793b86d9d019a97ae27] s-2-VM
+        HostDatastoreBrowserSearchResults result = browserMo.searchDatastore(dirFile.getPath(), searchSpec);
+        if (result != null) {
+            List<FileInfo> info = result.getFile();
+            for (FileInfo fi : info) {
+                if (file.getFileName().equals(fi.getPath())) {
+                    s_logger.debug("File found = " + fi.getPath() + ", size=" + fi.getFileSize());
+                    return fi.getFileSize();
+                }
+            }
+        }
+        s_logger.debug("File " + fileFullPath + " does not exist on datastore");
+        return size;
     }
 
     public boolean folderExists(String folderParentDatastorePath, String folderName) throws Exception {

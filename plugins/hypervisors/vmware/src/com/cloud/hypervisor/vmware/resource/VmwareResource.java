@@ -146,6 +146,8 @@ import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.GetVolumeStatsAnswer;
+import com.cloud.agent.api.GetVolumeStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.HostVmStateReportEntry;
 import com.cloud.agent.api.MaintainAnswer;
@@ -199,6 +201,7 @@ import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.ValidateSnapshotAnswer;
 import com.cloud.agent.api.ValidateSnapshotCommand;
 import com.cloud.agent.api.VmStatsEntry;
+import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
 import com.cloud.agent.api.check.CheckSshCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
@@ -414,6 +417,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((GetVmNetworkStatsCommand) cmd);
             } else if (clz == GetVmDiskStatsCommand.class) {
                 answer = execute((GetVmDiskStatsCommand)cmd);
+            } else if (cmd instanceof GetVolumeStatsCommand) {
+                return execute((GetVolumeStatsCommand)cmd);
             } else if (clz == CheckHealthCommand.class) {
                 answer = execute((CheckHealthCommand)cmd);
             } else if (clz == StopCommand.class) {
@@ -3273,6 +3278,44 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     protected Answer execute(GetVmNetworkStatsCommand cmd) {
         return new GetVmNetworkStatsAnswer(cmd, null, null, null);
+    }
+
+    protected GetVolumeStatsAnswer execute(GetVolumeStatsCommand cmd) {
+        try {
+            VmwareHypervisorHost srcHyperHost = getHyperHost(getServiceContext());
+            ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(srcHyperHost, cmd.getPoolUuid());
+            assert (morDs != null);
+            DatastoreMO primaryStorageDatastoreMo = new DatastoreMO(getServiceContext(), morDs);
+            VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+            ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+            DatacenterMO dcMo = new DatacenterMO(getServiceContext(), dcMor);
+            HashMap<String, VolumeStatsEntry> statEntry = new HashMap<String, VolumeStatsEntry>();
+
+            for (String chainInfo : cmd.getVolumeUuids()){
+                if (chainInfo != null) {
+                    VirtualMachineDiskInfo infoInChain = _gson.fromJson(chainInfo, VirtualMachineDiskInfo.class);
+                    if (infoInChain != null) {
+                        String[] disks = infoInChain.getDiskChain();
+                        if (disks.length > 0) {
+                            for (String diskPath : disks) {
+                                DatastoreFile file = new DatastoreFile(diskPath);
+                                VirtualMachineMO vmMo = dcMo.findVm(file.getDir());
+                                Pair<VirtualDisk, String> vds = vmMo.getDiskDevice(file.getFileName(), true);
+                                long virtualsize = vds.first().getCapacityInKB() * 1024;
+                                long physicalsize = primaryStorageDatastoreMo.fileDiskSize(file.getPath());
+                                VolumeStatsEntry vse = new VolumeStatsEntry(chainInfo, physicalsize, virtualsize);
+                                statEntry.put(chainInfo, vse);
+                            }
+                        }
+                    }
+                }
+            }
+            return new GetVolumeStatsAnswer(cmd, "", statEntry);
+        } catch (Exception e) {
+            s_logger.info("VOLSTAT GetVolumeStatsCommand failed " + e.getMessage());
+        }
+
+        return new GetVolumeStatsAnswer(cmd, "", null);
     }
 
     protected Answer execute(CheckHealthCommand cmd) {

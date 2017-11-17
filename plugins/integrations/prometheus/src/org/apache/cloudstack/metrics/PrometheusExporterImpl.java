@@ -114,13 +114,23 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
 
             final String cpuFactor = String.valueOf(CapacityManager.CpuOverprovisioningFactor.valueIn(host.getClusterId()));
             final CapacityVO cpuCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU);
-            metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, cpuCapacity.getUsedCapacity()));
-            metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, cpuCapacity.getTotalCapacity()));
+            if (cpuCapacity != null) {
+                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, cpuCapacity.getUsedCapacity()));
+                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, cpuCapacity.getTotalCapacity()));
+            } else {
+                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, USED, 0L));
+                metricsList.add(new ItemHostCpu(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), cpuFactor, TOTAL, 0L));
+            }
 
             final String memoryFactor = String.valueOf(CapacityManager.MemOverprovisioningFactor.valueIn(host.getClusterId()));
             final CapacityVO memCapacity = capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_MEMORY);
-            metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, USED, memCapacity.getUsedCapacity()));
-            metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, TOTAL, memCapacity.getTotalCapacity()));
+            if (memCapacity != null) {
+                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, USED, memCapacity.getUsedCapacity()));
+                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, TOTAL, memCapacity.getTotalCapacity()));
+            } else {
+                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, USED, 0L));
+                metricsList.add(new ItemHostMemory(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), memoryFactor, TOTAL, 0L));
+            }
 
             metricsList.add(new ItemHostVM(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), vmDao.listByHostId(host.getId()).size()));
 
@@ -128,6 +138,9 @@ public class PrometheusExporterImpl extends ManagerBase implements PrometheusExp
             if (coreCapacity != null) {
                 metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), USED, coreCapacity.getUsedCapacity()));
                 metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), TOTAL, coreCapacity.getTotalCapacity()));
+            } else {
+                metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), USED, 0L));
+                metricsList.add(new ItemVMCore(zoneName, zoneUuid, host.getName(), host.getUuid(), host.getPrivateIpAddress(), TOTAL, 0L));
             }
         }
 

@@ -292,6 +292,7 @@ public class ConsoleProxyAjaxHandler implements HttpHandler {
             case 2:     // mouse down
             case 3:     // mouse up
             case 8:     // mouse double click
+            case 9:     // mouse scroll
                 str = queryMap.get("x");
                 if (str != null) {
                     try {

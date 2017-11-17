@@ -17,11 +17,14 @@
 package com.cloud.tags.dao;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
 
 public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long> {
 
@@ -35,4 +38,6 @@ public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long> {
     List<? extends ResourceTag> listBy(long resourceId, ResourceObjectType resourceType);
 
     void updateResourceId(long srcId, long destId, ResourceObjectType resourceType);
+
+    Map<String, Set<ResourceTagResponse>> listTags();
 }

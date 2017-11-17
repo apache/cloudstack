@@ -914,6 +914,25 @@
                         var data = {};
                         listViewDataProvider(args, data);
 
+                        if ("routers" in args.context) {
+                            if ("vpcid" in args.context.routers[0]) {
+                                $.extend(data, {
+                                    vpcid: args.context.routers[0].vpcid
+                                });
+                            } else {
+                                if ("guestnetworkid" in args.context.routers[0]) {
+                                    $.extend(data, {
+                                        id: args.context.routers[0].guestnetworkid
+                                    });
+                                }
+                            }
+                            if ("projectid" in args.context.routers[0]) {
+                                $.extend(data, {
+                                    projectid: args.context.routers[0].projectid
+                                });
+                            }
+                        }
+
                         $.ajax({
                             url: createURL('listNetworks'),
                             data: data,
@@ -931,7 +950,7 @@
 
                     detailView: {
                         name: 'label.guest.network.details',
-                        viewAll: {
+                        viewAll: [{
                             path: 'network.ipAddresses',
                             label: 'label.menu.ipaddresses',
                             preFilter: function(args) {
@@ -940,7 +959,10 @@
 
                                 return true;
                             }
-                        },
+                        }, {
+                            label: 'label.instances',
+                            path: 'instances'
+                        }],
                         actions: {
                             edit: {
                                 label: 'label.edit',
@@ -6334,7 +6356,6 @@
                                 }
                             },
                             action: function(args) {
-                                console.log(args.context);
                                 $.ajax({
                                     url: createURL('removeVpnUser'),
                                     data: {

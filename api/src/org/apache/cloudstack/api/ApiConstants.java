@@ -85,6 +85,7 @@ public class ApiConstants {
     public static final String DEVICE_ID = "deviceid";
     public static final String DISK_OFFERING_ID = "diskofferingid";
     public static final String DISK_SIZE = "disksize";
+    public static final String UTILIZATION = "utilization";
     public static final String DRIVER = "driver";
     public static final String ROOT_DISK_SIZE = "rootdisksize";
     public static final String DISPLAY_NAME = "displayname";
@@ -205,6 +206,7 @@ public class ApiConstants {
     public static final String SSHKEY_ENABLED = "sshkeyenabled";
     public static final String PATH = "path";
     public static final String POD_ID = "podid";
+    public static final String POD_NAME = "podname";
     public static final String POD_IDS = "podids";
     public static final String POLICY_ID = "policyid";
     public static final String PORT = "port";
@@ -300,6 +302,7 @@ public class ApiConstants {
     public static final String VIRTUAL_MACHINE_COUNT = "virtualmachinecount";
     public static final String USAGE_ID = "usageid";
     public static final String USAGE_TYPE = "usagetype";
+    public static final String INCLUDE_TAGS = "includetags";
 
     public static final String VLAN = "vlan";
     public static final String VLAN_RANGE = "vlanrange";

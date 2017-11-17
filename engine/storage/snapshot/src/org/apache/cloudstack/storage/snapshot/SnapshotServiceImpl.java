@@ -22,8 +22,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -48,6 +46,7 @@ import org.apache.cloudstack.storage.command.CommandResult;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
@@ -62,7 +61,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 
-@Component
 public class SnapshotServiceImpl implements SnapshotService {
     private static final Logger s_logger = Logger.getLogger(SnapshotServiceImpl.class);
     @Inject

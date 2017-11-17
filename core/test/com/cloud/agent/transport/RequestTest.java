@@ -20,7 +20,6 @@
 package com.cloud.agent.transport;
 
 import java.nio.ByteBuffer;
-
 import junit.framework.TestCase;
 
 import org.apache.log4j.Level;
@@ -32,13 +31,16 @@ import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BadCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.GetHostStatsCommand;
+import com.cloud.agent.api.GetVolumeStatsCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
 import com.cloud.agent.api.UpdateHostPasswordCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
 import com.cloud.agent.api.storage.ListTemplateCommand;
 import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.transport.Request.Version;
 import com.cloud.exception.UnsupportedVersionException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.serializer.GsonHelper;
@@ -248,6 +250,28 @@ public class RequestTest extends TestCase {
         for (int i = 0; i < cmd1.length; i++) {
             assert cmd1[i].getClass().equals(cmd2[i].getClass());
         }
+    }
+
+    public void testGoodCommand() {
+        s_logger.info("Testing good Command");
+        String content = "[{\"com.cloud.agent.api.GetVolumeStatsCommand\":{\"volumeUuids\":[\"dcc860ac-4a20-498f-9cb3-bab4d57aa676\"],"
+                + "\"poolType\":\"NetworkFilesystem\",\"poolUuid\":\"e007c270-2b1b-3ce9-ae92-a98b94eef7eb\",\"contextMap\":{},\"wait\":5}}]";
+        Request sreq = new Request(Version.v2, 1L, 2L, 3L, 1L, (short)1, content);
+        sreq.setSequence(1);
+        Command cmds[] = sreq.getCommands();
+        s_logger.debug("Command class = " + cmds[0].getClass().getSimpleName());
+        assert cmds[0].getClass().equals(GetVolumeStatsCommand.class);
+    }
+
+    public void testBadCommand() {
+        s_logger.info("Testing Bad Command");
+        String content = "[{\"com.cloud.agent.api.SomeJunkCommand\":{\"volumeUuids\":[\"dcc860ac-4a20-498f-9cb3-bab4d57aa676\"],"
+                + "\"poolType\":\"NetworkFilesystem\",\"poolUuid\":\"e007c270-2b1b-3ce9-ae92-a98b94eef7eb\",\"contextMap\":{},\"wait\":5}}]";
+        Request sreq = new Request(Version.v2, 1L, 2L, 3L, 1L, (short)1, content);
+        sreq.setSequence(1);
+        Command cmds[] = sreq.getCommands();
+        s_logger.debug("Command class = " + cmds[0].getClass().getSimpleName());
+        assert cmds[0].getClass().equals(BadCommand.class);
     }
 
 }

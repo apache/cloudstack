@@ -1752,7 +1752,7 @@
                                     if (isAdmin()) {
                                         hiddenFields = [];
                                     } else {
-                                        hiddenFields = ['storage', 'hypervisor'];
+                                        hiddenFields = ['storage', 'hypervisor', 'virtualsize', 'physicalsize', 'utilization', 'clusterid', 'clustername'];
                                     }
                                     return hiddenFields;
                                 },
@@ -1810,6 +1810,33 @@
                                     },
                                     size: {
                                         label: 'label.size',
+                                        converter: function(args) {
+                                            if (args == null || args == 0)
+                                                return "";
+                                            else
+                                                return cloudStack.converters.convertBytes(args);
+                                        }
+                                    },
+                                    clusterid: {
+					label: 'label.cluster'
+                                    },
+                                    clustername: {
+					label: 'label.cluster.name'
+                                    },
+                                    physicalsize: {
+                                        label: 'label.disk.physicalsize',
+                                        converter: function(args) {
+                                            if (args == null || args == 0)
+                                                return "";
+                                            else
+                                                return cloudStack.converters.convertBytes(args);
+                                        }
+                                    },
+                                    utilization: {
+                                        label: 'label.disk.utilisation'
+                                    },
+                                    virtualsize: {
+                                        label: 'label.disk.virtualsize',
                                         converter: function(args) {
                                             if (args == null || args == 0)
                                                 return "";

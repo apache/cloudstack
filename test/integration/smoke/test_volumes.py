@@ -35,7 +35,8 @@ from marvin.lib.base import (ServiceOffering,
 from marvin.lib.common import (get_domain,
                                 get_zone,
                                 get_template,
-                                find_storage_pool_type)
+                                find_storage_pool_type,
+                                get_pod)
 from marvin.lib.utils import checkVolumeSize
 from marvin.codes import SUCCESS, FAILED, XEN_SERVER
 from nose.plugins.attrib import attr
@@ -797,3 +798,74 @@ class TestVolumes(cloudstackTestCase):
                         "Check if volume exists in ListVolumes"
                     )
         return
+
+    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_10_list_volumes(self):
+
+        # Validate the following
+        #
+        # 1. List Root Volume and waits until it has the newly introduced attributes
+        #
+        # 2. Verifies return attributes has values different from none, when instance is running
+        #
+
+        list_vm = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)[0]
+
+        host = Host.list(
+            self.apiclient,
+            type='Routing',
+            virtualmachineid=list_vm.id
+        )[0]
+        list_pods = get_pod(self.apiclient, self.zone.id, host.podid)
+
+        root_volume = self.wait_for_attributes_and_return_root_vol()
+
+        self.assertTrue(hasattr(root_volume, "utilization"))
+        self.assertTrue(root_volume.utilization is not None)
+
+        self.assertTrue(hasattr(root_volume, "virtualsize"))
+        self.assertTrue(root_volume.virtualsize is not None)
+
+        self.assertTrue(hasattr(root_volume, "physicalsize"))
+        self.assertTrue(root_volume.physicalsize is not None)
+
+        self.assertTrue(hasattr(root_volume, "vmname"))
+        self.assertEqual(root_volume.vmname, list_vm.name)
+
+        self.assertTrue(hasattr(root_volume, "clustername"))
+        self.assertTrue(root_volume.clustername is not None)
+
+        self.assertTrue(hasattr(root_volume, "clusterid"))
+        self.assertTrue(root_volume.clusterid is not None)
+
+        self.assertTrue(hasattr(root_volume, "storageid"))
+        self.assertTrue(root_volume.storageid is not None)
+
+        self.assertTrue(hasattr(root_volume, "storage"))
+        self.assertTrue(root_volume.storage is not None)
+
+        self.assertTrue(hasattr(root_volume, "zoneid"))
+        self.assertEqual(root_volume.zoneid, self.zone.id)
+
+        self.assertTrue(hasattr(root_volume, "zonename"))
+        self.assertEqual(root_volume.zonename, self.zone.name)
+
+        self.assertTrue(hasattr(root_volume, "podid"))
+        self.assertEqual(root_volume.podid, list_pods.id)
+
+        self.assertTrue(hasattr(root_volume, "podname"))
+        self.assertEqual(root_volume.podname, list_pods.name)
+
+    def wait_for_attributes_and_return_root_vol(self):
+
+        for i in range(60):
+            list_volume_response = Volume.list(
+                self.apiClient,
+                virtualmachineid=self.virtual_machine.id,
+                type='ROOT',
+                listall=True
+            )
+            if list_volume_response[0].virtualsize is not None:
+                return list_volume_response[0]
+
+            time.sleep(1)

@@ -34,6 +34,8 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.google.common.collect.Sets;
+
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -357,6 +359,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
+
+    private static final Set<Provider> VPC_ONLY_PROVIDERS = Sets.newHashSet(Provider.VPCVirtualRouter, Provider.JuniperContrailVpcRouter, Provider.InternalLbVm);
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -3902,6 +3906,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final boolean isPersistent = cmd.getIsPersistent();
         final Map<String, String> detailsStr = cmd.getDetails();
         final Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
+        Boolean forVpc = cmd.getForVpc();
+
         Integer maxconn = null;
         boolean enableKeepAlive = false;
         String servicePackageuuid = cmd.getServicePackageId();
@@ -3972,6 +3978,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 throw new InvalidParameterValueException("Invalid service " + serviceName);
             }
 
+            if (forVpc == null) {
+                if (service == Service.SecurityGroup || service == Service.Firewall) {
+                    forVpc = false;
+                } else if (service == Service.NetworkACL) {
+                    forVpc = true;
+                }
+            }
+
             if (service == Service.SecurityGroup) {
                 // allow security group service for Shared networks only
                 if (guestType != GuestType.Shared) {
@@ -3982,6 +3996,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 serviceProviderMap.put(Network.Service.SecurityGroup, sgProviders);
                 continue;
             }
+
             serviceProviderMap.put(service, defaultProviders);
         }
 
@@ -4024,6 +4039,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                         if ((service == Service.PortForwarding || service == Service.StaticNat) && provider == Provider.VirtualRouter) {
                             firewallProvider = Provider.VirtualRouter;
+                        }
+
+                        if (forVpc == null && VPC_ONLY_PROVIDERS.contains(provider)) {
+                            forVpc = true;
                         }
 
                         if (service == Service.Dhcp) {
@@ -4143,8 +4162,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        if (forVpc == null) {
+            forVpc = false;
+        }
+
         final NetworkOffering offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
     }
@@ -4273,12 +4296,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
     }
+
     @Override
     @DB
-    public NetworkOfferingVO createNetworkOffering(final String name, final String displayText, final TrafficType trafficType, String tags, final boolean specifyVlan, final Availability availability,
-            final Integer networkRate, final Map<Service, Set<Provider>> serviceProviderMap, final boolean isDefault, final Network.GuestType type, final boolean systemOnly, final Long serviceOfferingId,
+    public NetworkOfferingVO createNetworkOffering(final String name, final String displayText, final TrafficType trafficType, String tags, final boolean specifyVlan,
+            final Availability availability,
+            final Integer networkRate, final Map<Service, Set<Provider>> serviceProviderMap, final boolean isDefault, final GuestType type, final boolean systemOnly,
+            final Long serviceOfferingId,
             final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
-            final Map<NetworkOffering.Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive) {
+            final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -4442,7 +4468,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final NetworkOfferingVO offeringFinal = new NetworkOfferingVO(name, displayText, trafficType, systemOnly, specifyVlan, networkRate, multicastRate, isDefault, availability,
                 tags, type, conserveMode, dedicatedLb, sharedSourceNat, redundantRouter, elasticIp, elasticLb, specifyIpRanges, inline, isPersistent, associatePublicIp, publicLb,
-                internalLb, egressDefaultPolicy, strechedL2Subnet, publicAccess);
+                internalLb, forVpc, egressDefaultPolicy, strechedL2Subnet, publicAccess);
 
         if (serviceOfferingId != null) {
             offeringFinal.setServiceOfferingId(serviceOfferingId);
@@ -4793,12 +4819,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     public boolean isOfferingForVpc(final NetworkOffering offering) {
-        final boolean vpcProvider = _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(), Provider.VPCVirtualRouter) ||
-                _ntwkOffServiceMapDao.isProviderForNetworkOffering(offering.getId(), Provider.JuniperContrailVpcRouter);
-        final boolean nuageVpcProvider = _ntwkOffServiceMapDao.getDistinctProviders(offering.getId()).contains(Provider.NuageVsp.getName())
-                && offering.getIsPersistent();
-
-        return vpcProvider || nuageVpcProvider;
+        return offering.getForVpc();
     }
 
     @DB
