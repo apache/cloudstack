@@ -294,6 +294,7 @@ public abstract class ConsoleProxyClientBase implements ConsoleProxyClient, Cons
 
         String[] content =
             new String[] {"<html>", "<head>", "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/jquery.js\"></script>",
+                "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/jquery.flot.navigate.js\"></script>",
                 "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/cloud.logger.js\"></script>",
                 "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/ajaxkeys.js\"></script>",
                 "<script type=\"text/javascript\" language=\"javascript\" src=\"/resource/js/ajaxviewer.js\"></script>",

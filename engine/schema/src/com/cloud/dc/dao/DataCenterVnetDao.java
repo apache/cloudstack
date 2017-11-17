@@ -27,9 +27,9 @@ public interface DataCenterVnetDao extends GenericDao<DataCenterVnetVO, Long> {
 
     public List<DataCenterVnetVO> listAllocatedVnetsInRange(long dcId, long physicalNetworkId, Integer start, Integer end);
 
-    public List<DataCenterVnetVO> findVnet(long dcId, String vnet);
-
     public int countZoneVlans(long dcId, boolean onlyCountAllocated);
+
+    public List<DataCenterVnetVO> findVnet(long dcId, String vnet);
 
     public List<DataCenterVnetVO> findVnet(long dcId, long physicalNetworkId, String vnet);
 

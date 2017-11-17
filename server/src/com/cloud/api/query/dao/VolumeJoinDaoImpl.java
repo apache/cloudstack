@@ -78,6 +78,12 @@ public class VolumeJoinDaoImpl extends GenericDaoBaseWithTagInformation<VolumeJo
 
         volResponse.setZoneId(volume.getDataCenterUuid());
         volResponse.setZoneName(volume.getDataCenterName());
+        if (view == ResponseView.Full) {
+            volResponse.setClusterId(volume.getClusterUuid());
+            volResponse.setClusterName(volume.getClusterName());
+            volResponse.setPodId(volume.getPodUuid());
+            volResponse.setPodName(volume.getPodName());
+        }
 
         if (volume.getVolumeType() != null) {
             volResponse.setVolumeType(volume.getVolumeType().toString());

@@ -19,13 +19,8 @@
 
 package com.cloud.utils.nio;
 
-import com.cloud.utils.concurrency.NamedThreadFactory;
-import com.cloud.utils.exception.NioConnectionException;
-import org.apache.cloudstack.utils.security.SSLUtils;
-import org.apache.log4j.Logger;
+import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -49,7 +44,14 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-import static com.cloud.utils.AutoCloseableUtil.closeAutoCloseable;
+import javax.net.ssl.SSLEngine;
+
+import org.apache.cloudstack.framework.ca.CAService;
+import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.concurrency.NamedThreadFactory;
+import com.cloud.utils.exception.NioConnectionException;
 
 /**
  * NioConnection abstracts the NIO socket operations.  The Java implementation
@@ -70,6 +72,7 @@ public abstract class NioConnection implements Callable<Boolean> {
     protected String _name;
     protected ExecutorService _executor;
     protected ExecutorService _sslHandshakeExecutor;
+    protected CAService caService;
 
     public NioConnection(final String name, final int port, final int workers, final HandlerFactory factory) {
         _name = name;
@@ -79,6 +82,10 @@ public abstract class NioConnection implements Callable<Boolean> {
         _factory = factory;
         _executor = new ThreadPoolExecutor(workers, 5 * workers, 1, TimeUnit.DAYS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(name + "-Handler"));
         _sslHandshakeExecutor = Executors.newCachedThreadPool(new NamedThreadFactory(name + "-SSLHandshakeHandler"));
+    }
+
+    public void setCAService(final CAService caService) {
+        this.caService = caService;
     }
 
     public void start() throws NioConnectionException {
@@ -124,7 +131,7 @@ public abstract class NioConnection implements Callable<Boolean> {
     public Boolean call() throws NioConnectionException {
         while (_isRunning) {
             try {
-                _selector.select(100);
+                _selector.select(50);
 
                 // Someone is ready for I/O, get the ready keys
                 final Set<SelectionKey> readyKeys = _selector.selectedKeys();
@@ -196,10 +203,8 @@ public abstract class NioConnection implements Callable<Boolean> {
 
         final SSLEngine sslEngine;
         try {
-            final SSLContext sslContext = Link.initSSLContext(false);
-            sslEngine = sslContext.createSSLEngine();
+            sslEngine = Link.initServerSSLEngine(caService, socketChannel.getRemoteAddress().toString());
             sslEngine.setUseClientMode(false);
-            sslEngine.setNeedClientAuth(false);
             sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
             final NioConnection nioConnection = this;
             _sslHandshakeExecutor.submit(new Runnable() {

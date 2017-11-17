@@ -41,4 +41,11 @@ public interface ImageStore extends Identity, InternalIdentity {
      * @return data store protocol
      */
     String getProtocol();
+
+    /**
+     *
+     * @return uri
+     */
+    String getUrl();
+
 }

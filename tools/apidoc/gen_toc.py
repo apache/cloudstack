@@ -180,7 +180,13 @@ known_categories = {
     'stopNetScalerVpx' : 'Load Balancer',
     'deleteServicePackageOffering' : 'Load Balancer',
     'destroyNsVpx' : 'Load Balancer',
-    'startNsVpx' : 'Load Balancer'
+    'startNsVpx' : 'Load Balancer',
+    'listAnnotations' : 'Annotations',
+    'addAnnotation' : 'Annotations',
+    'removeAnnotation' : 'Annotations',
+    'CA': 'Certificate',
+    'listElastistorInterface': 'Misc',
+    'cloudian': 'Cloudian'
     }
 
 

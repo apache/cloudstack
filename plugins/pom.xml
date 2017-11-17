@@ -53,6 +53,7 @@
     <module>acl/dynamic-role-based</module>
     <module>affinity-group-processors/host-anti-affinity</module>
     <module>affinity-group-processors/explicit-dedication</module>
+    <module>ca/root-ca</module>
     <module>deployment-planners/user-concentrated-pod</module>
     <module>deployment-planners/user-dispersing</module>
     <module>deployment-planners/implicit-dedication</module>
@@ -82,6 +83,7 @@
     <module>network-elements/stratosphere-ssp</module>
     <module>network-elements/opendaylight</module>
     <module>outofbandmanagement-drivers/ipmitool</module>
+    <module>outofbandmanagement-drivers/nested-cloudstack</module>
     <module>storage-allocators/random</module>
     <module>user-authenticators/ldap</module>
     <module>user-authenticators/md5</module>
@@ -105,6 +107,8 @@
     <module>network-elements/vxlan</module>
     <module>network-elements/globodns</module>
     <module>database/quota</module>
+    <module>integrations/cloudian</module>
+    <module>integrations/prometheus</module>
   </modules>
 
   <dependencies>
@@ -203,12 +207,6 @@
       </activation>
       <modules>
         <module>hypervisors/simulator</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>midonet</id>
-      <modules>
-        <module>network-elements/midonet</module>
       </modules>
     </profile>
   </profiles>

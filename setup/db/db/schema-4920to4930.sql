@@ -121,3 +121,5 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'KVM', 'default', 'Other PV Virtio-SCSI (64-bit)', 275, utc_timestamp(), 0);
 
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'VMware', '6.5', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='VMware' AND hypervisor_version='6.0' AND (guest_os_id NOT IN (1,2,3,4,62,63,64,65,156,157,221,222) AND guest_os_id NOT BETWEEN 121 AND 130);
+
+UPDATE `cloud`.`configuration` SET value = '600', default_value = '600' WHERE category = 'Advanced' AND name = 'router.aggregation.command.each.timeout';

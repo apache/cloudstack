@@ -255,9 +255,6 @@
     <CustomAction Id="SetuptoolsInstallation" Directory='INSTALLDIR'
       ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\ez_setup.py"'
       Execute="deferred" Return="check" />
-    <CustomAction Id="GenerateSSLKey" Directory='CSMANAGEMENT'
-      ExeCommand='[PYTHON_HOME]\python "[CSMANAGEMENT]\webapps\client\WEB-INF\classes\scripts\common\keys\ssl-keys.py" "[CSMANAGEMENT]\lib"'
-      Execute="deferred" Return="check" />
     <CustomAction Id="DbHostWithPort" Execute="immediate" Property="DB_HOSTNAME" Value="[DB_HOSTNAME]:[DB_PORT]" />
     <CustomAction Id="DeployDB" Directory='CSMANAGEMENT'
       ExeCommand='[PYTHON_HOME]\python "[INSTALLDIR]\scripts\cloud-setup-databases" [DB_USERNAME]:[DB_PASSWORD]@[DB_HOSTNAME] --deploy-as=root:[DB_ROOT_PASSWORD] -c "[CSMANAGEMENT]\lib" -f "[CSMANAGEMENT]\setup" -j "[CSMANAGEMENT]\webapps\client\WEB-INF\lib\jasypt-1.9.2.jar" -n "[CSMANAGEMENT]\lib\key" -b "[MYSQL]\bin"'

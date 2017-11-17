@@ -21,8 +21,8 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
     <properties>
-        <client.config.base>../../client/target/cloud-client-ui-${project.version}/WEB-INF/</client.config.base>
-        <client.config.jars>${client.config.base}/lib</client.config.jars>
+        <client.config.base>../../client/target/</client.config.base>
+        <client.config.jars>${client.config.base}/cloud-client-ui-${project.version}.jar</client.config.jars>
         <client.config.conf>${client.config.base}/classes</client.config.conf>
     </properties>
 

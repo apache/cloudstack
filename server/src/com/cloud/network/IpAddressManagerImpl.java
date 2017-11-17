@@ -1631,7 +1631,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId()
                                     + " as a part of createVlanIpRange process");
                             guestNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName()
-                                    + "-network", null, null, null, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null);
+                                    + "-network", null, null, null, false, null, owner, null, physicalNetwork, zoneId, ACLType.Account, null, null, null, null, true, null);
                             if (guestNetwork == null) {
                                 s_logger.warn("Failed to create default Virtual network for the account " + accountId + "in zone " + zoneId);
                                 throw new CloudRuntimeException("Failed to create a Guest Isolated Networks with SourceNAT "
@@ -1988,7 +1988,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(ip.getVlanTag()));
                         nic.setFormat(AddressFormat.Ip4);
                         nic.setReservationId(String.valueOf(ip.getVlanTag()));
-                        nic.setMacAddress(ip.getMacAddress());
+                        if(nic.getMacAddress() == null) {
+                            nic.setMacAddress(ip.getMacAddress());
+                        }
                     }
                     nic.setIPv4Dns1(dc.getDns1());
                     nic.setIPv4Dns2(dc.getDns2());
@@ -2010,7 +2012,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                             nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanTag()));
                             nic.setFormat(AddressFormat.Ip6);
                             nic.setReservationId(String.valueOf(vlan.getVlanTag()));
-                            nic.setMacAddress(ip.getMacAddress());
+                            if(nic.getMacAddress() == null) {
+                                nic.setMacAddress(ip.getMacAddress());
+                            }
                         }
                     }
                     nic.setIPv6Dns1(dc.getIp6Dns1());
@@ -2057,8 +2061,9 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                         nic.setBroadcastUri(network.getBroadcastUri());
                         nic.setFormat(AddressFormat.Ip4);
-
-                        nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
+                        if(nic.getMacAddress() == null) {
+                            nic.setMacAddress(_networkModel.getNextAvailableMacAddressInNetwork(network.getId()));
+                        }
                     }
                     nic.setIPv4Dns1(dc.getDns1());
                     nic.setIPv4Dns2(dc.getDns2());

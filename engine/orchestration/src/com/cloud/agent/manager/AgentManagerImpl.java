@@ -37,6 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -135,6 +136,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     private final Lock _agentStatusLock = new ReentrantLock();
 
     @Inject
+    protected CAManager caService;
+    @Inject
     protected EntityManager _entityMgr;
 
     protected NioServer _connection;
@@ -223,7 +226,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         // allow core threads to time out even when there are no items in the queue
         _connectExecutor.allowCoreThreadTimeOut(true);
 
-        _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10, this);
+        _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10, this, caService);
         s_logger.info("Listening on " + Port.value() + " with " + Workers.value() + " workers");
 
         // executes all agent commands other than cron and ping
@@ -813,6 +816,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     s_logger.debug("The next status of agent " + hostId + "is " + nextStatus + ", current status is " + currentStatus);
                 }
             }
+            caService.purgeHostCertificate(host);
         }
 
         if (s_logger.isDebugEnabled()) {

@@ -30,6 +30,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
@@ -55,6 +56,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.base.Strings;
 
 public class UriUtils {
 
@@ -390,5 +392,53 @@ public class UriUtils {
             s_logger.error("Failed to read from URL: " + url);
             return null;
         }
+    }
+
+    /**
+     * Expands a given vlan URI to a list of vlan IDs
+     * @param vlanAuthority the URI part without the vlan:// scheme
+     * @return returns list of vlan integer ids
+     */
+    public static List<Integer> expandVlanUri(final String vlanAuthority) {
+        final List<Integer> expandedVlans = new ArrayList<>();
+        if (Strings.isNullOrEmpty(vlanAuthority)) {
+            return expandedVlans;
+        }
+        for (final String vlanPart: vlanAuthority.split(",")) {
+            if (Strings.isNullOrEmpty(vlanPart)) {
+                continue;
+            }
+            final String[] range = vlanPart.split("-");
+            if (range.length == 2) {
+                Integer start = NumbersUtil.parseInt(range[0], -1);
+                Integer end = NumbersUtil.parseInt(range[1], -1);
+                if (start <= end && end > -1 && start > -1) {
+                    while (start <= end) {
+                        expandedVlans.add(start++);
+                    }
+                }
+            } else {
+                final Integer value = NumbersUtil.parseInt(range[0], -1);
+                if (value > -1) {
+                    expandedVlans.add(value);
+                }
+            }
+        }
+        return expandedVlans;
+    }
+
+    /**
+     * Checks if given vlan URI authorities overlap
+     * @param vlanRange1
+     * @param vlanRange2
+     * @return true if they overlap
+     */
+    public static boolean checkVlanUriOverlap(final String vlanRange1, final String vlanRange2) {
+        final List<Integer> vlans1 = expandVlanUri(vlanRange1);
+        final List<Integer> vlans2 = expandVlanUri(vlanRange2);
+        if (vlans1 == null || vlans2 == null) {
+            return true;
+        }
+        return !Collections.disjoint(vlans1, vlans2);
     }
 }

@@ -20,6 +20,8 @@
 package com.cloud.utils;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotEquals;
 
 import java.nio.charset.Charset;
@@ -249,5 +251,16 @@ public class StringUtilsTest {
     public void listToCsvTags() {
         assertEquals("a,b,c", StringUtils.listToCsvTags(Arrays.asList("a","b", "c")));
         assertEquals("", StringUtils.listToCsvTags(new ArrayList<String>()));
+    }
+
+    @Test
+    public void testShuffleCSVList() {
+        String input = "one,two,three,four,five,six,seven,eight,nine,ten";
+        String output = StringUtils.shuffleCSVList(input);
+        assertFalse(input.equals(output));
+
+        input = "only-one";
+        output = StringUtils.shuffleCSVList("only-one");
+        assertTrue(input.equals(output));
     }
 }

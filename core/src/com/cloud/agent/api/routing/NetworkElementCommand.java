@@ -20,6 +20,7 @@
 package com.cloud.agent.api.routing;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import com.cloud.agent.api.Command;
 
@@ -44,6 +45,18 @@ public abstract class NetworkElementCommand extends Command {
 
     protected NetworkElementCommand() {
         super();
+    }
+
+    public void setAccessDetail(final Map<String, String> details) {
+        if (details == null) {
+            return;
+        }
+        for (final Map.Entry<String, String> detail : details.entrySet()) {
+            if (detail == null) {
+                continue;
+            }
+            setAccessDetail(detail.getKey(), detail.getValue());
+        }
     }
 
     public void setAccessDetail(final String name, final String value) {

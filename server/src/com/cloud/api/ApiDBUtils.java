@@ -260,6 +260,7 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -921,6 +922,10 @@ public class ApiDBUtils {
 
     public static VmStats getVmStatistics(long hostId) {
         return s_statsCollector.getVmStats(hostId);
+    }
+
+    public static VolumeStats getVolumeStatistics(String volumeUuid) {
+        return s_statsCollector.getVolumeStats(volumeUuid);
     }
 
     public static StorageStats getSecondaryStorageStatistics(long id) {

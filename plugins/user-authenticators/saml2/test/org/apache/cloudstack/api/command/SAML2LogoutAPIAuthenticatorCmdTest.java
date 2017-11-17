@@ -19,11 +19,19 @@
 
 package org.apache.cloudstack.api.command;
 
-import com.cloud.utils.HttpUtils;
+import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.security.cert.X509Certificate;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAMLUtils;
+import org.apache.cloudstack.utils.security.CertUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,12 +39,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.lang.reflect.Field;
-import java.security.cert.X509Certificate;
-import java.net.InetAddress;
+import com.cloud.utils.HttpUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class SAML2LogoutAPIAuthenticatorCmdTest {
@@ -70,7 +73,7 @@ public class SAML2LogoutAPIAuthenticatorCmdTest {
 
         String spId = "someSPID";
         String url = "someUrl";
-        X509Certificate cert = SAMLUtils.generateRandomX509Certificate(SAMLUtils.generateRandomKeyPair());
+        X509Certificate cert = SAMLUtils.generateRandomX509Certificate(CertUtils.generateRandomKeyPair(4096));
         Mockito.when(session.getAttribute(Mockito.anyString())).thenReturn(null);
 
         cmd.authenticate("command", null, session, InetAddress.getByName("127.0.0.1"), HttpUtils.RESPONSE_TYPE_JSON, new StringBuilder(), req, resp);

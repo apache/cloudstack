@@ -56,6 +56,11 @@ public class KVMPhysicalDisk {
         this.pool = pool;
     }
 
+    @Override
+    public String toString() {
+        return "KVMPhysicalDisk [path=" + path + ", name=" + name + ", pool=" + pool + ", format=" + format + ", size=" + size + ", virtualSize=" + virtualSize + "]";
+    }
+
     public void setFormat(PhysicalDiskFormat format) {
         this.format = format;
     }

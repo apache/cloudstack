@@ -127,7 +127,7 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         guestNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
         guestNic.setIsolationUri(guestNetwork.getBroadcastUri());
         guestNic.setMode(guestNetwork.getMode());
-        final String gatewayCidr = guestNetwork.getCidr();
+        final String gatewayCidr = _networkModel.getValidNetworkCidr(guestNetwork);
         guestNic.setIPv4Netmask(NetUtils.getCidrNetmask(gatewayCidr));
 
         return guestNic;

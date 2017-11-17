@@ -42,6 +42,7 @@ import javax.naming.ConfigurationException;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -49,6 +50,7 @@ import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.cloudstack.ha.dao.HAConfigDao;
 import org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDao;
 import org.apache.log4j.Logger;
 
@@ -123,6 +125,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     ConfigDepot _configDepot;
     @Inject
     private OutOfBandManagementDao outOfBandManagementDao;
+    @Inject
+    private HAConfigDao haConfigDao;
+    @Inject
+    private CAManager caService;
 
     protected ClusteredAgentManagerImpl() {
         super();
@@ -495,6 +501,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 }
                 final String ip = ms.getServiceIP();
                 InetAddress addr;
+                int port = Port.value();
                 try {
                     addr = InetAddress.getByName(ip);
                 } catch (final UnknownHostException e) {
@@ -502,21 +509,21 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                 }
                 SocketChannel ch1 = null;
                 try {
-                    ch1 = SocketChannel.open(new InetSocketAddress(addr, Port.value()));
+                    ch1 = SocketChannel.open(new InetSocketAddress(addr, port));
                     ch1.configureBlocking(false);
                     ch1.socket().setKeepAlive(true);
                     ch1.socket().setSoTimeout(60 * 1000);
                     try {
-                        final SSLContext sslContext = Link.initSSLContext(true);
-                        sslEngine = sslContext.createSSLEngine(ip, Port.value());
+                        SSLContext sslContext = Link.initManagementSSLContext(caService);
+                        sslEngine = sslContext.createSSLEngine(ip, port);
                         sslEngine.setUseClientMode(true);
                         sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
                         sslEngine.beginHandshake();
                         if (!Link.doHandshake(ch1, sslEngine, true)) {
                             ch1.close();
-                            throw new IOException("SSL handshake failed!");
+                            throw new IOException(String.format("SSL: Handshake failed with peer management server '%s' on %s:%d ", peerName, ip, port));
                         }
-                        s_logger.info("SSL: Handshake done");
+                        s_logger.info(String.format("SSL: Handshake done with peer management server '%s' on %s:%d ", peerName, ip, port));
                     } catch (final Exception e) {
                         ch1.close();
                         throw new IOException("SSL: Fail to init SSL! " + e);
@@ -528,10 +535,12 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                     _sslEngines.put(peerName, sslEngine);
                     return ch1;
                 } catch (final IOException e) {
-                    try {
-                        ch1.close();
-                    } catch (final IOException ex) {
-                        s_logger.error("failed to close failed peer socket: " + ex);
+                    if (ch1 != null) {
+                        try {
+                            ch1.close();
+                        } catch (final IOException ex) {
+                            s_logger.error("failed to close failed peer socket: " + ex);
+                        }
                     }
                     s_logger.warn("Unable to connect to peer management server: " + peerName + ", ip: " + ip + " due to " + e.getMessage(), e);
                     return null;
@@ -741,6 +750,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
             final long lastPing = (System.currentTimeMillis() >> 10) - getTimeout();
             _hostDao.markHostsAsDisconnected(vo.getMsid(), lastPing);
             outOfBandManagementDao.expireServerOwnership(vo.getMsid());
+            haConfigDao.expireServerOwnership(vo.getMsid());
             s_logger.info("Deleting entries from op_host_transfer table for Management server " + vo.getMsid());
             cleanupTransferMap(vo.getMsid());
         }

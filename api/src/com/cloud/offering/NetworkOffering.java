@@ -38,7 +38,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     }
 
     public enum Detail {
-        InternalLbProvider, PublicLbProvider, servicepackageuuid, servicepackagedescription
+        InternalLbProvider, PublicLbProvider, servicepackageuuid, servicepackagedescription, PromiscuousMode, MacAddressChanges, ForgedTransmits
     }
 
     public final static String SystemPublicNetwork = "System-Public-Network";
@@ -77,6 +77,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
      * @return the rate megabits per sec to which a VM's multicast&broadcast traffic is throttled to
      */
     Integer getMulticastRateMbps();
+
+    boolean getForVpc();
 
     TrafficType getTrafficType();
 

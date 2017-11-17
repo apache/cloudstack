@@ -171,6 +171,28 @@
                                 context: context,
                                 noSelect: true,
                                 noHeaderActionsColumn: true,
+                                selectPermission: {
+                                    action: function(args){
+                                        $.ajax({
+                                            url: createURL("updateRolePermission"),
+                                            data: {
+                                                roleid: args.roleid,
+                                                ruleid: args.ruleid,
+                                                permission: args.permission
+                                            },
+                                            dataType: "json",
+                                            async: true,
+                                            success: function(json) {
+                                                $(window).trigger('cloudStack.fullRefresh');
+                                            },
+                                            error: function(json) {
+                                                cloudStack.dialog.notice({
+                                                    message: 'message.role.update.fail'
+                                                });
+                                            }
+                                        });
+                                    }
+                                },
                                 reorder: {
                                     moveDrag: {
                                         action: function(args) {
@@ -193,6 +215,7 @@
                                             });
 
                                             $.ajax({
+                                            	type: 'POST',
                                                 url: createURL('updateRolePermission'),
                                                 data: {
                                                     roleid: rule.roleid,

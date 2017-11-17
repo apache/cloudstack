@@ -67,6 +67,7 @@ public class AgentShell implements IAgentShell, Daemon {
     private int _proxyPort;
     private int _workers;
     private String _guid;
+    private int _hostCounter = 0;
     private int _nextAgentId = 1;
     private volatile boolean _exit = false;
     private int _pingRetries;
@@ -107,7 +108,17 @@ public class AgentShell implements IAgentShell, Daemon {
 
     @Override
     public String getHost() {
-        return _host;
+        final String[] hosts = _host.split(",");
+        if (_hostCounter >= hosts.length) {
+            _hostCounter = 0;
+        }
+        final String host = hosts[_hostCounter % hosts.length];
+        _hostCounter++;
+        return host;
+    }
+
+    public void setHost(final String host) {
+        _host = host;
     }
 
     @Override

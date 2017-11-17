@@ -28,12 +28,10 @@
                       >
 
     <bean id="snapshotServiceImpl"
-        class="org.apache.cloudstack.storage.snapshot.SnapshotServiceImpl"
-        depends-on="snapshotStateMachineManagerImpl, snapshotDataFactoryImpl, dataStoreManagerImpl, dataMotionServiceImpl, objectInDataStoreManagerImpl" />
+        class="org.apache.cloudstack.storage.snapshot.SnapshotServiceImpl" />
 
     <bean id="snapshotDataFactoryImpl"
-        class="org.apache.cloudstack.storage.snapshot.SnapshotDataFactoryImpl"
-        depends-on="dataStoreManagerImpl, snapshotDataStoreDaoImpl, volumeDataFactoryImpl" />
+        class="org.apache.cloudstack.storage.snapshot.SnapshotDataFactoryImpl"/>
 
     <bean id="snapshotStateMachineManagerImpl"
         class="org.apache.cloudstack.storage.snapshot.SnapshotStateMachineManagerImpl" />

@@ -40,12 +40,22 @@ public class CreateNetworkCmdByAdmin extends CreateNetworkCmd {
     @Parameter(name=ApiConstants.VLAN, type=CommandType.STRING, description="the ID or VID of the network")
     private String vlan;
 
+    @Parameter(name=ApiConstants.BYPASS_VLAN_OVERLAP_CHECK, type=CommandType.BOOLEAN, description="when true bypasses VLAN id/range overlap check during network creation for shared networks")
+    private Boolean bypassVlanOverlapCheck;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public String getVlan() {
         return vlan;
+    }
+
+    public Boolean getBypassVlanOverlapCheck() {
+        if (bypassVlanOverlapCheck != null) {
+            return bypassVlanOverlapCheck;
+        }
+        return false;
     }
 
     /////////////////////////////////////////////////////

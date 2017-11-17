@@ -112,6 +112,10 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @Param(description = "display name of the os on volume")
     private String osDisplayName;
 
+    @SerializedName(ApiConstants.VIRTUAL_SIZE)
+    @Param(description = "virtual size of backedup snapshot on image store")
+    private long virtualSize;
+
     @Override
     public String getObjectId() {
         return this.getId();
@@ -220,5 +224,9 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
 
     public void setOsDisplayName(String osDisplayName) {
         this.osDisplayName = osDisplayName;
+    }
+
+    public void setVirtualSize(long virtualSize) {
+        this.virtualSize = virtualSize;
     }
 }

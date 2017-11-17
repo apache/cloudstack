@@ -16,6 +16,15 @@
 // under the License.
 package com.cloud.configuration;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringTokenizer;
+
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
@@ -29,14 +38,6 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.StringTokenizer;
 
 public enum Config {
 
@@ -181,14 +182,6 @@ public enum Config {
             "storage.pool.max.waitseconds",
             "3600",
             "Timeout (in seconds) to synchronize storage pool operations.",
-            null),
-    StorageTemplateCleanupEnabled(
-            "Storage",
-            ManagementServer.class,
-            Boolean.class,
-            "storage.template.cleanup.enabled",
-            "true",
-            "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled",
             null),
     PrimaryStorageDownloadWait(
             "Storage",
@@ -499,14 +492,6 @@ public enum Config {
             "The time interval in seconds when the management server polls for snapshots to be scheduled.",
             null),
     SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
-    BackupSnapshotAfterTakingSnapshot(
-            "Snapshots",
-            SnapshotManager.class,
-            Boolean.class,
-            "snapshot.backup.rightafter",
-            "true",
-            "backup snapshot right after snapshot is taken",
-            null),
     KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
 
     // Advanced
@@ -868,6 +853,8 @@ public enum Config {
             "60000",
             "The interval (in milliseconds) when vm stats are retrieved from agents.",
             null),
+    VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
+    VolumeStatsInterval("Advanced", ManagementServer.class, Integer.class, "volume.stats.interval", "60000", "Interval (in seconds) to report volume statistics.", null),
     VmTransitionWaitInterval(
             "Advanced",
             ManagementServer.class,
@@ -1216,24 +1203,6 @@ public enum Config {
             null),
     VmwareHungWorkerTimeout("Advanced", ManagementServer.class, Long.class, "vmware.hung.wokervm.timeout", "7200", "Worker VM timeout in seconds", null),
     VmwareVcenterSessionTimeout("Advanced", ManagementServer.class, Long.class, "vmware.vcenter.session.timeout", "1200", "VMware client timeout in seconds", null),
-
-    // Midonet
-    MidoNetAPIServerAddress(
-            "Network",
-            ManagementServer.class,
-            String.class,
-            "midonet.apiserver.address",
-            "http://localhost:8081",
-            "Specify the address at which the Midonet API server can be contacted (if using Midonet)",
-            null),
-    MidoNetProviderRouterId(
-            "Network",
-            ManagementServer.class,
-            String.class,
-            "midonet.providerrouter.id",
-            "d7c5e6a3-e2f4-426b-b728-b7ce6a0448e5",
-            "Specifies the UUID of the Midonet provider router (if using Midonet)",
-            null),
 
     // KVM
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
@@ -1927,7 +1896,7 @@ public enum Config {
             NetworkOrchestrationService.class,
             Integer.class,
             "router.aggregation.command.each.timeout",
-            "3",
+            "600",
             "timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ",
             null),
 

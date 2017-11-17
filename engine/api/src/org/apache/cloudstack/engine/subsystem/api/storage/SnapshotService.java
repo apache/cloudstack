@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.engine.subsystem.api.storage;
 
+import com.cloud.storage.Snapshot.Event;
+
 public interface SnapshotService {
     SnapshotResult takeSnapshot(SnapshotInfo snapshot);
 
@@ -29,4 +31,8 @@ public interface SnapshotService {
     void syncVolumeSnapshotsToRegionStore(long volumeId, DataStore store);
 
     void cleanupVolumeDuringSnapshotFailure(Long volumeId, Long snapshotId);
+
+    void processEventOnSnapshotObject(SnapshotInfo snapshot, Event event);
+
+    void cleanupOnSnapshotBackupFailure(SnapshotInfo snapshot);
 }

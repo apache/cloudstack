@@ -87,6 +87,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected GenericSearchBuilder<VMInstanceVO, Long> FindIdsOfVirtualRoutersByAccount;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountActiveByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
+    protected GenericSearchBuilder<VMInstanceVO, Long> CountByZoneAndState;
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
     protected GenericSearchBuilder<VMInstanceVO, String> DistinctHostNameSearch;
     protected SearchBuilder<VMInstanceVO> HostAndStateSearch;
@@ -241,6 +242,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         CountRunningByAccount.and("account", CountRunningByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
         CountRunningByAccount.and("state", CountRunningByAccount.entity().getState(), SearchCriteria.Op.EQ);
         CountRunningByAccount.done();
+
+        CountByZoneAndState = createSearchBuilder(Long.class);
+        CountByZoneAndState.select(null, Func.COUNT, null);
+        CountByZoneAndState.and("zone", CountByZoneAndState.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        CountByZoneAndState.and("state", CountByZoneAndState.entity().getState(), SearchCriteria.Op.EQ);
+        CountByZoneAndState.done();
 
         HostAndStateSearch = createSearchBuilder();
         HostAndStateSearch.and("host", HostAndStateSearch.entity().getHostId(), Op.EQ);
@@ -715,6 +722,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<Long> sc = CountRunningByAccount.create();
         sc.setParameters("account", accountId);
         sc.setParameters("state", State.Running);
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public Long countByZoneAndState(long zoneId, State state) {
+        SearchCriteria<Long> sc = CountByZoneAndState.create();
+        sc.setParameters("zone", zoneId);
+        sc.setParameters("state", state);
         return customSearch(sc, null).get(0);
     }
 

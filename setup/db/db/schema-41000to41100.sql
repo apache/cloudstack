@@ -19,6 +19,22 @@
 -- Schema upgrade from 4.10.0.0 to 4.11.0.0
 --;
 
+-- Add For VPC flag
+ALTER TABLE cloud.network_offerings ADD COLUMN for_vpc INT(1) NOT NULL DEFAULT 0;
+UPDATE cloud.network_offerings o
+SET for_vpc = 1
+where
+  o.conserve_mode = 0
+  and o.guest_type = 'Isolated'
+  and exists(
+    SELECT id
+    from cloud.ntwk_offering_service_map
+    where network_offering_id = o.id and (
+      provider in ('VpcVirtualRouter', 'InternalLbVm', 'JuniperContrailVpcRouter')
+      or service in ('NetworkACL')
+    )
+  );
+  
 --Alter view template_view
  
 DROP VIEW IF EXISTS `cloud`.`template_view`;
@@ -121,3 +137,315 @@ CREATE VIEW `template_view` AS
          LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_template`.`id`)
              AND ((`resource_tags`.`resource_type` = 'Template')
              OR (`resource_tags`.`resource_type` = 'ISO')))));
+
+UPDATE `cloud`.`configuration` SET value = '600', default_value = '600' WHERE category = 'Advanced' AND name = 'router.aggregation.command.each.timeout';
+
+-- CA framework changes
+DELETE from `cloud`.`configuration` where name='ssl.keystore';
+
+-- Certificate Revocation List
+CREATE TABLE IF NOT EXISTS `cloud`.`crl` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `serial` varchar(255) UNIQUE NOT NULL COMMENT 'certificate\'s serial number as hex string',
+  `cn` varchar(255) COMMENT 'certificate\'s common name',
+  `revoker_uuid` varchar(40) COMMENT 'revoker user account uuid',
+  `revoked` datetime COMMENT 'date of revocation',
+  PRIMARY KEY (`id`),
+  KEY (`serial`),
+  UNIQUE KEY (`serial`, `cn`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Host HA feature
+CREATE TABLE IF NOT EXISTS `cloud`.`ha_config` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `resource_id` bigint(20) unsigned DEFAULT NULL COMMENT 'id of the resource',
+  `resource_type` varchar(255) NOT NULL COMMENT 'the type of the resource',
+  `enabled` int(1) unsigned DEFAULT '0' COMMENT 'is HA enabled for the resource',
+  `ha_state` varchar(255) DEFAULT 'Disabled' COMMENT 'HA state',
+  `provider` varchar(255) DEFAULT NULL COMMENT 'HA provider',
+  `update_count` bigint(20) unsigned NOT NULL DEFAULT '0' COMMENT 'state based incr-only counter for atomic ha_state updates',
+  `update_time` datetime COMMENT 'last ha_state update datetime',
+  `mgmt_server_id` bigint(20) unsigned DEFAULT NULL COMMENT 'management server id that is responsible for the HA for the resource',
+  PRIMARY KEY (`id`),
+  KEY `i_ha_config__enabled` (`enabled`),
+  KEY `i_ha_config__ha_state` (`ha_state`),
+  KEY `i_ha_config__mgmt_server_id` (`mgmt_server_id`),
+  UNIQUE KEY (`resource_id`, `resource_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELETE from `cloud`.`configuration` where name='outofbandmanagement.sync.interval';
+
+-- Annotations specifc changes following
+CREATE TABLE IF NOT EXISTS `cloud`.`annotations` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40) UNIQUE,
+  `annotation` text,
+  `entity_uuid` varchar(40),
+  `entity_type` varchar(32),
+  `user_uuid` varchar(40),
+  `created` datetime COMMENT 'date of creation',
+  `removed` datetime COMMENT 'date of removal',
+  PRIMARY KEY (`id`),
+  KEY (`uuid`),
+  KEY `i_entity` (`entity_uuid`, `entity_type`, `created`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP VIEW IF EXISTS `cloud`.`last_annotation_view`;
+CREATE VIEW `last_annotation_view` AS
+    SELECT
+        `annotations`.`uuid` AS `uuid`,
+        `annotations`.`annotation` AS `annotation`,
+        `annotations`.`entity_uuid` AS `entity_uuid`,
+        `annotations`.`entity_type` AS `entity_type`,
+        `annotations`.`user_uuid` AS `user_uuid`,
+        `annotations`.`created` AS `created`,
+        `annotations`.`removed` AS `removed`
+    FROM
+        `annotations`
+    WHERE
+        `annotations`.`created` IN (SELECT
+                                        MAX(`annotations`.`created`)
+                                    FROM
+                                        `annotations`
+                                    WHERE
+                                        `annotations`.`removed` IS NULL
+                                    GROUP BY `annotations`.`entity_uuid`);
+
+-- Host HA changes:
+DROP VIEW IF EXISTS `cloud`.`host_view`;
+CREATE VIEW `cloud`.`host_view` AS
+    SELECT
+        host.id,
+        host.uuid,
+        host.name,
+        host.status,
+        host.disconnected,
+        host.type,
+        host.private_ip_address,
+        host.version,
+        host.hypervisor_type,
+        host.hypervisor_version,
+        host.capabilities,
+        host.last_ping,
+        host.created,
+        host.removed,
+        host.resource_state,
+        host.mgmt_server_id,
+        host.cpu_sockets,
+        host.cpus,
+        host.speed,
+        host.ram,
+        cluster.id cluster_id,
+        cluster.uuid cluster_uuid,
+        cluster.name cluster_name,
+        cluster.cluster_type,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        data_center.networktype data_center_type,
+        host_pod_ref.id pod_id,
+        host_pod_ref.uuid pod_uuid,
+        host_pod_ref.name pod_name,
+        host_tags.tag,
+        guest_os_category.id guest_os_category_id,
+        guest_os_category.uuid guest_os_category_uuid,
+        guest_os_category.name guest_os_category_name,
+        mem_caps.used_capacity memory_used_capacity,
+        mem_caps.reserved_capacity memory_reserved_capacity,
+        cpu_caps.used_capacity cpu_used_capacity,
+        cpu_caps.reserved_capacity cpu_reserved_capacity,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id,
+        oobm.enabled AS `oobm_enabled`,
+        oobm.power_state AS `oobm_power_state`,
+        ha_config.enabled AS `ha_enabled`,
+        ha_config.ha_state AS `ha_state`,
+        ha_config.provider AS `ha_provider`,
+        `last_annotation_view`.`annotation` AS `annotation`,
+        `last_annotation_view`.`created` AS `last_annotated`,
+        `user`.`username` AS `username`
+    FROM
+        `cloud`.`host`
+            LEFT JOIN
+        `cloud`.`cluster` ON host.cluster_id = cluster.id
+            LEFT JOIN
+        `cloud`.`data_center` ON host.data_center_id = data_center.id
+            LEFT JOIN
+        `cloud`.`host_pod_ref` ON host.pod_id = host_pod_ref.id
+            LEFT JOIN
+        `cloud`.`host_details` ON host.id = host_details.host_id
+            AND host_details.name = 'guest.os.category.id'
+            LEFT JOIN
+        `cloud`.`guest_os_category` ON guest_os_category.id = CONVERT ( host_details.value, UNSIGNED )
+            LEFT JOIN
+        `cloud`.`host_tags` ON host_tags.host_id = host.id
+            LEFT JOIN
+        `cloud`.`op_host_capacity` mem_caps ON host.id = mem_caps.host_id
+            AND mem_caps.capacity_type = 0
+            LEFT JOIN
+        `cloud`.`op_host_capacity` cpu_caps ON host.id = cpu_caps.host_id
+            AND cpu_caps.capacity_type = 1
+            LEFT JOIN
+        `cloud`.`async_job` ON async_job.instance_id = host.id
+            AND async_job.instance_type = 'Host'
+            AND async_job.job_status = 0
+            LEFT JOIN
+        `cloud`.`oobm` ON oobm.host_id = host.id
+            left join
+        `cloud`.`ha_config` ON ha_config.resource_id=host.id
+            and ha_config.resource_type='Host'
+            LEFT JOIN
+        `cloud`.`last_annotation_view` ON `last_annotation_view`.`entity_uuid` = `host`.`uuid`
+            LEFT JOIN
+        `cloud`.`user` ON `user`.`uuid` = `last_annotation_view`.`user_uuid`;
+-- End Of Annotations specific changes
+
+
+-- Out-of-band management driver for nested-cloudstack
+ALTER TABLE `cloud`.`oobm` MODIFY COLUMN port VARCHAR(255);
+
+
+-- CLOUDSTACK-9902: Console proxy SSL toggle
+INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`, `default_value`, `is_dynamic`) VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.sslEnabled', 'false', 'Enable SSL for console proxy', 'false', 0);
+
+-- CLOUDSTACK-9859: Retirement of midonet plugin (final removal) 
+delete from `cloud`.`configuration` where name in ('midonet.apiserver.address', 'midonet.providerrouter.id');
+
+-- CLOUDSTACK-9972: Enhance listVolumes API
+INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'management-server', 'volume.stats.interval', '600000', 'Interval (in seconds) to report volume statistics', '600000', now(), NULL, NULL);
+
+DROP VIEW IF EXISTS `cloud`.`volume_view`;
+CREATE VIEW `cloud`.`volume_view` AS
+    select
+        volumes.id,
+        volumes.uuid,
+        volumes.name,
+        volumes.device_id,
+        volumes.volume_type,
+        volumes.provisioning_type,
+        volumes.size,
+        volumes.min_iops,
+        volumes.max_iops,
+        volumes.created,
+        volumes.state,
+        volumes.attached,
+        volumes.removed,
+        volumes.display_volume,
+        volumes.format,
+        volumes.path,
+        volumes.chain_info,
+        account.id account_id,
+        account.uuid account_uuid,
+        account.account_name account_name,
+        account.type account_type,
+        domain.id domain_id,
+        domain.uuid domain_uuid,
+        domain.name domain_name,
+        domain.path domain_path,
+        projects.id project_id,
+        projects.uuid project_uuid,
+        projects.name project_name,
+        data_center.id data_center_id,
+        data_center.uuid data_center_uuid,
+        data_center.name data_center_name,
+        data_center.networktype data_center_type,
+        vm_instance.id vm_id,
+        vm_instance.uuid vm_uuid,
+        vm_instance.name vm_name,
+        vm_instance.state vm_state,
+        vm_instance.vm_type,
+        user_vm.display_name vm_display_name,
+        volume_store_ref.size volume_store_size,
+        volume_store_ref.download_pct,
+        volume_store_ref.download_state,
+        volume_store_ref.error_str,
+        volume_store_ref.created created_on_store,
+        disk_offering.id disk_offering_id,
+        disk_offering.uuid disk_offering_uuid,
+        disk_offering.name disk_offering_name,
+        disk_offering.display_text disk_offering_display_text,
+        disk_offering.use_local_storage,
+        disk_offering.system_use,
+        disk_offering.bytes_read_rate,
+        disk_offering.bytes_write_rate,
+        disk_offering.iops_read_rate,
+        disk_offering.iops_write_rate,
+        disk_offering.cache_mode,
+        storage_pool.id pool_id,
+        storage_pool.uuid pool_uuid,
+        storage_pool.name pool_name,
+        cluster.id cluster_id,
+        cluster.name cluster_name,
+        cluster.uuid cluster_uuid,
+        cluster.hypervisor_type,
+        vm_template.id template_id,
+        vm_template.uuid template_uuid,
+        vm_template.extractable,
+        vm_template.type template_type,
+        vm_template.name template_name,
+        vm_template.display_text template_display_text,
+        iso.id iso_id,
+        iso.uuid iso_uuid,
+        iso.name iso_name,
+        iso.display_text iso_display_text,
+        resource_tags.id tag_id,
+        resource_tags.uuid tag_uuid,
+        resource_tags.key tag_key,
+        resource_tags.value tag_value,
+        resource_tags.domain_id tag_domain_id,
+        resource_tags.account_id tag_account_id,
+        resource_tags.resource_id tag_resource_id,
+        resource_tags.resource_uuid tag_resource_uuid,
+        resource_tags.resource_type tag_resource_type,
+        resource_tags.customer tag_customer,
+        async_job.id job_id,
+        async_job.uuid job_uuid,
+        async_job.job_status job_status,
+        async_job.account_id job_account_id,
+        host_pod_ref.id pod_id,
+        host_pod_ref.uuid pod_uuid,
+        host_pod_ref.name pod_name,
+        resource_tag_account.account_name tag_account_name,
+        resource_tag_domain.uuid tag_domain_uuid,
+        resource_tag_domain.name tag_domain_name
+    from
+        `cloud`.`volumes`
+            inner join
+        `cloud`.`account` ON volumes.account_id = account.id
+            inner join
+        `cloud`.`domain` ON volumes.domain_id = domain.id
+            left join
+        `cloud`.`projects` ON projects.project_account_id = account.id
+            left join
+        `cloud`.`data_center` ON volumes.data_center_id = data_center.id
+            left join
+        `cloud`.`vm_instance` ON volumes.instance_id = vm_instance.id
+            left join
+        `cloud`.`user_vm` ON user_vm.id = vm_instance.id
+            left join
+        `cloud`.`volume_store_ref` ON volumes.id = volume_store_ref.volume_id
+            left join
+        `cloud`.`disk_offering` ON volumes.disk_offering_id = disk_offering.id
+            left join
+        `cloud`.`storage_pool` ON volumes.pool_id = storage_pool.id
+            left join
+        `cloud`.`host_pod_ref` ON storage_pool.pod_id = host_pod_ref.id
+            left join
+        `cloud`.`cluster` ON storage_pool.cluster_id = cluster.id
+            left join
+        `cloud`.`vm_template` ON volumes.template_id = vm_template.id
+            left join
+        `cloud`.`vm_template` iso ON iso.id = volumes.iso_id
+            left join
+        `cloud`.`resource_tags` ON resource_tags.resource_id = volumes.id
+            and resource_tags.resource_type = 'Volume'
+            left join
+        `cloud`.`async_job` ON async_job.instance_id = volumes.id
+            and async_job.instance_type = 'Volume'
+            and async_job.job_status = 0
+            left join
+        `cloud`.`account` resource_tag_account ON resource_tag_account.id = resource_tags.account_id
+            left join
+        `cloud`.`domain` resource_tag_domain ON resource_tag_domain.id = resource_tags.domain_id;

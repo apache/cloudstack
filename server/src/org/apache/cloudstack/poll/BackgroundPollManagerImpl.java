@@ -52,7 +52,11 @@ public final class BackgroundPollManagerImpl extends ManagerBase implements Back
         }
         backgroundPollTaskScheduler = Executors.newScheduledThreadPool(submittedTasks.size() + 1, new NamedThreadFactory("BackgroundTaskPollManager"));
         for (final BackgroundPollTask task : submittedTasks) {
-            backgroundPollTaskScheduler.scheduleWithFixedDelay(task, getInitialDelay(), getRoundDelay(), TimeUnit.MILLISECONDS);
+            Long delay = task.getDelay();
+            if (delay == null) {
+                delay = getRoundDelay();
+            }
+            backgroundPollTaskScheduler.scheduleWithFixedDelay(task, getInitialDelay(), delay, TimeUnit.MILLISECONDS);
             LOG.debug("Scheduled background poll task: " + task.getClass().getName());
         }
         isConfiguredAndStarted = true;

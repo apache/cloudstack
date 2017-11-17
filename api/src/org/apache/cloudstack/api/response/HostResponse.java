@@ -24,6 +24,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.outofbandmanagement.OutOfBandManagement;
 
 import java.util.Date;
@@ -206,6 +207,10 @@ public class HostResponse extends BaseResponse {
     @Param(description = "true if this host is suitable(has enough capacity and satisfies all conditions like hosttags, max guests vm limit etc) to migrate a VM to it , false otherwise")
     private Boolean suitableForMigration;
 
+    @SerializedName("hostha")
+    @Param(description = "the host HA information information")
+    private HostHAResponse hostHAResponse;
+
     @SerializedName("outofbandmanagement")
     @Param(description = "the host out-of-band management information")
     private OutOfBandManagementResponse outOfBandManagementResponse;
@@ -226,6 +231,17 @@ public class HostResponse extends BaseResponse {
     @Param(description = "Host details in key/value pairs.", since = "4.5")
     private Map details;
 
+    @SerializedName(ApiConstants.ANNOTATION)
+    @Param(description = "the last annotation set on this host by an admin", since = "4.11")
+    private String annotation;
+
+    @SerializedName(ApiConstants.LAST_ANNOTATED)
+    @Param(description = "the last time this host was annotated", since = "4.11")
+    private Date lastAnnotated;
+
+    @SerializedName(ApiConstants.USERNAME)
+    @Param(description = "the admin that annotated this host", since = "4.11")
+    private String username;
 
     // Default visibility to support accessing the details from unit tests
     Map getDetails() {
@@ -413,6 +429,14 @@ public class HostResponse extends BaseResponse {
         this.suitableForMigration = suitableForMigration;
     }
 
+    public HostHAResponse getHostHAResponse() {
+        return hostHAResponse;
+    }
+
+    public void setHostHAResponse(final HAConfig config) {
+        this.hostHAResponse = new HostHAResponse(config);
+    }
+
     public OutOfBandManagementResponse getOutOfBandManagementResponse() {
         return outOfBandManagementResponse;
     }
@@ -443,6 +467,18 @@ public class HostResponse extends BaseResponse {
 
     public void setHaHost(Boolean haHost) {
         this.haHost = haHost;
+    }
+
+    public void setAnnotation(String annotation) {
+        this.annotation = annotation;
+    }
+
+    public void setLastAnnotated(Date lastAnnotated) {
+        this.lastAnnotated = lastAnnotated;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public void setDetails(Map details) {

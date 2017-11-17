@@ -94,7 +94,7 @@ public class RegisterIsoCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account name. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the MD5 checksum value of this ISO")
+    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the checksum value of this ISO. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
     private String checksum;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Register ISO for the project")

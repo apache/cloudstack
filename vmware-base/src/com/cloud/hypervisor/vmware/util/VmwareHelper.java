@@ -89,7 +89,7 @@ public class VmwareHelper {
     }
 
     public static VirtualDevice prepareNicOpaque(VirtualMachineMO vmMo, VirtualEthernetCardType deviceType, String portGroupName,
-            String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
+            String macAddress, int contextNumber, boolean connected, boolean connectOnStart) throws Exception {
 
         assert(vmMo.getRunningHost().hasOpaqueNSXNetwork());
 
@@ -123,18 +123,17 @@ public class VmwareHelper {
 
         VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
         connectInfo.setAllowGuestControl(true);
-        connectInfo.setConnected(conntected);
+        connectInfo.setConnected(connected);
         connectInfo.setStartConnected(connectOnStart);
         nic.setAddressType("Manual");
         nic.setConnectable(connectInfo);
         nic.setMacAddress(macAddress);
-        nic.setUnitNumber(deviceNumber);
         nic.setKey(-contextNumber);
         return nic;
     }
 
     public static VirtualDevice prepareNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType, String portGroupName,
-            String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
+            String macAddress, int contextNumber, boolean connected, boolean connectOnStart) throws Exception {
 
         VirtualEthernetCard nic;
         switch (deviceType) {
@@ -166,18 +165,17 @@ public class VmwareHelper {
 
         VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
         connectInfo.setAllowGuestControl(true);
-        connectInfo.setConnected(conntected);
+        connectInfo.setConnected(connected);
         connectInfo.setStartConnected(connectOnStart);
         nic.setAddressType("Manual");
         nic.setConnectable(connectInfo);
         nic.setMacAddress(macAddress);
-        nic.setUnitNumber(deviceNumber);
         nic.setKey(-contextNumber);
         return nic;
     }
 
     public static VirtualDevice prepareDvNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType, String dvPortGroupName,
-            String dvSwitchUuid, String macAddress, int deviceNumber, int contextNumber, boolean conntected, boolean connectOnStart) throws Exception {
+            String dvSwitchUuid, String macAddress, int contextNumber, boolean connected, boolean connectOnStart) throws Exception {
 
         VirtualEthernetCard nic;
         switch (deviceType) {
@@ -210,16 +208,13 @@ public class VmwareHelper {
         dvPortConnection.setPortgroupKey(morNetwork.getValue());
         dvPortBacking.setPort(dvPortConnection);
         nic.setBacking(dvPortBacking);
-        nic.setKey(30);
 
         connectInfo.setAllowGuestControl(true);
-        connectInfo.setConnected(conntected);
+        connectInfo.setConnected(connected);
         connectInfo.setStartConnected(connectOnStart);
         nic.setAddressType("Manual");
         nic.setConnectable(connectInfo);
         nic.setMacAddress(macAddress);
-
-        nic.setUnitNumber(deviceNumber);
         nic.setKey(-contextNumber);
         return nic;
     }

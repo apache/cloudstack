@@ -16,11 +16,14 @@
 // under the License.
 package com.cloud.vm;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.utils.db.Encrypt;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.StateMachine;
+import com.cloud.utils.fsm.FiniteStateObject;
+import com.cloud.vm.VirtualMachine.State;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -36,16 +39,11 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
-
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.utils.db.Encrypt;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.StateMachine;
-import com.cloud.utils.fsm.FiniteStateObject;
-import com.cloud.vm.VirtualMachine.State;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 @Entity
 @Table(name = "vm_instance")
@@ -565,5 +563,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
 
     public void setPowerHostId(Long hostId) {
         powerHostId = hostId;
+    }
+
+    @Override
+    public PartitionType partitionType() {
+        return PartitionType.VM;
     }
 }

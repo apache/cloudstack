@@ -16,9 +16,10 @@
 // under the License.
 package com.cloud.dc;
 
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
+import com.cloud.network.Network.Provider;
+import com.cloud.org.Grouping;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -30,11 +31,9 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.TableGenerator;
 import javax.persistence.Transient;
-
-import com.cloud.network.Network.Provider;
-import com.cloud.org.Grouping;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.GenericDao;
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 @Entity
 @Table(name = "data_center")
@@ -453,5 +452,10 @@ public class DataCenterVO implements DataCenter {
 
     public void setIp6Dns2(String ip6Dns2) {
         this.ip6Dns2 = ip6Dns2;
+    }
+
+    @Override
+    public PartitionType partitionType() {
+        return PartitionType.Zone;
     }
 }

@@ -27,6 +27,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.spi.SelectorProvider;
 import java.util.WeakHashMap;
 
+import org.apache.cloudstack.framework.ca.CAService;
 import org.apache.log4j.Logger;
 
 public class NioServer extends NioConnection {
@@ -37,8 +38,9 @@ public class NioServer extends NioConnection {
 
     protected WeakHashMap<InetSocketAddress, Link> _links;
 
-    public NioServer(final String name, final int port, final int workers, final HandlerFactory factory) {
+    public NioServer(final String name, final int port, final int workers, final HandlerFactory factory, final CAService caService) {
         super(name, port, workers, factory);
+        setCAService(caService);
         _localAddr = null;
         _links = new WeakHashMap<InetSocketAddress, Link>(1024);
     }

@@ -35,6 +35,11 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.ca.SetupCertificateAnswer;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.ca.SetupKeyStoreCommand;
+import org.apache.cloudstack.ca.SetupKeystoreAnswer;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -108,6 +113,14 @@ public class VirtualRoutingResource {
                 return executeQueryCommand(cmd);
             }
 
+            if (cmd instanceof SetupKeyStoreCommand) {
+                return execute((SetupKeyStoreCommand) cmd);
+            }
+
+            if (cmd instanceof SetupCertificateCommand) {
+                return execute((SetupCertificateCommand) cmd);
+            }
+
             if (cmd instanceof AggregationControlCommand) {
                 return execute((AggregationControlCommand)cmd);
             }
@@ -137,6 +150,37 @@ public class VirtualRoutingResource {
                 }
             }
         }
+    }
+
+    private Answer execute(final SetupKeyStoreCommand cmd) {
+        final String args = String.format("/usr/local/cloud/systemvm/conf/agent.properties " +
+                        "/usr/local/cloud/systemvm/conf/%s " +
+                        "%s %d " +
+                        "/usr/local/cloud/systemvm/conf/%s",
+                KeyStoreUtils.defaultKeystoreFile,
+                cmd.getKeystorePassword(),
+                cmd.getValidityDays(),
+                KeyStoreUtils.defaultCsrFile);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), KeyStoreUtils.keyStoreSetupScript, args);
+        return new SetupKeystoreAnswer(result.getDetails());
+    }
+
+    private Answer execute(final SetupCertificateCommand cmd) {
+        final String args = String.format("/usr/local/cloud/systemvm/conf/agent.properties " +
+                        "/usr/local/cloud/systemvm/conf/%s %s " +
+                        "/usr/local/cloud/systemvm/conf/%s \"%s\" " +
+                        "/usr/local/cloud/systemvm/conf/%s \"%s\" " +
+                        "/usr/local/cloud/systemvm/conf/%s \"%s\"",
+                KeyStoreUtils.defaultKeystoreFile,
+                KeyStoreUtils.sshMode,
+                KeyStoreUtils.defaultCertFile,
+                cmd.getEncodedCertificate(),
+                KeyStoreUtils.defaultCaCertFile,
+                cmd.getEncodedCaCertificates(),
+                KeyStoreUtils.defaultPrivateKeyFile,
+                cmd.getEncodedPrivateKey());
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), KeyStoreUtils.keyStoreImportScript, args);
+        return new SetupCertificateAnswer(result.isSuccess());
     }
 
     private Answer executeQueryCommand(NetworkElementCommand cmd) {

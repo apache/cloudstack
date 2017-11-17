@@ -16,12 +16,16 @@
 // under the License.
 package com.cloud.agent;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.cloud.utils.StringUtils;
 
 public class AgentShellTest {
     @Test
@@ -43,5 +47,16 @@ public class AgentShellTest {
         shell.loadProperties();
         Assert.assertNotNull(shell.getProperties());
         Assert.assertFalse(shell.getProperties().entrySet().isEmpty());
+    }
+
+    @Test
+    public void testGetHost() {
+        AgentShell shell = new AgentShell();
+        List<String> hosts = Arrays.asList("10.1.1.1", "20.2.2.2", "30.3.3.3", "2001:db8::1");
+        shell.setHost(StringUtils.listToCsvTags(hosts));
+        for (String host : hosts) {
+            Assert.assertEquals(host, shell.getHost());
+        }
+        Assert.assertEquals(shell.getHost(), hosts.get(0));
     }
 }

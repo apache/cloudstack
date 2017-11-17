@@ -36,6 +36,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-ca</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.springframework</groupId>
       <artifactId>spring-context</artifactId>
     </dependency>
@@ -72,6 +77,10 @@
       <artifactId>bcprov-jdk15on</artifactId>
     </dependency>
     <dependency>
+      <groupId>org.bouncycastle</groupId>
+      <artifactId>bcpkix-jdk15on</artifactId>
+    </dependency>
+    <dependency>
       <groupId>com.jcraft</groupId>
       <artifactId>jsch</artifactId>
     </dependency>
@@ -85,7 +94,11 @@
     </dependency>
     <dependency>
       <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk</artifactId>
+      <artifactId>aws-java-sdk-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.amazonaws</groupId>
+      <artifactId>aws-java-sdk-s3</artifactId>
     </dependency>
     <dependency>
       <groupId>log4j</groupId>
@@ -147,6 +160,10 @@
           <groupId>xerces</groupId>
           <artifactId>xmlParserAPIs</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>commons-beanutils</groupId>
+          <artifactId>commons-beanutils-core</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -157,7 +174,7 @@
     <dependency>
       <groupId>commons-net</groupId>
       <artifactId>commons-net</artifactId>
-      <version>3.5</version>
+      <version>3.6</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>

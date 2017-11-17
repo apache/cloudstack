@@ -18,6 +18,8 @@ package com.cloud.storage.snapshot;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -25,13 +27,13 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Volume;
-import org.apache.cloudstack.framework.config.ConfigKey;
 
 /**
  *
  *
  */
-public interface SnapshotManager {
+public interface SnapshotManager extends Configurable {
+
     public static final int HOURLYMAX = 8;
     public static final int DAILYMAX = 8;
     public static final int WEEKLYMAX = 8;
@@ -48,6 +50,12 @@ public interface SnapshotManager {
             "Maximum recurring monthly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring monthly snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
     static final ConfigKey<Boolean> usageSnapshotSelection = new ConfigKey<Boolean>("Usage", Boolean.class, "usage.snapshot.virtualsize.select", "false",
             "Set the value to true if snapshot usage need to consider virtual size, else physical size is considered ", false);
+    public static final ConfigKey<Integer> BackupRetryAttempts = new ConfigKey<Integer>(Integer.class, "backup.retry", "Advanced", "3",
+            "Number of times to retry in creating backup of snapshot on secondary", false, ConfigKey.Scope.Global, null);
+
+    public static final ConfigKey<Integer> BackupRetryInterval = new ConfigKey<Integer>(Integer.class, "backup.retry.interval", "Advanced", "300",
+            "Time in seconds between retries in backing up snapshot to secondary", false, ConfigKey.Scope.Global, null);
+
     void deletePoliciesForVolume(Long volumeId);
 
     /**

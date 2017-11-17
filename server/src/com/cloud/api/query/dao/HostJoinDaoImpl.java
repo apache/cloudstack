@@ -50,6 +50,9 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
+import org.apache.cloudstack.ha.HAResource;
+import org.apache.cloudstack.ha.dao.HAConfigDao;
+
 @Component
 public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements HostJoinDao {
     public static final Logger s_logger = Logger.getLogger(HostJoinDaoImpl.class);
@@ -58,6 +61,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
     private ConfigurationDao _configDao;
     @Inject
     private HostDetailsDao hostDetailsDao;
+    @Inject
+    private HAConfigDao haConfigDao;
     @Inject
     private OutOfBandManagementDao outOfBandManagementDao;
 
@@ -231,6 +236,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             }
         }
 
+        hostResponse.setHostHAResponse(haConfigDao.findHAResource(host.getId(), HAResource.ResourceType.Host));
         hostResponse.setOutOfBandManagementResponse(outOfBandManagementDao.findByHost(host.getId()));
         hostResponse.setResourceState(host.getResourceState().toString());
 
@@ -239,6 +245,9 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
             hostResponse.setJobId(host.getJobUuid());
             hostResponse.setJobStatus(host.getJobStatus());
         }
+        hostResponse.setAnnotation(host.getAnnotation());
+        hostResponse.setLastAnnotated(host.getLastAnnotated ());
+        hostResponse.setUsername(host.getUsername());
 
         hostResponse.setObjectName("host");
 

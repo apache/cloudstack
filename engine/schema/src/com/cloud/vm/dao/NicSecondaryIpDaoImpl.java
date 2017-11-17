@@ -119,8 +119,10 @@ public class NicSecondaryIpDaoImpl extends GenericDaoBase<NicSecondaryIpVO, Long
 
     @Override
     public NicSecondaryIpVO findByIp4AddressAndNetworkId(String ip4Address, long networkId) {
-        // TODO Auto-generated method stub
-        return null;
+        SearchCriteria<NicSecondaryIpVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("address", ip4Address);
+        return findOneBy(sc);
     }
 
     @Override
@@ -128,6 +130,14 @@ public class NicSecondaryIpDaoImpl extends GenericDaoBase<NicSecondaryIpVO, Long
         SearchCriteria<NicSecondaryIpVO> sc = AllFieldsSearch.create();
         sc.setParameters("address", ip4Address);
         sc.setParameters("nicId", nicId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public NicSecondaryIpVO findByIp4AddressAndInstanceId(Long vmId, String vmIp) {
+        SearchCriteria<NicSecondaryIpVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instanceId", vmId);
+        sc.setParameters("address", vmIp);
         return findOneBy(sc);
     }
 

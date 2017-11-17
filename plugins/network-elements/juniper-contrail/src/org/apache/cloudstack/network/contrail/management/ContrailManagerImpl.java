@@ -219,7 +219,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         ConfigurationManager configMgr = (ConfigurationManager) _configService;
         NetworkOfferingVO voffer = configMgr.createNetworkOffering(offeringName, offeringDisplayText,
                 TrafficType.Public, null, true, Availability.Optional, null, serviceProviderMap, true,
-                Network.GuestType.Shared, false, null, false, null, true, false, null, true, null, false);
+                Network.GuestType.Shared, false, null, false, null, true, false, null, true, null, false, false);
 
         voffer.setState(NetworkOffering.State.Enabled);
         long id = voffer.getId();
@@ -256,7 +256,7 @@ public class ContrailManagerImpl extends ManagerBase implements ContrailManager 
         ConfigurationManager configMgr = (ConfigurationManager)_configService;
         NetworkOfferingVO voffer =
                 configMgr.createNetworkOffering(offeringName, offeringDisplayText, TrafficType.Guest, null, false, Availability.Optional, null, serviceProviderMap, true,
-                        Network.GuestType.Isolated, false, null, false, null, false, true, null, true, null, false);
+                        Network.GuestType.Isolated, false, null, false, null, false, true, null, true, null, false, offeringName.equals(vpcRouterOfferingName));
 
         voffer.setState(NetworkOffering.State.Enabled);
         if (offeringName.equals(vpcRouterOfferingName)) {

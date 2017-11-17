@@ -25,6 +25,10 @@ import com.cloud.agent.api.LogLevel.Log4jLevel;
 
 @LogLevel(Log4jLevel.Trace)
 public class GetVmDiskStatsCommand extends Command {
+    public String getString() {
+        return "GetVmDiskStatsCommand [vmNames=" + vmNames + ", hostGuid=" + hostGuid + ", hostName=" + hostName + "]";
+    }
+
     List<String> vmNames;
     String hostGuid;
     String hostName;

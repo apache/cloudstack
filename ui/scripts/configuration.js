@@ -2811,6 +2811,60 @@
                                         }
                                     },
 
+                                    promiscuousMode: {
+                                        label: 'label.promiscuous.mode',
+                                        select: function(args) {
+                                            args.response.success({
+                                                data: [{
+                                                    id: '',
+                                                    description: ''
+                                                }, {
+                                                    id: 'true',
+                                                    description: 'Accept'
+                                                }, {
+                                                    id: 'false',
+                                                    description: 'Reject'
+                                                }]
+                                            });
+                                        }
+                                    },
+
+                                    macAddressChanges: {
+                                        label: 'label.mac.address.changes',
+                                        select: function(args) {
+                                            args.response.success({
+                                                data: [{
+                                                    id: '',
+                                                    description: ''
+                                                }, {
+                                                    id: 'true',
+                                                    description: 'Accept'
+                                                }, {
+                                                    id: 'false',
+                                                    description: 'Reject'
+                                                }]
+                                            });
+                                        }
+                                    },
+
+                                    forgedTransmits: {
+                                        label: 'label.forged.transmits',
+                                        select: function(args) {
+                                            args.response.success({
+                                                data: [{
+                                                    id: '',
+                                                    description: ''
+                                                }, {
+                                                    id: 'true',
+                                                    description: 'Accept'
+                                                }, {
+                                                    id: 'false',
+                                                    description: 'Reject'
+                                                }]
+                                            });
+                                        }
+                                    },
+
                                     supportedServices: {
                                         label: 'label.supported.services',
 
@@ -3242,9 +3296,11 @@
                                             serviceCapabilityIndex++;
                                         }
                                     } else if (value != '') { // normal data (serviceData.length ==1), e.g. "name", "displayText", "networkRate", "guestIpType", "lbType" (unwanted), "availability" (unwated when value is "Optional"), "egressdefaultpolicy", "state" (unwanted), "status" (unwanted), "allocationstate" (unwanted)
-                                        if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate" || key == "useVpc" )) {
-                                        inputData[key] = value;
-                                    }
+                                        if (key == "useVpc") {
+                                            inputData['forvpc'] = value;
+                                        } else if (!(key ==  "lbType"  || (key == "availability" && value == "Optional") || key == "state" || key == "status" || key == "allocationstate" || key == "useVpc" )) {
+                                            inputData[key] = value;
+                                        }
                                     }
                                 });
 
@@ -3316,6 +3372,11 @@
                                     }
                                 }
 
+                                if (inputData['forvpc'] == 'on') {
+                                    inputData['forvpc'] = true;
+                                   } else {
+                                    delete inputData.forvpc; //if forVpc checkbox is unchecked, do not pass forVpc parameter to API call since we need to keep API call's size as small as possible (p.s. forVpc is defaulted as false at server-side)
+                                }
 
                                 if (inputData['conservemode'] == 'on') {
                                     delete inputData.conservemode; //if ConserveMode checkbox is checked, do not pass conservemode parameter to API call since we need to keep API call's size as small as possible (p.s. conservemode is defaulted as true at server-side)
@@ -3340,6 +3401,22 @@
                                 } else {
                                     delete inputData.egressdefaultpolicy;
                                 }
+
+                                if ("promiscuousMode" in inputData) {
+                                    inputData['details[0].promiscuousMode'] = inputData.promiscuousMode;
+                                    delete inputData.promiscuousMode;
+                                }
+
+                                if ("macAddressChanges" in inputData) {
+                                    inputData['details[0].macAddressChanges'] = inputData.macAddressChanges;
+                                    delete inputData.macAddressChanges;
+                                }
+
+                                if ("forgedTransmits" in inputData) {
+                                    inputData['details[0].forgedTransmits'] = inputData.forgedTransmits;
+                                    delete inputData.forgedTransmits;
+                                }
+
 
                                 if (args.$form.find('.form-item[rel=serviceofferingid]').css("display") == "none")
                                     delete inputData.serviceofferingid;
@@ -3639,6 +3716,9 @@
                                     },
                                     tags: {
                                         label: 'label.tags'
+                                    },
+                                    details: {
+                                        label: 'label.details'
                                     }
                                 }],
 
@@ -3649,9 +3729,16 @@
                                         async: true,
                                         success: function(json) {
                                             var item = json.listnetworkofferingsresponse.networkoffering[0];
+                                            if (!item.hasOwnProperty('details')) {
+                                                item.details = {};
+                                            }
                                             args.response.success({
                                                 actionFilter: networkOfferingActionfilter,
                                                 data: $.extend(item, {
+                                                    details: $.map(item.details, function(val, key) {
+                                                        return key + "=" + val;
+                                                    }).join(', '),
+
                                                     supportedServices: $.map(item.service, function(service) {
                                                         return service.name;
                                                     }).join(', '),
