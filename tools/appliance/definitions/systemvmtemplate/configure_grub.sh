@@ -19,19 +19,17 @@
 set -e
 set -x
 
-# Remove 5s grub timeout to speed up booting
 function configure_grub() {
-  grep GRUB_TIMEOUT=0 /etc/default/grub && return
-
   cat <<EOF > /etc/default/grub
 # If you change this file, run 'update-grub' afterwards to update
 # /boot/grub/grub.cfg.
 
 GRUB_DEFAULT=0
 GRUB_TIMEOUT=0
-GRUB_DISTRIBUTOR=`lsb_release -i -s 2> /dev/null || echo Debian`
+GRUB_DISTRIBUTOR=Debian
 GRUB_CMDLINE_LINUX_DEFAULT="quiet"
-GRUB_CMDLINE_LINUX="console=tty1 console=ttyS0,115200n8 net.ifnames=0 biosdevname=0 debian-installer=en_US"
+GRUB_CMDLINE_LINUX="console=tty0 console=ttyS0,115200n8 console=hvc0 earlyprintk=xen net.ifnames=0 biosdevname=0 debian-installer=en_US"
+GRUB_CMDLINE_XEN="com1=115200 console=com1"
 GRUB_TERMINAL="console serial"
 GRUB_SERIAL_COMMAND="serial --speed=115200 --unit=0 --word=8 --parity=no --stop=1"
 

@@ -49,7 +49,6 @@ class CsApache(CsApp):
         file.search("<VirtualHost.*:443>", "\t<VirtualHost %s:443>" % (self.ip))
         file.search("Listen .*:80", "Listen %s:80" % (self.ip))
         file.search("Listen .*:443", "Listen %s:443" % (self.ip))
-        file.search("NameVirtualHost .*:80", "NameVirtualHost %s:80" % (self.ip))
         file.search("ServerName.*", "\tServerName %s.%s" % (self.config.cl.get_type(), self.config.get_domain()))
         if file.is_changed():
             file.commit()

@@ -18,37 +18,67 @@ specific language governing permissions and limitations
 under the License.
 -->
 <!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
-
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
 
    <!-- ================================= -->
    <!-- Preserve messages in a local file -->
    <!-- ================================= -->
 
-   <!-- A time/date based rolling appender -->
-   <appender name="FILE" class="org.apache.log4j.DailyRollingFileAppender">
-      <param name="File" value="${log.home}systemvm.log"/>
+   <appender name="FILE1" class="org.apache.log4j.RollingFileAppender">
+      <param name="File" value="/var/log/cloud.log"/>
+      <param name="MaxFileSize" value="10000KB"/>
+      <param name="MaxBackupIndex" value="4"/>
+
+     <layout class="org.apache.log4j.EnhancedPatternLayout">
+      <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+     </layout>
+    </appender>
+
+    <appender name="FILE2" class="org.apache.log4j.RollingFileAppender">
+       <param name="File" value="/var/log/cloud/cloud.out"/>
+       <param name="Append" value="true"/>
+       <param name="MaxFileSize" value="10000KB"/>
+       <param name="MaxBackupIndex" value="4"/>
+
+    <layout class="org.apache.log4j.EnhancedPatternLayout">
+     <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+    </layout>
+    </appender>
+
+     <appender name="FILE3" class="org.apache.log4j.rolling.RollingFileAppender">
+       <param name="File" value="/usr/local/cloud/systemvm/cloud.log"/>
+       <param name="Append" value="true"/>
+       <param name="MaxFileSize" value="10000KB"/>
+       <param name="MaxBackupIndex" value="4"/>
+
+     <layout class="org.apache.log4j.EnhancedPatternLayout">
+     <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+     </layout>
+    </appender>
+
+   <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
       <param name="Threshold" value="DEBUG"/>
+      <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
+        <param name="FileNamePattern" value="/var/log/cloud/api-server.log.%d{yyyy-MM-dd}{GMT}.gz"/>
+        <param name="ActiveFileName" value="/var/log/cloud/api-server.log"/>
+      </rollingPolicy>
 
-      <!-- Rollover at midnight each day -->
-      <param name="DatePattern" value="'.'yyyy-MM-dd"/>
-
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%d %-5p [%c{3}] (%t:%x) %m%n"/>
+      <layout class="org.apache.log4j.EnhancedPatternLayout">
+         <param name="ConversionPattern" value="%d{ISO8601}{GMT} %m%n"/>
       </layout>
    </appender>
-   
+
    <!-- ============================== -->
    <!-- Append messages to the console -->
    <!-- ============================== -->
 
    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
       <param name="Target" value="System.out"/>
-      <param name="Threshold" value="WARN"/>
+      <param name="Threshold" value="INFO"/>
 
-      <layout class="org.apache.log4j.PatternLayout">
-         <param name="ConversionPattern" value="%d{ABSOLUTE} %5p %c{1}:%L - %m%n"/>
+      <layout class="org.apache.log4j.EnhancedPatternLayout">
+         <param name="ConversionPattern" value="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%n"/>
       </layout>
    </appender>
 
@@ -56,26 +86,14 @@ under the License.
    <!-- Limit categories -->
    <!-- ================ -->
 
-   <category name="com.cloud.console.ConsoleCanvas">
-     <priority value="WARN"/>
-   </category>
-   
-   <category name="com.cloud.consoleproxy.ConsoleProxyAjaxImageHandler">
-     <priority value="WARN"/>
-   </category>
-   
-   <category name="com.cloud.consoleproxy.ConsoleProxyViewer">
-     <priority value="WARN"/>
-   </category>
-
-   <category name="com.cloud.consoleproxy">
-     <priority value="INFO"/>
-   </category>
-
    <category name="com.cloud">
      <priority value="DEBUG"/>
    </category>
-   
+
+   <category name="org.apache.cloudstack">
+     <priority value="DEBUG"/>
+   </category>
+
    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
    <category name="org.apache">
       <priority value="INFO"/>
@@ -84,20 +102,19 @@ under the License.
    <category name="org">
       <priority value="INFO"/>
    </category>
-   
+
    <category name="net">
      <priority value="INFO"/>
    </category>
 
-   <!-- Limit the com.amazonaws category to INFO as its DEBUG is verbose -->
-   <category name="com.amazonaws">
-      <priority value="INFO"/>
+   <category name="apiserver.com.cloud">
+     <priority value="DEBUG"/>
    </category>
 
-   <!-- Limit the httpclient.wire category to INFO as its DEBUG is verbose -->
-   <category name="httpclient.wire">
-      <priority value="INFO"/>
-   </category>
+   <logger name="apiserver.com.cloud" additivity="false">
+      <level value="DEBUG"/>
+      <appender-ref ref="APISERVER"/>
+   </logger>
 
    <!-- ======================= -->
    <!-- Setup the Root category -->
@@ -106,7 +123,9 @@ under the License.
    <root>
       <level value="INFO"/>
       <appender-ref ref="CONSOLE"/>
-      <appender-ref ref="FILE"/>
+      <appender-ref ref="FILE1"/>
+      <appender-ref ref="FILE2"/>
+      <appender-ref ref="FILE3"/>
    </root>
 
 </log4j:configuration>

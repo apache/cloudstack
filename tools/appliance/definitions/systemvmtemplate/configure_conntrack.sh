@@ -38,6 +38,9 @@ nf_conntrack_ipv4
 nf_conntrack_ipv6
 nf_conntrack
 nf_conntrack_ftp
+nf_conntrack_pptp
+nf_conntrack_proto_gre
+nf_nat_tftp
 nf_nat_ftp
 EOF
 }

@@ -1,3 +1,4 @@
+#!/bin/bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,5 +16,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#set ENABLED to 1 if you want the init script to start the password server
-ENABLED=0
+. /opt/cloud/bin/setup/common.sh
+
+setup_default() {
+  cat > /etc/network/interfaces << EOF
+auto lo
+iface lo inet loopback
+EOF
+  cp -f /etc/iptables/rt_tables_init /etc/iproute2/rt_tables
+}
+
+setup_default

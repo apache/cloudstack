@@ -18,37 +18,19 @@
 #under the License.
 
 [ ! -f /var/cache/cloud/enabled_svcs ] && touch /var/cache/cloud/enabled_svcs
-for svc in $(cat /var/cache/cloud/enabled_svcs) 
+for svc in $(cat /var/cache/cloud/enabled_svcs)
 do
    logger -t cloud "Starting $svc"
-   service $svc start
+   systemctl enable --now $svc
 done
 
 [ ! -f /var/cache/cloud/disabled_svcs ] && touch /var/cache/cloud/disabled_svcs
-for svc in $(cat /var/cache/cloud/disabled_svcs) 
+for svc in $(cat /var/cache/cloud/disabled_svcs)
 do
    logger -t cloud "Stopping $svc"
-   service $svc stop
+   systemctl disable --now $svc
 done
 
-CMDLINE=$(cat /var/cache/cloud/cmdline)
-router=$(echo "$CMDLINE" | grep -o  type=router)
-vpcrouter=$(echo "$CMDLINE" | grep -o  type=vpcrouter)
-
-if [ "$router" != "" ] ||  [ "$vpcrouter" != "" ]
-then
-   echo 1000000 > /proc/sys/net/ipv4/netfilter/ip_conntrack_max
-   echo 1000000 > /proc/sys/net/netfilter/nf_conntrack_max
-   echo 1000000 > /proc/sys/net/nf_conntrack_max
-fi
-
-if [ "$router" != "" ]
-then
-    python /opt/cloud/bin/baremetal-vr.py &
-fi
-
-date > /var/cache/cloud/boot_up_done
-logger -t cloud "Boot up process done"
 
 #Restore the persistent iptables nat, rules and filters for IPv4 and IPv6 if they exist
 ipv4="/etc/iptables/router_rules.v4"
@@ -61,4 +43,36 @@ ipv6="/etc/iptables/router_rules.v6"
 if [ -e $ipv6 ]
 then
    iptables-restore < $ipv6
+fi
+
+date > /var/cache/cloud/boot_up_done
+logger -t cloud "Boot up process done"
+
+CMDLINE=/var/cache/cloud/cmdline
+for str in $(cat $CMDLINE)
+  do
+    KEY=$(echo $str | cut -d= -f1)
+    VALUE=$(echo $str | cut -d= -f2)
+    case $KEY in
+      type)
+        export TYPE=$VALUE
+        ;;
+      *)
+        ;;
+    esac
+done
+
+if [ "$TYPE" == "router" ]
+then
+    python /opt/cloud/bin/baremetal-vr.py &
+    logger -t cloud "Started baremetal-vr service"
+fi
+
+if [ "$TYPE" == "router" ] || [ "$TYPE" == "vpcrouter" ] || [ "$TYPE" == "dhcpsrvr" ]
+then
+  if [ -x /opt/cloud/bin/update_config.py ]
+  then
+      /opt/cloud/bin/update_config.py cmd_line.json
+      logger -t cloud "Updated config: cmd_line.json"
+  fi
 fi

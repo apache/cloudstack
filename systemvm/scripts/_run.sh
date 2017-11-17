@@ -16,24 +16,16 @@
 # specific language governing permissions and limitations
 # under the License.
 
+# run.sh runs the cloud service
+#set -x
 
+# make sure we delete the old files from the original template
+rm -f console-proxy.jar
+rm -f console-common.jar
+rm -f conf/cloud.properties
 
- 
+CP="./:./conf:$(ls *.jar | tr '\n' ':' | sed s'/.$//')"
 
-#run.sh runs the console proxy.
-
-# make sure we delete the old files from the original template 
-rm console-proxy.jar
-rm console-common.jar
-rm conf/cloud.properties
-
-set -x
-
-CP=./:./conf
-for file in *.jar
-do
-  CP=${CP}:$file
-done
 keyvalues=
 LOGHOME=/var/log/cloud/
 
@@ -50,7 +42,7 @@ for i in $CMDLINE
           keyvalues="${keyvalues} $KEY=$VALUE"
      esac
   done
-   
+
 tot_mem_k=$(cat /proc/meminfo | grep MemTotal | awk '{print $2}')
 let "tot_mem_m=tot_mem_k>>10"
 let "eightypcnt=$tot_mem_m*8/10"

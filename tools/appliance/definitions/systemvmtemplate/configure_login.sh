@@ -73,6 +73,7 @@ function configure_login() {
   configure_sudoers
   configure_user
   rm -fv /home/cloud/configure_login.sh
+  sync
   halt -p
 }
 

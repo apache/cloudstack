@@ -16,9 +16,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-. /etc/default/cloud-passwd-srvr
 addr=$1;
-while [ "$ENABLED" == "1" ]
+while true
 do
     python /opt/cloud/bin/passwd_server_ip.py $addr >/dev/null 2>/dev/null
     rc=$?
@@ -27,5 +26,4 @@ do
         logger -t cloud "Password server failed with error code $rc. Restarting it..."
         sleep 3
     fi
-    . /etc/default/cloud-passwd-srvr
 done

@@ -489,3 +489,6 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 -- Add XenServer 7.2 hypervisor guest OS mappings (copy 7.1.0 & remove Windows Vista, Windows XP, Windows 2003, CentOS 4.x, RHEL 4.xS, LES 10 (all versions) as per XenServer 7.2 Release Notes)
 
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '7.2.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.1.0' AND guest_os_id not in (1,2,3,4,56,101,56,58,93,94,50,51,87,88,89,90,91,92,26,27,28,29,40,41,42,43,44,45,96,97,107,108,109,110,151,152,153);
+
+-- Change monitor patch for apache2 in systemvm
+UPDATE `cloud`.`monitoring_services` SET pidfile="/var/run/apache2/apache2.pid" WHERE process_name="apache2" AND service_name="apache2";

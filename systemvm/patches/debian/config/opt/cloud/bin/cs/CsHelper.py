@@ -212,14 +212,14 @@ def execute2(command):
 
 
 def service(name, op):
-    execute("service %s %s" % (name, op))
+    execute("systemctl %s %s" % (op, name))
     logging.info("Service %s %s" % (name, op))
 
 
 def start_if_stopped(name):
-    ret = execute2("service %s status" % name)
+    ret = execute2("systemctl is-active %s" % name)
     if ret.returncode:
-        execute2("service %s start" % name)
+        execute2("systemctl start %s" % name)
 
 
 def hup_dnsmasq(name, user):

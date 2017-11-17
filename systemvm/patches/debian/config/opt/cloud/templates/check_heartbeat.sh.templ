@@ -47,9 +47,9 @@ then
     if [ $s -gt 2 ]
     then
         echo Keepalived process is dead! >> $ROUTER_LOG
-        service keepalived stop >> $ROUTER_LOG 2>&1
-        service conntrackd stop >> $ROUTER_LOG 2>&1
-        
+        systemctl stop keepalived >> $ROUTER_LOG 2>&1
+        systemctl stop conntrackd >> $ROUTER_LOG 2>&1
+
         #Set fault so we have the same effect as a KeepaliveD fault.
         python /opt/cloud/bin/master.py --fault
         

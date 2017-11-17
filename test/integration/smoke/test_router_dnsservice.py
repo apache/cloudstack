@@ -92,8 +92,8 @@ class TestRouterDnsService(cloudstackTestCase):
                                       zoneid=cls.zone.id)
 
         cls.logger.debug("Creating guest VM for Account %s using offering %s" % (cls.account.name, cls.service_offering.id))
-        cls.services["virtual_machine"]["displayname"] = VM1_NAME;
-        cls.services["virtual_machine"]["name"] = VM1_NAME;
+        cls.services["virtual_machine"]["displayname"] = VM1_NAME
+        cls.services["virtual_machine"]["name"] = VM1_NAME
         cls.vm1 = VirtualMachine.create(cls.api_client,
                                          cls.services["virtual_machine"],
                                          templateid=cls.template.id,
@@ -102,10 +102,10 @@ class TestRouterDnsService(cloudstackTestCase):
                                          serviceofferingid=cls.service_offering.id,
                                          networkids=[str(cls.network.id)])
         cls.vm1.password = "password"
-        cls.logger.debug("Created VM named %s" % VM1_NAME);
-                
-        cls.services["virtual_machine"]["displayname"] = VM2_NAME;
-        cls.services["virtual_machine"]["name"] = VM2_NAME;
+        cls.logger.debug("Created VM named %s" % VM1_NAME)
+
+        cls.services["virtual_machine"]["displayname"] = VM2_NAME
+        cls.services["virtual_machine"]["name"] = VM2_NAME
         cls.vm2 = VirtualMachine.create(cls.api_client,
                                          cls.services["virtual_machine"],
                                          templateid=cls.template.id,
@@ -114,7 +114,7 @@ class TestRouterDnsService(cloudstackTestCase):
                                          serviceofferingid=cls.service_offering.id,
                                          networkids=[str(cls.network.id)])
         cls.vm2.password = "password"
-        cls.logger.debug("Created VM named %s" % VM2_NAME);
+        cls.logger.debug("Created VM named %s" % VM2_NAME)
 
         cls.services["natrule1"] = {
             "privateport": 22,
@@ -256,7 +256,7 @@ class TestRouterDnsService(cloudstackTestCase):
         result1 = None
         try:
             self.logger.debug("SSH into guest VM with IP: %s" % nat_rule1.ipaddress)
-            ssh = self.vm1.get_ssh_client(ipaddress=nat_rule1.ipaddress, port=self.services['natrule1']["publicport"], retries=8)
+            ssh = self.vm1.get_ssh_client(ipaddress=nat_rule1.ipaddress, port=self.services['natrule1']["publicport"], retries=15)
             result1 = str(ssh.execute("nslookup %s" % VM1_NAME))
             self.logger.debug("nslookup %s: %s " % (VM1_NAME, result1))
             result2 = str(ssh.execute("nslookup %s" % VM2_NAME))

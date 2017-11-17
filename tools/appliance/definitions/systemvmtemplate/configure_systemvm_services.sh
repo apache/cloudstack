@@ -36,14 +36,19 @@ function install_cloud_scripts() {
   rsync -av ./cloud_scripts/ /
   chmod +x /opt/cloud/bin/* \
     /root/{clearUsageRules.sh,reconfigLB.sh,monitorServices.py} \
-    /etc/init.d/{cloud-early-config,cloud-passwd-srvr,postinit} \
+    /etc/init.d/{cloud-early-config,cloud-passwd-srvr} \
     /etc/profile.d/cloud.sh
 
   cat > /etc/systemd/system/cloud-early-config.service << EOF
 [Unit]
-Description=cloud-early-config: configure according to cmdline
+Description=cloud-early-config: configures systemvm using cmdline
 DefaultDependencies=no
-After=local-fs.target apparmor.service systemd-sysctl.service systemd-modules-load.service
+
+Before=network-pre.target
+Wants=network-pre.target
+
+Requires=local-fs.target
+After=local-fs.target
 
 [Install]
 WantedBy=multi-user.target
@@ -85,30 +90,14 @@ WantedBy=multi-user.target
 Type=forking
 ExecStart=/etc/init.d/cloud-passwd-srvr start
 ExecStop=/etc/init.d/cloud-passwd-srvr stop
-RemainAfterExit=true
-TimeoutStartSec=5min
-EOF
-
-  cat > /etc/systemd/system/postinit.service << EOF
-[Unit]
-Description=cloud post-init service
-After=cloud-early-config.service network.target local-fs.target
-
-[Install]
-WantedBy=multi-user.target
-
-[Service]
-Type=forking
-ExecStart=/etc/init.d/postinit start
-ExecStop=/etc/init.d/postinit stop
-RemainAfterExit=true
-TimeoutStartSec=5min
+Restart=always
+RestartSec=5
 EOF
 
   systemctl daemon-reload
   systemctl enable cloud-early-config
-  systemctl disable cloud-passwd-srvr
   systemctl disable cloud
+  systemctl disable cloud-passwd-srvr
 }
 
 function do_signature() {
@@ -130,6 +119,9 @@ function configure_services() {
   mkdir -p /usr/share/cloud
   mkdir -p /usr/local/cloud
 
+  # Fix dnsmasq directory issue
+  mkdir -p /opt/tftpboot
+
   # Fix haproxy directory issue
   mkdir -p /var/lib/haproxy
 
@@ -137,21 +129,21 @@ function configure_services() {
   do_signature
 
   systemctl daemon-reload
-  systemctl disable xl2tpd
+  systemctl disable apt-daily.service
+  systemctl disable apt-daily.timer
+  systemctl disable apt-daily-upgrade.timer
 
   # Disable services that slow down boot and are not used anyway
-  systemctl disable x11-common
-  systemctl disable console-setup
-  systemctl disable haproxy
   systemctl disable apache2
+  systemctl disable conntrackd
+  systemctl disable console-setup
   systemctl disable dnsmasq
-
-  # Hyperv kvp daemon - 64bit only
-  local arch=`dpkg --print-architecture`
-  if [ "${arch}" == "amd64" ]; then
-    systemctl disable hv_kvp_daemon
-  fi
+  systemctl disable haproxy
+  systemctl disable keepalived
   systemctl disable radvd
+  systemctl disable strongswan
+  systemctl disable x11-common
+  systemctl disable xl2tpd
 
   configure_apache2
   configure_strongswan

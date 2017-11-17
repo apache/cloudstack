@@ -83,9 +83,6 @@
 		Allow from 127.0.0.0/255.0.0.0 ::1/128
 	</Directory>
 
-    # Include CORS configuration **IF SET**
-    Include /etc/apache2/[cC][oO][rR][sS].conf
-
 	#   SSL Engine Switch:
 	#   Enable/Disable SSL for this virtual host.
 	SSLEngine on
@@ -228,12 +225,8 @@
 # README.Debian.gz
 
 Listen 10.1.1.1:80
-NameVirtualHost 10.1.1.1:80
 
 <IfModule mod_ssl.c>
-    # If you add NameVirtualHost *:443 here, you will also have to change
-    # the VirtualHost statement in /etc/apache2/sites-available/default-ssl
-    # to <VirtualHost *:443>
     # Server Name Indication for SSL named virtual hosts is currently not
     # supported by MSIE on Windows XP.
     Listen 10.1.1.1:443

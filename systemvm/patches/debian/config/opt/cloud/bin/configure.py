@@ -678,13 +678,13 @@ class CsRemoteAccessVpn(CsDataBag):
                 self.remoteaccessvpn_iptables(public_ip, self.dbag[public_ip])
 
                 CsHelper.execute("ipsec update")
-                CsHelper.execute("service xl2tpd start")
+                CsHelper.execute("systemctl start xl2tpd")
                 CsHelper.execute("ipsec rereadsecrets")
             else:
                 logging.debug("Disabling remote access vpn .....")
                 #disable remote access vpn
                 CsHelper.execute("ipsec down L2TP-PSK")
-                CsHelper.execute("service xl2tpd stop")
+                CsHelper.execute("systemctl stop xl2tpd")
 
 
     def configure_l2tpIpsec(self, left,  obj):

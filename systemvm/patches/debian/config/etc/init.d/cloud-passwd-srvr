@@ -24,9 +24,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-ENABLED=0
-[ -e /etc/default/cloud-passwd-srvr ] && . /etc/default/cloud-passwd-srvr
-
 add_iptables_rules()
 {
   #Delete any old iptables rule for port 8080 on eth0
@@ -72,7 +69,6 @@ remove_iptables_rules()
 }
 
 start() {
-  [ "$ENABLED" != 0 ]  || exit 0 
   pid=$(getpid)
   [ "$pid" != "" ] && echo "Password server is already running (pid=$pid)" && return 0
   add_iptables_rules

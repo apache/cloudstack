@@ -22,7 +22,7 @@ set -x
 function install_vhd_util() {
   [[ -f /bin/vhd-util ]] && return
 
-  wget --no-check-certificate http://download.cloudstack.org/tools/vhd-util -O /bin/vhd-util
+  wget --no-check-certificate https://github.com/rhtyd/cloudstack-nonoss/raw/master/vhd-util -O /bin/vhd-util
   chmod a+x /bin/vhd-util
 }
 
@@ -52,12 +52,12 @@ function install_packages() {
     ${apt_get} install links:i386 libuuid1:i386 libc6:i386
   fi
 
-  ${apt_get} install \
-    rsyslog logrotate cron insserv net-tools ifupdown vim netbase iptables \
-    openssh-server e2fsprogs isc-dhcp-client tcpdump socat wget \
+  ${apt_get} install grub-legacy \
+    rsyslog logrotate cron net-tools ifupdown vim tmux netbase iptables \
+    openssh-server e2fsprogs tcpdump socat wget \
     python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
     inetutils-ping iputils-arping httping  curl \
-    dnsutils zip unzip ethtool uuid file iproute acpid virt-what sudo \
+    dnsutils zip unzip ethtool uuid file iproute acpid sudo \
     sysstat python-netaddr \
     apache2 ssl-cert \
     dnsmasq dnsmasq-utils \
@@ -65,7 +65,9 @@ function install_packages() {
     samba-common cifs-utils \
     xl2tpd bcrelay ppp ipsec-tools tdb-tools \
     xenstore-utils libxenstore3.0 \
-    conntrackd ipvsadm libnetfilter-conntrack3 libnl-3-200 libnl-genl-3-200 \
+    ipvsadm conntrackd libnetfilter-conntrack3 \
+    keepalived irqbalance \
+    libnl-3-200 libnl-genl-3-200 \
     ipcalc \
     openjdk-8-jre-headless \
     ipset \
@@ -75,22 +77,19 @@ function install_packages() {
     haproxy \
     radvd \
     sharutils \
-    keepalived irqbalance open-vm-tools qemu-guest-agent \
-    strongswan libcharon-extra-plugins libstrongswan-extra-plugins
+    strongswan libcharon-extra-plugins libstrongswan-extra-plugins \
+    virt-what open-vm-tools qemu-guest-agent hyperv-daemons
+
+  # Install xenserver guest utilities as debian repos don't have it
+  wget https://mirrors.kernel.org/ubuntu/pool/universe/x/xe-guest-utilities/xe-guest-utilities_7.4.0-0ubuntu1_amd64.deb
+  dpkg -i xe-guest-utilities_7.4.0-0ubuntu1_amd64.deb
+  rm -f xe-guest-utilities_7.4.0-0ubuntu1_amd64.deb
 
   apt-get autoclean
   apt-get clean
 
   apt-get update
   apt-get -y upgrade
-
-  if [ "${arch}" == "amd64" ]; then
-    # Hyperv  kvp daemon - 64bit only
-    # Download the hv kvp daemon
-    wget http://people.apache.org/~rajeshbattala/hv-kvp-daemon_3.1_amd64.deb
-    dpkg -i hv-kvp-daemon_3.1_amd64.deb
-    rm -f hv-kvp-daemon_3.1_amd64.deb
-  fi
 }
 
 return 2>/dev/null || install_packages

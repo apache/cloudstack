@@ -39,6 +39,11 @@ function zero_disk() {
     sync
     rm -f ${path}/zero
   done
+
+  for partition in $(blkid -o list | grep ext | awk '{print $1}')
+  do
+    tune2fs -m0 $partition
+  done
 }
 
 return 2>/dev/null || zero_disk

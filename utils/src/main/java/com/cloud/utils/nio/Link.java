@@ -503,7 +503,7 @@ public class Link {
             s_logger.error(String.format("SSL error caught during unwrap data: %s, for local address=%s, remote address=%s. The client may have invalid ca-certificates.",
                     sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
-            return true;
+            return false;
         }
         switch (result.getStatus()) {
             case OK:
@@ -545,7 +545,7 @@ public class Link {
             s_logger.error(String.format("SSL error caught during wrap data: %s, for local address=%s, remote address=%s.",
                     sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
-            return true;
+            return false;
         }
         switch (result.getStatus()) {
             case OK :

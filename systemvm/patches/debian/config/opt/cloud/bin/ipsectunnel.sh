@@ -29,15 +29,15 @@ usage() {
 #set -x
 
 start_ipsec() {
-  service ipsec status > /dev/null
+  systemctl is-active ipsec > /dev/null
   if [ $? -ne 0 ]
   then
-    service ipsec start > /dev/null
+    systemctl start ipsec > /dev/null
     #Wait until ipsec started, 5 seconds at most
     for i in {1..5}
     do
       logger -t cloud "$(basename $0): waiting ipsec start..."
-      service ipsec status > /dev/null
+      systemctl is-active ipsec > /dev/null
       result=$?
       if [ $result -eq 0 ]
       then
@@ -46,7 +46,7 @@ start_ipsec() {
       sleep 1
     done
   fi
-  service ipsec status > /dev/null
+  systemctl is-active ipsec > /dev/null
   return $?
 }
 
@@ -139,36 +139,36 @@ ipsec_tunnel_add() {
 
   check_and_enable_iptables
 
-    sudo echo "conn vpn-$rightpeer" > $vpnconffile &&
-    sudo echo "  left=$leftpeer" >> $vpnconffile &&
-    sudo echo "  leftsubnet=$leftnet" >> $vpnconffile &&
-    sudo echo "  leftnexthop=$leftnexthop" >> $vpnconffile &&
-    sudo echo "  right=$rightpeer" >> $vpnconffile &&
-    sudo echo "  rightsubnets={$rightnets}" >> $vpnconffile &&
-    sudo echo "  type=tunnel" >> $vpnconffile &&
-    sudo echo "  authby=secret" >> $vpnconffile &&
-    sudo echo "  keyexchange=ike" >> $vpnconffile &&
-    sudo echo "  ike=$ikepolicy" >> $vpnconffile &&
-    sudo echo "  ikelifetime=${ikelifetime}s" >> $vpnconffile &&
-    sudo echo "  esp=$esppolicy" >> $vpnconffile &&
-    sudo echo "  salifetime=${esplifetime}s" >> $vpnconffile &&
-    sudo echo "  pfs=$pfs" >> $vpnconffile &&
-    sudo echo "  keyingtries=2" >> $vpnconffile &&
-    sudo echo "  auto=start" >> $vpnconffile &&
-    sudo echo "$leftpeer $rightpeer: PSK \"$secret\"" > $vpnsecretsfile &&
-    sudo chmod 0400 $vpnsecretsfile
+  sudo echo "conn vpn-$rightpeer" > $vpnconffile &&
+  sudo echo "  left=$leftpeer" >> $vpnconffile &&
+  sudo echo "  leftsubnet=$leftnet" >> $vpnconffile &&
+  sudo echo "  leftnexthop=$leftnexthop" >> $vpnconffile &&
+  sudo echo "  right=$rightpeer" >> $vpnconffile &&
+  sudo echo "  rightsubnets={$rightnets}" >> $vpnconffile &&
+  sudo echo "  type=tunnel" >> $vpnconffile &&
+  sudo echo "  authby=secret" >> $vpnconffile &&
+  sudo echo "  keyexchange=ike" >> $vpnconffile &&
+  sudo echo "  ike=$ikepolicy" >> $vpnconffile &&
+  sudo echo "  ikelifetime=${ikelifetime}s" >> $vpnconffile &&
+  sudo echo "  esp=$esppolicy" >> $vpnconffile &&
+  sudo echo "  salifetime=${esplifetime}s" >> $vpnconffile &&
+  sudo echo "  pfs=$pfs" >> $vpnconffile &&
+  sudo echo "  keyingtries=2" >> $vpnconffile &&
+  sudo echo "  auto=start" >> $vpnconffile &&
+  sudo echo "$leftpeer $rightpeer: PSK \"$secret\"" > $vpnsecretsfile &&
+  sudo chmod 0400 $vpnsecretsfile
 
-    if [ $dpd -ne 0 ]
-    then
-        sudo echo "  dpddelay=30" >> $vpnconffile &&
-        sudo echo "  dpdtimeout=120" >> $vpnconffile &&
-        sudo echo "  dpdaction=restart" >> $vpnconffile
-    fi
+  if [ $dpd -ne 0 ]
+  then
+      sudo echo "  dpddelay=30" >> $vpnconffile &&
+      sudo echo "  dpdtimeout=120" >> $vpnconffile &&
+      sudo echo "  dpdaction=restart" >> $vpnconffile
+  fi
 
-    enable_iptables_subnets
+  enable_iptables_subnets
 
-    sudo ipsec auto --rereadall
-    sudo ipsec auto --add vpn-$rightpeer
+  sudo ipsec auto --rereadall
+  sudo ipsec auto --add vpn-$rightpeer
 
   logger -t cloud "$(basename $0): done ipsec tunnel entry for right peer=$rightpeer right networks=$rightnets"
 

@@ -16,10 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
-
- 
-
 #_run.sh runs the agent client.
 
 # set -x

@@ -256,7 +256,7 @@ class TestRouterDns(cloudstackTestCase):
         result = None
         try:
             self.logger.debug("SSH into guest VM with IP: %s" % nat_rule1.ipaddress)
-            ssh = self.vm.get_ssh_client(ipaddress=nat_rule1.ipaddress, port=self.services['natrule1']["publicport"], retries=8)
+            ssh = self.vm.get_ssh_client(ipaddress=nat_rule1.ipaddress, port=self.services['natrule1']["publicport"], retries=15)
             result = str(ssh.execute("nslookup google.com"))
         except Exception as e:
             self.fail("Failed to SSH into VM - %s due to exception: %s" % (nat_rule1.ipaddress, e))

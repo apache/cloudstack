@@ -111,7 +111,7 @@ echo -e "$dns_option" >> "$DHCP_CONFIG"
 
 
 #restart the dnsmasq
-service dnsmasq restart
+systemctl restart dnsmasq
 result=$?
 if [ "$result" -ne "0" ]
 then
@@ -122,7 +122,7 @@ then
    cp "$DHCP_CONFIG_MAIN" "$DHCP_FAILURE_CONFIG_MAIN"
    cp "$DHCP_CONFIG_BAK" "$DHCP_CONFIG"
    cp "$DHCP_CONFIG_MAIN_BAK" "$DHCP_CONFIG_MAIN"
-   service dnsmasq restart
+   systemctl restart dnsmasq
    unlock_exit $result $lock $locked
 fi
 rm "$DHCP_CONFIG_BAK"

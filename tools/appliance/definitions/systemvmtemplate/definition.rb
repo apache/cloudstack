@@ -27,9 +27,9 @@ arch = 'amd64'
 architectures = {
     :amd64 => {
         :os_type_id => 'Debian_64',
-        :iso_file => 'debian-9.1.0-amd64-netinst.iso',
-        :iso_src => 'https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.1.0-amd64-netinst.iso',
-        :iso_md5 => 'ddd8f6542dae8baf410e90b9ae0fe986'
+        :iso_file => 'debian-9.2.1-amd64-netinst.iso',
+        :iso_src => 'https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.2.1-amd64-netinst.iso',
+        :iso_sha512 => 'ebfe25dc593967e39349b205480b0ec0103ef4a0468c602f4857e13d06d407bfe876162399e0e8d4dea5675953dc37ab585316f307ccf9f4440124b4f719df04'
     }
 }
 

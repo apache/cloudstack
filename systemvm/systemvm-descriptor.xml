@@ -58,8 +58,8 @@
       <fileMode>555</fileMode>
       <includes>
         <include>log4j-cloud.xml</include>
-	<include>consoleproxy.properties</include>
-	<include>agent.properties</include>
+        <include>consoleproxy.properties</include>
+        <include>agent.properties</include>
       </includes>
     </fileSet>
     <fileSet>
@@ -69,7 +69,7 @@
       <fileMode>555</fileMode>
       <includes>
         <include>*.jpg</include>
-	<include>*.gif</include>
+        <include>*.gif</include>
         <include>*.png</include>
         <include>*.cur</include>
       </includes>

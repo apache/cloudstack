@@ -49,7 +49,6 @@ config_apache2_conf() {
   sed -i -e "s/<VirtualHost.*>/<VirtualHost $ip:443>/" /etc/apache2/sites-available/default-ssl
   sed -i -e "s/Listen .*:80/Listen $ip:80/g" /etc/apache2/ports.conf
   sed -i -e "s/Listen .*:443/Listen $ip:443/g" /etc/apache2/ports.conf
-  sed -i -e "s/NameVirtualHost .*:80/NameVirtualHost $ip:80/g" /etc/apache2/ports.conf
   sed -i  's/ssl-cert-snakeoil.key/cert_apache.key/' /etc/apache2/sites-available/default-ssl
   sed -i  's/ssl-cert-snakeoil.pem/cert_apache.crt/' /etc/apache2/sites-available/default-ssl
   sed -i  's/SSLProtocol.*$/SSLProtocol all -SSLv2 -SSLv3/' /etc/apache2/sites-available/default-ssl

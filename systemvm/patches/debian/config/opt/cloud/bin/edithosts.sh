@@ -215,7 +215,7 @@ then
   then
     kill -HUP $pid
   else
-    service dnsmasq restart
+    systemctl restart dnsmasq
   fi
 else
   if [ $no_redundant -eq 1 ]
