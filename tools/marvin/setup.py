@@ -57,7 +57,7 @@ setup(name="Marvin",
           "ipmisim >= 0.7"
       ],
       extras_require={
-        "nuagevsp": ["libVSD", "PyYAML", "futures", "netaddr", "retries"]
+        "nuagevsp": ["libVSD", "PyYAML", "futures", "netaddr", "retries", "jpype1"]
       },
       py_modules=['marvin.marvinPlugin'],
       zip_safe=False,

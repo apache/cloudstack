@@ -1432,7 +1432,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
-        sb.and("hypervisorVersion", sb.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorVersion", sb.entity().getHypervisorVersion(), SearchCriteria.Op.GTEQ);
 
         final String haTag = _haMgr.getHaTag();
         SearchBuilder<HostTagVO> hostTagSearch = null;
@@ -1754,7 +1754,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (configVo != null) {
                     final ConfigKey<?> key = _configDepot.get(param.getName());
                     if (key != null) {
-                        configVo.setValue(key.valueIn(id).toString());
+                        configVo.setValue(key.valueIn(id) == null ? null : key.valueIn(id).toString());
                         configVOList.add(configVo);
                     } else {
                         s_logger.warn("ConfigDepot could not find parameter " + param.getName() + " for scope " + scope);

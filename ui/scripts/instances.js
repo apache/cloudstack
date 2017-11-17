@@ -1540,6 +1540,7 @@
                                                                 id: this.id,
                                                                 availableHostName: this.name,
                                                                 availableHostSuitability: suitability,
+                                                                requiresStorageMotion: this.requiresStorageMotion,
                                                                 cpuused: this.cpuused,
                                                                 memoryused: (parseFloat(this.memoryused)/(1024.0*1024.0*1024.0)).toFixed(2) + ' GB'
                                                             });

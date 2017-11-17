@@ -82,7 +82,7 @@ public class CreateSnapshotCmdTest extends TestCase {
         try {
 
             Mockito.when(volumeApiService.takeSnapshot(anyLong(), anyLong(), anyLong(),
-                    any(Account.class), anyBoolean(), isNull(Snapshot.LocationType.class))).thenReturn(snapshot);
+                    any(Account.class), anyBoolean(), isNull(Snapshot.LocationType.class), anyBoolean())).thenReturn(snapshot);
 
         } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
@@ -115,7 +115,7 @@ public class CreateSnapshotCmdTest extends TestCase {
 
         try {
                 Mockito.when(volumeApiService.takeSnapshot(anyLong(), anyLong(), anyLong(),
-                        any(Account.class), anyBoolean(), isNull(Snapshot.LocationType.class))).thenReturn(null);
+                        any(Account.class), anyBoolean(), isNull(Snapshot.LocationType.class), anyBoolean())).thenReturn(null);
         } catch (Exception e) {
             Assert.fail("Received exception when success expected " + e.getMessage());
         }

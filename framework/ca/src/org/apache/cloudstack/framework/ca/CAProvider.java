@@ -20,6 +20,8 @@ package org.apache.cloudstack.framework.ca;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +80,18 @@ public interface CAProvider {
      * @throws IOException
      */
     SSLEngine createSSLEngine(final SSLContext sslContext, final String remoteAddress, final Map<String, X509Certificate> certMap) throws GeneralSecurityException, IOException;
+
+    /**
+     * Returns the management server keystore used to connect to peers
+     * @return returns KeyStore instance
+     */
+    KeyStore getManagementKeyStore() throws KeyStoreException;
+
+    /**
+     * Returns the keystore passphrase to use
+     * @return returns char[] passphrase
+     */
+    char[] getKeyStorePassphrase();
 
     /**
      * Returns the unique name of the provider

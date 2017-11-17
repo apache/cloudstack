@@ -813,13 +813,18 @@
                                         },
                                         name: {
                                             label: 'label.name'
+                                        },
+                                        asyncBackup: {
+						label: 'label.async.backup',
+						isBoolean: true
                                         }
                                     }
                                 },
                                 action: function(args) {
                                     var data = {
                                         volumeId: args.context.volumes[0].id,
-                                        quiescevm: (args.data.quiescevm == 'on' ? true: false)
+                                        quiescevm: (args.data.quiescevm == 'on' ? true: false),
+                                        asyncBackup: (args.data.asyncBackup == 'on' ? true: false)
                                     };
                                     if (args.data.name != null && args.data.name.length > 0) {
                                         $.extend(data, {

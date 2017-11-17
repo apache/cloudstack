@@ -102,6 +102,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -413,7 +414,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             List<UserVmDetailVO> vmDetails = _userVmDetailsDao.listDetails(vmId);
             List<VMSnapshotDetailsVO> vmSnapshotDetails = new ArrayList<VMSnapshotDetailsVO>();
             for (UserVmDetailVO detail : vmDetails) {
-                if(detail.getName().equalsIgnoreCase("cpuNumber") || detail.getName().equalsIgnoreCase("cpuSpeed") || detail.getName().equalsIgnoreCase("memory")) {
+                if(detail.getName().equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.getName().equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.getName().equalsIgnoreCase(VmDetailConstants.MEMORY)) {
                     vmSnapshotDetails.add(new VMSnapshotDetailsVO(vmSnapshotId, detail.getName(), detail.getValue(), detail.isDisplay()));
                 }
             }

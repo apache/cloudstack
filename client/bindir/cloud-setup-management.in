@@ -29,13 +29,13 @@ if __name__ == '__main__':
 
     parser = OptionParser()
     parser.add_option("--https", action="store_true", dest="https", help="Enable HTTPs connection of management server")
-    parser.add_option("--tomcat7", action="store_true", dest="tomcat7", help="Use Tomcat7 configuration files in Management Server")
+    parser.add_option("--tomcat7", action="store_true", dest="tomcat7", help="Depreciated option, don't use it")
     parser.add_option("--no-start", action="store_true", dest="nostart", help="Do not start management server after successful configuration")
     (options, args) = parser.parse_args()
     if options.https:
         glbEnv.svrMode = "HttpsServer"
     if options.tomcat7:
-        glbEnv.svrConf = "Tomcat7"
+        print "The --tomcat7 option is deprecated, CloudStack now uses embedded Jetty server."
     if options.nostart:
         glbEnv.noStart = True
 

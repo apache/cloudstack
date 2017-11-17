@@ -1369,6 +1369,20 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             if (task.type == VolumeTaskType.NOP) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
                 vol = task.volume;
+                // For a zone-wide managed storage, it is possible that the VM can be started in another
+                // cluster. In that case make sure that the volume in in the right access group cluster.
+                if (pool.isManaged()) {
+                    long oldHostId = vm.getVirtualMachine().getLastHostId();
+                    long hostId = vm.getVirtualMachine().getHostId();
+                    if (oldHostId != hostId) {
+                        Host oldHost = _hostDao.findById(oldHostId);
+                        Host host = _hostDao.findById(hostId);
+                        DataStore storagePool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+
+                        volService.revokeAccess(volFactory.getVolume(vol.getId()), oldHost, storagePool);
+                        volService.grantAccess(volFactory.getVolume(vol.getId()), host, storagePool);
+                    }
+                }
             } else if (task.type == VolumeTaskType.MIGRATE) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
                 vol = migrateVolume(task.volume, pool);
@@ -1395,21 +1409,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 if (value != null && value) {
                     cloneType = UserVmCloneType.full;
                 }
-                try {
-                    UserVmCloneSettingVO cloneSettingVO = _vmCloneSettingDao.findByVmId(vm.getId());
-                    if (cloneSettingVO != null){
-                        if (! cloneSettingVO.getCloneType().equals(cloneType.toString())){
-                            cloneSettingVO.setCloneType(cloneType.toString());
-                            _vmCloneSettingDao.update(cloneSettingVO.getVmId(), cloneSettingVO);
-                        }
-                    }
-                    else {
-                        UserVmCloneSettingVO vmCloneSettingVO = new UserVmCloneSettingVO(vm.getId(), cloneType.toString());
-                        _vmCloneSettingDao.persist(vmCloneSettingVO);
+                UserVmCloneSettingVO cloneSettingVO = _vmCloneSettingDao.findByVmId(vm.getId());
+                if (cloneSettingVO != null){
+                    if (! cloneSettingVO.getCloneType().equals(cloneType.toString())){
+                        cloneSettingVO.setCloneType(cloneType.toString());
+                        _vmCloneSettingDao.update(cloneSettingVO.getVmId(), cloneSettingVO);
                     }
                 }
-                catch (Throwable e){
-                    s_logger.debug("[NSX_PLUGIN_LOG] ERROR: " + e.getMessage());
+                else {
+                    UserVmCloneSettingVO vmCloneSettingVO = new UserVmCloneSettingVO(vm.getId(), cloneType.toString());
+                    _vmCloneSettingDao.persist(vmCloneSettingVO);
                 }
             }
 
@@ -1444,9 +1453,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public static final ConfigKey<Boolean> StorageMigrationEnabled = new ConfigKey<Boolean>(Boolean.class, "enable.storage.migration", "Storage", "true",
             "Enable/disable storage migration across primary storage", true);
 
+    static final ConfigKey<Boolean> VolumeUrlCheck = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.url.check", "true",
+            "Check the url for a volume before downloading it from the management server. Set to flase when you managment has no internet access.",
+            true);
+
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {RecreatableSystemVmEnabled, MaxVolumeSize, StorageHAMigrationEnabled, StorageMigrationEnabled, CustomDiskOfferingMaxSize, CustomDiskOfferingMinSize};
+        return new ConfigKey<?>[] {RecreatableSystemVmEnabled, MaxVolumeSize, StorageHAMigrationEnabled, StorageMigrationEnabled, CustomDiskOfferingMaxSize, CustomDiskOfferingMinSize, VolumeUrlCheck};
     }
 
     @Override

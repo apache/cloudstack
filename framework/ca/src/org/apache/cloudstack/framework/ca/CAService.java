@@ -19,6 +19,8 @@ package org.apache.cloudstack.framework.ca;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
@@ -33,4 +35,16 @@ public interface CAService {
      * @throws IOException
      */
     SSLEngine createSSLEngine(final SSLContext context, final String remoteAddress) throws GeneralSecurityException, IOException;
+
+    /**
+     * Returns the management server keystore used to connect to peers
+     * @return returns KeyStore instance
+     */
+    KeyStore getManagementKeyStore() throws KeyStoreException;
+
+    /**
+     * Returns the keystore passphrase to use
+     * @return returns char[] passphrase
+     */
+    char[] getKeyStorePassphrase();
 }

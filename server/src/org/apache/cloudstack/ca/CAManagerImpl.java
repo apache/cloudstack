@@ -20,6 +20,8 @@ package org.apache.cloudstack.ca;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
@@ -268,6 +270,16 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             throw new CloudRuntimeException("Remote client address connecting to mgmt server cannot be empty/null");
         }
         return getConfiguredCaProvider().createSSLEngine(sslContext, remoteAddress, getActiveCertificatesMap());
+    }
+
+    @Override
+    public KeyStore getManagementKeyStore() throws KeyStoreException {
+        return getConfiguredCaProvider().getManagementKeyStore();
+    }
+
+    @Override
+    public char[] getKeyStorePassphrase() {
+        return getConfiguredCaProvider().getKeyStorePassphrase();
     }
 
     ////////////////////////////////////////////////////

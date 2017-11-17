@@ -30,6 +30,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
+import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.IsolationType;
@@ -830,7 +831,7 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public void checkRequestedIpAddresses(long networkId, String ip4, String ip6) throws InvalidParameterValueException {
+    public void checkRequestedIpAddresses(long networkId, IpAddresses ips) throws InvalidParameterValueException {
         // TODO Auto-generated method stub
     }
 

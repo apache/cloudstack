@@ -138,7 +138,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
                     outOfBandManagementConfig.setAddress(value);
                     break;
                 case PORT:
-                    outOfBandManagementConfig.setPort(Integer.parseInt(value));
+                    outOfBandManagementConfig.setPort(value);
                     break;
                 case USERNAME:
                     outOfBandManagementConfig.setUsername(value);
@@ -166,9 +166,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
                     value = outOfBandManagementConfig.getAddress();
                     break;
                 case PORT:
-                    if (outOfBandManagementConfig.getPort() != null) {
-                        value = String.valueOf(outOfBandManagementConfig.getPort());
-                    }
+                    value = outOfBandManagementConfig.getPort();
                     break;
                 case USERNAME:
                     value = outOfBandManagementConfig.getUsername();
@@ -269,7 +267,7 @@ public class OutOfBandManagementServiceImpl extends ManagerBase implements OutOf
     }
 
     public boolean isOutOfBandManagementEnabled(final Host host) {
-        return isOutOfBandManagementEnabledForZone(host.getDataCenterId())
+        return host != null && isOutOfBandManagementEnabledForZone(host.getDataCenterId())
                 && isOutOfBandManagementEnabledForCluster(host.getClusterId())
                 && isOutOfBandManagementEnabledForHost(host.getId());
     }

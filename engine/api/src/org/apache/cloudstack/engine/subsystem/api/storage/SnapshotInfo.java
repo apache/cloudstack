@@ -31,6 +31,10 @@ public interface SnapshotInfo extends DataObject, Snapshot {
 
     Object getPayload();
 
+    void setFullBackup(Boolean fullBackup);
+
+    Boolean getFullBackup();
+
     Long getDataCenterId();
 
     ObjectInDataStoreStateMachine.State getStatus();

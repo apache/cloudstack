@@ -214,7 +214,7 @@ public interface ConfigurationManager {
         Map<NetworkOffering.Detail, String> details, boolean egressDefaultPolicy, Integer maxconn, boolean enableKeepAlive);
 
     Vlan createVlanAndPublicIpRange(long zoneId, long networkId, long physicalNetworkId, boolean forVirtualNetwork, Long podId, String startIP, String endIP,
-        String vlanGateway, String vlanNetmask, String vlanId, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr)
+        String vlanGateway, String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, Account vlanOwner, String startIPv6, String endIPv6, String vlanIp6Gateway, String vlanIp6Cidr)
         throws InsufficientCapacityException, ConcurrentOperationException, InvalidParameterValueException;
 
     void createDefaultSystemNetworks(long zoneId) throws ConcurrentOperationException;

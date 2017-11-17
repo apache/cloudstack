@@ -48,9 +48,11 @@ import org.apache.log4j.Logger;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -176,7 +178,7 @@ public class CertUtils {
     }
 
     public static X509Certificate generateV3Certificate(final X509Certificate caCert,
-                                                        final PrivateKey caPrivateKey,
+                                                        final KeyPair caKeyPair,
                                                         final PublicKey clientPublicKey,
                                                         final String subject,
                                                         final String signatureAlgorithm,
@@ -186,25 +188,34 @@ public class CertUtils {
 
         final DateTime now = DateTime.now(DateTimeZone.UTC);
         final BigInteger serial = generateRandomBigInt();
-        final X509v3CertificateBuilder certBuilder = new JcaX509v3CertificateBuilder(
-                caCert,
-                serial,
-                now.minusHours(12).toDate(),
-                now.plusDays(validityDays).toDate(),
-                new X500Principal(subject),
-                clientPublicKey);
-
         final JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+        final X509v3CertificateBuilder certBuilder;
+        if (caCert == null) {
+            // Generate CA certificate
+            certBuilder = new JcaX509v3CertificateBuilder(
+                    new X500Name(subject),
+                    serial,
+                    now.minusHours(12).toDate(),
+                    now.plusDays(validityDays).toDate(),
+                    new X500Name(subject),
+                    clientPublicKey);
 
-        certBuilder.addExtension(
-                Extension.subjectKeyIdentifier,
-                false,
-                extUtils.createSubjectKeyIdentifier(clientPublicKey));
+            certBuilder.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
+            certBuilder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
+        } else {
+            // Generate client certificate
+            certBuilder = new JcaX509v3CertificateBuilder(
+                    caCert,
+                    serial,
+                    now.minusHours(12).toDate(),
+                    now.plusDays(validityDays).toDate(),
+                    new X500Principal(subject),
+                    clientPublicKey);
 
-        certBuilder.addExtension(
-                Extension.authorityKeyIdentifier,
-                false,
-                extUtils.createAuthorityKeyIdentifier(caCert));
+            certBuilder.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(caCert));
+        }
+
+        certBuilder.addExtension(Extension.subjectKeyIdentifier, false, extUtils.createSubjectKeyIdentifier(clientPublicKey));
 
         final List<ASN1Encodable> subjectAlternativeNames = new ArrayList<ASN1Encodable>();
         if (publicIPAddresses != null) {
@@ -225,16 +236,17 @@ public class CertUtils {
         }
         if (subjectAlternativeNames.size() > 0) {
             final GeneralNames subjectAltNames = GeneralNames.getInstance(new DERSequence(subjectAlternativeNames.toArray(new ASN1Encodable[] {})));
-            certBuilder.addExtension(
-                    Extension.subjectAlternativeName,
-                    false,
-                    subjectAltNames);
+            certBuilder.addExtension(Extension.subjectAlternativeName, false, subjectAltNames);
         }
 
-        final ContentSigner signer = new JcaContentSignerBuilder(signatureAlgorithm).setProvider("BC").build(caPrivateKey);
+        final ContentSigner signer = new JcaContentSignerBuilder(signatureAlgorithm).setProvider("BC").build(caKeyPair.getPrivate());
         final X509CertificateHolder certHolder = certBuilder.build(signer);
         final X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHolder);
-        cert.verify(caCert.getPublicKey());
+        if (caCert != null) {
+            cert.verify(caCert.getPublicKey());
+        } else {
+            cert.verify(caKeyPair.getPublic());
+        }
         return cert;
     }
 }

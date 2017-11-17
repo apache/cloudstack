@@ -67,6 +67,11 @@ public class VmwareStorageLayoutHelper {
     }
 
     public static String findVolumeDatastoreFullPath(DatastoreMO dsMo, String vmName, String vmdkFileName) throws Exception {
+        return findVolumeDatastoreFullPath(dsMo, vmName, vmdkFileName, null);
+    }
+
+    public static String findVolumeDatastoreFullPath(DatastoreMO dsMo, String vmName, String vmdkFileName, String excludeFolders) throws Exception {
+
         if (vmName != null) {
             String path = getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, vmdkFileName);
             if (!dsMo.fileExists(path)) {
@@ -80,7 +85,7 @@ public class VmwareStorageLayoutHelper {
             String path = getLegacyDatastorePathFromVmdkFileName(dsMo, vmdkFileName);
             if (!dsMo.fileExists(path)) {
                 // Datastore file movement is not atomic operations, we need to sync and repair
-                path = dsMo.searchFileInSubFolders(vmdkFileName, false);
+                path = dsMo.searchFileInSubFolders(vmdkFileName, false, excludeFolders);
 
                 // to save one call to vCenter, we won't check file existence for this round, so the caller
                 // may still fail with exception, but if that's case, we will let it fail anyway
@@ -90,6 +95,10 @@ public class VmwareStorageLayoutHelper {
     }
 
     public static String syncVolumeToVmDefaultFolder(DatacenterMO dcMo, String vmName, DatastoreMO ds, String vmdkName) throws Exception {
+        return syncVolumeToVmDefaultFolder(dcMo, vmName, ds, vmdkName, null);
+    }
+
+    public static String syncVolumeToVmDefaultFolder(DatacenterMO dcMo, String vmName, DatastoreMO ds, String vmdkName, String excludeFolders) throws Exception {
 
         assert (ds != null);
         if (!ds.folderExists(String.format("[%s]", ds.getName()), vmName)) {
@@ -109,7 +118,7 @@ public class VmwareStorageLayoutHelper {
             // be left over in its previous owner VM. We will do a fixup synchronization here by moving it to root
             // again.
             //
-            syncVolumeToRootFolder(dcMo, ds, vmdkName, vmName);
+            syncVolumeToRootFolder(dcMo, ds, vmdkName, vmName, excludeFolders);
         }
 
         if (ds.fileExists(vmdkFullCloneModeLegacyPair[1])) {
@@ -134,7 +143,11 @@ public class VmwareStorageLayoutHelper {
     }
 
     public static void syncVolumeToRootFolder(DatacenterMO dcMo, DatastoreMO ds, String vmdkName, String vmName) throws Exception {
-        String fileDsFullPath = ds.searchFileInSubFolders(vmdkName + ".vmdk", false);
+        syncVolumeToRootFolder(dcMo, ds, vmdkName, null);
+    }
+
+    public static void syncVolumeToRootFolder(DatacenterMO dcMo, DatastoreMO ds, String vmdkName, String vmName, String excludeFolders) throws Exception {
+        String fileDsFullPath = ds.searchFileInSubFolders(vmdkName + ".vmdk", false, excludeFolders);
         if (fileDsFullPath == null)
             return;
 
@@ -259,13 +272,17 @@ public class VmwareStorageLayoutHelper {
     }
 
     public static void deleteVolumeVmdkFiles(DatastoreMO dsMo, String volumeName, DatacenterMO dcMo) throws Exception {
+        deleteVolumeVmdkFiles(dsMo, volumeName, dcMo, null);
+    }
+
+    public static void deleteVolumeVmdkFiles(DatastoreMO dsMo, String volumeName, DatacenterMO dcMo, String excludeFolders) throws Exception {
 
         String fileName = volumeName + ".vmdk";
         String fileFullPath = getLegacyDatastorePathFromVmdkFileName(dsMo, fileName);
         if (!dsMo.fileExists(fileFullPath))
-            fileFullPath = dsMo.searchFileInSubFolders(fileName, false);
+            fileFullPath = dsMo.searchFileInSubFolders(fileName, false, excludeFolders);
         if (fileFullPath != null) {
-            dsMo.deleteFile(fileFullPath, dcMo.getMor(), true);
+            dsMo.deleteFile(fileFullPath, dcMo.getMor(), true, excludeFolders);
         } else {
             s_logger.warn("Unable to locate VMDK file: " + fileName);
         }
@@ -273,9 +290,9 @@ public class VmwareStorageLayoutHelper {
         fileName = volumeName + "-flat.vmdk";
         fileFullPath = getLegacyDatastorePathFromVmdkFileName(dsMo, fileName);
         if (!dsMo.fileExists(fileFullPath))
-            fileFullPath = dsMo.searchFileInSubFolders(fileName, false);
+            fileFullPath = dsMo.searchFileInSubFolders(fileName, false, excludeFolders);
         if (fileFullPath != null) {
-            dsMo.deleteFile(fileFullPath, dcMo.getMor(), true);
+            dsMo.deleteFile(fileFullPath, dcMo.getMor(), true, excludeFolders);
         } else {
             s_logger.warn("Unable to locate VMDK file: " + fileName);
         }
@@ -283,9 +300,9 @@ public class VmwareStorageLayoutHelper {
         fileName = volumeName + "-delta.vmdk";
         fileFullPath = getLegacyDatastorePathFromVmdkFileName(dsMo, fileName);
         if (!dsMo.fileExists(fileFullPath))
-            fileFullPath = dsMo.searchFileInSubFolders(fileName, false);
+            fileFullPath = dsMo.searchFileInSubFolders(fileName, false, excludeFolders);
         if (fileFullPath != null) {
-            dsMo.deleteFile(fileFullPath, dcMo.getMor(), true);
+            dsMo.deleteFile(fileFullPath, dcMo.getMor(), true, excludeFolders);
         } else {
             s_logger.warn("Unable to locate VMDK file: " + fileName);
         }

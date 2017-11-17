@@ -29,7 +29,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.resource.ResourceManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.utils.component.AdapterBase;
-
+import org.apache.cloudstack.ha.HAManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
@@ -40,17 +40,23 @@ import java.util.List;
 public class KVMInvestigator extends AdapterBase implements Investigator {
     private final static Logger s_logger = Logger.getLogger(KVMInvestigator.class);
     @Inject
-    HostDao _hostDao;
+    private HostDao _hostDao;
     @Inject
-    AgentManager _agentMgr;
+    private AgentManager _agentMgr;
     @Inject
-    ResourceManager _resourceMgr;
+    private ResourceManager _resourceMgr;
     @Inject
-    PrimaryDataStoreDao _storagePoolDao;
+    private PrimaryDataStoreDao _storagePoolDao;
+    @Inject
+    private HAManager haManager;
 
     @Override
     public boolean isVmAlive(com.cloud.vm.VirtualMachine vm, Host host) throws UnknownVM {
+        if (haManager.isHAEligible(host)) {
+            return haManager.isVMAliveOnHost(host);
+        }
         Status status = isAgentAlive(host);
+        s_logger.debug("HA: HOST is ineligible legacy state " + status + " for host " + host.getId());
         if (status == null) {
             throw new UnknownVM();
         }
@@ -65,6 +71,10 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
     public Status isAgentAlive(Host agent) {
         if (agent.getHypervisorType() != Hypervisor.HypervisorType.KVM && agent.getHypervisorType() != Hypervisor.HypervisorType.LXC) {
             return null;
+        }
+
+        if (haManager.isHAEligible(agent)) {
+            return haManager.getHostStatus(agent);
         }
 
         List<StoragePoolVO> clusterPools = _storagePoolDao.listPoolsByCluster(agent.getClusterId());
@@ -123,6 +133,7 @@ public class KVMInvestigator extends AdapterBase implements Investigator {
         if (neighbourStatus == Status.Down && (hostStatus == Status.Disconnected || hostStatus == Status.Down)) {
             hostStatus = Status.Down;
         }
+        s_logger.debug("HA: HOST is ineligible legacy state " + hostStatus + " for host " + agent.getId());
         return hostStatus;
     }
 }

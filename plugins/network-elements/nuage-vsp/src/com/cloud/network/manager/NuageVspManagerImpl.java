@@ -19,17 +19,16 @@
 
 package com.cloud.network.manager;
 
-import static com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand.SyncType;
-
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -41,17 +40,19 @@ import net.nuage.vsp.acs.client.api.model.VspHost;
 import net.nuage.vsp.acs.client.common.NuageVspApiVersion;
 import net.nuage.vsp.acs.client.common.NuageVspConstants;
 
+import net.nuage.vsp.acs.client.exception.NuageVspException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Strings;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
+import com.google.common.collect.Multimap;
 
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -59,17 +60,13 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.MessageSubscriber;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
-import com.cloud.agent.api.AgentControlAnswer;
-import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.PingNuageVspCommand;
-import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.manager.CleanUpDomainCommand;
 import com.cloud.agent.api.manager.EntityExistsCommand;
 import com.cloud.agent.api.manager.GetApiDefaultsAnswer;
@@ -99,7 +96,6 @@ import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
-import com.cloud.exception.ConnectionException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -153,11 +149,13 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
 
+import static com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand.SyncType;
+
 public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager, Configurable, StateListener<Status, Status.Event, Host> {
 
     private static final Logger s_logger = Logger.getLogger(NuageVspManagerImpl.class);
 
-    public static final Map<Network.Service, Set<Network.Provider>> NUAGE_VSP_VPC_SERVICE_MAP;
+    public static final Multimap<Network.Service, Network.Provider> NUAGE_VSP_VPC_SERVICE_MAP;
     private static final ConfigKey[] NUAGE_VSP_CONFIG_KEYS = new ConfigKey<?>[] { NuageVspConfigDns, NuageVspDnsExternal, NuageVspConfigGateway,
             NuageVspSharedNetworkDomainTemplateName, NuageVspVpcDomainTemplateName, NuageVspIsolatedNetworkDomainTemplateName };
     public static final String CMSID_CONFIG_KEY = "nuagevsp.cms.id";
@@ -222,23 +220,32 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         Set<Network.Provider> nuageVspProviders = ImmutableSet.of(Network.Provider.NuageVsp);
         Set<Network.Provider> vrProviders = ImmutableSet.of(Network.Provider.VPCVirtualRouter);
         Set<Network.Provider> lbProviders = ImmutableSet.of(Network.Provider.InternalLbVm);
-        NUAGE_VSP_VPC_SERVICE_MAP = ImmutableMap.<Network.Service, Set<Network.Provider>>builder()
-                .put(Network.Service.Connectivity, nuageVspProviders)
-                .put(Network.Service.Gateway, nuageVspProviders)
-                .put(Network.Service.Dhcp, nuageVspProviders)
-                .put(Network.Service.StaticNat, nuageVspProviders)
-                .put(Network.Service.SourceNat, nuageVspProviders)
-                .put(Network.Service.NetworkACL, nuageVspProviders)
-                .put(Network.Service.UserData, vrProviders)
-                .put(Network.Service.Lb, lbProviders)
-                .put(Network.Service.Dns, vrProviders)
+        NUAGE_VSP_VPC_SERVICE_MAP = ImmutableMultimap.<Network.Service, Network.Provider>builder()
+                .putAll(Network.Service.Connectivity, nuageVspProviders)
+                .putAll(Network.Service.Gateway, nuageVspProviders)
+                .putAll(Network.Service.Dhcp, nuageVspProviders)
+                .putAll(Network.Service.StaticNat, nuageVspProviders)
+                .putAll(Network.Service.SourceNat, nuageVspProviders)
+                .putAll(Network.Service.NetworkACL, nuageVspProviders)
+                .putAll(Network.Service.UserData, vrProviders)
+                .putAll(Network.Service.Lb, lbProviders)
+                .putAll(Network.Service.Dns, vrProviders)
                 .build();
     }
 
+    private Listener _nuageVspResourceListener;
+
     @Override
     public List<Class<?>> getCommands() {
-        return Lists.<Class<?>>newArrayList(AddNuageVspDeviceCmd.class, DeleteNuageVspDeviceCmd.class, ListNuageVspDevicesCmd.class,
-                UpdateNuageVspDeviceCmd.class, EnableNuageUnderlayVlanIpRangeCmd.class, DisableNuageUnderlayVlanIpRangeCmd.class, ListNuageUnderlayVlanIpRangesCmd.class);
+        return Lists.<Class<?>>newArrayList(
+                AddNuageVspDeviceCmd.class,
+                DeleteNuageVspDeviceCmd.class,
+                ListNuageVspDevicesCmd.class,
+                UpdateNuageVspDeviceCmd.class,
+                EnableNuageUnderlayVlanIpRangeCmd.class,
+                DisableNuageUnderlayVlanIpRangeCmd.class,
+                ListNuageUnderlayVlanIpRangesCmd.class
+        );
     }
 
     @Override
@@ -298,19 +305,15 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
                 }
                 apiVersion = cmd.getApiVersion();
             } else {
-                boolean apiVersionFound = false;
-                Map<NuageVspApiVersion, NuageVspApiVersion.Status> supportedVersions = clientLoader.getNuageVspManagerClient().getSupportedVersions();
-                for (NuageVspApiVersion selectedVersion : supportedVersions.keySet()) {
-                    if (supportedVersions.get(selectedVersion) == NuageVspApiVersion.Status.CURRENT){
-                        apiVersion = selectedVersion.toString();
-                        apiVersionFound = true;
-                        break;
-                    }
-                }
+                List<NuageVspApiVersion> supportedVsdVersions = clientLoader.getNuageVspManagerClient().getSupportedVersionList();
+                supportedVsdVersions.retainAll(Arrays.asList(NuageVspApiVersion.SUPPORTED_VERSIONS));
 
-                if(!apiVersionFound) {
+                if(supportedVsdVersions.isEmpty()) {
                     throw new CloudRuntimeException("No supported API version found!");
                 }
+
+                supportedVsdVersions.sort(Comparator.reverseOrder());
+                apiVersion = supportedVsdVersions.get(0).toString();
             }
 
 
@@ -365,7 +368,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         } catch (ConfigurationException e) {
             s_logger.error("Failed to configure Nuage VSD resource " + cmd.getHostName(), e);
             throw new CloudRuntimeException("Failed to configure Nuage VSD resource " + cmd.getHostName(), e);
-        } catch (ExecutionException ee) {
+        } catch (NuageVspException ee) {
             s_logger.error("Failed to add Nuage VSP device " + cmd.getHostName(), ee);
             throw new CloudRuntimeException("Failed to add Nuage VSP device " + cmd.getHostName(), ee);
         }
@@ -677,7 +680,12 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         return answer != null && answer.getSuccess();
     }
 
-    private void auditHost(HostVO host) {
+    void auditHost(long hostId) {
+        Host host = _hostDao.findById(hostId);
+        auditHost((HostVO)host);
+    }
+
+    void auditHost(HostVO host) {
         if (host == null) return;
 
         _hostDao.loadDetails(host);
@@ -897,124 +905,66 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     @DB
     private void initMessageBusListeners() {
         // Create corresponding enterprise and profile in VSP when creating a CS Domain
-        _messageBus.subscribe(DomainManager.MESSAGE_ADD_DOMAIN_EVENT, new MessageSubscriber() {
-            @Override
-            public void onPublishMessage(String senderAddress, String subject, Object args) {
-                Long domainId = (Long) args;
-                Domain domain = _domainDao.findById(domainId);
+        _messageBus.subscribe(DomainManager.MESSAGE_ADD_DOMAIN_EVENT, (senderAddress, subject, args) -> {
+            Long domainId = (Long) args;
+            Domain domain = _domainDao.findById(domainId);
 
-                try {
-                    _domainDao.acquireInLockTable(domain.getId());
+            try {
+                _domainDao.acquireInLockTable(domain.getId());
 
-                    List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listAll();
-                    for (NuageVspDeviceVO nuageVspDevice : nuageVspDevices) {
-                        VspDomain vspDomain = _nuageVspEntityBuilder.buildVspDomain(domain);
-                        SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, SyncDomainCommand.Type.ADD);
-                        _agentMgr.easySend(nuageVspDevice.getHostId(), cmd);
-                    }
-                } finally {
-                    _domainDao.releaseFromLockTable(domain.getId());
+                List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listAll();
+                for (NuageVspDeviceVO nuageVspDevice : nuageVspDevices) {
+                    VspDomain vspDomain = _nuageVspEntityBuilder.buildVspDomain(domain);
+                    SyncDomainCommand cmd = new SyncDomainCommand(vspDomain, SyncDomainCommand.Type.ADD);
+                    _agentMgr.easySend(nuageVspDevice.getHostId(), cmd);
                 }
+            } finally {
+                _domainDao.releaseFromLockTable(domain.getId());
             }
         });
 
         // Clean up corresponding resources in VSP when deleting a CS Domain
-        _messageBus.subscribe(DomainManager.MESSAGE_PRE_REMOVE_DOMAIN_EVENT, new MessageSubscriber() {
-            @Override
-            public void onPublishMessage(String senderAddress, String subject, Object args) {
-                DomainVO domain = (DomainVO) args;
-                List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listAll();
-                for (NuageVspDeviceVO nuageVspDevice : nuageVspDevices) {
-                    VspDomainCleanUp vspDomainCleanUp = _nuageVspEntityBuilder.buildVspDomainCleanUp(domain);
-                    CleanUpDomainCommand cmd = new CleanUpDomainCommand(vspDomainCleanUp);
-                    _agentMgr.easySend(nuageVspDevice.getHostId(), cmd);
-                }
+        _messageBus.subscribe(DomainManager.MESSAGE_PRE_REMOVE_DOMAIN_EVENT, (senderAddress, subject, args) -> {
+            DomainVO domain = (DomainVO) args;
+            List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listAll();
+            for (NuageVspDeviceVO nuageVspDevice : nuageVspDevices) {
+                VspDomainCleanUp vspDomainCleanUp = _nuageVspEntityBuilder.buildVspDomainCleanUp(domain);
+                CleanUpDomainCommand cmd = new CleanUpDomainCommand(vspDomainCleanUp);
+                _agentMgr.easySend(nuageVspDevice.getHostId(), cmd);
             }
         });
 
         // Delete corresponding enterprise and profile in VSP when deleting a CS Domain
-        _messageBus.subscribe(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT, new MessageSubscriber() {
-            @Override
-            public void onPublishMessage(String senderAddress, String subject, Object args) {
-                DomainVO domain = (DomainVO) args;
-                List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listAll();
-                for (NuageVspDeviceVO nuageVspDevice : nuageVspDevices) {
-                    VspDomain vspDomain = _nuageVspEntityBuilder.buildVspDomain(domain);
-                    SyncDomainCommand syncCmd = new SyncDomainCommand(vspDomain, SyncDomainCommand.Type.REMOVE);
-                    _agentMgr.easySend(nuageVspDevice.getHostId(), syncCmd);
-                }
+        _messageBus.subscribe(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT, (senderAddress, subject, args) -> {
+            DomainVO domain = (DomainVO) args;
+            List<NuageVspDeviceVO> nuageVspDevices = _nuageVspDao.listAll();
+            for (NuageVspDeviceVO nuageVspDevice : nuageVspDevices) {
+                VspDomain vspDomain = _nuageVspEntityBuilder.buildVspDomain(domain);
+                SyncDomainCommand syncCmd = new SyncDomainCommand(vspDomain, SyncDomainCommand.Type.REMOVE);
+                _agentMgr.easySend(nuageVspDevice.getHostId(), syncCmd);
             }
         });
     }
 
-    @DB
-    private void initNuageVspResourceListeners() {
-        _agentMgr.registerForHostEvents(new Listener() {
-            @Override
-            public boolean processAnswers(long agentId, long seq, Answer[] answers) {
-                return true;
-            }
-
-            @Override
-            public boolean processCommands(long agentId, long seq, Command[] commands) {
-                if (commands != null && commands.length == 1) {
-                    Command command = commands[0];
-                    if (command instanceof PingNuageVspCommand) {
-                        PingNuageVspCommand pingNuageVspCommand = (PingNuageVspCommand) command;
-                        if (pingNuageVspCommand.shouldAudit()) {
-                            Host host = _hostDao.findById(pingNuageVspCommand.getHostId());
-                            auditHost((HostVO) host);
-                        }
+    private class NuageVspResourceListener extends AbstractListener {
+        @Override
+        public boolean processCommands(long agentId, long seq, Command[] commands) {
+            if (commands != null && commands.length == 1) {
+                Command command = commands[0];
+                if (command instanceof PingNuageVspCommand) {
+                    PingNuageVspCommand pingNuageVspCommand = (PingNuageVspCommand)command;
+                    if (pingNuageVspCommand.shouldAudit()) {
+                        auditHost(pingNuageVspCommand.getHostId());
                     }
                 }
-                return true;
             }
+            return true;
+        }
+    }
 
-            @Override
-            public AgentControlAnswer processControlCommand(long agentId, AgentControlCommand cmd) {
-                return null;
-            }
-
-            @Override
-            public void processHostAdded(long hostId) {
-
-            }
-
-            @Override
-            public void processConnect(Host host, StartupCommand cmd, boolean forRebalance) throws ConnectionException {
-
-            }
-
-            @Override
-            public boolean processDisconnect(long agentId, Status state) {
-                return true;
-            }
-
-            @Override
-            public void processHostAboutToBeRemoved(long hostId) {
-
-            }
-
-            @Override
-            public void processHostRemoved(long hostId, long clusterId) {
-
-            }
-
-            @Override
-            public boolean isRecurring() {
-                return false;
-            }
-
-            @Override
-            public int getTimeout() {
-                return 0;
-            }
-
-            @Override
-            public boolean processTimeout(long agentId, long seq) {
-                return true;
-            }
-        }, false, true, false);
+    @DB
+    private void initNuageVspResourceListeners() {
+        _agentMgr.registerForHostEvents(new NuageVspResourceListener(), false, true, false);
     }
 
     @DB
@@ -1070,79 +1020,74 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     }
 
     @DB
-    protected VpcOffering createVpcOffering(final String name, final String displayText, final Map<Network.Service, Set<Network.Provider>> svcProviderMap, final boolean isDefault,
+    protected VpcOffering createVpcOffering(final String name, final String displayText, final Multimap<Network.Service, Network.Provider> svcProviderMap, final boolean isDefault,
                                             final VpcOffering.State state, final Long serviceOfferingId) {
-        return Transaction.execute(new TransactionCallback<VpcOffering>() {
-            @Override
-            public VpcOffering doInTransaction(TransactionStatus status) {
-                // create vpc offering object
-                VpcOfferingVO offering = new VpcOfferingVO(name, displayText, isDefault, serviceOfferingId, false, false);
+        return Transaction.execute((TransactionCallback<VpcOffering>)status -> createVpcOfferingInTransaction(name, displayText, svcProviderMap, isDefault, state, serviceOfferingId));
+    }
 
-                if (state != null) {
-                    offering.setState(state);
+    private VpcOffering createVpcOfferingInTransaction(String name, String displayText, Multimap<Network.Service, Network.Provider> svcProviderMap, boolean isDefault,
+            VpcOffering.State state, Long serviceOfferingId) {
+        // create vpc offering object
+        VpcOfferingVO offering = new VpcOfferingVO(name, displayText, isDefault, serviceOfferingId, false, false);
+
+        if (state != null) {
+            offering.setState(state);
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Adding vpc offering %s", offering));
+        }
+        offering = _vpcOffDao.persist(offering);
+        // populate services and providers
+        if (svcProviderMap != null) {
+            for (Map.Entry<Network.Service, Network.Provider> entry : svcProviderMap.entries()) {
+                Network.Service service = entry.getKey();
+                Network.Provider provider = entry.getValue();
+
+                VpcOfferingServiceMapVO offService = new VpcOfferingServiceMapVO(offering.getId(), service, provider);
+                _vpcOffSvcMapDao.persist(offService);
+                if (s_logger.isTraceEnabled()) {
+                    s_logger.trace(String.format("Added service for the vpc offering: %s with provider %s", offService, provider.getName()));
                 }
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Adding vpc offering %s", offering));
-                }
-                offering = _vpcOffDao.persist(offering);
-                // populate services and providers
-                if (svcProviderMap != null) {
-                    for (Network.Service service : svcProviderMap.keySet()) {
-                        Set<Network.Provider> providers = svcProviderMap.get(service);
-                        if (providers != null && !providers.isEmpty()) {
-                            for (Network.Provider provider : providers) {
-                                VpcOfferingServiceMapVO offService = new VpcOfferingServiceMapVO(offering.getId(), service, provider);
-                                _vpcOffSvcMapDao.persist(offService);
-                                if (s_logger.isTraceEnabled()) {
-                                    s_logger.trace(String.format("Added service for the vpc offering: %s with provider %s", offService, provider.getName()));
-                                }
-                            }
-                        } else {
-                            throw new InvalidParameterValueException(String.format("Provider is missing for the VPC offering service %s", service.getName()));
-                        }
-                    }
-                }
-                return offering;
             }
-        });
+        }
+
+        return offering;
     }
 
     @DB
-    protected void updateVpcOffering(final VpcOffering offering, final Map<Network.Service, Set<Network.Provider>> svcProviderMap) {
-        Transaction.execute(new TransactionCallback<VpcOffering>() {
-            @Override
-            public VpcOffering doInTransaction(TransactionStatus status) {
+    protected void updateVpcOffering(final VpcOffering offering, final Multimap<Network.Service, Network.Provider> svcProviderMap) {
+        Transaction.execute((TransactionCallback<VpcOffering>)status -> updateVpcOfferingInTransaction(offering, svcProviderMap));
+    }
+
+    @Nonnull
+    private VpcOffering updateVpcOfferingInTransaction(VpcOffering offering, Multimap<Network.Service, Network.Provider> svcProviderMap) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("Updating vpc offering %s", offering));
+        }
+
+        List<VpcOfferingServiceMapVO> currentVpcOfferingServices = _vpcOffSvcMapDao.listByVpcOffId(offering.getId());
+        Multimap<Network.Service, Network.Provider> currentSvcProviderMap = HashMultimap.create();
+        for (VpcOfferingServiceMapVO vpcOfferingService : currentVpcOfferingServices) {
+            Network.Service service = Network.Service.getService(vpcOfferingService.getService());
+            Network.Provider provider = Network.Provider.getProvider(vpcOfferingService.getProvider());
+            currentSvcProviderMap.put(service, provider);
+        }
+
+        for (Map.Entry<Network.Service, Network.Provider> entry : svcProviderMap.entries()) {
+            Network.Service service = entry.getKey();
+            Network.Provider provider = entry.getValue();
+
+            if (!currentSvcProviderMap.containsEntry(service, provider)) {
+                VpcOfferingServiceMapVO offService = new VpcOfferingServiceMapVO(offering.getId(), service, provider);
+                _vpcOffSvcMapDao.persist(offService);
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug(String.format("Updating vpc offering %s", offering));
+                    s_logger.debug(String.format("Added service for the vpc offering: %s", offService));
                 }
-
-                List<VpcOfferingServiceMapVO> currentVpcOfferingServices = _vpcOffSvcMapDao.listByVpcOffId(offering.getId());
-                Map<Network.Service, Set<Network.Provider>> currentSvcProviderMap = Maps.newHashMap();
-                for (VpcOfferingServiceMapVO vpcOfferingService : currentVpcOfferingServices) {
-                    Network.Service service = Network.Service.getService(vpcOfferingService.getService());
-                    Network.Provider provider = Network.Provider.getProvider(vpcOfferingService.getProvider());
-
-                    if (!currentSvcProviderMap.containsKey(service)) {
-                        currentSvcProviderMap.put(service, Sets.newHashSet(provider));
-                    } else if (!currentSvcProviderMap.get(service).contains(provider)) {
-                        currentSvcProviderMap.get(service).add(provider);
-                    }
-                }
-
-                for (Network.Service service : svcProviderMap.keySet()) {
-                    for (Network.Provider provider : svcProviderMap.get(service)) {
-                        if (currentSvcProviderMap.get(service) == null || !currentSvcProviderMap.get(service).contains(provider)) {
-                            VpcOfferingServiceMapVO offService = new VpcOfferingServiceMapVO(offering.getId(), service, provider);
-                            _vpcOffSvcMapDao.persist(offService);
-                            if (s_logger.isDebugEnabled()) {
-                                s_logger.debug(String.format("Added service for the vpc offering: %s", offService));
-                            }
-                        }
-                    }
-                }
-                return offering;
             }
-        });
+
+        }
+
+        return offering;
     }
 
     private HostVO findNuageVspHost(long hostId) {

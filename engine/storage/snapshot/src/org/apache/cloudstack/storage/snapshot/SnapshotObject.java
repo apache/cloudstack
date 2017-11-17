@@ -62,6 +62,7 @@ public class SnapshotObject implements SnapshotInfo {
     private SnapshotVO snapshot;
     private DataStore store;
     private Object payload;
+    private Boolean fullBackup;
     @Inject
     protected SnapshotDao snapshotDao;
     @Inject
@@ -231,6 +232,11 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
+    public long getSnapshotId() {
+        return snapshot.getSnapshotId();
+    }
+
+    @Override
     public Date getCreated() {
         return snapshot.getCreated();
     }
@@ -386,6 +392,16 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public Object getPayload() {
         return payload;
+    }
+
+    @Override
+    public void setFullBackup(Boolean data) {
+        fullBackup = data;
+    }
+
+    @Override
+    public Boolean getFullBackup() {
+        return fullBackup;
     }
 
     @Override

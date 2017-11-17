@@ -68,6 +68,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         AllFieldsSearch.and("nicid", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("strategy", AllFieldsSearch.entity().getReservationStrategy(), Op.EQ);
         AllFieldsSearch.and("reserverName",AllFieldsSearch.entity().getReserver(),Op.EQ);
+        AllFieldsSearch.and("macAddress", AllFieldsSearch.entity().getMacAddress(), Op.EQ);
         AllFieldsSearch.done();
 
         IpSearch = createSearchBuilder(String.class);
@@ -195,6 +196,14 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("address", ip4Address);
         sc.setParameters("network", networkId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public NicVO findByNetworkIdAndMacAddress(long networkId, String mac) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("macAddress", mac);
         return findOneBy(sc);
     }
 

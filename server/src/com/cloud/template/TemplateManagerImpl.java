@@ -542,7 +542,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         _tmpltSvr.syncTemplateToRegionStore(templateId, tmpltStore);
 
         TemplateInfo templateObject = _tmplFactory.getTemplate(templateId, tmpltStore);
-        String extractUrl = tmpltStore.createEntityExtractUrl(tmpltStoreRef.getInstallPath(), template.getFormat(), templateObject);
+        String extractUrl = tmpltStore.createEntityExtractUrl(templateObject.getInstallPath(), template.getFormat(), templateObject);
         tmpltStoreRef.setExtractUrl(extractUrl);
         tmpltStoreRef.setExtractUrlCreated(DateUtil.now());
         _tmplStoreDao.update(tmpltStoreRef.getId(), tmpltStoreRef);
@@ -673,9 +673,9 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
-    public String getChecksum(DataStore store, String templatePath) {
+    public String getChecksum(DataStore store, String templatePath, String algorithm) {
         EndPoint ep = _epSelector.select(store);
-        ComputeChecksumCommand cmd = new ComputeChecksumCommand(store.getTO(), templatePath);
+        ComputeChecksumCommand cmd = new ComputeChecksumCommand(store.getTO(), templatePath, algorithm);
         Answer answer = null;
         if (ep == null) {
             String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";

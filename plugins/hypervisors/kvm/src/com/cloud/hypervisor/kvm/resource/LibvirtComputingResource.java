@@ -133,6 +133,9 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtRequestWrapper;
 import com.cloud.hypervisor.kvm.resource.wrapper.LibvirtUtilitiesHelper;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
@@ -201,6 +204,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _resizeVolumePath;
     private String _createTmplPath;
     private String _heartBeatPath;
+    private String _vmActivityCheckPath;
     private String _securityGroupPath;
     private String _ovsPvlanDhcpHostPath;
     private String _ovsPvlanVmPath;
@@ -273,6 +277,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private File _qemuSocketsPath;
     private final String _qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
     private long _totalMemory;
+    protected WatchDogAction _watchDogAction = WatchDogAction.NONE;
+    protected WatchDogModel _watchDogModel = WatchDogModel.I6300ESB;
 
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
@@ -297,6 +303,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private String _updateHostPasswdPath;
 
     private long _dom0MinMem;
+
+    private long _dom0OvercommitMem;
 
     protected boolean _disconnected = true;
     protected int _cmdsTimeout;
@@ -445,6 +453,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public String getGuestBridgeName() {
         return _guestBridgeName;
+    }
+
+    public String getVmActivityCheckPath() {
+        return _vmActivityCheckPath;
     }
 
     public String getOvsPvlanDhcpHostPath() {
@@ -687,6 +699,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             throw new ConfigurationException("Unable to find the resizevolume.sh");
         }
 
+        _vmActivityCheckPath = Script.findScript(kvmScriptsDir, "kvmvmactivity.sh");
+        if (_vmActivityCheckPath == null) {
+            throw new ConfigurationException("Unable to find kvmvmactivity.sh");
+        }
+
         _createTmplPath = Script.findScript(storageScriptsDir, "createtmplt.sh");
         if (_createTmplPath == null) {
             throw new ConfigurationException("Unable to find the createtmplt.sh");
@@ -834,6 +851,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         // Reserve 1GB unless admin overrides
         _dom0MinMem = NumbersUtil.parseInt(value, 1024) * 1024 * 1024L;
 
+        value = (String)params.get("host.overcommit.mem.mb");
+        // Support overcommit memory for host if host uses ZSWAP, KSM and other memory
+        // compressing technologies
+        _dom0OvercommitMem = NumbersUtil.parseInt(value, 0) * 1024 * 1024L;
+
         value = (String) params.get("kvmclock.disable");
         if (Boolean.parseBoolean(value)) {
             _noKvmClock = true;
@@ -858,6 +880,16 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             value = (String) params.get("vm.rng.rate.period");
             _rngRatePeriod = NumbersUtil.parseInt(value, new Integer(_rngRatePeriod));
+        }
+
+        value = (String) params.get("vm.watchdog.model");
+        if (!Strings.isNullOrEmpty(value)) {
+            _watchDogModel = WatchDogModel.valueOf(value.toUpperCase());
+        }
+
+        value = (String) params.get("vm.watchdog.action");
+        if (!Strings.isNullOrEmpty(value)) {
+            _watchDogAction = WatchDogAction.valueOf(value.toUpperCase());
         }
 
         LibvirtConnection.initialize(_hypervisorURI);
@@ -2056,6 +2088,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         devices.addDevice(new ChannelDef(_qemuGuestAgentSocketName, ChannelDef.ChannelType.UNIX,
                           new File(_qemuSocketsPath + "/" + vmTO.getName() + "." + _qemuGuestAgentSocketName)));
 
+        devices.addDevice(new WatchDogDef(_watchDogAction, _watchDogModel));
+
         final VideoDef videoCard = new VideoDef(_videoHw, _videoRam);
         devices.addDevice(videoCard);
 
@@ -2755,12 +2789,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         info.add((int)cpus);
         info.add(speed);
         // Report system's RAM as actual RAM minus host OS reserved RAM
-        ram = ram - _dom0MinMem;
+        ram = ram - _dom0MinMem + _dom0OvercommitMem;
         info.add(ram);
         info.add(cap);
         info.add(_dom0MinMem);
         info.add(cpuSockets);
-        s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", _dom0MinMem=" + _dom0MinMem + ", cpu sockets=" + cpuSockets);
+        s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", _dom0MinMem=" + _dom0MinMem + ", _dom0OvercommitMem=" + _dom0OvercommitMem + ", cpu sockets=" + cpuSockets);
 
         return info;
     }

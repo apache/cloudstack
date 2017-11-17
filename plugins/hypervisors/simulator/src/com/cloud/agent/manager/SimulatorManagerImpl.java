@@ -112,6 +112,8 @@ import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.api.commands.CleanupSimulatorMockCmd;
 import com.cloud.api.commands.ConfigureSimulatorCmd;
+import com.cloud.api.commands.ConfigureSimulatorHAProviderState;
+import com.cloud.api.commands.ListSimulatorHAStateTransitions;
 import com.cloud.api.commands.QuerySimulatorMockCmd;
 import com.cloud.resource.SimulatorStorageProcessor;
 import com.cloud.serializer.GsonHelper;
@@ -193,6 +195,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
         cmdList.add(ConfigureSimulatorCmd.class);
         cmdList.add(QuerySimulatorMockCmd.class);
         cmdList.add(CleanupSimulatorMockCmd.class);
+        cmdList.add(ConfigureSimulatorHAProviderState.class);
+        cmdList.add(ListSimulatorHAStateTransitions.class);
         return cmdList;
     }
 

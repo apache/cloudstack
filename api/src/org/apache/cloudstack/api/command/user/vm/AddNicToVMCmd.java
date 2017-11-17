@@ -36,8 +36,10 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
@@ -60,6 +62,9 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "IP Address for the new network")
     private String ipaddr;
 
+    @Parameter(name = ApiConstants.MAC_ADDRESS, type = CommandType.STRING, description = "Mac Address for the new network")
+    private String macaddr;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -74,6 +79,18 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
 
     public String getIpAddress() {
         return ipaddr;
+    }
+
+    public String getMacAddress() {
+        if (macaddr == null) {
+            return null;
+        }
+        if(!NetUtils.isValidMac(macaddr)) {
+            throw new InvalidParameterValueException("Mac address is not valid: " + macaddr);
+        } else if(!NetUtils.isUnicastMac(macaddr)) {
+            throw new InvalidParameterValueException("Mac address is not unicast: " + macaddr);
+        }
+        return NetUtils.standardizeMacAddress(macaddr);
     }
 
     /////////////////////////////////////////////////////

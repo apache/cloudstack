@@ -214,7 +214,6 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         SnapshotResult result = null;
         SnapshotInfo snapshotOnPrimary = null;
-        SnapshotInfo backedUpSnapshot = null;
 
         try {
             volumeInfo.stateTransit(Volume.Event.SnapshotRequested);
@@ -250,23 +249,10 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             }
 
             snapshotOnPrimary = result.getSnapshot();
-            backedUpSnapshot = backupSnapshot(snapshotOnPrimary);
-
-            updateLocationTypeInDb(backedUpSnapshot);
         }
         finally {
             if (result != null && result.isSuccess()) {
                 volumeInfo.stateTransit(Volume.Event.OperationSucceeded);
-
-                if (snapshotOnPrimary != null && snapshotInfo.getLocationType() == Snapshot.LocationType.SECONDARY) {
-                    // remove the snapshot on primary storage
-                    try {
-                        snapshotSvr.deleteSnapshot(snapshotOnPrimary);
-                    } catch (Exception e) {
-                        s_logger.warn("Failed to clean up snapshot on primary Id:" + snapshotOnPrimary.getId() + " "
-                                + e.getMessage());
-                    }
-                }
             } else {
                 volumeInfo.stateTransit(Volume.Event.OperationFailed);
             }
@@ -274,7 +260,22 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         snapshotDao.releaseFromLockTable(snapshotInfo.getId());
 
-        return backedUpSnapshot;
+        return snapshotOnPrimary;
+    }
+
+    @Override
+    public void postSnapshotCreation(SnapshotInfo snapshot) {
+        updateLocationTypeInDb(snapshot);
+
+        if (snapshot.getLocationType() == Snapshot.LocationType.SECONDARY) {
+            // remove the snapshot on primary storage
+            try {
+                snapshotSvr.deleteSnapshot(snapshot);
+            } catch (Exception e) {
+                s_logger.warn("Failed to clean up snapshot '" + snapshot.getId() + "' on primary storage: " + e.getMessage());
+            }
+        }
+
     }
 
     private void updateLocationTypeInDb(SnapshotInfo snapshotInfo) {
@@ -604,4 +605,5 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         return StrategyPriority.CANT_HANDLE;
     }
+
 }

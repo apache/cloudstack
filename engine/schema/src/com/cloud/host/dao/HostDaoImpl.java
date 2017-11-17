@@ -31,6 +31,8 @@ import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
+import com.cloud.utils.NumbersUtil;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -144,6 +146,8 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected HostTransferMapDao _hostTransferDao;
     @Inject
     protected ClusterDao _clusterDao;
+    @Inject
+    private ConfigurationDao _configDao;
 
     public HostDaoImpl() {
         super();
@@ -991,7 +995,9 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             }
         }
         if (event.equals(Event.ManagementServerDown)) {
-            ub.set(host, _pingTimeAttr, ((System.currentTimeMillis() >> 10) - (10 * 60)));
+            Float pingTimeout = NumbersUtil.parseFloat(_configDao.getValue("ping.timeout"), 2.5f);
+            Integer pingInterval = NumbersUtil.parseInt(_configDao.getValue("ping.interval"), 60);
+            ub.set(host, _pingTimeAttr, ((System.currentTimeMillis() >> 10) - (long)(pingTimeout * pingInterval)));
         }
         int result = update(ub, sc, null);
         assert result <= 1 : "How can this update " + result + " rows? ";

@@ -19,11 +19,6 @@ package com.cloud.event;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.usage.Usage;
-
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -74,6 +69,12 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.annotation.Annotation;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.usage.Usage;
 
 public class EventTypes {
 
@@ -323,6 +324,12 @@ public class EventTypes {
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_CHANGE_PASSWORD = "HOST.OOBM.CHANGEPASSWORD";
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_POWERSTATE_TRANSITION = "HOST.OOBM.POWERSTATE.TRANSITION";
 
+    // HA
+    public static final String EVENT_HA_RESOURCE_ENABLE = "HA.RESOURCE.ENABLE";
+    public static final String EVENT_HA_RESOURCE_DISABLE = "HA.RESOURCE.DISABLE";
+    public static final String EVENT_HA_RESOURCE_CONFIGURE = "HA.RESOURCE.CONFIGURE";
+    public static final String EVENT_HA_STATE_TRANSITION = "HA.STATE.TRANSITION";
+
     // Maintenance
     public static final String EVENT_MAINTENANCE_CANCEL = "MAINT.CANCEL";
     public static final String EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE = "MAINT.CANCEL.PS";
@@ -562,6 +569,9 @@ public class EventTypes {
     public static final String EVENT_NETSCALER_VM_START = "NETSCALERVM.START";
     public static final String EVENT_NETSCALER_VM_STOP = "NETSCALERVM.STOP";
 
+    public static final String EVENT_ANNOTATION_CREATE = "ANNOTATION.CREATE";
+    public static final String EVENT_ANNOTATION_REMOVE = "ANNOTATION.REMOVE";
+
 
     static {
 
@@ -779,6 +789,12 @@ public class EventTypes {
         entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_CHANGE_PASSWORD, Host.class);
         entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_POWERSTATE_TRANSITION, Host.class);
 
+        // HA
+        entityEventDetails.put(EVENT_HA_RESOURCE_ENABLE, HAConfig.class);
+        entityEventDetails.put(EVENT_HA_RESOURCE_DISABLE, HAConfig.class);
+        entityEventDetails.put(EVENT_HA_RESOURCE_CONFIGURE, HAConfig.class);
+        entityEventDetails.put(EVENT_HA_STATE_TRANSITION, HAConfig.class);
+
         // Maintenance
         entityEventDetails.put(EVENT_MAINTENANCE_CANCEL, Host.class);
         entityEventDetails.put(EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE, Host.class);
@@ -940,6 +956,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_NETSCALER_SERVICEPACKAGE_ADD, "NETSCALER.SERVICEPACKAGE.CREATE");
         entityEventDetails.put(EVENT_NETSCALER_SERVICEPACKAGE_DELETE, "NETSCALER.SERVICEPACKAGE.DELETE");
 
+        entityEventDetails.put(EVENT_ANNOTATION_CREATE, Annotation.class);
+        entityEventDetails.put(EVENT_ANNOTATION_REMOVE, Annotation.class);
     }
 
     public static String getEntityForEvent(String eventName) {

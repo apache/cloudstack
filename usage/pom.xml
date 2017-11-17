@@ -113,7 +113,7 @@
             <configuration>
               <target>
                 <copy overwrite="true" todir="${basedir}/target/transformed">
-                  <fileset dir="${basedir}/../client/tomcatconf">
+                  <fileset dir="${basedir}/../client/conf">
                     <include name="**/db.properties.in" />
                   </fileset>
                   <globmapper from="*.in" to="*" />

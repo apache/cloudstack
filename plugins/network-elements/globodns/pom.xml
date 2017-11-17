@@ -31,7 +31,7 @@
     <dependency>
       <groupId>com.globo.globodns</groupId>
       <artifactId>globodns-client</artifactId>
-      <version>0.0.22</version>
+      <version>0.0.23</version>
     </dependency>
   </dependencies>
 </project>

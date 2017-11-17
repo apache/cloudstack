@@ -181,7 +181,12 @@ known_categories = {
     'deleteServicePackageOffering' : 'Load Balancer',
     'destroyNsVpx' : 'Load Balancer',
     'startNsVpx' : 'Load Balancer',
-    'CA': 'Certificate'
+    'listAnnotations' : 'Annotations',
+    'addAnnotation' : 'Annotations',
+    'removeAnnotation' : 'Annotations',
+    'CA': 'Certificate',
+    'listElastistorInterface': 'Misc',
+    'cloudian': 'Cloudian'
     }
 
 

@@ -227,6 +227,7 @@ import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.Snapshot;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
@@ -1136,6 +1137,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long vmId = cmd.getVmId();
         Long networkId = cmd.getNetworkId();
         String ipAddress = cmd.getIpAddress();
+        String macAddress = cmd.getMacAddress();
         Account caller = CallContext.current().getCallingAccount();
 
         UserVmVO vmInstance = _vmDao.findById(vmId);
@@ -1166,12 +1168,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 throw new CloudRuntimeException("A NIC already exists for VM:" + vmInstance.getInstanceName() + " in network: " + network.getUuid());
         }
 
-        NicProfile profile = new NicProfile(null, null);
+        if(_nicDao.findByNetworkIdAndMacAddress(networkId, macAddress) != null) {
+            throw new CloudRuntimeException("A NIC with this MAC address exists for network: " + network.getUuid());
+        }
+
+        NicProfile profile = new NicProfile(ipAddress, null, macAddress);
         if (ipAddress != null) {
             if (!(NetUtils.isValidIp(ipAddress) || NetUtils.isValidIpv6(ipAddress))) {
                 throw new InvalidParameterValueException("Invalid format for IP address parameter: " + ipAddress);
             }
-            profile = new NicProfile(ipAddress, null);
         }
 
         // Perform permission check on VM
@@ -2632,6 +2637,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _accountMgr.checkAccess(caller, null, true, vmInstance);
 
+        checkIfHostOfVMIsInPrepareForMaintenanceState(vmInstance.getHostId(), vmId, "Reboot");
+
         // If the VM is Volatile in nature, on reboot discard the VM's root disk and create a new root disk for it: by calling restoreVM
         long serviceOfferingId = vmInstance.getServiceOfferingId();
         ServiceOfferingVO offering = _serviceOfferingDao.findById(vmInstance.getId(), serviceOfferingId);
@@ -2671,10 +2678,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (expunge && !_accountMgr.isAdmin(ctx.getCallingAccount().getId()) && !AllowUserExpungeRecoverVm.valueIn(cmd.getEntityOwnerId())) {
             throw new PermissionDeniedException("Parameter " + ApiConstants.EXPUNGE + " can be passed by Admin only. Or when the allow.user.expunge.recover.vm key is set.");
         }
+        // check if VM exists
+        UserVmVO vm = _vmDao.findById(vmId);
+
+        if (vm == null) {
+            throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+
+        // check if there are active volume snapshots tasks
+        s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
+        if (checkStatusOfVolumeSnapshots(vmId, Volume.Type.ROOT)) {
+            throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on ROOT volume, vm destroy is not permitted, please try again later.");
+        }
+        s_logger.debug("Found no ongoing snapshots on volume of type ROOT, for the vm with id " + vmId);
 
         UserVm destroyedVm = destroyVm(vmId, expunge);
         if (expunge) {
-            UserVmVO vm = _vmDao.findById(vmId);
             if (!expunge(vm, ctx.getCallingUserId(), ctx.getCallingAccount())) {
                 throw new CloudRuntimeException("Failed to expunge vm " + destroyedVm);
             }
@@ -3084,7 +3103,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                     s_logger.debug("Creating network for account " + owner + " from the network offering id=" + requiredOfferings.get(0).getId() + " as a part of deployVM process");
                     Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), owner.getAccountName() + "-network", owner.getAccountName() + "-network",
-                            null, null, null, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true, null);
+                            null, null, null, false, null, owner, null, physicalNetwork, zone.getId(), ACLType.Account, null, null, null, null, true, null);
                     if (newNetwork != null) {
                         defaultNetwork = _networkDao.findById(newNetwork.getId());
                     }
@@ -3363,17 +3382,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (requestedIpPair == null) {
                 requestedIpPair = new IpAddresses(null, null);
             } else {
-                _networkModel.checkRequestedIpAddresses(network.getId(), requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
+                _networkModel.checkRequestedIpAddresses(network.getId(), requestedIpPair);
             }
 
-            NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address());
+            NicProfile profile = new NicProfile(requestedIpPair.getIp4Address(), requestedIpPair.getIp6Address(), requestedIpPair.getMacAddress());
 
             if (defaultNetworkNumber == 0) {
                 defaultNetworkNumber++;
                 // if user requested specific ip for default network, add it
                 if (defaultIps.getIp4Address() != null || defaultIps.getIp6Address() != null) {
-                    _networkModel.checkRequestedIpAddresses(network.getId(), defaultIps.getIp4Address(), defaultIps.getIp6Address());
+                    _networkModel.checkRequestedIpAddresses(network.getId(), defaultIps);
                     profile = new NicProfile(defaultIps.getIp4Address(), defaultIps.getIp6Address());
+                } else if (defaultIps.getMacAddress() != null) {
+                    profile = new NicProfile(null, null, defaultIps.getMacAddress());
                 }
 
                 profile.setDefaultNic(true);
@@ -3619,8 +3640,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                 _vmDao.persist(vm);
                 for (String key : customParameters.keySet()) {
-                    //handle double byte strings.
-                    vm.setDetail(key, Integer.toString(Integer.parseInt(customParameters.get(key))));
+                    if( key.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) ||
+                            key.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) ||
+                            key.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
+                        // handle double byte strings.
+                        vm.setDetail(key, Integer.toString(Integer.parseInt(customParameters.get(key))));
+                    } else {
+                        vm.setDetail(key, customParameters.get(key));
+                    }
                 }
                 vm.setDetail("deployvm", "true");
                 _vmDao.saveDetails(vm);
@@ -4587,7 +4614,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         if(!serviceOffering.isDynamic()) {
             for(String detail: cmd.getDetails().keySet()) {
-                if(detail.equalsIgnoreCase("cpuNumber") || detail.equalsIgnoreCase("cpuSpeed") || detail.equalsIgnoreCase("memory")) {
+                if(detail.equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.equalsIgnoreCase(VmDetailConstants.MEMORY)) {
                     throw new InvalidParameterValueException("cpuNumber or cpuSpeed or memory should not be specified for static service offering");
                 }
             }
@@ -4619,10 +4646,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         String ipAddress = cmd.getIpAddress();
         String ip6Address = cmd.getIp6Address();
+        String macAddress = cmd.getMacAddress();
         String name = cmd.getName();
         String displayName = cmd.getDisplayName();
         UserVm vm = null;
-        IpAddresses addrs = new IpAddresses(ipAddress, ip6Address);
+        IpAddresses addrs = new IpAddresses(ipAddress, ip6Address, macAddress);
         Long size = cmd.getSize();
         String group = cmd.getGroup();
         String userData = cmd.getUserData();
@@ -4832,6 +4860,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw ex;
         }
 
+        checkIfHostOfVMIsInPrepareForMaintenanceState(vm.getHostId(), vmId, "Migrate");
+
         if(serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
             throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
         }
@@ -4898,6 +4928,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new VirtualMachineMigrationException("Destination host, hostId: " + destinationHost.getId()
                             + " already has max Running VMs(count includes system VMs), cannot migrate to this host");
         }
+        //check if there are any ongoing volume snapshots on the volumes associated with the VM.
+        s_logger.debug("Checking if there are any ongoing snapshots volumes associated with VM with ID " + vmId);
+        if (checkStatusOfVolumeSnapshots(vmId, null)) {
+            throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on volume(s) attached to this VM, VM Migration is not permitted, please try again later.");
+        }
+        s_logger.debug("Found no ongoing snapshots on volumes associated with the vm with id " + vmId);
 
         UserVmVO uservm = _vmDao.findById(vmId);
         if (uservm != null) {
@@ -4923,6 +4959,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             return false;
         }
+    }
+
+    private void checkIfHostOfVMIsInPrepareForMaintenanceState(Long hostId, Long vmId, String operation) {
+        HostVO host = _hostDao.findById(hostId);
+        if (host.getResourceState() != ResourceState.PrepareForMaintenance) {
+            return;
+        }
+
+        s_logger.debug("Host is in PrepareForMaintenance state - " + operation + " VM operation on the VM id: " + vmId + " is not allowed");
+        throw new InvalidParameterValueException(operation + " VM operation on the VM id: " + vmId + " is not allowed as host is preparing for maintenance mode");
     }
 
     private Long accountOfDedicatedHost(HostVO host) {
@@ -5677,7 +5723,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             s_logger.debug("Creating network for account " + newAccount + " from the network offering id=" + requiredOfferings.get(0).getId()
                                     + " as a part of deployVM process");
                             Network newNetwork = _networkMgr.createGuestNetwork(requiredOfferings.get(0).getId(), newAccount.getAccountName() + "-network",
-                                    newAccount.getAccountName() + "-network", null, null, null, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null,
+                                    newAccount.getAccountName() + "-network", null, null, null, false, null, newAccount, null, physicalNetwork, zone.getId(), ACLType.Account, null, null,
                                     null, null, true, null);
                             // if the network offering has persistent set to true, implement the network
                             if (requiredOfferings.get(0).getIsPersistent()) {
@@ -5753,6 +5799,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         _accountMgr.checkAccess(caller, null, true, vm);
 
+        //check if there are any active snapshots on volumes associated with the VM
+        s_logger.debug("Checking if there are any ongoing snapshots on the ROOT volumes associated with VM with ID " + vmId);
+        if (checkStatusOfVolumeSnapshots(vmId, Volume.Type.ROOT)) {
+            throw new CloudRuntimeException("There is/are unbacked up snapshot(s) on ROOT volume, Re-install VM is not permitted, please try again later.");
+        }
+        s_logger.debug("Found no ongoing snapshots on volume of type ROOT, for the vm with id " + vmId);
         return restoreVMInternal(caller, vm, newTemplateId);
     }
 
@@ -6096,5 +6148,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         return true; // no info then default to true
+    }
+
+    private boolean checkStatusOfVolumeSnapshots(long vmId, Volume.Type type) {
+        List<VolumeVO> listVolumes = null;
+        if (type == Volume.Type.ROOT) {
+            listVolumes = _volsDao.findByInstanceAndType(vmId, type);
+        } else if (type == Volume.Type.DATADISK) {
+            listVolumes = _volsDao.findByInstanceAndType(vmId, type);
+        } else {
+            listVolumes = _volsDao.findByInstance(vmId);
+        }
+        s_logger.debug("Found "+listVolumes.size()+" no. of volumes of type "+type+" for vm with VM ID "+vmId);
+        for (VolumeVO volume : listVolumes) {
+            Long volumeId = volume.getId();
+            s_logger.debug("Checking status of snapshots for Volume with Volume Id: "+volumeId);
+            List<SnapshotVO> ongoingSnapshots = _snapshotDao.listByStatus(volumeId, Snapshot.State.Creating, Snapshot.State.CreatedOnPrimary, Snapshot.State.BackingUp);
+            int ongoingSnapshotsCount = ongoingSnapshots.size();
+            s_logger.debug("The count of ongoing Snapshots for VM with ID "+vmId+" and disk type "+type+" is "+ongoingSnapshotsCount);
+            if (ongoingSnapshotsCount > 0) {
+                s_logger.debug("Found "+ongoingSnapshotsCount+" no. of snapshots, on volume of type "+type+", which snapshots are not yet backed up");
+                return true;
+            }
+        }
+        return false;
     }
 }
