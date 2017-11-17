@@ -491,7 +491,7 @@
       <plugin>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-maven-plugin</artifactId>
-        <version>9.2.22.v20170606</version>
+        <version>${cs.jetty-maven-plugin.version}</version>
         <dependencies>
           <!-- specify the dependent jdbc driver here -->
           <dependency>
