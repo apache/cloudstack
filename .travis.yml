@@ -99,7 +99,7 @@ env:
              smoke/misc/test_vm_sync"
 
     - TESTS="component/find_hosts_for_migration
-             component/test_accounts
+             smoke/test_accounts
              component/test_acl_isolatednetwork_delete
              component/test_acl_listsnapshot
              component/test_acl_listvm
@@ -124,27 +124,29 @@ env:
              component/test_non_contiguous_vlan
              component/test_persistent_networks"
 
-    - TESTS="component/test_projects
+    - TESTS="smoke/test_projects
              component/test_project_configs
              component/test_project_usage
-             component/test_regions
+             smoke/test_regions
              component/test_regions_accounts
              component/test_routers
              component/test_snapshots"
 
     - TESTS="component/test_project_limits
-             component/test_resource_limits"
+             component/test_resource_limits
+             smoke/test_host_maintenance"
 
     - TESTS="component/test_stopped_vm
              component/test_tags
              component/test_templates
              component/test_update_vm
-             component/test_usage"
+             smoke/test_usage"
 
     - TESTS="component/test_volumes
              component/test_vpc_network
              component/test_vpc_offerings
              component/test_vpn_users"
+
 
 # FIXME: fix following tests and include them in Travis
 #    - TESTS="component/test_affinity_groups_projects"
