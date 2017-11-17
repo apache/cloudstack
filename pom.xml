@@ -120,8 +120,9 @@
     <cs.cxf.version>3.2.0</cs.cxf.version>
     <cs.groovy.version>2.4.12</cs.groovy.version>
     <cs.nitro.version>10.1</cs.nitro.version>
-    <cs.wiremock.version>2.8.0</cs.wiremock.version>
-    <cs.jetty.version>9.2.22.v20170606</cs.jetty.version>
+    <cs.wiremock.version>2.11.0</cs.wiremock.version>
+    <cs.jetty.version>9.4.7.v20170914</cs.jetty.version>
+    <cs.jetty-maven-plugin.version>9.2.22.v20170606</cs.jetty-maven-plugin.version>
   </properties>
 
   <distributionManagement>

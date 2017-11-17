@@ -52,7 +52,7 @@
     </dependency>
     <dependency>
       <groupId>com.github.tomakehurst</groupId>
-      <artifactId>wiremock</artifactId>
+      <artifactId>wiremock-standalone</artifactId>
       <version>${cs.wiremock.version}</version>
       <scope>test</scope>
     </dependency>
