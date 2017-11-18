@@ -23,7 +23,12 @@ public class ConcurrentOperationException extends CloudRuntimeException {
 
     private static final long serialVersionUID = SerialVersionUID.ConcurrentOperationException;
 
+    @Deprecated
     public ConcurrentOperationException(String msg) {
         super(msg);
+    }
+
+    public ConcurrentOperationException(String callId, String msg) {
+        super(callId, msg);
     }
 }

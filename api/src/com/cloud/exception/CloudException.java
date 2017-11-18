@@ -19,6 +19,7 @@ package com.cloud.exception;
 import java.util.ArrayList;
 
 import com.cloud.utils.exception.CSExceptionErrorCode;
+import org.apache.cloudstack.context.CallContext;
 
 /**
  * by the API response serializer. Any exceptions that are thrown by
@@ -34,18 +35,23 @@ public class CloudException extends Exception {
 
     protected Integer csErrorCode;
 
+    protected String contextId;
+
     public CloudException(String message) {
         super(message);
+        contextId = CallContext.current().getContextId();
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
     public CloudException(String message, Throwable cause) {
         super(message, cause);
+        contextId = CallContext.current().getContextId();
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
     public CloudException() {
         super();
+        contextId = CallContext.current().getContextId();
         setCSErrorCode(CSExceptionErrorCode.getCSErrCode(this.getClass().getName()));
     }
 
@@ -64,5 +70,9 @@ public class CloudException extends Exception {
 
     public int getCSErrorCode() {
         return csErrorCode;
+    }
+
+    public String getContextId() {
+        return contextId;
     }
 }

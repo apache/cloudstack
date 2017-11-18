@@ -17,6 +17,8 @@
 package org.apache.cloudstack.api;
 
 
+import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 /**
@@ -29,7 +31,7 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     public static final String vpcSyncObject = "vpc";
     public static final String snapshotHostSyncObject = "snapshothost";
     public static final String gslbSyncObject = "globalserverloadbalancer";
-    private static final Logger s_logger = Logger.getLogger(BaseAsyncCmd.class.getName());
+    private static final Logger s_logger = Logger.getLogger(BaseAsyncCmd.class);
 
     private Object job;
 
@@ -40,6 +42,9 @@ public abstract class BaseAsyncCmd extends BaseCmd {
     private String injectedJobId;
 
     public String getInjectedJobId() {
+        if (!StringUtils.isNotBlank(injectedJobId)) {
+            injectedJobId = CallContext.current().getContextId();
+        }
         return this.injectedJobId;
     }
 

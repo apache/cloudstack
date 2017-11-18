@@ -462,7 +462,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             } catch (final ServerApiException se) {
                 final String responseText = getSerializedApiError(se, parameterMap, responseType);
                 writeResponse(response, responseText, se.getErrorCode().getHttpCode(), responseType, se.getDescription());
-                sb.append(" " + se.getErrorCode() + " " + se.getDescription());
+                sb.append(" " + se.getContextId() + " " + se.getErrorCode() + " " + se.getDescription());
             } catch (final RuntimeException e) {
                 // log runtime exception like NullPointerException to help identify the source easier
                 s_logger.error("Unhandled exception, ", e);
@@ -540,7 +540,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                         throw new CloudRuntimeException("No APICommand annotation found for class " + cmdClass.getCanonicalName());
                     }
 
-                    BaseCmd cmdObj = (BaseCmd)cmdClass.newInstance();
+                    BaseCmd cmdObj = (BaseCmd)cmdClass.getConstructor().newInstance();
                     cmdObj = ComponentContext.inject(cmdObj);
                     cmdObj.configure();
                     cmdObj.setFullUrlParams(paramMap);
