@@ -55,7 +55,6 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.utils.DateUtil;
-
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
