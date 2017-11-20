@@ -46,7 +46,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.NDC;
+import org.apache.logging.log4j.ThreadContext;
 import org.apache.commons.lang.StringUtils;
 
 import com.google.gson.Gson;
@@ -395,7 +395,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             s_logger.trace("Begin executeRequest(), cmd: " + cmd.getClass().getSimpleName());
 
         Answer answer = null;
-        NDC.push(getCommandLogTitle(cmd));
+        ThreadContext.push(getCommandLogTitle(cmd));
         try {
             long cmdSequence = _cmdSequence++;
             Date startTime = DateUtil.currentGMTTime();
@@ -547,7 +547,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         } finally {
             recycleServiceContext();
-            NDC.pop();
+            ThreadContext.pop();
         }
 
         if (s_logger.isTraceEnabled())

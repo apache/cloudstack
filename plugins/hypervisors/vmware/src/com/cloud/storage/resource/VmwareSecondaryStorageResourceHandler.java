@@ -20,7 +20,7 @@ import java.util.List;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.NDC;
+import org.apache.logging.log4j.ThreadContext;
 
 import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
@@ -95,7 +95,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
 
         try {
             Answer answer;
-            NDC.push(getCommandLogTitle(cmd));
+            ThreadContext.push(getCommandLogTitle(cmd));
 
             if (s_logger.isDebugEnabled())
                 s_logger.debug("Executing " + _gson.toJson(cmd));
@@ -141,7 +141,7 @@ public class VmwareSecondaryStorageResourceHandler implements SecondaryStorageRe
             if (s_logger.isDebugEnabled())
                 s_logger.debug("Done executing " + _gson.toJson(cmd));
             recycleServiceContext();
-            NDC.pop();
+            ThreadContext.pop();
         }
     }
 

@@ -66,7 +66,7 @@ public abstract class CiscoNexusVSMDeviceManagerImpl extends AdapterBase {
     @Inject
     PortProfileDao _ppDao;
 
-    private static final org.apache.log4j.Logger s_logger = LogManager.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
+    private static final Logger s_logger = LogManager.getLogger(ExternalLoadBalancerDeviceManagerImpl.class);
 
     @DB
     //public CiscoNexusVSMDeviceVO addCiscoNexusVSM(long clusterId, String ipaddress, String username, String password, ServerResource resource, String vsmName) {
