@@ -2683,226 +2683,222 @@ class TestVMLifeCycleDiffHosts(cloudstackTestCase):
 
     @classmethod
     def setUpClass(cls):
-        try:
+        cls.testClient = super(TestVMLifeCycleDiffHosts, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
 
-            cls.testClient = super(TestVMLifeCycleDiffHosts, cls).getClsTestClient()
-            cls.api_client = cls.testClient.getApiClient()
-
-            cls.services = Services().services
-            # Get Zone, Domain and templates
-            cls.domain = get_domain(cls.api_client)
-            cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-            cls.template = get_template(
-                            cls.api_client,
-                            cls.zone.id,
-                            cls.services["ostype"]
-                            )
-            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-            cls.services["virtual_machine"]["template"] = cls.template.id
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.template = get_template(
+                        cls.api_client,
+                        cls.zone.id,
+                        cls.services["ostype"]
+                        )
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.services["virtual_machine"]["template"] = cls.template.id
 
             # 2 hosts are needed within cluster to run the test cases and
             # 3rd host is needed to run the migrate test case
             # Even if only 2 hosts are present, remaining test cases will be run and
             # migrate test will be skipped automatically
-            cluster = cls.FindClusterWithSufficientHosts(numberofhosts = 3)
-            if cluster is None:
-                raise unittest.SkipTest("Skipping as unable to find a cluster with\
-                        sufficient number of hosts")
+        cluster = cls.FindClusterWithSufficientHosts(numberofhosts = 3)
+        if cluster is None:
+            raise unittest.SkipTest("Skipping as unable to find a cluster with\
+                    sufficient number of hosts")
 
-            hosts = list_hosts(cls.api_client, type="Routing", listall=True, clusterid=cluster.id)
 
-            assert isinstance(hosts, list), "list_hosts should return a list response,\
-                                        instead got %s" % hosts
+        hosts = list_hosts(cls.api_client, type="Routing", listall=True, clusterid=cluster.id)
 
-            Host.update(cls.api_client, id=hosts[0].id, hosttags="host1")
-            Host.update(cls.api_client, id=hosts[1].id, hosttags="host2")
+        assert isinstance(hosts, list), "list_hosts should return a list response,\
+                                    instead got %s" % hosts
 
-            if len(hosts) > 2:
-                Host.update(cls.api_client, id=hosts[2].id, hosttags="host1")
+        Host.update(cls.api_client, id=hosts[0].id, hosttags="host1")
+        Host.update(cls.api_client, id=hosts[1].id, hosttags="host2")
 
-            cls.service_offering_1 = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering_1"]
-                                            )
-            cls.service_offering_2 = ServiceOffering.create(
-                                            cls.api_client,
-                                            cls.services["service_offering_2"]
-                                            )
+        if len(hosts) > 2:
+            Host.update(cls.api_client, id=hosts[2].id, hosttags="host1")
 
-            cls.account = Account.create(
-                                     cls.api_client,
-                                     cls.services["account"],
-                                     admin=True,
-                                     domainid=cls.domain.id
-                                     )
+        cls.service_offering_1 = ServiceOffering.create(
+                                        cls.api_client,
+                                        cls.services["service_offering_1"]
+                                        )
+        cls.service_offering_2 = ServiceOffering.create(
+                                        cls.api_client,
+                                        cls.services["service_offering_2"]
+                                        )
 
-            cls.vpc_off = VpcOffering.create(
-                                     cls.api_client,
-                                     cls.services["vpc_offering"]
-                                     )
+        cls.account = Account.create(
+                                 cls.api_client,
+                                 cls.services["account"],
+                                 admin=True,
+                                 domainid=cls.domain.id
+                                 )
 
-            cls.vpc_off.update(cls.api_client, state='Enabled')
+        cls.vpc_off = VpcOffering.create(
+                                 cls.api_client,
+                                 cls.services["vpc_offering"]
+                                 )
 
-            cls.services["vpc"]["cidr"] = '10.1.1.1/16'
-            cls.vpc = VPC.create(
-                         cls.api_client,
-                         cls.services["vpc"],
-                         vpcofferingid=cls.vpc_off.id,
-                         zoneid=cls.zone.id,
-                         account=cls.account.name,
-                         domainid=cls.account.domainid
-                         )
+        cls.vpc_off.update(cls.api_client, state='Enabled')
 
-            cls.nw_off = NetworkOffering.create(
-                                            cls.api_client,
-                                            cls.services["network_offering"],
-                                            conservemode=False
-                                            )
-            # Enable Network offering
-            cls.nw_off.update(cls.api_client, state='Enabled')
+        cls.services["vpc"]["cidr"] = '10.1.1.1/16'
+        cls.vpc = VPC.create(
+                     cls.api_client,
+                     cls.services["vpc"],
+                     vpcofferingid=cls.vpc_off.id,
+                     zoneid=cls.zone.id,
+                     account=cls.account.name,
+                     domainid=cls.account.domainid
+                     )
 
-            # Creating network using the network offering created
-            cls.network_1 = Network.create(
+        cls.nw_off = NetworkOffering.create(
+                                        cls.api_client,
+                                        cls.services["network_offering"],
+                                        conservemode=False
+                                        )
+        # Enable Network offering
+        cls.nw_off.update(cls.api_client, state='Enabled')
+
+        # Creating network using the network offering created
+        cls.network_1 = Network.create(
+                            cls.api_client,
+                            cls.services["network"],
+                            accountid=cls.account.name,
+                            domainid=cls.account.domainid,
+                            networkofferingid=cls.nw_off.id,
+                            zoneid=cls.zone.id,
+                            gateway='10.1.1.1',
+                            vpcid=cls.vpc.id
+                            )
+        cls.nw_off_no_lb = NetworkOffering.create(
                                 cls.api_client,
-                                cls.services["network"],
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                networkofferingid=cls.nw_off.id,
-                                zoneid=cls.zone.id,
-                                gateway='10.1.1.1',
-                                vpcid=cls.vpc.id
+                                cls.services["network_offering_no_lb"],
+                                conservemode=False
                                 )
-            cls.nw_off_no_lb = NetworkOffering.create(
-                                    cls.api_client,
-                                    cls.services["network_offering_no_lb"],
-                                    conservemode=False
-                                    )
-            # Enable Network offering
-            cls.nw_off_no_lb.update(cls.api_client, state='Enabled')
+        # Enable Network offering
+        cls.nw_off_no_lb.update(cls.api_client, state='Enabled')
 
-            # Creating network using the network offering created
-            cls.network_2 = Network.create(
-                                cls.api_client,
-                                cls.services["network"],
-                                accountid=cls.account.name,
-                                domainid=cls.account.domainid,
-                                networkofferingid=cls.nw_off_no_lb.id,
-                                zoneid=cls.zone.id,
-                                gateway='10.1.2.1',
-                                vpcid=cls.vpc.id
-                                )
-            # Spawn an instance in that network
-            cls.vm_1 = VirtualMachine.create(
-                                  cls.api_client,
-                                  cls.services["virtual_machine"],
-                                  accountid=cls.account.name,
-                                  domainid=cls.account.domainid,
-                                  serviceofferingid=cls.service_offering_1.id,
-                                  networkids=[str(cls.network_1.id)]
-                                  )
-            # Spawn an instance in that network
-            cls.vm_2 = VirtualMachine.create(
-                                  cls.api_client,
-                                  cls.services["virtual_machine"],
-                                  accountid=cls.account.name,
-                                  domainid=cls.account.domainid,
-                                  serviceofferingid=cls.service_offering_1.id,
-                                  networkids=[str(cls.network_1.id)]
-                                  )
-
-            cls.vm_3 = VirtualMachine.create(
-                                  cls.api_client,
-                                  cls.services["virtual_machine"],
-                                  accountid=cls.account.name,
-                                  domainid=cls.account.domainid,
-                                  serviceofferingid=cls.service_offering_2.id,
-                                  networkids=[str(cls.network_2.id)]
-                                  )
-
-            cls.public_ip_static = PublicIPAddress.create(
-                                cls.api_client,
-                                accountid=cls.account.name,
-                                zoneid=cls.zone.id,
-                                domainid=cls.account.domainid,
-                                networkid=cls.network_1.id,
-                                vpcid=cls.vpc.id
-                                )
-            StaticNATRule.enable(
+        # Creating network using the network offering created
+        cls.network_2 = Network.create(
+                            cls.api_client,
+                            cls.services["network"],
+                            accountid=cls.account.name,
+                            domainid=cls.account.domainid,
+                            networkofferingid=cls.nw_off_no_lb.id,
+                            zoneid=cls.zone.id,
+                            gateway='10.1.2.1',
+                            vpcid=cls.vpc.id
+                            )
+        # Spawn an instance in that network
+        cls.vm_1 = VirtualMachine.create(
                               cls.api_client,
-                              ipaddressid=cls.public_ip_static.ipaddress.id,
-                              virtualmachineid=cls.vm_1.id,
-                              networkid=cls.network_1.id
+                              cls.services["virtual_machine"],
+                              accountid=cls.account.name,
+                              domainid=cls.account.domainid,
+                              serviceofferingid=cls.service_offering_1.id,
+                              networkids=[str(cls.network_1.id)]
+                              )
+        # Spawn an instance in that network
+        cls.vm_2 = VirtualMachine.create(
+                              cls.api_client,
+                              cls.services["virtual_machine"],
+                              accountid=cls.account.name,
+                              domainid=cls.account.domainid,
+                              serviceofferingid=cls.service_offering_1.id,
+                              networkids=[str(cls.network_1.id)]
                               )
 
-            cls.public_ip_1 = PublicIPAddress.create(
+        cls.vm_3 = VirtualMachine.create(
+                              cls.api_client,
+                              cls.services["virtual_machine"],
+                              accountid=cls.account.name,
+                              domainid=cls.account.domainid,
+                              serviceofferingid=cls.service_offering_2.id,
+                              networkids=[str(cls.network_2.id)]
+                              )
+
+        cls.public_ip_static = PublicIPAddress.create(
+                            cls.api_client,
+                            accountid=cls.account.name,
+                            zoneid=cls.zone.id,
+                            domainid=cls.account.domainid,
+                            networkid=cls.network_1.id,
+                            vpcid=cls.vpc.id
+                            )
+        StaticNATRule.enable(
+                          cls.api_client,
+                          ipaddressid=cls.public_ip_static.ipaddress.id,
+                          virtualmachineid=cls.vm_1.id,
+                          networkid=cls.network_1.id
+                          )
+
+        cls.public_ip_1 = PublicIPAddress.create(
+                            cls.api_client,
+                            accountid=cls.account.name,
+                            zoneid=cls.zone.id,
+                            domainid=cls.account.domainid,
+                            networkid=cls.network_1.id,
+                            vpcid=cls.vpc.id
+                            )
+
+        cls.nat_rule = NATRule.create(
+                              cls.api_client,
+                              cls.vm_1,
+                              cls.services["natrule"],
+                              ipaddressid=cls.public_ip_1.ipaddress.id,
+                              openfirewall=False,
+                              networkid=cls.network_1.id,
+                              vpcid=cls.vpc.id
+                              )
+
+        cls.public_ip_2 = PublicIPAddress.create(
+                            cls.api_client,
+                            accountid=cls.account.name,
+                            zoneid=cls.zone.id,
+                            domainid=cls.account.domainid,
+                            networkid=cls.network_1.id,
+                            vpcid=cls.vpc.id
+                            )
+
+        cls.lb_rule = LoadBalancerRule.create(
                                 cls.api_client,
+                                cls.services["lbrule"],
+                                ipaddressid=cls.public_ip_2.ipaddress.id,
                                 accountid=cls.account.name,
-                                zoneid=cls.zone.id,
-                                domainid=cls.account.domainid,
                                 networkid=cls.network_1.id,
-                                vpcid=cls.vpc.id
+                                vpcid=cls.vpc.id,
+                                domainid=cls.account.domainid
+                            )
+        cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
+
+        # Opening up the ports in VPC
+        cls.nwacl_nat = NetworkACL.create(
+                                     cls.api_client,
+                                     networkid=cls.network_1.id,
+                                     services=cls.services["natrule"],
+                                     traffictype='Ingress'
                                 )
 
-            cls.nat_rule = NATRule.create(
-                                  cls.api_client,
-                                  cls.vm_1,
-                                  cls.services["natrule"],
-                                  ipaddressid=cls.public_ip_1.ipaddress.id,
-                                  openfirewall=False,
-                                  networkid=cls.network_1.id,
-                                  vpcid=cls.vpc.id
-                                  )
-
-            cls.public_ip_2 = PublicIPAddress.create(
-                                cls.api_client,
-                                accountid=cls.account.name,
-                                zoneid=cls.zone.id,
-                                domainid=cls.account.domainid,
-                                networkid=cls.network_1.id,
-                                vpcid=cls.vpc.id
-                                )
-
-            cls.lb_rule = LoadBalancerRule.create(
+        cls.nwacl_lb = NetworkACL.create(
+                            cls.api_client,
+                            networkid=cls.network_1.id,
+                            services=cls.services["lbrule"],
+                            traffictype='Ingress'
+                            )
+        cls.services["icmp_rule"]["protocol"] = "all"
+        cls.nwacl_internet = NetworkACL.create(
                                     cls.api_client,
-                                    cls.services["lbrule"],
-                                    ipaddressid=cls.public_ip_2.ipaddress.id,
-                                    accountid=cls.account.name,
                                     networkid=cls.network_1.id,
-                                    vpcid=cls.vpc.id,
-                                    domainid=cls.account.domainid
-                                )
-            cls.lb_rule.assign(cls.api_client, [cls.vm_1, cls.vm_2])
-
-            # Opening up the ports in VPC
-            cls.nwacl_nat = NetworkACL.create(
-                                         cls.api_client,
-                                         networkid=cls.network_1.id,
-                                         services=cls.services["natrule"],
-                                         traffictype='Ingress'
+                                    services=cls.services["icmp_rule"],
+                                    traffictype='Egress'
                                     )
-
-            cls.nwacl_lb = NetworkACL.create(
-                                cls.api_client,
-                                networkid=cls.network_1.id,
-                                services=cls.services["lbrule"],
-                                traffictype='Ingress'
-                                )
-            cls.services["icmp_rule"]["protocol"] = "all"
-            cls.nwacl_internet = NetworkACL.create(
-                                        cls.api_client,
-                                        networkid=cls.network_1.id,
-                                        services=cls.services["icmp_rule"],
-                                        traffictype='Egress'
-                                        )
-            cls._cleanup = [
-                        cls.service_offering_1,
-                        cls.service_offering_2,
-                        cls.nw_off,
-                        cls.nw_off_no_lb,
-                        ]
-
-        except Exception as e:
-            raise Exception("Warning: Exception during setup : %s" % e)
+        cls._cleanup = [
+                    cls.service_offering_1,
+                    cls.service_offering_2,
+                    cls.nw_off,
+                    cls.nw_off_no_lb,
+                    ]
 
         return
 

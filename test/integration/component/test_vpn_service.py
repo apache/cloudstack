@@ -36,7 +36,7 @@ from marvin.lib.common import (get_domain,
                                         get_template
                                         )
 from marvin.lib.utils import cleanup_resources
-
+import subprocess
 
 class Services:
     """Test VPN Service
