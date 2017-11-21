@@ -4270,7 +4270,8 @@ class Tag:
             })
         return Tag(apiclient.createTags(cmd).__dict__)
 
-    def delete(self, apiclient, resourceIds, resourceType, tags):
+    @classmethod
+    def delete(cls, apiclient, resourceIds, resourceType, tags):
         """Delete tags"""
 
         cmd = deleteTags.deleteTagsCmd()

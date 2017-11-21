@@ -1108,7 +1108,7 @@ class TestUpdateVMAffinityGroups(cloudstackTestCase):
         vm1.update_affinity_group(self.api_client, affinitygroupids=[])
 
         vm1.delete(self.api_client)
-        # Can cleanup affinity groups since none are set on the VM
+        # Can cleanup affinity groups since none are set on the VM
         for aff_grp in aff_grps:
             aff_grp.delete(self.api_client)
 
