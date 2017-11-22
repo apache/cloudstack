@@ -814,7 +814,7 @@ class TestVolumes(cloudstackTestCase):
         host = Host.list(
             self.apiclient,
             type='Routing',
-            virtualmachineid=list_vm.id
+            id=list_vm.hostid
         )[0]
         list_pods = get_pod(self.apiclient, self.zone.id, host.podid)
 
@@ -858,7 +858,7 @@ class TestVolumes(cloudstackTestCase):
 
     def wait_for_attributes_and_return_root_vol(self):
 
-        for i in range(60):
+        for i in range(360):
             list_volume_response = Volume.list(
                 self.apiClient,
                 virtualmachineid=self.virtual_machine.id,
