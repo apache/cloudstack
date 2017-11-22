@@ -178,11 +178,11 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                             final StringBuilder sb = new StringBuilder();
                             if (nicSecIps != null) {
                                 for (final String ip : nicSecIps) {
-                                    sb.append(ip).append(":");
+                                    sb.append(ip).append(";");
                                 }
                                 secIpsStr = sb.toString();
                             } else {
-                                secIpsStr = "0:";
+                                secIpsStr = "0;";
                             }
                             result = citrixResourceBase.callHostPlugin(conn, "vmops", "default_network_rules", "vmName", vmName, "vmIP", nic.getIp(), "vmMAC", nic.getMac(),
                                     "vmID", Long.toString(vmSpec.getId()), "secIps", secIpsStr);

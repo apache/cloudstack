@@ -34,6 +34,8 @@ public interface NicSecondaryIp extends ControlledEntity, Identity, InternalIden
 
     String getIp4Address();
 
+    String getIp6Address();
+
     long getNetworkId();
 
     long getVmId();
