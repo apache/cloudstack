@@ -456,6 +456,9 @@ class CsIP:
             self.fw.append(
                 ["mangle", "front", "-A ACL_OUTBOUND_%s -d 224.0.0.18/32 -j ACCEPT" % self.dev])
             self.fw.append(
+                ["mangle", "", "-A ACL_OUTBOUND_%s -j DROP" % self.dev])
+
+            self.fw.append(
                 ["filter", "", "-A INPUT -i %s -p udp -m udp --dport 67 -j ACCEPT" % self.dev])
             self.fw.append(
                 ["mangle", "front", "-A POSTROUTING " + "-p udp -m udp --dport 68 -j CHECKSUM --checksum-fill"])
@@ -717,4 +720,3 @@ class CsRpsrfs:
         if count < 2:
             logging.debug("Single CPU machine")
         return count
-
