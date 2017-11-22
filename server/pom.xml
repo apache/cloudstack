@@ -141,6 +141,11 @@
       <artifactId>opensaml</artifactId>
       <version>${cs.opensaml.version}</version>
     </dependency>
+    <dependency>
+      <groupId>com.googlecode.owasp-java-html-sanitizer</groupId>
+      <artifactId>owasp-java-html-sanitizer</artifactId>
+      <version>${cs.owasp.java.sanitizer.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <testResources>

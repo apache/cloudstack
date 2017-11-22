@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.resource;
 
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -38,7 +39,7 @@ public class UploadCustomCertificateCmd extends BaseAsyncCmd {
 
     private static final String s_name = "uploadcustomcertificateresponse";
 
-    @Parameter(name = ApiConstants.CERTIFICATE, type = CommandType.STRING, required = true, description = "The certificate to be uploaded.", length = 65535)
+    @Parameter(name = ApiConstants.CERTIFICATE, type = CommandType.STRING, required = true, description = "The certificate to be uploaded.", validations = {ApiArgValidator.SkipSanitization}, length = 65535)
     private String certificate;
 
     @Parameter(name = ApiConstants.ID,

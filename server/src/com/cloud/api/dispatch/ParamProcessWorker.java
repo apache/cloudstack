@@ -22,6 +22,7 @@ import static org.apache.commons.lang.StringUtils.isNotBlank;
 import java.lang.reflect.Field;
 import java.text.DateFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -30,18 +31,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.regex.Matcher;
-import java.text.SimpleDateFormat;
 
 import javax.inject.Inject;
-
-import com.google.common.base.Strings;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCreateCmd;
 import org.apache.cloudstack.api.BaseCmd;
@@ -50,7 +48,6 @@ import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.command.admin.resource.ArchiveAlertsCmd;
 import org.apache.cloudstack.api.command.admin.resource.DeleteAlertsCmd;
 import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
@@ -58,6 +55,9 @@ import org.apache.cloudstack.api.command.user.event.ArchiveEventsCmd;
 import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
+import org.owasp.html.PolicyFactory;
+import org.owasp.html.Sanitizers;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -65,6 +65,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.base.Strings;
 
 public class ParamProcessWorker implements DispatchWorker {
 
@@ -112,10 +113,18 @@ public class ParamProcessWorker implements DispatchWorker {
         }
     }
 
+    private void validateUntrustedString(final String untrustedString, final String argName) {
+        final PolicyFactory policy = Sanitizers.FORMATTING.and(Sanitizers.LINKS).and(Sanitizers.BLOCKS).and(Sanitizers.TABLES);
+        if (!untrustedString.equals(policy.sanitize(untrustedString))) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("The requested API argument '%s' contains untrusted (html) string that is not allowed", argName));
+        }
+    }
+
     private void validateField(final Object paramObj, final Parameter annotation) throws ServerApiException {
         if (annotation == null) {
             return;
         }
+        boolean needSanitization = true;
         final String argName = annotation.name();
         for (final ApiArgValidator validator : annotation.validations()) {
             if (validator == null) {
@@ -139,7 +148,13 @@ public class ParamProcessWorker implements DispatchWorker {
                             break;
                     }
                     break;
+                case SkipSanitization:
+                    needSanitization = false;
+                    break;
             }
+        }
+        if (needSanitization && annotation.type() == CommandType.STRING) {
+            validateUntrustedString(paramObj.toString(), argName);
         }
     }
 

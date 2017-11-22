@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command;
 
 import com.cloud.user.Account;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
@@ -41,10 +42,10 @@ public class QuotaEmailTemplateUpdateCmd extends BaseCmd {
     @Parameter(name = "templatetype", type = CommandType.STRING, required=true, description = "Type of the quota email template, allowed types: QUOTA_LOW, QUOTA_EMPTY")
     private String templateName;
 
-    @Parameter(name = "templatesubject", type = CommandType.STRING, required=true, description = "The quota email template subject, max: 77 characters", length = 77)
+    @Parameter(name = "templatesubject", type = CommandType.STRING, required=true, description = "The quota email template subject, max: 77 characters", validations = {ApiArgValidator.SkipSanitization}, length = 77)
     private String templateSubject;
 
-    @Parameter(name = "templatebody", type = CommandType.STRING, required=true, description = "The quota email template body, max: 500k characters", length = 512000)
+    @Parameter(name = "templatebody", type = CommandType.STRING, required=true, description = "The quota email template body, max: 500k characters", validations = {ApiArgValidator.SkipSanitization}, length = 512000)
     private String templateBody;
 
     @Parameter(name = "locale", type = CommandType.STRING, description = "The locale of the email text")
