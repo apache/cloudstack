@@ -75,17 +75,17 @@
         /*global window, $, Util, RFB, */
         "use strict";
         // Load supporting scripts
-        Util.load_scripts(["/resource/noVNC/include/webutil.js",
-                            "/resource/noVNC/include/base64.js",
-                            "/resource/noVNC/include/websock.js",
-                            "/resource/noVNC/include/des.js",
-                           "/resource/noVNC/include/keysymdef.js",
-                           "/resource/noVNC/include/keyboard.js",
-                           "/resource/noVNC/include/input.js",
-                           "/resource/noVNC/include/display.js",
-                           "/resource/noVNC/include/inflator.js",
-                           "/resource/noVNC/include/rfb.js",
-                           "/resource/noVNC/include/keysym.js"]);
+        Util.load_scripts(["../../resource/noVNC/include/webutil.js",
+                           "../../resource/noVNC/include/base64.js",
+                           "../../resource/noVNC/include/websock.js",
+                           "../../resource/noVNC/include/des.js",
+                           "../../resource/noVNC/include/keysymdef.js",
+                           "../../resource/noVNC/include/keyboard.js",
+                           "../../resource/noVNC/include/input.js",
+                           "../../resource/noVNC/include/display.js",
+                           "../../resource/noVNC/include/inflator.js",
+                           "../../resource/noVNC/include/rfb.js",
+                           "../../resource/noVNC/include/keysym.js"]);
         var rfb;
         var resizeTimeout;
         function UIresize() {

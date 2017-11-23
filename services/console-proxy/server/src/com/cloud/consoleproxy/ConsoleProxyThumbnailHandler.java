@@ -27,14 +27,16 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
-import com.cloud.consoleproxy.util.Logger;
-import org.eclipse.jetty.http.HttpURI;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.http.HttpURI;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
+import com.cloud.consoleproxy.util.Logger;
 
 public class ConsoleProxyThumbnailHandler extends AbstractHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyThumbnailHandler.class);
@@ -104,7 +106,7 @@ public class ConsoleProxyThumbnailHandler extends AbstractHandler {
         }
     }
     private void doHandle(Request request, HttpServletResponse httpServletResponse) throws Exception, IllegalArgumentException {
-        String queries = request.getUri().getQuery();
+        String queries = request.getHttpURI().getQuery();
         Map<String, String> queryMap = getQueryMap(queries);
         int width = 0;
         int height = 0;

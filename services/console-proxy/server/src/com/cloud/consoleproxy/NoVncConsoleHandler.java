@@ -16,17 +16,21 @@
 // under the License.
 package com.cloud.consoleproxy;
 
-import com.cloud.consoleproxy.util.Logger;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.Map;
+import java.util.Scanner;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Scanner;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
+import com.cloud.consoleproxy.util.Logger;
+import com.cloud.utils.NumbersUtil;
 
 public class NoVncConsoleHandler extends AbstractHandler {
     private static final Logger s_logger = Logger.getLogger(NoVncConsoleHandler.class);
@@ -36,9 +40,22 @@ public class NoVncConsoleHandler extends AbstractHandler {
     }
 
     private void doHandle(Request request, HttpServletResponse httpServletResponse) throws IOException {
-        String queries = request.getUri().getQuery();
-        if (s_logger.isTraceEnabled())
+        String queries = request.getHttpURI().getQuery();
+        if (s_logger.isTraceEnabled()) {
             s_logger.trace("Handle WebSocket Console request " + queries);
+        }
+
+        if (queries != null) {
+            Map<String, String> queryMap = ConsoleProxyHttpHandlerHelper.getQueryMap(queries);
+            String host = queryMap.get("host");
+            String portStr = queryMap.get("port");
+            String tag = queryMap.get("tag");
+            ConsoleProxyClientParam param = new ConsoleProxyClientParam();
+            param.setClientHostAddress(host);
+            param.setClientHostPort(NumbersUtil.parseInt(portStr, 80));
+            param.setClientTag(tag);
+            ConsoleProxy.removeViewer(param);
+        }
 
         sendResponse(httpServletResponse, "text/html", getFile("noVNC/start.html"));
     }

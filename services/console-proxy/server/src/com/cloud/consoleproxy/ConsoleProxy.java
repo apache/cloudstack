@@ -26,25 +26,23 @@ import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.xml.DOMConfigurator;
-
-import com.google.gson.Gson;
-import com.sun.net.httpserver.HttpServer;
-
-import com.cloud.consoleproxy.util.Logger;
-import com.cloud.utils.PropertiesUtil;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+
+import com.cloud.consoleproxy.util.Logger;
+import com.cloud.utils.PropertiesUtil;
+import com.google.gson.Gson;
+import com.sun.net.httpserver.HttpServer;
 
 /**
  *
@@ -69,7 +67,7 @@ public class ConsoleProxy {
     public static Method reportMethod;
     public static Method ensureRouteMethod;
 
-    static Hashtable<String, ConsoleProxyClient> connectionMap = new Hashtable<String, ConsoleProxyClient>();
+    final static Hashtable<String, ConsoleProxyClient> connectionMap = new Hashtable<String, ConsoleProxyClient>();
     static int httpListenPort = 80;
     static int httpCmdListenPort = 8001;
     static int reconnectMaxRetry = 5;
@@ -78,22 +76,7 @@ public class ConsoleProxy {
     static String factoryClzName;
     static boolean standaloneStart = false;
 
-    static String encryptorPassword = genDefaultEncryptorPassword();
-
-    private static String genDefaultEncryptorPassword() {
-        try {
-            SecureRandom random = SecureRandom.getInstance("SHA1PRNG");
-
-            byte[] randomBytes = new byte[16];
-            random.nextBytes(randomBytes);
-            return Base64.encodeBase64String(randomBytes);
-        } catch (NoSuchAlgorithmException e) {
-            s_logger.error("Unexpected exception ", e);
-            assert (false);
-        }
-
-        return "Dummy";
-    }
+    static String encryptorPassword = "Dummy";
 
     private static void configLog4j() {
         URL configUrl = System.class.getResource("/conf/log4j-cloud.xml");
@@ -364,55 +347,52 @@ public class ConsoleProxy {
 
     private static void startupHttpMain() {
         try {
-            ConsoleProxyServerFactory factory = getHttpServerFactory();
+            final ConsoleProxyServerFactory factory = getHttpServerFactory();
             if (factory == null) {
                 s_logger.error("Unable to load HTTP server factory");
                 System.exit(1);
             }
-            Server webServer = factory.
-                    createHttpServerInstance(httpListenPort);
-            Handler[] handlerList =  new Handler[6];
+            final Server webServer = factory.createHttpServerInstance(httpListenPort);
+
+            List<Handler> handlerList = new ArrayList<>();
             ContextHandler contextHandlerForScreen = new ContextHandler();
             contextHandlerForScreen.setContextPath("/getscreen/");
             contextHandlerForScreen.setHandler(new ConsoleProxyThumbnailHandler());
-            handlerList[0] = contextHandlerForScreen;
+            handlerList.add(contextHandlerForScreen);
 
             ContextHandler contextHandlerForResources = new ContextHandler();
             contextHandlerForScreen.setContextPath("/resource/");
             contextHandlerForScreen.setHandler(new ConsoleProxyResourceHandler());
-            handlerList[1] = contextHandlerForResources;
+            handlerList.add(contextHandlerForResources);
 
 
             ContextHandler contextHandlerForAjax = new ContextHandler();
             contextHandlerForAjax.setContextPath("/ajax/");
             contextHandlerForAjax.setHandler(new ConsoleProxyAjaxHandler());
-            handlerList[2] = contextHandlerForAjax;
-
+            handlerList.add(contextHandlerForAjax);
 
             ContextHandler contextHandlerForAjaxImage = new ContextHandler();
             contextHandlerForAjaxImage.setContextPath("/ajaximg/");
             contextHandlerForAjaxImage.setHandler(new ConsoleProxyAjaxImageHandler());
-            handlerList[3] = contextHandlerForAjaxImage;
-
+            handlerList.add(contextHandlerForAjaxImage);
 
             ContextHandler contextHandlerForNoVnc = new ContextHandler();
             contextHandlerForNoVnc.setContextPath("/novnc/");
             contextHandlerForNoVnc.setHandler(new NoVncConsoleHandler());
-            handlerList[4] = contextHandlerForNoVnc;
-
+            handlerList.add(contextHandlerForNoVnc);
 
             ContextHandler contextHandlerForWebSockify = new ContextHandler();
             contextHandlerForWebSockify.setContextPath("/websockify/");
             contextHandlerForWebSockify.setHandler(new WebSocketHandlerForNovnc());
-            handlerList[5] = contextHandlerForWebSockify;
+            handlerList.add(contextHandlerForWebSockify);
 
             ContextHandlerCollection contexts = new ContextHandlerCollection();
-            contexts.setHandlers(handlerList);
+            contexts.setHandlers(handlerList.toArray(new Handler[handlerList.size()]));
             webServer.setHandler(contexts);
             webServer.start();
         } catch (Exception e) {
-            s_logger.error(" could not start webserver at " + httpListenPort, e);
-            throw new RuntimeException("could not start webserver at " + httpListenPort);
+            s_logger.error("Could not start console proxy webserver at " + httpListenPort, e);
+            throw new RuntimeException("Could not start console proxy at " + httpListenPort);
         }
     }
 
@@ -526,6 +506,17 @@ public class ConsoleProxy {
             return new ConsoleProxyRdpClient();
         } else {
             return new ConsoleProxyVncClient();
+        }
+    }
+
+    public static void removeViewer(final ConsoleProxyClientParam param) {
+        final String clientKey = param.getClientMapKey();
+        ConsoleProxyClient viewer = null;
+        synchronized (connectionMap) {
+            viewer = connectionMap.get(clientKey);
+        }
+        if (viewer != null) {
+            removeViewer(viewer);
         }
     }
 

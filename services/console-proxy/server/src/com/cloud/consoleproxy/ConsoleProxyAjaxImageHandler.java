@@ -23,13 +23,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
-import com.cloud.consoleproxy.util.Logger;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
+import com.cloud.consoleproxy.util.Logger;
 
 public class ConsoleProxyAjaxImageHandler extends AbstractHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyAjaxImageHandler.class);
@@ -63,7 +65,7 @@ public class ConsoleProxyAjaxImageHandler extends AbstractHandler {
     }
 
     private void doHandle(Request request, HttpServletResponse httpServletResponse) throws Exception, IllegalArgumentException {
-        String queries = request.getUri().getQuery();
+        String queries = request.getHttpURI().getQuery();
         Map<String, String> queryMap = ConsoleProxyHttpHandlerHelper.getQueryMap(queries);
 
         String host = queryMap.get("host");

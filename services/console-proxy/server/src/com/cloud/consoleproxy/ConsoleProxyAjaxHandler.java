@@ -25,13 +25,15 @@ import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import com.cloud.consoleproxy.util.Logger;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.AbstractHandler;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+
+import com.cloud.consoleproxy.util.Logger;
 
 public class ConsoleProxyAjaxHandler extends AbstractHandler {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyAjaxHandler.class);
@@ -65,7 +67,7 @@ public class ConsoleProxyAjaxHandler extends AbstractHandler {
     }
 
     private void doHandle(Request request, HttpServletResponse response) throws Exception, IllegalArgumentException {
-        String queries = request.getUri().getQuery();
+        String queries = request.getHttpURI().getQuery();
         if (s_logger.isTraceEnabled())
             s_logger.trace("Handle AJAX request: " + queries);
 
