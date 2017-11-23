@@ -90,7 +90,7 @@ class CsAcl(CsDataBag):
             self.add_rule()
 
         def add_rule(self):
-            CIDR_ALL='0.0.0.0/0'
+            CIDR_ALL = '0.0.0.0/0'
             icmp_type = ''
             rule = self.rule
             icmp_type = "any"
