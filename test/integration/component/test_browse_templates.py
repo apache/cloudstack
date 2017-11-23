@@ -25,23 +25,12 @@ from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
-from marvin.codes import PASS,FAILED,SUCCESS,XEN_SERVER
-
-from marvin.sshClient import SshClient
+from marvin.codes import FAILED
 
 import requests
-
-import wget
-
 import random
-
 import string
-
-import telnetlib
-import os
-import urllib
 import time
-import tempfile
 _multiprocess_shared_ = True
 
 class TestBrowseUploadVolume(cloudstackTestCase):
@@ -58,38 +47,22 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls._cleanup = []
         cls.cleanup = []
-        cls.uploadtemplateformat="VHD"
-        cls.storagetype = 'shared'
-
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.unsupportedHypervisor = False
         hosts = list_hosts(
             cls.apiclient,
             type="Routing"
         )
 
+        if cls.hypervisor.lower() in ['lxc']:
+            # Template creation from root volume is not supported in LXC
+            cls.unsupportedHypervisor = True
+            return
+
         if hosts is None:
             raise unittest.SkipTest(
                 "There are no hypervisor's available.Check listhosts response")
-        for hypervisorhost in hosts :
-                 if hypervisorhost.hypervisor == "XenServer":
-                     cls.uploadtemplateformat="VHD"
-                     break
-                 elif hypervisorhost.hypervisor== "VMware":
-                     cls.uploadtemplateformat="OVA"
-                     break
-                 elif hypervisorhost.hypervisor=="KVM":
-                     cls.uploadtemplateformat="QCOW2"
-                     break
-                 else:
-                     break
-        cls.uploadurl=cls.testdata["configurableData"]["browser_upload_template"][cls.uploadtemplateformat]["url"]
-        cls.templatename=cls.testdata["configurableData"]["browser_upload_template"][cls.uploadtemplateformat]["templatename"]
-        cls.md5sum=cls.testdata["configurableData"]["browser_upload_template"][cls.uploadtemplateformat]["checksum"]
-        cls.templatedisplaytext=cls.testdata["configurableData"]["browser_upload_template"][cls.uploadtemplateformat]["displaytext"]
-        cls.templatehypervisor=cls.testdata["configurableData"]["browser_upload_template"][cls.uploadtemplateformat]["hypervisor"]
-        cls.templateostypeid=cls.testdata["configurableData"]["browser_upload_template"][cls.uploadtemplateformat]["ostypeid"]
-        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
-        cls.domain = get_domain(cls.apiclient)
-        cls.pod = get_pod(cls.apiclient, cls.zone.id)
 
         cls.account = Account.create(
             cls.apiclient,
@@ -104,13 +77,14 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if cls.template == FAILED:
                 raise unittest.SkipTest(
                     "Check for default cent OS template readiness ")
+
         cls.service_offering = ServiceOffering.create(
             cls.apiclient, 
             cls.testdata["service_offering"]
         )
         cls.disk_offering = DiskOffering.create(
             cls.apiclient,
-            cls.testdata["configurableData"]["browser_upload_volume"]["browser_resized_disk_offering"],
+            cls.testdata["resized_disk_offering"],
             custom=True
         )
         cls.project = Project.create(
@@ -126,6 +100,58 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             cls.disk_offering
         ]
 
+    def setUp(self):
+
+        if "kvm" in self.hypervisor.lower():
+            self.test_template = registerTemplate.registerTemplateCmd()
+            self.test_template = registerTemplate.registerTemplateCmd()
+            self.test_template.checksum = "{SHA-1}" + "bf580a13f791d86acf3449a7b457a91a14389264"
+            self.test_template.hypervisor = self.hypervisor
+            self.test_template.zoneid = self.zone.id
+            self.test_template.name = 'test sha-1'
+            self.test_template.displaytext = 'test sha-1'
+            self.test_template.url = "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2"
+            self.test_template.format = "QCOW2"
+            self.test_template.ostypeid = self.getOsType("Other Linux (64-bit)")
+            self.md5 = "ada77653dcf1e59495a9e1ac670ad95f"
+            self.sha256 = "0efc03633f2b8f5db08acbcc5dc1be9028572dfd8f1c6c8ea663f0ef94b458c5"
+
+        if "vmware" in self.hypervisor.lower():
+            self.test_template = registerTemplate.registerTemplateCmd()
+            self.test_template = registerTemplate.registerTemplateCmd()
+            self.test_template.checksum = "{SHA-1}" + "b25d404de8335b4348ff01e49a95b403c90df466"
+            self.test_template.hypervisor = self.hypervisor
+            self.test_template.zoneid = self.zone.id
+            self.test_template.name = 'test sha-2333'
+            self.test_template.displaytext = 'test sha-1'
+            self.test_template.url = "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova"
+            self.test_template.format = "OVA"
+            self.test_template.ostypeid = self.getOsType(self, "Other Linux (64-bit)")
+            self.md5 = "d6d97389b129c7d898710195510bf4fb"
+            self.sha256 = "f57b59f118ab59284a70d6c63229d1de8f2d69bffc5a82b773d6c47e769c12d9"
+
+        if "xen" in self.hypervisor.lower():
+            self.test_template = registerTemplate.registerTemplateCmd()
+            self.test_template = registerTemplate.registerTemplateCmd()
+            self.test_template.checksum = "{SHA-1}" + "427fad501d0d8a1d63b8600a9a469fbf91191314"
+            self.test_template.hypervisor = self.hypervisor
+            self.test_template.zoneid = self.zone.id
+            self.test_template.name = 'test sha-2333'
+            self.test_template.displaytext = 'test sha-1'
+            self.test_template.url = "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2"
+            self.test_template.format = "VHD"
+            self.test_template.ostypeid = self.getOsType("Other Linux (64-bit)")
+            self.md5 = "54ebc933e6e07ae58c0dc97dfd37c824"
+            self.sha256 = "bddd9876021d33df9792b71ae4b776598680ac68ecf55e9d9af33c80904cc1f3"
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                            %s" % self.hypervisor)
+
+    def getOsType(self, param):
+        cmd = listOsTypes.listOsTypesCmd()
+        cmd.description = param
+        return self.apiclient.listOsTypes(cmd)[0].id
 
     def __verify_values(self, expected_vals, actual_vals):
 
@@ -148,36 +174,51 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     (exp_val, act_val))
         return return_flag
 
-    def validate_uploaded_template(self,up_templateid,templatestate,zid):
+    def validate_uploaded_template(self, apiclient, template_id, retries=70, interval=5):
+        """Check if template download will finish in 1 minute"""
+        while retries > -1:
+            time.sleep(interval)
+            template_response = Template.list(
+                apiclient,
+                id=template_id,
+                zoneid=self.zone.id,
+                templatefilter='self'
+            )
 
-        config = Configurations.list(
-                                     self.apiclient,
-                                     name='upload.operation.timeout'
-                                     )
+            if isinstance(template_response, list):
+                template = template_response[0]
+                if not hasattr(template, 'status') or not template or not template.status:
+                    retries = retries - 1
+                    continue
 
-        uploadtimeout = int(config[0].value)
-        time.sleep(uploadtimeout*60)
+                # If template is ready,
+                # template.status = Download Complete
+                # Downloading - x% Downloaded
+                # if Failed
+                # Error - Any other string
+                if 'Failed' in template.status:
+                    raise Exception(
+                        "Failed to download template: status - %s" %
+                        template.status)
 
-        list_template_response = Template.list(
-                    self.apiclient,
-                    id=up_templateid,
-                    templatefilter="all",
-                    zoneid=zid)
+                elif template.status == 'Download Complete' and template.isready:
+                    return
 
-        self.assertNotEqual(
-                    list_template_response,
-                    None,
-                    "Check if template exists in ListTemplates"
-                )
+                elif 'Downloaded' in template.status:
+                    retries = retries - 1
+                    continue
 
-        self.assertEqual(
-                    list_template_response[0].status,
-                    templatestate,
-                    "Check template status in List templates"
-                )
-        return
+                elif 'Installing' not in template.status:
+                    if retries >= 0:
+                        retries = retries - 1
+                        continue
+                    raise Exception(
+                        "Error in downloading template: status - %s" %
+                        template.status)
 
-
+            else:
+                retries = retries - 1
+        raise Exception("Template download failed exception.")
 
     def gettemplatelimts(self):
 
@@ -189,7 +230,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         return(totaltemplates)
 
-
     def getstoragelimts(self,rtype):
 
         cmd=updateResourceCount.updateResourceCountCmd()
@@ -197,23 +237,22 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.domainid=self.domain.id
         cmd.resourcetype=rtype
 
-        responce=self.apiclient.updateResourceCount(cmd)
+        response=self.apiclient.updateResourceCount(cmd)
 
-        totalstorage=responce[0].resourcecount
+        totalstorage=response[0].resourcecount
 
         return(totalstorage)
 
-
     def browse_upload_template(self):
         cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
-        cmd.zoneid = self.zone.id
-        cmd.format = self.uploadtemplateformat
-        cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.zoneid = self.test_template.zoneid
+        cmd.format = self.test_template.format
+        cmd.name=self.test_template.name + self.account.name + (random.choice(string.ascii_uppercase))
         cmd.account=self.account.name
         cmd.domainid=self.domain.id
-        cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
-        cmd.hypervisor=self.templatehypervisor
-        cmd.ostypeid=self.templateostypeid
+        cmd.displaytext=self.test_template.name + self.account.name + (random.choice(string.ascii_uppercase))
+        cmd.hypervisor=self.test_template.hypervisor
+        cmd.ostypeid=self.test_template.ostypeid
         #cmd.isdynamicallyscalable="false"
         #cmd.type="template"
         getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
@@ -223,7 +262,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         metadata=getuploadparamsresponce.metadata
         expiredata=getuploadparamsresponce.expires
         #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
-        url=self.uploadurl
+        url=self.test_template.url
 
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
@@ -249,21 +288,20 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_template(getuploadparamsresponce.id,'Download Complete',self.zone.id)
+        self.validate_uploaded_template(self.apiclient, getuploadparamsresponce.id)
 
         return(getuploadparamsresponce)
-
 
     def browse_upload_template_with_out_zoneid(self):
 
         cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
-        cmd.format = self.uploadtemplateformat
-        cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.format = self.test_template.format
+        cmd.name=self.test_template.name+self.account.name+(random.choice(string.ascii_uppercase))
         cmd.account=self.account.name
         cmd.domainid=self.domain.id
-        cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
-        cmd.hypervisor=self.templatehypervisor
-        cmd.ostypeid=self.templateostypeid
+        cmd.displaytext=self.test_template.name+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.hypervisor=self.test_template.hypervisor
+        cmd.ostypeid=self.test_template.ostypeid
 
         success= False
         try:
@@ -278,18 +316,17 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         return
 
-
     def browse_upload_template_with_out_ostypeid(self):
 
 
         cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
         cmd.zoneid = self.zone.id
-        cmd.format = self.uploadtemplateformat
-        cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.format = self.test_template.format
+        cmd.name=self.test_template.name+self.account.name+(random.choice(string.ascii_uppercase))
         cmd.account=self.account.name
         cmd.domainid=self.domain.id
-        cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
-        cmd.hypervisor=self.templatehypervisor
+        cmd.displaytext=self.test_template.name+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.hypervisor=self.test_template.hypervisor
 
         success= False
         try:
@@ -304,17 +341,16 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         return
 
-
     def browse_upload_template_with_projectid(self,projectid):
         cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
         cmd.zoneid = self.zone.id
-        cmd.format = self.uploadtemplateformat
-        cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.format = self.test_template.format
+        cmd.name=self.test_template.name+self.account.name+(random.choice(string.ascii_uppercase))
         cmd.account=self.account.name
         cmd.domainid=self.domain.id
-        cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
-        cmd.hypervisor=self.templatehypervisor
-        cmd.ostypeid=self.templateostypeid
+        cmd.displaytext=self.test_template.name+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.hypervisor=self.test_template.hypervisor
+        cmd.ostypeid=self.test_template.ostypeid
         cmd.projectid=projectid
         #cmd.isdynamicallyscalable="false"
         #cmd.type="template"
@@ -325,7 +361,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         metadata=getuploadparamsresponce.metadata
         expiredata=getuploadparamsresponce.expires
         #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
-        url=self.uploadurl
+        url=self.test_template.url
 
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
@@ -345,7 +381,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         if results.status_code !=200: 
             self.fail("Upload is not fine")
 
-        self.validate_uploaded_template(getuploadparamsresponce.id,'Download Complete',self.zone.id)
+        self.validate_uploaded_template(self.apiclient, getuploadparamsresponce.id)
 
         return(getuploadparamsresponce)
 
@@ -353,13 +389,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
         cmd.zoneid ="-1"
-        cmd.format = self.uploadtemplateformat
-        cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.format = self.test_template.format
+        cmd.name=self.test_template.name+self.account.name+(random.choice(string.ascii_uppercase))
         cmd.account=self.account.name
         cmd.domainid=self.domain.id
-        cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
-        cmd.hypervisor=self.templatehypervisor
-        cmd.ostypeid=self.templateostypeid
+        cmd.displaytext=self.test_template.name+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.hypervisor=self.test_template.hypervisor
+        cmd.ostypeid=self.test_template.ostypeid
         #cmd.isdynamicallyscalable="false"
         #cmd.type="template"
         getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
@@ -369,7 +405,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         metadata=getuploadparamsresponce.metadata
         expiredata=getuploadparamsresponce.expires
         #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
-        url=self.uploadurl
+        url=self.test_template.url
 
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
@@ -396,20 +432,20 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Upload is not fine")
 
         for z1 in lzones:
-            self.validate_uploaded_template(getuploadparamsresponce.id,'Download Complete',z1.id)
+            self.validate_uploaded_template(self.apiclient, getuploadparamsresponce.id)
 
         return(getuploadparamsresponce)
 
     def uploadtemplate(self):
         cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
         cmd.zoneid = self.zone.id
-        cmd.format = self.uploadtemplateformat
-        cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.format = self.test_template.format
+        cmd.name=self.test_template.name+self.account.name+(random.choice(string.ascii_uppercase))
         cmd.account=self.account.name
         cmd.domainid=self.domain.id
-        cmd.displaytext=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
-        cmd.hypervisor=self.templatehypervisor
-        cmd.ostypeid=self.templateostypeid
+        cmd.displaytext=self.test_template.name+self.account.name+(random.choice(string.ascii_uppercase))
+        cmd.hypervisor=self.test_template.hypervisor
+        cmd.ostypeid=self.test_template.ostypeid
         #cmd.type="template"
         getuploadparamsresponce=self.apiclient.getUploadParamsForTemplate(cmd)
 
@@ -418,7 +454,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         metadata=getuploadparamsresponce.metadata
         expiredata=getuploadparamsresponce.expires
         #url = 'http://10.147.28.7/templates/rajani-thin-volume.vhd'
-        url=self.uploadurl
+        url=self.test_template.url
 
         uploadfile = url.split('/')[-1]
         r = requests.get(url, stream=True)
@@ -452,41 +488,43 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         templ1=self.uploadtemplate()
         templ2=self.uploadtemplate()
         templ3=self.uploadtemplate()
-        time.sleep(600)
-        self.validate_uploaded_template(templ1.id,'Download Complete')
-        self.validate_uploaded_template(templ2.id,'Download Complete')
-        self.validate_uploaded_template(templ3.id,'Download Complete')
+
+        self.validate_uploaded_template(self.apiclient, templ1.id)
+        self.validate_uploaded_template(self.apiclient, templ2.id)
+        self.validate_uploaded_template(self.apiclient, templ3.id)
+
         self.delete_template(templ1)
         self.delete_template(templ2)
         self.delete_template(templ3)
         return
 
-    def validate_vm(self,vmdetails,vmstate):
+    def validate_vm(self, apiclient, vm_id, state, retries=72, interval=5):
 
-        time.sleep(120 )
-        vm_response = VirtualMachine.list(
-                self.apiclient,
-                id=vmdetails.id,
-            )
-        self.assertEqual(
-                isinstance(vm_response, list),
-                True,
-                "Check list VM response for valid list"
+        """Check if vm  will be running in 6 minute"""
+        while retries > -1:
+            time.sleep(interval)
+            vm_response = list_virtual_machines(
+                apiclient,
+                id=vm_id
             )
 
-            # Verify VM response to check whether VM deployment was successful
-        self.assertNotEqual(
-                len(vm_response),
-                0,
-                "Check VMs available in List VMs response"
-            )
+            if isinstance(vm_response, list):
+                vm = vm_response[0]
+                if not hasattr(vm, 'state'):
+                    retries = retries - 1
+                    continue
 
-        deployedvm = vm_response[0]
-        self.assertEqual(
-                deployedvm.state,
-                vmstate,
-                "Check the state of VM"
-            )
+                # If vm is Running for x number of retries
+                if vm.state == state:
+                    return
+
+                else:
+                    retries = retries - 1
+                    continue
+
+            else:
+                retries = retries - 1
+        raise Exception("VM failed exception.")
 
     def deploy_vm(self,template):
             virtual_machine = VirtualMachine.create(
@@ -498,7 +536,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                                                     domainid=self.account.domainid,
                                                     serviceofferingid=self.service_offering.id,
                                                 )
-            self.validate_vm(virtual_machine,'Running')
+            self.validate_vm(self.apiclient, vm_id = virtual_machine.id, state="Running")
             return(virtual_machine)
 
     def attach_volume(self,vmlist,volid):
@@ -528,18 +566,37 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                 "Check list volumes response for valid list")
         self.validate_uploaded_volume(volid,'Ready')
 
+    def validate_uploaded_volume(self, volid, status):
+        list_volume_response = Volume.list(
+                    self.apiclient,
+                    id=volid,
+                    listall=True
+                    )
+
+        self.assertNotEqual(
+                    list_volume_response,
+                    None,
+                    "Check if volume exists in ListTemplates"
+                )
+
+        self.assertEqual(
+                    list_volume_response[0].status,
+                    status,
+                    "Check volume status in List Volumes"
+                )
+        return
 
     def reboot_vm(self,vmdetails):
         vmdetails.reboot(self.apiclient)
-        self.validate_vm(vmdetails,'Running')
+        self.validate_vm(self.apiclient, vm_id=vmdetails.id, state="Running")
 
     def stop_vm(self,vmdetails):
         vmdetails.stop(self.apiclient)
-        self.validate_vm(vmdetails,'Stopped')
+        self.validate_vm(self.apiclient, vm_id=vmdetails.id, state="Stopped")
 
     def start_vm(self,vmdetails):
         vmdetails.start(self.apiclient)
-        self.validate_vm(vmdetails,'Running')
+        self.validate_vm(self.apiclient, vm_id=vmdetails.id, state="Running")
 
     def vmoperations(self,vmdetails):
         self.reboot_vm(vmdetails)
@@ -547,7 +604,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         self.stop_vm(vmdetails)
 
         self.start_vm(vmdetails)
-
 
     def detach_volume(self,vmdetails,volid):
         """Detach a Volume attached to a VM
@@ -590,7 +646,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         )
         return
 
-
     def restore_vm(self,vmdetails):
         """Test recover Virtual Machine
         """
@@ -598,7 +653,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         cmd.virtualmachineid = vmdetails.id
         self.apiclient.recoverVirtualMachine(cmd)
 
-        list_vm_response = VirtualMachine.list(
+        list_vm_response = list_virtual_machines(
                                             self.apiclient,
                                             id=vmdetails.id
                                             )
@@ -639,7 +694,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         return
 
-
     def deletevolume(self,volumeid):
         """Delete a Volume attached to a VM
         """
@@ -661,12 +715,11 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                     )
         return
 
-
     def destroy_vm(self,vmdetails):
 
         vmdetails.delete(self.apiclient, expunge=False)
 
-        list_vm_response = VirtualMachine.list(
+        list_vm_response = list_virtual_machines(
                                             self.apiclient,
                                             id=vmdetails.id
                                             )
@@ -689,14 +742,13 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                         )
         return
 
-
     def recover_destroyed_vm(self,vmdetails):
 
         cmd = recoverVirtualMachine.recoverVirtualMachineCmd()
         cmd.id = vmdetails.id
         self.apiclient.recoverVirtualMachine(cmd)
 
-        list_vm_response = VirtualMachine.list(
+        list_vm_response = list_virtual_machines(
                                             self.apiclient,
                                             id=vmdetails.id
                                             )
@@ -745,7 +797,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         expunge_cycle = int(config[0].value)
         wait_time = expunge_cycle * 4
         while wait_time >= 0:
-            list_vm_response = VirtualMachine.list(
+            list_vm_response = list_virtual_machines(
                                                 self.apiclient,
                                                 id=vmdetails.id
                                                 )
@@ -755,11 +807,17 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             time.sleep(expunge_cycle)
             wait_time = wait_time - expunge_cycle
 
-        self.debug("listVirtualMachines response: %s" % list_vm_response)
+            self.debug("listVirtualMachines response: %s" % list_vm_response)
 
-        self.assertEqual(list_vm_response,None,"Check Expunged virtual machine is in listVirtualMachines response")
-        return
+            self.assertEqual(list_vm_response,None,"Check Expunged virtual machine is in listVirtualMachines response")
+            return
 
+        list_vm_response = list_virtual_machines(
+            self.apiclient,
+            id=vmdetails.id
+        )
+        if isinstance(list_vm_response, list):
+            self.fail("VM has not been expunged")
 
     def waitForSystemVMAgent(self, vmname):
         timeout = self.testdata["timeout"]
@@ -778,7 +836,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             time.sleep(self.testdata["sleep"])
             timeout = timeout - 1
-
 
     def ssvm_internals(self):
 
@@ -1059,7 +1116,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         # Call above tests to ensure SSVM is properly running
         self.list_sec_storage_vm()
 
-
     def reboot_ssvm(self):
 
         list_ssvm_response = list_ssvms(
@@ -1319,7 +1375,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         )
         return
 
-
     def delete_template(self,templatedetails):
 
         list_template_response = Template.list(
@@ -1348,8 +1403,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                             "Check template available in List Templates"
                         )
         return
-
-
 
     def detach_data_volume(self,volume,vmdetails):
 
@@ -1395,63 +1448,62 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         """
         Test Browser_template_Life_cycle
         """
-        try:
+        #try:
 
-            self.debug("========================= Test 1: Upload Browser based template and validate ========================= ")
-            browseup_template=self.browse_upload_template()
+        self.debug("========================= Test 1: Upload Browser based template and validate ========================= ")
+        browseup_template=self.browse_upload_template()
 
-            self.debug("========================= Test 2: Deploy a VM with uploaded template and validate VM Operations========================= ")
+        self.debug("========================= Test 2: Deploy a VM with uploaded template and validate VM Operations========================= ")
 
-            vm1details=self.deploy_vm(browseup_template)
+        vm1details=self.deploy_vm(browseup_template)
 
-            self.vmoperations(vm1details)
+        self.vmoperations(vm1details)
 
-            self.debug("========================= Test 3: Attach DATA DISK to the VM ")
+        self.debug("========================= Test 3: Attach DATA DISK to the VM ")
 
-            cvolume=self.create_data_volume()
-            self.attach_data_volume(cvolume, vm1details)
-            self.vmoperations(vm1details)
+        cvolume=self.create_data_volume()
+        self.attach_data_volume(cvolume, vm1details)
+        self.vmoperations(vm1details)
 
-            self.debug("========================= Test 4: Restore VM created with Uploaded template========================= ")
+        self.debug("========================= Test 4: Restore VM created with Uploaded template========================= ")
 
-            self.restore_vm(vm1details)
+        self.restore_vm(vm1details)
 
-            self.debug("========================= Test 5: Detach DATA DISK to the VM ")
+        self.debug("========================= Test 5: Detach DATA DISK to the VM ")
 
-            self.detach_data_volume(cvolume,vm1details)
-            self.vmoperations(vm1details)
+        self.detach_data_volume(cvolume,vm1details)
+        self.vmoperations(vm1details)
 
-            self.deletevolume(cvolume.id)
+        self.deletevolume(cvolume.id)
 
 
-            self.debug("========================= Test 6: Expunge VM created with Uploaded template========================= ")
+        self.debug("========================= Test 6: Expunge VM created with Uploaded template========================= ")
 
-            self.expunge_vm(vm1details)
+        self.expunge_vm(vm1details)
 
-            self.debug("========================= Test 7:  Destroy VM ========================= ")
+        self.debug("========================= Test 7:  Destroy VM ========================= ")
 
-            vm2details=self.deploy_vm(self.template)
+        vm2details=self.deploy_vm(self.template)
 
-            vm2details=self.deploy_vm(browseup_template)
-            self.destroy_vm(vm2details)
+        vm2details=self.deploy_vm(browseup_template)
+        self.destroy_vm(vm2details)
 
-            self.debug("========================= Test 8:  Recover destroyed VM which has Uploaded volumes attached========================= ")
+        self.debug("========================= Test 8:  Recover destroyed VM which has Uploaded volumes attached========================= ")
 
-            self.recover_destroyed_vm(vm2details)
-            self.expunge_vm(vm2details)
+        self.recover_destroyed_vm(vm2details)
+        self.expunge_vm(vm2details)
 
-            self.debug("========================= Test 9:  Delete the Uploaded Template========================= ")
-            self.debug(browseup_template)
-            self.delete_template(browseup_template)
+        self.debug("========================= Test 9:  Delete the Uploaded Template========================= ")
+        self.debug(browseup_template)
+        self.delete_template(browseup_template)
 
-            self.debug("========================= Test 10:  Upload Multiple templates========================= ")
+        self.debug("========================= Test 10:  Upload Multiple templates========================= ")
 
-            self.multiple_browse_upload_template()
+        self.multiple_browse_upload_template()
 
-        except Exception as e:
-            self.fail("Exception occurred  : %s" % e)
+#        except Exception as e:
+#            self.fail("Exception occurred  : %s" % e)
         return
-
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_02_SSVM_Life_Cycle_With_Browser_Template_TPath(self):
@@ -1500,7 +1552,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.fail("Exception occurred  : %s" % e)
         return
 
-
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_03_Browser_template_upload_multiple_zones(self):
         """
@@ -1519,8 +1570,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         except Exception as e:
             self.fail("Exception occurred  : %s" % e)
         return
-
-
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_04_Browser_template_ResetVM_With_Deleted_Template(self):
@@ -1542,7 +1591,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         except Exception as e:
             self.fail("Exception occurred  : %s" % e)
         return
-
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_05_Browser_Upload_Template_with_all_API_parameters(self):
@@ -1582,12 +1630,14 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.debug("========================= Test 21 Upload Template and verify Template limits========================")
             initialtemplatelimit=self.gettemplatelimts()
             browseup_template1=self.browse_upload_template()
+            # Adding time for limit to sync in background
+            time.sleep(120)
             afteruploadtemplatelimit=self.gettemplatelimts()
 
             if int(afteruploadtemplatelimit)!=(int(initialtemplatelimit)+1):
                 self.fail("Volume Resouce Count is not updated")
 
-            self.delete_template(browseup_template1.id)
+            self.delete_template(browseup_template1)
 
         except Exception as e:
             self.fail("Exception occurred  : %s" % e)
@@ -1617,7 +1667,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             if afteruploadsecondarystoragelimit!=(initialsecondarystoragelimit+tmpldetails[0].size):
                 self.fail("Secondary Storage Resouce Count is not updated")
 
-            self.delete_template(browseup_template1.id)
+            self.delete_template(browseup_template1)
 
         except Exception as e:
             self.fail("Exception occurred  : %s" % e)
@@ -1636,14 +1686,12 @@ class TestBrowseUploadVolume(cloudstackTestCase):
             self.delete_template(browseup_template1)
             aftertemplatelimit=self.gettemplatelimts()
 
-            if afteruploadtemplatlimit!=(initialtemplatelimit-1):
+            if aftertemplatelimit!=(initialtemplatelimit-1):
                 self.fail("Template Resource Count is not updated after deletion")
 
         except Exception as e:
             self.fail("Exceptione occurred  : %s" % e)
         return
-
-
 
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_09_Browser_Upload_Volume_secondary_storage_resource_limits_after_deletion(self):
@@ -1666,7 +1714,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             afteruploadprimarystoragelimit=self.getstoragelimts(11)
 
-            if afteruploadprimarystoragelimit!=(initialprimarystoragelimit-tempdetails[0].size):
+            if afteruploadprimarystoragelimit!=(initialuploadprimarystoragelimit-tmpldetails[0].size):
                 self.fail("Secondary Storage Resource Count is not updated after deletion")
 
         except Exception as e:
@@ -1684,14 +1732,22 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             #Only register template, without uploading
             cmd = getUploadParamsForTemplate.getUploadParamsForTemplateCmd()
+
+            if 'kvm' in self.hypervisor.lower():
+                cmd.url = 'http://dl.openvm.eu/cloudstack/centos/x86_64/centos-7-kvm.qcow2.bz2'
+            if 'vmware' in self.hypervisor.lower():
+                cmd.url = 'http://dl.openvm.eu/cloudstack/centos/x86_64/centos-7-vmware.ova'
+            if 'xenserver' in self.hypervisor.lower():
+                cmd.url = 'http://dl.openvm.eu/cloudstack/centos/x86_64/centos-7-xen.vhd.bz2'
+
             cmd.zoneid = self.zone.id
-            cmd.format = self.uploadtemplateformat
-            cmd.name=self.templatename+self.account.name+(random.choice(string.ascii_uppercase))
+            cmd.format = self.test_template.format
+            cmd.name=self.test_template.name+self.account.name+(random.choice(string.ascii_uppercase))
             cmd.account=self.account.name
             cmd.domainid=self.domain.id
             cmd.displaytext=cmd.name
-            cmd.hypervisor=self.templatehypervisor
-            cmd.ostypeid=self.templateostypeid
+            cmd.hypervisor=self.test_template.hypervisor
+            cmd.ostypeid=self.test_template.ostypeid
             template_response=self.apiclient.getUploadParamsForTemplate(cmd)
 
             #Destroy SSVM, and wait for new one to start
@@ -1708,7 +1764,6 @@ class TestBrowseUploadVolume(cloudstackTestCase):
         except Exception as e:
             self.fail("Exceptione occurred  : %s" % e)
         return
-
 
     @classmethod
     def tearDownClass(self):
