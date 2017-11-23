@@ -120,6 +120,7 @@ class CsAcl(CsDataBag):
             self.add_rule()
 
         def add_rule(self):
+            CIDR_ALL = '0.0.0.0/0'
             icmp_type = ''
             rule = self.rule
             icmp_type = "any"
@@ -172,6 +173,8 @@ class CsAcl(CsDataBag):
 
                 logging.debug("egress   rule  ####==> %s", self.rule)
                 for cidr in self.rule['dcidr']:
+                    if cidr == CIDR_ALL:
+                        continue
                     ipsetAddCmd = 'ipset add '+ destIpsetName + ' '+cidr
                     CsHelper.execute(ipsetAddCmd)
                     dflag = True
