@@ -56,8 +56,8 @@ import org.apache.cloudstack.api.command.user.event.DeleteEventsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
-import org.owasp.html.PolicyFactory;
-import org.owasp.html.Sanitizers;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Whitelist;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
@@ -113,10 +113,14 @@ public class ParamProcessWorker implements DispatchWorker {
         }
     }
 
-    private void validateUntrustedString(final String untrustedString, final String argName) {
-        final PolicyFactory policy = Sanitizers.FORMATTING.and(Sanitizers.LINKS).and(Sanitizers.BLOCKS).and(Sanitizers.TABLES);
-        if (!untrustedString.equals(policy.sanitize(untrustedString))) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("The requested API argument '%s' contains untrusted (html) string that is not allowed", argName));
+    protected void validateUntrustedString(final String unsafe, final String argName) {
+        if (Strings.isNullOrEmpty(unsafe)) {
+            return;
+        }
+
+        final String safe = Jsoup.clean(unsafe, Whitelist.basic());
+        if (!unsafe.trim().equals(safe)) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, String.format("The requested API argument '%s' contains unsafe (html) string that is not allowed", argName));
         }
     }
 

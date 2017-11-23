@@ -109,4 +109,32 @@ public class ParamProcessWorkerTest {
         Assert.assertTrue(Double.compare(cmd.doubleparam1, 11.89) == 0);
     }
 
+    @Test
+    public void validateUntrustedHtmlValid() {
+        paramProcessWorker.validateUntrustedString("cd360613-e1cf-3a32-b8ef-d07bad8dd92b", "uuid");
+        paramProcessWorker.validateUntrustedString("1000", "number");
+        paramProcessWorker.validateUntrustedString("123.456", "double");
+        paramProcessWorker.validateUntrustedString("somestringwithnospaces", "string");
+        paramProcessWorker.validateUntrustedString("some argument with spaces", "arg");
+        paramProcessWorker.validateUntrustedString("some argument with space at end ", "arg");
+        paramProcessWorker.validateUntrustedString(" some argument with spaces at beginning", "arg");
+        paramProcessWorker.validateUntrustedString("  some argument with spaces on both ends  ", "arg");
+        paramProcessWorker.validateUntrustedString("email@server.com", "email");
+        paramProcessWorker.validateUntrustedString("रोहित यादव", "unicode");
+        paramProcessWorker.validateUntrustedString("map[0].value=123", "map");
+        paramProcessWorker.validateUntrustedString("one,two,three,four", "list");
+        paramProcessWorker.validateUntrustedString(null, "null");
+        paramProcessWorker.validateUntrustedString("", "empty");
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void validateUntrustedHtmlFailTemplate() {
+        paramProcessWorker.validateUntrustedString("<div><h1>Title</h1><p>Some paragraph <a href='https://cloudstack.apache.org'>click here!</a></p></div>", "template");
+    }
+
+    @Test(expected = ServerApiException.class)
+    public void validateUntrustedHtmlFailXSS() {
+        paramProcessWorker.validateUntrustedString("<script>alert(123);</script>", "xss-alert");
+    }
+
 }
