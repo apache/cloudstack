@@ -119,7 +119,7 @@ public class QuotaStatementCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         Account activeAccountByName = _accountService.getActiveAccountByName(accountName, domainId);
-        if(activeAccountByName!= null) {
+        if (activeAccountByName != null) {
             return activeAccountByName.getAccountId();
         }
         return Account.ACCOUNT_ID_SYSTEM;
