@@ -413,7 +413,7 @@ Util.load_scripts = function (files) {
     for (var f = 0; f < files.length; f++) {
         script = document.createElement('script');
         script.type = 'text/javascript';
-        script.src = files[f];
+        script.src = Util.get_include_uri() + files[f];
         //console.log("loading script: " + script.src);
         script.onload = script.onreadystatechange = loadFunc;
         // In-order script execution tricks

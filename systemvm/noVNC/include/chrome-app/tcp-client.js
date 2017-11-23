@@ -86,7 +86,7 @@ Author: Boris Smus (smus@chromium.org)
     }
     log("sending bytes: " + (bytes.join(',')));
     */
-
+    
     socket.write(this.socketId, buf, this._onWriteComplete.bind(this));
 
     // Register sent callback.
@@ -238,7 +238,7 @@ Author: Boris Smus (smus@chromium.org)
       }
       log("received bytes: " + (bytes.join(',')));
       */
-
+      
       if (this.callbacks.recvBuffer) {
         // Return raw ArrayBuffer directly.
         this.callbacks.recvBuffer(readInfo.data);

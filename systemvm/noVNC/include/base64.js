@@ -85,7 +85,7 @@ var Base64 = {
                 console.error("Illegal character code " + data.charCodeAt(i) + " at position " + i);
                 continue;
             }
-
+          
             // Collect data into leftdata, update bitcount
             leftdata = (leftdata << 6) | c;
             leftbits += 6;

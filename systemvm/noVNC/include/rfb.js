@@ -119,12 +119,13 @@ var RFB;
         this._mouse_arr = [];
         this._viewportDragging = false;
         this._viewportDragPos = {};
+        this._viewportHasMoved = false;
 
         // set the default value on user-facing properties
         Util.set_defaults(this, defaults, {
             'target': 'null',                       // VNC display rendering Canvas object
             'focusContainer': document,             // DOM element that captures keyboard input
-            'encrypt': true,                       // Use TLS/SSL/wss encryption
+            'encrypt': false,                       // Use TLS/SSL/wss encryption
             'true_color': true,                     // Request true color pixel data
             'local_cursor': false,                  // Request locally rendered cursor
             'shared': true,                         // Request shared mode
@@ -310,28 +311,15 @@ var RFB;
             this._sock.flush();
         },
 
-        setDesktopSize: function (width, height) {
+        // Requests a change of remote desktop size. This message is an extension
+        // and may only be sent if we have received an ExtendedDesktopSize message
+        requestDesktopSize: function (width, height) {
             if (this._rfb_state !== "normal") { return; }
 
             if (this._supportsSetDesktopSize) {
-
-                var arr = [251];    // msg-type
-                arr.push8(0);       // padding
-                arr.push16(width);  // width
-                arr.push16(height); // height
-
-                arr.push8(1);       // number-of-screens
-                arr.push8(0);       // padding
-
-                // screen array
-                arr.push32(this._screen_id);    // id
-                arr.push16(0);                  // x-position
-                arr.push16(0);                  // y-position
-                arr.push16(width);              // width
-                arr.push16(height);             // height
-                arr.push32(this._screen_flags); // flags
-
-                this._sock.send(arr);
+                RFB.messages.setDesktopSize(this._sock, width, height,
+                                            this._screen_id, this._screen_flags);
+                this._sock.flush();
             }
         },
 
@@ -593,6 +581,13 @@ var RFB;
                     return;
                 } else {
                     this._viewportDragging = false;
+
+                    // If the viewport didn't actually move, then treat as a mouse click event
+                    // Send the button down event here, as the button up event is sent at the end of this function
+                    if (!this._viewportHasMoved && !this._view_only) {
+                        RFB.messages.pointerEvent(this._sock, this._display.absX(x), this._display.absY(y), bmask);
+                    }
+                    this._viewportHasMoved = false;
                 }
             }
 
@@ -606,9 +601,18 @@ var RFB;
             if (this._viewportDragging) {
                 var deltaX = this._viewportDragPos.x - x;
                 var deltaY = this._viewportDragPos.y - y;
-                this._viewportDragPos = {'x': x, 'y': y};
 
-                this._display.viewportChangePos(deltaX, deltaY);
+                // The goal is to trigger on a certain physical width, the
+                // devicePixelRatio brings us a bit closer but is not optimal.
+                var dragThreshold = 10 * (window.devicePixelRatio || 1);
+
+                if (this._viewportHasMoved || (Math.abs(deltaX) > dragThreshold ||
+                                               Math.abs(deltaY) > dragThreshold)) {
+                    this._viewportHasMoved = true;
+
+                    this._viewportDragPos = {'x': x, 'y': y};
+                    this._display.viewportChangePos(deltaX, deltaY);
+                }
 
                 // Skip sending mouse events
                 return;
@@ -986,8 +990,6 @@ var RFB;
 
             this._timing.fbu_rt_start = (new Date()).getTime();
             this._timing.pixels = 0;
-            // preventing noVNC from sending initialization data to server.
-            // server is already initialized
             this._sock.flush();
 
             if (this._encrypt) {
@@ -1323,6 +1325,41 @@ var RFB;
             }
 
             sock._sQlen += 8 + n;
+        },
+
+        setDesktopSize: function (sock, width, height, id, flags) {
+            var buff = sock._sQ;
+            var offset = sock._sQlen;
+
+            buff[offset] = 251;              // msg-type
+            buff[offset + 1] = 0;            // padding
+            buff[offset + 2] = width >> 8;   // width
+            buff[offset + 3] = width;
+            buff[offset + 4] = height >> 8;  // height
+            buff[offset + 5] = height;
+
+            buff[offset + 6] = 1;            // number-of-screens
+            buff[offset + 7] = 0;            // padding
+
+            // screen array
+            buff[offset + 8] = id >> 24;     // id
+            buff[offset + 9] = id >> 16;
+            buff[offset + 10] = id >> 8;
+            buff[offset + 11] = id;
+            buff[offset + 12] = 0;           // x-position
+            buff[offset + 13] = 0;
+            buff[offset + 14] = 0;           // y-position
+            buff[offset + 15] = 0;
+            buff[offset + 16] = width >> 8;  // width
+            buff[offset + 17] = width;
+            buff[offset + 18] = height >> 8; // height
+            buff[offset + 19] = height;
+            buff[offset + 20] = flags >> 24; // flags
+            buff[offset + 21] = flags >> 16;
+            buff[offset + 22] = flags >> 8;
+            buff[offset + 23] = flags;
+
+            sock._sQlen += 24;
         },
 
         pixelFormat: function (sock, bpp, depth, true_color) {
@@ -1730,6 +1767,7 @@ var RFB;
                             dest[dp + 2] = palette[sp + 2];
                         }
                     }
+
                     xoffset = yoffset + x * 8;
                     targetbyte = data[ybitoffset + x];
                     for (b = 7; b >= 8 - width % 8; b--) {
@@ -1973,8 +2011,7 @@ var RFB;
                     } else {
                         // Filter 0, Copy could be valid here, but servers don't send it as an explicit filter
                         // Filter 2, Gradient is valid but not use if jpeg is enabled
-                        // TODO(directxman12): why aren't we just calling '_fail' here
-                        throw new Error("Unsupported tight subencoding received, filter: " + filterId);
+                        this._fail("Unsupported tight subencoding received, filter: " + filterId);
                     }
                     break;
                 case "copy":

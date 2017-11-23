@@ -8,6 +8,7 @@
     Copyright (C) 2013 Samuel Mannehed for Cendio AB
     noVNC is licensed under the MPL 2.0 (see LICENSE.txt)
     This file is licensed under the 2-Clause BSD license (see LICENSE.txt).
+
     Connect parameters are provided in query string:
         http://example.com/?host=HOST&port=PORT&encrypt=1&true_color=1
     or the fragment:
@@ -45,7 +46,7 @@
 </head>
 
 <body style="margin: 0px;">
-    <div id="noVNC_screen">
+    <div id="noVNC_container">
             <div id="noVNC_status_bar" class="noVNC_status_bar" style="margin-top: 0px;">
                 <table border=0 width="100%"><tr>
                     <td><div id="noVNC_status" style="position: relative; height: auto;">
@@ -95,7 +96,7 @@
                 var controlbarH = $D('noVNC_status_bar').offsetHeight;
                 var padding = 5;
                 if (innerW !== undefined && innerH !== undefined)
-                    rfb.setDesktopSize(innerW, innerH - controlbarH - padding);
+                    rfb.requestDesktopSize(innerW, innerH - controlbarH - padding);
             }
         }
         function FBUComplete(rfb, fbu) {
@@ -145,17 +146,20 @@
                 case 'loaded':       level = "normal"; break;
                 default:             level = "warn";   break;
             }
+
             if (state === "normal") {
                 cad.disabled = false;
             } else {
                 cad.disabled = true;
                 xvpInit(0);
             }
+
             if (typeof(msg) !== 'undefined') {
                 sb.setAttribute("class", "noVNC_status_" + level);
-                s.innerHTML = msg;
+                s.textContent = msg;
             }
         }
+
         window.onresize = function () {
             // When the window has been resized, wait until the size remains
             // the same for 0.5 seconds before sending the request for changing
@@ -165,6 +169,7 @@
                 UIresize();
             }, 500);
         };
+
         function xvpInit(ver) {
             var xvpbuttons;
             xvpbuttons = $D('noVNC_xvp_buttons');
@@ -174,17 +179,22 @@
                 xvpbuttons.style.display = 'none';
             }
         }
+
         window.onscriptsload = function () {
             var host, port, password, path, token;
+
             $D('sendCtrlAltDelButton').style.display = "inline";
             $D('sendCtrlAltDelButton').onclick = sendCtrlAltDel;
             $D('xvpShutdownButton').onclick = xvpShutdown;
             $D('xvpRebootButton').onclick = xvpReboot;
             $D('xvpResetButton').onclick = xvpReset;
+
             WebUtil.init_logging(WebUtil.getConfigVar('logging', 'warn'));
             document.title = unescape(WebUtil.getConfigVar('title', 'noVNC'));
             // By default, use the host and port of server that served this file
             host = WebUtil.getConfigVar('host', window.location.hostname);
+            port = WebUtil.getConfigVar('port', window.location.port);
+
             // if port == 80 (or 443) then it won't be present and should be
             // set manually
             if (!port) {
