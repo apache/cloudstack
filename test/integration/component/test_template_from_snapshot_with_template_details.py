@@ -179,7 +179,6 @@ class TestCreateTemplate(cloudstackTestCase):
     @attr(tags=["advanced", "advancedns"], required_hardware="true")
     def test_01_create_template_snampshot(self):
 
-
         builtin_info = get_builtin_template_info(self.apiclient, self.zone.id)
         self.services["templates"][0]["url"] = builtin_info[0]
         self.services["templates"][0]["hypervisor"] = builtin_info[1]
@@ -325,22 +324,6 @@ class TestCreateTemplate(cloudstackTestCase):
             id=virtual_machine.id
         )
 
-        self.assertEqual(
-            isinstance(list_vm_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
-
-        self.assertNotEqual(
-            len(list_vm_response),
-            0,
-            "Check VM avaliable in List Virtual Machines"
-        )
-
-        list_vm_response = VirtualMachine.list(
-            self.apiclient,
-            id=self.small_virtual_machine.id
-        )
         self.assertEqual(
             isinstance(list_vm_response, list),
             True,
