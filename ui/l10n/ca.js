@@ -622,6 +622,7 @@ var dictionary = {
     "label.deleting.failed": "Deleting Failed",
     "label.deleting.processing": "Deleting....",
     "label.deny": "Deny",
+    "label.deploy.instance":"Implementar la instància",
     "label.deployment.planner": "Deployment planner",
     "label.description": "Description",
     "label.destination.physical.network.id": "ID de xarxa física de destí",

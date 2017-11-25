@@ -622,6 +622,7 @@ var dictionary = {
     "label.deleting.failed": "Verwijderen Mislukt",
     "label.deleting.processing": "Verwijderen....",
     "label.deny": "Weigeren",
+    "label.deploy.instance":"Implementeer instantie",
     "label.deployment.planner": "Deployment planner",
     "label.description": "Beschrijving",
     "label.destination.physical.network.id": "Bestemming fysiek netwerk ID",

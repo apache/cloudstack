@@ -622,6 +622,7 @@ var dictionary = {
     "label.deleting.failed": "删除失败",
     "label.deleting.processing": "正在删除...",
     "label.deny": "拒绝",
+    "label.deploy.instance":"部署实例",
     "label.deployment.planner": "部署规划器",
     "label.description": "说明",
     "label.destination.physical.network.id": "目标物理网络 ID",

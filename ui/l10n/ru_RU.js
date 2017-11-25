@@ -622,6 +622,7 @@ var dictionary = {
     "label.deleting.failed": "Удаление не удалось",
     "label.deleting.processing": "Удаление...",
     "label.deny": "Deny",
+    "label.deploy.instance":"Развертывание экземпляра",
     "label.deployment.planner": "Deployment planner",
     "label.description": "Описание",
     "label.destination.physical.network.id": "ID целевой физической сети",

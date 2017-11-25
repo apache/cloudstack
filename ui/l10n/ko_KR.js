@@ -622,6 +622,7 @@ var dictionary = {
     "label.deleting.failed": "삭제할 수 없음",
     "label.deleting.processing": "삭제하는 중...",
     "label.deny": "Deny",
+    "label.deploy.instance":"인스턴스를 배포합니다.",
     "label.deployment.planner": "Deployment planner",
     "label.description": "설명",
     "label.destination.physical.network.id": "목적 물리 네트워크 ID",

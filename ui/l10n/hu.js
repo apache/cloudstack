@@ -622,6 +622,7 @@ var dictionary = {
     "label.deleting.failed": "Törlés sikertelen",
     "label.deleting.processing": "Törlés...",
     "label.deny": "Megtilt",
+    "label.deploy.instance":"Példány telepítése",
     "label.deployment.planner": "Felhasználás tervező",
     "label.description": "Leírás",
     "label.destination.physical.network.id": "Cél fizikai hálózat ID",

@@ -622,6 +622,7 @@ var dictionary = {
     "label.deleting.failed": "Sletting feilet",
     "label.deleting.processing": "Sletter....",
     "label.deny": "Nekt",
+    "label.deploy.instance":"Distribuer forekomst",
     "label.deployment.planner": "utbyggings planlegger",
     "label.description": "Beskrivelse",
     "label.destination.physical.network.id": "Fysisk nettverksid-destinasjon",

@@ -622,6 +622,7 @@ var dictionary = {
     "label.deleting.failed": "Löschen fehlgeschlagen",
     "label.deleting.processing": "Lösche....",
     "label.deny": "Verweigern",
+    "label.deploy.instance":"Instanz bereitstellen",
     "label.deployment.planner": "Deployment-Planer",
     "label.description": "Beschreibung",
     "label.destination.physical.network.id": "Physiche Netzwerk-ID des Zielorts",

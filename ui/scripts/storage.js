@@ -25,9 +25,6 @@
             label: 'label.select-view'
         },
         sections: {
-            /**
-             * Volumes
-             */
             volumes: {
                 type: 'select',
                 title: 'label.volumes',
@@ -815,8 +812,8 @@
                                             label: 'label.name'
                                         },
                                         asyncBackup: {
-						label: 'label.async.backup',
-						isBoolean: true
+                                            label: 'label.async.backup',
+                                            isBoolean: true
                                         }
                                     }
                                 },
@@ -1818,10 +1815,10 @@
                                         }
                                     },
                                     clusterid: {
-					label: 'label.cluster'
+                                        label: 'label.cluster'
                                     },
                                     clustername: {
-					label: 'label.cluster.name'
+                                        label: 'label.cluster.name'
                                     },
                                     physicalsize: {
                                         label: 'label.disk.physicalsize',
@@ -1928,9 +1925,6 @@
                 }
             },
 
-            /**
-             * Snapshots
-             */
             snapshots: {
                 type: 'select',
                 title: 'label.snapshots',
@@ -2387,41 +2381,38 @@
                 },
             },
 
-            /**
-             * VM Snapshots
-             */
             vmsnapshots: {
                 type: 'select',
-		title: 'label.vmsnapshot',
-		listView: {
-		    id: 'vmsnapshots',
-		    isMaximized: true,
-		    fields: {
-		        displayname: {
-		            label: 'label.name'
-		        },
-		        state: {
-		            label: 'label.state',
-		            indicator: {
-		                'Ready': 'on',
-		                'Error': 'off'
-		            }
-		        },
-		        type: {
-		            label: 'label.vmsnapshot.type'
-		        },
-		        current: {
-		            label: 'label.vmsnapshot.current',
-		            converter: cloudStack.converters.toBooleanText
-		        },
-		        parentName: {
-		            label: 'label.vmsnapshot.parentname'
-		        },
-		        created: {
-		            label: 'label.date',
-		            converter: cloudStack.converters.toLocalDate
-		        }
-		    },
+                title: 'label.vmsnapshot',
+                listView: {
+                    id: 'vmsnapshots',
+                    isMaximized: true,
+                    fields: {
+                        displayname: {
+                            label: 'label.name'
+                        },
+                        state: {
+                            label: 'label.state',
+                            indicator: {
+                                'Ready': 'on',
+                                'Error': 'off'
+                            }
+                        },
+                        type: {
+                            label: 'label.vmsnapshot.type'
+                        },
+                        current: {
+                            label: 'label.vmsnapshot.current',
+                            converter: cloudStack.converters.toBooleanText
+                        },
+                        parentName: {
+                            label: 'label.vmsnapshot.parentname'
+                        },
+                        created: {
+                            label: 'label.date',
+                            converter: cloudStack.converters.toLocalDate
+                        }
+                    },
 
                     advSearchFields: {
                         name: {
@@ -2491,67 +2482,66 @@
                         }
                     },
 
-		    dataProvider: function(args) {
+                    dataProvider: function(args) {
                         var data = {};
                         listViewDataProvider(args, data);
 
-		        if (args.context != null) {
-		            if ("instances" in args.context) {
+                        if (args.context != null) {
+                            if ("instances" in args.context) {
                                 $.extend(data, {
                                     virtualMachineId: args.context.instances[0].id
                                 });
-		            }
-		        }
-		        $.ajax({
-		            url: createURL('listVMSnapshot&listAll=true'),
+                            }
+                        }
+                        $.ajax({
+                            url: createURL('listVMSnapshot&listAll=true'),
                             data: data,
-		            dataType: "json",
-		            async: true,
-		            success: function(json) {
-		                var jsonObj;
-		                jsonObj = json.listvmsnapshotresponse.vmSnapshot;
-		                args.response.success({
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                                var jsonObj;
+                                jsonObj = json.listvmsnapshotresponse.vmSnapshot;
+                                args.response.success({
                                     actionFilter: vmSnapshotActionfilter,
-		                    data: jsonObj
-		                });
-		            }
-		        });
-		    },
-		    //dataProvider end
-		    detailView: {
-		        tabs: {
-		            details: {
-		                title: 'label.details',
-		                fields: {
-		                    id: {
-		                        label: 'label.id'
-		                    },
-		                    name: {
-		                        label: 'label.name'
-		                    },
-		                    displayname: {
-		                        label: 'label.display.name'
-		                    },
-		                    type: {
-		                        label: 'label.vmsnapshot.type'
-		                    },
-		                    description: {
-		                        label: 'label.description'
-		                    },
-		                    state: {
-		                        label: 'label.state',
-		                        indicator: {
-		                            'Ready': 'on',
-		                            'Error': 'off'
-		                        }
-		                    },
-		                    current: {
-		                        label: 'label.vmsnapshot.current',
-		                        converter: cloudStack.converters.toBooleanText
-		                    },
-		                    parentName: {
-		                        label: 'label.vmsnapshot.parentname'
-		                    },
+                                    data: jsonObj
+                                });
+                            }
+                        });
+                    },
+                    detailView: {
+                        tabs: {
+                            details: {
+                                title: 'label.details',
+                                fields: {
+                                    id: {
+                                        label: 'label.id'
+                                    },
+                                    name: {
+                                        label: 'label.name'
+                                    },
+                                    displayname: {
+                                        label: 'label.display.name'
+                                    },
+                                    type: {
+                                        label: 'label.vmsnapshot.type'
+                                    },
+                                    description: {
+                                        label: 'label.description'
+                                    },
+                                    state: {
+                                        label: 'label.state',
+                                        indicator: {
+                                            'Ready': 'on',
+                                            'Error': 'off'
+                                        }
+                                    },
+                                    current: {
+                                        label: 'label.vmsnapshot.current',
+                                        converter: cloudStack.converters.toBooleanText
+                                    },
+                                    parentName: {
+                                        label: 'label.vmsnapshot.parentname'
+                                    },
                                     domain: {
                                         label: 'label.domain'
                                     },
@@ -2561,110 +2551,109 @@
                                     virtualmachineid: {
                                         label: 'label.vm.id'
                                     },
-		                    created: {
-		                        label: 'label.date',
-		                        converter: cloudStack.converters.toLocalDate
-		                    }
-		                },
-		                dataProvider: function(args) {
-		                    $.ajax({
-		                        url: createURL("listVMSnapshot&listAll=true&vmsnapshotid=" + args.context.vmsnapshots[0].id),
-		                        dataType: "json",
-		                        async: true,
-		                        success: function(json) {
-		                            var jsonObj;
-		                            jsonObj = json.listvmsnapshotresponse.vmSnapshot[0];
-		                            args.response.success({
+                                    created: {
+                                        label: 'label.date',
+                                        converter: cloudStack.converters.toLocalDate
+                                    }
+                                },
+                                dataProvider: function(args) {
+                                    $.ajax({
+                                        url: createURL("listVMSnapshot&listAll=true&vmsnapshotid=" + args.context.vmsnapshots[0].id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jsonObj;
+                                            jsonObj = json.listvmsnapshotresponse.vmSnapshot[0];
+                                            args.response.success({
                                                 actionFilter: vmSnapshotActionfilter,
-		                                data: jsonObj
-		                            });
-		                        }
-		                    });
-		                },
-		                tags: cloudStack.api.tags({
-		                    resourceType: 'VMSnapshot',
-		                    contextId: 'vmsnapshots'
-		                })
-		            }
-		        },
-		        actions: {
-		            //delete a snapshot
-		            remove: {
-		                label: 'label.action.vmsnapshot.delete',
-		                messages: {
-		                    confirm: function(args) {
-		                        return 'message.action.vmsnapshot.delete';
-		                    },
-		                    notification: function(args) {
-		                        return 'label.action.vmsnapshot.delete';
-		                    }
-		                },
-		                action: function(args) {
-		                    $.ajax({
-		                        url: createURL("deleteVMSnapshot&vmsnapshotid=" + args.context.vmsnapshots[0].id),
-		                        dataType: "json",
-		                        async: true,
-		                        success: function(json) {
-		                            var jid = json.deletevmsnapshotresponse.jobid;
-		                            args.response.success({
-		                                _custom: {
-		                                    jobId: jid
-		                                }
-		                            });
-		                        }
-		                    });
-		                },
-		                notification: {
-		                    poll: pollAsyncJobResult
-		                }
-		            },
-		            revertToVMSnapshot: {
-		                label: 'label.action.vmsnapshot.revert',
-		                messages: {
-		                    confirm: function(args) {
-		                        return 'label.action.vmsnapshot.revert';
-		                    },
-		                    notification: function(args) {
-		                        return 'message.action.vmsnapshot.revert';
-		                    }
-		                },
-		                action: function(args) {
-		                    $.ajax({
-		                        url: createURL("revertToVMSnapshot&vmsnapshotid=" + args.context.vmsnapshots[0].id),
-		                        dataType: "json",
-		                        async: true,
-		                        success: function(json) {
-		                            var jid = json.reverttovmsnapshotresponse.jobid;
-		                            args.response.success({
-		                                _custom: {
-		                                    jobId: jid
-		                                }
-		                            });
-		                        }
-		                    });
+                                                data: jsonObj
+                                            });
+                                        }
+                                    });
+                                },
+                                tags: cloudStack.api.tags({
+                                    resourceType: 'VMSnapshot',
+                                    contextId: 'vmsnapshots'
+                                })
+                            }
+                        },
+                        actions: {
+                            remove: {
+                                label: 'label.action.vmsnapshot.delete',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.action.vmsnapshot.delete';
+                                    },
+                                    notification: function(args) {
+                                        return 'label.action.vmsnapshot.delete';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("deleteVMSnapshot&vmsnapshotid=" + args.context.vmsnapshots[0].id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.deletevmsnapshotresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            revertToVMSnapshot: {
+                                label: 'label.action.vmsnapshot.revert',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'label.action.vmsnapshot.revert';
+                                    },
+                                    notification: function(args) {
+                                        return 'message.action.vmsnapshot.revert';
+                                    }
+                                },
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("revertToVMSnapshot&vmsnapshotid=" + args.context.vmsnapshots[0].id),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.reverttovmsnapshotresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
 
-		                },
-		                notification: {
-		                    poll: pollAsyncJobResult
-		                }
-		            },
-		            takeSnapshot: {
-		                label: 'Create Snapshot From VM Snapshot',
-		                messages: {
-		                    confirm: function(args) {
-		                        return 'Please confirm that you want to create a volume snapshot from the vm snapshot.';
-		                    },
-		                    notification: function(args) {
-		                        return 'Volume snapshot is created from vm snapshot';
-		                    }
-		                },
-		                createForm: {
-		                    title: 'label.action.take.snapshot',
-		                    desc: 'message.action.take.snapshot',
-		                    fields: {
-		                        name: {
-		                            label: 'label.name',
-		                        },
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            takeSnapshot: {
+                                label: 'Create Snapshot From VM Snapshot',
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'Please confirm that you want to create a volume snapshot from the vm snapshot.';
+                                    },
+                                    notification: function(args) {
+                                        return 'Volume snapshot is created from vm snapshot';
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.action.take.snapshot',
+                                    desc: 'message.action.take.snapshot',
+                                    fields: {
+                                        name: {
+                                            label: 'label.name',
+                                        },
                                         volume: {
                                             label: 'label.volume',
                                             validation: {
@@ -2692,42 +2681,96 @@
                                                 });
                                             }
                                         }
-		                    }
-		                },
-		                action: function(args) {
-		                    var data = {
+                                    }
+                                },
+                                action: function(args) {
+                                    var data = {
                                         volumeid: args.data.volume,
-		                        vmsnapshotid: args.context.vmsnapshots[0].id
-		                    };
-		                    if (args.data.name != null && args.data.name.length > 0) {
-		                        $.extend(data, {
-		                            name: args.data.name
-		                        });
-		                    }
-		                    $.ajax({
-		                        url: createURL("createSnapshotFromVMSnapshot"),
-		                        data: data,
-		                        dataType: "json",
-		                        async: true,
-		                        success: function(json) {
-		                            var jid = json.createsnapshotfromvmsnapshotresponse.jobid;
-		                            args.response.success({
-		                                _custom: {
-		                                    jobId: jid
-		                                }
-		                            });
-		                        }
-		                    });
+                                        vmsnapshotid: args.context.vmsnapshots[0].id
+                                    };
+                                    if (args.data.name != null && args.data.name.length > 0) {
+                                        $.extend(data, {
+                                            name: args.data.name
+                                        });
+                                    }
+                                    $.ajax({
+                                        url: createURL("createSnapshotFromVMSnapshot"),
+                                        data: data,
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.createsnapshotfromvmsnapshotresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid
+                                                }
+                                            });
+                                        }
+                                    });
 
-		                },
-		                notification: {
-		                    poll: pollAsyncJobResult
-		                }
-		            }
-		        }
-		    }
-		    //detailview end
-		}
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            start: {
+                                label: 'label.deploy.instance',
+
+                                action: {
+                                    custom: function(args)   {
+                                        var zoneObj, snapshotObj, hypervisorObj, detailsObj;
+
+                                        // In the case of deploying from Storage tab. Instance details won't be present.
+                                        // Get it from listVirtualMachine API.
+                                        if (args.context.instances == null || args.context.instances == undefined) {
+                                            $.ajax({
+                                                url: createURL("listVirtualMachines"),
+                                                data: {
+                                                    id: args.context.vmsnapshots[0].virtualmachineid
+                                                },
+                                                async: false,
+                                                success: function(json) {
+                                                    $.extend(args.context, {
+                                                          instances: json.listvirtualmachinesresponse.virtualmachine
+                                                    });
+                                                }
+                                            });
+                                        }
+
+                                        $.ajax({
+                                            url: createURL("listZones&available=true"),
+                                            dataType: "json",
+                                            data: {id: args.context.instances[0].zoneid},
+                                            async: false,
+                                            success: function(json) {
+                                                zoneObj = json.listzonesresponse.zone;
+                                            }
+                                        });
+
+                                        snapshotObj = args.context.vmsnapshots;
+                                        detailsObj = args.context.instances[0].details;
+
+                                        hypervisorObj = args.context.instances[0].hypervisor;
+
+                                        var customFunc = cloudStack.uiCustom.instanceWizard(cloudStack.instanceWizard, {step: 3, title: 'label.deploy.instance', zone: zoneObj, snapshot: snapshotObj, details: detailsObj, hypervisor: hypervisorObj});
+
+                                        customFunc(args);
+                                    }
+                                },
+
+                                messages: {
+                                    notification: function(args) {
+                                        return 'label.deploy.instance';
+                                    }
+                                },
+
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     };
@@ -2836,6 +2879,25 @@
             allowedActions.push("remove");
             allowedActions.push("revertToVMSnapshot");
             allowedActions.push("takeSnapshot");
+        }
+
+        if (args && args.context && args.context.instances && args.context.instances[0].hypervisor && args.context.instances[0].hypervisor == "VMware") {
+                    allowedActions.push("start");
+        } else if (args && args.context && args.context.vmsnapshots && args.context.vmsnapshots[0].virtualmachineid) {
+            // In the case of deploying from Storage tab. Instance details won't be present.
+            // Get it from listVirtualMachine API.
+            $.ajax({
+                url: createURL("listVirtualMachines"),
+                data: {
+                    id: args.context.vmsnapshots[0].virtualmachineid
+                },
+                async: false,
+                success: function(json) {
+                    if (json.listvirtualmachinesresponse.virtualmachine[0].hypervisor == "VMware") {
+                        allowedActions.push("start");
+                    }
+                }
+            });
         }
 
         return allowedActions;

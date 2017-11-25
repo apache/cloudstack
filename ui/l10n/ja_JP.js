@@ -622,6 +622,7 @@ var dictionary = {
     "label.deleting.failed": "削除できませんでした",
     "label.deleting.processing": "削除しています...",
     "label.deny": "拒否",
+    "label.deploy.instance":"インスタンスのデプロイ",
     "label.deployment.planner": "展開プランナー",
     "label.description": "説明",
     "label.destination.physical.network.id": "ブリッジ先物理ネットワーク ID",
