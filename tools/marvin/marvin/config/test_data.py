@@ -1239,34 +1239,10 @@ test_data = {
         },
         "service_offerings":
             {
-                "GRID K260Q":
+                "nonvgpuoffering":
                     {
-                        "name": "vGPU260Q",
-                        "displaytext": "vGPU260Q",
-                        "cpunumber": 2,
-                        "cpuspeed": 1600,  # in MHz
-                        "memory": 3072,  # In MBs
-                    },
-                "GRID K240Q":
-                    {
-                        "name": "vGPU240Q",
-                        "displaytext": "vGPU240Q",
-                        "cpunumber": 2,
-                        "cpuspeed": 1600,  # in MHz
-                        "memory": 3072,  # In MBs
-                    },
-                "GRID K220Q":
-                    {
-                        "name": "vGPU220Q",
-                        "displaytext": "vGPU220Q",
-                        "cpunumber": 2,
-                        "cpuspeed": 1600,  # in MHz
-                        "memory": 3072,  # In MBs
-                    },
-                "GRID K200":
-                    {
-                        "name": "vGPU200",
-                        "displaytext": "vGPU200",
+                        "name": "nonvgpuoffering",
+                        "displaytext": "nonvgpuoffering",
                         "cpunumber": 2,
                         "cpuspeed": 1600,  # in MHz
                         "memory": 3072,  # In MBs
@@ -1279,6 +1255,22 @@ test_data = {
                         "cpuspeed": 1600,  # in MHz
                         "memory": 3072,  # In MBs
                     },
+                "GRID K100":
+                    {
+                        "name": "vGPU100",
+                        "displaytext": "vGPU100",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "GRID K120Q":
+                    {
+                        "name": "vGPU120Q",
+                        "displaytext": "vGPU120Q",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
                 "GRID K140Q":
                     {
                         # Small service offering ID to for change VM
@@ -1286,34 +1278,153 @@ test_data = {
                         "name": "vGPU140Q",
                         "displaytext": "vGPU140Q",
                         "cpunumber": 2,
-                        "cpuspeed": 1600,
-                        "memory": 3072,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
                     },
-                "GRID K120Q":
+                "GRID K160Q":
                     {
-                        "name": "vGPU120Q",
-                        "displaytext": "vGPU120Q",
+                        "name": "vGPU160Q",
+                        "displaytext": "vGPU160Q",
                         "cpunumber": 2,
-                        "cpuspeed": 1600,
-                        "memory": 3072,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
                     },
-                "GRID K100":
+                "GRID K180Q":
                     {
-                        "name": "vGPU100",
-                        "displaytext": "vGPU100",
+                        "name": "vGPU180Q",
+                        "displaytext": "vGPU180Q",
                         "cpunumber": 2,
-                        "cpuspeed": 1600,
-                        "memory": 3072,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
                     },
-                "nonvgpuoffering":
+                "GRID K200":
                     {
-                        "name": "nonvgpuoffering",
-                        "displaytext": "nonvgpuoffering",
+                        "name": "vGPU200",
+                        "displaytext": "vGPU200",
                         "cpunumber": 2,
-                        "cpuspeed": 1600,
-                        "memory": 3072,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "GRID K220Q":
+                    {
+                        "name": "vGPU220Q",
+                        "displaytext": "vGPU220Q",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "GRID K240Q":
+                    {
+                        "name": "vGPU240Q",
+                        "displaytext": "vGPU240Q",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "GRID K260Q":
+                    {
+                        "name": "vGPU260Q",
+                        "displaytext": "vGPU260Q",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "GRID K280Q":
+                    {
+                        "name": "vGPU280Q",
+                        "displaytext": "vGPU280Q",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "Tesla M60-0Q":
+                    {
+                        "name": "vGPUM60-0Q",
+                        "displaytext": "vGPUM60-0Q",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "Tesla M60-1Q":
+                    {
+                        "name": "vGPUM60-1Q",
+                        "displaytext": "vGPUM60-1Q",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "Tesla M60-2Q":
+                    {
+                        "name": "vGPUM60-2Q",
+                        "displaytext": "vGPUM60-2Q",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "Tesla M60-4Q":
+                    {
+                        "name": "vGPUM60-4Q",
+                        "displaytext": "vGPUM60-4Q",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "Tesla M60-8Q":
+                    {
+                        "name": "vGPUM60-8Q",
+                        "displaytext": "vGPUM60-8Q",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "Tesla M60-0B":
+                    {
+                        "name": "vGPUM60-0B",
+                        "displaytext": "vGPUM60-0B",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "Tesla M60-1B":
+                    {
+                        "name": "vGPUM60-1B",
+                        "displaytext": "vGPUM60-1B",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "Tesla M60-1A":
+                    {
+                        "name": "vGPUM60-1A",
+                        "displaytext": "vGPUM60-1A",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "Tesla M60-2A":
+                    {
+                        "name": "vGPUM60-2A",
+                        "displaytext": "vGPUM60-2A",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "Tesla M60-4A":
+                    {
+                        "name": "vGPUM60-4A",
+                        "displaytext": "vGPUM60-4A",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
+                    },
+                "Tesla M60-8A":
+                    {
+                        "name": "vGPUM60-8A",
+                        "displaytext": "vGPUM60-8A",
+                        "cpunumber": 2,
+                        "cpuspeed": 1600,  # in MHz
+                        "memory": 3072,  # In MBs
                     }
-
             },
         "diskdevice": ['/dev/vdc', '/dev/vdb', '/dev/hdb', '/dev/hdc', '/dev/xvdd', '/dev/cdrom', '/dev/sr0',
                        '/dev/cdrom1'],

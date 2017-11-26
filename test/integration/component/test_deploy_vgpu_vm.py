@@ -62,25 +62,47 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             raise unittest.SkipTest(
                 "There are no XenServers available. GPU feature is supported only on XenServer.Check listhosts response")
         else:
-            cls.k140qgpuhosts = 0
-            cls.k120qgpuhosts = 0
-            cls.k100gpuhosts = 0
-            cls.k260qgpuhosts = 0
-            cls.k240qgpuhosts = 0
-            cls.k220qgpuhosts = 0
-            cls.k200gpuhosts = 0
-            cls.k1passthroughgpuhosts = 0
-            cls.k2passthroughgpuhosts = 0
             cls.nongpuhosts = []
-            cls.k2hosts = 0
-            cls.k1hosts = 0
-            cls.k100_vgpu_service_offering = []
-            cls.k200_vgpu_service_offering = []
+            cls.nonvgpu = []
             cls.nonvgpu_service_offering = []
+
+            cls.k1hosts = 0
+            cls.k1passthroughgpuhosts = 0
+            cls.k100gpuhosts = 0
+            cls.k120qgpuhosts = 0
+            cls.k140qgpuhosts = 0
+            cls.k160qgpuhosts = 0
+            cls.k180qgpuhosts = 0
+            cls.k100_vgpu_service_offering = []
             cls.vm_k1_card = []
+
+            cls.k2hosts = 0
+            cls.k2passthroughgpuhosts = 0
+            cls.k200gpuhosts = 0
+            cls.k220qgpuhosts = 0
+            cls.k240qgpuhosts = 0
+            cls.k260qgpuhosts = 0
+            cls.k280qgpuhosts = 0
+            cls.k200_vgpu_service_offering = []
             cls.vm_k2_card = []
             cls.vm2_k2_card = []
-            cls.nonvgpu = []
+
+            cls.m60hosts = 0
+            cls.m60passthroughgpuhosts = 0
+            cls.m60_0qgpuhosts = 0
+            cls.m60_1qgpuhosts = 0
+            cls.m60_2qgpuhosts = 0
+            cls.m60_4qgpuhosts = 0
+            cls.m60_8qgpuhosts = 0
+            cls.m60_0bgpuhosts = 0
+            cls.m60_1bgpuhosts = 0
+            cls.m60_1agpuhosts = 0
+            cls.m60_2agpuhosts = 0
+            cls.m60_4agpuhosts = 0
+            cls.m60_8agpuhosts = 0
+            cls.m60_vgpu_service_offering = []
+            cls.vm_m60_card = []
+
             cls.vmlifecycletest = 0
             cls.vmsnapwomemory = 0
             cls.vmsnapwithmemory = 0
@@ -99,65 +121,140 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                             sshClient.execute("xe patch-list uuid=0850b186-4d47-11e3-a720-001b2151a503"))
                         if res == 0:
                             continue
+
                     k1card = len(sshClient.execute("lspci | grep \"GRID K1\""))
                     k2card = len(sshClient.execute("lspci | grep \"GRID K2\""))
+
+                    m60card = 0
+                    if ghost.hypervisorversion >= "7.0.0":
+                        m60card = len(sshClient.execute("lspci | grep \"Tesla M60\""))
+
                     cls.debug(
-                        "k1 card and k2 card details are :%s %s " %
-                        (k1card, k2card))
-                    if (k2card == 0) and (k1card == 0):
+                        "K1/K2 cards and M60 card details are :%s %s %s" %
+                        (k1card, k2card, m60card))
+
+                    if (k1card == 0) and (k2card == 0) and (m60card == 0):
                         cls.nongpuhosts.append(ghost.ipaddress)
-                    if k2card != 0:
-                        cls.k2hosts = cls.k2hosts + 1
-                        k260q = len(
-                            sshClient.execute("xe vgpu-type-list model-name=\"GRID K260Q\""))
-                        k240q = len(
-                            sshClient.execute("xe vgpu-type-list model-name=\"GRID K240Q\""))
-                        k220q = len(
-                            sshClient.execute("xe vgpu-type-list model-name=\"GRID K220Q\""))
-                        k200 = len(
-                            sshClient.execute("xe vgpu-type-list model-name=\"GRID K200\""))
-                        k2passthrough = len(
-                            sshClient.execute("xe vgpu-type-list model-name='passthrough'"))
-                        if ((k260q == 0) and (k240q == 0) and (k220q == 0)
-                                and (k200 == 0) and (k2passthrough == 0)):
-                            continue
-                        else:
-                            if k260q != 0:
-                                cls.k260qgpuhosts = cls.k260qgpuhosts + 1
-                            if k240q != 0:
-                                cls.k240qgpuhosts = cls.k240qgpuhosts + 1
-                            if k220q != 0:
-                                cls.k220qgpuhosts = cls.k220qgpuhosts + 1
-                            if k200 != 0:
-                                cls.k200gpuhosts = cls.k200gpuhosts + 1
-                            if k2passthrough != 0:
-                                cls.k2passthroughgpuhosts = cls.k2passthroughgpuhosts + \
-                                    1
 
                     if k1card != 0:
                         cls.k1hosts = cls.k1hosts + 1
+                        k1passthrough = len(
+                            sshClient.execute("xe vgpu-type-list model-name='passthrough'"))
                         k100 = len(
                             sshClient.execute("xe vgpu-type-list model-name=\"GRID K100\""))
                         k120q = len(
                             sshClient.execute("xe vgpu-type-list model-name=\"GRID K120Q\""))
                         k140q = len(
                             sshClient.execute("xe vgpu-type-list model-name=\"GRID K140Q\""))
-                        k1passthrough = len(
-                            sshClient.execute("xe vgpu-type-list model-name='passthrough'"))
-                        if ((k100 == 0) and (k120q == 0) and (
-                                k140q == 0) and (k1passthrough == 0)):
+                        k160q = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"GRID K160Q\""))
+                        k180q = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"GRID K180Q\""))
+                        if ((k1passthrough == 0) and (k100 == 0) and (k120q == 0) and (
+                                k140q == 0) and (k160q == 0) and (k180q == 0)):
                             continue
                         else:
-                            if k140q != 0:
-                                cls.k140qgpuhosts = cls.k140qgpuhosts + 1
-                            if k120q != 0:
-                                cls.k120qgpuhosts = cls.k120qgpuhosts + 1
+                            if k1passthrough != 0:
+                                cls.k1passthroughgpuhosts = cls.k1passthroughgpuhosts + 1
                             if k100 != 0:
                                 cls.k100gpuhosts = cls.k100gpuhosts + 1
-                            if k1passthrough != 0:
-                                cls.k1passthroughgpuhosts = cls.k1passthroughgpuhosts + \
-                                    1
-        if (cls.k2hosts == 0) and (cls.k1hosts == 0):
+                            if k120q != 0:
+                                cls.k120qgpuhosts = cls.k120qgpuhosts + 1
+                            if k140q != 0:
+                                cls.k140qgpuhosts = cls.k140qgpuhosts + 1
+                            if k160q != 0:
+                                cls.k160qgpuhosts = cls.k160qgpuhosts + 1
+                            if k180q != 0:
+                                cls.k180qgpuhosts = cls.k180qgpuhosts + 1
+
+                    if k2card != 0:
+                        cls.k2hosts = cls.k2hosts + 1
+                        k2passthrough = len(
+                            sshClient.execute("xe vgpu-type-list model-name='passthrough'"))
+                        k200 = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"GRID K200\""))
+                        k220q = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"GRID K220Q\""))
+                        k240q = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"GRID K240Q\""))
+                        k260q = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"GRID K260Q\""))
+                        k280q = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"GRID K280Q\""))
+                        if ((k2passthrough == 0) and (k200 == 0) and (k220q == 0) and (k240q == 0)
+                            and (k260q == 0) and (k280q == 0)):
+                            continue
+                        else:
+                            if k2passthrough != 0:
+                                cls.k2passthroughgpuhosts = cls.k2passthroughgpuhosts + 1
+                            if k200 != 0:
+                                cls.k200gpuhosts = cls.k200gpuhosts + 1
+                            if k220q != 0:
+                                cls.k220qgpuhosts = cls.k220qgpuhosts + 1
+                            if k240q != 0:
+                                cls.k240qgpuhosts = cls.k240qgpuhosts + 1
+                            if k260q != 0:
+                                cls.k260qgpuhosts = cls.k260qgpuhosts + 1
+                            if k280q != 0:
+                                cls.k280qgpuhosts = cls.k280qgpuhosts + 1
+
+                    if m60card != 0:
+                        cls.m60hosts = cls.m60hosts + 1
+                        m60passthrough = len(
+                            sshClient.execute("xe vgpu-type-list model-name='passthrough'"))
+                        m60_0q = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"Tesla M60-0Q\""))
+                        m60_1q = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"Tesla M60-1Q\""))
+                        m60_2q = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"Tesla M60-2Q\""))
+                        m60_4q = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"Tesla M60-4Q\""))
+                        m60_8q = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"Tesla M60-8Q\""))
+                        m60_0b = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"Tesla M60-0B\""))
+                        m60_1b = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"Tesla M60-1B\""))
+                        m60_1a = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"Tesla M60-1A\""))
+                        m60_2a = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"Tesla M60-2A\""))
+                        m60_4a = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"Tesla M60-4A\""))
+                        m60_8a = len(
+                            sshClient.execute("xe vgpu-type-list model-name=\"Tesla M60-8A\""))
+                        if ((m60passthrough == 0) and (m60_0q == 0) and (m60_1q == 0) and (
+                                    m60_2q == 0) and (m60_4q == 0) and (m60_8q == 0) and (
+                                    m60_0b == 0) and (m60_1b == 0) and (m60_1a == 0) and (
+                                    m60_2a == 0) and (m60_4a == 0) and (m60_8a == 0)):
+                            continue
+                        else:
+                            if m60passthrough != 0:
+                                cls.m60passthroughgpuhosts = cls.m60passthroughgpuhosts + 1
+                            if m60_0q != 0:
+                                cls.m60_0qgpuhosts = cls.m60_0qgpuhosts + 1
+                            if m60_1q != 0:
+                                cls.m60_1qgpuhosts = cls.m60_1qgpuhosts + 1
+                            if m60_2q != 0:
+                                cls.m60_2qgpuhosts = cls.m60_2qgpuhosts + 1
+                            if m60_4q != 0:
+                                cls.m60_4qgpuhosts = cls.m60_4qgpuhosts + 1
+                            if m60_8q != 0:
+                                cls.m60_8qgpuhosts = cls.m60_8qgpuhosts + 1
+                            if m60_0b != 0:
+                                cls.m60_0bgpuhosts = cls.m60_0bgpuhosts + 1
+                            if m60_1b != 0:
+                                cls.m60_1bgpuhosts = cls.m60_1bgpuhosts + 1
+                            if m60_1a != 0:
+                                cls.m60_1agpuhosts = cls.m60_1agpuhosts + 1
+                            if m60_2a != 0:
+                                cls.m60_2agpuhosts = cls.m60_2agpuhosts + 1
+                            if m60_4a != 0:
+                                cls.m60_4agpuhosts = cls.m60_4agpuhosts + 1
+                            if m60_8a != 0:
+                                cls.m60_8agpuhosts = cls.m60_8agpuhosts + 1
+        if (cls.k1hosts == 0) and (cls.k2hosts == 0) and (cls.m60hosts == 0):
             raise unittest.SkipTest(
                 "No XenServer available with GPU Drivers installed")
 
@@ -734,16 +831,20 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
     def deploy_vm_lifecycle(self):
         """
-        Create Service Offerings for Both K1 and K2 cards to be used for VM life cycle tests
+        Create Service Offerings for K1, K2 and M60 cards to be used for VM life cycle tests
         """
 
         if(self.k1hosts != 0):
-            if(self.k140qgpuhosts != 0):
-                gtype = "GRID K140Q"
+            if(self.k100gpuhosts != 0):
+                gtype = "GRID K100"
             elif(self.k120qgpuhosts != 0):
                 gtype = "GRID K120Q"
-            elif(self.k100gpuhosts != 0):
-                gtype = "GRID K100"
+            elif(self.k140qgpuhosts != 0):
+                gtype = "GRID K140Q"
+            elif(self.k160qgpuhosts != 0):
+                gtype = "GRID K160Q"
+            elif(self.k180qgpuhosts != 0):
+                gtype = "GRID K180Q"
             else:
                 gtype = "passthrough"
 
@@ -758,12 +859,16 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                 self.fail("Failed to create the service offering, %s" % e)
 
         if(self.k2hosts != 0):
-            if(self.k240qgpuhosts != 0):
-                gtype = "GRID K240Q"
+            if(self.k200gpuhosts != 0):
+                gtype = "GRID K200"
             elif(self.k220qgpuhosts != 0):
                 gtype = "GRID K220Q"
-            elif(self.k200gpuhosts != 0):
-                gtype = "GRID K200"
+            elif(self.k240qgpuhosts != 0):
+                gtype = "GRID K240Q"
+            elif(self.k260qgpuhosts != 0):
+                gtype = "GRID K260Q"
+            elif(self.k280qgpuhosts != 0):
+                gtype = "GRID K280Q"
             else:
                 gtype = "passthrough"
 
@@ -771,6 +876,42 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                 {'pciDevice': 'Group of NVIDIA Corporation GK104GL [GRID K2] GPUs'}, {'vgpuType': gtype}]
             try:
                 self.__class__.k200_vgpu_service_offering = ServiceOffering.create(
+                    self.apiclient,
+                    self.testdata["vgpu"]["service_offerings"][gtype]
+                )
+            except Exception as e:
+                self.fail("Failed to create the service offering, %s" % e)
+
+        if(self.m60hosts != 0):
+            if(self.m60_0qgpuhosts != 0):
+                gtype = "Tesla M60-0Q"
+            elif(self.m60_1qgpuhosts != 0):
+                gtype = "Tesla M60-1Q"
+            elif(self.m60_2qgpuhosts != 0):
+                gtype = "Tesla M60-2Q"
+            elif(self.m60_4qgpuhosts != 0):
+                gtype = "Tesla M60-4Q"
+            elif(self.m60_8qgpuhosts != 0):
+                gtype = "Tesla M60-8Q"
+            elif(self.m60_0bgpuhosts != 0):
+                gtype = "Tesla M60-0B"
+            elif(self.m60_1bgpuhosts != 0):
+                gtype = "Tesla M60-1B"
+            elif(self.m60_1agpuhosts != 0):
+                gtype = "Tesla M60-1A"
+            elif(self.m60_2agpuhosts != 0):
+                gtype = "Tesla M60-2A"
+            elif(self.m60_4agpuhosts != 0):
+                gtype = "Tesla M60-4A"
+            elif(self.m60_8agpuhosts != 0):
+                gtype = "Tesla M60-8A"
+            else:
+                gtype = "passthrough"
+
+            self.testdata["vgpu"]["service_offerings"][gtype]["serviceofferingdetails"] = [
+                {'pciDevice': 'Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs'}, {'vgpuType': gtype}]
+            try:
+                self.__class__.m60_vgpu_service_offering = ServiceOffering.create(
                     self.apiclient,
                     self.testdata["vgpu"]["service_offerings"][gtype]
                 )
@@ -788,7 +929,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         )
 
         """
-        Create Virtual Machines for Both K1 and K2 cards to be used for VM life cycle tests
+        Create Virtual Machines for K1, K2 and M60 cards to be used for VM life cycle tests
        """
 
         if(self.k1hosts != 0):
@@ -821,6 +962,17 @@ class TestvGPUWindowsVm(cloudstackTestCase):
                 domainid=self.account.domainid,
                 serviceofferingid=self.k200_vgpu_service_offering.id,
                 templateid=win7templateid
+            )
+
+        if(self.m60hosts != 0):
+            self.__class__.vm_m60_card = VirtualMachine.create(
+                self.apiclient,
+                self.testdata["virtual_machine"],
+                accountid=self.account.name,
+                zoneid=self.zone.id,
+                domainid=self.account.domainid,
+                serviceofferingid=self.m60_vgpu_service_offering.id,
+                templateid=win8templateid
             )
 
         self.__class__.nonvgpu = VirtualMachine.create(
@@ -1404,73 +1556,170 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             0,
             "Check Host details are available in List Hosts"
         )
-        k260q = 0
-        k240q = 0
-        k220q = 0
-        k200 = 0
-        k2pass = 0
 
-        k140q = 0
-        k120q = 0
-        k100 = 0
         k1pass = 0
+        k100 = 0
+        k120q = 0
+        k140q = 0
+        k160q = 0
+        k180q = 0
+
+        k2pass = 0
+        k200 = 0
+        k220q = 0
+        k240q = 0
+        k260q = 0
+        k280q = 0
+
+        m60pass = 0
+        m60_0q = 0
+        m60_1q = 0
+        m60_2q = 0
+        m60_4q = 0
+        m60_8q = 0
+        m60_0b = 0
+        m60_1b = 0
+        m60_1a = 0
+        m60_2a = 0
+        m60_4a = 0
+        m60_8a = 0
 
         for ggroup in hhosts:
             if ggroup.ipaddress not in self.nongpuhosts:
                 for gp in ggroup.gpugroup:
+                    if gp.gpugroupname == "Group of NVIDIA Corporation GK107GL [GRID K1] GPUs":
+                        for gptype in gp.vgpu:
+                            if gptype.vgputype == "passthrough":
+                                k1pass = k1pass + 1
+                            if gptype.vgputype == "GRID K100":
+                                k100 = k100 + 1
+                            if gptype.vgputype == "GRID K120Q":
+                                k120q = k120q + 1
+                            if gptype.vgputype == "GRID K140Q":
+                                k140q = k140q + 1
+                            if gptype.vgputype == "GRID K160Q":
+                                k160q = k160q + 1
+                            if gptype.vgputype == "GRID K180Q":
+                                k180q = k180q + 1
                     if gp.gpugroupname == "Group of NVIDIA Corporation GK104GL [GRID K2] GPUs":
                         for gptype in gp.vgpu:
-                            if gptype.vgputype == "GRID K260Q":
-                                k260q = k260q + 1
+                            if gptype.vgputype != "passthrough":
+                                k2pass = k2pass + 1
+                            if gptype.vgputype == "GRID K200":
+                                k200 = k200 + 1
                             if gptype.vgputype == "GRID K220Q":
                                 k220q = k220q + 1
                             if gptype.vgputype == "GRID K240Q":
                                 k240q = k240q + 1
-                            if gptype.vgputype == "GRID K200":
-                                k200 = k200 + 1
-                            if gptype.vgputype != "passthrough":
-                                k2pass = k2pass + 1
-                    if gp.gpugroupname == "Group of NVIDIA Corporation GK107GL [GRID K1] GPUs":
+                            if gptype.vgputype == "GRID K260Q":
+                                k260q = k260q + 1
+                            if gptype.vgputype == "GRID K280Q":
+                                k280q = k280q + 1
+                    if gp.gpugroupname == "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs":
                         for gptype in gp.vgpu:
-                            if gptype.vgputype == "GRID K140Q":
-                                k140q = k140q + 1
-                            if gptype.vgputype == "GRID K120Q":
-                                k120q = k120q + 1
-                            if gptype.vgputype == "GRID K100":
-                                k100 = k100 + 1
-                            if gptype.vgputype == "passthrough":
-                                k1pass = k1pass + 1
+                            if gptype.vgputype != "passthrough":
+                                m60pass = m60pass + 1
+                            if gptype.vgputype == "Tesla M60-0Q":
+                                m60_0q = m60_0q + 1
+                            if gptype.vgputype == "Tesla M60-1Q":
+                                m60_1q = m60_1q + 1
+                            if gptype.vgputype == "Tesla M60-2Q":
+                                m60_2q = m60_2q + 1
+                            if gptype.vgputype == "Tesla M60-4Q":
+                                m60_4q = m60_4q + 1
+                            if gptype.vgputype == "Tesla M60-8Q":
+                                m60_8q = m60_8q + 1
+                            if gptype.vgputype != "Tesla M60-0B":
+                                m60_0b = m60_0b + 1
+                            if gptype.vgputype == "Tesla M60-1B":
+                                m60_1b = m60_1b + 1
+                            if gptype.vgputype == "Tesla M60-1A":
+                                m60_1a = m60_1a + 1
+                            if gptype.vgputype == "Tesla M60-2A":
+                                m60_2a = m60_2a + 1
+                            if gptype.vgputype == "Tesla M60-4A":
+                                m60_4a = m60_4a + 1
+                            if gptype.vgputype == "Tesla M60-8A":
+                                m60_8a = m60_8a + 1
             else:
                 self.debug("This is nongpuhost:%s" % (ggroup.ipaddress))
-        if self.k260qgpuhosts > 0:
-            if not k260q:
-                self.fail("list host details with K260Q vgpu are not correct")
-        if self.k240qgpuhosts > 0:
-            if not k240q:
-                self.fail("list host details with K240Q vgpu are not correct")
-        if self.k220qgpuhosts > 0:
-            if not k220q:
-                self.fail("list host details with K220Q vgpu are not correct")
-        if self.k200gpuhosts > 0:
-            if not k200:
-                self.fail("list host details with K200 vgpu are not correct")
-        if self.k2passthroughgpuhosts > 0:
-            if not k2pass:
-                self.fail(
-                    "list host details with K2 passthrough vgpu are not correct")
-        if self.k140qgpuhosts > 0:
-            if not k140q:
-                self.fail("list host details with K140Q vgpu are not correct")
-        if self.k120qgpuhosts > 0:
-            if not k120q:
-                self.fail("list host details with K120Q vgpu are not correct")
-        if self.k100gpuhosts > 0:
-            if not k100:
-                self.fail("list host details with K100 vgpu are not correct")
         if self.k1passthroughgpuhosts > 0:
             if not k1pass:
                 self.fail(
                     "list host details with K1 Passthrough vgpu are not correct")
+        if self.k100gpuhosts > 0:
+            if not k100:
+                self.fail("list host details with K100 vgpu are not correct")
+        if self.k120qgpuhosts > 0:
+            if not k120q:
+                self.fail("list host details with K120Q vgpu are not correct")
+        if self.k140qgpuhosts > 0:
+            if not k140q:
+                self.fail("list host details with K140Q vgpu are not correct")
+        if self.k160qgpuhosts > 0:
+            if not k160q:
+                self.fail("list host details with K160Q vgpu are not correct")
+        if self.k180qgpuhosts > 0:
+            if not k180q:
+                self.fail("list host details with K180Q vgpu are not correct")
+
+        if self.k2passthroughgpuhosts > 0:
+            if not k2pass:
+                self.fail(
+                    "list host details with K2 passthrough vgpu are not correct")
+        if self.k200gpuhosts > 0:
+            if not k200:
+                self.fail("list host details with K200 vgpu are not correct")
+        if self.k220qgpuhosts > 0:
+            if not k220q:
+                self.fail("list host details with K220Q vgpu are not correct")
+        if self.k240qgpuhosts > 0:
+            if not k240q:
+                self.fail("list host details with K240Q vgpu are not correct")
+        if self.k260qgpuhosts > 0:
+            if not k260q:
+                self.fail("list host details with K260Q vgpu are not correct")
+        if self.k280qgpuhosts > 0:
+            if not k280q:
+                self.fail("list host details with K280Q vgpu are not correct")
+
+        if self.m60passthroughgpuhosts > 0:
+            if not m60pass:
+                self.fail(
+                    "list host details with M60 passthrough vgpu are not correct")
+        if self.m60_0qgpuhosts > 0:
+            if not m60_0q:
+                self.fail("list host details with M60-0Q vgpu are not correct")
+        if self.m60_1qgpuhosts > 0:
+            if not m60_1q:
+                self.fail("list host details with M60-1Q vgpu are not correct")
+        if self.m60_2qgpuhosts > 0:
+            if not m60_2q:
+                self.fail("list host details with M60-2Q vgpu are not correct")
+        if self.m60_4qgpuhosts > 0:
+            if not m60_4q:
+                self.fail("list host details with M60-4Q vgpu are not correct")
+        if self.m60_8qgpuhosts > 0:
+            if not m60_8q:
+                self.fail("list host details with M60-8Q vgpu are not correct")
+        if self.m60_0bgpuhosts > 0:
+            if not m60_0b:
+                self.fail("list host details with M60-0B vgpu are not correct")
+        if self.m60_1bgpuhosts > 0:
+            if not m60_1b:
+                self.fail("list host details with M60-1B vgpu are not correct")
+        if self.m60_1agpuhosts > 0:
+            if not m60_1a:
+                self.fail("list host details with M60-1A vgpu are not correct")
+        if self.m60_2agpuhosts > 0:
+            if not m60_2a:
+                self.fail("list host details with M60-2A vgpu are not correct")
+        if self.m60_4agpuhosts > 0:
+            if not m60_4a:
+                self.fail("list host details with M60-4A vgpu are not correct")
+        if self.m60_8agpuhosts > 0:
+            if not m60_8a:
+                self.fail("list host details with M60-8A vgpu are not correct")
 
     @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
     def test_02_create_deploy_windows_vm_with_k100_vgpu_service_offering(self):
@@ -1751,6 +2000,9 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         if self.__class__.vm2_k2_card is not None:
             self.verify_vm(self.__class__.vm2_k2_card)
 
+        if self.__class__.vm_m60_card is not None:
+            self.verify_vm(self.__class__.vm_m60_card)
+
         self.__class__.vmlifecycletest = 1
         return
 
@@ -1771,6 +2023,9 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         if self.__class__.vm2_k2_card:
             self.stopvm(self.__class__.vm2_k2_card)
 
+        if self.__class__.vm_m60_card:
+            self.stopvm(self.__class__.vm_m60_card)
+
         return
 
     @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
@@ -1790,6 +2045,9 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         if self.__class__.vm2_k2_card:
             self.startvm(self.__class__.vm2_k2_card)
 
+        if self.__class__.vm_m60_card:
+            self.startvm(self.__class__.vm_m60_card)
+
         return
 
     @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
@@ -1803,10 +2061,15 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         if self.__class__.vm_k1_card:
             self.restorevm(self.__class__.vm_k1_card)
+
         if self.__class__.vm_k2_card:
             self.restorevm(self.__class__.vm_k2_card)
+
         if self.__class__.vm2_k2_card:
             self.restorevm(self.__class__.vm2_k2_card)
+
+        if self.__class__.vm_m60_card:
+            self.restorevm(self.__class__.vm_m60_card)
 
         return
 
@@ -1821,10 +2084,15 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         if self.__class__.vm_k1_card:
             self.rebootvm(self.__class__.vm_k1_card)
+
         if self.__class__.vm_k2_card:
             self.rebootvm(self.__class__.vm_k2_card)
+
         if self.__class__.vm2_k2_card:
             self.rebootvm(self.__class__.vm2_k2_card)
+
+        if self.__class__.vm_m60_card:
+            self.rebootvm(self.__class__.vm_m60_card)
 
         return
 
@@ -1841,8 +2109,6 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             raise unittest.SkipTest(" No VM available.Hence skipping")
 
         self.create_vm_snapshot(self.__class__.vm_k1_card)
-#        self.create_vm_snapshot(self.__class__.vm_k2_card)
-#        self.create_vm_snapshot(self.__class__.vm_k2_card)
 
         return
 
@@ -1861,6 +2127,10 @@ class TestvGPUWindowsVm(cloudstackTestCase):
 
         if not self.__class__.vm_k1_card:
             raise unittest.SkipTest("No VM available.Hence skipping")
+
+        # Stop the VM before revert. CloudStack doesn't support reverting running VMs.
+        # Assuming it would stop successfully. Else we need one parameter to track stopping of VMs.
+        self.stopvm(self.__class__.vm_k1_card)
 
         self.revert_vm_snapshot(self.__class__.vm_k1_card)
 
@@ -1891,6 +2161,12 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         """Test to create VM snapshots
         """
 
+        # CloudStack doesn't support creating a VM snapshot with memory for vGPU VMs.
+        # For now skipping the test, Later we can modify or remove this test.
+        if self.__class__.vmlifecycletest == 1:
+            raise unittest.SkipTest(
+                "CloudStack does not support this operation on vGPU VMs")
+
         if self.__class__.vmlifecycletest == 0:
             raise unittest.SkipTest(
                 "VM Life Cycle Deploy VM test failed hence skipping")
@@ -1907,10 +2183,16 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         """Test to revert VM snapshots
         """
 
+        # Same as above test, Later we can modify or remove this test.
+        if self.__class__.vmlifecycletest == 1:
+            raise unittest.SkipTest(
+                "CloudStack does not support this operation on vGPU VMs")
+
         if self.__class__.vmlifecycletest == 0:
             raise unittest.SkipTest(
                 "VM Life Cycle Deploy VM test failed hence skipping")
 
+        # Anyway the test will always be skipped here but did it early.
         if self.__class__.vmsnapwithmemory == 0:
             raise unittest.SkipTest(
                 "VM Snapshot creation with memory test failed hence skipping")
@@ -1927,10 +2209,16 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         """Test to delete vm snapshots
         """
 
+        # Same as above test, Later we can modify or remove this test.
+        if self.__class__.vmlifecycletest == 1:
+            raise unittest.SkipTest(
+                "CloudStack does not support this operation on vGPU VMs")
+
         if self.__class__.vmlifecycletest == 0:
             raise unittest.SkipTest(
                 "VM Life Cycle Deploy VM test failed hence skipping")
 
+        # Anyway the test will always be skipped here but did it early.
         if self.__class__.vmsnapwithmemory == 0:
             raise unittest.SkipTest(
                 "VM Snapshot creation with memory test failed hence skipping")
@@ -2038,14 +2326,17 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             raise unittest.SkipTest(
                 "VM Life Cycle Deploy VM test failed hence skipping")
 
-        if self.__class__.vm_k2_card:
-            self.deletevm(self.__class__.vm_k2_card)
-
         if self.__class__.vm_k1_card:
             self.deletevm(self.__class__.vm_k1_card)
 
+        if self.__class__.vm_k2_card:
+            self.deletevm(self.__class__.vm_k2_card)
+
         if self.__class__.vm2_k2_card:
             self.deletevm(self.__class__.vm2_k2_card)
+
+        if self.__class__.vm_m60_card:
+            self.deletevm(self.__class__.vm_m60_card)
 
         if self.__class__.nonvgpu:
             self.deletevm(self.__class__.nonvgpu)
@@ -2053,6 +2344,7 @@ class TestvGPUWindowsVm(cloudstackTestCase):
         self.cleanup.append(self.__class__.nonvgpu_service_offerin)
         self.cleanup.append(self.__class__.k100_vgpu_service_offering)
         self.cleanup.append(self.__class__.k200_vgpu_service_offering)
+        self.cleanup.append(self.__class__.m60_vgpu_service_offering)
 
         return
 
@@ -2065,14 +2357,17 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             raise unittest.SkipTest(
                 "VM Life Cycle Deploy VM test failed hence skipping")
 
-        if self.__class__.vm_k2_card is not None:
-            self.recovervm(self.__class__.vm_k2_card)
-
         if self.__class__.vm_k1_card is not None:
             self.recovervm(self.__class__.vm_k1_card)
 
+        if self.__class__.vm_k2_card is not None:
+            self.recovervm(self.__class__.vm_k2_card)
+
         if self.__class__.vm2_k2_card is not None:
             self.recovervm(self.__class__.vm2_k2_card)
+
+        if self.__class__.vm_m60_card is not None:
+            self.recovervm(self.__class__.vm_m60_card)
 
         return
 
@@ -2098,6 +2393,11 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             if self.check_vm_state(self.__class__.vm2_k2_card.id) == "Expunge":
                 raise unittest.SkipTest("VM is already deleted hence skipping")
             self.deletevm(self.__class__.vm2_k2_card)
+
+        if self.__class__.vm_m60_card:
+            if self.check_vm_state(self.__class__.vm_m60_card.id) == "Expunge":
+                raise unittest.SkipTest("VM is already deleted hence skipping")
+            self.deletevm(self.__class__.vm_m60_card)
 
         return
 
@@ -2266,6 +2566,317 @@ class TestvGPUWindowsVm(cloudstackTestCase):
             "Group of NVIDIA Corporation GK104GL [GRID K2] GPUs",
             "GRID K140Q",
             "Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
+        return
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_37_create_deploy_windows_vm_with_k160q_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with K160Q vGPU service offering"""
+
+        k160qcapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GK107GL [GRID K1] GPUs",
+            "GRID K160Q")
+
+        if (self.k160qgpuhosts == 0) or (k160qcapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with K160Q vGPU Drivers installed")
+
+        self.deploy_vm(
+            "GRID K160Q",
+            "Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_38_create_deploy_windows_vm_with_k180q_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with K180Q vGPU service offering"""
+
+        k180qcapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GK107GL [GRID K1] GPUs",
+            "GRID K180Q")
+
+        if (self.k180qgpuhosts == 0) or (k180qcapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with K180Q vGPU Drivers installed")
+
+        self.deploy_vm(
+            "GRID K180Q",
+            "Group of NVIDIA Corporation GK107GL [GRID K1] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_39_create_deploy_windows_vm_with_k280q_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with K280Q vGPU service offering"""
+
+        k280qcapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GK104GL [GRID K2] GPUs",
+            "GRID K280Q")
+
+        if (self.k280qgpuhosts == 0) or (k280qcapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with K280Q vGPU Drivers installed")
+
+        self.deploy_vm(
+            "GRID K280Q",
+            "Group of NVIDIA Corporation GK104GL [GRID K2] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_40_create_deploy_windows_vm_with_m60_passthrough_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with M60 passthrough vGPU service offering"""
+
+        m60passcapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs",
+            "passthrough")
+
+        if (self.m60passthroughgpuhosts == 0) or (m60passcapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with M60 passthrough installed")
+
+        self.deploy_vm(
+            "passthrough",
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_41_create_deploy_windows_vm_with_m60_0q_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with M60-0Q vGPU service offering"""
+
+        m60_0qcapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs",
+            "Tesla M60-0Q")
+
+        if (self.m60_0qgpuhosts == 0) or (m60_0qcapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with M60-0Q vGPU Drivers installed")
+
+        self.deploy_vm(
+            "Tesla M60-0Q",
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_42_create_deploy_windows_vm_with_m60_1q_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with M60-1Q vGPU service offering"""
+
+        m60_1qcapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs",
+            "Tesla M60-1Q")
+
+        if (self.m60_1qgpuhosts == 0) or (m60_1qcapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with M60-1Q vGPU Drivers installed")
+
+        self.deploy_vm(
+            "Tesla M60-1Q",
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_43_create_deploy_windows_vm_with_m60_2q_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with M60-2Q vGPU service offering"""
+
+        m60_2qcapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs",
+            "Tesla M60-2Q")
+
+        if (self.m60_2qgpuhosts == 0) or (m60_2qcapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with M60-2Q vGPU Drivers installed")
+
+        self.deploy_vm(
+            "Tesla M60-2Q",
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_44_create_deploy_windows_vm_with_m60_4q_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with M60-4Q vGPU service offering"""
+
+        m60_4qcapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs",
+            "Tesla M60-4Q")
+
+        if (self.m60_4qgpuhosts == 0) or (m60_4qcapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with M60-4Q vGPU Drivers installed")
+
+        self.deploy_vm(
+            "Tesla M60-4Q",
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_45_create_deploy_windows_vm_with_m60_8q_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with M60-8Q vGPU service offering"""
+
+        m60_8qcapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs",
+            "Tesla M60-8Q")
+
+        if (self.m60_8qgpuhosts == 0) or (m60_8qcapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with M60-8Q vGPU Drivers installed")
+
+        self.deploy_vm(
+            "Tesla M60-8Q",
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_46_create_deploy_windows_vm_with_m60_0b_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with M60-0B vGPU service offering"""
+
+        m60_0bcapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs",
+            "Tesla M60-0B")
+
+        if (self.m60_0bgpuhosts == 0) or (m60_0bcapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with M60-0B vGPU Drivers installed")
+
+        self.deploy_vm(
+            "Tesla M60-0B",
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_47_create_deploy_windows_vm_with_m60_1b_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with M60-1B vGPU service offering"""
+
+        m60_1bcapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs",
+            "Tesla M60-1B")
+
+        if (self.m60_1bgpuhosts == 0) or (m60_1bcapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with M60-1B vGPU Drivers installed")
+
+        self.deploy_vm(
+            "Tesla M60-1B",
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_48_create_deploy_windows_vm_with_m60_1a_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with M60-1A vGPU service offering"""
+
+        m60_1acapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs",
+            "Tesla M60-1A")
+
+        if (self.m60_1agpuhosts == 0) or (m60_1acapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with M60-1A vGPU Drivers installed")
+
+        self.deploy_vm(
+            "Tesla M60-1A",
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_49_create_deploy_windows_vm_with_m60_2a_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with M60-2A vGPU service offering"""
+
+        m60_2acapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs",
+            "Tesla M60-2A")
+
+        if (self.m60_2agpuhosts == 0) or (m60_2acapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with M60-2A vGPU Drivers installed")
+
+        self.deploy_vm(
+            "Tesla M60-2A",
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_50_create_deploy_windows_vm_with_m60_4a_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with M60-4A vGPU service offering"""
+
+        m60_4acapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs",
+            "Tesla M60-4A")
+
+        if (self.m60_4agpuhosts == 0) or (m60_4acapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with M60-4A vGPU Drivers installed")
+
+        self.deploy_vm(
+            "Tesla M60-4A",
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs")
+
+    @attr(tags=['advanced', 'basic', 'vgpu'], required_hardware="true")
+    def test_51_create_deploy_windows_vm_with_m60_8a_vgpu_service_offering(
+            self):
+        """Test to create and deploy vm with M60-8A vGPU service offering"""
+
+        m60_8acapacity = self.check_host_vgpu_capacity(
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs",
+            "Tesla M60-8A")
+
+        if (self.m60_8agpuhosts == 0) or (m60_8acapacity == 0):
+            raise unittest.SkipTest(
+                "No XenServer available with M60-8A vGPU Drivers installed")
+
+        self.deploy_vm(
+            "Tesla M60-8A",
+            "Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs")
+
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_52_create_m60_vm_snapshot_with_memory(self):
+        """Test to create VM snapshots
+        """
+
+        if self.__class__.vmlifecycletest == 0:
+            raise unittest.SkipTest(
+                "VM Life Cycle Deploy VM test failed hence skipping")
+
+        if not (self.__class__.vm_m60_card):
+            raise unittest.SkipTest("No VM available.Hence skipping")
+
+        self.create_vm_snapshot_with_memory(self.__class__.vm_m60_card)
+
+        return
+
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_53_revert_m60_vm_snapshot_with_memory(self):
+        """Test to revert VM snapshots
+        """
+
+        if self.__class__.vmlifecycletest == 0:
+            raise unittest.SkipTest(
+                "VM Life Cycle Deploy VM test failed hence skipping")
+
+        if self.__class__.vmsnapwithmemory == 0:
+            raise unittest.SkipTest(
+                "VM Snapshot creation with memory test failed hence skipping")
+
+        if not (self.__class__.vm_m60_card):
+            raise unittest.SkipTest("No VM available.Hence skipping")
+
+        self.revert_vm_snapshot_with_memory(self.__class__.vm_m60_card)
+
+        return
+
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_54_delete_m60_vm_snapshot_with_memory(self):
+        """Test to delete vm snapshots
+        """
+
+        if self.__class__.vmlifecycletest == 0:
+            raise unittest.SkipTest(
+                "VM Life Cycle Deploy VM test failed hence skipping")
+
+        if self.__class__.vmsnapwithmemory == 0:
+            raise unittest.SkipTest(
+                "VM Snapshot creation with memory test failed hence skipping")
+
+        if not(self.__class__.vm_m60_card):
+            raise unittest.SkipTest("No VM available.Hence skipping")
+
+        self.delete_vm_snapshot(self.__class__.vm_m60_card)
+
         return
 
     @classmethod
