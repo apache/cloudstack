@@ -1,5 +1,0 @@
-{
-  "run_list": [
-    "recipe[csip::default]"
-  ]
-}

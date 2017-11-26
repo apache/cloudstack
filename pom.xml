@@ -920,35 +920,12 @@
               <exclude>ui/lib/reset.css</exclude>
               <exclude>ui/lib/require.js</exclude>
               <exclude>utils/testsmallfileinactive</exclude>
-              <exclude>systemvm/conf/agent.properties</exclude>
-              <exclude>systemvm/conf/environment.properties</exclude>
-              <exclude>systemvm/js/jquery.js</exclude>
-              <exclude>systemvm/js/jquery.flot.navigate.js</exclude>
-              <exclude>systemvm/patches/debian/systemvm.vmx</exclude>
-              <exclude>systemvm/patches/debian/config/root/.ssh/authorized_keys</exclude>
-              <exclude>systemvm/patches/debian/config/etc/apache2/httpd.conf</exclude>
-              <exclude>systemvm/patches/debian/config/etc/apache2/vhost.template</exclude>
-              <exclude>systemvm/patches/debian/config/etc/dnsmasq.conf.tmpl</exclude>
-              <exclude>systemvm/patches/debian/config/etc/vpcdnsmasq.conf</exclude>
-              <exclude>systemvm/patches/debian/config/etc/ssh/sshd_config</exclude>
-              <exclude>systemvm/patches/debian/config/etc/rsyslog.conf</exclude>
-              <exclude>systemvm/patches/debian/config/etc/logrotate.conf</exclude>
-              <exclude>systemvm/patches/debian/config/etc/logrotate.d/*</exclude>
-              <exclude>systemvm/patches/debian/config/etc/sysctl.conf</exclude>
-              <exclude>systemvm/patches/debian/config/root/redundant_router/keepalived.conf.templ</exclude>
-              <exclude>systemvm/patches/debian/config/root/redundant_router/arping_gateways.sh.templ</exclude>
-              <exclude>systemvm/patches/debian/config/root/redundant_router/conntrackd.conf.templ</exclude>
-              <exclude>systemvm/patches/debian/vpn/etc/ipsec.conf</exclude>
-              <exclude>systemvm/patches/debian/vpn/etc/ppp/options.xl2tpd</exclude>
-              <exclude>systemvm/patches/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
-              <exclude>systemvm/patches/debian/vpn/etc/ipsec.secrets</exclude>
-              <exclude>systemvm/patches/debian/config/etc/haproxy/haproxy.cfg</exclude>
-              <exclude>systemvm/patches/debian/config/etc/cloud-nic.rules</exclude>
-              <exclude>systemvm/patches/debian/config/etc/modprobe.d/aesni_intel</exclude>
-              <exclude>systemvm/patches/debian/config/etc/rc.local</exclude>
-              <exclude>systemvm/patches/debian/config/var/www/html/userdata/.htaccess</exclude>
-              <exclude>systemvm/patches/debian/config/var/www/html/latest/.htaccess</exclude>
-              <exclude>systemvm/patches/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
+              <exclude>systemvm/agent/conf/agent.properties</exclude>
+              <exclude>systemvm/agent/conf/environment.properties</exclude>
+              <exclude>systemvm/agent/js/jquery.js</exclude>
+              <exclude>systemvm/agent/js/jquery.flot.navigate.js</exclude>
+              <exclude>systemvm/patches/debian/**</exclude>
+              <exclude>systemvm/patches/vpn/**</exclude>
               <exclude>tools/transifex/.tx/config</exclude>
               <exclude>tools/logo/apache_cloudstack.png</exclude>
               <exclude>tools/marvin/marvin/sandbox/advanced/sandbox.cfg</exclude>
