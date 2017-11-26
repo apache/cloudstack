@@ -25,14 +25,28 @@ public class GPU {
     }
 
     public enum GPUType {
+        passthrough("passthrough"),
         GRID_K100("GRID K100"),
         GRID_K120Q("GRID K120Q"),
         GRID_K140Q("GRID K140Q"),
+        GRID_K160Q("GRID K160Q"),
+        GRID_K180Q("GRID K180Q"),
         GRID_K200("GRID K200"),
         GRID_K220Q("GRID K220Q"),
         GRID_K240Q("GRID K240Q"),
         GRID_K260("GRID K260Q"),
-        passthrough("passthrough");
+        GRID_K280Q("GRID K280Q"),
+        TESLA_M60_0Q("Tesla M60-0Q"),
+        TESLA_M60_1Q("Tesla M60-1Q"),
+        TESLA_M60_2Q("Tesla M60-2Q"),
+        TESLA_M60_4Q("Tesla M60-4Q"),
+        TESLA_M60_8Q("Tesla M60-8Q"),
+        TESLA_M60_0B("Tesla M60-0B"),
+        TESLA_M60_1B("Tesla M60-1B"),
+        TESLA_M60_1A("Tesla M60-1A"),
+        TESLA_M60_2A("Tesla M60-2A"),
+        TESLA_M60_4A("Tesla M60-4A"),
+        TESLA_M60_8A("Tesla M60-8A");
 
         private String type;
 

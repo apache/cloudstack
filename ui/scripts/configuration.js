@@ -459,6 +459,10 @@
                                                 id: 'Group of NVIDIA Corporation GK104GL [GRID K2] GPUs',
                                                 description: 'NVIDIA GRID K2'
                                             });
+                                            items.push({
+                                                id: 'Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs',
+                                                description: 'NVIDIA Tesla M60'
+                                            });
                                             args.response.success({
                                                 data: items
                                             });
@@ -466,6 +470,7 @@
                                             var vGpuMap = {};
                                             vGpuMap['Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'] = ['passthrough', 'GRID K100', 'GRID K120Q', 'GRID K140Q', 'GRID K160Q', 'GRID K180Q'];
                                             vGpuMap['Group of NVIDIA Corporation GK104GL [GRID K2] GPUs'] = ['passthrough', 'GRID K200', 'GRID K220Q', 'GRID K240Q', 'GRID K260Q', 'GRID K280Q'];
+                                            vGpuMap['Group of NVIDIA Corporation GM204GL [Tesla M60] GPUs'] = ['passthrough', 'Tesla M60-0Q', 'Tesla M60-1Q', 'Tesla M60-2Q', 'Tesla M60-4Q', 'Tesla M60-8Q', 'Tesla M60-0B', 'Tesla M60-1B', 'Tesla M60-1A', 'Tesla M60-2A', 'Tesla M60-4A', 'Tesla M60-8A'];
 
                                             args.$select.change(function() {
                                                 var gpu = $(this).val();
@@ -548,6 +553,50 @@
                                             items.push({
                                                 id: 'GRID K280Q',
                                                 description: 'GRID K280Q'
+                                            });
+                                            items.push({
+                                                id: 'Tesla M60-0Q',
+                                                description: 'Tesla M60-0Q'
+                                            });
+                                            items.push({
+                                                id: 'Tesla M60-1Q',
+                                                description: 'Tesla M60-1Q'
+                                            });
+                                            items.push({
+                                                id: 'Tesla M60-2Q',
+                                                description: 'Tesla M60-2Q'
+                                            });
+                                            items.push({
+                                                id: 'Tesla M60-4Q',
+                                                description: 'Tesla M60-4Q'
+                                            });
+                                            items.push({
+                                                id: 'Tesla M60-8Q',
+                                                description: 'Tesla M60-8Q'
+                                            });
+                                            items.push({
+                                                id: 'Tesla M60-0B',
+                                                description: 'Tesla M60-0B'
+                                            });
+                                            items.push({
+                                                id: 'Tesla M60-1B',
+                                                description: 'Tesla M60-1B'
+                                            });
+                                            items.push({
+                                                id: 'Tesla M60-1A',
+                                                description: 'Tesla M60-1A'
+                                            });
+                                            items.push({
+                                                id: 'Tesla M60-2A',
+                                                description: 'Tesla M60-2A'
+                                            });
+                                            items.push({
+                                                id: 'Tesla M60-4A',
+                                                description: 'Tesla M60-4A'
+                                            });
+                                            items.push({
+                                                id: 'Tesla M60-8A',
+                                                description: 'Tesla M60-8A'
                                             });
                                             args.response.success({
                                                 data: items
