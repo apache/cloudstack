@@ -25,6 +25,7 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -44,6 +45,11 @@ import java.util.UUID;
 import javax.naming.ConfigurationException;
 import javax.xml.datatype.XMLGregorianCalendar;
 
+import com.vmware.vim25.VirtualMachinePciPassthroughInfo;
+import com.vmware.vim25.VirtualPCIPassthrough;
+import com.vmware.vim25.VirtualPCIPassthroughVmiopBackingInfo;
+import com.vmware.vim25.VMwareDVSPortSetting;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
@@ -59,7 +65,12 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.joda.time.Duration;
 
-import com.cloud.agent.IAgentControl;
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.log4j.NDC;
+import org.joda.time.Duration;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoAnswer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -84,6 +95,8 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.DeleteVMSnapshotAnswer;
 import com.cloud.agent.api.DeleteVMSnapshotCommand;
+import com.cloud.agent.api.GetGPUStatsAnswer;
+import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
 import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
@@ -156,6 +169,7 @@ import com.cloud.agent.api.UpgradeSnapshotCommand;
 import com.cloud.agent.api.ValidateSnapshotAnswer;
 import com.cloud.agent.api.ValidateSnapshotCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
+import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.VmStatsEntry;
 import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.agent.api.check.CheckSshAnswer;
@@ -177,12 +191,14 @@ import com.cloud.agent.api.storage.ResizeVolumeAnswer;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.GPUDeviceTO;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.agent.IAgentControl;
 import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.agent.resource.virtualnetwork.VirtualRoutingResource;
@@ -191,6 +207,7 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.Vlan;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.InternalErrorException;
+import com.cloud.gpu.GPU;
 import com.cloud.host.Host.Type;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.guru.VMwareGuru;
@@ -529,6 +546,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 return execute((GetVmIpAddressCommand)cmd);
             } else if (clz == UnregisterNicCommand.class) {
                 answer = execute((UnregisterNicCommand)cmd);
+            } else if (clz == GetGPUStatsCommand.class) {
+                answer = execute((GetGPUStatsCommand)cmd);
             } else {
                 answer = Answer.createUnsupportedCommandAnswer(cmd);
             }
@@ -1759,9 +1778,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 diskInfoBuilder = vmMo.getDiskInfoBuilder();
                 hasSnapshot = vmMo.hasSnapshot();
                 if (!hasSnapshot)
-                    vmMo.tearDownDevices(new Class<?>[] {VirtualDisk.class, VirtualEthernetCard.class});
+                    vmMo.tearDownDevices(new Class<?>[] {VirtualDisk.class, VirtualEthernetCard.class, VirtualPCIPassthrough.class});
                 else
-                    vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class});
+                    vmMo.tearDownDevices(new Class<?>[] {VirtualEthernetCard.class, VirtualPCIPassthrough.class});
                 if (systemVm) {
                     ensureScsiDiskControllers(vmMo, systemVmScsiControllerType.toString(), numScsiControllerForSystemVm, firstScsiControllerBusNum);
                 } else {
@@ -2226,12 +2245,15 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             vmConfigSpec.getExtraConfig()
                     .addAll(Arrays.asList(configureVnc(extraOptions.toArray(new OptionValue[0]), hyperHost, vmInternalCSName, vmSpec.getVncPassword(), keyboardLayout)));
 
-            // config video card
+            // Configure video card.
             configureVideoCard(vmMo, vmSpec, vmConfigSpec);
 
-            //
-            // Configure VM
-            //
+            // Configure GPU card.
+            if (vmSpec.getGpuDevice() != null) {
+                configureGpuCard(vmMo, vmSpec, vmConfigSpec);
+            }
+
+            // Configure VM.
             if (!vmMo.configureVm(vmConfigSpec)) {
                 throw new Exception("Failed to configure VM before start. vmName: " + vmInternalCSName);
             }
@@ -2262,6 +2284,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             //
             if (!vmMo.powerOn()) {
                 throw new Exception("Failed to start VM. vmName: " + vmInternalCSName + " with hostname " + vmNameOnVcenter);
+            }
+
+            if (vmSpec.getGpuDevice() != null) {
+                cmd.getVirtualMachine().getGpuDevice().setGroupDetails(vmMo.getRunningHost().getGPUGroupDetails());
             }
 
             StartAnswer startAnswer = new StartAnswer(cmd);
@@ -2366,7 +2392,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-
     /**
      * Generate the mac sequence from the nics.
      */
@@ -2416,6 +2441,46 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.error("Unexpected value, cannot parse " + value + " to long due to: " + e.getMessage());
             }
         }
+    }
+
+    /**
+     * Sets GPU card details to the one provided in detail vgpu.type (if provided) on {@code vmConfigSpec}.
+     * @param vmMo
+     * @param vmSpec
+     * @param vmConfigSpec
+     * @throws RuntimeFaultFaultMsg
+     * @throws Exception
+     */
+    protected void configureGpuCard(final VirtualMachineMO vmMo, final VirtualMachineTO vmSpec, final VirtualMachineConfigSpec vmConfigSpec) throws Exception {
+        final String vGpuProfile = vmSpec.getGpuDevice().getVgpuType();
+
+        VirtualDevice pciPassthroughDevice = null;
+        HostMO hostMo = new HostMO(vmMo.getContext(), getHyperHost(vmMo.getContext()).getMor());
+
+        if (vGpuProfile.equalsIgnoreCase(GPU.GPUType.passthrough.toString())) {
+            // Fetch the available direct PCI graphics card available for allocation
+            String pciDeviceId = hostMo.getPciIdForAvailableDirectPciPassthroughDevice();
+            VirtualMachinePciPassthroughInfo hostPciDeviceInfo = hostMo.getHostPciDeviceInfo(pciDeviceId);
+
+            if (hostPciDeviceInfo == null) {
+                final String msg = "Unable to find free passthrough GPU to be allocated to VM. Please check the host hardware configuration.";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            pciPassthroughDevice = hostMo.prepareDirectPciPassthroughDevice(hostPciDeviceInfo);
+        } else {
+            pciPassthroughDevice = hostMo.prepareSharedPciPassthroughDevice(vGpuProfile);
+        }
+
+        if (pciPassthroughDevice != null) {
+            VirtualDeviceConfigSpec virtualDeviceConfigSpec = new VirtualDeviceConfigSpec();
+            virtualDeviceConfigSpec.setDevice(pciPassthroughDevice);
+            virtualDeviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            vmConfigSpec.getDeviceChange().add(virtualDeviceConfigSpec);
+        }
+
+        vmConfigSpec.setMemoryReservationLockedToMax(true);
     }
 
     /**
@@ -3665,9 +3730,35 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         // i.e., i-x-y. This is the internal VM name.
         VmwareContext context = getServiceContext();
         VmwareHypervisorHost hyperHost = getHyperHost(context);
+
         try {
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
+
             if (vmMo != null) {
+                String vgpuType = "None";
+
+                if (vmMo != null && vmMo.getConfigInfo() != null && vmMo.getConfigInfo().getHardware() != null) {
+                    final List<VirtualDevice> devices = vmMo.getConfigInfo().getHardware().getDevice();
+
+                    for (VirtualDevice device : devices) {
+                        if (device instanceof VirtualPCIPassthrough) {
+                            if (device.getBacking() != null && (device.getBacking() instanceof VirtualPCIPassthroughVmiopBackingInfo)) {
+                                final VirtualPCIPassthroughVmiopBackingInfo backingInfo = (VirtualPCIPassthroughVmiopBackingInfo) device.getBacking();
+
+                                if (backingInfo.getVgpu() != null) {
+                                    vgpuType = backingInfo.getVgpu();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (vgpuType.equals("None") == false) {
+                    final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = vmMo.getRunningHost().getGPUGroupDetails();
+                    cmd.setGpuDevice(new GPUDeviceTO(null, null, groupDetails));
+                }
+
                 if (cmd.checkBeforeCleanup()) {
                     if (getVmPowerState(vmMo) != PowerState.PowerOff) {
                         String msg = "StopCommand is sent for cleanup and VM " + cmd.getVmName() + " is current running. ignore it.";
@@ -5413,6 +5504,31 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    /**
+     * GetGPUStatsCommand is used to collect the GPU/vGPU details of all the
+     * GPU enabled hosts.
+     * Do Nothing.
+     * @param cmd
+     * @return Answer
+     */
+    protected Answer execute(final GetGPUStatsCommand cmd) {
+        final VmwareContext context = getServiceContext();
+        final VmwareHypervisorHost hyperHost = getHyperHost(context);
+        final HostMO hostMo = new HostMO(context, hyperHost.getMor());
+
+        HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
+
+        try {
+            groupDetails = hostMo.getGPUGroupDetails();
+        } catch (final Exception e) {
+            final String msg = "Unable to get GPU stats" + e.toString();
+            s_logger.warn(msg, e);
+            return new GetGPUStatsAnswer(cmd, false, msg);
+        }
+
+        return new GetGPUStatsAnswer(cmd, groupDetails);
+    }
+
     public void cleanupNetwork(HostMO hostMo, NetworkDetails netDetails) {
         // we will no longer cleanup VLAN networks in order to support native VMware HA
         /*
@@ -5651,9 +5767,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
 
         try {
-            fillHostHardwareInfo(serviceContext, cmd);
-            fillHostNetworkInfo(serviceContext, cmd);
-            fillHostDetailsInfo(serviceContext, details);
+            fillHostHardwareInfo(cmd);
+            fillHostNetworkInfo(cmd);
+            fillHostDetailsInfo(details);
+            fillHostGpuInfo(cmd);
         } catch (RuntimeFaultFaultMsg e) {
             s_logger.error("RuntimeFault while retrieving host info: " + e.toString(), e);
             throw new CloudRuntimeException("RuntimeFault while retrieving host info");
@@ -5702,7 +5819,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return null;
     }
 
-    private void fillHostHardwareInfo(VmwareContext serviceContext, StartupRoutingCommand cmd) throws RuntimeFaultFaultMsg, RemoteException, Exception {
+    private void fillHostHardwareInfo(final StartupRoutingCommand cmd) throws Exception {
 
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
         VmwareHypervisorHostResourceSummary summary = hyperHost.getHyperHostResourceSummary();
@@ -5719,7 +5836,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         cmd.setMemory(summary.getMemoryBytes());
     }
 
-    private void fillHostNetworkInfo(VmwareContext serviceContext, StartupRoutingCommand cmd) throws RuntimeFaultFaultMsg, RemoteException {
+    private void fillHostNetworkInfo(final StartupRoutingCommand cmd) throws RuntimeFaultFaultMsg, RemoteException {
 
         try {
             VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
@@ -5751,11 +5868,29 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private void fillHostDetailsInfo(VmwareContext serviceContext, Map<String, String> details) throws Exception {
+    private void fillHostDetailsInfo(final Map<String, String> details) throws Exception {
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
 
         if (hyperHost.isHAEnabled()) {
             details.put("NativeHA", "true");
+        }
+    }
+
+    private void fillHostGpuInfo(final StartupRoutingCommand cmd) throws Exception {
+        final VmwareContext context = getServiceContext();
+        final VmwareHypervisorHost hyperHost = getHyperHost(context);
+        final HostMO hostMo = new HostMO(context, hyperHost.getMor());
+
+        try {
+            final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = hostMo.getGPUGroupDetails();
+            cmd.setGpuGroupDetails(groupDetails);
+            if (groupDetails != null && !groupDetails.isEmpty()) {
+                cmd.setHostTags("GPU");
+            }
+        } catch (final Exception e) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Error while getting GPU device info from host " + cmd.getName(), e);
+            }
         }
     }
 

@@ -334,6 +334,7 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
+import java.util.regex.Pattern;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -1742,9 +1743,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             long capacityMax = 0;
             for (VgpuTypesInfo capacity : gpuCapacities) {
                 if (vgpuVMs.containsKey(capacity.getGroupName().concat(capacity.getModelName()))) {
-                    capacityUsed += (float)vgpuVMs.get(capacity.getGroupName().concat(capacity.getModelName())) / capacity.getMaxVpuPerGpu();
+                    capacityUsed += (float)vgpuVMs.get(capacity.getGroupName().concat(capacity.getModelName())) / capacity.getMaxVgpuPerGpu();
                 }
                 if (capacity.getModelName().equals(GPU.GPUType.passthrough.toString())) {
+                    capacityMax += capacity.getMaxCapacity();
+                } else if (Pattern.matches("grid_k[12]80q", capacity.getModelName())) {//Only in case of VMware.
                     capacityMax += capacity.getMaxCapacity();
                 }
             }

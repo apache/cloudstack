@@ -540,18 +540,57 @@
                                         label: 'label.gpu',
                                         select: function(args) {
                                             var items = [];
+                                            var XenServer = false;
+                                            var VMware = false;
+
                                             items.push({
                                                 id: '',
                                                 description: ''
                                             });
-                                            items.push({
-                                                id: 'Group of NVIDIA Corporation GK107GL [GRID K1] GPUs',
-                                                description: 'NVIDIA GRID K1'
+
+                                            $.ajax({
+                                                url: createURL('listHosts'),
+                                                data: {},
+                                                async: false,
+                                                success: function (json) {
+                                                    var hosts = json.listhostsresponse.host;
+
+                                                    if (hosts) {
+                                                        $.each(hosts, function(id, host) {
+                                                            if (host) {
+                                                                if (host.hypervisor == "XenServer") {
+                                                                    XenServer = true;
+                                                                } else if (host.hypervisor == "VMware") {
+                                                                    VMware = true;
+                                                                }
+                                                            }
+                                                        });
+                                                    }
+                                                }
                                             });
-                                            items.push({
-                                                id: 'Group of NVIDIA Corporation GK104GL [GRID K2] GPUs',
-                                                description: 'NVIDIA GRID K2'
-                                            });
+
+                                            if (XenServer == true) {
+                                                items.push({
+                                                    id: 'Group of NVIDIA Corporation GK107GL [GRID K1] GPUs',
+                                                    description: 'NVIDIA GRID K1 (XenServer)'
+                                                });
+                                                items.push({
+                                                    id: 'Group of NVIDIA Corporation GK104GL [GRID K2] GPUs',
+                                                    description: 'NVIDIA GRID K2 (XenServer)'
+                                                });
+                                            }
+
+                                            if (VMware == true) {
+                                                items.push({
+                                                    id: 'NVIDIAGRID K1',
+                                                    description: 'NVIDIA GRID K1 (VMware)'
+                                                });
+                                                items.push({
+                                                    id: 'NVIDIAGRID K2',
+                                                    description: 'NVIDIA GRID K2 (VMware)'
+                                                });
+                                            }
+
                                             args.response.success({
                                                 data: items
                                             });
@@ -559,6 +598,8 @@
                                             var vGpuMap = {};
                                             vGpuMap['Group of NVIDIA Corporation GK107GL [GRID K1] GPUs'] = ['passthrough', 'GRID K100', 'GRID K120Q', 'GRID K140Q', 'GRID K160Q', 'GRID K180Q'];
                                             vGpuMap['Group of NVIDIA Corporation GK104GL [GRID K2] GPUs'] = ['passthrough', 'GRID K200', 'GRID K220Q', 'GRID K240Q', 'GRID K260Q', 'GRID K280Q'];
+                                            vGpuMap['NVIDIAGRID K1'] = ['passthrough', 'grid_k100', 'grid_k120q', 'grid_k140q', 'grid_k160q', 'grid_k180q'];
+                                            vGpuMap['NVIDIAGRID K2'] = ['passthrough', 'grid_k200', 'grid_k220q', 'grid_k240q', 'grid_k260q', 'grid_k280q'];
 
                                             args.$select.change(function() {
                                                 var gpu = $(this).val();
@@ -594,54 +635,129 @@
                                         isHidden: true,
                                         select: function(args) {
                                             var items = [];
+                                            var XenServer = false;
+                                            var VMware = false;
+
                                             items.push({
                                                 id: '',
                                                 description: ''
                                             });
-                                            items.push({
-                                                id: 'passthrough',
-                                                description: 'passthrough'
+
+                                            $.ajax({
+                                                url: createURL('listHosts'),
+                                                data: {},
+                                                async: false,
+                                                success: function (json) {
+                                                    var hosts = json.listhostsresponse.host;
+
+                                                    if (hosts) {
+                                                        $.each(hosts, function(id, host) {
+                                                            if (host) {
+                                                                if (host.hypervisor == "XenServer") {
+                                                                    XenServer = true;
+                                                                } else if (host.hypervisor == "VMware") {
+                                                                    VMware = true;
+                                                                }
+                                                            }
+                                                        });
+                                                    }
+                                                }
                                             });
-                                            items.push({
-                                                id: 'GRID K100',
-                                                description: 'GRID K100'
-                                            });
-                                            items.push({
-                                                id: 'GRID K120Q',
-                                                description: 'GRID K120Q'
-                                            });
-                                            items.push({
-                                                id: 'GRID K140Q',
-                                                description: 'GRID K140Q'
-                                            });
-                                            items.push({
-                                                id: 'GRID K160Q',
-                                                description: 'GRID K160Q'
-                                            });
-                                            items.push({
-                                                id: 'GRID K180Q',
-                                                description: 'GRID K180Q'
-                                            });
-                                            items.push({
-                                                id: 'GRID K200',
-                                                description: 'GRID K200'
-                                            });
-                                            items.push({
-                                                id: 'GRID K220Q',
-                                                description: 'GRID K220Q'
-                                            });
-                                            items.push({
-                                                id: 'GRID K240Q',
-                                                description: 'GRID K240Q'
-                                            });
-                                            items.push({
-                                                id: 'GRID K260Q',
-                                                description: 'GRID K260Q'
-                                            });
-                                            items.push({
-                                                id: 'GRID K280Q',
-                                                description: 'GRID K280Q'
-                                            });
+
+                                            if (XenServer == true) {
+                                                items.push({
+                                                    id: 'passthrough',
+                                                    description: 'passthrough'
+                                                });
+                                                items.push({
+                                                    id: 'GRID K100',
+                                                    description: 'GRID K100'
+                                                });
+                                                items.push({
+                                                    id: 'GRID K120Q',
+                                                    description: 'GRID K120Q'
+                                                });
+                                                items.push({
+                                                    id: 'GRID K140Q',
+                                                    description: 'GRID K140Q'
+                                                });
+                                                items.push({
+                                                    id: 'GRID K160Q',
+                                                    description: 'GRID K160Q'
+                                                });
+                                                items.push({
+                                                    id: 'GRID K180Q',
+                                                    description: 'GRID K180Q'
+                                                });
+                                                items.push({
+                                                    id: 'GRID K200',
+                                                    description: 'GRID K200'
+                                                });
+                                                items.push({
+                                                    id: 'GRID K220Q',
+                                                    description: 'GRID K220Q'
+                                                });
+                                                items.push({
+                                                    id: 'GRID K240Q',
+                                                    description: 'GRID K240Q'
+                                                });
+                                                items.push({
+                                                    id: 'GRID K260Q',
+                                                    description: 'GRID K260Q'
+                                                });
+                                                items.push({
+                                                    id: 'GRID K280Q',
+                                                    description: 'GRID K280Q'
+                                                });
+                                            }
+
+                                            if (VMware == true) {
+                                                items.push({
+                                                    id: 'passthrough',
+                                                    description: 'passthrough'
+                                                });
+                                                items.push({
+                                                    id: 'grid_k100',
+                                                    description: 'grid_k100'
+                                                });
+                                                items.push({
+                                                    id: 'grid_k120q',
+                                                    description: 'grid_k120q'
+                                                });
+                                                items.push({
+                                                    id: 'grid_k140q',
+                                                    description: 'grid_k140q'
+                                                });
+                                                items.push({
+                                                    id: 'grid_k160q',
+                                                    description: 'grid_k160q'
+                                                });
+                                                items.push({
+                                                    id: 'grid_k180q',
+                                                    description: 'grid_k180q'
+                                                });
+                                                items.push({
+                                                    id: 'grid_k200',
+                                                    description: 'grid_k200'
+                                                });
+                                                items.push({
+                                                    id: 'grid_k220q',
+                                                    description: 'grid_k220q'
+                                                });
+                                                items.push({
+                                                    id: 'grid_k240q',
+                                                    description: 'grid_k240q'
+                                                });
+                                                items.push({
+                                                    id: 'grid_k260q',
+                                                    description: 'grid_k260q'
+                                                });
+                                                items.push({
+                                                    id: 'grid_k280q',
+                                                    description: 'grid_k280q'
+                                                });
+                                            }
+
                                             args.response.success({
                                                 data: items
                                             });
@@ -5631,5 +5747,32 @@
 
         return allowedActions;
     };
+
+    var getHypervisorTypes = function() {
+        var hypervisors = [];
+
+        $.ajax({
+            url: createURL('listHosts'),
+            data: {},
+            async: false,
+            success: function (json) {
+                var hosts = json.listhostsresponse.host;
+
+                if (hosts) {
+                    $.each(hosts, function(id, host) {
+                        if (host) {
+                            hypervisors.push(host.hypervisor);
+                        }
+                    });
+                }
+
+                args.response.success({
+                    data: hosts
+                });
+            }
+        });
+
+        return hypervisors;
+    }
 
 })(cloudStack, jQuery);

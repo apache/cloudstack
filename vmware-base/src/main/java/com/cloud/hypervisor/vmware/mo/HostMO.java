@@ -24,19 +24,30 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.apache.log4j.Logger;
+import org.apache.commons.collections.CollectionUtils;
+
+import com.cloud.agent.api.VgpuTypesInfo;
+import com.cloud.gpu.GPU;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.hypervisor.vmware.util.VmwareHelper;
+import com.cloud.utils.Pair;
 
 import com.google.gson.Gson;
+
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.ClusterDasConfigInfo;
 import com.vmware.vim25.ComputeResourceSummary;
+import com.vmware.vim25.ConfigTarget;
 import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatastoreSummary;
+import com.vmware.vim25.Description;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostConfigManager;
 import com.vmware.vim25.HostConnectInfo;
 import com.vmware.vim25.HostFirewallInfo;
 import com.vmware.vim25.HostFirewallRuleset;
+import com.vmware.vim25.HostGraphicsInfo;
 import com.vmware.vim25.HostHardwareSummary;
 import com.vmware.vim25.HostHyperThreadScheduleInfo;
 import com.vmware.vim25.HostIpConfig;
@@ -47,6 +58,7 @@ import com.vmware.vim25.HostNetworkPolicy;
 import com.vmware.vim25.HostNetworkSecurityPolicy;
 import com.vmware.vim25.HostNetworkTrafficShapingPolicy;
 import com.vmware.vim25.HostOpaqueNetworkInfo;
+import com.vmware.vim25.HostPciDevice;
 import com.vmware.vim25.HostPortGroup;
 import com.vmware.vim25.HostPortGroupSpec;
 import com.vmware.vim25.HostRuntimeInfo;
@@ -61,11 +73,13 @@ import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
+import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualMachineConfigSpec;
+import com.vmware.vim25.VirtualMachinePciPassthroughInfo;
 import com.vmware.vim25.VirtualNicManagerNetConfig;
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.hypervisor.vmware.util.VmwareHelper;
-import com.cloud.utils.Pair;
+import com.vmware.vim25.VirtualPCIPassthrough;
+import com.vmware.vim25.VirtualPCIPassthroughDeviceBackingInfo;
+import com.vmware.vim25.VirtualPCIPassthroughVmiopBackingInfo;
 
 public class HostMO extends BaseMO implements VmwareHypervisorHost {
     private static final Logger s_logger = Logger.getLogger(HostMO.class);
@@ -85,6 +99,14 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
         HostConnectInfo hostInfo = _context.getService().queryHostConnectionInfo(_mor);
         HostHardwareSummary hardwareSummary = hostInfo.getHost().getHardware();
         return hardwareSummary;
+    }
+
+    public List<HostGraphicsInfo> getHostGraphicsInfo() throws Exception {
+        return (List<HostGraphicsInfo>)_context.getVimClient().getDynamicProperty(_mor, "config.graphicsInfo");
+    }
+
+    public List<String> getHostSharedPassthruGpuTypes() throws Exception {
+        return (List<String>)_context.getVimClient().getDynamicProperty(_mor, "config.sharedPassthruGpuTypes");
     }
 
     public HostConfigManager getHostConfigManager() throws Exception {
@@ -1183,5 +1205,262 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
             Thread.sleep(1000);
         }
         return morNetwork;
+    }
+
+    public ManagedObjectReference getComputeResourceEnvironmentBrowser() throws Exception {
+        ManagedObjectReference morParent = getParentMor();
+        ClusterMO clusterMo = new ClusterMO(_context, morParent);
+        return clusterMo.getComputeResourceEnvironmentBrowser();
+    }
+
+    public VirtualMachinePciPassthroughInfo getHostPciDeviceInfo(final String pciDeviceId) throws Exception {
+        VirtualMachinePciPassthroughInfo matchingPciPassthroughDevice = null;
+        ConfigTarget configTarget = _context.getService().queryConfigTarget(getComputeResourceEnvironmentBrowser(), _mor);
+        List<VirtualMachinePciPassthroughInfo> pciPassthroughDevices = configTarget.getPciPassthrough();
+        for (VirtualMachinePciPassthroughInfo pciPassthroughDevice : pciPassthroughDevices) {
+            HostPciDevice hostPciDevice = pciPassthroughDevice.getPciDevice();
+            if (pciDeviceId.equals(hostPciDevice.getId())) {
+                matchingPciPassthroughDevice = pciPassthroughDevice;
+                break;
+            }
+        }
+        return matchingPciPassthroughDevice;
+    }
+
+    public VirtualDevice prepareSharedPciPassthroughDevice(final String vGpuProfile) {
+        s_logger.debug("Preparing shared PCI device");
+        VirtualPCIPassthrough virtualPciPassthrough = new VirtualPCIPassthrough();
+        VirtualPCIPassthroughVmiopBackingInfo virtualPCIPassthroughVmiopBackingInfo = new VirtualPCIPassthroughVmiopBackingInfo();
+        virtualPCIPassthroughVmiopBackingInfo.setVgpu(vGpuProfile);
+        virtualPciPassthrough.setBacking(virtualPCIPassthroughVmiopBackingInfo);
+        Description description = new Description();
+        description.setLabel("vGPU device");
+        description.setSummary("vGPU type: " + vGpuProfile);
+        virtualPciPassthrough.setDeviceInfo(description);
+        return virtualPciPassthrough;
+    }
+
+    public VirtualDevice prepareDirectPciPassthroughDevice(final VirtualMachinePciPassthroughInfo hostPciDeviceInfo) {
+        // Ex: pciDeviceId is like "0000:08:00.0" composed of bus,slot,function
+        s_logger.debug("Preparing direct PCI device");
+
+        VirtualPCIPassthrough pciDevice = new VirtualPCIPassthrough();
+        VirtualPCIPassthroughDeviceBackingInfo pciBacking = new VirtualPCIPassthroughDeviceBackingInfo();
+        pciBacking.setId(hostPciDeviceInfo.getPciDevice().getId());
+        pciBacking.setDeviceId(Integer.toHexString(hostPciDeviceInfo.getPciDevice().getDeviceId()));
+        pciBacking.setDeviceName(hostPciDeviceInfo.getPciDevice().getDeviceName());
+        pciBacking.setVendorId(hostPciDeviceInfo.getPciDevice().getVendorId());
+        pciBacking.setSystemId(hostPciDeviceInfo.getSystemId());
+        pciDevice.setBacking(pciBacking);
+        return pciDevice;
+    }
+
+    public String getPciIdForAvailableDirectPciPassthroughDevice() throws Exception {
+        String pciId = "";
+        List<HostGraphicsInfo> hostGraphicsInfos = getHostGraphicsInfo();
+        for (HostGraphicsInfo hostGraphicsInfo : hostGraphicsInfos) {
+            if (GPU.GPUType.direct.toString().equalsIgnoreCase(hostGraphicsInfo.getGraphicsType())) {
+                List<ManagedObjectReference> vms = hostGraphicsInfo.getVm();
+                if (CollectionUtils.isEmpty(vms)) {
+                    pciId = hostGraphicsInfo.getPciId();
+                    break;
+                }
+            }
+        }
+        return pciId;
+    }
+
+    /**
+     * It updates the info of each vGPU type in the NVidia GRID K1/K2 Card.
+     * @param gpuCapacity (The output is stored in this)
+     * @param groupName - (NVIDIAGRID K1 or NVIDIAGRID K2)
+     * @param countGridKSharedGPUs (Number of Enabled shared GPUs)
+     * @param graphicsInfo (Info regarding the card)
+     * @param sharedPassthruGpuTypes (All the enabled vGPU types)
+     * @param gridKGPUMemory (Video RAM of each GPU in the card)
+     * @throws Exception
+     */
+    private void updateGpuCapacities(final HashMap<String, VgpuTypesInfo> gpuCapacity, final String groupName, final long countGridKSharedGPUs, final List<HostGraphicsInfo> graphicsInfo, final List<String> sharedPassthruGpuTypes, final long gridKGPUMemory) throws Exception {
+        /*
+         * 0 - grid_k100 or grid_k200
+         * 1 - grid_k120q or grid_k220q
+         * 2 - grid_k140q or grid_k240q
+         * 3 - grid_k160q or grid_k260q
+         * 4 - grid_k180q or grid_k280q
+         */
+        final long remainingCapacities[] = new long[5];
+
+        remainingCapacities[0] = 8l * countGridKSharedGPUs;
+        remainingCapacities[1] = 8l * countGridKSharedGPUs;
+        remainingCapacities[2] = 4l * countGridKSharedGPUs;
+        remainingCapacities[3] = 2l * countGridKSharedGPUs;
+        remainingCapacities[4] = countGridKSharedGPUs;
+
+        for (final HostGraphicsInfo graphicInfo : graphicsInfo) {
+            if (graphicInfo.getDeviceName().equals(groupName) && graphicInfo.getGraphicsType().equals("shared")) {
+                if (CollectionUtils.isNotEmpty(graphicInfo.getVm())) {
+                    String vgpuType = "None";
+
+                    for (ManagedObjectReference mor : graphicInfo.getVm()) {
+                        final VirtualMachineMO vmMo = new VirtualMachineMO(_context, mor);
+
+                        if (vgpuType.equals("None") && vmMo != null && vmMo.getConfigInfo() != null && vmMo.getConfigInfo().getHardware() != null) {
+                            final List<VirtualDevice> devices = vmMo.getConfigInfo().getHardware().getDevice();
+
+                            for (VirtualDevice device : devices) {
+                                if (device instanceof VirtualPCIPassthrough) {
+                                    if (device.getBacking() != null && (device.getBacking() instanceof VirtualPCIPassthroughVmiopBackingInfo)) {
+                                        final VirtualPCIPassthroughVmiopBackingInfo backingInfo = (VirtualPCIPassthroughVmiopBackingInfo) device.getBacking();
+
+                                        if (backingInfo.getVgpu() != null) {
+                                            vgpuType = backingInfo.getVgpu();
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // If GRID K1, then search for only K1 vGPU types. Same for GRID K2.
+                    // The remaining capacity of one type affects other vGPU type capacity.
+                    // Each GPU should always contain one type of vGPU VMs.
+                    if ((groupName.equals("NVIDIAGRID K1") && vgpuType.equals("grid_k100")) || (groupName.equals("NVIDIAGRID K2") && vgpuType.equals("grid_k200"))) {
+                        remainingCapacities[0] -= ((long)graphicInfo.getVm().size());
+                        remainingCapacities[1] -= 8l;
+                        remainingCapacities[2] -= 4l;
+                        remainingCapacities[3] -= 2l;
+                        remainingCapacities[4] -= 1l;
+                    } else if ((groupName.equals("NVIDIAGRID K1") && vgpuType.equals("grid_k120q")) || (groupName.equals("NVIDIAGRID K2") && vgpuType.equals("grid_k220q"))) {
+                        remainingCapacities[0] -= 8l;
+                        remainingCapacities[1] -= ((long) graphicInfo.getVm().size());
+                        remainingCapacities[2] -= 4l;
+                        remainingCapacities[3] -= 2l;
+                        remainingCapacities[4] -= 1l;
+                    } else if ((groupName.equals("NVIDIAGRID K1") && vgpuType.equals("grid_k140q")) || (groupName.equals("NVIDIAGRID K2") && vgpuType.equals("grid_k240q"))) {
+                        remainingCapacities[0] -= 8l;
+                        remainingCapacities[1] -= 8l;
+                        remainingCapacities[2] -= ((long) graphicInfo.getVm().size());
+                        remainingCapacities[3] -= 2l;
+                        remainingCapacities[4] -= 1l;
+                    } else if ((groupName.equals("NVIDIAGRID K1") && vgpuType.equals("grid_k160q")) || (groupName.equals("NVIDIAGRID K2") && vgpuType.equals("grid_k260q"))) {
+                        remainingCapacities[0] -= 8l;
+                        remainingCapacities[1] -= 8l;
+                        remainingCapacities[2] -= 4l;
+                        remainingCapacities[3] -= ((long)graphicInfo.getVm().size());
+                        remainingCapacities[4] -= 1l;
+                    } else if ((groupName.equals("NVIDIAGRID K1") && vgpuType.equals("grid_k180q")) || (groupName.equals("NVIDIAGRID K2") && vgpuType.equals("grid_k280q"))) {
+                        remainingCapacities[0] -= 8l;
+                        remainingCapacities[1] -= 8l;
+                        remainingCapacities[2] -= 4l;
+                        remainingCapacities[3] -= 2l;
+                        remainingCapacities[4] -= ((long)graphicInfo.getVm().size());
+                    }
+                }
+            }
+        }
+
+        //Pattern.matches("grid_k100|grid_k1[2468]0[q]", gpuType)
+        for (final String gpuType : sharedPassthruGpuTypes) {
+            if ((groupName.equals("NVIDIAGRID K1") && gpuType.equals("grid_k100")) || (groupName.equals("NVIDIAGRID K2") && gpuType.equals("grid_k200"))) {
+                gpuCapacity.put(gpuType, new VgpuTypesInfo(groupName, gpuType, (gridKGPUMemory == 0l ? 268435456l : (gridKGPUMemory / 16l)), 2l, 1920l, 1200l, 8l, remainingCapacities[0], 8l * countGridKSharedGPUs));
+            } else if ((groupName.equals("NVIDIAGRID K1") && gpuType.equals("grid_k120q")) || (groupName.equals("NVIDIAGRID K2") && gpuType.equals("grid_k220q"))) {
+                gpuCapacity.put(gpuType, new VgpuTypesInfo(groupName, gpuType, (gridKGPUMemory == 0l ? 536870912l : (gridKGPUMemory / 8l)), 2l, 2560l, 1600l, 8l, remainingCapacities[1], 8l * countGridKSharedGPUs));
+            } else if ((groupName.equals("NVIDIAGRID K1") && gpuType.equals("grid_k140q")) || (groupName.equals("NVIDIAGRID K2") && gpuType.equals("grid_k240q"))) {
+                gpuCapacity.put(gpuType, new VgpuTypesInfo(groupName, gpuType, (gridKGPUMemory == 0l ? 1073741824l : (gridKGPUMemory / 4l)), 2l, 2560l, 1600l, 4l, remainingCapacities[2], 4l * countGridKSharedGPUs));
+            } else if ((groupName.equals("NVIDIAGRID K1") && gpuType.equals("grid_k160q")) || (groupName.equals("NVIDIAGRID K2") && gpuType.equals("grid_k260q"))) {
+                gpuCapacity.put(gpuType, new VgpuTypesInfo(groupName, gpuType, (gridKGPUMemory == 0l ? 2147483648l : (gridKGPUMemory / 2l)), 4l, 2560l, 1600l, 2l, remainingCapacities[3], 2l * countGridKSharedGPUs));
+            } else if ((groupName.equals("NVIDIAGRID K1") && gpuType.equals("grid_k180q")) || (groupName.equals("NVIDIAGRID K2") && gpuType.equals("grid_k280q"))) {
+                gpuCapacity.put(gpuType, new VgpuTypesInfo(groupName, gpuType, (gridKGPUMemory == 0l ? 4294967296l : gridKGPUMemory), 4l, 2560l, 1600l, 1l, remainingCapacities[4], countGridKSharedGPUs));
+            }
+        }
+    }
+
+    public HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUGroupDetails() throws Exception {
+        final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
+        final List<HostGraphicsInfo> graphicsInfo = getHostGraphicsInfo();
+        final List<String> sharedPassthruGpuTypes = getHostSharedPassthruGpuTypes();
+
+        if (CollectionUtils.isEmpty(graphicsInfo) || CollectionUtils.isEmpty(sharedPassthruGpuTypes)) {
+            return groupDetails;
+        }
+
+        long countGridK1DirectGPUs, countGridK1SharedGPUs;
+        long countGridK2DirectGPUs, countGridK2SharedGPUs;
+        long countUsedGridK1DirectGPUs, countUsedGridK2DirectGPUs;
+        long gridK1GPUMemory, gridK2GPUMemory;
+
+        countGridK1DirectGPUs = countGridK1SharedGPUs = 0l;
+        countGridK2DirectGPUs = countGridK2SharedGPUs = 0l;
+        countUsedGridK1DirectGPUs = countUsedGridK2DirectGPUs = 0l;
+        gridK1GPUMemory = gridK2GPUMemory = 0l;
+
+        for (final HostGraphicsInfo graphicInfo : graphicsInfo) {
+            if (graphicInfo.getDeviceName().equals("NVIDIAGRID K1")) {
+
+                // Only one time is enough, because all the GPUs of K1 cards will have same memory.
+                if (gridK1GPUMemory == 0l) {
+                    gridK1GPUMemory = (graphicInfo.getMemorySizeInKB()) * 1024l;
+                }
+
+                if (graphicInfo.getGraphicsType().equals("direct")) {
+                    countGridK1DirectGPUs++;
+
+                    if (graphicInfo.getVm().isEmpty() == false && graphicInfo.getVm().size() > 0) {
+                        countUsedGridK1DirectGPUs++;
+                    }
+                } else if (graphicInfo.getGraphicsType().equals("shared")) {
+                    countGridK1SharedGPUs++;
+                }
+            }
+
+            if (graphicInfo.getDeviceName().equals("NVIDIAGRID K2")) {
+
+                // Only one time is enough, because all the GPUs of K2 cards will have same memory.
+                if (gridK2GPUMemory == 0l) {
+                    gridK2GPUMemory = (graphicInfo.getMemorySizeInKB()) * 1024l;
+                }
+
+                if (graphicInfo.getGraphicsType().equals("direct")) {
+                    countGridK2DirectGPUs++;
+
+                    if (graphicInfo.getVm().isEmpty() == false && graphicInfo.getVm().size() > 0) {
+                        countUsedGridK2DirectGPUs++;
+                    }
+                } else if (graphicInfo.getGraphicsType().equals("shared")) {
+                    countGridK2SharedGPUs++;
+                }
+            }
+        }
+
+        if (countGridK1DirectGPUs > 0l || countGridK1SharedGPUs > 0l) {
+            final HashMap<String, VgpuTypesInfo> gpuCapacity = new HashMap<String, VgpuTypesInfo>();
+
+            if (countGridK1DirectGPUs > 0l) {
+                gpuCapacity.put("passthrough", new VgpuTypesInfo("NVIDIAGRID K1", "passthrough", (gridK1GPUMemory == 0l ? 4294967296l : gridK1GPUMemory) * countGridK1DirectGPUs, 0l, 0l, 0l, 1l, (countGridK1DirectGPUs - countUsedGridK1DirectGPUs), countGridK1DirectGPUs));
+            }
+
+            if (countGridK1SharedGPUs > 0l) {
+                updateGpuCapacities(gpuCapacity, "NVIDIAGRID K1", countGridK1SharedGPUs, graphicsInfo, sharedPassthruGpuTypes, gridK1GPUMemory);
+            }
+
+            groupDetails.put("NVIDIAGRID K1", gpuCapacity);
+        }
+
+        if (countGridK2DirectGPUs > 0l || countGridK2SharedGPUs > 0l) {
+            final HashMap<String, VgpuTypesInfo> gpuCapacity = new HashMap<String, VgpuTypesInfo>();
+
+            if (countGridK2DirectGPUs > 0l) {
+                gpuCapacity.put("passthrough", new VgpuTypesInfo("NVIDIAGRID K2", "passthrough", (gridK2GPUMemory == 0l ? 4294967296l : gridK2GPUMemory) * countGridK2DirectGPUs, 0l, 0l, 0l, 1l, (countGridK2DirectGPUs - countUsedGridK2DirectGPUs), countGridK2DirectGPUs));
+            }
+
+            if (countGridK2SharedGPUs > 0l) {
+                updateGpuCapacities(gpuCapacity, "NVIDIAGRID K2", countGridK2SharedGPUs, graphicsInfo, sharedPassthruGpuTypes, gridK2GPUMemory);
+            }
+
+            groupDetails.put("NVIDIAGRID K2", gpuCapacity);
+        }
+
+        return groupDetails;
     }
 }

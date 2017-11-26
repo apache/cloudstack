@@ -148,6 +148,8 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
+import com.cloud.gpu.dao.VGPUTypesDao;
+import com.cloud.gpu.dao.HostGpuGroupsDao;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.Host;
@@ -292,6 +294,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
     private GuestOSDao _guestOSDao;
+    @Inject
+    protected HostGpuGroupsDao _hostGpuGroupsDao;
+    @Inject
+    protected VGPUTypesDao _vgpuTypesDao;
     @Inject
     private ServiceOfferingDao _serviceOfferingDao;
     @Inject
@@ -2745,7 +2751,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 Network network = _networkModel.getNetwork(defaultNic.getNetworkId());
                 if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
                     final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
-                    boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
+                    boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
                     vmData = _networkModel.generateVmData(userVm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
                             vm.getUuid(), defaultNic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);

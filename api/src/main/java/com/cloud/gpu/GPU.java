@@ -32,7 +32,8 @@ public class GPU {
         GRID_K220Q("GRID K220Q"),
         GRID_K240Q("GRID K240Q"),
         GRID_K260("GRID K260Q"),
-        passthrough("passthrough");
+        passthrough("passthrough"),
+        direct("direct");
 
         private String type;
 
