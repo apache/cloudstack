@@ -135,8 +135,9 @@ public class VGPUTypesDaoImpl extends GenericDaoBase<VGPUTypesVO, Long> implemen
                 VGPUTypesVO vgpuType = null;
                 if ((vgpuType = findByGroupIdVGPUType(gpuGroup.getId(), record.getKey())) == null) {
                     persist(new VGPUTypesVO(gpuGroup.getId(), record.getKey(), details.getVideoRam(), details.getMaxHeads(), details.getMaxResolutionX(),
-                            details.getMaxResolutionY(), details.getMaxVpuPerGpu(), details.getRemainingCapacity(), details.getMaxCapacity()));
+                            details.getMaxResolutionY(), details.getMaxVgpuPerGpu(), details.getRemainingCapacity(), details.getMaxCapacity()));
                 } else {
+                    vgpuType.setVideoRam(details.getVideoRam());
                     vgpuType.setRemainingCapacity(details.getRemainingCapacity());
                     vgpuType.setMaxCapacity(details.getMaxCapacity());
                     update(vgpuType.getId(), vgpuType);

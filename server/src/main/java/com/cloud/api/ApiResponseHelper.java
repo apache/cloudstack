@@ -322,6 +322,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
@@ -1715,9 +1716,11 @@ public class ApiResponseHelper implements ResponseGenerator {
             long capacityMax = 0;
             for (VgpuTypesInfo capacity : gpuCapacities) {
                 if (vgpuVMs.containsKey(capacity.getGroupName().concat(capacity.getModelName()))) {
-                    capacityUsed += (float)vgpuVMs.get(capacity.getGroupName().concat(capacity.getModelName())) / capacity.getMaxVpuPerGpu();
+                    capacityUsed += (float)vgpuVMs.get(capacity.getGroupName().concat(capacity.getModelName())) / capacity.getMaxVgpuPerGpu();
                 }
                 if (capacity.getModelName().equals(GPU.GPUType.passthrough.toString())) {
+                    capacityMax += capacity.getMaxCapacity();
+                } else if (Pattern.matches("grid_k[12]80q", capacity.getModelName())) {//Only in case of VMware.
                     capacityMax += capacity.getMaxCapacity();
                 }
             }

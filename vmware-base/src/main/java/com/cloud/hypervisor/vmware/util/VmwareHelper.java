@@ -48,7 +48,6 @@ import com.vmware.vim25.VirtualCdromRemotePassthroughBackingInfo;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceBackingInfo;
 import com.vmware.vim25.VirtualDeviceConnectInfo;
-import com.vmware.vim25.VirtualUSBController;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDiskFlatVer1BackingInfo;
 import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
@@ -64,6 +63,7 @@ import com.vmware.vim25.VirtualEthernetCardOpaqueNetworkBackingInfo;
 import com.vmware.vim25.VirtualMachineConfigSpec;
 import com.vmware.vim25.VirtualMachineSnapshotTree;
 import com.vmware.vim25.VirtualPCNet32;
+import com.vmware.vim25.VirtualUSBController;
 import com.vmware.vim25.VirtualVmxnet2;
 import com.vmware.vim25.VirtualVmxnet3;
 
@@ -772,5 +772,4 @@ public class VmwareHelper {
     public static boolean isControllerOsRecommended(String dataDiskController) {
         return DiskControllerType.getType(dataDiskController) == DiskControllerType.osdefault;
     }
-
 }

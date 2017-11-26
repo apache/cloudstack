@@ -87,5 +87,6 @@ public interface VmwareHypervisorHost {
     ComputeResourceSummary getHyperHostHardwareSummary() throws Exception;
 
     LicenseAssignmentManagerMO getLicenseAssignmentManager() throws Exception;
+
     String getRecommendedDiskController(String guestOsId) throws Exception;
 }

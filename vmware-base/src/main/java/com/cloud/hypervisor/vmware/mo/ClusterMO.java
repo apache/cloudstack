@@ -30,7 +30,11 @@ import com.vmware.vim25.ArrayOfHostIpRouteEntry;
 import com.vmware.vim25.ArrayUpdateOperation;
 import com.vmware.vim25.ClusterComputeResourceSummary;
 import com.vmware.vim25.ClusterConfigInfoEx;
+import com.vmware.vim25.ClusterConfigSpecEx;
 import com.vmware.vim25.ClusterDasConfigInfo;
+import com.vmware.vim25.ClusterDasVmConfigInfo;
+import com.vmware.vim25.ClusterDasVmConfigSpec;
+import com.vmware.vim25.ClusterDasVmSettings;
 import com.vmware.vim25.ClusterDasVmSettingsRestartPriority;
 import com.vmware.vim25.ClusterHostRecommendation;
 import com.vmware.vim25.ComputeResourceSummary;
@@ -53,10 +57,6 @@ import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VirtualMachineConfigOption;
 import com.vmware.vim25.VirtualMachineConfigSpec;
-import com.vmware.vim25.ClusterDasVmConfigInfo;
-import com.vmware.vim25.ClusterDasVmConfigSpec;
-import com.vmware.vim25.ClusterDasVmSettings;
-import com.vmware.vim25.ClusterConfigSpecEx;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
@@ -702,12 +702,18 @@ public class ClusterMO extends BaseMO implements VmwareHypervisorHost {
         // LicenseAssignmentManager deals with only host/vcenter licenses only. Has nothing todo with cluster
         throw new CloudRuntimeException("Unable to get LicenseAssignmentManager at cluster level");
     }
+
     private ManagedObjectReference getEnvironmentBrowser() throws Exception {
         if (_environmentBrowser == null) {
             _environmentBrowser = _context.getVimClient().getMoRefProp(_mor, "environmentBrowser");
         }
         return _environmentBrowser;
     }
+
+    public ManagedObjectReference getComputeResourceEnvironmentBrowser() throws Exception {
+        return getEnvironmentBrowser();
+    }
+
     @Override
     public String getRecommendedDiskController(String guestOsId) throws Exception {
         VirtualMachineConfigOption vmConfigOption = _context.getService().queryConfigOption(getEnvironmentBrowser(), null, null);
