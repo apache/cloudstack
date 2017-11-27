@@ -22,6 +22,7 @@ package com.cloud.hypervisor.kvm.resource;
 import junit.framework.TestCase;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import com.cloud.utils.Pair;
 
 import java.io.File;
@@ -156,6 +157,15 @@ public class LibvirtVMDefTest extends TestCase {
         LibvirtVMDef.WatchDogDef def = new LibvirtVMDef.WatchDogDef(action, model);
         assertEquals(def.getModel(), model);
         assertEquals(def.getAction(), action);
+    }
+
+    public void testSCSIDef() {
+        SCSIDef def = new SCSIDef();
+        String str = def.toString();
+        String expected = "<controller type='scsi' index='0' model='virtio-scsi'>\n" +
+                "<address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>\n" +
+                "</controller>\n";
+        assertEquals(str, expected);
     }
 
 }
