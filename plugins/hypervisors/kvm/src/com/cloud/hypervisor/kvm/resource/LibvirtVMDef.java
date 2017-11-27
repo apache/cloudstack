@@ -1333,13 +1333,13 @@ public class LibvirtVMDef {
         public String toString() {
             StringBuilder scsiBuilder = new StringBuilder();
 
-            scsiBuilder.append(String.format("<controller type='scsi' index='%d' mode='virtio-scsi'>\n", this.index ));
+            scsiBuilder.append(String.format("<controller type='scsi' index='%d' model='virtio-scsi'>\n", this.index ));
             scsiBuilder.append(String.format("<address type='pci' domain='0x%04X' bus='0x%02X' slot='0x%02X' function='0x%01X'/>\n",
                     this.domain, this.bus, this.slot, this.function ) );
             if(this.queues > 0) {
                 scsiBuilder.append(String.format("<driver queues='%d'/>\n", this.queues));
             }
-            scsiBuilder.append("</controller>");
+            scsiBuilder.append("</controller>\n");
             return scsiBuilder.toString();
         }
     }
