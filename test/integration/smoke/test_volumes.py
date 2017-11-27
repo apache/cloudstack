@@ -866,7 +866,7 @@ class TestVolumes(cloudstackTestCase):
                 listall=True
             )
 
-            if list_volume_response[0].virtualsize is not None:
+            if isinstance(list_volume_response, list) and list_volume_response[0].virtualsize is not None:
                 return True, list_volume_response[0]
             return False, None
 
