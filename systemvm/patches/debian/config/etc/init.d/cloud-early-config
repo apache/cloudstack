@@ -5,8 +5,8 @@
 # Required-Stop:     $local_fs
 # Should-Start:      
 # Should-Stop:       
-# Default-Start:     S
-# Default-Stop:      0 6
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
 # Short-Description: configure according to cmdline
 ### END INIT INFO
 # Licensed to the Apache Software Foundation (ASF) under one

@@ -21,6 +21,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import junit.framework.TestCase;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import com.cloud.utils.Pair;
 
 public class LibvirtVMDefTest extends TestCase {
@@ -116,6 +117,15 @@ public class LibvirtVMDefTest extends TestCase {
         assertTrue((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7));
         hostOsVersion = new Pair<Integer,Integer>(7,1);
         assertTrue((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7));
+    }
+
+    public void testSCSIDef() {
+        SCSIDef def = new SCSIDef();
+        String str = def.toString();
+        String expected = "<controller type='scsi' index='0' model='virtio-scsi'>\n" +
+                "<address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>\n" +
+                "</controller>\n";
+        assertEquals(str, expected);
     }
 
 }

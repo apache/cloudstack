@@ -2016,7 +2016,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         // If we're using virtio scsi, then we need to add a virtual scsi controller
         if (busT == DiskDef.DiskBus.SCSI) {
-            final SCSIDef sd = new SCSIDef((short)0, 0, 0, 9, 0);
+            int queues = getVirtioSCSIDriverQueuesFromVMDetail(vmTO);
+            final SCSIDef sd = new SCSIDef((short)0, 0, 0, 9, 0, queues);
             devices.addDevice(sd);
         }
 
@@ -2941,6 +2942,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
         return null;
+    }
+
+    public int getVirtioSCSIDriverQueuesFromVMDetail(final VirtualMachineTO vmTO) {
+        Map<String, String> details = vmTO.getDetails();
+        String queueStr = details.get(VmDetailConstants.VIRTIO_SCSI_DRIVER_QUEUES);
+        int queues = 0;
+        if (queueStr != null) {
+            try {
+                queues = Integer.parseInt(queueStr);
+            } catch(NumberFormatException nfe) {}
+        }
+        return queues;
     }
 
     private DiskDef.DiskBus getGuestDiskModel(final String platformEmulator) {
