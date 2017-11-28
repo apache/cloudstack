@@ -49,6 +49,7 @@ tools/marvin/marvin/cloudstackAPI/
 tools/marvin/build/
 tools/cli/build/
 *.jar
+!.mvn/wrapper/maven-wrapper.jar
 *.war
 *.mar
 *.iso

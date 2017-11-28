@@ -17,22 +17,24 @@ Install tools and dependencies used for development:
     $ yum install git ant ant-devel java-1.6.0-openjdk java-1.6.0-openjdk-devel
     mysql mysql-server mkisofs gcc python MySQL-python openssh-clients wget
 
-    # yum -y update
-    # yum -y install java-1.7.0-openjdk
-    # yum -y install java-1.7.0-openjdk-devel
-    # yum -y install mysql-server
-    # yum -y install git
-    # yum -y install genisoimage
+    $ yum -y update
+    $ yum -y install java-1.7.0-openjdk
+    $ yum -y install java-1.7.0-openjdk-devel
+    $ yum -y install mysql-server
+    $ yum -y install git
+    $ yum -y install genisoimage
 
 Set up Maven (3.0.5):
 
-    # wget http://www.us.apache.org/dist/maven/maven-3/3.0.5/binaries/apache-maven-3.0.5-bin.tar.gz
-    # tar -zxvf apache-maven-3.0.5-bin.tar.gz -C /usr/local
-    # cd /usr/local
-    # ln -s apache-maven-3.0.5 maven
-    # echo export M2_HOME=/usr/local/maven >> ~/.bashrc # or .zshrc or .profile
-    # echo export PATH=/usr/local/maven/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
-    # source ~/.bashrc
+    $ wget http://www.us.apache.org/dist/maven/maven-3/3.0.5/binaries/apache-maven-3.0.5-bin.tar.gz
+    $ tar -zxvf apache-maven-3.0.5-bin.tar.gz -C /usr/local
+    $ cd /usr/local
+    $ ln -s apache-maven-3.0.5 maven
+    $ echo export M2_HOME=/usr/local/maven >> ~/.bashrc # or .zshrc or .profile
+    $ echo export PATH=/usr/local/maven/bin:${PATH} >> ~/.bashrc # or .zshrc or .profile
+    $ source ~/.bashrc
+
+*N.B.* Since 4.0.11 we're using [Maven Wrapper](https://github.com/takari/maven-wrapper) and you don't need to install Maven on dev/CI machine.
 
 Start the MySQL service:
 
@@ -40,16 +42,15 @@ Start the MySQL service:
 
 ### Using jenv and/or pyenv for Version Management
 
-CloudStack is built using Java and Python.  To make selection of these tools versions more consistent and ease installation for developers, optional support for [jenv](http://www.jenv.be/) and [pyenv](https://github.com/yyuu/pyenv) with [virtualenv]|(https://github.com/yyuu/pyenv-virtualenv) is provided.  jenv installation instructions are available here and pyenv installation instructions are available here.  For users of [oh-my-zsh](http://ohmyz.sh/) there is a pyenv plugin available to trigger configuration of pyenv in a shell session.
+CloudStack is built using Java and Python.  To make selection of these tools versions more consistent and ease installation for developers, optional support for [jenv](http://www.jenv.be/) and [pyenv](https://github.com/yyuu/pyenv) with [virtualenv](https://github.com/yyuu/pyenv-virtualenv) is provided.  jenv installation instructions are available here and pyenv installation instructions are available here.  For users of [oh-my-zsh](http://ohmyz.sh/) there is a pyenv plugin available to trigger configuration of pyenv in a shell session.
 
 Following installation, execute the following commands to configure jenv and pyenv for use with CloudStack development:
 
-'''
-  # pyenv install 2.7.11                                          # Install Python 2.7.11
-  # pyenv virtualenv 2.7.11 cloudstack                            # Create a cloidstack virtualenv using Python 2.7.11
-  # pip install -r <root CloudStack source tree>/requirements.txt # Install cloudstack Python dependencies
-  # jenv add <path to JDK 1.7 installation>                       # Add Java7 to jenv
-'''
+    $ pyenv install 2.7.11                                          # Install Python 2.7.11
+    $ pyenv virtualenv 2.7.11 cloudstack                            # Create a cloidstack virtualenv using Python 2.7.11
+    $ pip install -r <root CloudStack source tree>/requirements.txt # Install cloudstack Python dependencies
+    $ jenv add <path to JDK 1.7 installation>                       # Add Java7 to jenv
+
 
 *N.B.* If you are running Linux, you may need to install additional packages to allow pyenv to build Python.
 
@@ -72,11 +73,11 @@ To checkout a specific branch, for example 4.4, do:
 
 Clean and build:
 
-    $ mvn clean install -P systemvm,developer
+    $ ./mvnw clean install -P systemvm,developer
 
 Clear old database (if any) and deploy the database schema:
 
-    $ mvn -P developer -pl developer -Ddeploydb
+    $ ./mvnw -P developer -pl developer -Ddeploydb
 
 Export the following variable if you need to run and debug the management server:
 
@@ -84,7 +85,7 @@ Export the following variable if you need to run and debug the management server
 
 Start the management server:
 
-    $ mvn -pl :cloud-client-ui jetty:run
+    $ ./mvnw -pl :cloud-client-ui jetty:run
 
 If this works, you've successfully setup a single server Apache CloudStack installation.
 
@@ -112,7 +113,7 @@ releases of CloudStack
 
 To build all non redistributable components, add the noredist flag to the build command:
 
-    $ mvn clean install -P systemvm,developer -Dnoredist
+    $ ./mvnw clean install -P systemvm,developer -Dnoredist
 
 ## Packaging and Installation
 
@@ -122,12 +123,12 @@ Before packaging, please make sure you go through the "Building" section above. 
 
 To create debs install the following extra packages:
 
-    # apt-get -y install python-mysqldb
-    # apt-get -y install debhelper
+    $ apt-get -y install python-mysqldb
+    $ apt-get -y install debhelper
 
 Then:
 
-    $ mvn -P deps # -D noredist, for noredist as described in the "Building" section above
+    $ ./mvnw -P deps # -D noredist, for noredist as described in the "Building" section above
     $ dpkg-buildpackage -uc -us
 
 All the deb packages will be located one level down.
@@ -136,11 +137,11 @@ All the deb packages will be located one level down.
 
 To create rpms, install the following extra packages:
 
-    # yum -y install rpm-build
-    # yum -y install ws-commons-util
-    # yum -y instal gcc
-    # yum -y install glibc-devel
-    # yum -y install MySQL-python
+    $ yum -y install rpm-build
+    $ yum -y install ws-commons-util
+    $ yum -y instal gcc
+    $ yum -y install glibc-devel
+    $ yum -y install MySQL-python
 
 Then:
 
