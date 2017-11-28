@@ -155,6 +155,13 @@ class TestDeployVmRootSize(cloudstackTestCase):
                 Configurations.update(cls.api_client,
                                               "vmware.root.disk.controller",
                                               value=cls.defaultdiskcontroller)
+                StoragePool.update(cls.api_client, id=cls.storageID,
+                                   tags="")
+                cls.restartServer()
+
+                #Giving 30 seconds to management to warm-up,
+                #Experienced failures when trying to deploy a VM exactly when management came up
+                time.sleep(30)
 
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:

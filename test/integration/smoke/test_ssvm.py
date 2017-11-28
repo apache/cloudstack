@@ -75,7 +75,7 @@ class TestSSVMs(cloudstackTestCase):
         return
 
     def waitForSystemVMAgent(self, vmname):
-        timeout = self.services["timeout"]
+        timeout = 120
 
         while True:
             list_host_response = list_hosts(
@@ -89,7 +89,7 @@ class TestSSVMs(cloudstackTestCase):
             if timeout == 0:
                 raise Exception("Timed out waiting for SSVM agent to be Up")
 
-            time.sleep(self.services["sleep"])
+            time.sleep(1)
             timeout = timeout - 1
 
     @attr(
@@ -798,7 +798,7 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = cpvm.id
         self.apiclient.stopSystemVm(cmd)
 
-        timeout = self.services["timeout"]
+        timeout = 120
         while True:
             list_cpvm_response = list_ssvms(
                 self.apiclient,
@@ -810,7 +810,7 @@ class TestSSVMs(cloudstackTestCase):
             if timeout == 0:
                 raise Exception("List CPVM call failed!")
 
-            time.sleep(self.services["sleep"])
+            time.sleep(1)
             timeout = timeout - 1
 
         cpvm_response = list_cpvm_response[0]
