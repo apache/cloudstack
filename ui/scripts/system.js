@@ -39,7 +39,7 @@
             router.guestnetworkname = router.vpcname;
         }
 
-        if ("isredundantrouter" in router && router.isredundantrouter) {
+        if (router.isredundantrouter) {
             router.guestnetworkname = router.guestnetworkname + " (" + router.redundantstate + ")";
         }
 
@@ -2180,6 +2180,12 @@
                         },
                         isolationmethods: {
                             label: 'label.isolation.method'
+                        },
+                        vlan: {
+                            label: 'label.vlan'
+                        },
+                        broadcastdomainrange: {
+                            label: 'label.broadcast.domain.range'
                         }
                     },
 
@@ -9205,6 +9211,14 @@
                                         data: data,
                                         success: function (json) {
                                             var systemvmObjs = json.listsystemvmsresponse.systemvm;
+                                            $(systemvmObjs).each(function(idx, item) {
+                                                var controlIp = item.linklocalip;
+                                                if (item.hypervisor == "VMware") {
+                                                    var controlIp = item.privateip;
+                                                }
+                                                item.controlip = controlIp;
+                                            });
+
                                             if (systemvmObjs != undefined) {
                                                 $.ajax({
                                                     url: createURL('listHosts'),
@@ -9585,16 +9599,19 @@
                                     label: 'label.name'
                                 },
                                 publicip: {
-                                    label: 'label.public.ip'
+                                    label: 'label.ip'
                                 },
-                                account: {
-                                    label: 'label.account'
+                                routerType: {
+                                    label: 'label.type'
                                 },
                                 guestnetworkname: {
                                     label: 'label.network'
                                 },
-                                routerType: {
-                                    label: 'label.type'
+                                account: {
+                                    label: 'label.account'
+                                },
+                                hostname: {
+                                    label: 'label.host'
                                 },
                                 state: {
                                     converter: function (str) {
@@ -10975,6 +10992,12 @@
                                 return "Secondary Storage VM"; else
                                 return args;
                             }
+                        },
+                        controlip: {
+                            label: 'label.control.ip'
+                        },
+                        hostname: {
+                            label: 'label.host'
                         },
                         zonename: {
                             label: 'label.zone'
@@ -13293,12 +13316,19 @@
                         netmask: {
                             label: 'label.netmask'
                         },
+                        zonename: {
+                            label: 'label.zone'
+                        },
                         allocationstate: {
                             converter: function (str) {
                                 // For localization
                                 return str;
                             },
-                            label: 'label.allocation.state'
+                            label: 'label.allocation.state',
+                            indicator: {
+                                'Enabled': 'on',
+                                'Disabled': 'off'
+                            }
                         }
                     },
 
@@ -13934,23 +13964,27 @@
                         name: {
                             label: 'label.name'
                         },
-                        podname: {
-                            label: 'label.pod'
-                        },
                         hypervisortype: {
                             label: 'label.hypervisor'
                         },
-                        //allocationstate: { label: 'label.allocation.state' },
-                        //managedstate: { label: 'Managed State' },
+                        zonename: {
+                            label: 'label.zone'
+                        },
+                        podname: {
+                            label: 'label.pod'
+                        },
+                        managedstate: {
+                            label: 'label.managed.state'
+                        },
                         allocationstate: {
                             converter: function (str) {
                                 // For localization
                                 return str;
                             },
-                            label: 'label.state',
+                            label: 'label.allocation.state',
                             indicator: {
                                 'Enabled': 'on',
-                                'Destroyed': 'off'
+                                'Disabled': 'off'
                             }
                         }
                     },
@@ -15487,14 +15521,25 @@
                         name: {
                             label: 'label.name'
                         },
+                        ipaddress: {
+                            label: 'label.ip.address'
+                        },
+                        hypervisor: {
+                            label: 'label.hypervisor'
+                        },
                         zonename: {
                             label: 'label.zone'
                         },
-                        podname: {
-                            label: 'label.pod'
-                        },
                         clustername: {
                             label: 'label.cluster'
+                        },
+                        resourcestate: {
+                            label: 'label.resource.state',
+                            indicator: {
+                                'Enabled': 'on',
+                                'Disabled': 'off',
+                                'Maintenance': 'warning'
+                            }
                         },
                         state: {
                             label: 'label.state',
@@ -17497,12 +17542,34 @@
                             label: 'label.path',
                             truncate: true
                         },
+                        type: {
+                            label: 'label.type'
+                        },
+                        scope: {
+                            label: 'label.scope'
+                        },
                         clustername: {
                             label: 'label.cluster',
                             truncate: true
                         },
-                        scope: {
-                            label: 'label.scope'
+                        zonename: {
+                            label: 'label.zone'
+                        },
+                        state: {
+                            label: 'label.state',
+                            converter: function (str) {
+                                // For localization
+                                return str;
+                            },
+                            indicator: {
+                                'Up': 'on',
+                                'Down': 'off',
+                                'Removed': 'off',
+                                'ErrorInMaintenance': 'off',
+                                'PrepareForMaintenance': 'warning',
+                                'CancelMaintenance': 'warning',
+                                'Maintenance': 'warning',
+                            }
                         }
                     },
 
@@ -19492,8 +19559,17 @@
                                 name: {
                                     label: 'label.name'
                                 },
+                                url: {
+                                    label: 'label.url'
+                                },
                                 protocol: {
                                     label: 'label.protocol'
+                                },
+                                scope: {
+                                    label: 'label.scope'
+                                },
+                                zonename: {
+                                    label: 'label.zone'
                                 }
                             },
 

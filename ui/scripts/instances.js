@@ -17,6 +17,153 @@
 (function($, cloudStack) {
     var vmMigrationHostObjs, ostypeObjs;
 
+    var vmStopAction = function(args) {
+        var action = {
+            messages: {
+                confirm: function(args) {
+                    return 'message.action.stop.instance';
+                },
+                notification: function(args) {
+                    return 'label.action.stop.instance';
+                }
+            },
+            label: 'label.action.stop.instance',
+            compactLabel: 'label.stop',
+            addRow: 'false',
+            createForm: {
+                title: 'notification.stop.instance',
+                desc: 'message.action.stop.instance',
+                fields: {
+                    forced: {
+                        label: 'force.stop',
+                        isBoolean: true,
+                        isChecked: false
+                    }
+                }
+            },
+            action: function(args) {
+                var instances = args.context.instances;
+                $(instances).map(function(index, instance) {
+                    var data = {
+                        id: instance.id,
+                        forced: (args.data.forced == "on")
+                    };
+                    $.ajax({
+                        url: createURL("stopVirtualMachine"),
+                        data: data,
+                        dataType: "json",
+                        success: function(json) {
+                            var jid = json.stopvirtualmachineresponse.jobid;
+                            args.response.success({
+                                _custom: {
+                                    jobId: jid,
+                                    getUpdatedItem: function(json) {
+                                        return $.extend(json.queryasyncjobresultresponse.jobresult.virtualmachine, { hostid: null });
+                                    },
+                                    getActionFilter: function() {
+                                        return vmActionfilter;
+                                    }
+                                }
+                            });
+                        },
+                        error: function(json) {
+                            args.response.error(parseXMLHttpResponse(json));
+                        }
+                    });
+                });
+            },
+            notification: {
+                poll: pollAsyncJobResult
+            }
+        };
+
+
+        if (args && args.listView) {
+            $.extend(action, {
+                isHeader: true,
+                isMultiSelectAction: true
+            });
+        }
+
+        return action;
+    };
+
+    var vmDestroyAction = function(args) {
+        var action = {
+            messages: {
+                notification: function(args) {
+                    return 'label.action.destroy.instance';
+                }
+            },
+            label: 'label.action.destroy.instance',
+            compactLabel: 'label.destroy',
+            addRow: 'false',
+            createForm: {
+                title: 'label.action.destroy.instance',
+                desc: 'label.action.destroy.instance',
+                isWarning: true,
+                preFilter: function(args) {
+                    if (! g_allowUserExpungeRecoverVm) {
+                        args.$form.find('.form-item[rel=expunge]').hide();
+                    }
+                },
+                fields: {
+                    expunge: {
+                        label: 'label.expunge',
+                        isBoolean: true,
+                        isChecked: false
+                    }
+                }
+            },
+            action: function(args) {
+                var instances = args.context.instances;
+                $(instances).map(function(index, instance) {
+                    var data = {
+                        id: instance.id
+                    };
+                    if (args.data.expunge == 'on') {
+                        $.extend(data, {
+                            expunge: true
+                        });
+                    }
+                    $.ajax({
+                        url: createURL('destroyVirtualMachine'),
+                        data: data,
+                        success: function(json) {
+                            var jid = json.destroyvirtualmachineresponse.jobid;
+                            args.response.success({
+                                _custom: {
+                                    jobId: jid,
+                                    getUpdatedItem: function(json) {
+                                        if ('virtualmachine' in json.queryasyncjobresultresponse.jobresult) //destroy without expunge
+                                            return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                                        else //destroy with expunge
+                                            return { 'toRemove': true };
+                                    },
+                                    getActionFilter: function() {
+                                        return vmActionfilter;
+                                    }
+                                }
+                            });
+                        }
+                    });
+                });
+            },
+            notification: {
+                poll: pollAsyncJobResult
+            }
+        };
+
+        if (args && args.listView) {
+            $.extend(action, {
+                isHeader: true,
+                isMultiSelectAction: true
+            });
+        }
+
+        return action;
+    };
+
     var vmSnapshotAction = function(args) {
         var action = {
             messages: {
@@ -162,6 +309,7 @@
                 var hiddenFields = [];
                 if (!isAdmin()) {
                     hiddenFields.push('instancename');
+                    hiddenFields.push('account');
                 }
                 return hiddenFields;
             },
@@ -180,16 +328,26 @@
                 ipaddress: {
                     label: 'label.ip.address'
                 },
+                account: {
+                    label: 'label.account'
+                },
                 zonename: {
                     label: 'label.zone.name'
                 },
                 state: {
-                    label: 'label.state',
+                    label: 'label.metrics.state',
+                    converter: function (str) {
+                        // For localization
+                        return str;
+                    },
                     indicator: {
                         'Running': 'on',
                         'Stopped': 'off',
+                        'Error': 'off',
                         'Destroyed': 'off',
-                        'Error': 'off'
+                        'Expunging': 'off',
+                        'Stopping': 'warning',
+                        'Shutdowned': 'warning'
                     }
                 }
             },
@@ -304,6 +462,8 @@
                         poll: pollAsyncJobResult
                     }
                 },
+                stop: vmStopAction({ listView: true}),
+                destroy: vmDestroyAction({ listView: true }),
                 snapshot: vmSnapshotAction({ listView: true }),
                 viewMetrics: {
                     label: 'label.metrics',
@@ -683,55 +843,7 @@
                             poll: pollAsyncJobResult
                         }
                     },
-                    stop: {
-                        label: 'label.action.stop.instance',
-                        compactLabel: 'label.stop',
-                        createForm: {
-                            title: 'notification.stop.instance',
-                            desc: 'message.action.stop.instance',
-                            fields: {
-                                forced: {
-                                    label: 'force.stop',
-                                    isBoolean: true,
-                                    isChecked: false
-                                }
-                            }
-                        },
-                        action: function(args) {
-                            var array1 = [];
-                            array1.push("&forced=" + (args.data.forced == "on"));
-                            $.ajax({
-                                url: createURL("stopVirtualMachine&id=" + args.context.instances[0].id + array1.join("")),
-                                dataType: "json",
-                                async: true,
-                                success: function(json) {
-                                    var jid = json.stopvirtualmachineresponse.jobid;
-                                    args.response.success({
-                                        _custom: {
-                                            jobId: jid,
-                                            getUpdatedItem: function(json) {
-                                                return $.extend(json.queryasyncjobresultresponse.jobresult.virtualmachine, { hostid: null });
-                                            },
-                                            getActionFilter: function() {
-                                                return vmActionfilter;
-                                            }
-                                        }
-                                    });
-                                }
-                            });
-                        },
-                        messages: {
-                            confirm: function(args) {
-                                return 'message.action.stop.instance';
-                            },
-                            notification: function(args) {
-                                return 'label.action.stop.instance';
-                            }
-                        },
-                        notification: {
-                            poll: pollAsyncJobResult
-                        }
-                    },
+                    stop: vmStopAction(),
                     restart: {
                         label: 'label.action.reboot.instance',
                         compactLabel: 'label.reboot',
@@ -775,66 +887,7 @@
                         }
                     },
                     snapshot: vmSnapshotAction(),
-                    destroy: {
-                        label: 'label.action.destroy.instance',
-                        compactLabel: 'label.destroy',
-                        createForm: {
-                            title: 'label.action.destroy.instance',
-                            desc: 'label.action.destroy.instance',
-                            isWarning: true,
-                            preFilter: function(args) {
-                                if (! g_allowUserExpungeRecoverVm) {
-                                    args.$form.find('.form-item[rel=expunge]').hide();
-                                }
-                            },
-                            fields: {
-                                expunge: {
-                                    label: 'label.expunge',
-                                    isBoolean: true,
-                                    isChecked: false
-                                }
-                            }
-                        },
-                        messages: {
-                            notification: function(args) {
-                                return 'label.action.destroy.instance';
-                            }
-                        },
-                        action: function(args) {
-                            var data = {
-                                id: args.context.instances[0].id
-                            };
-                            if (args.data.expunge == 'on') {
-                                $.extend(data, {
-                                    expunge: true
-                                });
-                            }
-                            $.ajax({
-                                url: createURL('destroyVirtualMachine'),
-                                data: data,
-                                success: function(json) {
-                                    var jid = json.destroyvirtualmachineresponse.jobid;
-                                    args.response.success({
-                                        _custom: {
-                                            jobId: jid,
-                                            getUpdatedItem: function(json) {
-                                                if ('virtualmachine' in json.queryasyncjobresultresponse.jobresult) //destroy without expunge
-                                                    return json.queryasyncjobresultresponse.jobresult.virtualmachine;
-                                                else //destroy with expunge
-                                                    return { 'toRemove': true };
-                                            },
-                                            getActionFilter: function() {
-                                                return vmActionfilter;
-                                            }
-                                        }
-                                    });
-                                }
-                            });
-                        },
-                        notification: {
-                            poll: pollAsyncJobResult
-                        }
-                    },
+                    destroy: vmDestroyAction(),
                     expunge: {
                         label: 'label.action.expunge.instance',
                         compactLabel: 'label.expunge',
