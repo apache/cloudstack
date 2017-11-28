@@ -21,6 +21,7 @@ package com.cloud.hypervisor.kvm.resource;
 
 import junit.framework.TestCase;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
 import com.cloud.utils.Pair;
 
 public class LibvirtVMDefTest extends TestCase {
