@@ -57,6 +57,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -845,18 +846,23 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
         if (passedPhysicalNetworkId != null) {
             physicalNetworkId = Optional.of(passedPhysicalNetworkId);
         } else if (zoneId != null) {
-            physicalNetworkId = Optional.of(getPhysicalNetworkBasedOnZone(zoneId));
+            physicalNetworkId = Optional.ofNullable(getPhysicalNetworkBasedOnZone(zoneId));
         } else {
             throw new InvalidParameterValueException("No zoneid or physicalnetworkid specified.");
         }
 
-        List<VspDomainTemplate> domainTemplates;
+        if (!physicalNetworkId.isPresent()) {
+            return new LinkedList<>();
+        }
+
+        Long hostId = getNuageVspHostId(physicalNetworkId.get());
+        if (hostId == null) {
+            return new LinkedList<>();
+        }
 
         ListVspDomainTemplatesCommand agentCmd = new ListVspDomainTemplatesCommand(vspDomain, keyword);
-        Long hostId = getNuageVspHostId(physicalNetworkId.get());
-
         ListVspDomainTemplatesAnswer answer = (ListVspDomainTemplatesAnswer) _agentMgr.easySend(hostId, agentCmd);
-        domainTemplates = answer.getDomainTemplates();
+        List<VspDomainTemplate> domainTemplates = answer.getDomainTemplates();
 
         return domainTemplates.stream()
                        .map(NuageVspManagerImpl::createDomainTemplateResponse)
@@ -926,6 +932,10 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     @Override
     public boolean entityExist(EntityExistsCommand cmd, Long physicalNetworkId){
         Long hostId = getNuageVspHostId(physicalNetworkId);
+        if (hostId == null) {
+            throw new CloudRuntimeException("There is no Nuage VSP device configured on physical network " + physicalNetworkId);
+        }
+
         Answer answer = _agentMgr.easySend(hostId, cmd);
         if (answer != null) {
             return answer.getResult();
@@ -1168,7 +1178,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
             return config.getHostId();
         }
 
-        throw new CloudRuntimeException("There is no Nuage VSP device configured on physical network " + physicalNetworkId);
+        return null;
     }
 
     @DB

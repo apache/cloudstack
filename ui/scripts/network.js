@@ -5245,65 +5245,66 @@
                                                 args.context.domainTemplateMap = [];
                                                 args.context.globalDomainTemplateUsed = [];
                                             }
-                                                $.ajax({
-                                                    url: createURL('listNuageVspDomainTemplates'),
-                                                    dataType: "json",
-                                                    data: {
-                                                        zoneid: args.zoneid
-                                                    },
-                                                    async: true,
-                                                    success: function (json) {
-                                                        $.ajax({
-                                                            url: createURL('listNuageVspGlobalDomainTemplate'),
-                                                            dataType: "json",
-                                                            data: {
-                                                                name: "nuagevsp.vpc.domaintemplate.name"
-                                                            },
-                                                            async: true,
-                                                            success: function(PDTjson){
-                                                                var domaintemplates = json.listnuagevspdomaintemplatesresponse.domaintemplates ? json.listnuagevspdomaintemplatesresponse.domaintemplates : [];
-                                                                var preConfiguredDomainTemplate = PDTjson.listnuagevspglobaldomaintemplateresponse.count == 1 ? PDTjson.listnuagevspglobaldomaintemplateresponse.domaintemplates[0].name : "";
 
-                                                                if (!domaintemplates.length) {
-                                                                    args.$form.find("[rel=nuageusedomaintemplate]").hide();
-                                                                }
+                                            $.ajax({
+                                                url: createURL('listNuageVspDomainTemplates'),
+                                                dataType: "json",
+                                                data: {
+                                                    zoneid: args.zoneid
+                                                },
+                                                async: true,
+                                                error: function(XMLHttpRequest, textStatus, errorThrown) {
+                                                    args.response.success({});
+                                                },
+                                                success: function (json) {
+                                                    $.ajax({
+                                                        url: createURL('listNuageVspGlobalDomainTemplate'),
+                                                        dataType: "json",
+                                                        data: {
+                                                            name: "nuagevsp.vpc.domaintemplate.name"
+                                                        },
+                                                        async: true,
+                                                        success: function(PDTjson){
+                                                            var domaintemplates = json.listnuagevspdomaintemplatesresponse.domaintemplates ? json.listnuagevspdomaintemplatesresponse.domaintemplates : [];
+                                                            var preConfiguredDomainTemplate = PDTjson.listnuagevspglobaldomaintemplateresponse.count == 1 ? PDTjson.listnuagevspglobaldomaintemplateresponse.domaintemplates[0].name : "";
 
-                                                                var index = -1;
-                                                                $.each(domaintemplates, function(key,value) {
-                                                                    if (preConfiguredDomainTemplate == value.name) {
-                                                                        index = key;
-                                                                    }
-                                                                });
-
-                                                                //Set global pre configured DT as the default by placing it to the top of the drop down list.
-                                                                if (index != -1) {
-                                                                    domaintemplates.unshift(domaintemplates[index]);
-                                                                    domaintemplates.splice(index + 1, 1);
-                                                                    args.$form.find("[rel=nuageusedomaintemplate]").show();
-                                                                    args.$form.find("[rel=nuagedomaintemplatelist]").show();
-                                                                    args.$form.find("[rel=nuageusedomaintemplate]").find("input").attr('checked', true);
-                                                                    args.context.globalDomainTemplateUsed[args.zoneid] = true;
-                                                                } else {
-                                                                    args.context.globalDomainTemplateUsed[args.zoneid] = false;
-                                                                }
-
-                                                                args.context.domainTemplateMap[args.zoneid] = domaintemplates;
-                                                                args.response.success({
-                                                                    data: $.map(domaintemplates, function (dt) {
-                                                                        return {
-                                                                            id: dt.name,
-                                                                            description: dt.description
-                                                                        };
-                                                                    })
-                                                                });
+                                                            if (!domaintemplates.length) {
+                                                                args.$form.find("[rel=nuageusedomaintemplate]").hide();
                                                             }
-                                                        });
 
-                                                    }
-                                                });
+                                                            var index = -1;
+                                                            $.each(domaintemplates, function(key,value) {
+                                                                if (preConfiguredDomainTemplate == value.name) {
+                                                                    index = key;
+                                                                }
+                                                            });
 
-                                            //}
+                                                            //Set global pre configured DT as the default by placing it to the top of the drop down list.
+                                                            if (index != -1) {
+                                                                domaintemplates.unshift(domaintemplates[index]);
+                                                                domaintemplates.splice(index + 1, 1);
+                                                                args.$form.find("[rel=nuageusedomaintemplate]").show();
+                                                                args.$form.find("[rel=nuagedomaintemplatelist]").show();
+                                                                args.$form.find("[rel=nuageusedomaintemplate]").find("input").attr('checked', true);
+                                                                args.context.globalDomainTemplateUsed[args.zoneid] = true;
+                                                            } else {
+                                                                args.context.globalDomainTemplateUsed[args.zoneid] = false;
+                                                            }
 
+                                                            args.context.domainTemplateMap[args.zoneid] = domaintemplates;
+                                                            args.response.success({
+                                                                data: $.map(domaintemplates, function (dt) {
+                                                                    return {
+                                                                        id: dt.name,
+                                                                        description: dt.description
+                                                                    };
+                                                                })
+                                                            });
+                                                        }
+                                                    });
+
+                                                }
+                                            });
                                         }
 
                                     }
