@@ -18,13 +18,10 @@
  */
 package com.cloud.hypervisor.xenserver.resource;
 
-import javax.ejb.Local;
-
 import org.apache.cloudstack.hypervisor.xenserver.XenServerResourceNewBase;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.cloud.resource.ServerResource;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.StorageSubsystemCommandHandlerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -34,7 +31,6 @@ import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.VM;
 
-@Local(value=ServerResource.class)
 public class Xenserver625Resource extends XenServerResourceNewBase {
 
     private static final Logger s_logger = Logger.getLogger(Xenserver625Resource.class);

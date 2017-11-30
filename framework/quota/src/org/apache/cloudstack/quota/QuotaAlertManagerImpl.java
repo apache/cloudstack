@@ -16,6 +16,37 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
+import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.mail.Authenticator;
+import javax.mail.Message;
+import javax.mail.MessagingException;
+import javax.mail.PasswordAuthentication;
+import javax.mail.Session;
+import javax.mail.URLName;
+import javax.mail.internet.InternetAddress;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
+import org.apache.cloudstack.quota.constant.QuotaConfig.QuotaEmailTemplateTypes;
+import org.apache.cloudstack.quota.dao.QuotaAccountDao;
+import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
+import org.apache.cloudstack.quota.vo.QuotaAccountVO;
+import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
+import org.apache.commons.lang3.text.StrSubstitutor;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
@@ -31,40 +62,8 @@ import com.google.common.base.Strings;
 import com.sun.mail.smtp.SMTPMessage;
 import com.sun.mail.smtp.SMTPSSLTransport;
 import com.sun.mail.smtp.SMTPTransport;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.quota.constant.QuotaConfig;
-import org.apache.cloudstack.quota.constant.QuotaConfig.QuotaEmailTemplateTypes;
-import org.apache.cloudstack.quota.dao.QuotaAccountDao;
-import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
-import org.apache.cloudstack.quota.dao.QuotaUsageDao;
-import org.apache.cloudstack.quota.vo.QuotaAccountVO;
-import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
-import org.apache.commons.lang3.text.StrSubstitutor;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.mail.Authenticator;
-import javax.mail.Message;
-import javax.mail.MessagingException;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.URLName;
-import javax.mail.internet.InternetAddress;
-import javax.naming.ConfigurationException;
-import java.io.UnsupportedEncodingException;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 
 @Component
-@Local(value = QuotaAlertManager.class)
 public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertManager {
     private static final Logger s_logger = Logger.getLogger(QuotaAlertManagerImpl.class);
 
@@ -80,8 +79,6 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
     private QuotaEmailTemplatesDao _quotaEmailTemplateDao;
     @Inject
     private ConfigurationDao _configDao;
-    @Inject
-    private QuotaUsageDao _quotaUsage;
     @Inject
     private QuotaManager _quotaManager;
 
@@ -154,7 +151,9 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             BigDecimal thresholdBalance = quotaAccount.getQuotaMinBalance();
             if (accountBalance != null) {
                 AccountVO account = _accountDao.findById(quotaAccount.getId());
-                if (account == null) continue; // the account is removed
+                if (account == null) {
+                    continue; // the account is removed
+                }
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("checkAndSendQuotaAlertEmails: Check id=" + account.getId() + " bal=" + accountBalance + ", alertDate=" + alertDate + ", lockable=" + lockable);
                 }
@@ -186,6 +185,7 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
         }
     }
 
+    @Override
     public void sendQuotaAlert(DeferredQuotaEmail emailToBeSent) {
         final AccountVO account = emailToBeSent.getAccount();
         final BigDecimal balance = emailToBeSent.getQuotaBalance();
@@ -221,8 +221,8 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
             }
 
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("accountName" + account.getAccountName() + "accountID" + account.getUuid() + "accountUsers" + userNames + "domainName" + accountDomain.getName()
-                        + "domainID" + accountDomain.getUuid());
+                s_logger.debug("accountName" + account.getAccountName() + "accountID" + account.getUuid() + "accountUsers" + userNames + "domainName" + accountDomain.getName() + "domainID"
+                        + accountDomain.getUuid());
             }
 
             final StrSubstitutor templateEngine = new StrSubstitutor(optionMap);
@@ -232,15 +232,14 @@ public class QuotaAlertManagerImpl extends ManagerBase implements QuotaAlertMana
                 _emailQuotaAlert.sendQuotaAlert(emailRecipients, subject, body);
                 emailToBeSent.sentSuccessfully(_quotaAcc);
             } catch (Exception e) {
-                s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body,
-                        account.getAccountName(), account.getUuid(), emailRecipients, e));
+                s_logger.error(String.format("Unable to send quota alert email (subject=%s; body=%s) to account %s (%s) recipients (%s) due to error (%s)", subject, body, account.getAccountName(),
+                        account.getUuid(), emailRecipients, e));
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Exception", e);
                 }
             }
         } else {
-            s_logger.error(String.format("No quota email template found for type %s, cannot send quota alert email to account %s(%s)", emailType, account.getAccountName(),
-                    account.getUuid()));
+            s_logger.error(String.format("No quota email template found for type %s, cannot send quota alert email to account %s(%s)", emailType, account.getAccountName(), account.getUuid()));
         }
     }
 

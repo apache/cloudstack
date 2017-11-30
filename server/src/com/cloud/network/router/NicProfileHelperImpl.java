@@ -19,7 +19,6 @@ package com.cloud.network.router;
 
 import java.net.URI;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
@@ -43,7 +42,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 
-@Local(value = {NicProfileHelper.class})
 public class NicProfileHelperImpl implements NicProfileHelper {
 
     @Inject

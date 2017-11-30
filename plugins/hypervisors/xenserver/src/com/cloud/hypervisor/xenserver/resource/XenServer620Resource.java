@@ -18,19 +18,15 @@ package com.cloud.hypervisor.xenserver.resource;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
-
 import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.StartupRoutingCommand;
-import com.cloud.resource.ServerResource;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.HostPatch;
 import com.xensource.xenapi.PoolPatch;
 
-@Local(value = ServerResource.class)
 public class XenServer620Resource extends XenServer610Resource {
 
     private static final Logger s_logger = Logger.getLogger(XenServer620Resource.class);

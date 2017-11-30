@@ -21,7 +21,6 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.dao.RoleDao;
@@ -53,7 +52,6 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.google.common.base.Strings;
 
-@Local(value = {RoleService.class})
 public class RoleManagerImpl extends ManagerBase implements RoleService, Configurable, PluggableService {
     @Inject
     private AccountDao accountDao;

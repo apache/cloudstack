@@ -18,12 +18,11 @@ package org.apache.cloudstack.quota.dao;
 
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.quota.vo.ServiceOfferingVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-import org.apache.cloudstack.quota.vo.ServiceOfferingVO;
 
 import com.cloud.event.UsageEventVO;
 import com.cloud.utils.db.DB;
@@ -35,7 +34,6 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
-@Local(value = {ServiceOfferingDao.class})
 @DB()
 public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Long> implements ServiceOfferingDao {
     protected static final Logger s_logger = Logger.getLogger(ServiceOfferingDaoImpl.class);
@@ -43,6 +41,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     @Inject
     UserVmDetailsDao userVmDetailsDao;
 
+    @Override
     public ServiceOfferingVO findServiceOffering(final Long vmId, final long serviceOfferingId) {
         return Transaction.execute(TransactionLegacy.CLOUD_DB, new TransactionCallback<ServiceOfferingVO>() {
             @Override
