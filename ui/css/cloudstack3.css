@@ -96,7 +96,7 @@ a:hover {
 
 /*Table*/
 table {
-  width: 940px;
+  width: 955px;
   max-width: 977px;
   margin: 15px 15px 12px 12px;
   font-size: 13px;
@@ -1307,7 +1307,6 @@ div.panel div.list-view {
 
 div.panel div.list-view div.data-table table {
   width: 955px;
-  margin-top: 44px;
 }
 
 .detail-view div.list-view div.data-table table {
