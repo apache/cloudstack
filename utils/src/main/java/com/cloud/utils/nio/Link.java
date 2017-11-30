@@ -32,6 +32,8 @@ import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -462,7 +464,7 @@ public class Link {
         return buffer;
     }
 
-    public static ByteBuffer handleBufferUnderflow(final SSLEngine engine, ByteBuffer buffer) {
+    public static ByteBuffer handleBufferUnderflow(final SSLEngine engine, final ByteBuffer buffer) {
         if (engine == null || buffer == null) {
             return buffer;
         }
@@ -475,14 +477,14 @@ public class Link {
         return replaceBuffer;
     }
 
-    private static boolean doHandshakeUnwrap(final SocketChannel socketChannel, final SSLEngine sslEngine,
+    private static HandshakeHolder doHandshakeUnwrap(final SocketChannel socketChannel, final SSLEngine sslEngine,
                                              ByteBuffer peerAppData, ByteBuffer peerNetData, final int appBufferSize) throws IOException {
         if (socketChannel == null || sslEngine == null || peerAppData == null || peerNetData == null || appBufferSize < 0) {
-            return false;
+            return new HandshakeHolder(peerAppData, peerNetData, false);
         }
         if (socketChannel.read(peerNetData) < 0) {
             if (sslEngine.isInboundDone() && sslEngine.isOutboundDone()) {
-                return false;
+                return new HandshakeHolder(peerAppData, peerNetData, false);
             }
             try {
                 sslEngine.closeInbound();
@@ -492,7 +494,7 @@ public class Link {
             sslEngine.closeOutbound();
             // After closeOutbound the engine will be set to WRAP state,
             // in order to try to send a close message to the client.
-            return true;
+            return new HandshakeHolder(peerAppData, peerNetData, true);
         }
         peerNetData.flip();
         SSLEngineResult result = null;
@@ -503,7 +505,10 @@ public class Link {
             s_logger.error(String.format("SSL error caught during unwrap data: %s, for local address=%s, remote address=%s. The client may have invalid ca-certificates.",
                     sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
-            return false;
+            return new HandshakeHolder(peerAppData, peerNetData, true);
+        }
+        if (result == null) {
+            return new HandshakeHolder(peerAppData, peerNetData, false);
         }
         switch (result.getStatus()) {
             case OK:
@@ -519,23 +524,23 @@ public class Link {
                 break;
             case CLOSED:
                 if (sslEngine.isOutboundDone()) {
-                    return false;
+                    return new HandshakeHolder(peerAppData, peerNetData, false);
                 } else {
                     sslEngine.closeOutbound();
-                    break;
                 }
+                break;
             default:
                 throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
         }
-        return true;
+        return new HandshakeHolder(peerAppData, peerNetData, true);
     }
 
-    private static boolean doHandshakeWrap(final SocketChannel socketChannel, final SSLEngine sslEngine,
+    private static HandshakeHolder doHandshakeWrap(final SocketChannel socketChannel, final SSLEngine sslEngine,
                                            ByteBuffer myAppData, ByteBuffer myNetData, ByteBuffer peerNetData,
                                            final int netBufferSize) throws IOException {
         if (socketChannel == null || sslEngine == null || myNetData == null || peerNetData == null
                 || myAppData == null || netBufferSize < 0) {
-            return false;
+            return new HandshakeHolder(myAppData, myNetData, false);
         }
         myNetData.clear();
         SSLEngineResult result = null;
@@ -545,7 +550,10 @@ public class Link {
             s_logger.error(String.format("SSL error caught during wrap data: %s, for local address=%s, remote address=%s.",
                     sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
-            return false;
+            return new HandshakeHolder(myAppData, myNetData, true);
+        }
+        if (result == null) {
+            return new HandshakeHolder(myAppData, myNetData, false);
         }
         switch (result.getStatus()) {
             case OK :
@@ -579,10 +587,10 @@ public class Link {
             default:
                 throw new IllegalStateException("Invalid SSL status: " + result.getStatus());
         }
-        return true;
+        return new HandshakeHolder(myAppData, myNetData, true);
     }
 
-    public static boolean doHandshake(final SocketChannel socketChannel, final SSLEngine sslEngine, final boolean isClient) throws IOException {
+    public static boolean doHandshake(final SocketChannel socketChannel, final SSLEngine sslEngine) throws IOException {
         if (socketChannel == null || sslEngine == null) {
             return false;
         }
@@ -593,6 +601,7 @@ public class Link {
         ByteBuffer myNetData = ByteBuffer.allocate(netBufferSize);
         ByteBuffer peerNetData = ByteBuffer.allocate(netBufferSize);
 
+        final Executor executor = Executors.newSingleThreadExecutor();
         final long startTimeMills = System.currentTimeMillis();
 
         HandshakeStatus handshakeStatus = sslEngine.getHandshakeStatus();
@@ -606,12 +615,17 @@ public class Link {
             }
             switch (handshakeStatus) {
                 case NEED_UNWRAP:
-                    if (!doHandshakeUnwrap(socketChannel, sslEngine, peerAppData, peerNetData, appBufferSize)) {
+                    final HandshakeHolder unwrapResult = doHandshakeUnwrap(socketChannel, sslEngine, peerAppData, peerNetData, appBufferSize);
+                    peerAppData = unwrapResult.getAppDataBuffer();
+                    peerNetData = unwrapResult.getNetDataBuffer();
+                    if (!unwrapResult.isSuccess()) {
                         return false;
                     }
                     break;
                 case NEED_WRAP:
-                    if (!doHandshakeWrap(socketChannel, sslEngine,  myAppData, myNetData, peerNetData, netBufferSize)) {
+                    final HandshakeHolder wrapResult = doHandshakeWrap(socketChannel, sslEngine,  myAppData, myNetData, peerNetData, netBufferSize);
+                    myNetData = wrapResult.getNetDataBuffer();
+                    if (!wrapResult.isSuccess()) {
                         return false;
                     }
                     break;
@@ -621,7 +635,7 @@ public class Link {
                         if (s_logger.isTraceEnabled()) {
                             s_logger.trace("SSL: Running delegated task!");
                         }
-                        task.run();
+                        executor.execute(task);
                     }
                     break;
                 case FINISHED:
@@ -634,6 +648,30 @@ public class Link {
             handshakeStatus = sslEngine.getHandshakeStatus();
         }
         return true;
+    }
+
+    private static class HandshakeHolder {
+        private ByteBuffer appData;
+        private ByteBuffer netData;
+        private boolean success = true;
+
+        HandshakeHolder(ByteBuffer appData, ByteBuffer netData, boolean success) {
+            this.appData = appData;
+            this.netData = netData;
+            this.success = success;
+        }
+
+        ByteBuffer getAppDataBuffer() {
+            return appData;
+        }
+
+        ByteBuffer getNetDataBuffer() {
+            return netData;
+        }
+
+        boolean isSuccess() {
+            return success;
+        }
     }
 
 }

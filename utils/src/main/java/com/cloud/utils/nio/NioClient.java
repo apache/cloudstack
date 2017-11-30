@@ -61,7 +61,7 @@ public class NioClient extends NioConnection {
             sslEngine.setUseClientMode(true);
             sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
             sslEngine.beginHandshake();
-            if (!Link.doHandshake(_clientConnection, sslEngine, true)) {
+            if (!Link.doHandshake(_clientConnection, sslEngine)) {
                 s_logger.error("SSL Handshake failed while connecting to host: " + _host + " port: " + _port);
                 _selector.close();
                 throw new IOException("SSL Handshake failed while connecting to host: " + _host + " port: " + _port);
