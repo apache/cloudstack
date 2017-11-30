@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 from __builtin__ import False
-""" BVT tests for Hosts Maintenance
+""" Tests for Secondary Storage with Local Storage
 """
 
 # Import Local Modules
