@@ -66,7 +66,6 @@ class TestSecSRMount(cloudstackTestCase):
                          "sleep": 30,
                          "timeout": 10,
                          }
-        
 
     def tearDown(self):
         try:
@@ -78,10 +77,9 @@ class TestSecSRMount(cloudstackTestCase):
 
         return
 
-
     def isOnlyLocalStorageAvailable(self):
-        if not(self.zone.localstorageenabled):
-            return False
+        if not self.zone.localstorageenabled:
+            self.skipTest("Local Storage not enabled")
         
         storage_pools = StoragePool.list(
                    self.apiclient,
@@ -99,22 +97,51 @@ class TestSecSRMount(cloudstackTestCase):
             
         return True
 
-    def areDownloaded(self, id):
-        # Fetch details of templates copied from table in database
-        qresultset = self.dbclient.execute(
-            "SELECT template_id, download_state FROM cloud.template_spool_ref, cloud.vm_template where \
-            cloud.template_spool_ref.template_id=cloud.vm_template.id and cloud.vm_template.uuid='%s';" %
-            id)
-        self.logger.debug("Qresult %s" % format(qresultset))
-        if not isinstance(qresultset, list) or len(qresultset) <= 1:
-            return False, 1
-        
-        for result in qresultset:
-            self.logger.debug('Template %s download status %s' % (result[0], result[1])) 
-            if result[1] != 'DOWNLOADED':
-                return False, 1
-            
-        return True, 1
+    def download(self, apiclient, template_id, retries=12, interval=5):
+        """Check if template download will finish in 1 minute"""
+        while retries > -1:
+            time.sleep(interval)
+            template_response = Template.list(
+                apiclient,
+                id=template_id,
+                zoneid=self.zone.id,
+                templatefilter='self'
+            )
+
+            if isinstance(template_response, list):
+                template = template_response[0]
+                if not hasattr(template, 'status') or not template or not template.status:
+                    retries = retries - 1
+                    continue
+
+                # If template is ready,
+                # template.status = Download Complete
+                # Downloading - x% Downloaded
+                # if Failed
+                # Error - Any other string
+                if 'Failed' in template.status:
+                    raise Exception(
+                        "Failed to download template: status - %s" %
+                        template.status)
+
+                elif template.status == 'Download Complete' and template.isready:
+                    return
+
+                elif 'Downloaded' in template.status:
+                    retries = retries - 1
+                    continue
+
+                elif 'Installing' not in template.status:
+                    if retries >= 0:
+                        retries = retries - 1
+                        continue
+                    raise Exception(
+                        "Error in downloading template: status - %s" %
+                        template.status)
+
+            else:
+                retries = retries - 1
+        raise Exception("Template download failed exception.")
 
     @attr(
         tags=[
@@ -123,9 +150,8 @@ class TestSecSRMount(cloudstackTestCase):
         required_hardware="true")
     def test_01_prepare_template_local_storage(self):
     
-        if not(self.isOnlyLocalStorageAvailable()):
-            raise unittest.SkipTest("Skipping this test as this is for Local storage on only.");
-            return
+        if not self.isOnlyLocalStorageAvailable():
+            self.skipTest("Skipping this test as this is for Local storage on only.")
         
         listHost = Host.list(
             self.apiclient,
@@ -138,8 +164,7 @@ class TestSecSRMount(cloudstackTestCase):
                   
         if len(listHost) < 2:
             self.logger.debug("Prepare secondary storage race condition can be tested with two or more host only %s, found" % len(listHost));
-            raise unittest.SkipTest("Prepare secondary storage can be tested with two host only %s, found" % len(listHost));
-            return
+            self.skipTest("Prepare secondary storage can be tested with two host only %s, found" % len(listHost))
         
         list_template_response = Template.list(
                                             self.apiclient,
@@ -151,9 +176,8 @@ class TestSecSRMount(cloudstackTestCase):
         self.logger.debug('Template id %s is Ready %s' % (template_response.id, template_response.isready))
         
         if template_response.isready != True:
-            raise unittest.SkipTest('Template id %s is Not Ready' % (template_response.id));
-            
-        
+            self.skipTest('Template id %s is Not Ready' % (template_response.id))
+
         try:
             cmd = prepareTemplate.prepareTemplateCmd()
             cmd.zoneid = self.zone.id
@@ -162,9 +186,6 @@ class TestSecSRMount(cloudstackTestCase):
             self.logger.debug('Prepare Template result %s' % result)
         except Exception as e:
            raise Exception("Warning: Exception during prepare template : %s" % e)
-    
-        downloadStatus = wait_until(self.services['sleep'], self.services['timeout'], self.areDownloaded, template_response.id)
-        if not(downloadStatus): 
-            raise Exception("Prepare template failed to download template to primary stores or is taking longer than expected")
-                  
+
+        self.download(self.apiclient, template_response.id)
         return
