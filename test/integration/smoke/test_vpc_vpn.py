@@ -21,7 +21,8 @@ from marvin.codes import PASS, FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (validateList,
                               cleanup_resources,
-                              get_process_status)
+                              get_process_status,
+                              wait_until)
 
 from marvin.lib.base import (Domain,
                              Account,
@@ -184,7 +185,7 @@ class Services:
             },
             "vpn": {
                 "vpn_user": "root",
-                "vpn_pass": "Md1s#dc",
+                "vpn_pass": "Md1sdc",
                 "vpn_pass_fail": "abc!123",  # too short
                 "iprange": "10.3.2.1-10.3.2.10",
                 "fordisplay": "true"
@@ -757,8 +758,19 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
             self.apiclient, customer2_response.id, vpn1_response['id'])
         self.debug("VPN connection created for VPC %s" % vpc1.id)
 
-        self.assertEqual(
-            vpnconn2_response['state'], "Connected", "Failed to connect between VPCs!")
+        def checkVpnConnected():
+            connections = Vpn.listVpnConnection(
+                self.apiclient,
+                listall='true',
+                vpcid=vpc2.id)
+            if isinstance(connections, list):
+                return connections[0].state == 'Connected', None
+            return False, None
+
+        # Wait up to 60 seconds for passive connection to show up as Connected
+        res, _ = wait_until(2, 30, checkVpnConnected)
+        if not res:
+            self.fail("Failed to connect between VPCs, see VPN state as Connected")
 
         # acquire an extra ip address to use to ssh into vm2
         try:
@@ -793,9 +805,9 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         if ssh_client:
             # run ping test
-            packet_loss = ssh_client.execute(
-                "/bin/ping -c 3 -t 10 " + vm1.nic[0].ipaddress + " |grep packet|cut -d ' ' -f 7| cut -f1 -d'%'")[0]
-            self.assert_(int(packet_loss) == 0, "Ping did not succeed")
+            packet_loss = ssh_client.execute("/bin/ping -c 3 -t 10 " + vm1.nic[0].ipaddress + " | grep packet | sed 's/.*received, //g' | sed 's/[% ]*packet.*//g'")[0]
+            # during startup, some packets may not reply due to link/ipsec-route setup
+            self.assert_(int(packet_loss) < 50, "Ping did not succeed")
         else:
             self.fail("Failed to setup ssh connection to %s" % vm2.public_ip)
 

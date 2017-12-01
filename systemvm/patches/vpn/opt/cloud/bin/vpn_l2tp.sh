@@ -87,15 +87,15 @@ iptables_() {
 }
 
 start_ipsec() {
-  service ipsec status > /dev/null
+  systemctl is-active ipsec > /dev/null
   if [ $? -ne 0 ]
   then
-    service ipsec start > /dev/null
+    systemctl start ipsec > /dev/null
     #Wait until ipsec started, 5 seconds at most
     for i in {1..5}
     do
       logger -t cloud "$(basename $0): waiting ipsec start..."
-      service ipsec status > /dev/null
+      systemctl is-active ipsec > /dev/null
       result=$?
       if [ $result -eq 0 ]
       then
@@ -104,7 +104,7 @@ start_ipsec() {
       sleep 1
     done
   fi
-  service ipsec status > /dev/null
+  systemctl is-active ipsec > /dev/null
   return $?
 }
 
@@ -112,14 +112,14 @@ ipsec_server() {
    local op=$1
    case $op in
        "start")     start_ipsec
-                    sudo service xl2tpd start
+                    sudo systemctl start xl2tpd
                     ;;
-        "stop")     sudo service xl2tpd stop
+        "stop")     sudo systemctl stop xl2tpd
                     ;;
         "restart")  start_ipsec
                     sudo ipsec auto --rereadall
-                    service xl2tpd stop
-                    service xl2tpd start
+                    systemctl stop xl2tpd
+                    systemctl start xl2tpd
                     ;;
    esac
 }
@@ -131,7 +131,7 @@ create_l2tp_ipsec_vpn_server() {
    local local_ip=$4
 
    sed -i -e "s/left=.*$/left=$public_ip/" /etc/ipsec.d/l2tp.conf
-   echo ": PSK \"$ipsec_psk\"" > /etc/ipsec.d/ipsec.any.secrets
+   echo "$public_ip %any : PSK \"$ipsec_psk\"" > /etc/ipsec.d/ipsec.any.secrets
    sed -i -e "s/^ip range = .*$/ip range = $client_range/"  /etc/xl2tpd/xl2tpd.conf
    sed -i -e "s/^local ip = .*$/local ip = $local_ip/"  /etc/xl2tpd/xl2tpd.conf
 

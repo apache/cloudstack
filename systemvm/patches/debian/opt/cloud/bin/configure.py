@@ -546,10 +546,6 @@ class CsSite2SiteVpn(CsDataBag):
         ikepolicy=obj['ike_policy'].replace(';','-')
         esppolicy=obj['esp_policy'].replace(';','-')
 
-        pfs='no'
-        if 'modp' in esppolicy:
-            pfs='yes'
-
         if rightpeer in self.confips:
             self.confips.remove(rightpeer)
         file = CsFile(vpnconffile)
@@ -557,7 +553,6 @@ class CsSite2SiteVpn(CsDataBag):
         file.search("conn ", "conn vpn-%s" % rightpeer)
         file.addeq(" left=%s" % leftpeer)
         file.addeq(" leftsubnet=%s" % obj['local_guest_cidr'])
-        file.addeq(" leftnexthop=%s" % obj['local_public_gateway'])
         file.addeq(" right=%s" % rightpeer)
         file.addeq(" rightsubnet=%s" % peerlist)
         file.addeq(" type=tunnel")
@@ -567,9 +562,8 @@ class CsSite2SiteVpn(CsDataBag):
         file.addeq(" ikelifetime=%s" % self.convert_sec_to_h(obj['ike_lifetime']))
         file.addeq(" esp=%s" % esppolicy)
         file.addeq(" lifetime=%s" % self.convert_sec_to_h(obj['esp_lifetime']))
-        file.addeq(" pfs=%s" % pfs)
         file.addeq(" keyingtries=2")
-        file.addeq(" auto=start")
+        file.addeq(" auto=route")
         if 'encap' not in obj:
             obj['encap']=False
         file.addeq(" forceencaps=%s" % CsHelper.bool_to_yn(obj['encap']))
@@ -585,9 +579,19 @@ class CsSite2SiteVpn(CsDataBag):
             logging.info("Configured vpn %s %s", leftpeer, rightpeer)
             CsHelper.execute("ipsec rereadsecrets")
 
-        # This will load the new config and start the connection when needed since auto=start in the config
+        # This will load the new config
         CsHelper.execute("ipsec reload")
         os.chmod(vpnsecretsfile, 0400)
+
+        for i in xrange(3):
+            result = CsHelper.execute('ipsec status vpn-%s | grep "%s"' % (rightpeer, peerlist.split(",", 1)[0]))
+            if len(result) > 0:
+                break
+            time.sleep(1)
+
+        # With 'auto=route', connections are established on an attempt to
+        # communicate over the S2S VPN. This uses ping to initialize the connection.
+        CsHelper.execute("timeout 5 ping -c 3 %s" % (peerlist.split("/", 1)[0].replace(".0", ".1")))
 
     def convert_sec_to_h(self, val):
         hrs = int(val) / 3600
@@ -658,6 +662,7 @@ class CsRemoteAccessVpn(CsDataBag):
         self.confips = []
 
         logging.debug(self.dbag)
+
         for public_ip in self.dbag:
             if public_ip == "id":
                 continue
@@ -665,12 +670,13 @@ class CsRemoteAccessVpn(CsDataBag):
 
             #Enable remote access vpn
             if vpnconfig['create']:
+                shutdownIpsec = False
                 logging.debug("Enabling  remote access vpn  on "+ public_ip)
 
                 dev = CsHelper.get_device(public_ip)
                 if dev == "":
-                        logging.error("Request for ipsec to %s not possible because ip is not configured", public_ip)
-                        continue
+                    logging.error("Request for ipsec to %s not possible because ip is not configured", public_ip)
+                    continue
 
                 CsHelper.start_if_stopped("ipsec")
                 self.configure_l2tpIpsec(public_ip, self.dbag[public_ip])
@@ -682,7 +688,6 @@ class CsRemoteAccessVpn(CsDataBag):
                 CsHelper.execute("ipsec rereadsecrets")
             else:
                 logging.debug("Disabling remote access vpn .....")
-                #disable remote access vpn
                 CsHelper.execute("ipsec down L2TP-PSK")
                 CsHelper.execute("systemctl stop xl2tpd")
 
@@ -693,7 +698,6 @@ class CsRemoteAccessVpn(CsDataBag):
         xl2tpdconffile="/etc/xl2tpd/xl2tpd.conf"
         xl2tpoptionsfile='/etc/ppp/options.xl2tpd'
 
-        file = CsFile(l2tpconffile)
         localip=obj['local_ip']
         localcidr=obj['local_cidr']
         publicIface=obj['public_interface']
@@ -701,13 +705,13 @@ class CsRemoteAccessVpn(CsDataBag):
         psk=obj['preshared_key']
 
         #left
-        file.addeq(" left=%s" % left)
-        file.commit()
-
+        l2tpfile = CsFile(l2tpconffile)
+        l2tpfile.addeq(" left=%s" % left)
+        l2tpfile.commit()
 
         secret = CsFile(vpnsecretfilte)
         secret.empty()
-        secret.addeq(": PSK \"%s\"" %psk)
+        secret.addeq("%s %%any : PSK \"%s\"" % (left, psk))
         secret.commit()
 
         xl2tpdconf = CsFile(xl2tpdconffile)
@@ -730,6 +734,8 @@ class CsRemoteAccessVpn(CsDataBag):
         self.fw.append(["", "", "-A INPUT -i %s --dst %s -p udp -m udp --dport 1701 -j ACCEPT" % (publicdev, publicip)])
         self.fw.append(["", "", "-A INPUT -i %s -p ah -j ACCEPT" % publicdev])
         self.fw.append(["", "", "-A INPUT -i %s -p esp -j ACCEPT" % publicdev])
+        self.fw.append(["", "", "-A OUTPUT -p ah -j ACCEPT"])
+        self.fw.append(["", "", "-A OUTPUT -p esp -j ACCEPT"])
 
         if self.config.is_vpc():
             self.fw.append(["", ""," -N VPN_FORWARD"])

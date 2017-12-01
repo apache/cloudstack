@@ -50,8 +50,6 @@ echo $processname >> $configFile
 echo $service_name >> $configFile
 echo $pidfile >> $configFile
 
-
-
 done
 
 }
