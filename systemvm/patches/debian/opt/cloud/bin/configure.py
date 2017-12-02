@@ -17,33 +17,29 @@
 # specific language governing permissions and limitations
 # under the License.
 import sys
-import os
 import base64
 
-from merge import DataBag
-from pprint import pprint
-import subprocess
+from collections import OrderedDict
+
 import logging
 import re
-import time
-import shutil
+
 import os.path
 import os
 from fcntl import flock, LOCK_EX, LOCK_UN
 
-from cs.CsDatabag import CsDataBag, CsCmdLine
-import cs.CsHelper
+from cs.CsDatabag import CsDataBag
 from cs.CsNetfilter import CsNetfilters
 from cs.CsDhcp import CsDhcp
 from cs.CsRedundant import *
 from cs.CsFile import CsFile
-from cs.CsApp import CsApache, CsDnsmasq
 from cs.CsMonitor import CsMonitor
 from cs.CsLoadBalancer import CsLoadBalancer
 from cs.CsConfig import CsConfig
 from cs.CsProcess import CsProcess
 from cs.CsStaticRoutes import CsStaticRoutes
 
+OCCURRENCES = 1
 
 class CsPassword(CsDataBag):
 
@@ -668,15 +664,10 @@ class CsRemoteAccessVpn(CsDataBag):
                 continue
             vpnconfig=self.dbag[public_ip]
 
-            #Enable remote access vpn
+            # Enable remote access vpn
             if vpnconfig['create']:
                 shutdownIpsec = False
                 logging.debug("Enabling  remote access vpn  on "+ public_ip)
-
-                dev = CsHelper.get_device(public_ip)
-                if dev == "":
-                    logging.error("Request for ipsec to %s not possible because ip is not configured", public_ip)
-                    continue
 
                 CsHelper.start_if_stopped("ipsec")
                 self.configure_l2tpIpsec(public_ip, self.dbag[public_ip])
@@ -960,16 +951,49 @@ class CsForwardingRules(CsDataBag):
         self.fw.append(["nat", "front", "-A POSTROUTING -s %s -d %s -j SNAT -o eth0 --to-source %s" % (self.getNetworkByIp(rule['internal_ip']),rule["internal_ip"], self.getGuestIp())])
 
 
+class IpTablesExecutor:
+
+    config = None
+
+    def __init__(self, config):
+        self.config = config
+
+    def process(self):
+        acls = CsAcl('networkacl', self.config)
+        acls.process()
+
+        acls = CsAcl('firewallrules', self.config)
+        acls.process()
+
+        fwd = CsForwardingRules("forwardingrules", self.config)
+        fwd.process()
+
+        vpns = CsSite2SiteVpn("site2sitevpn", self.config)
+        vpns.process()
+
+        rvpn = CsRemoteAccessVpn("remoteaccessvpn", self.config)
+        rvpn.process()
+
+        lb = CsLoadBalancer("loadbalancer", self.config)
+        lb.process()
+
+        logging.debug("Configuring iptables rules")
+        nf = CsNetfilters()
+        nf.compare(self.config.get_fw())
+
+        logging.debug("Configuring iptables rules done ...saving rules")
+
+        # Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
+        CsHelper.save_iptables("iptables-save", "/etc/iptables/router_rules.v4")
+        CsHelper.save_iptables("ip6tables-save", "/etc/iptables/router_rules.v6")
+
 def main(argv):
     # The file we are currently processing, if it is "cmd_line.json" everything will be processed.
     process_file = argv[1]
 
-    # process_file can be None, if so assume cmd_line.json
     if process_file is None:
-        process_file = "cmd_line.json"
-
-    # Track if changes need to be committed to NetFilter
-    iptables_change = False
+        logging.debug("No file was received, do not go on processing the other actions. Just leave for now.")
+        return
 
     # The "GLOBAL" Configuration object
     config = CsConfig()
@@ -977,108 +1001,61 @@ def main(argv):
     logging.basicConfig(filename=config.get_logger(),
                         level=config.get_level(),
                         format=config.get_format())
-    try:
-        # Load stored ip addresses from disk to CsConfig()
-        config.set_address()
 
-        logging.debug("Configuring ip addresses")
-        config.address().compare()
-        config.address().process()
+    # Load stored ip addresses from disk to CsConfig()
+    config.set_address()
 
-        if process_file in ["cmd_line.json", "guest_network.json"]:
-            logging.debug("Configuring Guest Network")
-            iptables_change = True
+    logging.debug("Configuring ip addresses")
+    config.address().compare()
+    config.address().process()
 
-        if process_file in ["cmd_line.json", "vm_password.json"]:
-            logging.debug("Configuring vmpassword")
-            password = CsPassword("vmpassword", config)
-            password.process()
+    databag_map = OrderedDict([("guest_network.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("vm_password.json", {"process_iptables" : False, "executor" : CsPassword("vmpassword", config)}),
+                               ("vm_metadata.json", {"process_iptables" : False, "executor" : CsVmMetadata('vmdata', config)}),
+                               ("network_acl.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("firewall_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("forwarding_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("staticnat_rules.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("site_2_site_vpn.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("remote_access_vpn.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("vpn_user_list.json", {"process_iptables" : False, "executor" : CsVpnUser("vpnuserlist", config)}),
+                               ("vm_dhcp_entry.json", {"process_iptables" : False, "executor" : CsDhcp("dhcpentry", config)}),
+                               ("dhcp.json", {"process_iptables" : False, "executor" : CsDhcp("dhcpentry", config)}),
+                               ("load_balancer.json", {"process_iptables" : True, "executor" : IpTablesExecutor(config)}),
+                               ("monitor_service.json", {"process_iptables" : False, "executor" : CsMonitor("monitorservice", config)}),
+                               ("static_routes.json", {"process_iptables" : False, "executor" : CsStaticRoutes("staticroutes", config)})
+                               ])
 
-        if process_file in ["cmd_line.json", "vm_metadata.json"]:
-            logging.debug("Configuring vmdata")
-            metadata = CsVmMetadata('vmdata', config)
-            metadata.process()
+    if process_file.count("cmd_line.json") == OCCURRENCES:
+        logging.debug("cmd_line.json changed. All other files will be processed as well.")
 
-        if process_file in ["cmd_line.json", "network_acl.json"]:
-            logging.debug("Configuring networkacl")
-            iptables_change = True
+        while databag_map:
+            item = databag_map.popitem(last = False)
+            item_name = item[0]
+            item_dict = item[1]
+            if not item_dict["process_iptables"]:
+                executor = item_dict["executor"]
+                executor.process()
 
-        if process_file in ["cmd_line.json", "firewall_rules.json"]:
-            logging.debug("Configuring firewall rules")
-            iptables_change = True
+        iptables_executor = IpTablesExecutor(config)
+        iptables_executor.process()
+    else:
+        while databag_map:
+            item = databag_map.popitem(last = False)
+            item_name = item[0]
+            item_dict = item[1]
+            if process_file.count(item_name) == OCCURRENCES:
+                executor = item_dict["executor"]
+                executor.process()
 
-        if process_file in ["cmd_line.json", "forwarding_rules.json", "staticnat_rules.json"]:
-            logging.debug("Configuring PF rules")
-            iptables_change = True
+                if item_dict["process_iptables"]:
+                    iptables_executor = IpTablesExecutor(config)
+                    iptables_executor.process()
 
-        if process_file in ["cmd_line.json", "site_2_site_vpn.json"]:
-            logging.debug("Configuring s2s vpn")
-            iptables_change = True
+                break
 
-        if process_file in ["cmd_line.json", "remote_access_vpn.json"]:
-            logging.debug("Configuring remote access vpn")
-            iptables_change = True
-
-        if process_file in ["cmd_line.json", "vpn_user_list.json"]:
-            logging.debug("Configuring vpn users list")
-            vpnuser = CsVpnUser("vpnuserlist", config)
-            vpnuser.process()
-
-        if process_file in ["cmd_line.json", "vm_dhcp_entry.json", "dhcp.json"]:
-            logging.debug("Configuring dhcp entry")
-            dhcp = CsDhcp("dhcpentry", config)
-            dhcp.process()
-
-        if process_file in ["cmd_line.json", "load_balancer.json"]:
-            logging.debug("Configuring load balancer")
-            iptables_change = True
-
-        if process_file in ["cmd_line.json", "monitor_service.json"]:
-            logging.debug("Configuring monitor service")
-            mon = CsMonitor("monitorservice", config)
-            mon.process()
-
-        # If iptable rules have changed, apply them.
-        if iptables_change:
-            acls = CsAcl('networkacl', config)
-            acls.process()
-
-            acls = CsAcl('firewallrules', config)
-            acls.flushAllowAllEgressRules()
-            acls.process()
-
-            fwd = CsForwardingRules("forwardingrules", config)
-            fwd.process()
-
-            vpns = CsSite2SiteVpn("site2sitevpn", config)
-            vpns.process()
-
-            rvpn = CsRemoteAccessVpn("remoteaccessvpn", config)
-            rvpn.process()
-
-            lb = CsLoadBalancer("loadbalancer", config)
-            lb.process()
-
-            logging.debug("Configuring iptables rules")
-            nf = CsNetfilters()
-            nf.compare(config.get_fw())
-
-            logging.debug("Configuring iptables rules done ...saving rules")
-
-            # Save iptables configuration - will be loaded on reboot by the iptables-restore that is configured on /etc/rc.local
-            CsHelper.save_iptables("iptables-save", "/etc/iptables/router_rules.v4")
-            CsHelper.save_iptables("ip6tables-save", "/etc/iptables/router_rules.v6")
-
-        red = CsRedundant(config)
-        red.set()
-
-        if process_file in ["cmd_line.json", "static_routes.json"]:
-            logging.debug("Configuring static routes")
-            static_routes = CsStaticRoutes("staticroutes", config)
-            static_routes.process()
-    except Exception:
-        logging.exception("Exception while configuring router")
-        return 1
+    red = CsRedundant(config)
+    red.set()
 
 if __name__ == "__main__":
     main(sys.argv)

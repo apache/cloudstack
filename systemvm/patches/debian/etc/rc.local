@@ -67,12 +67,3 @@ then
     python /opt/cloud/bin/baremetal-vr.py &
     logger -t cloud "Started baremetal-vr service"
 fi
-
-if [ "$TYPE" == "router" ] || [ "$TYPE" == "vpcrouter" ] || [ "$TYPE" == "dhcpsrvr" ]
-then
-  if [ -x /opt/cloud/bin/update_config.py ]
-  then
-      /opt/cloud/bin/update_config.py cmd_line.json
-      logger -t cloud "Updated config: cmd_line.json"
-  fi
-fi

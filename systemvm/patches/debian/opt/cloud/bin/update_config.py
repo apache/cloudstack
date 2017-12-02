@@ -26,6 +26,8 @@ import os.path
 import configure
 import json
 
+OCCURRENCES = 1
+
 logging.basicConfig(filename='/var/log/cloud.log', level=logging.INFO, format='%(asctime)s  %(filename)s %(funcName)s:%(lineno)d %(message)s')
 
 # first commandline argument should be the file to process
@@ -37,6 +39,14 @@ if (len(sys.argv) != 2):
 jsonPath = "/var/cache/cloud/%s"
 jsonCmdConfigPath = jsonPath % sys.argv[1]
 currentGuestNetConfig = "/etc/cloudstack/guestnetwork.json"
+
+
+# If the command line json file is unprocessed process it
+# This is important or, the control interfaces will get deleted!
+if os.path.isfile(jsonPath % "cmd_line.json"):
+    qf = QueueFile()
+    qf.setFile("cmd_line.json")
+    qf.load(None)
 
 
 def finish_config():
@@ -111,19 +121,13 @@ def is_guestnet_configured(guestnet_dict, keys):
 
     return exists
 
-if not (os.path.isfile(jsonCmdConfigPath) and os.access(jsonCmdConfigPath, os.R_OK)):
+filename = jsonCmdConfigPath
+if not (os.path.isfile(filename) and os.access(filename, os.R_OK)):
     print "[ERROR] update_config.py :: You are telling me to process %s, but i can't access it" % jsonCmdConfigPath
     sys.exit(1)
 
-# If the command line json file is unprocessed process it
-# This is important or, the control interfaces will get deleted!
-if os.path.isfile(jsonPath % "cmd_line.json"):
-    qf = QueueFile()
-    qf.setFile("cmd_line.json")
-    qf.load(None)
-
 # If the guest network is already configured and have the same IP, do not try to configure it again otherwise it will break
-if sys.argv[1] == "guest_network.json":
+if sys.argv[1] and sys.argv[1].count("guest_network.json") == OCCURRENCES:
     if os.path.isfile(currentGuestNetConfig):
         file = open(currentGuestNetConfig)
         guestnet_dict = json.load(file)

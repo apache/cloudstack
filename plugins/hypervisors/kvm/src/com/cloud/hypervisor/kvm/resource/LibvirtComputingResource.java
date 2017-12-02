@@ -332,6 +332,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (details == null) {
             details = parser.getLines();
         }
+
+        s_logger.debug("Executing script in VR: " + script);
+
         return new ExecutionResult(command.getExitValue() == 0, details);
     }
 
@@ -339,6 +342,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public ExecutionResult createFileInVR(final String routerIp, final String path, final String filename, final String content) {
         final File permKey = new File("/root/.ssh/id_rsa.cloud");
         String error = null;
+
+        s_logger.debug("Creating file in VR, with ip: " + routerIp + ", file: " + filename);
 
         try {
             SshHelper.scpTo(routerIp, 3922, "root", permKey, null, path, content.getBytes(), filename, null);
