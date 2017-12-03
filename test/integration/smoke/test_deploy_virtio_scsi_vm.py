@@ -130,7 +130,6 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             cls.services["service_offerings"]["small"]
         )
 
-
         cls.sparse_disk_offering = DiskOffering.create(
             cls.apiclient,
             cls.services["sparse_disk_offering"]

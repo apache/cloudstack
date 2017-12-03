@@ -27,54 +27,22 @@ function configure_user() {
   usermod -a -G admin cloud
   mkdir -p /home/cloud/.ssh
   chmod 700 /home/cloud/.ssh
-  echo "cloud:`openssl rand -base64 32`" | chpasswd
   echo "root:password" | chpasswd
 }
-
-function configure_sudoers() {
-  cat >/etc/sudoers <<END
-Defaults	env_reset
-Defaults	exempt_group=admin
-Defaults	mail_badpass
-Defaults	secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-
-root	  ALL=(ALL:ALL) ALL
-%admin	ALL=NOPASSWD:/bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount
-
-#includedir /etc/sudoers.d
-END
-  echo 'cloud ALL=NOPASSWD:/bin/chmod, /bin/cp, /bin/mkdir, /bin/mount, /bin/umount, /sbin/halt' > /etc/sudoers.d/cloud
-}
-
-# sshd_config is overwritten from cloud_scripts
-#function configure_sshd() {
-#  grep "UseDNS no" /etc/ssh/sshd_config && \
-#      grep "PasswordAuthentication no" /etc/ssh/sshd_config && \
-#      return
-#  # Tweak sshd to prevent DNS resolution (speed up logins)
-#  echo 'UseDNS no' >> /etc/ssh/sshd_config
-#
-#  # Require ssh keys for login
-#  sed -i -e 's/^.*PasswordAuthentication .*$/PasswordAuthentication no/g' /etc/ssh/sshd_config
-#}
 
 function configure_inittab() {
   # Fix inittab
   cat >> /etc/inittab << EOF
 
+0:2345:respawn:/sbin/getty -L 115200 ttyS0 vt102
 vc:2345:respawn:/sbin/getty 38400 hvc0
 EOF
 }
 
 function configure_login() {
-  # configure_sshd
   configure_inittab
   add_admin_group
-  configure_sudoers
   configure_user
-  rm -fv /home/cloud/configure_login.sh
-  sync
-  halt -p
 }
 
 return 2>/dev/null || configure_login

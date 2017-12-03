@@ -275,7 +275,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         cls.logger.setLevel(logging.DEBUG)
         cls.logger.addHandler(cls.stream_handler)
 
-        return
+        cls.advert_int = int(Configurations.list(cls.api_client, name="router.redundant.vrrp.interval")[0].value)
 
     @classmethod
     def tearDownClass(cls):
@@ -283,7 +283,6 @@ class TestVPCRedundancy(cloudstackTestCase):
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     def setUp(self):
         self.routers = []
@@ -344,9 +343,15 @@ class TestVPCRedundancy(cloudstackTestCase):
             len(self.routers), count,
             "Check that %s routers were indeed created" % count)
 
+    def wait_for_vrrp(self):
+        # Wait until 3*advert_int+skew time to get one of the routers as MASTER
+        time.sleep(3 * self.advert_int + 5)
+
     def check_routers_state(self,count=2, status_to_check="MASTER", expected_count=1, showall=False):
         vals = ["MASTER", "BACKUP", "UNKNOWN"]
         cnts = [0, 0, 0]
+
+        self.wait_for_vrrp()
 
         result = "UNKNOWN"
         self.query_routers(count, showall)
@@ -404,6 +409,7 @@ class TestVPCRedundancy(cloudstackTestCase):
         self.logger.debug('Stopping router %s' % router.id)
         cmd = stopRouter.stopRouterCmd()
         cmd.id = router.id
+        cmd.forced = True
         self.apiclient.stopRouter(cmd)
 
     def reboot_router(self, router):
@@ -657,7 +663,7 @@ class TestVPCRedundancy(cloudstackTestCase):
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_05_rvpc_multi_tiers(self):
         """ Create a redundant VPC with 1 Tier, 1 VM, 1 ACL, 1 PF and test Network GC Nics"""
-        self.logger.debug("Starting test_04_rvpc_network_garbage_collector_nics")
+        self.logger.debug("Starting test_05_rvpc_multi_tiers")
         self.query_routers()
 
         network = self.create_network(self.services["network_offering"], "10.1.1.1", nr_vms=1, mark_net_cleanup=False)
@@ -732,7 +738,7 @@ class TestVPCRedundancy(cloudstackTestCase):
                 ssh_command = "ping -c 3 8.8.8.8"
 
                 # Should be able to SSH VM
-                result = 'failed'
+                packet_loss = 100
                 try:
                     vm = vmObj.get_vm()
                     public_ip = vmObj.get_ip()
@@ -741,19 +747,22 @@ class TestVPCRedundancy(cloudstackTestCase):
                     ssh = vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
         
                     self.logger.debug("Ping to google.com from VM")
-                    result = str(ssh.execute(ssh_command))
+                    result = ssh.execute(ssh_command)
 
-                    self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count(" 0% packet loss")))
+                    for line in result:
+                        if "packet loss" in line:
+                            packet_loss = int(line.split("% packet loss")[0].split(" ")[-1])
+                            break
+
+                    self.logger.debug("SSH result: %s; packet loss is ==> %s" % (result, packet_loss))
                 except Exception as e:
                     self.fail("SSH Access failed for %s: %s" % \
                               (vmObj.get_ip(), e)
                               )
-        
-                self.assertEqual(
-                                 result.count(" 0% packet loss"),
-                                 1,
-                                 "Ping to outside world from VM should be successful"
-                                 )
+
+                # Most pings should be successful
+                self.assertTrue(packet_loss < 50,
+                                 "Ping to outside world from VM should be successful")
 
 
 class networkO(object):

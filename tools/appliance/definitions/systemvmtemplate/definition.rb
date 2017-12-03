@@ -81,11 +81,11 @@ config = {
         'configure_systemvm_services.sh',
         'authorized_keys.sh',
         'configure_persistent_config.sh',
+        # setup login stuff
+        'configure_login.sh',
         # cleanup & space-saving
         'cleanup.sh',
-        'zerodisk.sh',
-        # setup login stuff
-        'configure_login.sh'
+        'finalize.sh'
     ],
     :postinstall_timeout => '10000'
 }

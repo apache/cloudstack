@@ -924,8 +924,7 @@
               <exclude>systemvm/agent/conf/environment.properties</exclude>
               <exclude>systemvm/agent/js/jquery.js</exclude>
               <exclude>systemvm/agent/js/jquery.flot.navigate.js</exclude>
-              <exclude>systemvm/patches/debian/**</exclude>
-              <exclude>systemvm/patches/vpn/**</exclude>
+              <exclude>systemvm/debian/**</exclude>
               <exclude>tools/transifex/.tx/config</exclude>
               <exclude>tools/logo/apache_cloudstack.png</exclude>
               <exclude>tools/marvin/marvin/sandbox/advanced/sandbox.cfg</exclude>

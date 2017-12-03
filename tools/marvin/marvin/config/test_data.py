@@ -1780,24 +1780,24 @@ test_data = {
           "VHD": {
         "templatename": "XenUploadtemplate",
         "displaytext": "XenUploadtemplate",
-        "url": "http://people.apache.org/~sanjeev/centos56-x86_64.vhd.bz2",
+        "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
         "hypervisor":"XenServer",
-        "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
+        "checksum": "54ebc933e6e07ae58c0dc97dfd37c824",
         "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
                 },
           "OVA": {
         "templatename": "VMwareUploadtemplate",
         "displaytext": "VMwareUploadtemplate",
-        "url": "http://people.apache.org/~sanjeev/CentOS5.3-x86_64.ova",
-        "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
+        "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
+        "checksum": "d6d97389b129c7d898710195510bf4fb",
         "hypervisor":"VMware",
         "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
                 },
           "QCOW2": {
         "templatename": "KVMUploadtemplate",
         "displaytext": "VMwareUploadtemplate",
-        "url": "http://people.apache.org/~sanjeev/eec2209b-9875-3c8d-92be-c001bd8a0faf.qcow2.bz2",
-        "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
+        "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
+        "checksum": "ada77653dcf1e59495a9e1ac670ad95f",
         "hypervisor":"KVM",
         "ostypeid":"2e02e376-cdf3-11e4-beb3-8aa6272b57ef"
                 },
@@ -1883,7 +1883,7 @@ test_data = {
                     "name": "testISO",
                     "bootable": True,
                     "ispublic": False,
-                    "url": "http://people.apache.org/~sanjeev/CentOS-6.3-x86_64-bin-DVD1.iso",
+                    "url": "http://dl.openvm.eu/cloudstack/iso/TinyCore-8.0.iso",
                     "ostype": 'CentOS 6.3 (64-bit)',
                     "mode": 'HTTP_DOWNLOAD'
         },

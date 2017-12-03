@@ -1,0 +1,231 @@
+#!/bin/bash
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+#set -x
+#exec 3>&0 4>&1 > /var/log/test.log 2>&1
+PATH="/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin"
+CMDLINE=/var/cache/cloud/cmdline
+
+# Clear boot up flag, it would be created by rc.local after boot up done
+mkdir -p /var/cache/cloud
+rm -f /var/cache/cloud/boot_up_done
+
+[ -x /sbin/ifup ] || exit 0
+
+. /lib/lsb/init-functions
+
+log_it() {
+  echo "$(date) $@" >> /var/log/cloud.log
+  log_action_msg "$@"
+}
+
+hypervisor() {
+  local try=$([ -x /usr/sbin/virt-what ] && virt-what | tail -1)
+  [ "$try" != "" ] && echo $try && return 0
+
+  grep -q QEMU /proc/cpuinfo  && echo "kvm" && return 0
+  grep -q QEMU /var/log/messages && echo "kvm" && return 0
+
+  [ -d /proc/xen ] && mount -t xenfs none /proc/xen
+  [ -d /proc/xen ] && echo "xen-domU" && return 0
+
+  vmware-checkvm &> /dev/null && echo "vmware" && return 0
+
+  echo "unknown" && return 1
+}
+
+config_guest() {
+  if [ "$HYPERVISOR" == "kvm" ]
+  then
+    # Configure hot-plug
+    modprobe acpiphp || true
+    modprobe pci_hotplug || true
+    sed -i -e "/^s0:2345:respawn.*/d" /etc/inittab
+    sed -i -e "/6:23:respawn/a\s0:2345:respawn:/sbin/getty -L 115200 ttyS0 vt102" /etc/inittab
+  fi
+  [ ! -d /proc/xen ] && sed -i 's/^vc/#vc/' /etc/inittab && telinit q
+  [  -d /proc/xen ] && sed -i 's/^#vc/vc/' /etc/inittab && telinit q
+}
+
+get_boot_params() {
+  case $HYPERVISOR in
+     xen-domU|xen-hvm)
+          cat /proc/cmdline > $CMDLINE
+          sed -i "s/%/ /g" $CMDLINE
+          ;;
+     kvm)
+          VPORT=$(find /dev/virtio-ports -type l -name '*.vport' 2>/dev/null|head -1)
+
+          if [ -z "$VPORT" ]; then
+            log_it "No suitable VirtIO port was found in /dev/virtio-ports" && exit 2
+          fi
+
+          if [ ! -e "$VPORT" ]; then
+            log_it "${VPORT} not loaded, perhaps guest kernel is too old." && exit 2
+          fi
+
+          local factor=2
+          local progress=1
+          for i in {1..5}
+          do
+            while read line; do
+              if [[ $line == cmdline:* ]]; then
+                cmd=${line//cmdline:/}
+                echo $cmd > $CMDLINE
+              elif [[ $line == pubkey:* ]]; then
+                pubkey=${line//pubkey:/}
+                echo $pubkey > /var/cache/cloud/authorized_keys
+                echo $pubkey > /root/.ssh/authorized_keys
+              fi
+            done < $VPORT
+            # In case of reboot we do not send the boot args again.
+            # So, no need to wait for them, as the boot args are already set at startup
+            if [ -s $CMDLINE  ]
+            then
+              log_it "Found a non empty cmdline file. Will now exit the loop and proceed with configuration."
+              break;
+            fi
+            sleep ${progress}s
+            progress=$[ progress * factor ]
+          done
+          chmod go-rwx /root/.ssh/authorized_keys
+          ;;
+     vmware)
+          vmtoolsd --cmd 'machine.id.get' > $CMDLINE
+          ;;
+     virtualpc|hyperv)
+          # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
+          #waiting for the hv_kvp_daemon to start up
+          #sleep  need to fix the race condition of hv_kvp_daemon and cloud-early-config
+          [ -f /usr/sbin/hv_kvp_daemon ] && /usr/sbin/hv_kvp_daemon
+          sleep 5
+          cp -f /var/opt/hyperv/.kvp_pool_0 $CMDLINE
+          cat /dev/null > /var/opt/hyperv/.kvp_pool_0
+          ;;
+     virtualbox)
+          # Virtualbox is used to test the virtual router
+          # get the commandline from a dmistring  (yes, hacky!)
+          dmidecode | grep cmdline | sed 's/^.*cmdline://' > $CMDLINE
+          RV=$?
+          if [ $RV -ne 0 ] ; then
+            log_it "Failed to get cmdline from a virtualbox dmi property"
+          fi
+          ;;
+  esac
+}
+
+get_systemvm_type() {
+  for str in $(cat $CMDLINE)
+    do
+      KEY=$(echo $str | cut -d= -f1)
+      VALUE=$(echo $str | cut -d= -f2)
+      case $KEY in
+        type)
+          export TYPE=$VALUE
+          ;;
+        *)
+          ;;
+      esac
+  done
+}
+
+patch() {
+  local PATCH_MOUNT=/media/cdrom
+  local patchfile=$PATCH_MOUNT/cloud-scripts.tgz
+  local privkey=$PATCH_MOUNT/authorized_keys
+  local md5file=/var/cache/cloud/cloud-scripts-signature
+  local cdrom_dev=
+  mkdir -p $PATCH_MOUNT
+
+  if [ -e /dev/xvdd ]; then
+       cdrom_dev=/dev/xvdd
+  elif [ -e /dev/cdrom ]; then
+       cdrom_dev=/dev/cdrom
+  elif [ -e /dev/cdrom1 ]; then
+       cdrom_dev=/dev/cdrom1
+  elif [ -e /dev/cdrom2 ]; then
+       cdrom_dev=/dev/cdrom2
+  elif [ -e /dev/cdrom3 ]; then
+       cdrom_dev=/dev/cdrom3
+  fi
+
+  [ -f /var/cache/cloud/authorized_keys ] && privkey=/var/cache/cloud/authorized_keys
+
+  if [ -n "$cdrom_dev" ]; then
+    mount -o ro $cdrom_dev $PATCH_MOUNT
+    local oldmd5=
+    [ -f ${md5file} ] && oldmd5=$(cat ${md5file})
+    local newmd5=
+    [ -f ${patchfile} ] && newmd5=$(md5sum ${patchfile} | awk '{print $1}')
+
+    log_it "Scripts checksum detected: oldmd5=$oldmd5 newmd5=$newmd5"
+    if [ "$oldmd5" != "$newmd5" ] && [ -f ${patchfile} ] && [ "$newmd5" != "" ]
+    then
+      tar xzf $patchfile -C /
+      echo ${newmd5} > ${md5file}
+      log_it "Patched scripts using $patchfile"
+
+      log_it "Patching cloud service"
+      /opt/cloud/bin/setup/patchsystemvm.sh $PATCH_MOUNT $TYPE
+    fi
+
+    [ -f $privkey ] && cp -f $privkey /root/.ssh/ && chmod go-rwx /root/.ssh/authorized_keys
+    umount $PATCH_MOUNT
+  fi
+
+  if [ -f /mnt/cmdline ]; then
+    cat /mnt/cmdline > $CMDLINE
+  fi
+
+  return 0
+}
+
+start() {
+  log_it "Executing cloud-early-config"
+
+  # Clear /tmp for file lock
+  rm -f /tmp/*.lock
+  rm -f /tmp/rrouter_bumped
+  rm -f /root/.rnd
+  echo "" > /root/.ssh/known_hosts
+
+  export HYPERVISOR=$(hypervisor)
+  [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
+  log_it "Detected that we are running inside $HYPERVISOR"
+
+  config_guest
+  get_boot_params
+  get_systemvm_type
+  patch
+  sync
+  sysctl -p
+
+  log_it "Configuring systemvm type=$TYPE"
+
+  if [ -f "/opt/cloud/bin/setup/$TYPE.sh" ]; then
+      /opt/cloud/bin/setup/$TYPE.sh
+  else
+      /opt/cloud/bin/setup/default.sh
+  fi
+
+  log_it "Finished setting up systemvm"
+
+  exit 0
+}
+
+start

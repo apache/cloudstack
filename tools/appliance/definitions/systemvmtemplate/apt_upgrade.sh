@@ -19,6 +19,15 @@
 set -e
 set -x
 
+function remove_reserved_blocks() {
+  for partition in $(blkid -o list | grep ext | awk '{print $1}')
+  do
+    tune2fs -m0 $partition
+  done
+  fdisk -l
+  df -h
+}
+
 function add_backports() {
   sed -i '/cdrom/d' /etc/apt/sources.list
   sed -i '/deb-src/d' /etc/apt/sources.list
@@ -33,6 +42,7 @@ function apt_upgrade() {
   # Setup sudo
   echo 'cloud ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/cloud
 
+  remove_reserved_blocks
   add_backports
 
   rm -fv /root/*.iso
@@ -40,8 +50,6 @@ function apt_upgrade() {
   apt-get autoclean
   apt-get -q -y update
   apt-get -q -y upgrade
-
-  df -h
 }
 
 return 2>/dev/null || apt_upgrade

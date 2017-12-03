@@ -20,8 +20,11 @@ set -e
 set -x
 
 function cleanup_apt() {
-  apt-get -y remove dictionaries-common busybox isc-dhcp-client isc-dhcp-common
-  apt-get -y autoremove
+  apt-get -y remove --purge dictionaries-common busybox isc-dhcp-client isc-dhcp-common \
+    task-english task-ssh-server tasksel tasksel-data laptop-detect nano wamerican \
+    debconf-i18n sharutils gnupg gnupg-agent keyboard-configuration
+
+  apt-get -y autoremove --purge
   apt-get autoclean
   apt-get clean
 }
@@ -40,13 +43,28 @@ function cleanup_dev() {
 }
 
 function cleanup_misc() {
+  # Scripts
   rm -fr /home/cloud/cloud_scripts*
+  rm -f /usr/share/cloud/cloud-scripts.tar
   rm -f /root/.rnd
   rm -f /var/www/html/index.html
+  # Logs
   rm -f /var/log/*.log
   rm -f /var/log/apache2/*
   rm -f /var/log/messages
   rm -f /var/log/syslog
+  rm -f /var/log/messages
+  rm -fr /var/log/apt
+  rm -fr /var/log/installer
+  # Docs and data files
+  rm -fr /var/lib/apt/*
+  rm -fr /var/cache/apt/*
+  rm -fr /usr/lib/gnupg*
+  rm -fr /usr/share/doc
+  rm -fr /usr/share/man
+  rm -fr /usr/share/info
+  rm -fr /usr/share/lintian
+  find /usr/share/locale -type f | grep -v en | xargs rm -fr
 }
 
 function cleanup() {

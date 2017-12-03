@@ -53,7 +53,7 @@ function install_packages() {
   fi
 
   ${apt_get} install grub-legacy \
-    rsyslog logrotate cron net-tools ifupdown vim tmux netbase iptables \
+    rsyslog logrotate cron net-tools ifupdown vim netbase iptables \
     openssh-server e2fsprogs tcpdump socat wget \
     python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
     inetutils-ping iputils-arping httping  curl \
@@ -67,7 +67,6 @@ function install_packages() {
     xenstore-utils libxenstore3.0 \
     ipvsadm conntrackd libnetfilter-conntrack3 \
     keepalived irqbalance \
-    libnl-3-200 libnl-genl-3-200 \
     ipcalc \
     openjdk-8-jre-headless \
     ipset \
@@ -80,16 +79,14 @@ function install_packages() {
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons
 
+  apt-get -y autoremove --purge
+  apt-get autoclean
+  apt-get clean
+
   # Install xenserver guest utilities as debian repos don't have it
   wget https://mirrors.kernel.org/ubuntu/pool/universe/x/xe-guest-utilities/xe-guest-utilities_7.4.0-0ubuntu1_amd64.deb
   dpkg -i xe-guest-utilities_7.4.0-0ubuntu1_amd64.deb
   rm -f xe-guest-utilities_7.4.0-0ubuntu1_amd64.deb
-
-  apt-get autoclean
-  apt-get clean
-
-  apt-get update
-  apt-get -y upgrade
 }
 
 return 2>/dev/null || install_packages

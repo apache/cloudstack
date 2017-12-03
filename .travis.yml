@@ -50,7 +50,6 @@ env:
              smoke/test_hostha_simulator
              smoke/test_host_annotations
              smoke/test_host_maintenance
-             smoke/test_hosts
              smoke/test_internal_lb
              smoke/test_iso
              smoke/test_list_ids_parameter

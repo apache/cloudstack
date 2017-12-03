@@ -130,7 +130,7 @@ class TestDeployVMFromISO(cloudstackTestCase):
         )
         try:
             # Download the ISO
-            self.iso.download(self.apiclient)
+            self.iso.download(self.apiclient, retries=150)
 
         except Exception as e:
             raise Exception("Exception while downloading ISO %s: %s"

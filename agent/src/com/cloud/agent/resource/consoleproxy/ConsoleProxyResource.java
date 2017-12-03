@@ -441,11 +441,6 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
     }
 
     @Override
-    public boolean stop() {
-        return true;
-    }
-
-    @Override
     public void setName(String name) {
     }
 

@@ -100,7 +100,7 @@ pip install --user --upgrade pip
 
 for ((i=0;i<$RETRY_COUNT;i++))
 do
-  pip install --user --upgrade lxml paramiko nose texttable ipmisim pyopenssl > /tmp/piplog
+  pip install --user --upgrade lxml paramiko nose texttable ipmisim pyopenssl mock flask netaddr pylint pep8 > /tmp/piplog
   if [[ $? -eq 0 ]]; then
     echo -e "\npython packages installed successfully"
     break;

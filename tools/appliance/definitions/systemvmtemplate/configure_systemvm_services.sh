@@ -34,70 +34,15 @@ function configure_apache2() {
 function install_cloud_scripts() {
   # ./cloud_scripts/ has been put there by ../../cloud_scripts_shar_archive.sh
   rsync -av ./cloud_scripts/ /
-  chmod +x /opt/cloud/bin/* \
+  chmod +x /opt/cloud/bin/* /opt/cloud/bin/setup/* \
     /root/{clearUsageRules.sh,reconfigLB.sh,monitorServices.py} \
-    /etc/init.d/{cloud-early-config,cloud-passwd-srvr} \
     /etc/profile.d/cloud.sh
 
-  cat > /etc/systemd/system/cloud-early-config.service << EOF
-[Unit]
-Description=cloud-early-config: configures systemvm using cmdline
-DefaultDependencies=no
-
-Before=network-pre.target
-Wants=network-pre.target
-
-Requires=local-fs.target
-After=local-fs.target
-
-[Install]
-WantedBy=multi-user.target
-
-[Service]
-Type=oneshot
-ExecStart=/etc/init.d/cloud-early-config start
-ExecStop=/etc/init.d/cloud-early-config stop
-RemainAfterExit=true
-TimeoutStartSec=5min
-
-EOF
-
-  cat > /etc/systemd/system/cloud.service << EOF
-[Unit]
-Description=cloud: startup cloud service
-After=cloud-early-config.service network.target local-fs.target
-
-[Install]
-WantedBy=multi-user.target
-
-[Service]
-Type=simple
-WorkingDirectory=/usr/local/cloud/systemvm
-ExecStart=/usr/local/cloud/systemvm/_run.sh
-Restart=always
-RestartSec=5
-EOF
-
-  cat > /etc/systemd/system/cloud-passwd-srvr.service << EOF
-[Unit]
-Description=cloud-passwd-srvr: cloud password server
-After=network.target local-fs.target
-
-[Install]
-WantedBy=multi-user.target
-
-[Service]
-Type=forking
-ExecStart=/etc/init.d/cloud-passwd-srvr start
-ExecStop=/etc/init.d/cloud-passwd-srvr stop
-Restart=always
-RestartSec=5
-EOF
+  chmod -x /etc/systemd/system/*
 
   systemctl daemon-reload
   systemctl enable cloud-early-config
-  systemctl disable cloud
-  systemctl disable cloud-passwd-srvr
+  systemctl enable cloud-postinit
 }
 
 function do_signature() {

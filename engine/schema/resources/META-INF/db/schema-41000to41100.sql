@@ -492,3 +492,6 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 
 -- Change monitor patch for apache2 in systemvm
 UPDATE `cloud`.`monitoring_services` SET pidfile="/var/run/apache2/apache2.pid" WHERE process_name="apache2" AND service_name="apache2";
+
+-- Boost secondary storage systemvm
+UPDATE `cloud`.`service_offering` SET ram_size=1024, cpu=2 WHERE vm_type="secondarystoragevm" and cpu=1 and ram_size=512;

@@ -1,0 +1,13 @@
+[Unit]
+Description=CloudStack Agent service
+After=cloud-early-config.service network.target local-fs.target
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+WorkingDirectory=/usr/local/cloud/systemvm
+ExecStart=/usr/local/cloud/systemvm/_run.sh
+Restart=always
+RestartSec=5

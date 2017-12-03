@@ -505,7 +505,7 @@ public class Link {
             s_logger.error(String.format("SSL error caught during unwrap data: %s, for local address=%s, remote address=%s. The client may have invalid ca-certificates.",
                     sslException.getMessage(), socketChannel.getLocalAddress(), socketChannel.getRemoteAddress()));
             sslEngine.closeOutbound();
-            return new HandshakeHolder(peerAppData, peerNetData, true);
+            return new HandshakeHolder(peerAppData, peerNetData, false);
         }
         if (result == null) {
             return new HandshakeHolder(peerAppData, peerNetData, false);

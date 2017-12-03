@@ -88,7 +88,7 @@
                   </includes>
                 </resource>
                 <resource>
-                  <directory>patches/debian/root/.ssh</directory>
+                  <directory>debian/root/.ssh</directory>
                   <includes>
                     <include>authorized_keys</include>
                   </includes>
@@ -112,10 +112,7 @@
                 <mkdir dir="${basedir}/dist" />
                 <mkdir dir="${basedir}/target/build-patch" />
                 <copy overwrite="true" todir="${basedir}/target/build-patch">
-                  <fileset dir="${basedir}/patches/debian/">
-                    <include name="**/*" />
-                  </fileset>
-                  <fileset dir="${basedir}/patches/vpn/">
+                  <fileset dir="${basedir}/debian/">
                     <include name="**/*" />
                   </fileset>
                 </copy>
