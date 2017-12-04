@@ -516,3 +516,13 @@ UPDATE `cloud`.`vm_template` SET guest_os_id=99 WHERE id=8;
 
 -- Network External Ids
 ALTER TABLE `cloud`.`networks` ADD `external_id` varchar(255);
+
+-- ldap binding on domain level
+CREATE TABLE `cloud`.`domain_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `domain_id` bigint unsigned NOT NULL COMMENT 'account id',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(255) NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_domain_details__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
