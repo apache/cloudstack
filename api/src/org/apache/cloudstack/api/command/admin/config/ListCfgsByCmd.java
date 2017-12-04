@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -77,6 +78,12 @@ public class ListCfgsByCmd extends BaseListCmd {
                description = "the ID of the Account to update the parameter value for corresponding account")
     private Long accountId;
 
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "the ID of the Domain to update the parameter value for corresponding domain")
+    private Long domainId;
+
     @Parameter(name = ApiConstants.IMAGE_STORE_UUID,
             type = CommandType.UUID,
             entityType = ImageStoreResponse.class,
@@ -109,6 +116,10 @@ public class ListCfgsByCmd extends BaseListCmd {
 
     public Long getAccountId() {
         return accountId;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     public Long getImageStoreId() {
@@ -157,6 +168,9 @@ public class ListCfgsByCmd extends BaseListCmd {
             }
             if (getAccountId() != null) {
                 cfgResponse.setScope("account");
+            }
+            if (getDomainId() != null) {
+                cfgResponse.setScope("domain");
             }
             if (getImageStoreId() != null){
                 cfgResponse.setScope("imagestore");
