@@ -130,8 +130,10 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.domain.Domain;
+import com.cloud.domain.DomainDetailVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.domain.dao.DomainDetailsDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
@@ -227,6 +229,79 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupService;
+import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.CreateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
+import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
+import org.apache.cloudstack.api.command.admin.pod.UpdatePodCmd;
+import org.apache.cloudstack.api.command.admin.region.CreatePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.DeletePortableIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.region.ListPortableIpRangesCmd;
+import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.DeleteVlanIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.admin.zone.CreateZoneCmd;
+import org.apache.cloudstack.api.command.admin.zone.DeleteZoneCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateZoneCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.ConfigDepot;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpDao;
+import org.apache.cloudstack.region.PortableIpRange;
+import org.apache.cloudstack.region.PortableIpRangeDao;
+import org.apache.cloudstack.region.PortableIpRangeVO;
+import org.apache.cloudstack.region.PortableIpVO;
+import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.region.RegionVO;
+import org.apache.cloudstack.region.dao.RegionDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.net.URI;
+import java.sql.Date;
+import java.sql.PreparedStatement;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.UUID;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -325,6 +400,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     StoragePoolDetailsDao _storagePoolDetailsDao;
     @Inject
     AccountDetailsDao _accountDetailsDao;
+    @Inject
+    DomainDetailsDao _domainDetailsDao;
     @Inject
     PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -544,6 +621,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 _imageStoreDetailsDao.addDetail(resourceId, name, value, true);
                 break;
 
+            case Domain:
+                final DomainVO domain = _domainDao.findById(resourceId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("unable to find domain by id " + resourceId);
+                }
+                DomainDetailVO domainDetailVO = _domainDetailsDao.findDetail(resourceId, name);
+                if (domainDetailVO == null) {
+                    domainDetailVO = new DomainDetailVO(resourceId, name, value);
+                    _domainDetailsDao.persist(domainDetailVO);
+                } else {
+                    domainDetailVO.setValue(value);
+                    _domainDetailsDao.update(domainDetailVO.getId(), domainDetailVO);
+                }
+                break;
+
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
@@ -651,6 +743,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
         final Long imageStoreId = cmd.getImageStoreId();
+        final Long domainId = cmd.getDomainId();
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : value == null ? "" : value));
         // check if config value exists
         final ConfigurationVO config = _configDao.findByName(name);
@@ -694,6 +787,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (accountId != null) {
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
+            paramCountCheck++;
+        }
+        if (domainId != null) {
+            scope = ConfigKey.Scope.Domain.toString();
+            id = domainId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {
