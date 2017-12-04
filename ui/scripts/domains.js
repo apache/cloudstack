@@ -625,36 +625,6 @@
                             domainObj["vmTotal"] = totalVMs;
                             domainObj["volumeTotal"] = totalVolumes;
 
-                            /* $.ajax({
-                url: createURL("listVirtualMachines&details=min&domainid=" + domainObj.id),
-                async: false,
-                dataType: "json",
-                success: function(json) {
-                  var items = json.listvirtualmachinesresponse.virtualmachine;
-                  var total;
-                  if (items != null)
-                    total = items.length;
-                  else
-                    total = 0;
-                  domainObj["vmTotal"] = total;
-                }
-              });
-
-              $.ajax({
-                url: createURL("listVolumes&domainid=" + domainObj.id),
-                async: false,
-                dataType: "json",
-                success: function(json) {
-                  var items = json.listvolumesresponse.volume;
-                  var total;
-                  if (items != null)
-                    total = items.length;
-                  else
-                    total = 0;
-                  domainObj["volumeTotal"] = total;
-                }
-              });*/
-
                             $.ajax({
                                 url: createURL("listResourceLimits&domainid=" + domainObj.id),
                                 async: false,
@@ -709,7 +679,58 @@
                                 actionFilter: domainActionfilter
                             });
                         }
+                    },
+                    // Granular settings for account
+                    settings: {
+                        title: 'label.settings',
+                        custom: cloudStack.uiCustom.granularSettings({
+                            dataProvider: function(args) {
+                                $.ajax({
+                                    url: createURL('listConfigurations&domainid=' + args.context.domains[0].id),
+                                    data: listViewDataProvider(args, {}, { searchBy: 'name' }),
+                                    success: function(json) {
+                                        args.response.success({
+                                            data: json.listconfigurationsresponse.configuration
+                                        });
+
+                                    },
+
+                                    error: function(json) {
+                                        args.response.error(parseXMLHttpResponse(json));
+
+                                    }
+                                });
+
+                            },
+                            actions: {
+                                edit: function(args) {
+                                    // call updateDomainLevelParameters
+                                    var data = {
+                                        name: args.data.jsonObj.name,
+                                        value: args.data.value
+                                    };
+
+                                    $.ajax({
+                                        url: createURL('updateConfiguration&domainid=' + args.context.domains[0].id),
+                                        data: data,
+                                        success: function(json) {
+                                            var item = json.updateconfigurationresponse.configuration;
+                                            args.response.success({
+                                                data: item
+                                            });
+                                        },
+
+                                        error: function(json) {
+                                            args.response.error(parseXMLHttpResponse(json));
+                                        }
+
+                                    });
+
+                                }
+                            }
+                        })
                     }
+
                 }
             },
             labelField: 'name',
