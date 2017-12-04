@@ -523,3 +523,14 @@ ADD COLUMN `forsystemvms` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'Indicates if 
 
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc`
 ADD COLUMN `vlan` INT(10) UNSIGNED NULL COMMENT 'Vlan the management network range is on';
+
+-- ldap binding on domain level
+CREATE TABLE `cloud`.`domain_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `domain_id` bigint unsigned NOT NULL COMMENT 'account id',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(255) NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_domain_details__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
