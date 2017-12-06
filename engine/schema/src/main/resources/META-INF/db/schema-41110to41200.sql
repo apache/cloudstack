@@ -33,3 +33,6 @@ ALTER TABLE `vlan` CHANGE `description` `ip4_range` varchar(255);
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 2, 'moveNetworkAclItem', 'ALLOW', 100) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'moveNetworkAclItem', 'ALLOW', 302) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'moveNetworkAclItem', 'ALLOW', 260) ON DUPLICATE KEY UPDATE rule=rule;
+
+-- Enable storage motion for KVM hypervisor
+UPDATE  `cloud`.`hypervisor_capabilities` SET  `storage_motion_supported` =  1 WHERE  `hypervisor_capabilities`.`hypervisor_type` =  'KVM';
