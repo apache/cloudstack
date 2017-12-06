@@ -321,12 +321,15 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_MEMORY, null, clusterId);
             final Metrics metrics = new Metrics(cpuCapacity, memoryCapacity);
 
-            for (final HostJoinVO host: hostJoinDao.findByClusterId(clusterId, Host.Type.Routing)) {
+            for (final Host host: hostDao.findByClusterId(clusterId)) {
+                if (host == null || host.getType() != Host.Type.Routing) {
+                    continue;
+                }
                 if (host.getStatus() == Status.Up) {
                     metrics.incrUpResources();
                 }
                 metrics.incrTotalResources();
-                updateHostMetrics(metrics, host);
+                updateHostMetrics(metrics, hostJoinDao.findById(host.getId()));
             }
 
             metricsResponse.setState(clusterResponse.getAllocationState(), clusterResponse.getManagedState());
@@ -391,14 +394,20 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             final Metrics metrics = new Metrics(cpuCapacity, memoryCapacity);
 
             for (final Cluster cluster : clusterDao.listClustersByDcId(zoneId)) {
+                if (cluster == null) {
+                    continue;
+                }
                 metrics.incrTotalResources();
                 if (cluster.getAllocationState() == Grouping.AllocationState.Enabled
                         && cluster.getManagedState() == Managed.ManagedState.Managed) {
                     metrics.incrUpResources();
                 }
 
-                for (final HostJoinVO host: hostJoinDao.findByClusterId(cluster.getId(), Host.Type.Routing)) {
-                    updateHostMetrics(metrics, host);
+                for (final Host host: hostDao.findByClusterId(cluster.getId())) {
+                    if (host == null || host.getType() != Host.Type.Routing) {
+                        continue;
+                    }
+                    updateHostMetrics(metrics, hostJoinDao.findById(host.getId()));
                 }
             }
 
