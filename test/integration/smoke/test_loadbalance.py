@@ -40,14 +40,14 @@ class TestLoadBalance(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
-        template = get_template(
+        cls.hypervisor = testClient.getHypervisorInfo()
+        template = get_test_template(
                             cls.apiclient,
                             cls.zone.id,
-                            cls.services["ostype"]
-                            )
+                            cls.hypervisor)
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
-        
+            assert False, "get_test_template() failed to return template"
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         #Create an account, network, VM and IP addresses

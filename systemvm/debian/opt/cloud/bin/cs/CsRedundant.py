@@ -75,6 +75,10 @@ class CsRedundant(object):
     def _redundant_off(self):
         CsHelper.service("conntrackd", "stop")
         CsHelper.service("keepalived", "stop")
+        CsHelper.umount_tmpfs(self.CS_RAMDISK_DIR)
+        CsHelper.rmdir(self.CS_RAMDISK_DIR)
+        CsHelper.rm(self.CONNTRACKD_CONF)
+        CsHelper.rm(self.KEEPALIVED_CONF)
 
     def _redundant_on(self):
         guest = self.address.get_guest_if()
@@ -107,10 +111,9 @@ class CsRedundant(object):
             CsHelper.service("keepalived", "stop")
             return
 
-        # setup_router should execute this already:
-        # CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
-        # CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
-        # CsHelper.mkdir(self.CS_ROUTER_DIR, 0755, False)
+        CsHelper.mkdir(self.CS_RAMDISK_DIR, 0755, False)
+        CsHelper.mount_tmpfs(self.CS_RAMDISK_DIR)
+        CsHelper.mkdir(self.CS_ROUTER_DIR, 0755, False)
         for s in self.CS_TEMPLATES:
             d = s
             if s.endswith(".templ"):

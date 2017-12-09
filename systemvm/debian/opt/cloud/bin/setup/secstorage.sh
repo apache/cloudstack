@@ -19,7 +19,7 @@
 . /opt/cloud/bin/setup/common.sh
 
 secstorage_svcs() {
-  echo "apache2 cloud ssh nfs-common portmap" > /var/cache/cloud/enabled_svcs
+  echo "apache2 cloud nfs-common portmap" > /var/cache/cloud/enabled_svcs
   echo "conntrackd keepalived haproxy dnsmasq" > /var/cache/cloud/disabled_svcs
   mkdir -p /var/log/cloud
 }

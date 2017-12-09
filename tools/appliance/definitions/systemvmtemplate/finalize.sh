@@ -51,13 +51,14 @@ function cleanup_veewee() {
 
 # Zero out the free space to save space in the final image:
 function zero_disk() {
+  df -h
+  fstrim -av
   for path in / /boot /var/log /tmp
   do
     dd if=/dev/zero of=${path}/zero bs=1M || true
     sync
     rm -f ${path}/zero
   done
-  df -h
 }
 
 function finalize() {

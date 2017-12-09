@@ -1225,13 +1225,16 @@ class Template:
     @classmethod
     def register(cls, apiclient, services, zoneid=None,
                  account=None, domainid=None, hypervisor=None,
-                 projectid=None, details=None):
+                 projectid=None, details=None, randomize_name=True):
         """Create template from URL"""
 
         # Create template from Virtual machine and Volume ID
         cmd = registerTemplate.registerTemplateCmd()
         cmd.displaytext = services["displaytext"]
-        cmd.name = "-".join([services["name"], random_gen()])
+        if randomize_name:
+            cmd.name = "-".join([services["name"], random_gen()])
+        else:
+            cmd.name = services["name"]
         cmd.format = services["format"]
         if hypervisor:
             cmd.hypervisor = hypervisor

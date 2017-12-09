@@ -80,10 +80,10 @@ class TestHAKVM(cloudstackTestCase):
             self.services["service_offerings"]["hasmall"]
         )
 
-        self.template = get_template(
+        self.template = get_test_template(
             self.apiclient,
             self.zone.id,
-            self.services["ostype"]
+            self.hypervisor
         )
 
         self.configureAndDisableHostHa()

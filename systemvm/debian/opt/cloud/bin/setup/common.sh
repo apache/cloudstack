@@ -590,8 +590,7 @@ routing_svcs() {
    systemctl disable --now portmap
    systemctl enable apache2
    systemctl enable haproxy
-   systemctl enable ssh
-   echo "ssh haproxy apache2" > /var/cache/cloud/enabled_svcs
+   echo "haproxy apache2" > /var/cache/cloud/enabled_svcs
    echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
    if [ $RROUTER -eq 1 ]
    then
@@ -607,61 +606,6 @@ routing_svcs() {
        echo "dnsmasq" >> /var/cache/cloud/enabled_svcs
        echo "keepalived conntrackd " >> /var/cache/cloud/disabled_svcs
    fi
-}
-
-setup_redundant_router() {
-    rrouter_bin_path="/ramdisk/rrouter"
-    rrouter_log="/ramdisk/rrouter/keepalived.log"
-    rrouter_bin_path_str="\/ramdisk\/rrouter"
-    rrouter_log_str="\/ramdisk\/rrouter\/keepalived.log"
-    mkdir -p /ramdisk
-    mount tmpfs /ramdisk -t tmpfs
-    mkdir -p /ramdisk/rrouter
-    ip route delete default
-
-    # Seed keepalived
-    cp /opt/cloud/templates/keepalived.conf.templ /etc/keepalived/keepalived.conf # changes!
-    sed -i "s/\[ROUTER_ID\]/$NAME/g" /etc/keepalived/keepalived.conf
-    sed -i "s/\[ROUTER_IP\]/$GUEST_GW\/$GUEST_CIDR_SIZE/g" /etc/keepalived/keepalived.conf #fixme, multiple ips?
-    sed -i "s/\[BOARDCAST\]/$GUEST_BRD/g" /etc/keepalived/keepalived.conf
-    sed -i "s/\[PRIORITY\]/$ROUTER_PR/g" /etc/keepalived/keepalived.conf
-    sed -i "s/\[PASS\]/$VM_PASSWORD/g" /etc/keepalived/keepalived.conf #FIXME, router password?
-    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" /etc/keepalived/keepalived.conf
-    sed -i "s/\[DELTA\]/2/g" /etc/keepalived/keepalived.conf
-    sed -i "s/--exec\ \$DAEMON;/--exec\ \$DAEMON\ --\ --vrrp;/g" /etc/init.d/keepalived
-    if [ $ADVERT_INT ]
-    then
-        sed -i "s/advert_int 1/advert_int $ADVERT_INT/g" /etc/keepalived/keepalived.conf
-    fi
-    chmod -x /etc/keepalived/keepalived.conf
-
-    # Seed conntrackd
-    cp /opt/cloud/templates/conntrackd.conf.templ /etc/conntrackd/conntrackd.conf
-    sed -i "s/\[LINK_IF\]/eth0/g" /etc/conntrackd/conntrackd.conf
-    sed -i "s/\[LINK_IP\]/$ETH0_IP/g" /etc/conntrackd/conntrackd.conf
-    sed -i "s/\[IGNORE_IP1\]/$GUEST_GW/g" /etc/conntrackd/conntrackd.conf # checkme?
-    sed -i "s/\[IGNORE_IP2\]/$ETH0_IP/g" /etc/conntrackd/conntrackd.conf
-    sed -i "s/\[IGNORE_IP3\]/$ETH1_IP/g" /etc/conntrackd/conntrackd.conf
-
-    # ramdisk scripts
-    cp /opt/cloud/templates/heartbeat.sh.templ $rrouter_bin_path/heartbeat.sh
-    cp /opt/cloud/templates/check_heartbeat.sh.templ $rrouter_bin_path/check_heartbeat.sh
-    cp /opt/cloud/templates/arping_gateways.sh.templ $rrouter_bin_path/arping_gateways.sh
-    cp /opt/cloud/templates/check_bumpup.sh $rrouter_bin_path/
-    cp /opt/cloud/templates/checkrouter.sh.templ /opt/cloud/bin/checkrouter.sh # changes!
-    #sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" /opt/cloud/bin/checkrouter.sh
-
-    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/heartbeat.sh
-    sed -i "s/\[RROUTER_BIN_PATH\]/$rrouter_bin_path_str/g" $rrouter_bin_path/check_heartbeat.sh
-    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/check_heartbeat.sh
-    sed -i "s/\[RROUTER_LOG\]/$rrouter_log_str/g" $rrouter_bin_path/arping_gateways.sh
-    chmod a+x $rrouter_bin_path/*.sh
-
-    crontab -l|grep "check_heartbeat.sh"
-    if [ $? -ne 0 ]
-    then
-        (crontab -l; echo -e "SHELL=/bin/bash\nPATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin\n* * * * * $rrouter_bin_path/check_heartbeat.sh 2>&1 > /dev/null") | crontab
-    fi
 }
 
 parse_cmd_line() {
@@ -781,6 +725,9 @@ parse_cmd_line() {
             ;;
         redundant_router)
             export RROUTER=$VALUE
+            ;;
+        redundant_state)
+            export RROUTER_STATE=$VALUE
             ;;
         guestgw)
             export GUEST_GW=$VALUE

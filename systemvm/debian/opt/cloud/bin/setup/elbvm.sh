@@ -19,7 +19,7 @@
 . /opt/cloud/bin/setup/common.sh
 
 elbvm_svcs() {
-  echo "ssh haproxy" > /var/cache/cloud/enabled_svcs
+  echo "haproxy" > /var/cache/cloud/enabled_svcs
   echo "cloud dnsmasq conntrackd keepalived apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
 }
 

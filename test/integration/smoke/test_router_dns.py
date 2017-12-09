@@ -29,7 +29,7 @@ from marvin.lib.base import (ServiceOffering,
                              NetworkOffering,
                              Network)
 from marvin.lib.common import (get_zone,
-                               get_template,
+                               get_test_template,
                                get_domain,
                                list_routers,
                                list_nat_rules,
@@ -51,12 +51,15 @@ class TestRouterDns(cloudstackTestCase):
 
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
         cls.services['mode'] = cls.zone.networktype
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         cls.logger.debug("Creating Admin Account for domain %s on zone %s" % (cls.domain.id, cls.zone.id))
@@ -264,5 +267,5 @@ class TestRouterDns(cloudstackTestCase):
         if not result:
             self.fail("Did not to receive any response from the guest VM, failing.")
 
-        self.assertTrue("google.com" in result and "#53" in result,
+        self.assertTrue("google.com" in result and "10.1.1.1" in result,
                         "VR DNS should serve requests from guest network, unable to get valid nslookup result from guest VM.")

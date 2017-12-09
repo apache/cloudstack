@@ -10993,8 +10993,8 @@
                                 return args;
                             }
                         },
-                        controlip: {
-                            label: 'label.control.ip'
+                        publicip: {
+                            label: 'label.public.ip'
                         },
                         hostname: {
                             label: 'label.host'

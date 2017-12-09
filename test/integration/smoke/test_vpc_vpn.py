@@ -52,7 +52,7 @@ from marvin.sshClient import SshClient
 
 from marvin.lib.common import (get_zone,
                                get_domain,
-                               get_template,
+                               get_test_template,
                                list_network_offerings)
 
 from nose.plugins.attrib import attr
@@ -215,48 +215,6 @@ class Services:
                 "privateport": 22,
                 "publicport": 22,
                 "protocol": 'TCP',
-            },
-            "template": {
-
-                "kvm": {
-                    "name": "tiny-kvm",
-                    "displaytext": "macchinina kvm",
-                    "format": "qcow2",
-                    "hypervisor": "kvm",
-                    "ostype": "Other Linux (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
-                    "requireshvm": "True",
-                },
-
-                "xenserver": {
-                    "name": "tiny-xen",
-                    "displaytext": "macchinina xen",
-                    "format": "vhd",
-                    "hypervisor": "xen",
-                    "ostype": "Other Linux (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
-                    "requireshvm": "True",
-                },
-
-                "hyperv": {
-                    "name": "tiny-hyperv",
-                    "displaytext": "macchinina xen",
-                    "format": "vhd",
-                    "hypervisor": "hyperv",
-                    "ostype": "Other Linux (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-hyperv.vhd.zip",
-                    "requireshvm": "True",
-                },
-
-                "vmware": {
-                    "name": "tiny-vmware",
-                    "displaytext": "macchinina vmware",
-                    "format": "ova",
-                    "hypervisor": "vmware",
-                    "ostype": "Other Linux (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
-                    "requireshvm": "True",
-                }
             }
         }
 
@@ -287,14 +245,9 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
-        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
-                         cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower(
-        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
-        cls.template.download(cls.apiclient)
-
+        cls.template = get_test_template(cls.apiclient, cls.zone.id, cls.hypervisor)
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template"
+            assert False, "get_test_template() failed to return template"
 
         cls.logger.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,
@@ -437,9 +390,6 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
 
         try:
             cls.logger.debug("Cleaning up resources")
-            try:
-                cls.template.delete(cls.apiclient)
-            except Exception: pass
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception, e:
             raise Exception("Cleanup failed with %s" % e)
@@ -471,14 +421,9 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
-        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
-                         cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower(
-        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
-        cls.template.download(cls.apiclient)
-
+        cls.template = get_test_template(cls.apiclient, cls.zone.id, cls.hypervisor)
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template"
+            assert False, "get_test_template() failed to return template"
 
         cls.logger.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,
@@ -814,9 +759,6 @@ class TestVpcSite2SiteVpn(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            try:
-                cls.template.delete(cls.apiclient)
-            except Exception: pass
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception, e:
             raise Exception("Cleanup failed with %s" % e)
@@ -848,14 +790,9 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
-        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
-                         cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower(
-        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
-        cls.template.download(cls.apiclient)
-
+        cls.template = get_test_template(cls.apiclient, cls.zone.id, cls.hypervisor)
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template"
+            assert False, "get_test_template() failed to return template"
 
         cls.logger.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,
@@ -1194,9 +1131,6 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            try:
-                cls.template.delete(cls.apiclient)
-            except Exception: pass
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception, e:
             raise Exception("Cleanup failed with %s" % e)
@@ -1228,14 +1162,9 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
 
         cls.hypervisor = testClient.getHypervisorInfo()
 
-        cls.logger.debug("Downloading Template: %s from: %s" % (cls.services["template"][
-                         cls.hypervisor.lower()], cls.services["template"][cls.hypervisor.lower()]["url"]))
-        cls.template = Template.register(cls.apiclient, cls.services["template"][cls.hypervisor.lower(
-        )], cls.zone.id, hypervisor=cls.hypervisor.lower(), account=cls.account.name, domainid=cls.domain.id)
-        cls.template.download(cls.apiclient)
-
+        cls.template = get_test_template(cls.apiclient, cls.zone.id, cls.hypervisor)
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template"
+            assert False, "get_test_template() failed to return template"
 
         cls.logger.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,
@@ -1642,9 +1571,6 @@ class TestVPCSite2SiteVPNMultipleOptions(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
-            try:
-                cls.template.delete(cls.apiclient)
-            except Exception: pass
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception, e:
             raise Exception("Cleanup failed with %s" % e)

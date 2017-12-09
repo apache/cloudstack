@@ -897,7 +897,7 @@
 
             $listView.dialog({
                 dialogClass: 'multi-edit-add-list panel',
-                width: 825,
+                width: 900,
                 title: _l('Select VM'),
                 buttons: [{
                     text: _l('label.apply'),

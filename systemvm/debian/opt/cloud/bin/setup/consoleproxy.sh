@@ -19,7 +19,7 @@
 . /opt/cloud/bin/setup/common.sh
 
 consoleproxy_svcs() {
-  echo "cloud ssh" > /var/cache/cloud/enabled_svcs
+  echo "cloud" > /var/cache/cloud/enabled_svcs
   echo "haproxy dnsmasq apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
   mkdir -p /var/log/cloud
 }

@@ -28,7 +28,7 @@ from marvin.lib.base import (Account,
                              DiskOffering)
 from marvin.lib.common import (get_zone,
                                get_domain,
-                               get_template)
+                               get_test_template)
 from marvin.codes import PASS
 
 
@@ -44,11 +44,12 @@ class TestDeployVMFromISO(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
 
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.testdata["ostype"]
+            cls.hypervisor
         )
 
         # Create service, disk offerings  etc

@@ -44,6 +44,10 @@ CMDLINE=/var/cache/cloud/cmdline
 PATCH_MOUNT=$1
 TYPE=$2
 
+# Refresh and setup systemd
+chmod -x /etc/systemd/system/cloud*.service
+systemctl daemon-reload
+
 echo "Patching systemvm for cloud service with mount=$PATCH_MOUNT for type=$TYPE" >> $logfile
 
 if [ "$TYPE" == "consoleproxy" ] || [ "$TYPE" == "secstorage" ]  && [ -f ${PATCH_MOUNT}/agent.zip ]

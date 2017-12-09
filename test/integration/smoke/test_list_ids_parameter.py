@@ -29,7 +29,7 @@ from marvin.lib.base import (Account,
                              VmSnapshot,
                              VirtualMachine)
 from marvin.lib.common import (get_domain,
-                                get_zone, get_template)
+                                get_zone, get_test_template)
 from marvin.codes import FAILED, PASS
 from nose.plugins.attrib import attr
 #Import System modules
@@ -62,14 +62,14 @@ class TestListIdsParams(cloudstackTestCase):
                                             cls.services["service_offerings"]["tiny"]
                                             )
 
-        template = get_template(
+        template = get_test_template(
                             cls.apiclient,
                             cls.zone.id,
-                            cls.services["ostype"]
+                            cls.hypervisor
                             )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
-            
+            assert False, "get_test_template() failed to return template"
+
         cls.services["template"]["ostypeid"] = template.ostypeid
         cls.services["template_2"]["ostypeid"] = template.ostypeid
         cls.services["ostypeid"] = template.ostypeid

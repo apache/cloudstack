@@ -35,7 +35,7 @@ from marvin.lib.base import (ServiceOffering,
                              Network,
                              Router)
 from marvin.lib.common import (get_zone,
-                               get_template,
+                               get_test_template,
                                get_domain,
                                list_virtual_machines,
                                list_networks,
@@ -69,11 +69,12 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
-        template = get_template(
+        template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id

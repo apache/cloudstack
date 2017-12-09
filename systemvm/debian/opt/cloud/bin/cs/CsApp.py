@@ -66,7 +66,7 @@ class CsApache(CsApp):
 
 class CsPasswdSvc():
     """
-      nohup bash /opt/cloud/bin/vpc_passwd_server $ip >/dev/null 2>&1 &
+      CloudStack VR password server
     """
 
     def __init__(self, ip):

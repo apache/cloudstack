@@ -53,7 +53,7 @@ function install_packages() {
   fi
 
   ${apt_get} install grub-legacy \
-    rsyslog logrotate cron net-tools ifupdown vim netbase iptables \
+    rsyslog logrotate cron net-tools ifupdown tmux vim netbase iptables \
     openssh-server e2fsprogs tcpdump socat wget \
     python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
     inetutils-ping iputils-arping httping  curl \

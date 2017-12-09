@@ -21,8 +21,8 @@ set -x
 
 function cleanup_apt() {
   apt-get -y remove --purge dictionaries-common busybox isc-dhcp-client isc-dhcp-common \
-    task-english task-ssh-server tasksel tasksel-data laptop-detect nano wamerican \
-    debconf-i18n sharutils gnupg gnupg-agent keyboard-configuration
+    task-english task-ssh-server tasksel tasksel-data laptop-detect wamerican \
+    debconf-i18n sharutils gnupg gnupg-agent
 
   apt-get -y autoremove --purge
   apt-get autoclean
@@ -59,7 +59,6 @@ function cleanup_misc() {
   # Docs and data files
   rm -fr /var/lib/apt/*
   rm -fr /var/cache/apt/*
-  rm -fr /usr/lib/gnupg*
   rm -fr /usr/share/doc
   rm -fr /usr/share/man
   rm -fr /usr/share/info

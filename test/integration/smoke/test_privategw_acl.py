@@ -167,11 +167,12 @@ class TestPrivateGwACL(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"])
+            cls.hypervisor)
 
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id

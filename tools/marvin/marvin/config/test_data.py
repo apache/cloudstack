@@ -956,8 +956,54 @@ test_data = {
         "name": "xs",
         "passwordenabled": False,
         "ostype": "CentOS 5.6 (64-bit)"
-
     },
+
+    "test_templates": {
+        "kvm": {
+            "name": "tiny-kvm",
+            "displaytext": "tiny kvm",
+            "format": "qcow2",
+            "hypervisor": "kvm",
+            "ostype": "Other Linux (64-bit)",
+            "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "True"
+        },
+        "xenserver": {
+            "name": "tiny-xen",
+            "displaytext": "tiny xen",
+            "format": "vhd",
+            "hypervisor": "xenserver",
+            "ostype": "Other Linux (64-bit)",
+            "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "True"
+        },
+        "hyperv": {
+            "name": "tiny-hyperv",
+            "displaytext": "tiny hyperv",
+            "format": "vhd",
+            "hypervisor": "hyperv",
+            "ostype": "Other Linux (64-bit)",
+            "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-hyperv.vhd.zip",
+            "requireshvm": "True",
+            "ispublic": "True",
+            "isextractable": "True"
+        },
+        "vmware": {
+            "name": "tiny-vmware",
+            "displaytext": "tiny vmware",
+            "format": "ova",
+            "hypervisor": "vmware",
+            "ostype": "Other Linux (64-bit)",
+            "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
+            "requireshvm": "True",
+            "ispublic": "True"
+        }
+    },
+
     "coreos_volume": {
         "diskname": "Volume_core",
         "urlvmware":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",

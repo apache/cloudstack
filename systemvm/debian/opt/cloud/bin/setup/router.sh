@@ -49,11 +49,6 @@ setup_router() {
       fi
   fi
 
-  if [ -n "$ETH2_IP" -a "$RROUTER" == "1" ]
-  then
-    setup_redundant_router
-  fi
-
   log_it "Checking udev NIC assignment order changes"
   if [ "$NIC_MACS" != "" ]
   then

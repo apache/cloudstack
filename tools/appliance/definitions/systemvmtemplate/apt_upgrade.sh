@@ -19,10 +19,12 @@
 set -e
 set -x
 
-function remove_reserved_blocks() {
+# Perform fsck check on every 2nd boot
+function fix_tune2fs() {
   for partition in $(blkid -o list | grep ext | awk '{print $1}')
   do
-    tune2fs -m0 $partition
+    tune2fs -m 1 $partition
+    tune2fs -c 2 $partition
   done
   fdisk -l
   df -h
@@ -39,10 +41,11 @@ function apt_upgrade() {
   DEBIAN_FRONTEND=noninteractive
   DEBIAN_PRIORITY=critical
 
+  fix_tune2fs
+
   # Setup sudo
   echo 'cloud ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/cloud
 
-  remove_reserved_blocks
   add_backports
 
   rm -fv /root/*.iso

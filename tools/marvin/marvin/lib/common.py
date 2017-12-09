@@ -18,6 +18,7 @@
 """
 
 # Import Local Modules
+from marvin.config.test_data import test_data
 from marvin.cloudstackAPI import (listConfigurations,
                                   listPhysicalNetworks,
                                   listRegions,
@@ -76,6 +77,7 @@ from marvin.lib.base import (PhysicalNetwork,
                              NATRule,
                              StaticNATRule,
                              Volume,
+                             Template,
                              Account,
                              Project,
                              Snapshot,
@@ -296,6 +298,7 @@ def get_pod(apiclient, zone_id=None, pod_id=None, pod_name=None):
     if validateList(cmd_out)[0] != PASS:
         return FAILED
     return cmd_out[0]
+
 def get_template(
         apiclient, zone_id=None, ostype_desc=None, template_filter="featured", template_type='BUILTIN',
         template_id=None, template_name=None, account=None, domain_id=None, project_id=None,
@@ -341,6 +344,50 @@ def get_template(
     '''
     return list_templatesout[0]
 
+
+def get_test_template(apiclient, zone_id=None, hypervisor=None):
+    """
+    @Name : get_test_template
+    @Desc : Retrieves the test template used to running tests. When the template
+            is missing it will be download at most one in a zone for a hypervisor.
+    @Input : returns a template
+    """
+    test_templates = test_data["test_templates"]
+
+    if hypervisor is None:
+        return FAILED
+
+    hypervisor = hypervisor.lower()
+
+    # Return built-in template for simulator
+    if hypervisor == 'simulator':
+        return get_template(apiclient, zone_id)
+
+    if hypervisor not in test_templates.keys():
+        print "Provided hypervisor has no test template"
+        return FAILED
+
+    test_template = test_templates[hypervisor]
+
+    cmd = listTemplates.listTemplatesCmd()
+    cmd.name = test_template['name']
+    cmd.templatefilter = 'all'
+    if zone_id is not None:
+        cmd.zoneid = zone_id
+    if hypervisor is not None:
+        cmd.hypervisor = hypervisor
+    templates = apiclient.listTemplates(cmd)
+
+    if validateList(templates)[0] != PASS:
+        template = Template.register(apiclient, test_template, zoneid=zone_id, hypervisor=hypervisor.lower(), randomize_name=False)
+        template.download(apiclient)
+        return template
+
+    for template in templates:
+        if template.isready and template.ispublic:
+            return template
+
+    return FAILED
 
 
 def get_windows_template(

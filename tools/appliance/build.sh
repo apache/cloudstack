@@ -397,7 +397,7 @@ function stage_vmx (){
 displayname = "${1}"
 annotation = "${1}"
 guestos = "otherlinux-64"
-virtualhw.version = "7"
+virtualHW.version = "8"
 config.version = "8"
 numvcpus = "1"
 cpuid.coresPerSocket = "1"
@@ -611,8 +611,8 @@ function main() {
   ovm_export "${hdd_path}"
   kvm_export "${hdd_path}"
   vmware_export "${machine_uuid}" "${hdd_uuid}"
-  vagrant_export "${machine_uuid}"
   hyperv_export "${hdd_uuid}"
+  #vagrant_export "${machine_uuid}"
   md5sum dist/* > dist/md5sum.txt
   add_on_exit log INFO "BUILD SUCCESSFUL"
 }

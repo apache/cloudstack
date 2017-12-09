@@ -11,4 +11,4 @@ WantedBy=multi-user.target
 Type=oneshot
 ExecStart=/opt/cloud/bin/setup/postinit.sh
 RemainAfterExit=true
-TimeoutStartSec=1min
+TimeoutStartSec=10min

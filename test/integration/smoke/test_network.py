@@ -37,7 +37,7 @@ from marvin.lib.base import (Account,
                              Router)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_test_template,
                                list_hosts,
                                list_publicIP,
                                list_nat_rules,
@@ -258,14 +258,13 @@ class TestPortForwarding(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
-        template = get_template(
+        template = get_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services[
-                "ostype"]
+            assert False, "get_test_template() failed to return template"
 
         # Create an account, network, VM and IP addresses
         cls.account = Account.create(
@@ -583,15 +582,15 @@ class TestRebootRouter(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient)
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
-        template = get_template(
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        template = get_test_template(
             self.apiclient,
             self.zone.id,
-            self.services["ostype"]
+            self.hypervisor
         )
         if template == FAILED:
-            self.fail(
-                "get_template() failed to return template with description %s" %
-                self.services["ostype"])
+            self.fail("get_test_template() failed to return template")
+
         self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         # Create an account, network, VM and IP addresses
@@ -756,10 +755,11 @@ class TestReleaseIP(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient)
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
-        template = get_template(
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        template = get_test_template(
             self.apiclient,
             self.zone.id,
-            self.services["ostype"]
+            self.hypervisor
         )
         self.services["virtual_machine"]["zoneid"] = self.zone.id
 
@@ -897,10 +897,11 @@ class TestDeleteAccount(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient)
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
-        template = get_template(
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        template = get_test_template(
             self.apiclient,
             self.zone.id,
-            self.services["ostype"]
+            self.hypervisor
         )
         self.services["virtual_machine"]["zoneid"] = self.zone.id
 
@@ -1040,14 +1041,13 @@ class TestRouterRules(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
-        template = get_template(
+        template = get_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template\
-                    with description %s" % cls.services["ostype"]
+            assert False, "get_test_template() failed to return template"
 
         # Create an account, network, VM and IP addresses
         cls.account = Account.create(

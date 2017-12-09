@@ -27,16 +27,16 @@ arch = 'amd64'
 architectures = {
     :amd64 => {
         :os_type_id => 'Debian_64',
-        :iso_file => 'debian-9.2.1-amd64-netinst.iso',
-        :iso_src => 'https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.2.1-amd64-netinst.iso',
-        :iso_sha512 => 'ebfe25dc593967e39349b205480b0ec0103ef4a0468c602f4857e13d06d407bfe876162399e0e8d4dea5675953dc37ab585316f307ccf9f4440124b4f719df04'
+        :iso_file => 'debian-9.3.0-amd64-netinst.iso',
+        :iso_src => 'https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.3.0-amd64-netinst.iso',
+        :iso_sha512 => '8775231d6f56a3d8f116eb64fe048f5cbd2ea0f8c092a1cb7608bcb4106f9c85cb69ce68f53bd381019ab40f1c0316843036daf3fd9107c81c58a240334cc747'
     }
 }
 
 config = {
     :cpu_count => '1',
     :memory_size => '512',
-    :disk_size => '2000', :disk_format => 'VDI', :hostiocache => 'off',
+    :disk_size => '2100', :disk_format => 'VDI', :hostiocache => 'off',
     :iso_download_timeout => '1000',
     :boot_wait => '10',
     :boot_cmd_sequence => [

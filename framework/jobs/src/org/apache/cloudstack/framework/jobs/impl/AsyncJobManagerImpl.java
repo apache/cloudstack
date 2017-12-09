@@ -216,6 +216,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
             @SuppressWarnings("rawtypes")
             final GenericDao dao = GenericDaoBase.getDao(job.getClass());
 
+            if (dao == null) {
+                throw new CloudRuntimeException(String.format("Failed to get dao from job's class=%s, for job id=%d, cmd=%s", job.getClass(), job.getId(), job.getCmd()));
+            }
+
             publishOnEventBus(job, "submit");
 
             if (!_vmInstanceDao.lockInLockTable(String.valueOf(syncObjId), VmJobLockTimeout.value())){

@@ -21,16 +21,23 @@ global_defs {
 
 vrrp_script heartbeat {
     script "[RROUTER_BIN_PATH]/heartbeat.sh"
-    interval 4
+    interval 5
 }
 
 vrrp_instance inside_network {
-    state BACKUP
+    state EQUAL
     interface eth2
     virtual_router_id 51
     nopreempt
 
     advert_int 1
+    garp_master_delay 1
+    garp_master_repeat 10
+    garp_master_refresh 5
+
+    #use_vmac
+    #vmac_xmit_base
+
     authentication {
         auth_type AH
         auth_pass PASS

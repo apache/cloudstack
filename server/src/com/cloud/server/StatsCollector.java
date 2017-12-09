@@ -918,7 +918,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     try {
                         HashMap<String, VolumeStatsEntry> volumeStatsByUuid = _userVmMgr.getVolumeStatistics(pool.getClusterId(), pool.getUuid(), pool.getPoolType(), volumeLocators, StatsTimeout.value());
                         if (volumeStatsByUuid != null){
-                            _volumeStats.putAll(volumeStatsByUuid);
+                            for (final Map.Entry<String, VolumeStatsEntry> entry : volumeStatsByUuid.entrySet()) {
+                                if (entry == null || entry.getKey() == null || entry.getValue() == null) {
+                                    continue;
+                                }
+                                _volumeStats.put(entry.getKey(), entry.getValue());
+                            }
                         }
                     } catch (Exception e) {
                         s_logger.warn("Failed to get volume stats for cluster with ID: " + pool.getClusterId(), e);
@@ -932,7 +937,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     }
 
     public VolumeStats getVolumeStats(String volumeLocator) {
-        return _volumeStats.get(volumeLocator);
+        if (volumeLocator != null && _volumeStats.containsKey(volumeLocator)) {
+            return _volumeStats.get(volumeLocator);
+        }
+        return null;
     }
 
     class StorageCollector extends ManagedContextRunnable {

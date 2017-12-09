@@ -73,11 +73,6 @@ EOF
      fi
   fi
 
-  if [ "$RROUTER" == "1" ]
-  then
-    setup_redundant_router
-  fi
-
   ip route delete default
   # create route table for static route
 

@@ -19,7 +19,7 @@
 . /opt/cloud/bin/setup/common.sh
 
 dhcpsrvr_svcs() {
-  echo "ssh dnsmasq apache2" > /var/cache/cloud/enabled_svcs
+  echo "dnsmasq apache2" > /var/cache/cloud/enabled_svcs
   echo "cloud nfs-common conntrackd keepalived haproxy portmap" > /var/cache/cloud/disabled_svcs
 }
 
