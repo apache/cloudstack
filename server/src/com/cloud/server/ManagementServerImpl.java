@@ -3370,6 +3370,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         boolean securityGroupsEnabled = false;
         boolean elasticLoadBalancerEnabled = false;
         boolean KVMSnapshotEnabled = false;
+        boolean allowVolumeExtraction = false;
         String supportELB = "false";
         final List<NetworkVO> networks = _networkDao.listSecurityGroupEnabledNetworks();
         if (networks != null && !networks.isEmpty()) {
@@ -3387,6 +3388,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final long diskOffMinSize = VolumeOrchestrationService.CustomDiskOfferingMinSize.value();
         final long diskOffMaxSize = VolumeOrchestrationService.CustomDiskOfferingMaxSize.value();
         KVMSnapshotEnabled = Boolean.parseBoolean(_configDao.getValue("KVM.snapshot.enabled"));
+
+        Account account = CallContext.current().getCallingAccount();
+        allowVolumeExtraction = TemplateManager.AllowVolumeExtraction.valueIn(account.getId());
 
         final boolean userPublicTemplateEnabled = TemplateManager.AllowPublicUserTemplates.valueIn(caller.getId());
 
@@ -3417,6 +3421,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
         capabilities.put("allowUserViewDestroyedVM", allowUserViewDestroyedVM);
         capabilities.put("allowUserExpungeRecoverVM", allowUserExpungeRecoverVM);
+        capabilities.put("allowVolumeExtraction", allowVolumeExtraction);
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);

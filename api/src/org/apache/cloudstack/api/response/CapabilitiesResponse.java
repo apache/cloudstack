@@ -84,6 +84,10 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if the user can recover and expunge virtualmachines, false otherwise", since = "4.6.0")
     private boolean allowUserExpungeRecoverVM;
 
+    @SerializedName("allowvolumeextraction")
+    @Param(description = "If false, users will not be able to extract volumes and templates")
+    private boolean allowVolumeExtraction;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -142,5 +146,9 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setAllowUserExpungeRecoverVM(boolean allowUserExpungeRecoverVM) {
         this.allowUserExpungeRecoverVM = allowUserExpungeRecoverVM;
+    }
+
+    public void setAllowVolumeExtraction(boolean allowVolumeExtraction) {
+        this.allowVolumeExtraction = allowVolumeExtraction;
     }
 }

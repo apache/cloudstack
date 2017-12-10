@@ -149,6 +149,7 @@
 
                         g_allowUserExpungeRecoverVm = json.listcapabilitiesresponse.capability.allowuserexpungerecovervm;
                         g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
+                        g_allowvolumeextraction = json.listcapabilitiesresponse.capability.allowvolumeextraction;
 
                         g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 
@@ -302,6 +303,7 @@
                                 }
                                 g_allowUserExpungeRecoverVm = json.listcapabilitiesresponse.capability.allowuserexpungerecovervm;
                                 g_userProjectsEnabled = json.listcapabilitiesresponse.capability.allowusercreateprojects;
+                                g_allowvolumeextraction = json.listcapabilitiesresponse.capability.allowvolumeextraction;
 
                                 g_cloudstackversion = json.listcapabilitiesresponse.capability.cloudstackversion;
 
@@ -360,6 +362,7 @@
                         g_kvmsnapshotenabled = null;
                         g_regionsecondaryenabled = null;
                         g_loginCmdText = null;
+                        g_allowvolumeextraction = null;
 
                         // Remove any cookies
                         var cookies = document.cookie.split(";");
@@ -396,6 +399,7 @@
                 g_kvmsnapshotenabled = null;
                 g_regionsecondaryenabled = null;
                 g_loginCmdText = null;
+                g_allowvolumeextraction = null;
 
                 // Remove any cookies
                 var cookies = document.cookie.split(";");

@@ -2279,6 +2279,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new PermissionDeniedException("Extraction has been disabled by admin");
         }
 
+        boolean VolumeExtractionEnabled = TemplateManager.AllowVolumeExtraction.valueIn(account.getId());
+        //AccountDetailVO accountDetailVO = _accountDetailsDao.findDetail(account.getId(), "allow.volume.extraction");
+        if (!VolumeExtractionEnabled) {
+            throw new PermissionDeniedException("Extraction has been disabled in user properties");
+        }
+
         VolumeVO volume = _volsDao.findById(volumeId);
         if (volume == null) {
             InvalidParameterValueException ex = new InvalidParameterValueException("Unable to find volume with specified volumeId");
