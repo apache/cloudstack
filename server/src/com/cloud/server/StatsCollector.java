@@ -64,6 +64,7 @@ import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.gpu.dao.HostGpuGroupsDao;
@@ -92,18 +93,20 @@ import com.cloud.network.as.dao.AutoScaleVmGroupVmMapDao;
 import com.cloud.network.as.dao.AutoScaleVmProfileDao;
 import com.cloud.network.as.dao.ConditionDao;
 import com.cloud.network.as.dao.CounterDao;
+import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceState;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.ImageStoreDetailsUtil;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StorageStats;
 import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.UserStatisticsVO;
-import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.user.dao.VmDiskStatisticsDao;
@@ -172,6 +175,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private UserVmManager _userVmMgr;
     @Inject
     private HostDao _hostDao;
+    @Inject
+    private ClusterDao _clusterDao;
     @Inject
     private UserVmDao _userVmDao;
     @Inject
@@ -916,7 +921,18 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         }
                     }
                     try {
-                        HashMap<String, VolumeStatsEntry> volumeStatsByUuid = _userVmMgr.getVolumeStatistics(pool.getClusterId(), pool.getUuid(), pool.getPoolType(), volumeLocators, StatsTimeout.value());
+                        Map<String, VolumeStatsEntry> volumeStatsByUuid;
+                        if (pool.getScope() == ScopeType.ZONE) {
+                            volumeStatsByUuid = new HashMap<>();
+                            for (final Cluster cluster: _clusterDao.listByZoneId(pool.getDataCenterId())) {
+                                final Map<String, VolumeStatsEntry> volumeStatsForCluster = _userVmMgr.getVolumeStatistics(cluster.getId(), pool.getUuid(), pool.getPoolType(), volumeLocators, StatsTimeout.value());
+                                if (volumeStatsForCluster != null) {
+                                    volumeStatsByUuid.putAll(volumeStatsForCluster);
+                                }
+                            }
+                        } else {
+                            volumeStatsByUuid = _userVmMgr.getVolumeStatistics(pool.getClusterId(), pool.getUuid(), pool.getPoolType(), volumeLocators, StatsTimeout.value());
+                        }
                         if (volumeStatsByUuid != null){
                             for (final Map.Entry<String, VolumeStatsEntry> entry : volumeStatsByUuid.entrySet()) {
                                 if (entry == null || entry.getKey() == null || entry.getValue() == null) {

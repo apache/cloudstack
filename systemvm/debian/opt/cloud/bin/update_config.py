@@ -112,6 +112,12 @@ def is_guestnet_configured(guestnet_dict, keys):
 
     return exists
 
+# If the command line json file is unprocessed process it
+# This is important or, the control interfaces will get deleted!
+if jsonFilename != "cmd_line.json" and os.path.isfile(jsonPath % "cmd_line.json"):
+    qf = QueueFile()
+    qf.setFile("cmd_line.json")
+    qf.load(None)
 
 if not (os.path.isfile(jsonConfigFile) and os.access(jsonConfigFile, os.R_OK)):
     print "[ERROR] update_config.py :: Unable to read and access %s to process it" % jsonConfigFile

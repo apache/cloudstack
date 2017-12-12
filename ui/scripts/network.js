@@ -844,7 +844,7 @@
                                 'Released': 'off',
                                 'Destroy': 'off',
                                 'Shutdown': 'off',
-                                'Setup': 'warning',
+                                'Setup': 'on',
                                 'Implemented': 'on'
                             }
                         }

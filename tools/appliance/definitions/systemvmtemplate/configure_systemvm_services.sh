@@ -52,6 +52,15 @@ function do_signature() {
   echo "Cloudstack Release $CLOUDSTACK_RELEASE $(date)" > /etc/cloudstack-release
 }
 
+function configure_issue() {
+  cat > /etc/issue <<EOF
+   __?.o/  Apache CloudStack SystemVM $CLOUDSTACK_RELEASE
+  (  )#    https://cloudstack.apache.org
+ (___(_)   Debian GNU/Linux 9 \n \l
+
+EOF
+}
+
 function configure_strongswan() {
   # change the charon stroke timeout from 3 minutes to 30 seconds
   sed -i "s/# timeout = 0/timeout = 30000/" /etc/strongswan.d/charon/stroke.conf
@@ -92,6 +101,7 @@ function configure_services() {
 
   configure_apache2
   configure_strongswan
+  configure_issue
 }
 
 return 2>/dev/null || configure_services

@@ -59,10 +59,8 @@ setup_router() {
 
     if [ "$oldmd5" != "$newmd5" ]
     then
-      log_it "udev NIC assignment requires reboot to take effect"
-      sync
-      sleep 2
-      reboot
+      log_it "Reloading udev for new udev NIC assignment"
+      udevadm control --reload-rules && udevadm trigger
     fi
   fi
 

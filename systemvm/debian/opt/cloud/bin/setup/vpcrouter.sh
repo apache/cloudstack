@@ -65,11 +65,8 @@ EOF
      if [ "$HYPERVISOR" == "vmware" ] || [ "$HYPERVISOR" == "hyperv" ];
      then
          ip route add $MGMTNET via $LOCAL_GW dev eth0
-
-          # a hacking way to activate vSwitch under VMware
-         ping -n -c 3 $LOCAL_GW &
-         sleep 3
-         pkill ping
+         # workaround to activate vSwitch under VMware
+         timeout 3 ping -n -c 3 $LOCAL_GW || true
      fi
   fi
 

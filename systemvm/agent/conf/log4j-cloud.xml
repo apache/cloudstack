@@ -24,7 +24,7 @@ under the License.
    <!-- Preserve messages in a local file -->
    <!-- ================================= -->
 
-   <appender name="FILE1" class="org.apache.log4j.RollingFileAppender">
+   <appender name="cloudLog" class="org.apache.log4j.RollingFileAppender">
       <param name="File" value="/var/log/cloud.log"/>
       <param name="MaxFileSize" value="10000KB"/>
       <param name="MaxBackupIndex" value="4"/>
@@ -34,7 +34,7 @@ under the License.
      </layout>
     </appender>
 
-    <appender name="FILE2" class="org.apache.log4j.RollingFileAppender">
+    <appender name="cloudOut" class="org.apache.log4j.RollingFileAppender">
        <param name="File" value="/var/log/cloud/cloud.out"/>
        <param name="Append" value="true"/>
        <param name="MaxFileSize" value="10000KB"/>
@@ -45,7 +45,7 @@ under the License.
     </layout>
     </appender>
 
-     <appender name="FILE3" class="org.apache.log4j.rolling.RollingFileAppender">
+     <appender name="cloudSystemvmLog" class="org.apache.log4j.rolling.RollingFileAppender">
        <param name="File" value="/usr/local/cloud/systemvm/cloud.log"/>
        <param name="Append" value="true"/>
        <param name="MaxFileSize" value="10000KB"/>
@@ -123,9 +123,9 @@ under the License.
    <root>
       <level value="INFO"/>
       <appender-ref ref="CONSOLE"/>
-      <appender-ref ref="FILE1"/>
-      <appender-ref ref="FILE2"/>
-      <appender-ref ref="FILE3"/>
+      <appender-ref ref="cloudLog"/>
+      <appender-ref ref="cloudOut"/>
+      <appender-ref ref="cloudSystemvmLog"/>
    </root>
 
 </log4j:configuration>

@@ -219,7 +219,8 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
                                      "controller index")
                 elif child.tag.lower() == "driver":
                     discard = child.get("discard")
-                    self.assertEqual(discard, "unmap", "discard settings not unmap")
+                    if discard: # may not be defined by older qemu/libvirt
+                        self.assertEqual(discard, "unmap", "discard settings not unmap")
 
     def verifyGuestState(self, diskcount):
         ssh = self.virtual_machine.get_ssh_client(reconnect=True)

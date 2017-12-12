@@ -4776,8 +4776,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
             s_logger.info("Unable to find vm " + work.getVmId());
+            throw new CloudRuntimeException("Unable to find VM id=" + work.getVmId());
         }
-        assert vm != null;
 
         orchestrateStop(vm.getUuid(), work.isCleanup());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);

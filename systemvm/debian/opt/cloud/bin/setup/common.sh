@@ -331,14 +331,14 @@ setup_common() {
     ip route add default via $GW dev $gwdev
   fi
 
-  # a hacking way to activate vSwitch under VMware
-  ping -n -c 3 $GW &
+  # Workaround to activate vSwitch under VMware
+  timeout 3 ping -n -c 3 $GW || true
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
-      ping -n -c 3 $LOCAL_GW &
+      timeout 3 ping -n -c 3 $LOCAL_GW || true
       #This code is added to address ARP issue by pinging MGMT_GW
       MGMT_GW=$(echo $MGMTNET | awk -F "." '{print $1"."$2"."$3".1"}')
-      ping -n -c 3 $MGMT_GW &
+      timeout 3 ping -n -c 3 $MGMT_GW || true
   fi
 
   if [ "$HYPERVISOR" == "vmware" ]; then

@@ -20,14 +20,14 @@ set -e
 set -x
 
 function configure_grub() {
-  cat <<EOF > /etc/default/grub
+  cat > /etc/default/grub <<EOF
 # If you change this file, run 'update-grub' afterwards to update
 # /boot/grub/grub.cfg.
 
 GRUB_DEFAULT=0
 GRUB_TIMEOUT=0
 GRUB_DISTRIBUTOR=Debian
-GRUB_CMDLINE_LINUX_DEFAULT=""
+GRUB_CMDLINE_LINUX_DEFAULT="loglevel=4"
 GRUB_CMDLINE_LINUX="console=tty0 console=ttyS0,115200n8 console=hvc0 earlyprintk=xen net.ifnames=0 biosdevname=0 debian-installer=en_US nomodeset"
 GRUB_CMDLINE_XEN="com1=115200 console=com1"
 GRUB_TERMINAL="console serial"

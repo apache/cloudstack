@@ -73,7 +73,7 @@ class TestSSVMs(cloudstackTestCase):
                 return list_host_response[0].state == 'Up', None
             return False, None
 
-        res, _ = wait_until(3, self.services["sleep"], checkRunningAgent)
+        res, _ = wait_until(3, 300, checkRunningAgent)
         if not res:
             raise Exception("Failed to wait for SSVM agent to be Up")
 
@@ -99,7 +99,7 @@ class TestSSVMs(cloudstackTestCase):
                 return ssvm_response.state == 'Running', ssvm_response
             return False, None
 
-        res, ssvm_response = wait_until(3, self.services["sleep"], checkRunningState)
+        res, ssvm_response = wait_until(3, 300, checkRunningState)
         if not res:
             self.fail("Failed to reach systemvm state to Running")
         return ssvm_response

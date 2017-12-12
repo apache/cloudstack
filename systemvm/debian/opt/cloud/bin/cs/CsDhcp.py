@@ -80,7 +80,7 @@ class CsDhcp(CsDataBag):
             # DNS search order
             if gn.get_dns() and device:
                 sline = "dhcp-option=tag:interface-%s-%s,6" % (device, idx)
-                dns_list = [x for x in gn.get_dns() if x is not None]
+                dns_list = [x for x in gn.get_dns() if not (not x)]
                 line = "dhcp-option=tag:interface-%s-%s,6,%s" % (device, idx, ','.join(dns_list))
                 self.conf.search(sline, line)
             # Gateway

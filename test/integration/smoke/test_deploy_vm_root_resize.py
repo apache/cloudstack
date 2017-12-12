@@ -53,8 +53,8 @@ class TestDeployVmRootSize(cloudstackTestCase):
         cls.services = cls.testClient.getParsedTestDataConfig()
         cls.services["mode"] = cls.zone.networktype
         cls._cleanup = []
+        cls.storageID = None
         cls.updateclone = False
-        cls.restartreq = False
         cls.defaultdiskcontroller = "ide"
         cls.template = get_template(cls.api_client, cls.zone.id)
         if cls.template == FAILED:
@@ -70,7 +70,8 @@ class TestDeployVmRootSize(cloudstackTestCase):
         list_pool_resp = list_storage_pools(cls.api_client,
                                             account=cls.account.name,
                                             domainid=cls.domain.id)
-        #Identify the storage pool type  and set vmware fullclone to
+
+        # Identify the storage pool type  and set vmware fullclone to
         # true if storage is VMFS
         if cls.hypervisor == 'vmware':
              # please make sure url of templateregister dictionary in
@@ -89,26 +90,13 @@ class TestDeployVmRootSize(cloudstackTestCase):
                                               value="scsi")
 
                         cls.updateclone = True
-                        cls.restartreq = True
-
-             list_config_fullclone_global_response = list_configurations(
-                        cls.api_client
-                        , name=
-                        "vmware.create.full.clone")
-             if list_config_fullclone_global_response[0].value=="false":
-                        Configurations.update(cls.api_client,
-                                              "vmware.create.full.clone",
-                                              value="true")
-
-                        cls.updateclone = True
-                        cls.restartreq = True
 
              for strpool in list_pool_resp:
                 if strpool.type.lower() == "vmfs" or strpool.type.lower()== "networkfilesystem":
                     list_config_storage_response = list_configurations(
-                        cls.api_client
-                        , name=
-                        "vmware.create.full.clone",storageid=strpool.id)
+                        cls.api_client, name="vmware.create.full.clone",
+                        storageid=strpool.id)
+
                     res = validateList(list_config_storage_response)
                     if res[2]== INVALID_INPUT:
                         raise Exception("Failed to  list configurations ")
@@ -123,12 +111,16 @@ class TestDeployVmRootSize(cloudstackTestCase):
                                            tags="scsi")
                         cls.storageID = strpool.id
                         break
-             if cls.restartreq:
-                cls.restartServer()
 
-                #Giving 30 seconds to management to warm-up,
-                #Experienced failures when trying to deploy a VM exactly when management came up
-                time.sleep(30)
+             list_config_fullclone_global_response = list_configurations(
+                        cls.api_client, name="vmware.create.full.clone")
+
+             if list_config_fullclone_global_response[0].value=="false":
+                        Configurations.update(cls.api_client,
+                                              "vmware.create.full.clone",
+                                              value="true")
+                        cls.updateclone = True
+
 
         #create a service offering
         cls.service_offering = ServiceOffering.create(
@@ -147,21 +139,17 @@ class TestDeployVmRootSize(cloudstackTestCase):
 
             if cls.updateclone:
                 Configurations.update(cls.api_client,
-                                      "vmware.create.full.clone",
-                                      value="false",storageid=cls.storageID)
+                                              "vmware.root.disk.controller",
+                                              value=cls.defaultdiskcontroller)
                 Configurations.update(cls.api_client,
                                               "vmware.create.full.clone",
                                               value="false")
                 Configurations.update(cls.api_client,
-                                              "vmware.root.disk.controller",
-                                              value=cls.defaultdiskcontroller)
-                StoragePool.update(cls.api_client, id=cls.storageID,
-                                   tags="")
-                cls.restartServer()
-
-                #Giving 30 seconds to management to warm-up,
-                #Experienced failures when trying to deploy a VM exactly when management came up
-                time.sleep(30)
+                                      "vmware.create.full.clone",
+                                      value="false", storageid=cls.storageID)
+                if cls.storageID:
+                    StoragePool.update(cls.api_client, id=cls.storageID,
+                                    tags="")
 
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:

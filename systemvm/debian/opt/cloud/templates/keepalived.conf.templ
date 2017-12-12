@@ -25,7 +25,7 @@ vrrp_script heartbeat {
 }
 
 vrrp_instance inside_network {
-    state EQUAL
+    state BACKUP
     interface eth2
     virtual_router_id 51
     nopreempt
