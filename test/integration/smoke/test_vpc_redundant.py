@@ -600,7 +600,7 @@ class TestVPCRedundancy(cloudstackTestCase):
 
         gc_wait = Configurations.list(self.apiclient, name="network.gc.wait")
         gc_interval = Configurations.list(self.apiclient, name="network.gc.interval")
-        
+
         self.logger.debug("network.gc.wait is ==> %s" % gc_wait)
         self.logger.debug("network.gc.interval is ==> %s" % gc_interval)
 
@@ -618,7 +618,7 @@ class TestVPCRedundancy(cloudstackTestCase):
 
     @attr(tags=["advanced", "intervlan"], required_hardware="true")
     def test_05_rvpc_multi_tiers(self):
-        """ Create a redundant VPC with 1 Tier, 1 VM, 1 ACL, 1 PF and test Network GC Nics"""
+        """ Create a redundant VPC with multiple tiers"""
         self.logger.debug("Starting test_05_rvpc_multi_tiers")
         self.query_routers()
 
