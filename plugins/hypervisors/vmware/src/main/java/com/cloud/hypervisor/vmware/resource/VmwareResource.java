@@ -4029,7 +4029,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
 
-            return new MigrateWithStorageAnswer(cmd, volumeToList);
+            return new MigrateWithStorageAnswer(cmd, volumeToList, false, null);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encountered remote exception at vCenter, invalidating VMware session context");
@@ -4038,7 +4038,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             String msg = "MigrationCommand failed due to " + VmwareHelper.getExceptionMessage(e);
             s_logger.warn(msg, e);
-            return new MigrateWithStorageAnswer(cmd, (Exception)e);
+            return new MigrateWithStorageAnswer(cmd, false, false, (Exception)e);
         } finally {
             // Cleanup datastores mounted on source host
             for (String mountedDatastore : mountedDatastoresAtSource) {
