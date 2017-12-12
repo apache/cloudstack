@@ -689,7 +689,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
-    static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "10",
+    static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6",
                                                                                       "Specifies the length of a randomly generated password", false);
     @Inject
     public AccountManager _accountMgr;
