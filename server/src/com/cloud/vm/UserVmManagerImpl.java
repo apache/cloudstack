@@ -765,7 +765,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             // Need to reboot the virtual machine so that the password gets
             // redownloaded from the DomR, and reset on the VM
             if (!result) {
-                s_logger.debug("Failed to reset password for the virutal machine; no need to reboot the vm");
+                s_logger.debug("Failed to reset password for the virtual machine; no need to reboot the vm");
                 return false;
             } else {
                 if (vmInstance.getState() == State.Stopped) {
@@ -874,7 +874,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Need to reboot the virtual machine so that the password gets redownloaded from the DomR, and reset on the VM
         if (!result) {
-            s_logger.debug("Failed to reset SSH Key for the virutal machine; no need to reboot the vm");
+            s_logger.debug("Failed to reset SSH Key for the virtual machine; no need to reboot the vm");
             return false;
         } else {
             if (vmInstance.getState() == State.Stopped) {
