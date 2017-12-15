@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import com.cloud.agent.api.AttachOrDettachConfigDriveCommand;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.ca.CAManager;
@@ -4730,8 +4731,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             orchestrateStart(vm.getUuid(), work.getParams(), work.getPlan(), _dpMgr.getDeploymentPlannerByName(work.getDeploymentPlanner()));
         }
         catch (CloudRuntimeException e){
-            s_logger.info("Caught CloudRuntimeException, returning job failed");
-            return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, null);
+            s_logger.info("Caught CloudRuntimeException, returning job failed " + e);
+            CloudRuntimeException ex = new CloudRuntimeException("Unable to start VM instance");
+            return new Pair<JobInfo.Status, String>(JobInfo.Status.FAILED, JobSerializerHelper.toObjectSerializedString(ex));
         }
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);
     }
