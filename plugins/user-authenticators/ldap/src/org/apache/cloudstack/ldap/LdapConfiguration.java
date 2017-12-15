@@ -42,10 +42,111 @@ public class LdapConfiguration implements Configurable{
     private static final ConfigKey<Boolean> ldapEnableNestedGroups = new ConfigKey<Boolean>(Boolean.class, "ldap.nested.groups.enable", "Advanced", "true",
                                                                                             "if true, nested groups will also be queried", true, ConfigKey.Scope.Global, null);
 
-    private final static int scope = SearchControls.SUBTREE_SCOPE;
+    private static final ConfigKey<String> ldapBaseDn = new ConfigKey<String>(
+            "Advanced",
+            String.class,
+            "ldap.basedn",
+            null,
+            "Sets the basedn for LDAP",
+            true,
+            ConfigKey.Scope.Domain);
 
-    @Inject
-    private ConfigurationDao _configDao;
+    private static final ConfigKey<String> ldapBindPassword = new ConfigKey<String>(
+            "Advanced",
+            String.class,
+            "ldap.bind.password",
+            null,
+            "Sets the bind password for LDAP",
+            true,
+            ConfigKey.Scope.Domain);
+    private static final ConfigKey<String> ldapBindPrincipal = new ConfigKey<String>(
+            "Advanced",
+            String.class,
+            "ldap.bind.principal",
+            null,
+            "Sets the bind principal for LDAP",
+            true,
+            ConfigKey.Scope.Domain);
+    private static final ConfigKey<String> ldapEmailAttribute = new ConfigKey<String>(
+            "Advanced",
+            String.class,
+            "ldap.email.attribute",
+            "mail",
+            "Sets the email attribute used within LDAP",
+            true,
+            ConfigKey.Scope.Domain);
+    private static final ConfigKey<String> ldapFirstnameAttribute = new ConfigKey<String>(
+            "Advanced",
+            String.class,
+            "ldap.firstname.attribute",
+            "givenname",
+            "Sets the firstname attribute used within LDAP",
+            true,
+            ConfigKey.Scope.Domain);
+    private static final ConfigKey<String> ldapLastnameAttribute = new ConfigKey<String>(
+            "Advanced",
+            String.class, "ldap.lastname.attribute",
+            "sn",
+            "Sets the lastname attribute used within LDAP",
+            true,
+            ConfigKey.Scope.Domain);
+    private static final ConfigKey<String> ldapUsernameAttribute = new ConfigKey<String>(
+            "Advanced",
+            String.class,
+            "ldap.username.attribute",
+            "uid",
+            "Sets the username attribute used within LDAP",
+            true,
+            ConfigKey.Scope.Domain);
+    private static final ConfigKey<String> ldapUserObject = new ConfigKey<String>(
+            "Advanced",
+            String.class,
+            "ldap.user.object",
+            "inetOrgPerson",
+            "Sets the object type of users within LDAP",
+            true,
+            ConfigKey.Scope.Domain);
+    private static final ConfigKey<String> ldapSearchGroupPrinciple = new ConfigKey<String>(
+            "Advanced",
+            String.class,
+            "ldap.search.group.principle",
+            null,
+            "Sets the principle of the group that users must be a member of",
+            true,
+            ConfigKey.Scope.Domain);
+    private static final ConfigKey<String> ldapGroupObject = new ConfigKey<String>(
+            "Advanced",
+            String.class,
+            "ldap.group.object",
+            "groupOfUniqueNames",
+            "Sets the object type of groups within LDAP",
+            true,
+            ConfigKey.Scope.Domain);
+    private static final ConfigKey<String> ldapGroupUniqueMemberAttribute = new ConfigKey<String>(
+            "Advanced",
+            String.class,
+            "ldap.group.user.uniquemember",
+            "uniquemember",
+            "Sets the attribute for uniquemembers within a group",
+            true,
+            ConfigKey.Scope.Domain);
+
+    private static final ConfigKey<String> ldapTrustStore = new ConfigKey<String>(
+            "Advanced",
+            String.class,
+            "ldap.truststore",
+            null,
+            "Sets the path to the truststore to use for SSL",
+            true);
+    private static final ConfigKey<String> ldapTrustStorePassword = new ConfigKey<String>(
+            "Advanced",
+            String.class,
+            "ldap.truststore.password",
+            null,
+            "Sets the password for the truststore",
+            true);
+
+    private final static int scope = SearchControls.SUBTREE_SCOPE;
 
     @Inject
     private LdapConfigurationDao _ldapConfigurationDao;
@@ -53,8 +154,12 @@ public class LdapConfiguration implements Configurable{
     public LdapConfiguration() {
     }
 
+    public LdapConfiguration(final LdapConfigurationDao ldapConfigurationDao) {
+        _ldapConfigurationDao = ldapConfigurationDao;
+    }
+
+    @Deprecated
     public LdapConfiguration(final ConfigurationDao configDao, final LdapConfigurationDao ldapConfigurationDao) {
-        _configDao = configDao;
         _ldapConfigurationDao = ldapConfigurationDao;
     }
 
@@ -67,20 +172,35 @@ public class LdapConfiguration implements Configurable{
     }
 
     public String getBaseDn() {
-        return _configDao.getValue("ldap.basedn");
+        return ldapBaseDn.defaultValue();
+    }
+
+    public String getBaseDn(long domain) {
+        return ldapBaseDn.valueIn(domain);
     }
 
     public String getBindPassword() {
-        return _configDao.getValue("ldap.bind.password");
+        return ldapBindPassword.value();
+    }
+
+    public String getBindPassword(long domain) {
+        return ldapBindPassword.valueIn(domain);
     }
 
     public String getBindPrincipal() {
-        return _configDao.getValue("ldap.bind.principal");
+        return ldapBindPrincipal.value();
+    }
+
+    public String getBindPrincipal(long domain) {
+        return ldapBindPrincipal.valueIn(domain);
     }
 
     public String getEmailAttribute() {
-        final String emailAttribute = _configDao.getValue("ldap.email.attribute");
-        return emailAttribute == null ? "mail" : emailAttribute;
+        return ldapEmailAttribute.value();
+    }
+
+    public String getEmailAttribute(long domain) {
+        return ldapEmailAttribute.valueIn(domain);
     }
 
     public String getFactory() {
@@ -88,13 +208,19 @@ public class LdapConfiguration implements Configurable{
     }
 
     public String getFirstnameAttribute() {
-        final String firstnameAttribute = _configDao.getValue("ldap.firstname.attribute");
-        return firstnameAttribute == null ? "givenname" : firstnameAttribute;
+        return ldapFirstnameAttribute.value();
+    }
+
+    public String getFirstnameAttribute(long domain) {
+        return ldapFirstnameAttribute.valueIn(domain);
     }
 
     public String getLastnameAttribute() {
-        final String lastnameAttribute = _configDao.getValue("ldap.lastname.attribute");
-        return lastnameAttribute == null ? "sn" : lastnameAttribute;
+        return ldapLastnameAttribute.value();
+    }
+
+    public String getLastnameAttribute(long domain) {
+        return ldapLastnameAttribute.valueIn(domain);
     }
 
     public String getProviderUrl() {
@@ -120,7 +246,11 @@ public class LdapConfiguration implements Configurable{
     }
 
     public String getSearchGroupPrinciple() {
-        return _configDao.getValue("ldap.search.group.principle");
+        return ldapSearchGroupPrinciple.value();
+    }
+
+    public String getSearchGroupPrinciple(long domain) {
+        return ldapSearchGroupPrinciple.valueIn(domain);
     }
 
     public boolean getSSLStatus() {
@@ -132,31 +262,43 @@ public class LdapConfiguration implements Configurable{
     }
 
     public String getTrustStore() {
-        return _configDao.getValue("ldap.truststore");
+        return ldapTrustStore.value();
     }
 
     public String getTrustStorePassword() {
-        return _configDao.getValue("ldap.truststore.password");
+        return ldapTrustStorePassword.value();
     }
 
     public String getUsernameAttribute() {
-        final String usernameAttribute = _configDao.getValue("ldap.username.attribute");
-        return usernameAttribute == null ? "uid" : usernameAttribute;
+        return ldapUsernameAttribute.value();
+    }
+
+    public String getUsernameAttribute(long domain) {
+        return ldapUsernameAttribute.valueIn(domain);
     }
 
     public String getUserObject() {
-        final String userObject = _configDao.getValue("ldap.user.object");
-        return userObject == null ? "inetOrgPerson" : userObject;
+        return ldapUserObject.value();
+    }
+
+    public String getUserObject(long domain) {
+        return ldapUserObject.valueIn(domain);
     }
 
     public String getGroupObject() {
-        final String groupObject = _configDao.getValue("ldap.group.object");
-        return groupObject == null ? "groupOfUniqueNames" : groupObject;
+        return ldapGroupObject.value();
+    }
+
+    public String getGroupObject(long domain) {
+        return ldapGroupObject.valueIn(domain);
     }
 
     public String getGroupUniqueMemeberAttribute() {
-        final String uniqueMemberAttribute = _configDao.getValue("ldap.group.user.uniquemember");
-        return uniqueMemberAttribute == null ? "uniquemember" : uniqueMemberAttribute;
+        return ldapGroupUniqueMemberAttribute.value();
+    }
+
+    public String getGroupUniqueMemeberAttribute(long domain) {
+        return ldapGroupUniqueMemberAttribute.valueIn(domain);
     }
 
     public String getCommonNameAttribute() {
@@ -197,6 +339,24 @@ public class LdapConfiguration implements Configurable{
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {ldapReadTimeout, ldapPageSize, ldapProvider, ldapEnableNestedGroups};
+        return new ConfigKey<?>[]{
+                ldapReadTimeout,
+                ldapPageSize,
+                ldapProvider,
+                ldapEnableNestedGroups,
+                ldapBaseDn,
+                ldapBindPassword,
+                ldapBindPrincipal,
+                ldapEmailAttribute,
+                ldapFirstnameAttribute,
+                ldapLastnameAttribute,
+                ldapUsernameAttribute,
+                ldapUserObject,
+                ldapSearchGroupPrinciple,
+                ldapGroupObject,
+                ldapGroupUniqueMemberAttribute,
+                ldapTrustStore,
+                ldapTrustStorePassword
+        };
     }
 }

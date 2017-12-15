@@ -460,3 +460,12 @@ CREATE TABLE `cloud`.`nic_extra_dhcp_options` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_nic_extra_dhcp_options_nic_id` FOREIGN KEY (`nic_id`) REFERENCES `nics`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`domain_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `domain_id` bigint unsigned NOT NULL COMMENT 'account id',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(255) NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_domain_details__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
