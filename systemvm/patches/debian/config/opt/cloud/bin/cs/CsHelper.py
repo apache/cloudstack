@@ -246,6 +246,6 @@ def copy(src, dest):
     try:
         shutil.copy2(src, dest)
     except IOError:
-        logging.Error("Could not copy %s to %s" % (src, dest))
+        logging.error("Could not copy %s to %s" % (src, dest))
     else:
         logging.info("Copied %s to %s" % (src, dest))
