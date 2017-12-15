@@ -19,6 +19,7 @@ package com.cloud.api.query.dao;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.StoragePoolJoinVO;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.StorageStats;
 import com.cloud.utils.StringUtils;
@@ -26,7 +27,11 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -40,6 +45,12 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
 
     @Inject
     private ConfigurationDao _configDao;
+
+    @Inject
+    private DataStoreManager dataStoreMgr;
+
+    @Inject
+    protected PrimaryDataStoreDao storagePoolDao;
 
     private final SearchBuilder<StoragePoolJoinVO> spSearch;
 
@@ -60,6 +71,7 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
 
     @Override
     public StoragePoolResponse newStoragePoolResponse(StoragePoolJoinVO pool) {
+        StoragePool storagePool = storagePoolDao.findById(pool.getId());
         StoragePoolResponse poolResponse = new StoragePoolResponse();
         poolResponse.setId(pool.getUuid());
         poolResponse.setName(pool.getName());
@@ -86,6 +98,13 @@ public class StoragePoolJoinDaoImpl extends GenericDaoBase<StoragePoolJoinVO, Lo
         poolResponse.setDiskSizeTotal(pool.getCapacityBytes());
         poolResponse.setDiskSizeAllocated(allocatedSize);
         poolResponse.setCapacityIops(pool.getCapacityIops());
+
+        if (storagePool.isManaged()) {
+            DataStore store = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+            PrimaryDataStoreDriver driver = (PrimaryDataStoreDriver) store.getDriver();
+            long usedIops = driver.getUsedIops(storagePool);
+            poolResponse.setAllocatedIops(usedIops);
+        }
 
         // TODO: StatsCollector does not persist data
         StorageStats stats = ApiDBUtils.getStoragePoolStatistics(pool.getId());

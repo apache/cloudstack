@@ -18778,6 +18778,15 @@
                                             return ""; else
                                             return args;
                                         }
+                                    },
+                                    allocatediops: {
+                                        label: 'label.disk.iops.allocated',
+                                        isEditable: false,
+                                        converter: function (args) {
+                                            if (args == null || args == 0)
+                                            return ""; else
+                                            return args;
+                                        }
                                     }
                                 }],
 
