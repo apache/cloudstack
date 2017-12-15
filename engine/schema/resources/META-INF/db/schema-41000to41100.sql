@@ -451,7 +451,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         `cloud`.`domain` resource_tag_domain ON resource_tag_domain.id = resource_tags.domain_id;
 
 -- Extra Dhcp Options
-CREATE TABLE `cloud`.`nic_extra_dhcp_options` (
+CREATE TABLE  IF NOT EXISTS `cloud`.`nic_extra_dhcp_options` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `nic_id` bigint unsigned NOT NULL COMMENT ' nic id where dhcp options are applied',
@@ -518,7 +518,7 @@ UPDATE `cloud`.`vm_template` SET guest_os_id=99 WHERE id=8;
 ALTER TABLE `cloud`.`networks` ADD `external_id` varchar(255);
 
 -- ldap binding on domain level
-CREATE TABLE `cloud`.`domain_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`domain_details` (
     `id` bigint unsigned NOT NULL auto_increment,
     `domain_id` bigint unsigned NOT NULL COMMENT 'account id',
     `name` varchar(255) NOT NULL,
@@ -526,3 +526,5 @@ CREATE TABLE `cloud`.`domain_details` (
     PRIMARY KEY (`id`),
     CONSTRAINT `fk_domain_details__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
 )ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE cloud.ldap_configuration ADD COLUMN domain_id bigint(20) DEFAULT null;
