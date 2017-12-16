@@ -210,7 +210,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapConfigurationDao.findByHostname(_) >> null
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "A ldap configuration that doesn't exist is deleted"
-        ldapManager.deleteConfiguration("localhost")
+        ldapManager.deleteConfiguration("localhost", 0, null)
         then: "A exception is thrown"
         thrown InvalidParameterValueException
     }
@@ -265,7 +265,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapConfigurationDao.remove(_) >> null
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "A ldap configuration is deleted"
-        def result = ldapManager.deleteConfiguration("localhost")
+        def result = ldapManager.deleteConfiguration("localhost", 0, null)
         then: "The deleted configuration is returned"
         result.hostname == "localhost"
         result.port == 389

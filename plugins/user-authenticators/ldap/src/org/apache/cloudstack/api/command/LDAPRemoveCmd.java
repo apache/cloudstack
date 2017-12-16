@@ -60,7 +60,7 @@ public class LDAPRemoveCmd extends BaseCmd {
         LdapListConfigurationCmd listConfigurationCmd = new LdapListConfigurationCmd(_ldapManager);
         Pair<List<? extends LdapConfigurationVO>, Integer> result = _ldapManager.listConfigurations(listConfigurationCmd);
         for (LdapConfigurationVO config : result.first()) {
-            _ldapManager.deleteConfiguration(config.getHostname());
+            _ldapManager.deleteConfiguration(config.getHostname(), 0, null);
         }
         return true;
     }

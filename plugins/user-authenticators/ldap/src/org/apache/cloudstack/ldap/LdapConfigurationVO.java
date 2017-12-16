@@ -39,12 +39,16 @@ public class LdapConfigurationVO implements InternalIdentity {
     @Column(name = "port")
     private int port;
 
+    @Column(name = "domain_id")
+    private Long domainId;
+
     public LdapConfigurationVO() {
     }
 
-    public LdapConfigurationVO(final String hostname, final int port) {
+    public LdapConfigurationVO(final String hostname, final int port, final Long domainId) {
         this.hostname = hostname;
         this.port = port;
+        this.domainId = domainId;
     }
 
     public String getHostname() {
@@ -58,6 +62,10 @@ public class LdapConfigurationVO implements InternalIdentity {
 
     public int getPort() {
         return port;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     public void setId(final long id) {

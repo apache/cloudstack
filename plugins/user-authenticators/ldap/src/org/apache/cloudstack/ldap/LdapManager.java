@@ -18,6 +18,8 @@ package org.apache.cloudstack.ldap;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.command.LdapAddConfigurationCmd;
+import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
@@ -31,7 +33,10 @@ public interface LdapManager extends PluggableService {
 
     enum LinkType { GROUP, OU;}
 
-    LdapConfigurationResponse addConfiguration(String hostname, int port) throws InvalidParameterValueException;
+    LdapConfigurationResponse addConfiguration(final LdapAddConfigurationCmd cmd) throws InvalidParameterValueException;
+
+    @Deprecated
+    LdapConfigurationResponse addConfiguration(String hostname, int port, Long domainId) throws InvalidParameterValueException;
 
     boolean canAuthenticate(String principal, String password);
 
@@ -39,7 +44,10 @@ public interface LdapManager extends PluggableService {
 
     LdapUserResponse createLdapUserResponse(LdapUser user);
 
-    LdapConfigurationResponse deleteConfiguration(String hostname) throws InvalidParameterValueException;
+    LdapConfigurationResponse deleteConfiguration(LdapDeleteConfigurationCmd cmd) throws InvalidParameterValueException;
+
+    @Deprecated
+    LdapConfigurationResponse deleteConfiguration(String hostname, int port, Long domainId) throws InvalidParameterValueException;
 
     LdapUser getUser(final String username) throws NoLdapUserMatchingQueryException;
 
