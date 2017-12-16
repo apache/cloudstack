@@ -24,6 +24,14 @@ import javax.inject.Inject;
 import javax.naming.NamingException;
 import javax.naming.ldap.LdapContext;
 
+import com.cloud.domain.dao.DomainDao;
+import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
+import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
+import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
+import org.apache.commons.lang.Validate;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.LdapValidator;
 import org.apache.cloudstack.api.command.LDAPConfigCmd;
 import org.apache.cloudstack.api.command.LDAPRemoveCmd;
@@ -85,17 +93,32 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
-    public LdapConfigurationResponse addConfiguration(final String hostname, final int port) throws InvalidParameterValueException {
-        LdapConfigurationVO configuration = _ldapConfigurationDao.findByHostname(hostname);
+    public LdapConfigurationResponse addConfiguration(final LdapAddConfigurationCmd cmd) throws InvalidParameterValueException {
+        return addConfigurationInternal(cmd.getHostname(),cmd.getPort(),cmd.getDomainId());
+    }
+
+    @Override // TODO make private
+    public LdapConfigurationResponse addConfiguration(final String hostname, int port, final Long domainId) throws InvalidParameterValueException {
+        return addConfigurationInternal(hostname,port,domainId);
+    }
+
+    private LdapConfigurationResponse addConfigurationInternal(final String hostname, int port, final Long domainId) throws InvalidParameterValueException {
+        // TODO evaluate what the right default should be
+        if(port <= 0) {
+            port = 389;
+        }
+
+        // hostname:port is unique for domain binding
+        LdapConfigurationVO configuration = _ldapConfigurationDao.find(hostname, port, domainId);
         if (configuration == null) {
             LdapContext context = null;
             try {
                 final String providerUrl = "ldap://" + hostname + ":" + port;
                 context = _ldapContextFactory.createBindContext(providerUrl);
-                configuration = new LdapConfigurationVO(hostname, port);
+                configuration = new LdapConfigurationVO(hostname, port, domainId);
                 _ldapConfigurationDao.persist(configuration);
-                s_logger.info("Added new ldap server with hostname: " + hostname);
-                return new LdapConfigurationResponse(hostname, port);
+                s_logger.info("Added new ldap server with url: " + providerUrl + (domainId == null ? "": " for domain " + domainId));
+                return createLdapConfigurationResponse(configuration);
             } catch (NamingException | IOException e) {
                 s_logger.debug("NamingException while doing an LDAP bind", e);
                 throw new InvalidParameterValueException("Unable to bind to the given LDAP server");
@@ -132,10 +155,11 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 
     @Override
     public LdapConfigurationResponse createLdapConfigurationResponse(final LdapConfigurationVO configuration) {
-        final LdapConfigurationResponse response = new LdapConfigurationResponse();
-        response.setHostname(configuration.getHostname());
-        response.setPort(configuration.getPort());
-        return response;
+        String domainUuid = null;
+        if(configuration.getDomainId() != null) {
+            domainUuid = domainDao.findById(configuration.getDomainId()).getUuid();
+        }
+        return new LdapConfigurationResponse(configuration.getHostname(), configuration.getPort(), domainUuid);
     }
 
     @Override
@@ -151,14 +175,23 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
-    public LdapConfigurationResponse deleteConfiguration(final String hostname) throws InvalidParameterValueException {
-        final LdapConfigurationVO configuration = _ldapConfigurationDao.findByHostname(hostname);
+    public LdapConfigurationResponse deleteConfiguration(final LdapDeleteConfigurationCmd cmd) throws InvalidParameterValueException {
+        return deleteConfigurationInternal(cmd.getHostname(), cmd.getPort(), cmd.getDomainId());
+    }
+
+    @Override
+    public LdapConfigurationResponse deleteConfiguration(final String hostname, int port, Long domainId) throws InvalidParameterValueException {
+        return deleteConfigurationInternal(hostname, port, domainId);
+    }
+
+    private LdapConfigurationResponse deleteConfigurationInternal(final String hostname, int port, Long domainId) throws InvalidParameterValueException {
+        final LdapConfigurationVO configuration = _ldapConfigurationDao.find(hostname,port,domainId);
         if (configuration == null) {
             throw new InvalidParameterValueException("Cannot find configuration with hostname " + hostname);
         } else {
             _ldapConfigurationDao.remove(configuration.getId());
-            s_logger.info("Removed ldap server with hostname: " + hostname);
-            return new LdapConfigurationResponse(configuration.getHostname(), configuration.getPort());
+            s_logger.info("Removed ldap server with url: " + hostname + ':' + port + (domainId == null ? "" : " for domain id " + domainId));
+            return createLdapConfigurationResponse(configuration);
         }
     }
 
@@ -247,7 +280,8 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     public Pair<List<? extends LdapConfigurationVO>, Integer> listConfigurations(final LdapListConfigurationCmd cmd) {
         final String hostname = cmd.getHostname();
         final int port = cmd.getPort();
-        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(hostname, port);
+        final Long domainId = cmd.getDomainId();
+        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(hostname, port, domainId);
         return new Pair<List<? extends LdapConfigurationVO>, Integer>(result.first(), result.second());
     }
 

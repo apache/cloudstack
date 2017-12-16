@@ -21,7 +21,10 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
+import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.ldap.LdapConfiguration;
 
+@EntityReference(value = LdapConfiguration.class)
 public class LdapConfigurationResponse extends BaseResponse {
     @SerializedName("hostname")
     @Param(description = "hostname")
@@ -31,18 +34,27 @@ public class LdapConfigurationResponse extends BaseResponse {
     @Param(description = "port")
     private int port;
 
+    @SerializedName("domain_id")
+    @Param(description = "linked domain")
+    private String domainId;
+
     public LdapConfigurationResponse() {
         super();
     }
 
     public LdapConfigurationResponse(final String hostname) {
         super();
-        this.hostname = hostname;
+        setHostname(hostname);
     }
 
     public LdapConfigurationResponse(final String hostname, final int port) {
-        this.hostname = hostname;
-        this.port = port;
+        this(hostname);
+        setPort(port);
+    }
+
+    public LdapConfigurationResponse(final String hostname, final int port, final String domainId) {
+        this(hostname, port);
+        setDomainId(domainId);
     }
 
     public String getHostname() {
@@ -59,5 +71,13 @@ public class LdapConfigurationResponse extends BaseResponse {
 
     public void setPort(final int port) {
         this.port = port;
+    }
+
+    public String getDomainId() {
+        return domainId;
+    }
+
+    public void setDomainId(String domainId) {
+        this.domainId = domainId;
     }
 }

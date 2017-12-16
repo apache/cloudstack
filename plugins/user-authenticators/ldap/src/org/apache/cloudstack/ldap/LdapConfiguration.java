@@ -228,7 +228,7 @@ public class LdapConfiguration implements Configurable{
 
     public String getProviderUrl() {
         final String protocol = getSSLStatus() == true ? "ldaps://" : "ldap://";
-        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(null, 0);
+        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(null, 0, null);
         final StringBuilder providerUrls = new StringBuilder();
         String delim = "";
         for (final LdapConfigurationVO resource : result.first()) {
