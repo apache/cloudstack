@@ -2178,9 +2178,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 hyperHost.setRestartPriorityForVM(vmMo, DasVmPriority.HIGH.value());
             }
 
-            //For resizing root disk.
+            // For resizing root disk.
             if (rootDiskTO != null && !hasSnapshot) {
-                resizeRootDisk(vmMo, rootDiskTO, hyperHost, context);
+                resizeRootDiskOnVMStart(vmMo, rootDiskTO, hyperHost, context);
             }
 
             //
@@ -2250,28 +2250,24 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return path + fileType;
     }
 
-    private void resizeRootDisk(VirtualMachineMO vmMo, DiskTO rootDiskTO, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception
-    {
-        Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, appendFileType(rootDiskTO.getPath(), ".vmdk"));
+    private void resizeRootDiskOnVMStart(VirtualMachineMO vmMo, DiskTO rootDiskTO, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
+        final Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, appendFileType(rootDiskTO.getPath(), ".vmdk"));
         assert(vdisk != null);
 
-        Long reqSize=((VolumeObjectTO)rootDiskTO.getData()).getSize()/1024;
-        VirtualDisk disk = vdisk.first();
-        if (reqSize > disk.getCapacityInKB())
-        {
-            VirtualMachineDiskInfo diskInfo = getMatchingExistingDisk(vmMo.getDiskInfoBuilder(), rootDiskTO, hyperHost, context);
+        final Long reqSize = ((VolumeObjectTO)rootDiskTO.getData()).getSize() / 1024;
+        final VirtualDisk disk = vdisk.first();
+        if (reqSize > disk.getCapacityInKB()) {
+            final VirtualMachineDiskInfo diskInfo = getMatchingExistingDisk(vmMo.getDiskInfoBuilder(), rootDiskTO, hyperHost, context);
             assert (diskInfo != null);
-            String[] diskChain = diskInfo.getDiskChain();
+            final String[] diskChain = diskInfo.getDiskChain();
 
-            if (diskChain != null && diskChain.length>1)
-            {
-                s_logger.error("Unsupported Disk chain length "+ diskChain.length);
-                throw new Exception("Unsupported Disk chain length "+ diskChain.length);
+            if (diskChain != null && diskChain.length > 1) {
+                s_logger.warn("Disk chain length for the VM is greater than one, skipping resizing of root disk.");
+                return;
             }
-            if (diskInfo.getDiskDeviceBusName() == null || !diskInfo.getDiskDeviceBusName().toLowerCase().startsWith("scsi"))
-            {
-                s_logger.error("Unsupported root disk device bus "+ diskInfo.getDiskDeviceBusName() );
-                throw new Exception("Unsupported root disk device bus "+ diskInfo.getDiskDeviceBusName());
+            if (diskInfo.getDiskDeviceBusName() == null || !diskInfo.getDiskDeviceBusName().toLowerCase().startsWith("scsi")) {
+                s_logger.warn("Resizing of root disk is only support for scsi device/bus, the provide disk's device bus name is " + diskInfo.getDiskDeviceBusName());
+                return;
             }
 
             disk.setCapacityInKB(reqSize);
