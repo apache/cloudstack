@@ -880,14 +880,8 @@
               <exclude>services/secondary-storage/conf/agent.properties</exclude>
               <exclude>services/secondary-storage/conf/environment.properties</exclude>
               <exclude>test/systemvm/README.md</exclude>
-              <exclude>tools/appliance/.ruby-version</exclude>
-              <exclude>tools/vagrant/systemvm/vagrant.pub</exclude>
-              <exclude>tools/vagrant/systemvm/.ruby-version</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
-              <exclude>tools/appliance/definitions/devcloud/*</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/*</exclude>
-              <exclude>tools/appliance/definitions/systemvm64template/*</exclude>
-              <exclude>tools/appliance/definitions/builtin/*</exclude>
+              <exclude>tools/appliance/*/template.json</exclude>
               <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
               <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>

@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# since veewee wants .sh files to execute, we'll give it a shar
+# since packer wants .sh files to execute, we'll give it a shar
 
 set -e
 set -x
