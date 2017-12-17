@@ -495,3 +495,7 @@ UPDATE `cloud`.`monitoring_services` SET pidfile="/var/run/apache2/apache2.pid" 
 
 -- Boost secondary storage systemvm
 UPDATE `cloud`.`service_offering` SET ram_size=1024, cpu=2 WHERE vm_type="secondarystoragevm" and cpu=1 and ram_size=512;
+
+-- Use 'Other Linux 64-bit' as guest os for the default systemvmtemplate for VMware
+-- This fixes a memory allocation issue to systemvms on VMware/ESXi
+UPDATE `cloud`.`vm_template` SET guest_os_id=99 WHERE id=8;
