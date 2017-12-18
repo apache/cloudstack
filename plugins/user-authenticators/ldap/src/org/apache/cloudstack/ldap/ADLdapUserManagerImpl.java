@@ -54,7 +54,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         final List<LdapUser> users = new ArrayList<LdapUser>();
         while (results.hasMoreElements()) {
             final SearchResult result = results.nextElement();
-            users.add(createUser(result));
+            users.add(createUser(result, domainId));
         }
         return users;
     }

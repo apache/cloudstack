@@ -184,7 +184,7 @@ class OpenLdapUserManagerSpec extends spock.lang.Specification {
         def attributes = createUserAttributes(username, email, firstname, lastname)
         def search = createSearchResult(attributes)
         def userManager = new OpenLdapUserManagerImpl(ldapConfiguration)
-        def result = userManager.createUser(search)
+        def result = userManager.createUser(search,)
 
         expect: "The crated user the data supplied from LDAP"
 

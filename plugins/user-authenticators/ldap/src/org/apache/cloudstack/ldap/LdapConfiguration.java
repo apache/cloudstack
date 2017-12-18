@@ -40,6 +40,7 @@ public class LdapConfiguration implements Configurable{
     private static final ConfigKey<Boolean> ldapEnableNestedGroups = new ConfigKey<Boolean>(Boolean.class, "ldap.nested.groups.enable", "Advanced", "true",
             "if true, nested groups will also be queried", true, ConfigKey.Scope.Global, null);
 
+    //TODO make Domain scope
     private static final ConfigKey<String> ldapMemberOfAttribute = new ConfigKey<String>(String.class, "ldap.user.memberof.attribute", "Advanced", "memberof",
             "the reverse membership attibute for group members", true, ConfigKey.Scope.Global, null);
 
