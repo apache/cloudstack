@@ -112,7 +112,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
             LdapContext context = null;
             try {
                 final String providerUrl = "ldap://" + hostname + ":" + port;
-                context = _ldapContextFactory.createBindContext(providerUrl);
+                context = _ldapContextFactory.createBindContext(providerUrl,domainId);
                 configuration = new LdapConfigurationVO(hostname, port, domainId);
                 _ldapConfigurationDao.persist(configuration);
                 s_logger.info("Added new ldap server with url: " + providerUrl + (domainId == null ? "": " for domain " + domainId));
@@ -128,10 +128,17 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         }
     }
 
+    /**
+     * TODO decide if the principal is good enough to get the domain id or we need to add it as parameter
+     * @param principal
+     * @param password
+     * @return
+     */
     @Override
     public boolean canAuthenticate(final String principal, final String password) {
         try {
-            final LdapContext context = _ldapContextFactory.createUserContext(principal, password);
+            // TODO pass the right domainId
+            final LdapContext context = _ldapContextFactory.createUserContext(principal, password,null);
             closeContext(context);
             return true;
         } catch (NamingException | IOException e) {
@@ -210,13 +217,13 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
-    public LdapUser getUser(final String username) throws NoLdapUserMatchingQueryException {
+    public LdapUser getUser(final String username, Long domainId) throws NoLdapUserMatchingQueryException {
         LdapContext context = null;
         try {
-            context = _ldapContextFactory.createBindContext();
+            context = _ldapContextFactory.createBindContext(domainId);
 
             final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
-            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider()).getUser(escapedUsername, context);
+            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(null)).getUser(escapedUsername, context, domainId);
 
         } catch (NamingException | IOException e) {
             s_logger.debug("ldap Exception: ",e);
@@ -227,12 +234,12 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
-    public LdapUser getUser(final String username, final String type, final String name) throws NoLdapUserMatchingQueryException {
+    public LdapUser getUser(final String username, final String type, final String name, Long domainId) throws NoLdapUserMatchingQueryException {
         LdapContext context = null;
         try {
-            context = _ldapContextFactory.createBindContext();
+            context = _ldapContextFactory.createBindContext(domainId);
             final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
-            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider()).getUser(escapedUsername, type, name, context);
+            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(null)).getUser(escapedUsername, type, name, context, domainId);
         } catch (NamingException | IOException e) {
             s_logger.debug("ldap Exception: ",e);
             throw new NoLdapUserMatchingQueryException("No Ldap User found for username: "+username + " in group: " + name + " of type: " + type);
@@ -242,11 +249,11 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
-    public List<LdapUser> getUsers() throws NoLdapUserMatchingQueryException {
+    public List<LdapUser> getUsers(Long domainId) throws NoLdapUserMatchingQueryException {
         LdapContext context = null;
         try {
-            context = _ldapContextFactory.createBindContext();
-            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider()).getUsers(context);
+            context = _ldapContextFactory.createBindContext(domainId);
+            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(domainId)).getUsers(context, domainId);
         } catch (NamingException | IOException e) {
             s_logger.debug("ldap Exception: ",e);
             throw new NoLdapUserMatchingQueryException("*");
@@ -256,11 +263,11 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     }
 
     @Override
-    public List<LdapUser> getUsersInGroup(String groupName) throws NoLdapUserMatchingQueryException {
+    public List<LdapUser> getUsersInGroup(String groupName, Long domainId) throws NoLdapUserMatchingQueryException {
         LdapContext context = null;
         try {
-            context = _ldapContextFactory.createBindContext();
-            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider()).getUsersInGroup(groupName, context);
+            context = _ldapContextFactory.createBindContext(domainId);
+            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(domainId)).getUsersInGroup(groupName, context, domainId);
         } catch (NamingException | IOException e) {
             s_logger.debug("ldap NamingException: ",e);
             throw new NoLdapUserMatchingQueryException("groupName=" + groupName);
@@ -287,9 +294,10 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     public List<LdapUser> searchUsers(final String username) throws NoLdapUserMatchingQueryException {
         LdapContext context = null;
         try {
-            context = _ldapContextFactory.createBindContext();
+            // TODO search users per domain (only?)
+            context = _ldapContextFactory.createBindContext(null);
             final String escapedUsername = LdapUtils.escapeLDAPSearchFilter(username);
-            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider()).getUsers("*" + escapedUsername + "*", context);
+            return _ldapUserManagerFactory.getInstance(_ldapConfiguration.getLdapProvider(null)).getUsers("*" + escapedUsername + "*", context, null);
         } catch (NamingException | IOException e) {
             s_logger.debug("ldap Exception: ",e);
             throw new NoLdapUserMatchingQueryException(username);

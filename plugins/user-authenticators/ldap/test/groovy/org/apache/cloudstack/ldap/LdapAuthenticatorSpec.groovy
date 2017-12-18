@@ -49,7 +49,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
         def ldapUser = Mock(LdapUser)
         ldapUser.isDisabled() >> false
         ldapManager.isLdapEnabled() >> true
-        ldapManager.getUser("rmurphy") >> ldapUser
+        ldapManager.getUser("rmurphy", null) >> ldapUser
         ldapManager.canAuthenticate(_, _) >> false
 
         UserAccountDao userAccountDao = Mock(UserAccountDao)
@@ -85,7 +85,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
         ldapUser.isDisabled() >> false
         ldapManager.isLdapEnabled() >> true
         ldapManager.canAuthenticate(_, _) >> true
-        ldapManager.getUser("rmurphy") >> ldapUser
+        ldapManager.getUser("rmurphy", null) >> ldapUser
 
         UserAccountDao userAccountDao = Mock(UserAccountDao)
         userAccountDao.getUserAccount(_, _) >> new UserAccountVO()

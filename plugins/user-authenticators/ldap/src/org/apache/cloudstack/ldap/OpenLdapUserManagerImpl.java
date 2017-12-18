@@ -125,8 +125,8 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
-    public LdapUser getUser(final String username, final LdapContext context) throws NamingException, IOException {
-        List<LdapUser> result = searchUsers(username, context);
+    public LdapUser getUser(final String username, final LdapContext context, Long domainId) throws NamingException, IOException {
+        List<LdapUser> result = searchUsers(username, context, domainId);
         if (result!= null && result.size() == 1) {
             return result.get(0);
         } else {
@@ -135,7 +135,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
-    public LdapUser getUser(final String username, final String type, final String name, final LdapContext context) throws NamingException, IOException {
+    public LdapUser getUser(final String username, final String type, final String name, final LdapContext context, Long domainId) throws NamingException, IOException {
         String basedn;
         if("OU".equals(type)) {
             basedn = name;
@@ -145,12 +145,12 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
         final StringBuilder userObjectFilter = new StringBuilder();
         userObjectFilter.append("(objectClass=");
-        userObjectFilter.append(_ldapConfiguration.getUserObject());
+        userObjectFilter.append(_ldapConfiguration.getUserObject(domainId));
         userObjectFilter.append(")");
 
         final StringBuilder usernameFilter = new StringBuilder();
         usernameFilter.append("(");
-        usernameFilter.append(_ldapConfiguration.getUsernameAttribute());
+        usernameFilter.append(_ldapConfiguration.getUsernameAttribute(domainId));
         usernameFilter.append("=");
         usernameFilter.append((username == null ? "*" : username));
         usernameFilter.append(")");
@@ -169,7 +169,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         searchQuery.append(memberOfFilter);
         searchQuery.append(")");
 
-        return searchUser(basedn, searchQuery.toString(), context);
+        return searchUser(basedn, searchQuery.toString(), context, domainId);
     }
 
     protected String getMemberOfAttribute() {
@@ -177,13 +177,13 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
-    public List<LdapUser> getUsers(final LdapContext context) throws NamingException, IOException {
-        return getUsers(null, context);
+    public List<LdapUser> getUsers(final LdapContext context, Long domainId) throws NamingException, IOException {
+        return getUsers(null, context, domainId);
     }
 
     @Override
-    public List<LdapUser> getUsers(final String username, final LdapContext context) throws NamingException, IOException {
-        List<LdapUser> users = searchUsers(username, context);
+    public List<LdapUser> getUsers(final String username, final LdapContext context, Long domainId) throws NamingException, IOException {
+        List<LdapUser> users = searchUsers(username, context, domainId);
 
         if (CollectionUtils.isNotEmpty(users)) {
             Collections.sort(users);
@@ -192,8 +192,8 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
-    public List<LdapUser> getUsersInGroup(String groupName, LdapContext context) throws NamingException {
-        String attributeName = _ldapConfiguration.getGroupUniqueMemberAttribute();
+    public List<LdapUser> getUsersInGroup(String groupName, LdapContext context, Long domainId) throws NamingException {
+        String attributeName = _ldapConfiguration.getGroupUniqueMemberAttribute(domainId);
         final SearchControls controls = new SearchControls();
         controls.setSearchScope(_ldapConfiguration.getScope());
         controls.setReturningAttributes(new String[] {attributeName});
@@ -209,7 +209,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
             while (values.hasMoreElements()) {
                 String userdn = String.valueOf(values.nextElement());
                 try{
-                    users.add(getUserForDn(userdn, context));
+                    users.add(getUserForDn(userdn, context, domainId));
                 } catch (NamingException e){
                     s_logger.info("Userdn: " + userdn + " Not Found:: Exception message: " + e.getMessage());
                 }
@@ -221,12 +221,12 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         return users;
     }
 
-    private LdapUser getUserForDn(String userdn, LdapContext context) throws NamingException {
+    private LdapUser getUserForDn(String userdn, LdapContext context, Long domainId) throws NamingException {
         final SearchControls controls = new SearchControls();
         controls.setSearchScope(_ldapConfiguration.getScope());
-        controls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
+        controls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
-        NamingEnumeration<SearchResult> result = context.search(userdn, "(objectClass=" + _ldapConfiguration.getUserObject() + ")", controls);
+        NamingEnumeration<SearchResult> result = context.search(userdn, "(objectClass=" + _ldapConfiguration.getUserObject(domainId) + ")", controls);
         if (result.hasMoreElements()) {
             return createUser(result.nextElement());
         } else {
@@ -235,19 +235,19 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
-    public List<LdapUser> searchUsers(final LdapContext context) throws NamingException, IOException {
-        return searchUsers(null, context);
+    public List<LdapUser> searchUsers(final LdapContext context, Long domainId) throws NamingException, IOException {
+        return searchUsers(null, context, domainId);
     }
 
     protected boolean isUserDisabled(SearchResult result) throws NamingException {
         return false;
     }
 
-    public LdapUser searchUser(final String basedn, final String searchString, final LdapContext context) throws NamingException, IOException {
+    public LdapUser searchUser(final String basedn, final String searchString, final LdapContext context, Long domainId) throws NamingException, IOException {
         final SearchControls searchControls = new SearchControls();
 
         searchControls.setSearchScope(_ldapConfiguration.getScope());
-        searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
+        searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
         NamingEnumeration<SearchResult> results = context.search(basedn, searchString, searchControls);
         final List<LdapUser> users = new ArrayList<LdapUser>();
@@ -264,14 +264,14 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
     }
 
     @Override
-    public List<LdapUser> searchUsers(final String username, final LdapContext context) throws NamingException, IOException {
+    public List<LdapUser> searchUsers(final String username, final LdapContext context, Long domainId) throws NamingException, IOException {
 
         final SearchControls searchControls = new SearchControls();
 
         searchControls.setSearchScope(_ldapConfiguration.getScope());
-        searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes());
+        searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
-        String basedn = _ldapConfiguration.getBaseDn();
+        String basedn = _ldapConfiguration.getBaseDn(domainId);
         if (StringUtils.isBlank(basedn)) {
             throw new IllegalArgumentException("ldap basedn is not configured");
         }

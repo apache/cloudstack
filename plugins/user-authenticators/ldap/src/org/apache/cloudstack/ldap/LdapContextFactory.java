@@ -40,29 +40,31 @@ public class LdapContextFactory {
         _ldapConfiguration = ldapConfiguration;
     }
 
-    public LdapContext createBindContext() throws NamingException, IOException {
-        return createBindContext(null);
+    // TODO add optional domain (optional only for backwards compatibility)
+    public LdapContext createBindContext(Long domainId) throws NamingException, IOException {
+        return createBindContext(null, domainId);
     }
 
-    public LdapContext createBindContext(final String providerUrl) throws NamingException, IOException {
-        final String bindPrincipal = _ldapConfiguration.getBindPrincipal();
-        final String bindPassword = _ldapConfiguration.getBindPassword();
-        return createInitialDirContext(bindPrincipal, bindPassword, providerUrl, true);
+    // TODO add optional domain (optional only for backwards compatibility)
+    public LdapContext createBindContext(final String providerUrl, Long domainId) throws NamingException, IOException {
+        final String bindPrincipal = _ldapConfiguration.getBindPrincipal(domainId);
+        final String bindPassword = _ldapConfiguration.getBindPassword(domainId);
+        return createInitialDirContext(bindPrincipal, bindPassword, providerUrl, true, domainId);
     }
 
-    private LdapContext createInitialDirContext(final String principal, final String password, final boolean isSystemContext) throws NamingException, IOException {
-        return createInitialDirContext(principal, password, null, isSystemContext);
+    private LdapContext createInitialDirContext(final String principal, final String password, final boolean isSystemContext, Long domainId) throws NamingException, IOException {
+        return createInitialDirContext(principal, password, null, isSystemContext, domainId);
     }
 
-    private LdapContext createInitialDirContext(final String principal, final String password, final String providerUrl, final boolean isSystemContext)
+    private LdapContext createInitialDirContext(final String principal, final String password, final String providerUrl, final boolean isSystemContext, Long domainId)
         throws NamingException, IOException {
-        Hashtable<String, String> environment = getEnvironment(principal, password, providerUrl, isSystemContext);
+        Hashtable<String, String> environment = getEnvironment(principal, password, providerUrl, isSystemContext, domainId);
         s_logger.debug("initializing ldap with provider url: " + environment.get(Context.PROVIDER_URL));
         return new InitialLdapContext(environment, null);
     }
 
-    public LdapContext createUserContext(final String principal, final String password) throws NamingException, IOException {
-        return createInitialDirContext(principal, password, false);
+    public LdapContext createUserContext(final String principal, final String password, Long domainId) throws NamingException, IOException {
+        return createInitialDirContext(principal, password, false, domainId);
     }
 
     private void enableSSL(final Hashtable<String, String> environment) {
@@ -76,9 +78,9 @@ public class LdapContextFactory {
         }
     }
 
-    private Hashtable<String, String> getEnvironment(final String principal, final String password, final String providerUrl, final boolean isSystemContext) {
+    private Hashtable<String, String> getEnvironment(final String principal, final String password, final String providerUrl, final boolean isSystemContext, Long domainId) {
         final String factory = _ldapConfiguration.getFactory();
-        final String url = providerUrl == null ? _ldapConfiguration.getProviderUrl() : providerUrl;
+        final String url = providerUrl == null ? _ldapConfiguration.getProviderUrl(domainId) : providerUrl;
 
         final Hashtable<String, String> environment = new Hashtable<String, String>();
 

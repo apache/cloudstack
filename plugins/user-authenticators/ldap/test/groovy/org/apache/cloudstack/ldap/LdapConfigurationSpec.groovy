@@ -149,7 +149,7 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
 
         when: "A request is made to get the providerUrl"
-        String providerUrl = ldapConfiguration.getProviderUrl()
+        String providerUrl = ldapConfiguration.getProviderUrl(_)
 
         then: "The providerUrl should be given."
         providerUrl == "ldap://localhost:389"
@@ -194,7 +194,7 @@ class LdapConfigurationSpec extends spock.lang.Specification {
 
         def expected = provider.equalsIgnoreCase("microsoftad") ? LdapUserManager.Provider.MICROSOFTAD : LdapUserManager.Provider.OPENLDAP //"openldap" is the default value
 
-        def result = ldapConfiguration.getLdapProvider()
+        def result = ldapConfiguration.getLdapProvider(null)
         expect:
         println "asserting for provider configuration: " + provider
         result == expected

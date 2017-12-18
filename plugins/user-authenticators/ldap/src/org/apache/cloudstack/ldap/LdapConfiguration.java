@@ -36,14 +36,22 @@ public class LdapConfiguration implements Configurable{
 
     private static final ConfigKey<Integer> ldapPageSize = new ConfigKey<Integer>(Integer.class, "ldap.request.page.size", "Advanced", "1000",
                                                                                "page size sent to ldap server on each request to get user", true, ConfigKey.Scope.Global, 1);
-    private static final ConfigKey<String> ldapProvider = new ConfigKey<String>(String.class, "ldap.provider", "Advanced", "openldap", "ldap provider ex:openldap, microsoftad",
-                                                                                true, ConfigKey.Scope.Global, null);
 
     private static final ConfigKey<Boolean> ldapEnableNestedGroups = new ConfigKey<Boolean>(Boolean.class, "ldap.nested.groups.enable", "Advanced", "true",
             "if true, nested groups will also be queried", true, ConfigKey.Scope.Global, null);
 
     private static final ConfigKey<String> ldapMemberOfAttribute = new ConfigKey<String>(String.class, "ldap.user.memberof.attribute", "Advanced", "memberof",
             "the reverse membership attibute for group members", true, ConfigKey.Scope.Global, null);
+
+    private static final ConfigKey<String> ldapProvider = new ConfigKey<String>(
+            String.class,
+            "ldap.provider",
+            "Advanced",
+            "openldap",
+            "ldap provider ex:openldap, microsoftad",
+            true,
+            ConfigKey.Scope.Domain,
+            null);
 
     private static final ConfigKey<String> ldapBaseDn = new ConfigKey<String>(
             "Advanced",
@@ -174,61 +182,67 @@ public class LdapConfiguration implements Configurable{
         }
     }
 
+    @Deprecated
     public String getBaseDn() {
         return ldapBaseDn.value();
     }
 
-    public String getBaseDn(long domain) {
-        return ldapBaseDn.valueIn(domain);
+    public String getBaseDn(Long domainId) {
+        return ldapBaseDn.valueIn(domainId);
     }
 
+    @Deprecated
     public String getBindPassword() {
         return ldapBindPassword.value();
     }
 
-    public String getBindPassword(long domain) {
-        return ldapBindPassword.valueIn(domain);
+    public String getBindPassword(Long domainId) {
+        return ldapBindPassword.valueIn(domainId);
     }
 
+    @Deprecated
     public String getBindPrincipal() {
         return ldapBindPrincipal.value();
     }
 
-    public String getBindPrincipal(long domain) {
-        return ldapBindPrincipal.valueIn(domain);
+    public String getBindPrincipal(Long domainId) {
+        return ldapBindPrincipal.valueIn(domainId);
     }
 
+    @Deprecated
     public String getEmailAttribute() {
         return ldapEmailAttribute.value();
     }
 
-    public String getEmailAttribute(long domain) {
-        return ldapEmailAttribute.valueIn(domain);
+    public String getEmailAttribute(Long domainId) {
+        return ldapEmailAttribute.valueIn(domainId);
     }
 
     public String getFactory() {
         return factory;
     }
 
+    @Deprecated
     public String getFirstnameAttribute() {
         return ldapFirstnameAttribute.value();
     }
 
-    public String getFirstnameAttribute(long domain) {
-        return ldapFirstnameAttribute.valueIn(domain);
+    public String getFirstnameAttribute(Long domainId) {
+        return ldapFirstnameAttribute.valueIn(domainId);
     }
 
+    @Deprecated
     public String getLastnameAttribute() {
         return ldapLastnameAttribute.value();
     }
 
-    public String getLastnameAttribute(long domain) {
-        return ldapLastnameAttribute.valueIn(domain);
+    public String getLastnameAttribute(Long domainId) {
+        return ldapLastnameAttribute.valueIn(domainId);
     }
 
-    public String getProviderUrl() {
+    public String getProviderUrl(Long domainId) {
         final String protocol = getSSLStatus() == true ? "ldaps://" : "ldap://";
-        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(null, 0, null);
+        final Pair<List<LdapConfigurationVO>, Integer> result = _ldapConfigurationDao.searchConfigurations(null, 0, domainId);
         final StringBuilder providerUrls = new StringBuilder();
         String delim = "";
         for (final LdapConfigurationVO resource : result.first()) {
@@ -239,8 +253,13 @@ public class LdapConfiguration implements Configurable{
         return providerUrls.toString();
     }
 
-    public String[] getReturnAttributes() {
-        return new String[] {getUsernameAttribute(), getEmailAttribute(), getFirstnameAttribute(), getLastnameAttribute(), getCommonNameAttribute(),
+    public String[] getReturnAttributes(Long domainId) {
+        return new String[] {
+                getUsernameAttribute(domainId),
+                getEmailAttribute(domainId),
+                getFirstnameAttribute(domainId),
+                getLastnameAttribute(domainId),
+                getCommonNameAttribute(),
                 getUserAccountControlAttribute()};
     }
 
@@ -248,12 +267,13 @@ public class LdapConfiguration implements Configurable{
         return scope;
     }
 
+    @Deprecated
     public String getSearchGroupPrinciple() {
         return ldapSearchGroupPrinciple.value();
     }
 
-    public String getSearchGroupPrinciple(long domain) {
-        return ldapSearchGroupPrinciple.valueIn(domain);
+    public String getSearchGroupPrinciple(Long domainId) {
+        return ldapSearchGroupPrinciple.valueIn(domainId);
     }
 
     public boolean getSSLStatus() {
@@ -272,42 +292,48 @@ public class LdapConfiguration implements Configurable{
         return ldapTrustStorePassword.value();
     }
 
+    @Deprecated
     public String getUsernameAttribute() {
         return ldapUsernameAttribute.value();
     }
 
-    public String getUsernameAttribute(long domain) {
-        return ldapUsernameAttribute.valueIn(domain);
+    public String getUsernameAttribute(Long domainId) {
+        return ldapUsernameAttribute.valueIn(domainId);
     }
 
+    @Deprecated
     public String getUserObject() {
         return ldapUserObject.value();
     }
 
-    public String getUserObject(long domain) {
-        return ldapUserObject.valueIn(domain);
+    public String getUserObject(Long domainId) {
+        return ldapUserObject.valueIn(domainId);
     }
 
+    @Deprecated
     public String getGroupObject() {
         return ldapGroupObject.value();
     }
 
-    public String getGroupObject(long domain) {
-        return ldapGroupObject.valueIn(domain);
+    public String getGroupObject(Long domainId) {
+        return ldapGroupObject.valueIn(domainId);
     }
 
+    @Deprecated
     public String getGroupUniqueMemberAttribute() {
         return ldapGroupUniqueMemberAttribute.value();
     }
 
-    public String getGroupUniqueMemberAttribute(long domain) {
-        return ldapGroupUniqueMemberAttribute.valueIn(domain);
+    public String getGroupUniqueMemberAttribute(Long domainId) {
+        return ldapGroupUniqueMemberAttribute.valueIn(domainId);
     }
 
+    // TODO remove hard-coding
     public String getCommonNameAttribute() {
         return "cn";
     }
 
+    // TODO remove hard-coding
     public String getUserAccountControlAttribute() {
         return "userAccountControl";
     }
@@ -320,10 +346,10 @@ public class LdapConfiguration implements Configurable{
         return ldapPageSize.value();
     }
 
-    public LdapUserManager.Provider getLdapProvider() {
+    public LdapUserManager.Provider getLdapProvider(Long domainId) {
         LdapUserManager.Provider provider;
         try {
-            provider = LdapUserManager.Provider.valueOf(ldapProvider.value().toUpperCase());
+            provider = LdapUserManager.Provider.valueOf(ldapProvider.valueIn(domainId).toUpperCase());
         } catch (IllegalArgumentException ex) {
             //openldap is the default
             provider = LdapUserManager.Provider.OPENLDAP;

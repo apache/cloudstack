@@ -68,7 +68,7 @@ public class LdapImportUsersCmdTest implements LdapConfigurationChanger {
         List<LdapUser> users = new ArrayList();
         users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false));
         users.add(new LdapUser("bob", "bob@test.com", "Robert", "Young", "cn=bob,ou=engineering,dc=cloudstack,dc=org", "engineering", false));
-        when(ldapManager.getUsers()).thenReturn(users);
+        when(ldapManager.getUsers(null)).thenReturn(users);
         LdapUserResponse response1 = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering");
         LdapUserResponse response2 = new LdapUserResponse("bob", "bob@test.com", "Robert", "Young", "cn=bob,ou=engineering,dc=cloudstack,dc=org", "engineering");
         when(ldapManager.createLdapUserResponse(any(LdapUser.class))).thenReturn(response1).thenReturn(response2);

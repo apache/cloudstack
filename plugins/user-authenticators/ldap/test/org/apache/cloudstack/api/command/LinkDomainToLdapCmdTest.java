@@ -70,7 +70,7 @@ public class LinkDomainToLdapCmdTest implements LdapConfigurationChanger
 
         LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId, type, name, (short)accountType);
         when(ldapManager.linkDomainToLdap(domainId,type,name,accountType)).thenReturn(response);
-        when(ldapManager.getUser(username, type, name)).thenReturn(new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", false));
+        when(ldapManager.getUser(username, type, name, 1L)).thenReturn(new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", false));
 
         when(accountService.getActiveAccountByName(username, domainId)).thenReturn(null);
         UserAccountVO userAccount =  new UserAccountVO();
