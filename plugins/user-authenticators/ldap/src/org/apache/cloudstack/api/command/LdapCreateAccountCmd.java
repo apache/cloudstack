@@ -136,10 +136,11 @@ public class LdapCreateAccountCmd extends BaseCmd {
         }
         final CallContext callContext = getCurrentContext();
         String finalAccountName = getAccountName();
+        // TODO add domain id to create account and create user calls
         Long finalDomainId = getDomainId();
         callContext.setEventDetails("Account Name: " + finalAccountName + ", Domain Id:" + finalDomainId);
         try {
-            final LdapUser user = _ldapManager.getUser(username);
+            final LdapUser user = _ldapManager.getUser(username, null);
             validateUser(user);
             final UserAccount userAccount = createCloudstackUserAccount(user, finalAccountName, finalDomainId);
             if (userAccount != null) {

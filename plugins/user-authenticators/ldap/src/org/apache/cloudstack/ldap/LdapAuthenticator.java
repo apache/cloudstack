@@ -70,7 +70,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
             LdapTrustMapVO ldapTrustMapVO = _ldapManager.getDomainLinkedToLdap(domainId);
             if(ldapTrustMapVO != null) {
                 try {
-                    LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType().toString(), ldapTrustMapVO.getName());
+                    LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType().toString(), ldapTrustMapVO.getName(), domainId);
                     if(!ldapUser.isDisabled()) {
                         result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password);
                         if(result) {
@@ -93,7 +93,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 //domain is not linked to ldap follow normal authentication
                 if(user != null ) {
                     try {
-                        LdapUser ldapUser = _ldapManager.getUser(username);
+                        LdapUser ldapUser = _ldapManager.getUser(username, null);
                         if(!ldapUser.isDisabled()) {
                             result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password);
                         } else {

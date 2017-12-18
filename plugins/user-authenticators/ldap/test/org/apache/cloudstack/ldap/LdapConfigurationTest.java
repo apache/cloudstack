@@ -90,7 +90,7 @@ public class LdapConfigurationTest {
             } else {
                 expectedResult = groupObject;
             };
-            String result = ldapConfiguration.getGroupUniqueMemberAttribute();
+            String result = ldapConfiguration.getGroupUniqueMemberAttribute(null);
             assertEquals("testing for " + groupObject, expectedResult, result);
         }
     }

@@ -74,7 +74,7 @@ public class LinkDomainToLdapCmd extends BaseCmd {
             if(admin!=null) {
                 LdapUser ldapUser = null;
                 try {
-                    ldapUser = _ldapManager.getUser(admin, type, name);
+                    ldapUser = _ldapManager.getUser(admin, type, name, domainId);
                 } catch (NoLdapUserMatchingQueryException e) {
                     s_logger.debug("no ldap user matching username " + admin + " in the given group/ou", e);
                 }

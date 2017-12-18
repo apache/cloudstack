@@ -31,6 +31,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.junit.Assert.fail;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.isNull;
 import static org.powermock.api.mockito.PowerMockito.spy;
 import static org.powermock.api.mockito.PowerMockito.when;
 
@@ -55,7 +56,7 @@ public class LdapCreateAccountCmdTest implements LdapConfigurationChanger {
     @Test(expected = ServerApiException.class)
     public void failureToRetrieveLdapUser() throws Exception {
         // We have an LdapManager, AccountService and LdapCreateAccountCmd and LDAP user that doesn't exist
-        when(ldapManager.getUser(anyString())).thenThrow(NoLdapUserMatchingQueryException.class);
+        when(ldapManager.getUser(anyString(), isNull(Long.class))).thenThrow(NoLdapUserMatchingQueryException.class);
         ldapCreateAccountCmd.execute();
         fail("An exception should have been thrown: " + ServerApiException.class);
     }
@@ -64,7 +65,7 @@ public class LdapCreateAccountCmdTest implements LdapConfigurationChanger {
     public void failedCreationDueToANullResponseFromCloudstackAccountCreater() throws Exception {
         // We have an LdapManager, AccountService and LdapCreateAccountCmd
         LdapUser mrMurphy = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false);
-        when(ldapManager.getUser(anyString())).thenReturn(mrMurphy);
+        when(ldapManager.getUser(anyString(), isNull(Long.class))).thenReturn(mrMurphy);
         ldapCreateAccountCmd.execute();
         fail("An exception should have been thrown: " + ServerApiException.class);
     }
