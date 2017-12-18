@@ -553,7 +553,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     public List<HostVO> findAndUpdateDirectAgentToLoad(long lastPingSecondsAfter, Long limit, long managementServerId) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
-        txn.start();
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Resetting hosts suitable for reconnect");
         }
@@ -569,6 +568,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             s_logger.debug("Acquiring hosts for clusters already owned by this management server");
         }
         List<Long> clusters = findClustersOwnedByManagementServer(managementServerId);
+        txn.start();
         if (clusters.size() > 0) {
             // handle clusters already owned by @managementServerId
             SearchCriteria<HostVO> sc = UnmanagedDirectConnectSearch.create();
