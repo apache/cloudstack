@@ -972,7 +972,7 @@ def main(argv):
                         level=config.get_level(),
                         format=config.get_format())
     try:
-        # Load stored ip adresses from disk to CsConfig()
+        # Load stored ip addresses from disk to CsConfig()
         config.set_address()
 
         logging.debug("Configuring ip addresses")

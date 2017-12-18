@@ -247,7 +247,7 @@ public class ConfigurationManagerTest {
         /*
          * TEST 5: given range is already allocated to a different account DedicatePublicIpRange should fail
          */
-        runDedicatePublicIpRangeIPAdressAllocated();
+        runDedicatePublicIpRangeIPAddressAllocated();
     }
 
     @Test
@@ -373,8 +373,8 @@ public class ConfigurationManagerTest {
         }
     }
 
-    void runDedicatePublicIpRangeIPAdressAllocated() throws Exception {
-        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeIPAdressAllocated");
+    void runDedicatePublicIpRangeIPAddressAllocated() throws Exception {
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeIPAddressAllocated");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -397,7 +397,7 @@ public class ConfigurationManagerTest {
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("Public IP address in range is allocated to another account"));
         } finally {
-            txn.close("runDedicatePublicIpRangeIPAdressAllocated");
+            txn.close("runDedicatePublicIpRangeIPAddressAllocated");
         }
     }
 
