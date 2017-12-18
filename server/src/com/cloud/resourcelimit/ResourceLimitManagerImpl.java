@@ -26,24 +26,22 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
@@ -109,7 +107,6 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-@Local(value = {ResourceLimitService.class})
 public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService, Configurable{
     public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
 
@@ -876,8 +873,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         ResourceCountVO accountRC = _resourceCountDao.findByOwnerAndType(accountId, ResourceOwnerType.Account, type);
         long oldCount = 0;
-        if (accountRC != null)
+        if (accountRC != null) {
             oldCount = accountRC.getCount();
+        }
 
         if (type == Resource.ResourceType.user_vm) {
             newCount = _userVmDao.countAllocatedVMsForAccount(accountId);
@@ -1007,10 +1005,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             dedicatedCount += new Long(ips.size());
         }
         allocatedCount = _ipAddressDao.countAllocatedIPsForAccount(accountId);
-        if (dedicatedCount > allocatedCount)
+        if (dedicatedCount > allocatedCount) {
             return dedicatedCount;
-        else
+        } else {
             return allocatedCount;
+        }
     }
 
     @Override
@@ -1053,8 +1052,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public void changeResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
 
         // meaning that the display flag is not changed so neither increment or decrement
-        if (displayResource == null)
+        if (displayResource == null) {
             return;
+        }
 
         // Increment because the display is turned on.
         if (displayResource) {

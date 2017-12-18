@@ -1581,9 +1581,6 @@
                         <Component Id="cmp9FAD7DAD071299E1AAF045F54DE9F495" Guid="{73188CEE-DB1A-48F0-AF78-A37662859327}">
                             <File Id="filF642ECE1D8F64EBCECFA04A5600BF8E3" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\ehcache-core-2.6.6.jar" />
                         </Component>
-                        <Component Id="cmp89F65AB47003394DE45F2F27D9992C86" Guid="{A523C269-1E43-4512-BDC1-48D76556443C}">
-                            <File Id="fil15FE2F49ABA53F783D33C935E0703143" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\ejb-api-3.0.jar" />
-                        </Component>
                         <Component Id="cmp0C3372A952450A4EED8FDCC1B8EAF4A3" Guid="{D0DA328A-0956-4341-9D5D-CEAF84470F46}">
                             <File Id="filD619AEE8A024E5F335662217E6852A4C" KeyPath="yes" Source="!(wix.SourceClient)\WEB-INF\lib\esapi-2.0.1.jar" />
                         </Component>

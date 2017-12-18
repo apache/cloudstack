@@ -34,7 +34,6 @@ import org.apache.cloudstack.acl.RolePermissionVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -42,7 +41,6 @@ import java.util.List;
 import java.util.Set;
 
 @Component
-@Local(value = {RolePermissionsDao.class})
 public class RolePermissionsDaoImpl extends GenericDaoBase<RolePermissionVO, Long> implements RolePermissionsDao {
     protected static final Logger LOGGER = Logger.getLogger(RolePermissionsDaoImpl.class);
 

@@ -20,17 +20,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.NamingException;
 import javax.naming.ldap.LdapContext;
-
-import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
-import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
-import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
-import org.apache.commons.lang.Validate;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.LdapValidator;
 import org.apache.cloudstack.api.command.LDAPConfigCmd;
@@ -42,15 +34,20 @@ import org.apache.cloudstack.api.command.LdapImportUsersCmd;
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapListUsersCmd;
 import org.apache.cloudstack.api.command.LdapUserSearchCmd;
+import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
+import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
+import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
+import org.apache.commons.lang.Validate;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 
 @Component
-@Local(value = LdapManager.class)
 public class LdapManagerImpl implements LdapManager, LdapValidator {
     private static final Logger s_logger = Logger.getLogger(LdapManagerImpl.class.getName());
 

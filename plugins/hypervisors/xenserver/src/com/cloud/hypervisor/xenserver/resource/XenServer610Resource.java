@@ -22,14 +22,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
-
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
 import com.cloud.agent.api.to.DiskTO;
-import com.cloud.resource.ServerResource;
 import com.cloud.storage.Volume;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
@@ -40,7 +37,6 @@ import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VIF;
 import com.xensource.xenapi.VM;
 
-@Local(value = ServerResource.class)
 public class XenServer610Resource extends XenServer600Resource {
 
     private static final Logger s_logger = Logger.getLogger(XenServer610Resource.class);
