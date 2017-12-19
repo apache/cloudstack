@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import java.io.File;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -31,7 +31,7 @@ public class Upgrade218to224DomainVlans implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade218to224DomainVlans.class);
 
     @Override
-    public File[] getPrepareScripts() {
+    public InputStream[] getPrepareScripts() {
         return null;
     }
 
@@ -93,7 +93,7 @@ public class Upgrade218to224DomainVlans implements DbUpgrade {
     }
 
     @Override
-    public File[] getCleanupScripts() {
+    public InputStream[] getCleanupScripts() {
         return null;
     }
 

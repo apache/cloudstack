@@ -16,30 +16,27 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import java.io.File;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade222to224Premium extends Upgrade222to224 {
     final static Logger s_logger = Logger.getLogger(Upgrade222to224Premium.class);
 
     @Override
-    public File[] getPrepareScripts() {
-        File[] scripts = super.getPrepareScripts();
-        File[] newScripts = new File[2];
-        newScripts[0] = scripts[0];
-
-        String file = Script.findScript("", "db/schema-222to224-premium.sql");
-        if (file == null) {
-            throw new CloudRuntimeException("Unable to find the upgrade script, schema-222to224-premium.sql");
+    public InputStream[] getPrepareScripts() {
+        InputStream[] newScripts = new InputStream[2];
+        newScripts[0] = super.getPrepareScripts()[0];
+        final String scriptFile = "META-INF/db/schema-222to224-premium.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
-
-        newScripts[1] = new File(file);
+        newScripts[1] = script;
 
         return newScripts;
     }
@@ -48,15 +45,6 @@ public class Upgrade222to224Premium extends Upgrade222to224 {
     public void performDataMigration(Connection conn) {
         super.performDataMigration(conn);
         updateUserStats(conn);
-    }
-
-    @Override
-    public File[] getCleanupScripts() {
-        File[] scripts = super.getCleanupScripts();
-        File[] newScripts = new File[1];
-        // Change the array to 2 when you add in the scripts for premium.
-        newScripts[0] = scripts[0];
-        return newScripts;
     }
 
     private void updateUserStats(Connection conn) {

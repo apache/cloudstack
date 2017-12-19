@@ -19,10 +19,9 @@ package com.cloud.upgrade.dao;
 
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 import org.apache.log4j.Logger;
 
-import java.io.File;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -33,7 +32,7 @@ import java.util.Map;
 import java.util.Set;
 
 public class Upgrade4930to41000 implements DbUpgrade {
-    final static Logger LOG = Logger.getLogger(Upgrade4930to41000.class);
+    final static Logger s_logger = Logger.getLogger(Upgrade4930to41000.class);
 
     public static class MemoryValues {
         long max;
@@ -69,12 +68,14 @@ public class Upgrade4930to41000 implements DbUpgrade {
     }
 
     @Override
-    public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-4930to41000.sql");
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-4930to41000.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-4930to41000.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
-        return new File[] {new File(script)};
+
+        return new InputStream[] {script};
     }
 
     @Override
@@ -86,7 +87,7 @@ public class Upgrade4930to41000 implements DbUpgrade {
 
     @SuppressWarnings("serial")
     private void updateSystemVmTemplates(final Connection conn) {
-        LOG.debug("Updating System Vm template IDs");
+        s_logger.debug("Updating System Vm template IDs");
         // Get all hypervisors in use
         final Set<Hypervisor.HypervisorType> hypervisorsListInUse = new HashSet<Hypervisor.HypervisorType>();
         try (PreparedStatement pstmt = conn.prepareStatement("select distinct(hypervisor_type) from `cloud`.`cluster` where removed is null"); ResultSet rs = pstmt.executeQuery()) {
@@ -116,7 +117,7 @@ public class Upgrade4930to41000 implements DbUpgrade {
                 }
             }
         } catch (final SQLException e) {
-            LOG.error("updateSystemVmTemplates:Exception while getting hypervisor types from clusters: " + e.getMessage());
+            s_logger.error("updateSystemVmTemplates:Exception while getting hypervisor types from clusters: " + e.getMessage());
             throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting hypervisor types from clusters", e);
         }
 
@@ -165,7 +166,7 @@ public class Upgrade4930to41000 implements DbUpgrade {
         };
 
         for (final Map.Entry<Hypervisor.HypervisorType, String> hypervisorAndTemplateName : NewTemplateNameList.entrySet()) {
-            LOG.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
+            s_logger.debug("Updating " + hypervisorAndTemplateName.getKey() + " System Vms");
             try (PreparedStatement pstmt = conn.prepareStatement("select id from `cloud`.`vm_template` where name = ? and removed is null order by id desc limit 1")) {
                 // Get 4.10.0 system Vm template Id for corresponding hypervisor
                 long templateId = -1;
@@ -175,7 +176,7 @@ public class Upgrade4930to41000 implements DbUpgrade {
                         templateId = rs.getLong(1);
                     }
                 } catch (final SQLException e) {
-                    LOG.error("updateSystemVmTemplates:Exception while getting ids of templates: " + e.getMessage());
+                    s_logger.error("updateSystemVmTemplates:Exception while getting ids of templates: " + e.getMessage());
                     throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting ids of templates", e);
                 }
 
@@ -185,7 +186,7 @@ public class Upgrade4930to41000 implements DbUpgrade {
                         templ_type_pstmt.setLong(1, templateId);
                         templ_type_pstmt.executeUpdate();
                     } catch (final SQLException e) {
-                        LOG.error("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system': " + e.getMessage());
+                        s_logger.error("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system': " + e.getMessage());
                         throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating template with id " + templateId + " to be marked as 'system'", e);
                     }
                     // update template ID of system Vms
@@ -195,7 +196,7 @@ public class Upgrade4930to41000 implements DbUpgrade {
                         update_templ_id_pstmt.setString(2, hypervisorAndTemplateName.getKey().toString());
                         update_templ_id_pstmt.executeUpdate();
                     } catch (final Exception e) {
-                        LOG.error("updateSystemVmTemplates:Exception while setting template for " + hypervisorAndTemplateName.getKey().toString() + " to " + templateId
+                        s_logger.error("updateSystemVmTemplates:Exception while setting template for " + hypervisorAndTemplateName.getKey().toString() + " to " + templateId
                                 + ": " + e.getMessage());
                         throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting template for " + hypervisorAndTemplateName.getKey().toString() + " to "
                                 + templateId, e);
@@ -208,7 +209,7 @@ public class Upgrade4930to41000 implements DbUpgrade {
                         update_pstmt.setString(2, routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()));
                         update_pstmt.executeUpdate();
                     } catch (final SQLException e) {
-                        LOG.error("updateSystemVmTemplates:Exception while setting " + routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()) + " to "
+                        s_logger.error("updateSystemVmTemplates:Exception while setting " + routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()) + " to "
                                 + hypervisorAndTemplateName.getValue() + ": " + e.getMessage());
                         throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting "
                                 + routerTemplateConfigurationNames.get(hypervisorAndTemplateName.getKey()) + " to " + hypervisorAndTemplateName.getValue(), e);
@@ -221,14 +222,14 @@ public class Upgrade4930to41000 implements DbUpgrade {
                         update_pstmt.setString(2, "minreq.sysvmtemplate.version");
                         update_pstmt.executeUpdate();
                     } catch (final SQLException e) {
-                        LOG.error("updateSystemVmTemplates:Exception while setting 'minreq.sysvmtemplate.version' to 4.10.0: " + e.getMessage());
+                        s_logger.error("updateSystemVmTemplates:Exception while setting 'minreq.sysvmtemplate.version' to 4.10.0: " + e.getMessage());
                         throw new CloudRuntimeException("updateSystemVmTemplates:Exception while setting 'minreq.sysvmtemplate.version' to 4.10.0", e);
                     }
                 } else {
                     if (hypervisorsListInUse.contains(hypervisorAndTemplateName.getKey())) {
                         throw new CloudRuntimeException(getUpgradedVersion() + hypervisorAndTemplateName.getKey() + " SystemVm template not found. Cannot upgrade system Vms");
                     } else {
-                        LOG.warn(getUpgradedVersion() + hypervisorAndTemplateName.getKey() + " SystemVm template not found. " + hypervisorAndTemplateName.getKey()
+                        s_logger.warn(getUpgradedVersion() + hypervisorAndTemplateName.getKey() + " SystemVm template not found. " + hypervisorAndTemplateName.getKey()
                                 + " hypervisor is not used, so not failing upgrade");
                         // Update the latest template URLs for corresponding
                         // hypervisor
@@ -239,7 +240,7 @@ public class Upgrade4930to41000 implements DbUpgrade {
                             update_templ_url_pstmt.setString(3, hypervisorAndTemplateName.getKey().toString());
                             update_templ_url_pstmt.executeUpdate();
                         } catch (final SQLException e) {
-                            LOG.error("updateSystemVmTemplates:Exception while updating 'url' and 'checksum' for hypervisor type "
+                            s_logger.error("updateSystemVmTemplates:Exception while updating 'url' and 'checksum' for hypervisor type "
                                     + hypervisorAndTemplateName.getKey().toString() + ": " + e.getMessage());
                             throw new CloudRuntimeException("updateSystemVmTemplates:Exception while updating 'url' and 'checksum' for hypervisor type "
                                     + hypervisorAndTemplateName.getKey().toString(), e);
@@ -247,21 +248,23 @@ public class Upgrade4930to41000 implements DbUpgrade {
                     }
                 }
             } catch (final SQLException e) {
-                LOG.error("updateSystemVmTemplates:Exception while getting ids of templates: " + e.getMessage());
+                s_logger.error("updateSystemVmTemplates:Exception while getting ids of templates: " + e.getMessage());
                 throw new CloudRuntimeException("updateSystemVmTemplates:Exception while getting ids of templates", e);
             }
         }
-        LOG.debug("Updating System Vm Template IDs Complete");
+        s_logger.debug("Updating System Vm Template IDs Complete");
     }
 
 
     @Override
-    public File[] getCleanupScripts() {
-        String script = Script.findScript("", "db/schema-4930to41000-cleanup.sql");
+    public InputStream[] getCleanupScripts() {
+        final String scriptFile = "META-INF/db/schema-4930to41000-cleanup.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-4930to41000-cleanup.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
-        return new File[] {new File(script)};
+
+        return new InputStream[] {script};
     }
 
     private void populateGuestOsDetails(Connection conn){

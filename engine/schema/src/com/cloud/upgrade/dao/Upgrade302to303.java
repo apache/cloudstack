@@ -20,7 +20,7 @@ package com.cloud.upgrade.dao;
 /**
  * @author Alena Prokharchyk
  */
-import java.io.File;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -30,11 +30,9 @@ import java.util.UUID;
 
 import org.apache.log4j.Logger;
 
-//
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade302to303 extends LegacyDbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade302to303.class);
@@ -55,13 +53,14 @@ public class Upgrade302to303 extends LegacyDbUpgrade {
     }
 
     @Override
-    public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-302to303.sql");
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-302to303.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-302to303.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(script)};
+        return new InputStream[] {script};
     }
 
     @Override
@@ -273,7 +272,7 @@ public class Upgrade302to303 extends LegacyDbUpgrade {
     }
 
     @Override
-    public File[] getCleanupScripts() {
+    public InputStream[] getCleanupScripts() {
         return null;
     }
 }
