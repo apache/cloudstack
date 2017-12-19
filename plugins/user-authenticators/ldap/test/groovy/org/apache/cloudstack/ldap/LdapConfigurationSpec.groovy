@@ -171,7 +171,7 @@ class LdapConfigurationSpec extends spock.lang.Specification {
 
         def expected = timeout == null ? 1000 : timeout.toLong() //1000 is the default value
 
-        def result = ldapConfiguration.getReadTimeout()
+        def result = ldapConfiguration.getReadTimeout(null)
         expect:
         result == expected
         where:

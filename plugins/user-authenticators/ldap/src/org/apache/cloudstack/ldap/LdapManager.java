@@ -38,7 +38,7 @@ public interface LdapManager extends PluggableService {
     @Deprecated
     LdapConfigurationResponse addConfiguration(String hostname, int port, Long domainId) throws InvalidParameterValueException;
 
-    boolean canAuthenticate(String principal, String password);
+    boolean canAuthenticate(String principal, String password, final Long domainId);
 
     LdapConfigurationResponse createLdapConfigurationResponse(LdapConfigurationVO configuration);
 

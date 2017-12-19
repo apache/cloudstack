@@ -72,7 +72,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 try {
                     LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType().toString(), ldapTrustMapVO.getName(), domainId);
                     if(!ldapUser.isDisabled()) {
-                        result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password);
+                        result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password, domainId);
                         if(result) {
                             if(user == null) {
                                 // import user to cloudstack
@@ -93,9 +93,9 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                 //domain is not linked to ldap follow normal authentication
                 if(user != null ) {
                     try {
-                        LdapUser ldapUser = _ldapManager.getUser(username, null);
+                        LdapUser ldapUser = _ldapManager.getUser(username, domainId);
                         if(!ldapUser.isDisabled()) {
-                            result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password);
+                            result = _ldapManager.canAuthenticate(ldapUser.getPrincipal(), password, domainId);
                         } else {
                             s_logger.debug("user with principal "+ ldapUser.getPrincipal() + " is disabled in ldap");
                         }

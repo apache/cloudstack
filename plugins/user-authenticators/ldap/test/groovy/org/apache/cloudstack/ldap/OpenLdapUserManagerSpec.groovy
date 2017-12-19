@@ -165,12 +165,12 @@ class OpenLdapUserManagerSpec extends spock.lang.Specification {
         ldapConfiguration.getEmailAttribute() >> "mail"
         ldapConfiguration.getFirstnameAttribute() >> "givenname"
         ldapConfiguration.getLastnameAttribute() >> "sn"
-        ldapConfiguration.getBaseDn() >> "dc=cloudstack,dc=org"
+        ldapConfiguration.getBaseDn(_) >> "dc=cloudstack,dc=org"
         ldapConfiguration.getCommonNameAttribute() >> "cn"
         ldapConfiguration.getGroupObject() >> "groupOfUniqueNames"
         ldapConfiguration.getGroupUniqueMemberAttribute(_) >> "uniquemember"
         ldapConfiguration.getLdapPageSize() >> 1
-        ldapConfiguration.getReadTimeout() >> 1000
+        ldapConfiguration.getReadTimeout(_) >> 1000
 
         username = "rmurphy"
         email = "rmurphy@test.com"
