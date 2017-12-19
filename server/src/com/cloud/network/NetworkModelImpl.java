@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Collections;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -1827,7 +1828,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public Set<Long> getAvailableIps(Network network, String requestedIp) {
         if (network.getCidr() == null) {
-            return null;
+            return Collections.emptySet();
         }
         String[] cidr = network.getCidr().split("/");
         List<String> ips = getUsedIpsInNetwork(network);
