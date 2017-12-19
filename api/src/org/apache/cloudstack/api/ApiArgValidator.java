@@ -20,4 +20,5 @@ package org.apache.cloudstack.api;
 public enum ApiArgValidator {
     NotNullOrEmpty, // does Strings.isNullOrEmpty check
     PositiveNumber, // does != null and > 0 check
+    SkipSanitization, // does no HTML sanitization checks on string fields
 }

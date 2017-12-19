@@ -25,6 +25,7 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -60,7 +61,7 @@ public class IssueCertificateCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.CSR, type = BaseCmd.CommandType.STRING, description = "The certificate signing request (in pem format), if CSR is not provided then configured/provided options are considered", length = 65535)
+    @Parameter(name = ApiConstants.CSR, type = BaseCmd.CommandType.STRING, description = "The certificate signing request (in pem format), if CSR is not provided then configured/provided options are considered", validations = {ApiArgValidator.SkipSanitization}, length = 65535)
     private String csr;
 
     @Parameter(name = ApiConstants.DOMAIN, type = BaseCmd.CommandType.STRING, description = "Comma separated list of domains, the certificate should be issued for. When csr is not provided, the first domain is used as a subject/CN")

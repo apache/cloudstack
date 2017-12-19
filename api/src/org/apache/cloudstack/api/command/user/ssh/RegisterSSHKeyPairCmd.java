@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.ssh;
 
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -42,7 +43,7 @@ public class RegisterSSHKeyPairCmd extends BaseCmd {
     @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "Name of the keypair")
     private String name;
 
-    @Parameter(name = "publickey", type = CommandType.STRING, required = true, description = "Public key material of the keypair", length = 5120)
+    @Parameter(name = "publickey", type = CommandType.STRING, required = true, description = "Public key material of the keypair", validations = {ApiArgValidator.SkipSanitization}, length = 5120)
     private String publicKey;
 
     //Owner information

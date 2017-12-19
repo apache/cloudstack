@@ -141,6 +141,11 @@
       <artifactId>opensaml</artifactId>
       <version>${cs.opensaml.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
+      <version>${cs.jsoup.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <testResources>

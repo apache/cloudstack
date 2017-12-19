@@ -18,9 +18,8 @@ package org.apache.cloudstack.api.command.user.loadbalancer;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
@@ -30,13 +29,14 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SslCertResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.tls.CertService;
+import org.apache.log4j.Logger;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import org.apache.cloudstack.network.tls.CertService;
 
 @APICommand(name = "uploadSslCert", description = "Upload a certificate to CloudStack", responseObject = SslCertResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -52,13 +52,13 @@ public class UploadSslCertCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.CERTIFICATE, type = CommandType.STRING, required = true, description = "SSL certificate", length = 16384)
+    @Parameter(name = ApiConstants.CERTIFICATE, type = CommandType.STRING, required = true, description = "SSL certificate", validations = {ApiArgValidator.SkipSanitization}, length = 16384)
     private String cert;
 
-    @Parameter(name = ApiConstants.PRIVATE_KEY, type = CommandType.STRING, required = true, description = "Private key", length = 16384)
+    @Parameter(name = ApiConstants.PRIVATE_KEY, type = CommandType.STRING, required = true, description = "Private key", validations = {ApiArgValidator.SkipSanitization}, length = 16384)
     private String key;
 
-    @Parameter(name = ApiConstants.CERTIFICATE_CHAIN, type = CommandType.STRING, description = "Certificate chain of trust", length = 2097152)
+    @Parameter(name = ApiConstants.CERTIFICATE_CHAIN, type = CommandType.STRING, description = "Certificate chain of trust", validations = {ApiArgValidator.SkipSanitization}, length = 2097152)
     private String chain;
 
     @Parameter(name = ApiConstants.PASSWORD, type = CommandType.STRING, description = "Password for the private key")
