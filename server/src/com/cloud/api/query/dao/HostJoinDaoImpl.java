@@ -159,8 +159,8 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 Long mem = host.getMemReservedCapacity() + host.getMemUsedCapacity();
                 Long cpu = host.getCpuReservedCapacity() + host.getCpuUsedCapacity();
 
-                hostResponse.setMemoryTotal(mem);
-                Float totalMemorywithOverprovisioning=new Float((host.getTotalMemory()*ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId())));
+                hostResponse.setMemoryTotal(host.getTotalMemory());
+                Float totalMemorywithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
                 hostResponse.setMemWithOverprovisioning(totalMemorywithOverprovisioning.toString());
                 hostResponse.setMemoryAllocated(mem);
 
@@ -180,7 +180,7 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
 
                 hostResponse.setHypervisorVersion(host.getHypervisorVersion());
 
-                Float cpuWithOverprovisioning = new Float(host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId()));
+                Float cpuWithOverprovisioning = host.getCpus() * host.getSpeed() * ApiDBUtils.getCpuOverprovisioningFactor(host.getClusterId());
                 String cpuAlloc = decimalFormat.format(((float)cpu / cpuWithOverprovisioning * 100f)) + "%";
                 hostResponse.setCpuAllocated(cpuAlloc);
                 hostResponse.setCpuWithOverprovisioning(cpuWithOverprovisioning.toString());
@@ -308,10 +308,10 @@ public class HostJoinDaoImpl extends GenericDaoBase<HostJoinVO, Long> implements
                 Long mem = host.getMemReservedCapacity() + host.getMemUsedCapacity();
                 Long cpu = host.getCpuReservedCapacity() + host.getCpuReservedCapacity();
 
-                hostResponse.setMemoryTotal(mem);
-                Float memWithOverprovisioning =new Float((host.getTotalMemory()*ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId())));
+                hostResponse.setMemoryTotal(host.getTotalMemory());
+                Float memWithOverprovisioning = host.getTotalMemory() * ApiDBUtils.getMemOverprovisioningFactor(host.getClusterId());
                 hostResponse.setMemWithOverprovisioning(memWithOverprovisioning.toString());
-                hostResponse.setMemoryAllocated(decimalFormat.format((float)mem/ memWithOverprovisioning*100f).toString()+"%");
+                hostResponse.setMemoryAllocated(decimalFormat.format((float) mem / memWithOverprovisioning * 100.0f) +"%");
 
                 String hostTags = host.getTag();
                 hostResponse.setHostTags(host.getTag());
