@@ -67,7 +67,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
 
         final StringBuilder memberOfFilter = new StringBuilder();
         String groupCnName =  _ldapConfiguration.getCommonNameAttribute() + "=" +groupName + "," +  _ldapConfiguration.getBaseDn(domainId);
-        memberOfFilter.append("(").append(getMemberOfAttribute()).append("=");
+        memberOfFilter.append("(").append(getMemberOfAttribute(domainId)).append("=");
         memberOfFilter.append(groupCnName);
         memberOfFilter.append(")");
 
@@ -94,8 +94,8 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         return isDisabledUser;
     }
 
-    protected String getMemberOfAttribute() {
-        if(_ldapConfiguration.isNestedGroupsEnabled()) {
+    protected String getMemberOfAttribute(final Long domainId) {
+        if(_ldapConfiguration.isNestedGroupsEnabled(domainId)) {
             return MICROSOFT_AD_NESTED_MEMBERS_FILTER;
         } else {
             return MICROSOFT_AD_MEMBERS_FILTER;

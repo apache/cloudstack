@@ -194,7 +194,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapManager = Spy(LdapManagerImpl, constructorArgs: [ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration])
         ldapManager.getUser(_, null) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null) }
         when: "The user attempts to authenticate with a bad password"
-        def result = ldapManager.canAuthenticate("rmurphy", "password")
+        def result = ldapManager.canAuthenticate("rmurphy", "password", null)
         then: "The authentication fails"
         result == false
     }
@@ -244,7 +244,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapManager = Spy(LdapManagerImpl, constructorArgs: [ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration])
         ldapManager.getUser(_, null) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null) }
         when: "A user authenticates"
-        def result = ldapManager.canAuthenticate("rmurphy", "password")
+        def result = ldapManager.canAuthenticate("rmurphy", "password", null)
         then: "The result is true"
         result == true
     }

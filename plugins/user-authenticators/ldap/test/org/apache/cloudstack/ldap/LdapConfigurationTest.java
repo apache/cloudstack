@@ -67,7 +67,7 @@ public class LdapConfigurationTest {
     public void getAuthenticationReturnsSimple() throws Exception {
         overrideConfigValue("ldapBindPrincipal", "cn=bla");
         overrideConfigValue("ldapBindPassword", "pw");
-        String authentication = ldapConfiguration.getAuthentication();
+        String authentication = ldapConfiguration.getAuthentication(null);
         assertEquals("authentication should be set to simple", "simple", authentication);
     }
 
@@ -75,7 +75,7 @@ public class LdapConfigurationTest {
     @Test
     public void getBaseDnReturnsABaseDn() throws Exception {
         overrideConfigValue("ldapBaseDn", "dc=cloudstack,dc=org");
-        String baseDn = ldapConfiguration.getBaseDn();
+        String baseDn = ldapConfiguration.getBaseDn(null);
         assertEquals("The set baseDn should be returned","dc=cloudstack,dc=org", baseDn);
     }
 
@@ -107,7 +107,7 @@ public class LdapConfigurationTest {
     public void getSearchGroupPrincipleReturnsSuccessfully() throws Exception {
         // We have a ConfigDao with a value for ldap.search.group.principle and an LdapConfiguration
         overrideConfigValue("ldapSearchGroupPrinciple", "cn=cloudstack,cn=users,dc=cloudstack,dc=org");
-        String result = ldapConfiguration.getSearchGroupPrinciple();
+        String result = ldapConfiguration.getSearchGroupPrinciple(null);
 
         assertEquals("The result holds the same value configDao did", "cn=cloudstack,cn=users,dc=cloudstack,dc=org",result);
     }
@@ -134,7 +134,7 @@ public class LdapConfigurationTest {
             } else {
                 expectedResult = groupObject;
             };
-            String result = ldapConfiguration.getGroupObject();
+            String result = ldapConfiguration.getGroupObject(null);
             assertEquals("testing for " + groupObject, expectedResult, result);
         }
     }

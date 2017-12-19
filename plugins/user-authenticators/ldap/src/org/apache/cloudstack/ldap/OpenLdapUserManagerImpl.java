@@ -85,9 +85,9 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         if (_ldapConfiguration.getSearchGroupPrinciple(domainId) != null) {
             if(s_logger.isDebugEnabled()) {
                 s_logger.debug("adding search filter for '" + _ldapConfiguration.getSearchGroupPrinciple(domainId) +
-                "', using " + _ldapConfiguration.getUserMemberOfAttribute());
+                "', using " + _ldapConfiguration.getUserMemberOfAttribute(domainId));
             }
-            memberOfFilter.append("(" + _ldapConfiguration.getUserMemberOfAttribute() + "=");
+            memberOfFilter.append("(" + _ldapConfiguration.getUserMemberOfAttribute(domainId) + "=");
             memberOfFilter.append(_ldapConfiguration.getSearchGroupPrinciple(domainId));
             memberOfFilter.append(")");
         }
@@ -140,7 +140,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         if("OU".equals(type)) {
             basedn = name;
         } else {
-            basedn = _ldapConfiguration.getBaseDn();
+            basedn = _ldapConfiguration.getBaseDn(domainId);
         }
 
         final StringBuilder userObjectFilter = new StringBuilder();
@@ -157,7 +157,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
         final StringBuilder memberOfFilter = new StringBuilder();
         if ("GROUP".equals(type)) {
-            memberOfFilter.append("(").append(getMemberOfAttribute()).append("=");
+            memberOfFilter.append("(").append(getMemberOfAttribute(domainId)).append("=");
             memberOfFilter.append(name);
             memberOfFilter.append(")");
         }
@@ -172,8 +172,8 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         return searchUser(basedn, searchQuery.toString(), context, domainId);
     }
 
-    protected String getMemberOfAttribute() {
-        return "memberof";
+    protected String getMemberOfAttribute(final Long domainId) {
+        return _ldapConfiguration.getUserMemberOfAttribute(domainId);
     }
 
     @Override
@@ -250,6 +250,9 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         searchControls.setReturningAttributes(_ldapConfiguration.getReturnAttributes(domainId));
 
         NamingEnumeration<SearchResult> results = context.search(basedn, searchString, searchControls);
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("searching user(s) with filter: \"" + searchString + "\"");
+        }
         final List<LdapUser> users = new ArrayList<LdapUser>();
         while (results.hasMoreElements()) {
             final SearchResult result = results.nextElement();
@@ -276,7 +279,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
             throw new IllegalArgumentException("ldap basedn is not configured");
         }
         byte[] cookie = null;
-        int pageSize = _ldapConfiguration.getLdapPageSize();
+        int pageSize = _ldapConfiguration.getLdapPageSize(domainId);
         context.setRequestControls(new Control[]{new PagedResultsControl(pageSize, Control.NONCRITICAL)});
         final List<LdapUser> users = new ArrayList<LdapUser>();
         NamingEnumeration<SearchResult> results;

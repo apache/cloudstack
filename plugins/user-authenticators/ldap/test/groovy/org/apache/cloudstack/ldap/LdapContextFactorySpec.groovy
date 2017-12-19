@@ -48,11 +48,11 @@ class LdapContextFactorySpec extends spock.lang.Specification {
         ldapConfiguration.getEmailAttribute() >> "mail"
         ldapConfiguration.getFirstnameAttribute() >> "givenname"
         ldapConfiguration.getLastnameAttribute() >> "sn"
-        ldapConfiguration.getBaseDn() >> "dc=cloudstack,dc=org"
+        ldapConfiguration.getBaseDn(_) >> "dc=cloudstack,dc=org"
 		ldapConfiguration.getSSLStatus() >> true
 		ldapConfiguration.getTrustStore() >> "/tmp/ldap.ts"
 		ldapConfiguration.getTrustStorePassword() >> "password"
-        ldapConfiguration.getReadTimeout() >> 1000
+        ldapConfiguration.getReadTimeout(_) >> 1000
         ldapConfiguration.getLdapPageSize() >> 1
 
         username = "rmurphy"

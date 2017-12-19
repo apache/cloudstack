@@ -86,11 +86,11 @@ public class LdapContextFactory {
 
         environment.put(Context.INITIAL_CONTEXT_FACTORY, factory);
         environment.put(Context.PROVIDER_URL, url);
-        environment.put("com.sun.jndi.ldap.read.timeout", _ldapConfiguration.getReadTimeout().toString());
+        environment.put("com.sun.jndi.ldap.read.timeout", _ldapConfiguration.getReadTimeout(domainId).toString());
         environment.put("com.sun.jndi.ldap.connect.pool", "true");
 
         enableSSL(environment);
-        setAuthentication(environment, isSystemContext);
+        setAuthentication(environment, isSystemContext, domainId);
 
         if (principal != null) {
             environment.put(Context.SECURITY_PRINCIPAL, principal);
@@ -103,8 +103,8 @@ public class LdapContextFactory {
         return environment;
     }
 
-    private void setAuthentication(final Hashtable<String, String> environment, final boolean isSystemContext) {
-        final String authentication = _ldapConfiguration.getAuthentication();
+    private void setAuthentication(final Hashtable<String, String> environment, final boolean isSystemContext, final Long domainId) {
+        final String authentication = _ldapConfiguration.getAuthentication(domainId);
 
         if ("none".equals(authentication) && !isSystemContext) {
             environment.put(Context.SECURITY_AUTHENTICATION, "simple");

@@ -132,13 +132,14 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
      * TODO decide if the principal is good enough to get the domain id or we need to add it as parameter
      * @param principal
      * @param password
+     * @param domainId
      * @return
      */
     @Override
-    public boolean canAuthenticate(final String principal, final String password) {
+    public boolean canAuthenticate(final String principal, final String password, final Long domainId) {
         try {
             // TODO pass the right domainId
-            final LdapContext context = _ldapContextFactory.createUserContext(principal, password,null);
+            final LdapContext context = _ldapContextFactory.createUserContext(principal, password,domainId);
             closeContext(context);
             return true;
         } catch (NamingException | IOException e) {
