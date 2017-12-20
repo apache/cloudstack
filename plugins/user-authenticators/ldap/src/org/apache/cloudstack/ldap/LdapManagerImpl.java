@@ -138,7 +138,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     @Override
     public boolean canAuthenticate(final String principal, final String password, final Long domainId) {
         try {
-            // TODO pass the right domainId
+            // TODO return the right account for this user
             final LdapContext context = _ldapContextFactory.createUserContext(principal, password,domainId);
             closeContext(context);
             return true;
