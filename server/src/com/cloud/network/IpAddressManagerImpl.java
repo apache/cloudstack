@@ -291,8 +291,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     SearchBuilder<IPAddressVO> AssignIpAddressSearch;
     SearchBuilder<IPAddressVO> AssignIpAddressFromPodVlanSearch;
-    private final Object _allocatedLock = new Object();
-    private final Object _allocatingLock = new Object();
+    private static final Object allocatedLock = new Object();
+    private static final Object allocatingLock = new Object();
 
     static Boolean rulesContinueOnErrFlag = true;
 
@@ -834,7 +834,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @DB
     @Override
     public void markPublicIpAsAllocated(final IPAddressVO addr) {
-        synchronized (_allocatedLock) {
+        synchronized (allocatedLock) {
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
@@ -857,6 +857,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                                         _resourceLimitMgr.incrementResourceCount(owner.getId(), ResourceType.public_ip);
                                     }
                                 }
+                            } else {
+                                s_logger.error("Failed to mark public IP as allocated with id=" + addr.getId() + " address=" + addr.getAddress());
                             }
                         }
                     }
@@ -867,14 +869,18 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     @DB
     private void markPublicIpAsAllocating(final IPAddressVO addr) {
-        synchronized (_allocatingLock) {
+        synchronized (allocatingLock) {
             Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
                 public void doInTransactionWithoutResult(TransactionStatus status) {
 
                     if (_ipAddressDao.lockRow(addr.getId(), true) != null) {
                         addr.setState(IpAddress.State.Allocating);
-                        _ipAddressDao.update(addr.getId(), addr);
+                        if (!_ipAddressDao.update(addr.getId(), addr)) {
+                            s_logger.error("Failed to update public IP as allocating with id=" + addr.getId() + " and address=" + addr.getAddress());
+                        }
+                    } else {
+                        s_logger.error("Failed to lock row to mark public IP as allocating with id=" + addr.getId() + " and address=" + addr.getAddress());
                     }
                 }
             });
@@ -935,8 +941,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 displayIp = vpc.isDisplay();
             }
 
-            return fetchNewPublicIp(dcId, null, null, owner, VlanType.VirtualNetwork, guestNtwkId, isSourceNat, false, null, false, vpcId, displayIp);
-
+            ip = fetchNewPublicIp(dcId, null, null, owner, VlanType.VirtualNetwork, guestNtwkId, isSourceNat, true, null, false, vpcId, displayIp);
+            return ip;
         } finally {
             if (owner != null) {
                 if (s_logger.isDebugEnabled()) {

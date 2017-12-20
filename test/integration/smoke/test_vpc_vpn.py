@@ -390,6 +390,7 @@ class TestVpcRemoteAccessVpn(cloudstackTestCase):
         finally:
             self.logger.debug("Acquired public ip address: OK")
 
+        vpn = None
         try:
             vpn = Vpn.create(self.apiclient,
                              publicipid=ip.id,
