@@ -2910,7 +2910,8 @@ class Network:
     def create(cls, apiclient, services, accountid=None, domainid=None,
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
-               gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None):
+               gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
+               externalid=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -2958,6 +2959,8 @@ class Network:
             cmd.vpcid = vpcid
         if aclid:
             cmd.aclid = aclid
+        if externalid:
+            cmd.externalid = externalid
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):

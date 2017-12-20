@@ -45,7 +45,7 @@ public abstract class NuageVspCommandWrapper<T extends Command> extends CommandW
         } catch (NuageVspUnsupportedRequestException e) {
             s_logger.error("Failure during " + command + " on " + nuageVspResource.getName(), e);
             return new UnsupportedAnswer(command, e.getMessage()); //New Exception so there is no stacktrace showed in the UI when changing ACL lists.
-        } catch (NuageVspException | ConfigurationException e) {
+        } catch (Exception e) {
             s_logger.error("Failure during " + command + " on " + nuageVspResource.getName(), e);
             return new Answer(command, e);
         }

@@ -395,6 +395,10 @@ cloudStack.docs = {
         desc: 'If you want to assign a special domain name to this domain\'s guest VM network, specify the DNS suffix',
         externalLink: ''
     },
+    helpDomainId: {
+        desc: 'A valid domain id. CloudStack will generate one for you if empty.',
+        externalLink: ''
+    },
     // Add F5
     helpF5IPAddress: {
         desc: 'The IP address of the device',

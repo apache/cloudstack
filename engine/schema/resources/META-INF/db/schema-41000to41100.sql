@@ -496,3 +496,6 @@ UPDATE `cloud`.`monitoring_services` SET pidfile="/var/run/apache2/apache2.pid" 
 -- Use 'Other Linux 64-bit' as guest os for the default systemvmtemplate for VMware
 -- This fixes a memory allocation issue to systemvms on VMware/ESXi
 UPDATE `cloud`.`vm_template` SET guest_os_id=99 WHERE id=8;
+
+-- Network External Ids
+ALTER TABLE `cloud`.`networks` ADD `external_id` varchar(255);

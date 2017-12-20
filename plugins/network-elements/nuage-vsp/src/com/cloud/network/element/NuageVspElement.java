@@ -507,7 +507,6 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         return true;
     }
 
-
     @Override
     public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
         List<VspStaticNat> vspStaticNatDetails = new ArrayList<VspStaticNat>();
@@ -687,6 +686,8 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
                 preConfiguredDomainTemplateName = _configDao.getValue(NuageVspManager.NuageVspVpcDomainTemplateName.key());
             }
 
+            Map<String, String> vpcDetails = _vpcDetailsDao.listDetailsKeyPairs(vpc.getId(), false);
+
             cleanUpVpcCaching(vpc.getId());
             //related to migration caching
             List<? extends ResourceTag> vpcResourceDetails = _resourceTagDao.listByResourceUuid(vpc.getUuid());
@@ -698,7 +699,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
                                   .ifPresent(this::cleanUpVpcCaching);
             }
 
-            ShutDownVpcVspCommand cmd = new ShutDownVpcVspCommand(vpcDomain.getUuid(), vpc.getUuid(), preConfiguredDomainTemplateName, domainRouterUuids);
+            ShutDownVpcVspCommand cmd = new ShutDownVpcVspCommand(vpcDomain.getUuid(), vpc.getUuid(), preConfiguredDomainTemplateName, domainRouterUuids, vpcDetails);
             Answer answer =  _agentMgr.easySend(nuageVspHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
                 s_logger.error("ShutDownVpcVspCommand for VPC " + vpc.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));

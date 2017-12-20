@@ -387,7 +387,7 @@ class nuageTestCase(cloudstackTestCase):
     @needscleanup
     def create_Network(cls, nw_off, gateway="10.1.1.1",
                        netmask="255.255.255.0", vpc=None, acl_list=None,
-                       testdata=None, account=None, vlan=None):
+                       testdata=None, account=None, vlan=None, externalid=None):
         if not account:
             account = cls.account
         cls.debug("Creating a network in the account - %s" % account.name)
@@ -404,6 +404,7 @@ class nuageTestCase(cloudstackTestCase):
                                  zoneid=cls.zone.id,
                                  gateway=gateway,
                                  vlan=vlan,
+                                 externalid=externalid,
                                  vpcid=vpc.id if vpc else cls.vpc.id
                                  if hasattr(cls, "vpc") else None,
                                  aclid=acl_list.id if acl_list else None

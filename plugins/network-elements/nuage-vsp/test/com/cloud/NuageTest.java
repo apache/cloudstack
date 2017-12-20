@@ -146,7 +146,6 @@ public class NuageTest {
         return new NetworkRelatedVsdIds.Builder()
                 .vsdZoneId("vsdZoneId")
                 .vsdDomainId("vsdDomainId")
-                .vsdEnterpriseId("vsdEnterpriseId")
                 .vsdSubnetId("vsdSubnetId")
                 .build();
     }
