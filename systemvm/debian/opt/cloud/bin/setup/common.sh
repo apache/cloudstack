@@ -39,6 +39,7 @@ init_interfaces_orderby_macs() {
            echo -n " eth$i" >> $interface_file
         fi
     done
+
     cat >> $interface_file << EOF
 
 iface lo inet loopback
@@ -481,21 +482,14 @@ setup_vpc_apache2() {
 }
 
 clean_ipalias_config() {
-  # Old
   rm -f /etc/apache2/conf.d/ports.*.meta-data.conf
   rm -f /etc/apache2/sites-available/ipAlias*
   rm -f /etc/apache2/sites-enabled/ipAlias*
   rm -f /etc/apache2/conf.d/vhost*.conf
   rm -f /etc/apache2/ports.conf
   rm -f /etc/apache2/vhostexample.conf
-  rm -f /etc/apache2/sites-available/default
-  rm -f /etc/apache2/sites-available/default-ssl
-  rm -f /etc/apache2/sites-enabled/default
-  rm -f /etc/apache2/sites-enabled/default-ssl
-
-  # New
-  rm -f /etc/apache2/sites-enabled/vhost-*.conf
-  rm -f /etc/apache2/sites-enabled/000-default
+  rm -f /etc/apache2/sites-available/*
+  rm -f /etc/apache2/sites-enabled/*
 
   rm -rf /etc/failure_config
 }
@@ -513,6 +507,8 @@ setup_apache2_common() {
 
 setup_apache2() {
   log_it "Setting up apache web server"
+  mkdir -p /var/www
+  chown www-data:www-data -R /var/www
   clean_ipalias_config
   setup_apache2_common
   local ip=$1

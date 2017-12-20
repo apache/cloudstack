@@ -1300,6 +1300,7 @@ class TestL2Networks(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.hypervisor = testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
         # Create Accounts & networks
         cls.account = Account.create(
@@ -1308,10 +1309,10 @@ class TestL2Networks(cloudstackTestCase):
             admin=True,
             domainid=cls.domain.id
         )
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,

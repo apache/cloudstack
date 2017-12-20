@@ -824,7 +824,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         if (userIp.getState() == IpAddress.State.Free) {
                             addr.setState(IpAddress.State.Allocating);
                             if (_ipAddressDao.update(addr.getId(), addr)) {
-                                finalAddr = _ipAddressDao.findById(addr.getId());
+                                finalAddr = addr;
                                 break;
                             }
                         }

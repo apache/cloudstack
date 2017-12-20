@@ -20,9 +20,10 @@ set -e
 set -x
 
 function cleanup_apt() {
+  export DEBIAN_FRONTEND=noninteractive
   apt-get -y remove --purge dictionaries-common busybox isc-dhcp-client isc-dhcp-common \
-    task-english task-ssh-server tasksel tasksel-data laptop-detect wamerican \
-    debconf-i18n sharutils gnupg gnupg-agent
+    task-english task-ssh-server tasksel tasksel-data laptop-detect wamerican sharutils \
+    nano util-linux-locales krb5-locales
 
   apt-get -y autoremove --purge
   apt-get autoclean
@@ -63,7 +64,9 @@ function cleanup_misc() {
   rm -fr /usr/share/man
   rm -fr /usr/share/info
   rm -fr /usr/share/lintian
-  find /usr/share/locale -type f | grep -v en | xargs rm -fr
+  rm -fr /usr/share/apache2/icons
+  find /usr/share/locale -type f | grep -v en_US | xargs rm -fr
+  find /usr/share/zoneinfo -type f | grep -v UTC | xargs rm -fr
 }
 
 function cleanup() {

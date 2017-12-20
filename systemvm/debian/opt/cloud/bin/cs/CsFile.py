@@ -58,7 +58,7 @@ class CsFile:
     def commit(self):
         if not self.is_changed():
             logging.info("Nothing to commit. The %s file did not change" % self.filename)
-            return
+            return False
         handle = open(self.filename, "w+")
         for line in self.new_config:
             handle.write(line)
@@ -66,6 +66,7 @@ class CsFile:
         logging.info("Wrote edited file %s" % self.filename)
         self.config = list(self.new_config)
         logging.info("Updated file in-cache configuration")
+        return True
 
     def dump(self):
         for line in self.new_config:

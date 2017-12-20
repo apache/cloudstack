@@ -46,7 +46,7 @@ function install_packages() {
   local apt_get="apt-get --no-install-recommends -q -y"
 
   ${apt_get} install grub-legacy \
-    rsyslog logrotate cron net-tools ifupdown tmux vim htop netbase iptables \
+    rsyslog logrotate cron net-tools ifupdown tmux vim-tiny htop netbase iptables \
     openssh-server e2fsprogs tcpdump iftop socat wget \
     python bzip2 sed gawk diffutils grep gzip less tar telnet ftp rsync traceroute psmisc lsof procps \
     inetutils-ping iputils-arping httping curl \
@@ -68,7 +68,7 @@ function install_packages() {
     python-flask \
     haproxy \
     radvd \
-    sharutils \
+    sharutils genisoimage \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons
 

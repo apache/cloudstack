@@ -233,12 +233,8 @@ class TestIsolatedNetworksPasswdServer(cloudstackTestCase):
                     self._testMethodName)
 
         self.logger.debug("cat /var/cache/cloud/passwords-%s | grep %s | sed 's/=/ /g' | awk '{print $1}' RESULT IS ==> %s" % (vm.nic[0].gateway, vm.nic[0].ipaddress, result))
-        res = str(result)
-        
-        self.assertEqual(
-            res.count(vm.nic[0].ipaddress),
-            1,
-            "Password file is empty or doesn't exist!")
+
+        self.assertTrue(vm.nic[0].ipaddress in result, "Password file is empty or doesn't exist!")
 
     @attr(tags=["advanced", "advancedns", "ssh"], required_hardware="true")
     def test_isolate_network_password_server(self):

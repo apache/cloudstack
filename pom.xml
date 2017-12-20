@@ -883,8 +883,6 @@
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
               <exclude>tools/appliance/*/template.json</exclude>
               <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
-              <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
-              <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
               <exclude>tools/marvin/Marvin.egg-info/*</exclude>
               <exclude>ui/css/token-input-facebook.css</exclude>
               <exclude>ui/l10n/*</exclude>

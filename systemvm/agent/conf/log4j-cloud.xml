@@ -20,18 +20,18 @@ under the License.
 <!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
 
-   <!-- ================================= -->
-   <!-- Preserve messages in a local file -->
-   <!-- ================================= -->
+    <!-- ================================= -->
+    <!-- Preserve messages in a local file -->
+    <!-- ================================= -->
 
-   <appender name="cloudLog" class="org.apache.log4j.RollingFileAppender">
+    <appender name="cloudLog" class="org.apache.log4j.RollingFileAppender">
       <param name="File" value="/var/log/cloud.log"/>
       <param name="MaxFileSize" value="10000KB"/>
       <param name="MaxBackupIndex" value="4"/>
 
-     <layout class="org.apache.log4j.EnhancedPatternLayout">
-      <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
-     </layout>
+      <layout class="org.apache.log4j.EnhancedPatternLayout">
+        <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+      </layout>
     </appender>
 
     <appender name="cloudOut" class="org.apache.log4j.RollingFileAppender">
@@ -40,23 +40,23 @@ under the License.
        <param name="MaxFileSize" value="10000KB"/>
        <param name="MaxBackupIndex" value="4"/>
 
-    <layout class="org.apache.log4j.EnhancedPatternLayout">
-     <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
-    </layout>
+      <layout class="org.apache.log4j.EnhancedPatternLayout">
+        <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+      </layout>
     </appender>
 
-     <appender name="cloudSystemvmLog" class="org.apache.log4j.rolling.RollingFileAppender">
+    <appender name="cloudSystemvmLog" class="org.apache.log4j.rolling.RollingFileAppender">
        <param name="File" value="/usr/local/cloud/systemvm/cloud.log"/>
        <param name="Append" value="true"/>
        <param name="MaxFileSize" value="10000KB"/>
        <param name="MaxBackupIndex" value="4"/>
 
-     <layout class="org.apache.log4j.EnhancedPatternLayout">
-     <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
-     </layout>
+      <layout class="org.apache.log4j.EnhancedPatternLayout">
+        <param name="ConversionPattern" value="%d{ISO8601}{GMT} %-5p [%c{3}] (%t:%x) %m%n"/>
+      </layout>
     </appender>
 
-   <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
+    <appender name="APISERVER" class="org.apache.log4j.rolling.RollingFileAppender">
       <param name="Append" value="true"/>
       <param name="Threshold" value="DEBUG"/>
       <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
@@ -67,65 +67,65 @@ under the License.
       <layout class="org.apache.log4j.EnhancedPatternLayout">
          <param name="ConversionPattern" value="%d{ISO8601}{GMT} %m%n"/>
       </layout>
-   </appender>
+    </appender>
 
-   <!-- ============================== -->
-   <!-- Append messages to the console -->
-   <!-- ============================== -->
+    <!-- ============================== -->
+    <!-- Append messages to the console -->
+    <!-- ============================== -->
 
-   <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
       <param name="Target" value="System.out"/>
       <param name="Threshold" value="INFO"/>
 
       <layout class="org.apache.log4j.EnhancedPatternLayout">
          <param name="ConversionPattern" value="%d{ABSOLUTE}{GMT} %5p %c{1}:%L - %m%n"/>
       </layout>
-   </appender>
+    </appender>
 
-   <!-- ================ -->
-   <!-- Limit categories -->
-   <!-- ================ -->
+    <!-- ================ -->
+    <!-- Limit categories -->
+    <!-- ================ -->
 
-   <category name="com.cloud">
-     <priority value="DEBUG"/>
-   </category>
+    <category name="com.cloud">
+      <priority value="DEBUG"/>
+    </category>
 
-   <category name="org.apache.cloudstack">
-     <priority value="DEBUG"/>
-   </category>
+    <category name="org.apache.cloudstack">
+      <priority value="DEBUG"/>
+    </category>
 
-   <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
-   <category name="org.apache">
+    <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->
+    <category name="org.apache">
       <priority value="INFO"/>
-   </category>
+    </category>
 
-   <category name="org">
+    <category name="org">
       <priority value="INFO"/>
-   </category>
+    </category>
 
-   <category name="net">
-     <priority value="INFO"/>
-   </category>
+    <category name="net">
+      <priority value="INFO"/>
+    </category>
 
-   <category name="apiserver.com.cloud">
-     <priority value="DEBUG"/>
-   </category>
+    <category name="apiserver.com.cloud">
+      <priority value="DEBUG"/>
+    </category>
 
-   <logger name="apiserver.com.cloud" additivity="false">
+    <logger name="apiserver.com.cloud" additivity="false">
       <level value="DEBUG"/>
       <appender-ref ref="APISERVER"/>
-   </logger>
+    </logger>
 
-   <!-- ======================= -->
-   <!-- Setup the Root category -->
-   <!-- ======================= -->
+    <!-- ======================= -->
+    <!-- Setup the Root category -->
+    <!-- ======================= -->
 
-   <root>
+    <root>
       <level value="INFO"/>
       <appender-ref ref="CONSOLE"/>
       <appender-ref ref="cloudLog"/>
       <appender-ref ref="cloudOut"/>
       <appender-ref ref="cloudSystemvmLog"/>
-   </root>
+    </root>
 
 </log4j:configuration>

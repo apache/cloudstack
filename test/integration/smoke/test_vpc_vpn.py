@@ -852,7 +852,7 @@ class TestRVPCSite2SiteVpn(cloudstackTestCase):
                 retries)
 
         except Exception as e:
-            self.fail("Unable to create ssh connection: " % e)
+            self.fail("Unable to create ssh connection: %s" % e)
 
         self.assertIsNotNone(
             ssh_client, "Failed to setup ssh connection to vm=%s on public_ip=%s" % (virtual_machine.name, virtual_machine.public_ip))

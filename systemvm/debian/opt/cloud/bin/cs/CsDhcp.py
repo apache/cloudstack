@@ -54,13 +54,16 @@ class CsDhcp(CsDataBag):
 
         self.configure_server()
 
-        self.conf.commit()
+        restart_dnsmasq = self.conf.commit()
         self.cloud.commit()
         self.dhcp_opts.commit()
 
-        # We restart DNSMASQ every time the configure.py is called in order to avoid lease problems.
         if not self.cl.is_redundant() or self.cl.is_master():
-            CsHelper.service("dnsmasq", "restart")
+            if restart_dnsmasq:
+                CsHelper.service("dnsmasq", "restart")
+            else:
+                CsHelper.start_if_stopped("dnsmasq")
+                CsHelper.service("dnsmasq", "reload")
 
     def configure_server(self):
         # self.conf.addeq("dhcp-hostsfile=%s" % DHCP_HOSTS)
@@ -80,7 +83,7 @@ class CsDhcp(CsDataBag):
             # DNS search order
             if gn.get_dns() and device:
                 sline = "dhcp-option=tag:interface-%s-%s,6" % (device, idx)
-                dns_list = [x for x in gn.get_dns() if not (not x)]
+                dns_list = [x for x in gn.get_dns() if x]
                 line = "dhcp-option=tag:interface-%s-%s,6,%s" % (device, idx, ','.join(dns_list))
                 self.conf.search(sline, line)
             # Gateway

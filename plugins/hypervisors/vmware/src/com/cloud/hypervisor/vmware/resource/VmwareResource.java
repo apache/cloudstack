@@ -102,6 +102,7 @@ import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
@@ -2178,8 +2179,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 hyperHost.setRestartPriorityForVM(vmMo, DasVmPriority.HIGH.value());
             }
 
-            // For resizing root disk.
-            if (rootDiskTO != null && !hasSnapshot) {
+            // Resizing root disk only when explicit requested by user
+            final Map<String, String> vmDetails = cmd.getVirtualMachine().getDetails();
+            if (rootDiskTO != null && !hasSnapshot && (vmDetails != null && vmDetails.containsKey(ApiConstants.ROOT_DISK_SIZE))) {
                 resizeRootDiskOnVMStart(vmMo, rootDiskTO, hyperHost, context);
             }
 
@@ -2254,7 +2256,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         final Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, appendFileType(rootDiskTO.getPath(), ".vmdk"));
         assert(vdisk != null);
 
-        final Long reqSize = ((VolumeObjectTO)rootDiskTO.getData()).getSize() / 1024;
+        Long reqSize = 0L;
+        final VolumeObjectTO volumeTO = ((VolumeObjectTO)rootDiskTO.getData());
+        if (volumeTO != null) {
+            reqSize = volumeTO.getSize() / 1024;
+        }
         final VirtualDisk disk = vdisk.first();
         if (reqSize > disk.getCapacityInKB()) {
             final VirtualMachineDiskInfo diskInfo = getMatchingExistingDisk(vmMo.getDiskInfoBuilder(), rootDiskTO, hyperHost, context);
@@ -2262,12 +2268,12 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             final String[] diskChain = diskInfo.getDiskChain();
 
             if (diskChain != null && diskChain.length > 1) {
-                s_logger.warn("Disk chain length for the VM is greater than one, skipping resizing of root disk.");
-                return;
+                s_logger.warn("Disk chain length for the VM is greater than one, this is not supported");
+                throw new CloudRuntimeException("Unsupported VM disk chain length: "+ diskChain.length);
             }
             if (diskInfo.getDiskDeviceBusName() == null || !diskInfo.getDiskDeviceBusName().toLowerCase().startsWith("scsi")) {
-                s_logger.warn("Resizing of root disk is only support for scsi device/bus, the provide disk's device bus name is " + diskInfo.getDiskDeviceBusName());
-                return;
+                s_logger.warn("Resizing of root disk is only support for scsi device/bus, the provide VM's disk device bus name is " + diskInfo.getDiskDeviceBusName());
+                throw new CloudRuntimeException("Unsupported VM root disk device bus: "+ diskInfo.getDiskDeviceBusName());
             }
 
             disk.setCapacityInKB(reqSize);

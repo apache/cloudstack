@@ -27,7 +27,7 @@ import com.cloud.vm.SecondaryStorageVmVO;
 
 public interface SecondaryStorageVmManager extends Manager {
 
-    public static final int DEFAULT_SS_VM_RAMSIZE = 1024;           // 1024M
+    public static final int DEFAULT_SS_VM_RAMSIZE = 512;            // 512M
     public static final int DEFAULT_SS_VM_CPUMHZ = 500;             // 500 MHz
     public static final int DEFAULT_SS_VM_MTUSIZE = 1500;
     public static final int DEFAULT_SS_VM_CAPACITY = 50;            // max command execution session per SSVM

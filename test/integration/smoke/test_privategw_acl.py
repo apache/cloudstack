@@ -720,10 +720,10 @@ class TestPrivateGwACL(cloudstackTestCase):
         succeeded_pings = 0
         minimum_vms_to_pass = 2
         for vm_ip in vms_ips:
-            ssh_command = "ping -c 3 %s" % vm_ip
+            ssh_command = "ping -c 5 %s" % vm_ip
 
             # Should be able to SSH VM
-            result = 'failed'
+            packet_loss = 100
             try:
                 self.logger.debug("SSH into VM: %s" % public_ip.ipaddress.ipaddress)
 
@@ -733,15 +733,19 @@ class TestPrivateGwACL(cloudstackTestCase):
                 time.sleep(sleep_time)
 
                 self.logger.debug("Ping to VM inside another Network Tier")
-                result = str(ssh.execute(ssh_command))
+                result = ssh.execute(ssh_command)
 
-                self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("0% packet loss")))
+                for line in result:
+                    if "packet loss" in line:
+                        packet_loss = int(line.split("% packet loss")[0].split(" ")[-1])
+                        break
+
+                self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, packet_loss < 50))
             except Exception as e:
-                self.fail("SSH Access failed for %s: %s" % \
-                          (virtual_machine, e)
-                          )
+                self.fail("SSH Access failed for %s: %s" % (virtual_machine, e))
 
-            succeeded_pings += result.count("0% packet loss")
+            if packet_loss < 50:
+                succeeded_pings += 1
 
 
         self.assertTrue(succeeded_pings >= minimum_vms_to_pass,

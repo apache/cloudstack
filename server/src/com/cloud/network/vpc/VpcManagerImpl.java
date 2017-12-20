@@ -1749,6 +1749,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_DELETE, eventDescription = "deleting private gateway")
     @DB
     public boolean deleteVpcPrivateGateway(final long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException {
+        final VpcGatewayVO gatewayToBeDeleted = _vpcGatewayDao.findById(gatewayId);
+        if (gatewayToBeDeleted == null) {
+            s_logger.debug("VPC gateway is already deleted for id=" + gatewayId);
+            return true;
+        }
 
         final VpcGatewayVO gatewayVO = _vpcGatewayDao.acquireInLockTable(gatewayId);
         if (gatewayVO == null || gatewayVO.getType() != VpcGateway.Type.Private) {

@@ -29,6 +29,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.log4j.Logger;
@@ -66,7 +67,6 @@ import com.trilead.ssh2.Connection;
 
 public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(LibvirtServerDiscoverer.class);
-    private String _hostIp;
     private final int _waitTime = 5; /* wait for 5 minutes */
     private String _kvmPrivateNic;
     private String _kvmPublicNic;
@@ -291,7 +291,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
             setupAgentSecurity(sshConnection, agentIp, hostname);
 
-            String parameters = " -m " + StringUtils.shuffleCSVList(_hostIp) + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
+            String parameters = " -m " + StringUtils.shuffleCSVList(ApiServiceConfiguration.ManagementHostIPAdr.value()) + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
 
             parameters += " --pubNic=" + kvmPublicNic;
             parameters += " --prvNic=" + kvmPrivateNic;
@@ -395,10 +395,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             _kvmGuestNic = _kvmPrivateNic;
         }
 
-        _hostIp = _configDao.getValue("host");
-        if (_hostIp == null) {
-            throw new ConfigurationException("Can't get host IP");
-        }
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
