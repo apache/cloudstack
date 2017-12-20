@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.guru;
 
+import com.cloud.vm.VirtualMachine;
 import java.util.Random;
 
 import javax.inject.Inject;
@@ -119,10 +120,14 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         Pod pod = dest.getPod();
 
-        Pair<String, Long> ip = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId());
-        if (ip == null) {
+        boolean forSystemVms = (vm.getType().equals(VirtualMachine.Type.ConsoleProxy) ||
+                                vm.getType().equals(VirtualMachine.Type.SecondaryStorageVm)) ? true : false;
+        Pair<Pair<String, Long>, Integer> result = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId(), forSystemVms);
+        if (result == null) {
             throw new InsufficientAddressCapacityException("Unable to get a management ip address", Pod.class, pod.getId());
         }
+        Pair<String, Long> ip = result.first();
+        Integer vlan = result.second();
 
         nic.setIPv4Address(ip.first());
         nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.second(), NetworkModel.MACIdentifier.value())));
@@ -131,7 +136,11 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         String netmask = NetUtils.getCidrNetmask(pod.getCidrSize());
         nic.setIPv4Netmask(netmask);
         nic.setBroadcastType(BroadcastDomainType.Native);
-        nic.setBroadcastUri(null);
+        if (vlan != null) {
+            nic.setBroadcastUri(BroadcastDomainType.Native.toUri(vlan));
+        } else {
+            nic.setBroadcastUri(null);
+        }
         nic.setIsolationUri(null);
 
         s_logger.debug("Allocated a nic " + nic + " for " + vm);

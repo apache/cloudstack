@@ -902,7 +902,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     }
 
                     if (startIp != null) {
-                        _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal);
+                        _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal, false, null);
                     }
 
                     String ipNums = _configDao.getValue("linkLocalIp.nums");

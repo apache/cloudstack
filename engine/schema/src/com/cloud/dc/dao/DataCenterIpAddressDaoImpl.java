@@ -22,6 +22,8 @@ import java.util.Date;
 import java.util.List;
 
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -38,7 +40,7 @@ import com.cloud.utils.net.NetUtils;
 
 @Component
 @DB
-public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddressVO, Long> implements DataCenterIpAddressDao {
+public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddressVO, Long> implements DataCenterIpAddressDao, Configurable {
     private static final Logger s_logger = Logger.getLogger(DataCenterIpAddressDaoImpl.class);
 
     private final SearchBuilder<DataCenterIpAddressVO> AllFieldsSearch;
@@ -47,16 +49,26 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     private final GenericSearchBuilder<DataCenterIpAddressVO, Integer> AllAllocatedIpCount;
     private final GenericSearchBuilder<DataCenterIpAddressVO, Integer> AllAllocatedIpCountForDc;
 
+    private static final ConfigKey<Boolean> SystemVmManagementIpReservationModeStrictness = new ConfigKey<Boolean>("Advanced",
+            Boolean.class, "system.vm.management.ip.reservation.mode.strictness", "false","If enabled, the use of System VMs management IP reservation is strict, preferred if not.", false, ConfigKey.Scope.Global);
+
     @Override
     @DB
-    public DataCenterIpAddressVO takeIpAddress(long dcId, long podId, long instanceId, String reservationId) {
+    public DataCenterIpAddressVO takeIpAddress(long dcId, long podId, long instanceId, String reservationId, boolean forSystemVms) {
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("pod", podId);
         sc.setParameters("taken", (Date)null);
+        sc.setParameters("forSystemVms", forSystemVms);
 
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         txn.start();
         DataCenterIpAddressVO vo = lockOneRandomRow(sc, true);
+
+        // If there is no explicitly created range for system vms and reservation mode is preferred (strictness = false)
+        if (forSystemVms && vo == null && !SystemVmManagementIpReservationModeStrictness.value()) {
+            sc.setParameters("forSystemVms", false);
+            vo = lockOneRandomRow(sc, true);
+        }
         if (vo == null) {
             txn.rollback();
             return null;
@@ -121,10 +133,10 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
 
     @Override
     @DB
-    public void addIpRange(long dcId, long podId, String start, String end) {
+    public void addIpRange(long dcId, long podId, String start, String end, boolean forSystemVms, Integer vlan) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        String insertSql = "INSERT INTO `cloud`.`op_dc_ip_address_alloc` (ip_address, data_center_id, pod_id, mac_address) " +
-            "VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?))";
+        String insertSql = "INSERT INTO `cloud`.`op_dc_ip_address_alloc` (ip_address, data_center_id, pod_id, mac_address, forsystemvms" + (vlan == null ? ") " : ", vlan) ") +
+                "VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?" + (vlan == null ? ")" : ", ?)");
         String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
 
         long startIP = NetUtils.ip2Long(start);
@@ -139,6 +151,10 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
                     insertPstmt.setLong(2, dcId);
                     insertPstmt.setLong(3, podId);
                     insertPstmt.setLong(4, dcId);
+                    insertPstmt.setBoolean(5, forSystemVms);
+                    if (vlan != null) {
+                        insertPstmt.setInt(6, vlan);
+                    }
                     insertPstmt.executeUpdate();
                 }
                 try(PreparedStatement updatePstmt = txn.prepareStatement(updateSql);) {
@@ -285,6 +301,7 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         AllFieldsSearch.and("ipAddress", AllFieldsSearch.entity().getIpAddress(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("reservation", AllFieldsSearch.entity().getReservationId(), SearchCriteria.Op.EQ);
         AllFieldsSearch.and("taken", AllFieldsSearch.entity().getTakenAt(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("forSystemVms", AllFieldsSearch.entity().isForSystemVms(), SearchCriteria.Op.EQ);
         AllFieldsSearch.done();
 
         AllIpCount = createSearchBuilder(Integer.class);
@@ -308,5 +325,15 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         AllAllocatedIpCountForDc.and("data_center_id", AllAllocatedIpCountForDc.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         AllAllocatedIpCountForDc.and("removed", AllAllocatedIpCountForDc.entity().getTakenAt(), SearchCriteria.Op.NNULL);
         AllAllocatedIpCountForDc.done();
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return DataCenterIpAddressDao.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {SystemVmManagementIpReservationModeStrictness};
     }
 }

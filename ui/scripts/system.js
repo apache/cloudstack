@@ -974,6 +974,13 @@
                                                 edit: true,
                                                 label: 'label.netmask'
                                             },
+                                            'vlan': {
+                                                edit: true,
+                                                label: 'label.vlan',
+                                                validation: {
+                                                    required: false
+                                                }
+                                            },
                                             'startip': {
                                                 edit: true,
                                                 label: 'label.start.IP'
@@ -984,6 +991,10 @@
                                                 validation: {
                                                     required: false
                                                 }
+                                            },
+                                            'systemvms' : {
+                                                isBoolean: true,
+                                                label: 'label.system.vms'
                                             },
                                             'add-rule': {
                                                 label: 'label.add',
@@ -1002,6 +1013,13 @@
 
                                                 if (args.data.endip != null && args.data.endip.length > 0)
                                                     array1.push("&endip=" + args.data.endip);
+
+                                                if (args.data.systemvms) {
+                                                    array1.push("&forsystemvms=" + (args.data.systemvms == "on" ? "true" : "false"));
+                                                }
+
+                                                if (args.data.vlan != null && args.data.vlan.length > 0)
+                                                    array1.push("&vlan=" + todb(args.data.vlan));
 
                                                 $.ajax({
                                                     url: createURL("createManagementNetworkIpRange" + array1.join("")),
@@ -1032,6 +1050,7 @@
                                                     array1.push("&podid=" + args.context.multiRule[0].podid);
                                                     array1.push("&startip=" + args.context.multiRule[0].startip);
                                                     array1.push("&endip=" + args.context.multiRule[0].endip);
+                                                    array1.push("&vlan=" + args.context.multiRule[0].vlan);
 
                                                     $.ajax({
                                                         url: createURL('deleteManagementNetworkIpRange' + array1.join("")),
@@ -1067,12 +1086,15 @@
                                                     var pods = json.listpodsresponse.pod;
                                                     $(pods).each(function () {
                                                         for (var i = 0; i < this.startip.length; i++) {
+                                                            var systemvmsValue = this.forsystemvms[i] == "1" ? true : false;
                                                             items.push({
                                                                 podid: this.id,
                                                                 gateway: this.gateway,
                                                                 netmask: this.netmask,
                                                                 startip: this.startip[i],
-                                                                endip: this.endip[i]
+                                                                endip: this.endip[i],
+                                                                systemvms: systemvmsValue,
+                                                                vlan: this.vlanid[i]
                                                             });
                                                         }
                                                     });

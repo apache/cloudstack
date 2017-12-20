@@ -35,7 +35,7 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
 
     String[] getNextAvailableMacAddressPair(long id, long mask);
 
-    Pair<String, Long> allocatePrivateIpAddress(long id, long podId, long instanceId, String reservationId);
+    Pair<Pair<String, Long>, Integer> allocatePrivateIpAddress(long id, long podId, long instanceId, String reservationId, boolean forSystemVms);
 
     DataCenterIpAddressVO allocatePrivateIpAddress(long id, String reservationId);
 
@@ -57,7 +57,7 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
 
     boolean deleteLinkLocalIpAddressByPod(long podId);
 
-    void addPrivateIpAddress(long dcId, long podId, String start, String end);
+    void addPrivateIpAddress(long dcId, long podId, String start, String end, boolean forSystemVms, Integer vlan);
 
     void addLinkLocalIpAddress(long dcId, long podId, String start, String end);
 

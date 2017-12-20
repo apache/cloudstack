@@ -247,13 +247,14 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public Pair<String, Long> allocatePrivateIpAddress(long dcId, long podId, long instanceId, String reservationId) {
+    public Pair<Pair<String, Long>, Integer> allocatePrivateIpAddress(long dcId, long podId, long instanceId, String reservationId, boolean forSystemVms) {
         _ipAllocDao.releaseIpAddress(instanceId);
-        DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId);
+        DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId, forSystemVms);
         if (vo == null) {
             return null;
         }
-        return new Pair<String, Long>(vo.getIpAddress(), vo.getMacAddress());
+        Pair<String, Long> pair = new Pair<>(vo.getIpAddress(), vo.getMacAddress());
+        return new Pair<Pair<String, Long>, Integer>(pair, vo.getVlan());
     }
 
     @Override
@@ -287,8 +288,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public void addPrivateIpAddress(long dcId, long podId, String start, String end) {
-        _ipAllocDao.addIpRange(dcId, podId, start, end);
+    public void addPrivateIpAddress(long dcId, long podId, String start, String end, boolean forSystemVms, Integer vlan) {
+        _ipAllocDao.addIpRange(dcId, podId, start, end, forSystemVms, vlan);
     }
 
     @Override

@@ -179,6 +179,19 @@
                             }
                             $td.attr('title', data[fieldName]);
                         }
+                    } else if (field.isBoolean) {
+                        var $checkbox = $('<input>');
+                        $checkbox.attr({
+                            disabled: true,
+                            name: fieldName,
+                            type: 'checkbox'
+                        });
+                        if (_s(data[fieldName])) {
+                            $checkbox.attr({
+                                checked: true
+                            });
+                        }
+                        $checkbox.appendTo($td);
                     } else if (field.select) {
                         // Get matching option text
                         var $matchingSelect = $multi.find('select')
@@ -980,6 +993,12 @@
                         error: function(args) {}
                     }
                 });
+            } else if (field.isBoolean) {
+                var $input = $('<input>')
+                    .attr({
+                        name: fieldName,
+                        type: 'checkbox'
+                }).appendTo($td);
             } else if (field.edit && field.edit != 'ignore') {
                 if (field.range) {
                     var $range = $('<div>').addClass('range').appendTo($td);
@@ -1118,7 +1137,11 @@
                 $multi.find('input').each(function() {
                     var $input = $(this);
 
-                    if ($input.data('multi-default-value')) {
+                    if ($input.is(":checkbox")) {
+                        $input.attr({
+                            checked: false
+                        });
+                    } else if ($input.data('multi-default-value')) {
                         $input.val($input.data('multi-default-value'));
                     } else {
                         $input.val('');

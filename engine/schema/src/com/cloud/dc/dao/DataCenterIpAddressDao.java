@@ -23,11 +23,11 @@ import com.cloud.utils.db.GenericDao;
 
 public interface DataCenterIpAddressDao extends GenericDao<DataCenterIpAddressVO, Long> {
 
-    DataCenterIpAddressVO takeIpAddress(long dcId, long podId, long instanceId, String reservationId);
+    DataCenterIpAddressVO takeIpAddress(long dcId, long podId, long instanceId, String reservationId, boolean forSystemVms);
 
     DataCenterIpAddressVO takeDataCenterIpAddress(long dcId, String reservationId);
 
-    void addIpRange(long dcId, long podId, String start, String end);
+    void addIpRange(long dcId, long podId, String start, String end, boolean forSystemVms, Integer vlan);
 
     void releaseIpAddress(String ipAddress, long dcId, Long instanceId);
 
