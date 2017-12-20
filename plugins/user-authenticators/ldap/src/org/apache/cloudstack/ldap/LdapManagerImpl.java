@@ -25,12 +25,6 @@ import javax.naming.NamingException;
 import javax.naming.ldap.LdapContext;
 
 import com.cloud.domain.dao.DomainDao;
-import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
-import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
-import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
-import org.apache.commons.lang.Validate;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.LdapValidator;
 import org.apache.cloudstack.api.command.LDAPConfigCmd;
