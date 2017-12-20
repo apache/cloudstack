@@ -130,28 +130,28 @@ class CsDhcp(CsDataBag):
             logging.debug("Hosts file unchanged")
 
     def add(self, entry):
-        self.add_host(entry['ipv4_adress'], entry['host_name'])
+        self.add_host(entry['ipv4_address'], entry['host_name'])
         # lease time boils down to once a month
         # with a splay of 60 hours to prevent storms
         lease = randint(700, 760)
 
         if entry['default_entry'] == True:
             self.cloud.add("%s,%s,%s,%sh" % (entry['mac_address'],
-                                             entry['ipv4_adress'],
+                                             entry['ipv4_address'],
                                              entry['host_name'],
                                              lease))
         else:
-            tag = entry['ipv4_adress'].replace(".","_")
+            tag = entry['ipv4_address'].replace(".","_")
             self.cloud.add("%s,set:%s,%s,%s,%sh" % (entry['mac_address'],
                                                     tag,
-                                                    entry['ipv4_adress'],
+                                                    entry['ipv4_address'],
                                                     entry['host_name'],
                                                     lease))
             self.dhcp_opts.add("%s,%s" % (tag, 3))
             self.dhcp_opts.add("%s,%s" % (tag, 6))
             self.dhcp_opts.add("%s,%s" % (tag, 15))
 
-        i = IPAddress(entry['ipv4_adress'])
+        i = IPAddress(entry['ipv4_address'])
         # Calculate the device
         for v in self.devinfo:
             if i > v['network'].network and i < v['network'].broadcast:
@@ -159,6 +159,6 @@ class CsDhcp(CsDataBag):
                 # Virtual Router
                 v['gateway'] = entry['default_gateway']
 
-
     def add_host(self, ip, hosts):
         self.hosts[ip] = hosts
+        

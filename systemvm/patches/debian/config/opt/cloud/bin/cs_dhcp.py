@@ -18,17 +18,22 @@
 from pprint import pprint
 from netaddr import *
 
-
 def merge(dbag, data):
-
     # A duplicate ip address wil clobber the old value
     # This seems desirable ....
-    if "add" in data and data['add'] is False and \
-            "ipv4_adress" in data:
-        if data['ipv4_adress'] in dbag:
-            del(dbag[data['ipv4_adress']])
-        return dbag
+    if "add" in data and data['add'] is False and "ipv4_address" in data:
+        if data['ipv4_address'] in dbag:
+            del(dbag[data['ipv4_address']])
     else:
-        dbag[data['ipv4_adress']] = data
-    return dbag
+        remove_key = None
+        for key, entry in dbag.iteritems():
+            if key != 'id' and entry['host_name'] == data['host_name']:
+                remove_key = key
+                break
+        if remove_key is not None:
+            del(dbag[remove_key])
+            
+        dbag[data['ipv4_address']] = data
 
+    return dbag
+                                                                                                                            
