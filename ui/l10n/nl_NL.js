@@ -338,6 +338,7 @@ var dictionary = {
     "label.add.isolated.guest.network": "Voeg een geïsoleerd netwerk toe",
     "label.add.isolated.guest.network.with.sourcenat": "voeg en geïsoleerd gast netwerk met bron-NAT toe",
     "label.add.isolated.network": "Geisoleerd Netwerk Toevoegen",
+    "label.add.l2.guest.network":"Add L2 Guest Network",
     "label.add.ldap.account": "Voeg LDAP account toe",
     "label.add.list.name": "ACL lijst naam",
     "label.add.load.balancer": "Voeg Load Balancer toe",

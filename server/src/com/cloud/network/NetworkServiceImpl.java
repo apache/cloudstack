@@ -1124,7 +1124,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 }
             }
         } else {
-            if (ntwkOff.getGuestType() == GuestType.Isolated) {
+            if (ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L2) {
                 aclType = ACLType.Account;
             } else if (ntwkOff.getGuestType() == GuestType.Shared) {
                 aclType = ACLType.Domain;
@@ -1861,9 +1861,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         Account owner = _accountMgr.getAccount(network.getAccountId());
 
-        // Only Admin can delete Shared networks
-        if (network.getGuestType() == GuestType.Shared && !_accountMgr.isAdmin(caller.getId())) {
-            throw new InvalidParameterValueException("Only Admins can delete network with guest type " + GuestType.Shared);
+        // Only Admin can delete Shared and L2 networks
+        if ((network.getGuestType() == GuestType.Shared || network.getGuestType() == GuestType.L2) && !_accountMgr.isAdmin(caller.getId())) {
+            throw new InvalidParameterValueException("Only Admins can delete network with guest type " + network.getGuestType());
         }
 
         // Perform permission check

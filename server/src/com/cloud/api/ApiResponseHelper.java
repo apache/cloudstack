@@ -2013,7 +2013,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // FIXME - either set netmask or cidr
         response.setCidr(network.getCidr());
-        response.setNetworkCidr((network.getNetworkCidr()));
+        if (network.getNetworkCidr() != null) {
+            response.setNetworkCidr((network.getNetworkCidr()));
+        }
         // If network has reservation its entire network cidr is defined by
         // getNetworkCidr()
         // if no reservation is present then getCidr() will define the entire

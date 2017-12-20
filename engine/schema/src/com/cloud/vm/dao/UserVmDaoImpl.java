@@ -29,6 +29,9 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.network.Network;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.server.ResourceTag.ResourceObjectType;
@@ -77,6 +80,8 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
     // ResourceTagsDaoImpl _tagsDao = ComponentLocator.inject(ResourceTagsDaoImpl.class);
     @Inject
     ResourceTagDao _tagsDao;
+    @Inject
+    NetworkDao networkDao;
 
     private static final String LIST_PODS_HAVING_VMS_FOR_ACCOUNT =
             "SELECT pod_id FROM cloud.vm_instance WHERE data_center_id = ? AND account_id = ? AND pod_id IS NOT NULL AND (state = 'Running' OR state = 'Stopped') "
@@ -299,21 +304,32 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         return listBy(sc);
     }
 
-    @Override
-    public List<UserVmVO> listByNetworkIdAndStates(long networkId, State... states) {
-        if (UserVmSearch == null) {
+    /**
+     * Recreates UserVmSearch depending on network type, as nics on L2 networks have no ip addresses
+     * @param network network
+     */
+    private void recreateUserVmSeach(NetworkVO network) {
+        if (network != null) {
             SearchBuilder<NicVO> nicSearch = _nicDao.createSearchBuilder();
             nicSearch.and("networkId", nicSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
             nicSearch.and("removed", nicSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-            nicSearch.and().op("ip4Address", nicSearch.entity().getIPv4Address(), SearchCriteria.Op.NNULL);
-            nicSearch.or("ip6Address", nicSearch.entity().getIPv6Address(), SearchCriteria.Op.NNULL);
-            nicSearch.cp();
+            if (!Network.GuestType.L2.equals(network.getGuestType())) {
+                nicSearch.and().op("ip4Address", nicSearch.entity().getIPv4Address(), SearchCriteria.Op.NNULL);
+                nicSearch.or("ip6Address", nicSearch.entity().getIPv6Address(), SearchCriteria.Op.NNULL);
+                nicSearch.cp();
+            }
 
             UserVmSearch = createSearchBuilder();
             UserVmSearch.and("states", UserVmSearch.entity().getState(), SearchCriteria.Op.IN);
             UserVmSearch.join("nicSearch", nicSearch, UserVmSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
             UserVmSearch.done();
         }
+    }
+
+    @Override
+    public List<UserVmVO> listByNetworkIdAndStates(long networkId, State... states) {
+        NetworkVO network = networkDao.findById(networkId);
+        recreateUserVmSeach(network);
 
         SearchCriteria<UserVmVO> sc = UserVmSearch.create();
         if (states != null && states.length != 0) {
