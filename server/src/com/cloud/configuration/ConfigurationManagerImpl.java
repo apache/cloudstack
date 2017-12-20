@@ -41,7 +41,9 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
@@ -224,6 +226,7 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -997,7 +1000,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         checkIpRange(startIp, endIp, cidrAddress, cidrSize);
 
         // Check if the IP range overlaps with the public ip
-        checkOverlapPublicIpRange(zoneId, startIp, endIp);
+        if(!Strings.isNullOrEmpty(startIp)) {
+            checkOverlapPublicIpRange(zoneId, startIp, endIp);
+        }
 
         // Check if the gateway is a valid IP address
         if (!NetUtils.isValidIp(gateway)) {
@@ -1091,8 +1096,240 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @Override
+    @DB
+    public Pod createPodIpRange(final CreateManagementNetworkIpRangeCmd cmd) {
+
+        final Account account = CallContext.current().getCallingAccount();
+
+        if(!_accountMgr.isRootAdmin(account.getId())) {
+            throw new PermissionDeniedException("Cannot perform this operation, Calling account is not root admin: " + account.getId());
+        }
+
+        final long podId = cmd.getPodId();
+        final String gateway = cmd.getGateWay();
+        final String netmask = cmd.getNetmask();
+        final String startIp = cmd.getStartIp();
+        String endIp = cmd.getEndIp();
+
+        final HostPodVO pod = _podDao.findById(podId);
+
+        if(pod == null) {
+            throw new InvalidParameterValueException("Unable to find pod by ID: " + podId);
+        }
+
+        final long zoneId = pod.getDataCenterId();
+
+        if(!NetUtils.isValidIp(gateway)) {
+            throw new InvalidParameterValueException("The gateway IP address is invalid.");
+        }
+
+        if(!NetUtils.isValidNetmask(netmask)) {
+            throw new InvalidParameterValueException("The netmask IP address is invalid.");
+        }
+
+        if(endIp == null) {
+            endIp = startIp;
+        }
+
+        final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
+
+        if(!NetUtils.isValidCIDR(cidr)) {
+            throw new InvalidParameterValueException("The CIDR is invalid " + cidr);
+        }
+
+        final String cidrAddress = pod.getCidrAddress();
+        final long cidrSize = pod.getCidrSize();
+
+        // Because each pod has only one Gateway and Netmask.
+        if (!gateway.equals(pod.getGateway())) {
+            throw new InvalidParameterValueException("Multiple gateways for the POD: " + pod.getId() + " are not allowed. The Gateway should be same as the existing Gateway " + pod.getGateway());
+        }
+
+        if (!netmask.equals(NetUtils.getCidrNetmask(cidrSize))) {
+            throw new InvalidParameterValueException("Multiple subnets for the POD: " + pod.getId() + " are not allowed. The Netmask should be same as the existing Netmask " + NetUtils.getCidrNetmask(cidrSize));
+        }
+
+        // Check if the IP range is valid.
+        checkIpRange(startIp, endIp, cidrAddress, cidrSize);
+
+        // Check if the IP range overlaps with the public ip.
+        checkOverlapPublicIpRange(zoneId, startIp, endIp);
+
+        // Check if the gateway is in the CIDR subnet
+        if (!NetUtils.getCidrSubNet(gateway, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
+            throw new InvalidParameterValueException("The gateway is not in the CIDR subnet.");
+        }
+
+        if (NetUtils.ipRangesOverlap(startIp, endIp, gateway, gateway)) {
+            throw new InvalidParameterValueException("The gateway shouldn't overlap start/end ip addresses");
+        }
+
+        final String[] existingPodIpRanges = pod.getDescription().split(",");
+
+        for(String podIpRange: existingPodIpRanges) {
+            final String[] existingPodIpRange = podIpRange.split("-");
+
+            if (existingPodIpRange.length > 1) {
+                if (!NetUtils.isValidIp(existingPodIpRange[0]) || !NetUtils.isValidIp(existingPodIpRange[1])) {
+                    continue;
+                }
+                // Check if the range overlaps with any existing range.
+                if (NetUtils.ipRangesOverlap(startIp, endIp, existingPodIpRange[0], existingPodIpRange[1])) {
+                    throw new InvalidParameterValueException("The new range overlaps with existing range. Please add a mutually exclusive range.");
+                }
+            }
+        }
+
+        try {
+            final String endIpFinal = endIp;
+
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
+                    String ipRange = pod.getDescription();
+
+                    if(ipRange != null && !ipRange.isEmpty())
+                        ipRange += ("," + startIp + "-" + endIpFinal);
+                    else
+                        ipRange = (startIp + "-" + endIpFinal);
+
+                    pod.setDescription(ipRange);
+
+                    HostPodVO lock = null;
+                    try {
+                        lock = _podDao.acquireInLockTable(podId);
+
+                        if (lock == null) {
+                            String msg = "Unable to acquire lock on table to update the ip range of POD: " + pod.getName() + ", Creation failed.";
+                            s_logger.warn(msg);
+                            throw new CloudRuntimeException(msg);
+                        }
+
+                        _podDao.update(podId, pod);
+                    } finally {
+                        if (lock != null) {
+                            _podDao.releaseFromLockTable(podId);
+                        }
+                    }
+
+                    _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal);
+                }
+            });
+        } catch (final Exception e) {
+            s_logger.error("Unable to create Pod IP range due to " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to create Pod IP range. Please contact Cloud Support.");
+        }
+
+        return pod;
+    }
+
+    @Override
+    @DB
+    public void deletePodIpRange(final DeleteManagementNetworkIpRangeCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
+        final long podId = cmd.getPodId();
+        final String startIp = cmd.getStartIp();
+        final String endIp = cmd.getEndIp();
+
+        final HostPodVO pod = _podDao.findById(podId);
+
+        if(pod == null) {
+            throw new InvalidParameterValueException("Unable to find pod by id " + podId);
+        }
+
+        if (startIp == null || !NetUtils.isValidIp(startIp)) {
+            throw new InvalidParameterValueException("The start address of the IP range is not a valid IP address.");
+        }
+
+        if (endIp == null || !NetUtils.isValidIp(endIp)) {
+            throw new InvalidParameterValueException("The end address of the IP range is not a valid IP address.");
+        }
+
+        if (NetUtils.ip2Long(startIp) > NetUtils.ip2Long(endIp)) {
+            throw new InvalidParameterValueException("The start IP address must have a lower value than the end IP address.");
+        }
+
+        for(long ipAddr = NetUtils.ip2Long(startIp); ipAddr <= NetUtils.ip2Long(endIp); ipAddr++) {
+            if(_privateIpAddressDao.countIpAddressUsage(NetUtils.long2Ip(ipAddr), podId, pod.getDataCenterId(), true) > 0) {
+                throw new CloudRuntimeException("Some IPs of the range has been allocated, so it cannot be deleted.");
+            }
+        }
+
+        final String[] existingPodIpRanges = pod.getDescription().split(",");
+
+        if(existingPodIpRanges.length == 0) {
+            throw new InvalidParameterValueException("The IP range cannot be found. As the existing IP range is empty.");
+        }
+
+        final String[] newPodIpRanges = new String[existingPodIpRanges.length-1];
+        int index = existingPodIpRanges.length-2;
+        boolean foundRange = false;
+
+        for(String podIpRange: existingPodIpRanges) {
+            final String[] existingPodIpRange = podIpRange.split("-");
+
+            if(existingPodIpRange.length > 1) {
+                if (startIp.equals(existingPodIpRange[0]) && endIp.equals(existingPodIpRange[1])) {
+                    foundRange = true;
+                } else if (index >= 0) {
+                    newPodIpRanges[index--] = (existingPodIpRange[0] + "-" + existingPodIpRange[1]);
+                }
+            }
+        }
+
+        if(!foundRange) {
+            throw new InvalidParameterValueException("The input IP range: " + startIp + "-" + endIp + " of pod: " + podId + "is not present. Please input an existing range.");
+        }
+
+        final StringBuilder newPodIpRange = new StringBuilder();
+        boolean first = true;
+        for (String podIpRange : newPodIpRanges) {
+            if (first)
+                first = false;
+            else
+                newPodIpRange.append(",");
+
+            newPodIpRange.append(podIpRange);
+        }
+
+        try {
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(final TransactionStatus status) {
+                    pod.setDescription(newPodIpRange.toString());
+
+                    HostPodVO lock = null;
+                    try {
+                        lock = _podDao.acquireInLockTable(podId);
+
+                        if (lock == null) {
+                            String msg = "Unable to acquire lock on table to update the ip range of POD: " + pod.getName() + ", Deletion failed.";
+                            s_logger.warn(msg);
+                            throw new CloudRuntimeException(msg);
+                        }
+
+                        _podDao.update(podId, pod);
+                    } finally {
+                        if (lock != null) {
+                            _podDao.releaseFromLockTable(podId);
+                        }
+                    }
+
+                    for(long ipAddr = NetUtils.ip2Long(startIp); ipAddr <= NetUtils.ip2Long(endIp); ipAddr++) {
+                        if (!_privateIpAddressDao.deleteIpAddressByPodDc(NetUtils.long2Ip(ipAddr), podId, pod.getDataCenterId())) {
+                            throw new CloudRuntimeException("Failed to cleanup private ip address: " + NetUtils.long2Ip(ipAddr) + " of Pod: " + podId + " DC: " + pod.getDataCenterId());
+                        }
+                    }
+                }
+            });
+        } catch (final Exception e) {
+            s_logger.error("Unable to delete Pod " + podId + "IP range due to " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to delete Pod " + podId + "IP range. Please contact Cloud Support.");
+        }
+    }
+
+    @Override
     public Pod editPod(final UpdatePodCmd cmd) {
-        return editPod(cmd.getId(), cmd.getPodName(), cmd.getStartIp(), cmd.getEndIp(), cmd.getGateway(), cmd.getNetmask(), cmd.getAllocationState());
+        return editPod(cmd.getId(), cmd.getPodName(), null, null, cmd.getGateway(), cmd.getNetmask(), cmd.getAllocationState());
     }
 
     @Override
@@ -1106,16 +1343,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to find pod by id " + id);
         }
 
-        final String[] existingPodIpRange = pod.getDescription().split("-");
-        String[] leftRangeToAdd = null;
-        String[] rightRangeToAdd = null;
-        boolean allowToDownsize = false;
-
         // If the gateway, CIDR, private IP range is being changed, check if the
         // pod has allocated private IP addresses
         if (podHasAllocatedPrivateIPs(id)) {
 
-            if (netmask != null) {
+            if (!Strings.isNullOrEmpty(netmask)) {
                 final long newCidr = NetUtils.getCidrSize(netmask);
                 final long oldCidr = pod.getCidrSize();
 
@@ -1123,31 +1355,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new CloudRuntimeException("The specified pod has allocated private IP addresses, so its IP address range can be extended only");
                 }
             }
-
-            if (startIp != null && !startIp.equals(existingPodIpRange[0])) {
-                if (NetUtils.ipRangesOverlap(startIp, null, existingPodIpRange[0], existingPodIpRange[1])) {
-                    throw new CloudRuntimeException("The specified pod has allocated private IP addresses, so its IP address range can be extended only");
-                } else {
-                    leftRangeToAdd = new String[2];
-                    final long endIpForUpdate = NetUtils.ip2Long(existingPodIpRange[0]) - 1;
-                    leftRangeToAdd[0] = startIp;
-                    leftRangeToAdd[1] = NetUtils.long2Ip(endIpForUpdate);
-                }
-            }
-
-            if (endIp != null && !endIp.equals(existingPodIpRange[1])) {
-                if (NetUtils.ipRangesOverlap(endIp, endIp, existingPodIpRange[0], existingPodIpRange[1])) {
-                    throw new CloudRuntimeException("The specified pod has allocated private IP addresses, so its IP address range can be extended only");
-                } else {
-                    rightRangeToAdd = new String[2];
-                    final long startIpForUpdate = NetUtils.ip2Long(existingPodIpRange[1]) + 1;
-                    rightRangeToAdd[0] = NetUtils.long2Ip(startIpForUpdate);
-                    rightRangeToAdd[1] = endIp;
-                }
-            }
-
-        } else {
-            allowToDownsize = true;
         }
 
         if (gateway == null) {
@@ -1163,18 +1370,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             name = oldPodName;
         }
 
-        if (gateway == null) {
-            gateway = pod.getGateway();
-        }
-
-        if (startIp == null) {
-            startIp = existingPodIpRange[0];
-        }
-
-        if (endIp == null) {
-            endIp = existingPodIpRange[1];
-        }
-
         if (allocationStateStr == null) {
             allocationStateStr = pod.getAllocationState().toString();
         }
@@ -1182,17 +1377,39 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // Verify pod's attributes
         final String cidr = NetUtils.ipAndNetMaskToCidr(gateway, netmask);
         final boolean checkForDuplicates = !oldPodName.equals(name);
-        checkPodAttributes(id, name, pod.getDataCenterId(), gateway, cidr, startIp, endIp, allocationStateStr, checkForDuplicates, false);
+        checkPodAttributes(id, name, pod.getDataCenterId(), gateway, cidr, startIp, endIp, allocationStateStr, checkForDuplicates, true);
+
+        // Valid check is already done in checkPodAttributes method.
+        final String cidrAddress = getCidrAddress(cidr);
+        final long cidrSize = getCidrSize(cidr);
+
+        // Check if start IP and end IP of all the ranges lie in the CIDR subnet.
+        final String[] existingPodIpRanges = pod.getDescription().split(",");
+
+        for(String podIpRange: existingPodIpRanges) {
+            final String[] existingPodIpRange = podIpRange.split("-");
+
+            if (existingPodIpRange.length > 1) {
+                if (!NetUtils.isValidIp(existingPodIpRange[0]) || !NetUtils.isValidIp(existingPodIpRange[1])) {
+                    continue;
+                }
+
+                if (!NetUtils.getCidrSubNet(existingPodIpRange[0], cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
+                    throw new InvalidParameterValueException("The start address of the some IP range is not in the CIDR subnet.");
+                }
+
+                if (!NetUtils.getCidrSubNet(existingPodIpRange[1], cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
+                    throw new InvalidParameterValueException("The end address of the some IP range is not in the CIDR subnet.");
+                }
+
+                if (NetUtils.ipRangesOverlap(existingPodIpRange[0], existingPodIpRange[1], gateway, gateway)) {
+                    throw new InvalidParameterValueException("The gateway shouldn't overlap some start/end ip addresses");
+                }
+            }
+        }
 
         try {
-
-            final String[] existingPodIpRangeFinal = existingPodIpRange;
-            final String[] leftRangeToAddFinal = leftRangeToAdd;
-            final String[] rightRangeToAddFinal = rightRangeToAdd;
-            final boolean allowToDownsizeFinal = allowToDownsize;
             final String allocationStateStrFinal = allocationStateStr;
-            final String startIpFinal = startIp;
-            final String endIpFinal = endIp;
             final String nameFinal = name;
             final String gatewayFinal = gateway;
             Transaction.execute(new TransactionCallbackNoReturn() {
@@ -1200,42 +1417,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 public void doInTransactionWithoutResult(final TransactionStatus status) {
                     final long zoneId = pod.getDataCenterId();
 
-                    String startIp = startIpFinal;
-                    String endIp = endIpFinal;
-
-                    if (!allowToDownsizeFinal) {
-                        if (leftRangeToAddFinal != null) {
-                            _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), leftRangeToAddFinal[0], leftRangeToAddFinal[1]);
-                        }
-
-                        if (rightRangeToAddFinal != null) {
-                            _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), rightRangeToAddFinal[0], rightRangeToAddFinal[1]);
-                        }
-
-                    } else {
-                        // delete the old range
-                        _zoneDao.deletePrivateIpAddressByPod(pod.getId());
-
-                        // add the new one
-                        if (startIp == null) {
-                            startIp = existingPodIpRangeFinal[0];
-                        }
-
-                        if (endIp == null) {
-                            endIp = existingPodIpRangeFinal[1];
-                        }
-
-                        _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIp);
-                    }
-
                     pod.setName(nameFinal);
                     pod.setDataCenterId(zoneId);
                     pod.setGateway(gatewayFinal);
                     pod.setCidrAddress(getCidrAddress(cidr));
                     pod.setCidrSize(getCidrSize(cidr));
 
-                    final String ipRange = startIp + "-" + endIp;
-                    pod.setDescription(ipRange);
                     Grouping.AllocationState allocationState = null;
                     if (allocationStateStrFinal != null && !allocationStateStrFinal.isEmpty()) {
                         allocationState = Grouping.AllocationState.valueOf(allocationStateStrFinal);
@@ -1297,7 +1484,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // endIp is an optional parameter; if not specified - default it to the
         // end ip of the pod's cidr
-        if (startIp != null) {
+        if (!Strings.isNullOrEmpty(startIp)) {
             if (endIp == null) {
                 endIp = NetUtils.getIpRangeEndIpFromCidr(cidrAddress, cidrSize);
             }
@@ -1308,7 +1495,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Create the new pod in the database
         String ipRange;
-        if (startIp != null) {
+        if (!Strings.isNullOrEmpty(startIp)) {
             ipRange = startIp + "-" + endIp;
         } else {
             throw new InvalidParameterValueException("Start ip is required parameter");
@@ -1329,7 +1516,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
                 final HostPodVO pod = _podDao.persist(podFinal);
 
-                if (startIp != null) {
+                if (!Strings.isNullOrEmpty(startIp)) {
                     _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal);
                 }
 
@@ -1448,23 +1635,26 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     private void checkIpRange(final String startIp, final String endIp, final String cidrAddress, final long cidrSize) {
-        if (!NetUtils.isValidIp(startIp)) {
+        //Checking not null for start IP as well. Previously we assumed to be not null always.
+        //But the check is required for the change in updatePod API.
+        if (!Strings.isNullOrEmpty(startIp) && !NetUtils.isValidIp(startIp)) {
             throw new InvalidParameterValueException("The start address of the IP range is not a valid IP address.");
         }
 
-        if (endIp != null && !NetUtils.isValidIp(endIp)) {
+        if (!Strings.isNullOrEmpty(endIp) && !NetUtils.isValidIp(endIp)) {
             throw new InvalidParameterValueException("The end address of the IP range is not a valid IP address.");
         }
 
-        if (!NetUtils.getCidrSubNet(startIp, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
+        //Not null check is required for the change in updatePod API.
+        if (!Strings.isNullOrEmpty(startIp) && !NetUtils.getCidrSubNet(startIp, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
             throw new InvalidParameterValueException("The start address of the IP range is not in the CIDR subnet.");
         }
 
-        if (endIp != null && !NetUtils.getCidrSubNet(endIp, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
+        if (!Strings.isNullOrEmpty(endIp) && !NetUtils.getCidrSubNet(endIp, cidrSize).equalsIgnoreCase(NetUtils.getCidrSubNet(cidrAddress, cidrSize))) {
             throw new InvalidParameterValueException("The end address of the IP range is not in the CIDR subnet.");
         }
 
-        if (endIp != null && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(endIp)) {
+        if (!Strings.isNullOrEmpty(endIp) && NetUtils.ip2Long(startIp) > NetUtils.ip2Long(endIp)) {
             throw new InvalidParameterValueException("The start IP address must have a lower value than the end IP address.");
         }
 
@@ -1487,15 +1677,20 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         final List<HostPodVO> podsInZone = _podDao.listByDataCenterId(zoneId);
         for (final HostPodVO hostPod : podsInZone) {
-            final String[] IpRange = hostPod.getDescription().split("-");
-            if (IpRange[0] == null || IpRange[1] == null) {
-                continue;
-            }
-            if (!NetUtils.isValidIp(IpRange[0]) || !NetUtils.isValidIp(IpRange[1])) {
-                continue;
-            }
-            if (NetUtils.ipRangesOverlap(startIp, endIp, IpRange[0], IpRange[1])) {
-                throw new InvalidParameterValueException("The Start IP and endIP address range overlap with private IP :" + IpRange[0] + ":" + IpRange[1]);
+            final String[] existingPodIpRanges = hostPod.getDescription().split(",");
+
+            for(String podIpRange: existingPodIpRanges) {
+                final String[] existingPodIpRange = podIpRange.split("-");
+
+                if (existingPodIpRange.length > 1) {
+                    if (!NetUtils.isValidIp(existingPodIpRange[0]) || !NetUtils.isValidIp(existingPodIpRange[1])) {
+                        continue;
+                    }
+
+                    if (NetUtils.ipRangesOverlap(startIp, endIp, existingPodIpRange[0], existingPodIpRange[1])) {
+                        throw new InvalidParameterValueException("The Start IP and EndIP address range overlap with private IP :" + existingPodIpRange[0] + ":" + existingPodIpRange[1]);
+                    }
+                }
             }
         }
     }

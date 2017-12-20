@@ -945,10 +945,18 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public PodResponse createPodResponse(Pod pod, Boolean showCapacities) {
         String[] ipRange = new String[2];
+        List<String> startIp = new ArrayList<String>();
+        List<String> endIp = new ArrayList<String>();
+
         if (pod.getDescription() != null && pod.getDescription().length() > 0) {
-            ipRange = pod.getDescription().split("-");
-        } else {
-            ipRange[0] = pod.getDescription();
+            final String[] existingPodIpRanges = pod.getDescription().split(",");
+
+            for(String podIpRange: existingPodIpRanges) {
+                final String[] existingPodIpRange = podIpRange.split("-");
+
+                startIp.add(((existingPodIpRange.length > 0) && (existingPodIpRange[0] != null)) ? existingPodIpRange[0] : "");
+                endIp.add(((existingPodIpRange.length > 1) && (existingPodIpRange[1] != null)) ? existingPodIpRange[1] : "");
+            }
         }
 
         PodResponse podResponse = new PodResponse();
@@ -960,8 +968,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             podResponse.setZoneName(zone.getName());
         }
         podResponse.setNetmask(NetUtils.getCidrNetmask(pod.getCidrSize()));
-        podResponse.setStartIp(ipRange[0]);
-        podResponse.setEndIp(((ipRange.length > 1) && (ipRange[1] != null)) ? ipRange[1] : "");
+        podResponse.setStartIp(startIp);
+        podResponse.setEndIp(endIp);
         podResponse.setGateway(pod.getGateway());
         podResponse.setAllocationState(pod.getAllocationState().toString());
         if (showCapacities != null && showCapacities) {
