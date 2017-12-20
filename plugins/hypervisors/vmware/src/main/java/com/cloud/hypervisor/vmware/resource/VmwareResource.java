@@ -701,6 +701,36 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     }
 
+    /**
+     * It finds the vGPU type used by the VM.
+     * If there is no vGPU type attached, then considers it as None.
+     * @param vmMo Virtual Machine Managed Object
+     * @return vgpuType - (Either None or grid_k100/grid_k120q.. etc)
+     * @throws Exception (Improvement required - Parent Exception type needs to be changed)
+     */
+    protected String getVgpuTypeOfVM(final VirtualMachineMO vmMo) throws Exception {
+        String vgpuType = "None";
+
+        if (vmMo != null && vmMo.getConfigInfo() != null && vmMo.getConfigInfo().getHardware() != null) {
+            final List<VirtualDevice> devices = vmMo.getConfigInfo().getHardware().getDevice();
+
+            for (VirtualDevice device : devices) {
+                if (device instanceof VirtualPCIPassthrough) {
+                    if (device.getBacking() != null && (device.getBacking() instanceof VirtualPCIPassthroughVmiopBackingInfo)) {
+                        final VirtualPCIPassthroughVmiopBackingInfo backingInfo = (VirtualPCIPassthroughVmiopBackingInfo) device.getBacking();
+
+                        if (backingInfo.getVgpu() != null) {
+                            vgpuType = backingInfo.getVgpu();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        return vgpuType;
+    }
+
     private Answer execute(ResizeVolumeCommand cmd) {
         String path = cmd.getPath();
         String vmName = cmd.getInstanceName();
@@ -2445,9 +2475,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     /**
      * Sets GPU card details to the one provided in detail vgpu.type (if provided) on {@code vmConfigSpec}.
-     * @param vmMo
-     * @param vmSpec
-     * @param vmConfigSpec
+     * @param vmMo Virtual Machine Managed Object
+     * @param vmSpec Virtual Machine Specification
+     * @param vmConfigSpec Virtual Machine Configuration Specification
      * @throws RuntimeFaultFaultMsg
      * @throws Exception
      */
@@ -2473,12 +2503,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             pciPassthroughDevice = hostMo.prepareSharedPciPassthroughDevice(vGpuProfile);
         }
 
-        if (pciPassthroughDevice != null) {
-            VirtualDeviceConfigSpec virtualDeviceConfigSpec = new VirtualDeviceConfigSpec();
-            virtualDeviceConfigSpec.setDevice(pciPassthroughDevice);
-            virtualDeviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
-            vmConfigSpec.getDeviceChange().add(virtualDeviceConfigSpec);
-        }
+        VirtualDeviceConfigSpec virtualDeviceConfigSpec = new VirtualDeviceConfigSpec();
+        virtualDeviceConfigSpec.setDevice(pciPassthroughDevice);
+        virtualDeviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+        vmConfigSpec.getDeviceChange().add(virtualDeviceConfigSpec);
 
         vmConfigSpec.setMemoryReservationLockedToMax(true);
     }
@@ -3733,26 +3761,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         try {
             VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(cmd.getVmName());
-
             if (vmMo != null) {
-                String vgpuType = "None";
-
-                if (vmMo != null && vmMo.getConfigInfo() != null && vmMo.getConfigInfo().getHardware() != null) {
-                    final List<VirtualDevice> devices = vmMo.getConfigInfo().getHardware().getDevice();
-
-                    for (VirtualDevice device : devices) {
-                        if (device instanceof VirtualPCIPassthrough) {
-                            if (device.getBacking() != null && (device.getBacking() instanceof VirtualPCIPassthroughVmiopBackingInfo)) {
-                                final VirtualPCIPassthroughVmiopBackingInfo backingInfo = (VirtualPCIPassthroughVmiopBackingInfo) device.getBacking();
-
-                                if (backingInfo.getVgpu() != null) {
-                                    vgpuType = backingInfo.getVgpu();
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
+                final String vgpuType = getVgpuTypeOfVM(vmMo);
 
                 if (vgpuType.equals("None") == false) {
                     final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = vmMo.getRunningHost().getGPUGroupDetails();
@@ -5507,26 +5517,24 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     /**
      * GetGPUStatsCommand is used to collect the GPU/vGPU details of all the
      * GPU enabled hosts.
-     * Do Nothing.
-     * @param cmd
-     * @return Answer
+     *
+     * @param cmd - Get GPU statistics command.
+     * @return Answer - Returns the answer returned from the command(Success/Failure)
      */
     protected Answer execute(final GetGPUStatsCommand cmd) {
         final VmwareContext context = getServiceContext();
         final VmwareHypervisorHost hyperHost = getHyperHost(context);
         final HostMO hostMo = new HostMO(context, hyperHost.getMor());
 
-        HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = new HashMap<String, HashMap<String, VgpuTypesInfo>>();
-
         try {
-            groupDetails = hostMo.getGPUGroupDetails();
+            final HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = hostMo.getGPUGroupDetails();
+            return new GetGPUStatsAnswer(cmd, groupDetails);
         } catch (final Exception e) {
             final String msg = "Unable to get GPU stats" + e.toString();
             s_logger.warn(msg, e);
             return new GetGPUStatsAnswer(cmd, false, msg);
         }
 
-        return new GetGPUStatsAnswer(cmd, groupDetails);
     }
 
     public void cleanupNetwork(HostMO hostMo, NetworkDetails netDetails) {
@@ -5887,7 +5895,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (groupDetails != null && !groupDetails.isEmpty()) {
                 cmd.setHostTags("GPU");
             }
-        } catch (final Exception e) {
+        } catch (final Exception e) { // Improvement: More specific exception type required. Parent exception type needs to be changed.
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Error while getting GPU device info from host " + cmd.getName(), e);
             }
