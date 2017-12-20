@@ -23,4 +23,5 @@
     compress
     missingok
     create 0644 cloud cloud
+    su root cloud
 }
