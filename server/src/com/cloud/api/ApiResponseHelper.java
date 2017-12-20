@@ -18,21 +18,6 @@ package com.cloud.api;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.tags.dao.ResourceTagDao;
-
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-
-import javax.inject.Inject;
-
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -176,7 +161,6 @@ import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
-import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -3643,14 +3627,6 @@ public class ApiResponseHelper implements ResponseGenerator {
         }
         /*6: ipAddress*/
         response.setIpaddress(result.getIPv4Address());
-
-        List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = nicExtraDhcpOptionVOs
-                .stream()
-                .map(vo -> new NicExtraDhcpOptionResponse(Dhcp.DhcpOptionCode.valueOfInt(vo.getCode()).getName(), vo.getCode(), vo.getValue()))
-                .collect(Collectors.toList());
-
-        response.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
-
         /*7: gateway*/
         response.setGateway(result.getIPv4Gateway());
         /*8: netmask*/
@@ -3698,6 +3674,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setSecondaryIps(ipList);
             }
         }
+        /*18: extra dhcp options */
+        List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = nicExtraDhcpOptionVOs
+                .stream()
+                .map(vo -> new NicExtraDhcpOptionResponse(Dhcp.DhcpOptionCode.valueOfInt(vo.getCode()).getName(), vo.getCode(), vo.getValue()))
+                .collect(Collectors.toList());
+
+        response.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
 
         if (result instanceof NicVO){
             if (((NicVO)result).getNsxLogicalSwitchUuid() != null){
