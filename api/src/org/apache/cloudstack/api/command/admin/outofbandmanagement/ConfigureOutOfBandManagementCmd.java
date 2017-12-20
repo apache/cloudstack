@@ -83,7 +83,7 @@ public class ConfigureOutOfBandManagementCmd extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unable to find host by ID: " + getHostId());
         }
         CallContext.current().putContextParameter(Host.class, host.getUuid());
-        final OutOfBandManagementResponse response = outOfBandManagementService.configureOutOfBandManagement(host, getHostPMOptions());
+        final OutOfBandManagementResponse response = outOfBandManagementService.configure(host, getHostPMOptions());
         response.setId(host.getUuid());
         response.setResponseName(getCommandName());
         setResponseObject(response);

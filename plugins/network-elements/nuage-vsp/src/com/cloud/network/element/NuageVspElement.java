@@ -81,7 +81,6 @@ import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
-import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
@@ -694,7 +693,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         Long guestPhysicalNetworkId = 0L;
         List<PhysicalNetworkVO> physicalNetworkList = _physicalNetworkDao.listByZone(zoneId);
         for (PhysicalNetworkVO phyNtwk : physicalNetworkList) {
-            if (phyNtwk.getIsolationMethods().contains(PhysicalNetwork.IsolationMethod.VSP.name())) {
+            if (phyNtwk.getIsolationMethods().contains("VSP")) {
                 guestPhysicalNetworkId = phyNtwk.getId();
                 break;
             }

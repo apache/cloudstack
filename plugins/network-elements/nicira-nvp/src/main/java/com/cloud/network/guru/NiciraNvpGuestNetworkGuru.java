@@ -113,7 +113,7 @@ public class NiciraNvpGuestNetworkGuru extends GuestNetworkGuru implements Netwo
 
     public NiciraNvpGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] { IsolationMethod.STT, IsolationMethod.VXLAN };
+        _isolationMethods = new IsolationMethod[] { new IsolationMethod("STT", "NiciraNvp"), new IsolationMethod("VXLAN","NiciraNvp") };
     }
 
     @Override

@@ -3249,9 +3249,21 @@ public class ApiResponseHelper implements ResponseGenerator {
             //Hypervisor Type
             usageRecResponse.setType(usageRecord.getType());
             //Dynamic compute offerings details
-            usageRecResponse.setCpuNumber(usageRecord.getCpuCores());
-            usageRecResponse.setCpuSpeed(usageRecord.getCpuSpeed());
-            usageRecResponse.setMemory(usageRecord.getMemory());
+            if(usageRecord.getCpuCores() != null) {
+                usageRecResponse.setCpuNumber(usageRecord.getCpuCores());
+            } else if (svcOffering.getCpu() != null){
+                usageRecResponse.setCpuNumber(svcOffering.getCpu().longValue());
+            }
+            if(usageRecord.getCpuSpeed() != null) {
+                usageRecResponse.setCpuSpeed(usageRecord.getCpuSpeed());
+            } else if(svcOffering.getSpeed() != null){
+                usageRecResponse.setCpuSpeed(svcOffering.getSpeed().longValue());
+            }
+            if(usageRecord.getMemory() != null) {
+                usageRecResponse.setMemory(usageRecord.getMemory());
+            } else if(svcOffering.getRamSize() != null) {
+                usageRecResponse.setMemory(svcOffering.getRamSize().longValue());
+            }
 
         } else if (usageRecord.getUsageType() == UsageTypes.IP_ADDRESS) {
             //isSourceNAT
