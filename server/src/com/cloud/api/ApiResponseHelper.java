@@ -3594,6 +3594,10 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    /**
+     * The resulting Response attempts to be in line with what is returned from
+     * @see com.cloud.api.query.dao.UserVmJoinDaoImpl#setUserVmResponse(ResponseView, UserVmResponse, UserVmJoinVO)
+     */
     @Override
     public NicResponse createNicResponse(Nic result) {
         NicResponse response = new NicResponse();
@@ -3602,30 +3606,63 @@ public class ApiResponseHelper implements ResponseGenerator {
         UserVmJoinVO userVm = _entityMgr.findById(UserVmJoinVO.class, result.getInstanceId());
         List<NicExtraDhcpOptionVO> nicExtraDhcpOptionVOs = _nicExtraDhcpOptionDao.listByNicId(result.getId());
 
+        // The numbered comments are to keep track of the data returned from here and UserVmJoinDaoImpl.setUserVmResponse()
+        // the data can't be identical but some tidying up/unifying might be possible
+        /*1: nicUuid*/
         response.setId(result.getUuid());
+        /*2: networkUuid*/
         response.setNetworkid(network.getUuid());
-
+        /*3: vmId*/
         if (vm != null) {
             response.setVmId(vm.getUuid());
         }
 
         if (userVm != null){
             if (userVm.getTrafficType() != null) {
+                /*4: trafficType*/
                 response.setTrafficType(userVm.getTrafficType().toString());
             }
             if (userVm.getGuestType() != null) {
+                /*5: guestType*/
                 response.setType(userVm.getGuestType().toString());
             }
         }
+        /*6: ipAddress*/
         response.setIpaddress(result.getIPv4Address());
-
-        List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = nicExtraDhcpOptionVOs
-                .stream()
-                .map(vo -> new NicExtraDhcpOptionResponse(Dhcp.DhcpOptionCode.valueOfInt(vo.getCode()).getName(), vo.getCode(), vo.getValue()))
-                .collect(Collectors.toList());
-
-        response.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
-
+        /*7: gateway*/
+        response.setGateway(result.getIPv4Gateway());
+        /*8: netmask*/
+        response.setNetmask(result.getIPv4Netmask());
+        /*9: networkName*/
+        if(userVm != null && userVm.getNetworkName() != null) {
+            response.setNetworkName(userVm.getNetworkName());
+        }
+        /*10: macAddress*/
+        response.setMacAddress(result.getMacAddress());
+        /*11: IPv6Address*/
+        if (result.getIPv6Address() != null) {
+            response.setIp6Address(result.getIPv6Address());
+        }
+        /*12: IPv6Gateway*/
+        if (result.getIPv6Gateway() != null) {
+            response.setIp6Gateway(result.getIPv6Gateway());
+        }
+        /*13: IPv6Cidr*/
+        if (result.getIPv6Cidr() != null) {
+            response.setIp6Cidr(result.getIPv6Cidr());
+        }
+        /*14: deviceId*/
+        response.setDeviceId(String.valueOf(result.getDeviceId()));
+        /*15: broadcastURI*/
+        if (result.getBroadcastUri() != null) {
+            response.setBroadcastUri(result.getBroadcastUri().toString());
+        }
+        /*16: isolationURI*/
+        if (result.getIsolationUri() != null) {
+            response.setIsolationUri(result.getIsolationUri().toString());
+        }
+        /*17: default*/
+        response.setIsDefault(result.isDefaultNic());
         if (result.getSecondaryIp()) {
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(result.getId());
             if (secondaryIps != null) {
@@ -3639,22 +3676,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setSecondaryIps(ipList);
             }
         }
+        /*18: extra dhcp options */
+        List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = nicExtraDhcpOptionVOs
+                .stream()
+                .map(vo -> new NicExtraDhcpOptionResponse(Dhcp.DhcpOptionCode.valueOfInt(vo.getCode()).getName(), vo.getCode(), vo.getValue()))
+                .collect(Collectors.toList());
 
-        response.setGateway(result.getIPv4Gateway());
-        response.setNetmask(result.getIPv4Netmask());
-        response.setMacAddress(result.getMacAddress());
-
-        if (result.getIPv6Address() != null) {
-            response.setIp6Address(result.getIPv6Address());
-        }
-
-        if (result.getIPv6Cidr() != null) {
-            response.setIp6Cidr(result.getIPv6Cidr());
-        }
-
-        response.setDeviceId(String.valueOf(result.getDeviceId()));
-
-        response.setIsDefault(result.isDefaultNic());
+        response.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
 
         if (result instanceof NicVO){
             if (((NicVO)result).getNsxLogicalSwitchUuid() != null){
