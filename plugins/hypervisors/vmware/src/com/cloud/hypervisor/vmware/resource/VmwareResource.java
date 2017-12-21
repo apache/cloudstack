@@ -1255,7 +1255,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private void plugPublicNic(VirtualMachineMO vmMo, final String vlanId, final String vifMacAddress) throws Exception {
+    private void plugPublicNic(VirtualMachineMO vmMo, final String vlanId, final IpAddressTO ipAddressTO) throws Exception {
         // TODO : probably need to set traffic shaping
         Pair<ManagedObjectReference, String> networkInfo = null;
         VirtualSwitchType vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
@@ -1267,11 +1267,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
          */
         if (VirtualSwitchType.StandardVirtualSwitch == vSwitchType) {
             networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(),
-                    "cloud.public", vmMo.getRunningHost(), vlanId, null, null,
+                    "cloud.public", vmMo.getRunningHost(), vlanId, ipAddressTO.getNetworkRate(), null,
                     _opsTimeout, true, BroadcastDomainType.Vlan, null, null);
         } else {
             networkInfo =
-                    HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public", vmMo.getRunningHost(), vlanId, null, null, null,
+                    HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public", vmMo.getRunningHost(), vlanId, null, ipAddressTO.getNetworkRate(), null,
                             _opsTimeout, vSwitchType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, _vsmCredentials, null);
         }
 
@@ -1387,7 +1387,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
 
                 if (addVif) {
-                    plugPublicNic(vmMo, vlanId, ip.getVifMacAddress());
+                    plugPublicNic(vmMo, vlanId, ip);
                     publicNicInfo = vmMo.getNicDeviceIndex(publicNeworkName);
                     if (publicNicInfo.first().intValue() >= 0) {
                         networkUsage(controlIp, "addVif", "eth" + publicNicInfo.first());

@@ -38,6 +38,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -993,33 +994,43 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (vmId != null) {
             vm = _vmDao.findById(vmId);
         }
-        Network network = getNetwork(networkId);
-        NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+        final Network network = getNetwork(networkId);
+        final NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
 
-        // For default userVm Default network and domR guest/public network, get rate information from the service
-        // offering; for other situations get information
-        // from the network offering
-        boolean isUserVmsDefaultNetwork = false;
-        boolean isDomRGuestOrPublicNetwork = false;
-        boolean isSystemVmNetwork = false;
+        // For user VM: For default nic use network rate from the service/compute offering,
+        //              or on NULL from vm.network.throttling.rate global setting
+        // For router: Get network rate for guest and public networks from the guest network offering
+        //              or on NULL from network.throttling.rate
+        // For others: Use network rate from their network offering,
+        //              or on NULL from network.throttling.rate setting at zone > global level
+        // http://docs.cloudstack.apache.org/projects/cloudstack-administration/en/latest/service_offerings.html#network-throttling
         if (vm != null) {
-            Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
-            if (vm.getType() == Type.User && nic != null && nic.isDefaultNic()) {
-                isUserVmsDefaultNetwork = true;
-            } else if (vm.getType() == Type.DomainRouter && ntwkOff != null &&
-                (ntwkOff.getTrafficType() == TrafficType.Public || ntwkOff.getTrafficType() == TrafficType.Guest)) {
-                isDomRGuestOrPublicNetwork = true;
-            } else if (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm) {
-                isSystemVmNetwork = true;
+            if (vm.getType() == Type.User) {
+                final Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
+                if (nic != null && nic.isDefaultNic()) {
+                    return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), network.getDataCenterId());
+                }
+            }
+            if (vm.getType() == Type.DomainRouter && (network.getTrafficType() == TrafficType.Public || network.getTrafficType() == TrafficType.Guest)) {
+                for (final Nic nic: _nicDao.listByVmId(vmId)) {
+                    final NetworkVO nw = _networksDao.findById(nic.getNetworkId());
+                    if (nw.getTrafficType() == TrafficType.Guest) {
+                        return _configMgr.getNetworkOfferingNetworkRate(nw.getNetworkOfferingId(), network.getDataCenterId());
+                    }
+                }
+            }
+            if (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm) {
+                return -1;
             }
         }
-        if (isUserVmsDefaultNetwork || isDomRGuestOrPublicNetwork) {
-            return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), network.getDataCenterId());
-        } else if (isSystemVmNetwork) {
-            return -1;
-        } else {
+        if (ntwkOff != null) {
             return _configMgr.getNetworkOfferingNetworkRate(ntwkOff.getId(), network.getDataCenterId());
         }
+        final Integer networkRate = NetworkOrchestrationService.NetworkThrottlingRate.valueIn(network.getDataCenterId());
+        if (networkRate != null && networkRate > 0) {
+            return networkRate;
+        }
+        return -1;
     }
 
     @Override
