@@ -63,14 +63,19 @@ public class LinkDomainToLdapCmdTest implements LdapConfigurationChanger
 //      test with valid params and with admin who doesnt exist in cloudstack
         long domainId = 1;
         String type = "GROUP";
-        String name = "CN=test,DC=ccp,DC=Citrix,DC=com";
+        String ldapDomain = "CN=test,DC=ccp,DC=Citrix,DC=com";
         short accountType = Account.ACCOUNT_TYPE_DOMAIN_ADMIN;
         String username = "admin";
         long accountId = 24;
+        setHiddenField(linkDomainToLdapCmd, "ldapDomain", ldapDomain);
+        setHiddenField(linkDomainToLdapCmd, "admin", username);
+        setHiddenField(linkDomainToLdapCmd, "type", type);
+        setHiddenField(linkDomainToLdapCmd, "domainId", domainId);
+        setHiddenField(linkDomainToLdapCmd, "accountType", accountType);
 
-        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId, type, name, (short)accountType);
-        when(ldapManager.linkDomainToLdap(domainId,type,name,accountType)).thenReturn(response);
-        when(ldapManager.getUser(username, type, name, 1L)).thenReturn(new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", false));
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId, type, ldapDomain, (short)accountType);
+        when(ldapManager.linkDomainToLdap(linkDomainToLdapCmd)).thenReturn(response);
+        when(ldapManager.getUser(username, type, ldapDomain, 1L)).thenReturn(new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", ldapDomain, "ccp", false));
 
         when(accountService.getActiveAccountByName(username, domainId)).thenReturn(null);
         UserAccountVO userAccount =  new UserAccountVO();
@@ -79,11 +84,6 @@ public class LinkDomainToLdapCmdTest implements LdapConfigurationChanger
                 eq(username), eq(Account.ACCOUNT_TYPE_DOMAIN_ADMIN), eq(RoleType.DomainAdmin.getId()), eq(domainId), isNull(String.class),
                 (java.util.Map<String,String>)isNull(), anyString(), anyString(), eq(User.Source.LDAP))).thenReturn(userAccount);
 
-        setHiddenField(linkDomainToLdapCmd, "admin", username);
-        setHiddenField(linkDomainToLdapCmd, "type", type);
-        setHiddenField(linkDomainToLdapCmd, "name", name);
-        setHiddenField(linkDomainToLdapCmd, "domainId", domainId);
-        setHiddenField(linkDomainToLdapCmd, "accountType", accountType);
 
         linkDomainToLdapCmd.execute();
         LinkDomainToLdapResponse result = (LinkDomainToLdapResponse)linkDomainToLdapCmd.getResponseObject();
@@ -91,7 +91,7 @@ public class LinkDomainToLdapCmdTest implements LdapConfigurationChanger
         assertEquals("commandName", linkDomainToLdapCmd.getCommandName(), result.getResponseName());
         assertEquals("domainId", domainId, result.getDomainId());
         assertEquals("type", type, result.getType());
-        assertEquals("name", name, result.getName());
+        assertEquals("name", ldapDomain, result.getLdapDomain());
         assertEquals("accountId", String.valueOf(accountId), result.getAdminId());
     }
 
