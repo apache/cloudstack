@@ -17,6 +17,7 @@
 package com.cloud.storage.snapshot;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.alert.AlertManager;
@@ -785,6 +786,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     public SnapshotPolicyVO createPolicy(CreateSnapshotPolicyCmd cmd, Account policyOwner) {
         Long volumeId = cmd.getVolumeId();
         boolean display = cmd.isDisplay();
+        SnapshotPolicyVO policy = null;
         VolumeVO volume = _volsDao.findById(cmd.getVolumeId());
         if (volume == null) {
             throw new InvalidParameterValueException("Failed to create snapshot policy, unable to find a volume with id " + volumeId);
@@ -854,33 +856,39 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 throw new InvalidParameterValueException("Max number of snapshots shouldn't exceed the " + message + " level snapshot limit");
             }
         }
-        SnapshotPolicyVO policy = _snapshotPolicyDao.findOneByVolumeInterval(volumeId, intvType);
-        if (policy == null) {
-            policy = new SnapshotPolicyVO(volumeId, cmd.getSchedule(), timezoneId, intvType, cmd.getMaxSnaps(), display);
-            policy = _snapshotPolicyDao.persist(policy);
-            _snapSchedMgr.scheduleNextSnapshotJob(policy);
-        } else {
+
+        final GlobalLock createSnapshotPolicyLock = GlobalLock.getInternLock("createSnapshotPolicy_" + volumeId);
+        boolean isLockAcquired = createSnapshotPolicyLock.lock(5);
+        if (isLockAcquired) {
+            s_logger.debug("Acquired lock for creating snapshot policy of volume : " + volume.getName());
             try {
-                boolean previousDisplay = policy.isDisplay();
-                policy = _snapshotPolicyDao.acquireInLockTable(policy.getId());
-                policy.setSchedule(cmd.getSchedule());
-                policy.setTimezone(timezoneId);
-                policy.setInterval((short)intvType.ordinal());
-                policy.setMaxSnaps(cmd.getMaxSnaps());
-                policy.setActive(true);
-                policy.setDisplay(display);
-                _snapshotPolicyDao.update(policy.getId(), policy);
-                _snapSchedMgr.scheduleOrCancelNextSnapshotJobOnDisplayChange(policy, previousDisplay);
-            } finally {
-                if (policy != null) {
-                    _snapshotPolicyDao.releaseFromLockTable(policy.getId());
+                policy = _snapshotPolicyDao.findOneByVolumeInterval(volumeId, intvType);
+                if (policy == null) {
+                    policy = new SnapshotPolicyVO(volumeId, cmd.getSchedule(), timezoneId, intvType, cmd.getMaxSnaps(), display);
+                    policy = _snapshotPolicyDao.persist(policy);
+                    _snapSchedMgr.scheduleNextSnapshotJob(policy);
+                } else {
+                    boolean previousDisplay = policy.isDisplay();
+                    policy.setSchedule(cmd.getSchedule());
+                    policy.setTimezone(timezoneId);
+                    policy.setInterval((short)intvType.ordinal());
+                    policy.setMaxSnaps(cmd.getMaxSnaps());
+                    policy.setActive(true);
+                    policy.setDisplay(display);
+                    _snapshotPolicyDao.update(policy.getId(), policy);
+                    _snapSchedMgr.scheduleOrCancelNextSnapshotJobOnDisplayChange(policy, previousDisplay);
                 }
+            } finally {
+                createSnapshotPolicyLock.unlock();
             }
 
+            // TODO - Make createSnapshotPolicy - BaseAsyncCreate and remove this.
+            CallContext.current().putContextParameter(SnapshotPolicy.class, policy.getUuid());
+            return policy;
+        } else {
+            s_logger.warn("Unable to acquire lock for creating snapshot policy of volume : " + volume.getName());
+            return null;
         }
-        // TODO - Make createSnapshotPolicy - BaseAsyncCreate and remove this.
-        CallContext.current().putContextParameter(SnapshotPolicy.class, policy.getUuid());
-        return policy;
     }
 
     protected boolean deletePolicy(long userId, Long policyId) {
