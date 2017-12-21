@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.cloudstack.api.command.LdapAddConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
+import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 
@@ -64,7 +65,7 @@ public interface LdapManager extends PluggableService {
 
     List<LdapUser> searchUsers(String query) throws NoLdapUserMatchingQueryException;
 
-    LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name, short accountType);
+    LinkDomainToLdapResponse linkDomainToLdap(LinkDomainToLdapCmd cmd);
 
-    public LdapTrustMapVO getDomainLinkedToLdap(long domainId);
+    LdapTrustMapVO getDomainLinkedToLdap(long domainId);
 }
