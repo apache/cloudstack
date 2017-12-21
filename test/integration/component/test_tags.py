@@ -2516,6 +2516,21 @@ class TestResourceTags(cloudstackTestCase):
             domainid=self.child_do_admin.domainid,
             zoneid=self.zone.id
         )
+        tag = "tag1"
+        self.so_with_tag = ServiceOffering.create(
+            self.apiclient,
+            self.services["service_offering"],
+            hosttags=tag
+        )
+        self.vm = VirtualMachine.create(
+            self.api_client,
+            self.services["virtual_machine"],
+            accountid=self.child_do_admin.name,
+            domainid=self.child_do_admin.domainid,
+            networkids=self.network.id,
+            serviceofferingid=self.so_with_tag.id
+        )
+
         self.debug("Fetching the network details for account: %s" %
                    self.child_do_admin.name
         )
