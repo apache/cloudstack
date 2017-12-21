@@ -31,6 +31,29 @@ import unittest
 import re
 
 
+class Services:
+    """Test network services
+    """
+    def __init__(self):
+        self.services = {
+            "shared_network_offering": {
+                "name": "MySharedOffering-shared",
+                "displaytext": "MySharedOffering",
+                "guestiptype": "Shared",
+                "supportedservices": "Dhcp,Dns,UserData",
+                "specifyVlan": "True",
+                "specifyIpRanges": "True",
+                "traffictype": "GUEST",
+                "tags": "native",
+                "serviceProviderList": {
+                    "Dhcp": "VirtualRouter",
+                    "Dns": "VirtualRouter",
+                    "UserData": "VirtualRouter"
+                }
+            }
+        }
+
+
 class TestNuageMigration(nuageTestCase):
     """Test Native to Nuage Migration
     """
@@ -38,6 +61,7 @@ class TestNuageMigration(nuageTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestNuageMigration, cls).setUpClass()
+        cls.services = Services().services
 
         if not hasattr(cls.vsp_physical_network, "tags") \
                 or cls.vsp_physical_network.tags != 'nuage':
@@ -99,7 +123,7 @@ class TestNuageMigration(nuageTestCase):
 
         # create a Native shared network offering
         cls.native_shared_network_offering = cls.create_NetworkOffering(
-            cls.test_data["shared_network_offering"], False)
+            cls.services["shared_network_offering"], False)
 
         # create a Nuage shared network offering
         cls.nuage_shared_network_offering = cls.create_NetworkOffering(
@@ -1217,7 +1241,7 @@ class TestNuageMigration(nuageTestCase):
         self.debug("Creating Native VSP VPC offering with Static NAT service "
                    "provider as VPCVR...")
         native_vpc_off = self.create_VpcOffering(
-                self.test_data["vpc_offering_native"])
+                self.test_data["vpc_offering_reduced"])
         self.validate_VpcOffering(native_vpc_off, state="Enabled")
 
         self.debug("Creating a VPC with Static NAT service provider as "
@@ -1228,7 +1252,7 @@ class TestNuageMigration(nuageTestCase):
         self.debug("Creating native VPC Network Tier offering "
                    "with Static NAT service provider as VPCVR")
         native_tiernet_off = self.create_NetworkOffering(
-                self.test_data["vpc_network_offering_native"])
+                self.test_data["nw_offering_reduced_vpc"])
         self.validate_NetworkOffering(native_tiernet_off, state="Enabled")
 
         acl_list = self.create_NetworkAclList(
@@ -1479,7 +1503,7 @@ class TestNuageMigration(nuageTestCase):
         self.debug("Creating Native VSP VPC offering with Static NAT service "
                    "provider as VPCVR...")
         native_vpc_off = self.create_VpcOffering(
-                self.test_data["vpc_offering_native"])
+                self.test_data["vpc_offering_reduced"])
         self.validate_VpcOffering(native_vpc_off, state="Enabled")
 
         self.debug("Creating a VPC with Static NAT service provider as "
@@ -1490,7 +1514,7 @@ class TestNuageMigration(nuageTestCase):
         self.debug("Creating native VPC Network Tier offering "
                    "with Static NAT service provider as VPCVR")
         native_tiernet_off = self.create_NetworkOffering(
-                self.test_data["vpc_network_offering_native"])
+                self.test_data["nw_offering_reduced_vpc"])
         self.validate_NetworkOffering(native_tiernet_off, state="Enabled")
 
         acl_list = self.create_NetworkAclList(
@@ -1797,7 +1821,7 @@ class TestNuageMigration(nuageTestCase):
         self.debug("Creating Native VSP VPC offering with Static NAT service "
                    "provider as VPCVR...")
         native_vpc_off = self.create_VpcOffering(
-                self.test_data["vpc_offering_native"])
+                self.test_data["vpc_offering_reduced"])
         self.validate_VpcOffering(native_vpc_off, state="Enabled")
 
         self.debug("Creating a VPC with Static NAT service provider as "
@@ -1808,7 +1832,7 @@ class TestNuageMigration(nuageTestCase):
         self.debug("Creating native VPC Network Tier offering "
                    "with Static NAT service provider as VPCVR")
         native_tiernet_off = self.create_NetworkOffering(
-                self.test_data["vpc_network_offering_native"])
+                self.test_data["nw_offering_reduced_vpc"])
         self.validate_NetworkOffering(native_tiernet_off, state="Enabled")
 
         acl_list = self.create_NetworkAclList(
@@ -1917,7 +1941,7 @@ class TestNuageMigration(nuageTestCase):
         self.debug("Creating Native VSP VPC offering with Static NAT service "
                    "provider as VPCVR...")
         native_vpc_off = self.create_VpcOffering(
-                self.test_data["vpc_offering_native"])
+                self.test_data["vpc_offering_reduced"])
         self.validate_VpcOffering(native_vpc_off, state="Enabled")
 
         self.debug("Creating a VPC with Static NAT service provider as "
@@ -1928,7 +1952,7 @@ class TestNuageMigration(nuageTestCase):
         self.debug("Creating native VPC Network Tier offering "
                    "with Static NAT service provider as VPCVR")
         native_tiernet_off = self.create_NetworkOffering(
-                self.test_data["vpc_network_offering_native"])
+                self.test_data["nw_offering_reduced_vpc"])
         self.validate_NetworkOffering(native_tiernet_off, state="Enabled")
 
         acl_list = self.create_NetworkAclList(

@@ -87,14 +87,6 @@ public final class LibvirtReplugNicCommandWrapper extends CommandWrapper<ReplugN
             s_logger.debug("ReplugNic: Updating interface" + interfaceDef);
             vm.updateDeviceFlags(interfaceDef.toString(), DomainAffect.LIVE.getValue());
 
-            /*
-            // Manual replug
-            for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {
-                vifDriver.detach(oldPluggedNic);
-            }
-            newVifDriver.attach(interfaceDef);
-            */
-
             // We don't know which "traffic type" is associated with
             // each interface at this point, so inform all vif drivers
             for (final VifDriver vifDriver : libvirtComputingResource.getAllVifDrivers()) {

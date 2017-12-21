@@ -19,13 +19,7 @@
 
 package com.cloud.api.commands;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.network.manager.NuageVspManager;
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
@@ -40,11 +34,20 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import javax.inject.Inject;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.manager.NuageVspManager;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = AssociateNuageVspDomainTemplateCmd.APINAME, responseObject = SuccessResponse.class, description = "associate a vpc with a domain template", authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.User})
+@APICommand(name = AssociateNuageVspDomainTemplateCmd.APINAME, responseObject = SuccessResponse.class,
+            description = "associate a vpc with a domain template", authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.User},
+            since = "4.11.0")
 public class AssociateNuageVspDomainTemplateCmd extends BaseCmd {
     static final String APINAME = "associateNuageVspDomainTemplate";
+
     @Inject
     NuageVspManager _nuageVspManager;
 

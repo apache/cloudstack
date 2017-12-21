@@ -19,6 +19,11 @@
 
 package com.cloud.api.commands;
 
+import java.util.LinkedList;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -26,11 +31,6 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
-
-import javax.inject.Inject;
-
-import java.util.LinkedList;
-import java.util.List;
 
 import com.cloud.api.response.NuageVspDomainTemplateResponse;
 import com.cloud.exception.ConcurrentOperationException;
@@ -43,7 +43,9 @@ import com.cloud.network.manager.NuageVspManager;
 import com.cloud.user.Account;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = ListNuageVspGlobalDomainTemplateCmd.APINAME, responseObject = BaseResponse.class, description = "Lists Nuage VSP domain templates", authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.User})
+@APICommand(name = ListNuageVspGlobalDomainTemplateCmd.APINAME, responseObject = BaseResponse.class,
+            description = "Lists Nuage VSP domain templates", authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.User},
+            since = "4.11.0")
 public class ListNuageVspGlobalDomainTemplateCmd  extends BaseCmd {
     static final String APINAME = "listNuageVspGlobalDomainTemplate";
 
