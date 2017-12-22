@@ -246,7 +246,6 @@ CREATE TABLE `cloud`.`guest_os_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `user_ip_address` ADD COLUMN `rule_state` VARCHAR(32) COMMENT 'static  rule state while removing';
-
 CREATE TABLE `cloud`.`firewall_rules_dcidrs`(
   `id` BIGINT(20) unsigned NOT NULL AUTO_INCREMENT,
   `firewall_rule_id` BIGINT(20) unsigned NOT NULL,
