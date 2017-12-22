@@ -18,6 +18,6 @@ package org.apache.cloudstack.solidfire;
 
 public interface SolidFireIntegrationTestManager {
     long getSolidFireAccountId(String csAccountUuid, String storagePoolUuid);
-    long getSolidFireVolumeAccessGroupId(String csClusterUuid, String storagePoolUuid);
+    long[] getSolidFireVolumeAccessGroupIds(String csClusterUuid, String storagePoolUuid);
     long getSolidFireVolumeSize(String volumeUuid);
 }

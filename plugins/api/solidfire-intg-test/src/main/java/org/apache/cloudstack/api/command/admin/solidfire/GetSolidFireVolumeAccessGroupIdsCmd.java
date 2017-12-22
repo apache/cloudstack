@@ -26,16 +26,16 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.response.solidfire.ApiSolidFireVolumeAccessGroupIdResponse;
+import org.apache.cloudstack.api.response.solidfire.ApiSolidFireVolumeAccessGroupIdsResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.solidfire.SolidFireIntegrationTestManager;
 import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
 
-@APICommand(name = "getSolidFireVolumeAccessGroupId", responseObject = ApiSolidFireVolumeAccessGroupIdResponse.class, description = "Get the SF Volume Access Group ID",
+@APICommand(name = "getSolidFireVolumeAccessGroupIds", responseObject = ApiSolidFireVolumeAccessGroupIdsResponse.class, description = "Get the SF Volume Access Group IDs",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class GetSolidFireVolumeAccessGroupIdCmd extends BaseCmd {
-    private static final Logger LOGGER = Logger.getLogger(GetSolidFireVolumeAccessGroupIdCmd.class.getName());
-    private static final String NAME = "getsolidfirevolumeaccessgroupidresponse";
+public class GetSolidFireVolumeAccessGroupIdsCmd extends BaseCmd {
+    private static final Logger LOGGER = Logger.getLogger(GetSolidFireVolumeAccessGroupIdsCmd.class.getName());
+    private static final String NAME = "getsolidfirevolumeaccessgroupidsresponse";
 
     @Parameter(name = ApiConstants.CLUSTER_ID, type = CommandType.STRING, description = "Cluster UUID", required = true)
     private String clusterUuid;
@@ -67,14 +67,14 @@ public class GetSolidFireVolumeAccessGroupIdCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        LOGGER.info("'GetSolidFireVolumeAccessGroupIdCmd.execute' method invoked");
+        LOGGER.info("'GetSolidFireVolumeAccessGroupIdsCmd.execute' method invoked");
 
-        long sfVagId = manager.getSolidFireVolumeAccessGroupId(clusterUuid, storagePoolUuid);
+        long[] sfVagIds = manager.getSolidFireVolumeAccessGroupIds(clusterUuid, storagePoolUuid);
 
-        ApiSolidFireVolumeAccessGroupIdResponse response = new ApiSolidFireVolumeAccessGroupIdResponse(sfVagId);
+        ApiSolidFireVolumeAccessGroupIdsResponse response = new ApiSolidFireVolumeAccessGroupIdsResponse(sfVagIds);
 
         response.setResponseName(getCommandName());
-        response.setObjectName("apisolidfirevolumeaccessgroupid");
+        response.setObjectName("apisolidfirevolumeaccessgroupids");
 
         this.setResponseObject(response);
     }

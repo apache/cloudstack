@@ -22,12 +22,12 @@ import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.BaseResponse;
 
-public class ApiSolidFireVolumeAccessGroupIdResponse extends BaseResponse {
-    @SerializedName("solidFireVolumeAccessGroupId")
-    @Param(description = "SolidFire Volume Access Group Id")
-    private long solidFireVolumeAccessGroupId;
+public class ApiSolidFireVolumeAccessGroupIdsResponse extends BaseResponse {
+    @SerializedName("solidFireVolumeAccessGroupIds")
+    @Param(description = "SolidFire Volume Access Group Ids")
+    private long[] solidFireVolumeAccessGroupIds;
 
-    public ApiSolidFireVolumeAccessGroupIdResponse(long sfVolumeAccessGroupId) {
-        solidFireVolumeAccessGroupId = sfVolumeAccessGroupId;
+    public ApiSolidFireVolumeAccessGroupIdsResponse(long[] sfVolumeAccessGroupIds) {
+        solidFireVolumeAccessGroupIds = sfVolumeAccessGroupIds;
     }
 }

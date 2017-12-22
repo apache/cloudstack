@@ -40,7 +40,6 @@ import com.cloud.agent.api.ModifyStoragePoolAnswer;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.alert.AlertManager;
-import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -57,7 +56,6 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
     @Inject private AgentManager agentMgr;
     @Inject private AlertManager alertMgr;
     @Inject private ClusterDao clusterDao;
-    @Inject private ClusterDetailsDao clusterDetailsDao;
     @Inject private DataStoreManager dataStoreMgr;
     @Inject private HostDao hostDao;
     @Inject private PrimaryDataStoreDao storagePoolDao;
@@ -69,14 +67,15 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
         HostVO host = hostDao.findById(hostId);
 
         if (host == null) {
-            LOGGER.error("Failed to add host by SolidFireSharedHostListener as host was not found with id=" + hostId);
+            LOGGER.error("Failed to add host by SolidFireSharedHostListener as host was not found with id = " + hostId);
+
             return false;
         }
 
-        SolidFireUtil.hostAddedToOrRemovedFromCluster(hostId, host.getClusterId(), true, SolidFireUtil.SHARED_PROVIDER_NAME,
-                clusterDao, clusterDetailsDao, storagePoolDao, storagePoolDetailsDao, hostDao);
+        SolidFireUtil.hostAddedToCluster(hostId, host.getClusterId(), SolidFireUtil.SHARED_PROVIDER_NAME,
+                clusterDao, hostDao, storagePoolDao, storagePoolDetailsDao);
 
-        handleVMware(hostId, true, ModifyTargetsCommand.TargetTypeToRemove.NEITHER);
+        handleVMware(host, true, ModifyTargetsCommand.TargetTypeToRemove.NEITHER);
 
         return true;
     }
@@ -123,10 +122,10 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
     public boolean hostAboutToBeRemoved(long hostId) {
         HostVO host = hostDao.findById(hostId);
 
-        SolidFireUtil.hostAddedToOrRemovedFromCluster(hostId, host.getClusterId(), false, SolidFireUtil.SHARED_PROVIDER_NAME,
-                clusterDao, clusterDetailsDao, storagePoolDao, storagePoolDetailsDao, hostDao);
+        SolidFireUtil.hostRemovedFromCluster(hostId, host.getClusterId(), SolidFireUtil.SHARED_PROVIDER_NAME,
+                clusterDao, hostDao, storagePoolDao, storagePoolDetailsDao);
 
-        handleVMware(hostId, false, ModifyTargetsCommand.TargetTypeToRemove.BOTH);
+        handleVMware(host, false, ModifyTargetsCommand.TargetTypeToRemove.BOTH);
 
         return true;
     }
@@ -136,9 +135,7 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
         return true;
     }
 
-    private void handleVMware(long hostId, boolean add, ModifyTargetsCommand.TargetTypeToRemove targetTypeToRemove) {
-        HostVO host = hostDao.findById(hostId);
-
+    private void handleVMware(HostVO host, boolean add, ModifyTargetsCommand.TargetTypeToRemove targetTypeToRemove) {
         if (HypervisorType.VMware.equals(host.getHypervisorType())) {
             List<StoragePoolVO> storagePools = storagePoolDao.findPoolsByProvider(SolidFireUtil.SHARED_PROVIDER_NAME);
 
@@ -179,7 +176,7 @@ public class SolidFireSharedHostListener implements HypervisorHostListener {
                     cmd.setTargetTypeToRemove(targetTypeToRemove);
                     cmd.setRemoveAsync(true);
 
-                    sendModifyTargetsCommand(cmd, hostId);
+                    sendModifyTargetsCommand(cmd, host.getId());
                 }
             }
         }

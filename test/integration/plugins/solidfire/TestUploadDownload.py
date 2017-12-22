@@ -185,7 +185,7 @@ class TestUploadDownload(cloudstackTestCase):
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
-        cls.cluster = list_clusters(cls.apiClient)[1]
+        cls.cluster = list_clusters(cls.apiClient)[0]
         cls.template = get_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 

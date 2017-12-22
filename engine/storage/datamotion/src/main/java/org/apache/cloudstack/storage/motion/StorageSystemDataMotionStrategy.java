@@ -1654,18 +1654,18 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         details.put(ModifyTargetsCommand.STORAGE_HOST, storagePool.getHostAddress());
         details.put(ModifyTargetsCommand.STORAGE_PORT, String.valueOf(storagePool.getPort()));
 
-        ModifyTargetsCommand modifyTargetsCommand = new ModifyTargetsCommand();
+        ModifyTargetsCommand cmd = new ModifyTargetsCommand();
 
         List<Map<String, String>> targets = new ArrayList<>();
 
         targets.add(details);
 
-        modifyTargetsCommand.setTargets(targets);
-        modifyTargetsCommand.setApplyToAllHostsInCluster(true);
-        modifyTargetsCommand.setAdd(add);
-        modifyTargetsCommand.setTargetTypeToRemove(ModifyTargetsCommand.TargetTypeToRemove.DYNAMIC);
+        cmd.setTargets(targets);
+        cmd.setApplyToAllHostsInCluster(true);
+        cmd.setAdd(add);
+        cmd.setTargetTypeToRemove(ModifyTargetsCommand.TargetTypeToRemove.DYNAMIC);
 
-        return modifyTargetsCommand;
+        return cmd;
     }
 
     private List<String> sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {

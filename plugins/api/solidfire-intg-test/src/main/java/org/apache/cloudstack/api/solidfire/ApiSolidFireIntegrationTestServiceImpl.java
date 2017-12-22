@@ -22,7 +22,7 @@ import java.util.ArrayList;
 import org.apache.cloudstack.api.command.admin.solidfire.GetPathForVolumeCmd;
 // import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.command.admin.solidfire.GetSolidFireAccountIdCmd;
-import org.apache.cloudstack.api.command.admin.solidfire.GetSolidFireVolumeAccessGroupIdCmd;
+import org.apache.cloudstack.api.command.admin.solidfire.GetSolidFireVolumeAccessGroupIdsCmd;
 import org.apache.cloudstack.api.command.admin.solidfire.GetVolumeSnapshotDetailsCmd;
 import org.apache.cloudstack.api.command.admin.solidfire.GetVolumeiScsiNameCmd;
 import org.apache.cloudstack.api.command.admin.solidfire.GetSolidFireVolumeSizeCmd;
@@ -38,7 +38,7 @@ public class ApiSolidFireIntegrationTestServiceImpl extends AdapterBase implemen
 
         cmdList.add(GetPathForVolumeCmd.class);
         cmdList.add(GetSolidFireAccountIdCmd.class);
-        cmdList.add(GetSolidFireVolumeAccessGroupIdCmd.class);
+        cmdList.add(GetSolidFireVolumeAccessGroupIdsCmd.class);
         cmdList.add(GetVolumeiScsiNameCmd.class);
         cmdList.add(GetSolidFireVolumeSizeCmd.class);
         cmdList.add(GetVolumeSnapshotDetailsCmd.class);
