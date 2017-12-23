@@ -52,7 +52,7 @@
     <cs.cglib.version>3.2.5</cs.cglib.version>
     <cs.dbcp.version>1.4</cs.dbcp.version>
     <cs.pool.version>1.6</cs.pool.version>
-    <cs.codec.version>1.10</cs.codec.version>
+    <cs.codec.version>1.11</cs.codec.version>
     <cs.configuration.version>1.10</cs.configuration.version>
     <cs.logging.version>1.1.1</cs.logging.version>
     <cs.discovery.version>0.5</cs.discovery.version>
@@ -69,9 +69,9 @@
     <cs.ehcache.version>2.6.11</cs.ehcache.version>
     <cs.gson.version>1.7.2</cs.gson.version>
     <cs.guava-testlib.version>18.0</cs.guava-testlib.version>
-    <cs.guava.version>23.2-jre</cs.guava.version>
+    <cs.guava.version>23.6-jre</cs.guava.version>
     <cs.xapi.version>6.2.0-3.1</cs.xapi.version>
-    <cs.httpclient.version>4.5.3</cs.httpclient.version>
+    <cs.httpclient.version>4.5.4</cs.httpclient.version>
     <cs.httpcore.version>4.4.8</cs.httpcore.version>
     <cs.commons-httpclient.version>3.1</cs.commons-httpclient.version>
     <cs.mysql.version>5.1.34</cs.mysql.version>
@@ -88,14 +88,14 @@
     <cs.jstl-api.version>1.2.1</cs.jstl-api.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
     <cs.vmware.api.version>6.0</cs.vmware.api.version>
-    <org.springframework.version>5.0.0.RELEASE</org.springframework.version>
+    <org.springframework.version>5.0.2.RELEASE</org.springframework.version>
     <cs.mockito.version>1.10.19</cs.mockito.version>
     <cs.powermock.version>1.6.4</cs.powermock.version>
     <cs.aws.sdk.version>1.11.213</cs.aws.sdk.version>
     <cs.jackson.version>2.9.2</cs.jackson.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-lang3.version>3.4</cs.commons-lang3.version>
-    <cs.commons-io.version>2.5</cs.commons-io.version>
+    <cs.commons-io.version>2.6</cs.commons-io.version>
     <cs.commons-fileupload.version>1.3.3</cs.commons-fileupload.version>
     <cs.commons-collections.version>4.1</cs.commons-collections.version>
     <cs.commons-validator.version>1.6</cs.commons-validator.version>
@@ -106,7 +106,7 @@
     <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>
     <cs.rados-java.version>0.2.0</cs.rados-java.version>
     <cs.target.dir>target</cs.target.dir>
-    <cs.daemon.version>1.0.15</cs.daemon.version>
+    <cs.daemon.version>1.1.0</cs.daemon.version>
     <cs.jna.version>4.0.0</cs.jna.version>
     <cs.checkstyle.version>2.17</cs.checkstyle.version>
     <cs.mycila.license.version>2.11</cs.mycila.license.version>
@@ -116,12 +116,12 @@
     <cs.xml-apis.version>1.4.01</cs.xml-apis.version>
     <cs.joda-time.version>2.8.1</cs.joda-time.version>
     <cs.batik.version>1.9.1</cs.batik.version>
-    <cs.servicemix.version>2.5.7_1</cs.servicemix.version>
+    <cs.servicemix.version>2.5.8_1</cs.servicemix.version>
     <cs.cxf.version>3.2.0</cs.cxf.version>
     <cs.groovy.version>2.4.12</cs.groovy.version>
     <cs.nitro.version>10.1</cs.nitro.version>
     <cs.wiremock.version>2.11.0</cs.wiremock.version>
-    <cs.jetty.version>9.4.7.v20170914</cs.jetty.version>
+    <cs.jetty.version>9.4.8.v20171121</cs.jetty.version>
     <cs.jetty-maven-plugin.version>9.2.22.v20170606</cs.jetty-maven-plugin.version>
   </properties>
 
@@ -441,12 +441,12 @@
       <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjtools</artifactId>
-        <version>1.8.11</version>
+        <version>1.8.13</version>
       </dependency>
       <dependency>
         <groupId>org.aspectj</groupId>
         <artifactId>aspectjweaver</artifactId>
-        <version>1.8.11</version>
+        <version>1.8.13</version>
       </dependency>
       <dependency>
         <groupId>org.apache.axis</groupId>
