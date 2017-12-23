@@ -651,7 +651,7 @@
             <includeTestSourceDirectory>true</includeTestSourceDirectory>
             <sourceDirectory>${project.basedir}</sourceDirectory>
             <includes>**\/*.java</includes>
-            <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/apidoc\/</excludes>
+            <excludes>**\/deps\/,**\/test\/,**\/target**\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/apidoc\/</excludes>
           </configuration>
         </plugin>
         <plugin>
@@ -678,7 +678,7 @@
             </mapping>
             <useDefaultExcludes>false</useDefaultExcludes>
             <excludes>
-              <exclude>**/target/**</exclude>
+              <exclude>**/target**/**</exclude>
               <exclude>.settings/**</exclude>
               <exclude>.checkstyle</exclude>
               <exclude>.project</exclude>
@@ -851,7 +851,7 @@
               <exclude>**/*.iso</exclude>
               <exclude>**/*.tgz</exclude>
               <exclude>**/*.zip</exclude>
-              <exclude>**/target/**</exclude>
+              <exclude>**/target**/**</exclude>
               <exclude>**/.vagrant</exclude>
               <exclude>**/*.json</exclude>
               <exclude>build/build.number</exclude>
@@ -880,6 +880,7 @@
               <exclude>services/secondary-storage/conf/agent.properties</exclude>
               <exclude>services/secondary-storage/conf/environment.properties</exclude>
               <exclude>test/systemvm/README.md</exclude>
+              <exclude>test/integration/plugins/vyos/vyosConfigs/*</exclude>
               <exclude>tools/appliance/.ruby-version</exclude>
               <exclude>tools/vagrant/systemvm/vagrant.pub</exclude>
               <exclude>tools/vagrant/systemvm/.ruby-version</exclude>

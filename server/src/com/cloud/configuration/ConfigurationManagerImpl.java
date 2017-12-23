@@ -4239,6 +4239,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             firewallProvider = Provider.PaloAlto;
                         }
 
+                        if (provider == Provider.VyosRouter) {
+                            firewallProvider = Provider.VyosRouter;
+                        }
+
                         if ((service == Service.PortForwarding || service == Service.StaticNat) && provider == Provider.VirtualRouter) {
                             firewallProvider = Provider.VirtualRouter;
                         }
@@ -4341,7 +4345,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             firewallProviderSet.add(firewallProvider);
             serviceProviderMap.put(Service.Firewall, firewallProviderSet);
             if (!(firewallProvider.getName().equals(Provider.JuniperSRX.getName()) || firewallProvider.getName().equals(Provider.PaloAlto.getName()) || firewallProvider.getName()
-                    .equals(Provider.VirtualRouter.getName())) && egressDefaultPolicy == false) {
+                    .equals(Provider.VirtualRouter.getName()) || firewallProvider.getName().equals(Provider.VyosRouter.getName())) && egressDefaultPolicy == false) {
                 throw new InvalidParameterValueException("Firewall egress with default policy " + egressDefaultPolicy + " is not supported by the provider "
                         + firewallProvider.getName());
             }
