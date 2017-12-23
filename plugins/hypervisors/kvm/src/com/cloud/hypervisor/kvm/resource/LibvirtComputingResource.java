@@ -3412,7 +3412,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         cmd.add("--vmname", vmName);
         cmd.add("--vmid", vmId);
         cmd.add("--vmip", guestIP);
-        cmd.add("--vmip6", guestIP6);
+        if (guestIP6 != null) {
+            cmd.add("--vmip6", guestIP6);
+        }
         cmd.add("--sig", sig);
         cmd.add("--seq", seq);
         cmd.add("--vmmac", mac);

@@ -38,8 +38,11 @@ iptables = Command("iptables")
 bash = Command("/bin/bash")
 ebtables = Command("ebtables")
 driver = "qemu:///system"
+br_netfilter_module = "br_netfilter"
+
 cfo = configFileOps("/etc/cloudstack/agent/agent.properties")
 hyper = cfo.getEntry("hypervisor.type")
+
 if hyper == "lxc":
     driver = "lxc:///"
 
@@ -60,6 +63,15 @@ def obtain_file_lock(path):
 def execute(cmd):
     logging.debug(cmd)
     return bash("-c", cmd).stdout
+
+def load_kernel_module(module_name):
+    module_proc_file = "/proc/modules"
+    idx = execute("grep -E '^%s' %s | cut -f1 -d' '" % (module_name, module_proc_file)).find(module_name)
+    if idx == -1:
+        logging.debug("Module %s is absent. Load it." % (module_name))
+        execute("modprobe %s" % (module_name))
+    else:
+        logging.debug("Module %s is loaded. Skip loading." % (module_name,))
 
 def can_bridge_firewall(privnic):
     try:
@@ -1039,21 +1051,27 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
                 range = 'any'
 
         for ip in rule['ipv4']:
-            if protocol == 'all':
-                execute('iptables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
-            elif protocol != 'icmp':
-                execute('iptables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
-            else:
-                execute('iptables -I ' + vmchain + ' -p icmp --icmp-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
-
+            try:
+                if protocol == 'all':
+                    execute('iptables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+                elif protocol != 'icmp':
+                    execute('iptables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+                else:
+                    execute('iptables -I ' + vmchain + ' -p icmp --icmp-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
+            except:
+                pass
+                    
         for ip in rule['ipv6']:
-            if protocol == 'all':
-                execute('ip6tables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
-            elif 'icmp' != protocol:
-                execute('ip6tables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
-            else:
-                execute('ip6tables -I ' + vmchain + ' -p icmpv6 --icmpv6-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
-
+            try:
+                if protocol == 'all':
+                    execute('ip6tables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+                elif 'icmp' != protocol:
+                    execute('ip6tables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+                else:
+                    execute('ip6tables -I ' + vmchain + ' -p icmpv6 --icmpv6-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
+            except:
+                pass
+                    
     egress_vmchain = egress_chain_name(vm_name)
     if egressrule_v4 == 0 :
         execute('iptables -A ' + egress_vmchain + ' -j RETURN')
@@ -1145,8 +1163,13 @@ def getBrfw(brname):
         brfwname = "BF-" + brname
     return brfwname
 
+
 def addFWFramework(brname):
     try:
+        # Check if br_netfilter module is present. Further sysctl ops require it online.
+        # Load if absent
+        load_kernel_module(br_netfilter_module)
+
         execute("sysctl -w net.bridge.bridge-nf-call-arptables=1")
         execute("sysctl -w net.bridge.bridge-nf-call-iptables=1")
         execute("sysctl -w net.bridge.bridge-nf-call-ip6tables=1")
