@@ -1651,27 +1651,20 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final String routerName = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
 
         try {
-            conn = LibvirtConnection.getConnectionByVmName(routerName);
+            conn = getLibvirtUtilitiesHelper().getConnectionByVmName(routerName);
             final IpAddressTO[] ips = cmd.getIpAddresses();
             Integer devNum = 0;
-            final Map<String, Integer> broadcastUriToNicNum = new HashMap<String, Integer>();
             final List<InterfaceDef> pluggedNics = getInterfaces(conn, routerName);
+            final Map<String, Integer> macAddressToNicNum = new HashMap<>(pluggedNics.size());
 
             for (final InterfaceDef pluggedNic : pluggedNics) {
                 final String pluggedVlan = pluggedNic.getBrName();
-                if (pluggedVlan.equalsIgnoreCase(_linkLocalBridgeName)) {
-                    broadcastUriToNicNum.put("LinkLocal", devNum);
-                } else if (pluggedVlan.equalsIgnoreCase(_publicBridgeName) || pluggedVlan.equalsIgnoreCase(_privBridgeName) ||
-                        pluggedVlan.equalsIgnoreCase(_guestBridgeName)) {
-                    broadcastUriToNicNum.put(BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString(), devNum);
-                } else {
-                    broadcastUriToNicNum.put(getBroadcastUriFromBridge(pluggedVlan), devNum);
-                }
+                macAddressToNicNum.put(pluggedNic.getMacAddress(), devNum);
                 devNum++;
             }
 
             for (final IpAddressTO ip : ips) {
-                ip.setNicDevId(broadcastUriToNicNum.get(ip.getBroadcastUri()));
+                ip.setNicDevId(macAddressToNicNum.get(ip.getVifMacAddress()));
             }
 
             return new ExecutionResult(true, null);
