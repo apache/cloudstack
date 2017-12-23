@@ -31,6 +31,15 @@
   </dependencySets>
   <fileSets>
     <fileSet>
+      <directory>../scripts/util/</directory>
+      <outputDirectory>scripts/util</outputDirectory>
+      <directoryMode>555</directoryMode>
+      <fileMode>555</fileMode>
+      <includes>
+        <include>keystore*</include>
+      </includes>
+    </fileSet>
+    <fileSet>
       <directory>../scripts/storage/secondary/</directory>
       <outputDirectory>scripts/storage/secondary</outputDirectory>
       <directoryMode>555</directoryMode>

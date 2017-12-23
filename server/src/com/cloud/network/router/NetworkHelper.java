@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
+import com.cloud.network.lb.LoadBalancingRule;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
@@ -89,4 +90,6 @@ public interface NetworkHelper {
 
     public abstract LinkedHashMap<Network, List<? extends NicProfile>> configureGuestNic(RouterDeploymentDefinition routerDeploymentDefinition)
             throws ConcurrentOperationException, InsufficientAddressCapacityException;
+
+    public boolean validateHAProxyLBRule(final LoadBalancingRule rule);
 }

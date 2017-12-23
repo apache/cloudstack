@@ -113,7 +113,8 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
     private Boolean isPersistent;
 
     @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, since = "4.2.0", description = "Network offering details in key/value pairs."
-        + " Supported keys are internallbprovider/publiclbprovider with service provider as a value")
+        + " Supported keys are internallbprovider/publiclbprovider with service provider as a value, and"
+        + " promiscuousmode/macaddresschanges/forgedtransmits with true/false as value to accept/reject the security settings if available for a nic/portgroup")
     protected Map details;
 
     @Parameter(name = ApiConstants.EGRESS_DEFAULT_POLICY,
@@ -273,8 +274,21 @@ public class CreateNetworkOfferingCmd extends BaseCmd {
         }
 
         Collection paramsCollection = details.values();
-        Map<String, String> params = (Map<String, String>)(paramsCollection.toArray())[0];
+        Object objlist[]= paramsCollection.toArray();
+        Map<String, String> params = (Map<String, String>)(objlist[0]);
+        for(int i=1; i< objlist.length; i++)
+        {
+            params.putAll((Map<String, String>)(objlist[i]));
+        }
+
         return params;
+    }
+
+    public String getServicePackageId() {
+        Map<String, String> data = getDetails();
+        if (data == null)
+            return null;
+        return data.get(NetworkOffering.Detail.servicepackageuuid+ "");
     }
 
     /////////////////////////////////////////////////////

@@ -47,8 +47,12 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = FirewallRuleResponse.class, required = true, description = "the ID of the port forwarding rule", since = "4.4")
     private Long id;
 
-    @Parameter(name=ApiConstants.PRIVATE_PORT, type=CommandType.INTEGER, description="the private port of the port forwarding rule")
+    @Parameter(name=ApiConstants.PRIVATE_START_PORT, type=CommandType.INTEGER, description="the private start port of the port forwarding rule")
     private Integer privatePort;
+
+
+    @Parameter(name=ApiConstants.PRIVATE_END_PORT, type=CommandType.INTEGER, description="the private end port of the port forwarding rule")
+    private Integer privateEndPort;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
                type = CommandType.UUID,
@@ -72,6 +76,10 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
 
     public Integer getPrivatePort() {
         return privatePort;
+    }
+
+    public Integer getPrivateEndPort() {
+        return privateEndPort;
     }
 
     public Long getVirtualMachineId() {
@@ -130,7 +138,7 @@ public class UpdatePortForwardingRuleCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        PortForwardingRule rule = _rulesService.updatePortForwardingRule(id, getPrivatePort(), getVirtualMachineId(), getVmGuestIp(), getCustomId(), getDisplay());
+        PortForwardingRule rule = _rulesService.updatePortForwardingRule(getId(), getPrivatePort(), getPrivateEndPort(), getVirtualMachineId(), getVmGuestIp(), getCustomId(), getDisplay());
         FirewallRuleResponse fwResponse = new FirewallRuleResponse();
         if (rule != null) {
             fwResponse = _responseGenerator.createPortForwardingRuleResponse(rule);

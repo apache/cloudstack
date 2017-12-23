@@ -25,6 +25,7 @@ import com.cloud.agent.api.to.DataStoreTO;
 public class ComputeChecksumCommand extends SsCommand {
     private DataStoreTO store;
     private String templatePath;
+    private String algorithm = "MD5";
 
     public ComputeChecksumCommand() {
         super();
@@ -35,6 +36,11 @@ public class ComputeChecksumCommand extends SsCommand {
         this.setStore(store);
     }
 
+    public ComputeChecksumCommand(DataStoreTO store, String templatePath, String algorithm) {
+        this(store,templatePath);
+        this.algorithm = algorithm;
+    }
+
     public String getTemplatePath() {
         return templatePath;
     }
@@ -43,8 +49,12 @@ public class ComputeChecksumCommand extends SsCommand {
         return store;
     }
 
-    public void setStore(DataStoreTO store) {
-        this.store = store;
+
+    public String getAlgorithm() {
+        return algorithm;
     }
 
+    void setStore(DataStoreTO store) {
+        this.store = store;
+    }
 }

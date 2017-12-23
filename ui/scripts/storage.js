@@ -813,13 +813,18 @@
                                         },
                                         name: {
                                             label: 'label.name'
+                                        },
+                                        asyncBackup: {
+						label: 'label.async.backup',
+						isBoolean: true
                                         }
                                     }
                                 },
                                 action: function(args) {
                                     var data = {
                                         volumeId: args.context.volumes[0].id,
-                                        quiescevm: (args.data.quiescevm == 'on' ? true: false)
+                                        quiescevm: (args.data.quiescevm == 'on' ? true: false),
+                                        asyncBackup: (args.data.asyncBackup == 'on' ? true: false)
                                     };
                                     if (args.data.name != null && args.data.name.length > 0) {
                                         $.extend(data, {
@@ -1705,6 +1710,11 @@
                                         if (maxIops != null && maxIops.length > 0) {
                                             array1.push("&maxiops=" + todb(maxIops));
                                         }
+                                    }
+                                    //if original disk size  > new disk size
+                                    if ((args.context.volumes[0].type == "ROOT")
+                                    && (args.context.volumes[0].size > (newSize * (1024 * 1024 * 1024)))) {
+                                        return args.response.error('message.volume.root.shrink.disk.size');
                                     }
 
 

@@ -16,15 +16,6 @@
 // under the License.
 package org.apache.cloudstack.util.solidfire;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.api.response.solidfire.ApiVolumeSnapshotDetailsResponse;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.storage.SnapshotVO;
@@ -35,6 +26,14 @@ import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.api.response.solidfire.ApiVolumeSnapshotDetailsResponse;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SolidFireIntegrationTestUtil {
     @Inject private AccountDao accountDao;
@@ -48,48 +47,70 @@ public class SolidFireIntegrationTestUtil {
 
     public long getAccountIdForAccountUuid(String accountUuid) {
         Account account = accountDao.findByUuid(accountUuid);
-
+        if (account == null){
+            throw new CloudRuntimeException("Unable to find Account for ID: " + accountUuid);
+        }
         return account.getAccountId();
     }
 
     public long getAccountIdForVolumeUuid(String volumeUuid) {
         VolumeVO volume = volumeDao.findByUuid(volumeUuid);
+        if (volume == null){
+            throw new CloudRuntimeException("Unable to find Volume for ID: " + volumeUuid);
+        }
 
         return volume.getAccountId();
     }
 
     public long getAccountIdForSnapshotUuid(String snapshotUuid) {
         SnapshotVO snapshot = snapshotDao.findByUuid(snapshotUuid);
-
+        if (snapshot == null){
+            throw new CloudRuntimeException("Unable to find Volume for ID: " + snapshotUuid);
+        }
         return snapshot.getAccountId();
     }
 
     public long getClusterIdForClusterUuid(String clusterUuid) {
         ClusterVO cluster = clusterDao.findByUuid(clusterUuid);
+        if (cluster == null){
+            throw new CloudRuntimeException("Unable to find Volume for ID: " + clusterUuid);
+        }
 
         return cluster.getId();
     }
 
     public long getStoragePoolIdForStoragePoolUuid(String storagePoolUuid) {
         StoragePoolVO storagePool = storagePoolDao.findByUuid(storagePoolUuid);
+        if (storagePool == null){
+            throw new CloudRuntimeException("Unable to find Volume for ID: " + storagePoolUuid);
+        }
 
         return storagePool.getId();
     }
 
     public String getPathForVolumeUuid(String volumeUuid) {
         VolumeVO volume = volumeDao.findByUuid(volumeUuid);
+        if (volume == null){
+            throw new CloudRuntimeException("Unable to find Volume for ID: " + volumeUuid);
+        }
 
         return volume.getPath();
     }
 
     public String getVolume_iScsiName(String volumeUuid) {
         VolumeVO volume = volumeDao.findByUuid(volumeUuid);
+        if (volume == null){
+            throw new CloudRuntimeException("Unable to find Volume for ID: " + volumeUuid);
+        }
 
         return volume.get_iScsiName();
     }
 
     public List<ApiVolumeSnapshotDetailsResponse> getSnapshotDetails(String snapshotUuid) {
         SnapshotVO snapshot = snapshotDao.findByUuid(snapshotUuid);
+        if (snapshot == null){
+            throw new CloudRuntimeException("Unable to find Volume for ID: " + snapshotUuid);
+        }
 
         List<SnapshotDetailsVO> snapshotDetails = snapshotDetailsDao.listDetails(snapshot.getId());
 

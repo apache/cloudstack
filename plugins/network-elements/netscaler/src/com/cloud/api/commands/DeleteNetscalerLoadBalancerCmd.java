@@ -96,7 +96,7 @@ public class DeleteNetscalerLoadBalancerCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_LOAD_BALANCER_DELETE;
+        return EventTypes.EVENT_EXTERNAL_NCC_DEVICE_DELETE;
     }
 
     @Override

@@ -66,6 +66,10 @@ public class UserResponse extends BaseResponse {
     @Param(description = "the account type of the user")
     private Short accountType;
 
+    @SerializedName("usersource")
+    @Param(description = "the source type of the user in lowercase, such as native, ldap, saml2")
+    private String userSource;
+
     @SerializedName(ApiConstants.ROLE_ID)
     @Param(description = "the ID of the role")
     private String roleId;
@@ -259,5 +263,16 @@ public class UserResponse extends BaseResponse {
 
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
+    }
+
+    public String getUserSource() {
+        return userSource;
+    }
+
+    public void setUserSource(User.Source userSource) {
+        this.userSource = userSource.toString().toLowerCase();
+        if (this.userSource.equals(User.Source.UNKNOWN.toString().toLowerCase())) {
+            this.userSource = User.Source.NATIVE.toString().toLowerCase();
+        }
     }
 }

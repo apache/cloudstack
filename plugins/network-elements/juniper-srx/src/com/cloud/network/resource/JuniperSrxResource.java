@@ -2841,8 +2841,8 @@ public class JuniperSrxResource implements ServerResource {
                             action = "<permit></permit>";
                         }
 
-                        xml = replaceXmlValue(xml, "action", action);
                     }
+                    xml = replaceXmlValue(xml, "action", action);
                 } else {
                     xml = replaceXmlValue(xml, "from-zone", fromZone);
                     xml = replaceXmlValue(xml, "to-zone", toZone);
@@ -3611,7 +3611,7 @@ public class JuniperSrxResource implements ServerResource {
 
     private Long getVlanTag(String vlan) throws ExecutionException {
         Long publicVlanTag = null;
-        if (!vlan.equals("untagged")) {
+        if (!vlan.contains("untagged")) {
             try {
                 // make sure this vlan is numeric
                 publicVlanTag = Long.parseLong(BroadcastDomainType.getValue(vlan));

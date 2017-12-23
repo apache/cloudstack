@@ -307,6 +307,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         String snapshotUuid = cmd.getSnapshotUuid(); // not null: Precondition.
         String prevSnapshotUuid = cmd.getPrevSnapshotUuid();
         String prevBackupUuid = cmd.getPrevBackupUuid();
+        String searchExcludedFolders = cmd.getContextParam("searchexludefolders");
         VirtualMachineMO workerVm = null;
         String workerVMName = null;
         String volumePath = cmd.getVolumePath();
@@ -344,7 +345,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                         workerVm = vmMo;
 
                         // attach volume to worker VM
-                        String datastoreVolumePath = getVolumePathInDatastore(dsMo, volumePath + ".vmdk");
+                        String datastoreVolumePath = getVolumePathInDatastore(dsMo, volumePath + ".vmdk", searchExcludedFolders);
                         vmMo.attachDisk(new String[] {datastoreVolumePath}, morDs);
                     }
                 }
@@ -986,6 +987,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         VirtualMachineMO workerVm = null;
         VirtualMachineMO vmMo = null;
         String exportName = UUID.randomUUID().toString();
+        String searchExcludedFolders = cmd.getContextParam("searchexludefolders");
+
 
         try {
             ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolId);
@@ -1009,7 +1012,7 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
                 }
 
                 //attach volume to worker VM
-                String datastoreVolumePath = getVolumePathInDatastore(dsMo, volumePath + ".vmdk");
+                String datastoreVolumePath = getVolumePathInDatastore(dsMo, volumePath + ".vmdk", searchExcludedFolders);
                 workerVm.attachDisk(new String[] {datastoreVolumePath}, morDs);
                 vmMo = workerVm;
             }
@@ -1030,8 +1033,8 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
         }
     }
 
-    private String getVolumePathInDatastore(DatastoreMO dsMo, String volumeFileName) throws Exception {
-        String datastoreVolumePath = dsMo.searchFileInSubFolders(volumeFileName, true);
+    private String getVolumePathInDatastore(DatastoreMO dsMo, String volumeFileName, String searchExcludeFolders) throws Exception {
+        String datastoreVolumePath = dsMo.searchFileInSubFolders(volumeFileName, true, searchExcludeFolders);
         if (datastoreVolumePath == null) {
             throw new CloudRuntimeException("Unable to find file " + volumeFileName + " in datastore " + dsMo.getName());
         }

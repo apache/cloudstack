@@ -114,14 +114,15 @@ INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'management-server',
             'ping.timeout', '1.5');
 
-INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
-            VALUES ('Advanced', 'DEFAULT', 'management-server',
-            'outofbandmanagement.sync.interval', '1000');
-
 -- Enable dynamic RBAC by default for fresh deployments
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
             VALUES ('Advanced', 'DEFAULT', 'RoleService',
             'dynamic.apichecker.enabled', 'true');
+
+-- Enable RootCA auth strictness for fresh deployments
+INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)
+            VALUES ('Advanced', 'DEFAULT', 'RootCAProvider',
+            'ca.plugin.root.auth.strictness', 'true');
 
 -- Add developer configuration entry; allows management server to be run as a user other than "cloud"
 INSERT INTO `cloud`.`configuration` (category, instance, component, name, value)

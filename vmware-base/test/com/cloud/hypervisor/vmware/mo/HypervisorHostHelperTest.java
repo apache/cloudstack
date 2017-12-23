@@ -16,16 +16,17 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.vmware.vim25.AboutInfo;
-import com.vmware.vim25.BoolPolicy;
-import com.vmware.vim25.DVPortgroupConfigInfo;
-import com.vmware.vim25.DVPortgroupConfigSpec;
-import com.vmware.vim25.DVSTrafficShapingPolicy;
-import com.vmware.vim25.LongPolicy;
-import com.vmware.vim25.ServiceContent;
-import com.vmware.vim25.VMwareDVSPortSetting;
-import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -34,13 +35,21 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.offering.NetworkOffering;
+import com.vmware.vim25.AboutInfo;
+import com.vmware.vim25.BoolPolicy;
+import com.vmware.vim25.DVPortgroupConfigInfo;
+import com.vmware.vim25.DVPortgroupConfigSpec;
+import com.vmware.vim25.DVSSecurityPolicy;
+import com.vmware.vim25.DVSTrafficShapingPolicy;
+import com.vmware.vim25.HostNetworkSecurityPolicy;
+import com.vmware.vim25.LongPolicy;
+import com.vmware.vim25.ServiceContent;
+import com.vmware.vim25.VMwareDVSPortSetting;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchTrunkVlanSpec;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
 
 public class HypervisorHostHelperTest {
     @Mock
@@ -773,5 +782,105 @@ public class HypervisorHostHelperTest {
                 "  </VirtualSystem>\n" +
                 "</Envelope>";
         assertEquals(expected, HypervisorHostHelper.removeOVFNetwork(ovfString));
+    }
+
+    private Map<NetworkOffering.Detail, String> getSecurityDetails() {
+        final Map<NetworkOffering.Detail, String> details = new HashMap<>();
+        details.put(NetworkOffering.Detail.PromiscuousMode, "false");
+        details.put(NetworkOffering.Detail.ForgedTransmits, "false");
+        details.put(NetworkOffering.Detail.MacAddressChanges, "false");
+        return details;
+    }
+
+    @Test
+    public void testVSSecurityPolicyDefault() {
+        HostNetworkSecurityPolicy secPolicy = HypervisorHostHelper.createVSSecurityPolicy(null);
+        assertFalse(secPolicy.isAllowPromiscuous());
+        assertTrue(secPolicy.isForgedTransmits());
+        assertTrue(secPolicy.isMacChanges());
+    }
+
+    @Test
+    public void testVSSecurityPolicyDefaultWithDetail() {
+        HostNetworkSecurityPolicy secPolicy = HypervisorHostHelper.createVSSecurityPolicy(getSecurityDetails());
+        assertFalse(secPolicy.isAllowPromiscuous());
+        assertFalse(secPolicy.isForgedTransmits());
+        assertFalse(secPolicy.isMacChanges());
+    }
+
+    @Test
+    public void testVSSecurityPolicyWithDetail() {
+        Map<NetworkOffering.Detail, String> details = getSecurityDetails();
+        details.put(NetworkOffering.Detail.MacAddressChanges, "true");
+        HostNetworkSecurityPolicy secPolicy = HypervisorHostHelper.createVSSecurityPolicy(details);
+        assertFalse(secPolicy.isAllowPromiscuous());
+        assertFalse(secPolicy.isForgedTransmits());
+        assertTrue(secPolicy.isMacChanges());
+    }
+
+    @Test
+    public void testDVSSecurityPolicyDefault() {
+        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(null);
+        assertFalse(secPolicy.getAllowPromiscuous().isValue());
+        assertTrue(secPolicy.getForgedTransmits().isValue());
+        assertTrue(secPolicy.getMacChanges().isValue());
+    }
+
+    @Test
+    public void testDVSSecurityPolicyDefaultWithDetail() {
+        Map<NetworkOffering.Detail, String> details = getSecurityDetails();
+        details.remove(NetworkOffering.Detail.ForgedTransmits);
+        details.remove(NetworkOffering.Detail.PromiscuousMode);
+        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(details);
+        assertFalse(secPolicy.getAllowPromiscuous().isValue());
+        assertFalse(secPolicy.getMacChanges().isValue());
+        assertTrue(secPolicy.getForgedTransmits().isValue());
+    }
+
+    @Test
+    public void testDVSSecurityPolicyWithDetail() {
+        Map<NetworkOffering.Detail, String> details = getSecurityDetails();
+        details.put(NetworkOffering.Detail.ForgedTransmits, "true");
+        DVSSecurityPolicy secPolicy = HypervisorHostHelper.createDVSSecurityPolicy(details);
+        assertFalse(secPolicy.getAllowPromiscuous().isValue());
+        assertTrue(secPolicy.getForgedTransmits().isValue());
+        assertFalse(secPolicy.getMacChanges().isValue());
+    }
+
+    @Test
+    public void testCreateDVPortVlanSpecNullVlanId() {
+        VmwareDistributedVirtualSwitchVlanSpec spec = HypervisorHostHelper.createDVPortVlanSpec(null, null);
+        assertTrue(spec instanceof VmwareDistributedVirtualSwitchVlanIdSpec);
+        assertTrue(((VmwareDistributedVirtualSwitchVlanIdSpec) spec).getVlanId() == 0);
+    }
+
+    @Test
+    public void testCreateDVPortVlanSpecValidVlanId() {
+        VmwareDistributedVirtualSwitchVlanSpec spec = HypervisorHostHelper.createDVPortVlanSpec(100, "400");
+        assertTrue(spec instanceof VmwareDistributedVirtualSwitchVlanIdSpec);
+        assertTrue(((VmwareDistributedVirtualSwitchVlanIdSpec) spec).getVlanId() == 100);
+    }
+
+    @Test
+    public void testCreateDVPortVlanSpecValidVlanRange() {
+        VmwareDistributedVirtualSwitchVlanSpec spec = HypervisorHostHelper.createDVPortVlanSpec(null, "200-250");
+        assertTrue(spec instanceof VmwareDistributedVirtualSwitchTrunkVlanSpec);
+        assertTrue(((VmwareDistributedVirtualSwitchTrunkVlanSpec) spec).getVlanId().get(0).getStart() == 200);
+        assertTrue(((VmwareDistributedVirtualSwitchTrunkVlanSpec) spec).getVlanId().get(0).getEnd() == 250);
+    }
+
+    @Test
+    public void testCreateDVPortVlanSpecInvalidMissingVlanRange() {
+        VmwareDistributedVirtualSwitchVlanSpec spec = HypervisorHostHelper.createDVPortVlanSpec(null, "200-");
+        assertTrue(spec instanceof VmwareDistributedVirtualSwitchVlanIdSpec);
+        assertTrue(((VmwareDistributedVirtualSwitchVlanIdSpec) spec).getVlanId() == 0);
+    }
+
+    @Test
+    public void testCreateDVPortVlanSpecInvalidInputVlanRange() {
+        VmwareDistributedVirtualSwitchVlanSpec spec = HypervisorHostHelper.createDVPortVlanSpec(null, "a-b");
+        assertTrue(spec instanceof VmwareDistributedVirtualSwitchTrunkVlanSpec);
+        assertTrue(((VmwareDistributedVirtualSwitchTrunkVlanSpec) spec).getVlanId().get(0).getStart() == 0);
+        assertTrue(((VmwareDistributedVirtualSwitchTrunkVlanSpec) spec).getVlanId().get(0).getEnd() == 0);
     }
 }

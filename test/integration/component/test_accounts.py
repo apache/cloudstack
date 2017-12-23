@@ -20,6 +20,7 @@
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (random_gen,
                               cleanup_resources)
+from marvin.cloudstackAPI import *
 from marvin.lib.base import (Domain,
                              Account,
                              ServiceOffering,
@@ -42,6 +43,8 @@ from marvin.lib.common import (get_domain,
 from nose.plugins.attrib import attr
 from marvin.cloudstackException import CloudstackAPIException
 import time
+
+from pyVmomi.VmomiSupport import GetVersionFromVersionUri
 
 
 class Services:
@@ -96,7 +99,7 @@ class Services:
             "template": {
                 "displaytext": "Public Template",
                 "name": "Public template",
-                "ostype": 'CentOS 5.3 (64-bit)',
+                "ostype": 'CentOS 5.6 (64-bit)',
                 "url": "",
                 "hypervisor": '',
                 "format": '',
@@ -110,8 +113,7 @@ class Services:
                 "privateport": 22,
                 "protocol": 'TCP',
             },
-            "ostype": 'CentOS 5.3 (64-bit)',
-            # Cent OS 5.3 (64 bit)
+            "ostype": 'CentOS 5.6 (64-bit)',
             "sleep": 60,
             "timeout": 10,
         }
@@ -248,6 +250,11 @@ class TestAccounts(cloudstackTestCase):
             user.state,
             user_response.state,
             "Check state of created user"
+        )
+        self.assertEqual(
+            "native",
+            user_response.usersource,
+            "Check user source of created user"
         )
         return
 
@@ -1649,6 +1656,7 @@ class TestUserAPIKeys(cloudstackTestCase):
             user.apikey,
             userkeys.apikey,
             "Check User api key")
+        user.secretkey = self.get_secret_key(user.id)
         self.assertEqual(
             user.secretkey,
             userkeys.secretkey,
@@ -1664,10 +1672,17 @@ class TestUserAPIKeys(cloudstackTestCase):
             userkeys.apikey,
             new_keys.apikey,
             "Check API key is different")
+        new_keys.secretkey = self.get_secret_key(user_1.id)
         self.assertNotEqual(
             userkeys.secretkey,
             new_keys.secretkey,
             "Check secret key is different")
+
+    def get_secret_key(self, id):
+        cmd = getUserKeys.getUserKeysCmd()
+        cmd.id = id
+        keypair = self.apiclient.getUserKeys(cmd)
+        return keypair.secretkey
 
     @attr(tags=[
         "role",
@@ -2066,3 +2081,4 @@ class TestDomainForceRemove(cloudstackTestCase):
         with self.assertRaises(Exception):
             domain.delete(self.apiclient, cleanup=False)
         return
+

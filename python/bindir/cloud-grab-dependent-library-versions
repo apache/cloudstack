@@ -18,7 +18,7 @@
 
 import subprocess
 
-depLibraries = ['python', 'bzip2', 'gzip', 'unzip', 'openssh-clients', 'nfs-utils', 'wget', 'tomcat6', 'ws-commons-util', 'commons-dbcp',
+depLibraries = ['python', 'bzip2', 'gzip', 'unzip', 'openssh-clients', 'nfs-utils', 'wget', 'ws-commons-util', 'commons-dbcp',
                 'commons-collections', 'commons-httpclient', 'jpackage-utils', 'MySQL-python', 'python-paramiko', 'ipmitool', 'commons-httpclient', 'commons-collections',
                 'commons-pool', 'commons-dbcp', 'jakarta-commons-logging', 'java-*-openjdk']
 

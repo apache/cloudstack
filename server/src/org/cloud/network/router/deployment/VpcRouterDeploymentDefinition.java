@@ -73,11 +73,6 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     }
 
     @Override
-    public boolean isPublicNetwork() {
-        return true;
-    }
-
-    @Override
     protected void lock() {
         final Vpc vpcLock = vpcDao.acquireInLockTable(vpc.getId());
         if (vpcLock == null) {
@@ -115,12 +110,19 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
      */
     @Override
     protected boolean prepareDeployment() {
+        //Check if the VR is the src NAT provider...
+        isPublicNetwork = vpcMgr.isSrcNatIpRequired(vpc.getVpcOfferingId());
+
+        // Check if public network has to be set on VR
         return true;
     }
 
     @Override
     protected void findSourceNatIP() throws InsufficientAddressCapacityException, ConcurrentOperationException {
-        sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
+        sourceNatIp = null;
+        if (isPublicNetwork) {
+            sourceNatIp = vpcMgr.assignSourceNatIpAddressToVpc(owner, vpc);
+        }
     }
 
     @Override

@@ -129,7 +129,7 @@ public class BigSwitchBcfGuestNetworkGuru extends GuestNetworkGuru implements Ne
 
     public BigSwitchBcfGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] {IsolationMethod.BCF_SEGMENT};
+        _isolationMethods = new IsolationMethod[] {new IsolationMethod("BCF_SEGMENT")};
     }
 
     @Override

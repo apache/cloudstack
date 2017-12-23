@@ -43,6 +43,9 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.NicModel;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef.RngBackendModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogModel;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef.WatchDogAction;
 
 public class LibvirtDomainXMLParser {
     private static final Logger s_logger = Logger.getLogger(LibvirtDomainXMLParser.class);
@@ -50,6 +53,7 @@ public class LibvirtDomainXMLParser {
     private final List<DiskDef> diskDefs = new ArrayList<DiskDef>();
     private final List<RngDef> rngDefs = new ArrayList<RngDef>();
     private final List<ChannelDef> channels = new ArrayList<ChannelDef>();
+    private final List<WatchDogDef> watchDogDefs = new ArrayList<WatchDogDef>();
     private Integer vncPort;
     private String desc;
 
@@ -237,6 +241,27 @@ public class LibvirtDomainXMLParser {
                 rngDefs.add(def);
             }
 
+            NodeList watchDogs = devices.getElementsByTagName("watchdog");
+            for (int i = 0; i < watchDogs.getLength(); i++) {
+                WatchDogDef def = null;
+                Element watchDog = (Element)watchDogs.item(i);
+                String action = watchDog.getAttribute("action");
+                String model = watchDog.getAttribute("model");
+
+                if (Strings.isNullOrEmpty(model)) {
+                   continue;
+                }
+
+                if (Strings.isNullOrEmpty(action)) {
+                    def = new WatchDogDef(WatchDogModel.valueOf(model.toUpperCase()));
+                } else {
+                    def = new WatchDogDef(WatchDogAction.valueOf(action.toUpperCase()),
+                                          WatchDogModel.valueOf(model.toUpperCase()));
+                }
+
+                watchDogDefs.add(def);
+            }
+
             return true;
         } catch (ParserConfigurationException e) {
             s_logger.debug(e.toString());
@@ -288,6 +313,10 @@ public class LibvirtDomainXMLParser {
 
     public List<ChannelDef> getChannels() {
         return Collections.unmodifiableList(channels);
+    }
+
+    public List<WatchDogDef> getWatchDogs() {
+        return watchDogDefs;
     }
 
     public String getDescription() {

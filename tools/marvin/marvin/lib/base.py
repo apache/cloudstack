@@ -449,7 +449,7 @@ class VirtualMachine:
                hostid=None, keypair=None, ipaddress=None, mode='default',
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
-               rootdiskcontroller=None):
+               rootdiskcontroller=None, macaddress=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -562,6 +562,11 @@ class VirtualMachine:
         # program default access to ssh
         if mode.lower() == 'basic':
             cls.ssh_access_group(apiclient, cmd)
+
+        if macaddress:
+            cmd.macaddress = macaddress
+        elif macaddress in services:
+            cmd.macaddress = services["macaddress"]
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
@@ -775,7 +780,7 @@ class VirtualMachine:
         cmd.id = volume.id
         return apiclient.detachVolume(cmd)
 
-    def add_nic(self, apiclient, networkId, ipaddress=None):
+    def add_nic(self, apiclient, networkId, ipaddress=None, macaddress=None):
         """Add a NIC to a VM"""
         cmd = addNicToVirtualMachine.addNicToVirtualMachineCmd()
         cmd.virtualmachineid = self.id
@@ -783,6 +788,9 @@ class VirtualMachine:
 
         if ipaddress:
             cmd.ipaddress = ipaddress
+
+        if macaddress:
+            cmd.macaddress = macaddress
 
         return apiclient.addNicToVirtualMachine(cmd)
 
@@ -1097,7 +1105,7 @@ class Snapshot:
 
     @classmethod
     def create(cls, apiclient, volume_id, account=None,
-               domainid=None, projectid=None, locationtype=None):
+               domainid=None, projectid=None, locationtype=None, asyncbackup=None):
         """Create Snapshot"""
         cmd = createSnapshot.createSnapshotCmd()
         cmd.volumeid = volume_id
@@ -1109,6 +1117,8 @@ class Snapshot:
             cmd.projectid = projectid
         if locationtype:
             cmd.locationtype = locationtype
+	if asyncbackup:
+	    cmd.asyncbackup = asyncbackup
         return Snapshot(apiclient.createSnapshot(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -1648,6 +1658,30 @@ class NATRule:
             cmd.vmguestip = vmguestip
 
         return NATRule(apiclient.createPortForwardingRule(cmd).__dict__)
+
+    @classmethod
+    def update(self, apiclient, id, virtual_machine, services, fordisplay=False,
+           vmguestip=None):
+        """Create Port forwarding rule"""
+        cmd = updatePortForwardingRule.updatePortForwardingRuleCmd()
+        cmd.id = id
+
+        if "privateport" in services:
+            cmd.privateport = services["privateport"]
+
+        if "privateendport" in services:
+            cmd.privateendport = services["privateendport"]
+
+        if vmguestip:
+            cmd.vmguestip = vmguestip
+
+        if fordisplay:
+            cmd.fordisplay = fordisplay
+
+        if virtual_machine.id:
+            cmd.virtualmachineid = virtual_machine.id
+
+        return NATRule(apiclient.updatePortForwardingRule(cmd).__dict__)
 
     def delete(self, apiclient):
         """Delete port forwarding"""
@@ -2201,6 +2235,12 @@ class NetworkOffering:
             cmd.ispersistent = services["ispersistent"]
         if "egress_policy" in services:
             cmd.egressdefaultpolicy = services["egress_policy"]
+        cmd.details = [{}]
+        if "servicepackageuuid" in services:
+            cmd.details[0]["servicepackageuuid"] = services["servicepackageuuid"]
+        if "servicepackagedescription" in services:
+            cmd.details[0]["servicepackagedescription"] = services["servicepackagedescription"]
+
 
         cmd.availability = 'Optional'
 
@@ -5190,3 +5230,18 @@ class StorageNetworkIpRange:
         cmd = listStorageNetworkIpRange.listStorageNetworkIpRangeCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listStorageNetworkIpRange(cmd))
+
+class RegisteredServicePackage:
+    """Manage ServicePackage registered with NCC"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists service packages published by NCC"""
+
+        cmd = listRegisteredServicePackages.listRegisteredServicePackagesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listRegisteredServicePackages(cmd))
+

@@ -25,6 +25,7 @@ from marvin.lib.base import (Account,
                              ServiceOffering,
                              Volume,
                              DiskOffering,
+                             VmSnapshot,
                              Template,
                              listConfigurations)
 from marvin.lib.common import (get_domain,list_isos,
@@ -44,6 +45,7 @@ class TestVMware(cloudstackTestCase):
             cls.testClient = super(TestVMware, cls).getClsTestClient()
             cls.api_client = cls.testClient.getApiClient()
             cls.services = cls.testClient.getParsedTestDataConfig()
+            cls.hypervisor = cls.testClient.getHypervisorInfo()
             # Get Domain, Zone, Template
             cls.domain = get_domain(cls.api_client)
             cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -330,4 +332,39 @@ class TestVMware(cloudstackTestCase):
         attachedIsoName=response[0].isoname;
         self.assertEqual(attachedIsoName, "vmware-tools.iso", "vmware-tools.iso not attached")
         return
+
+    @attr(tags=["advanced", "basic"], required_hardware="true")
+    def test_04_check_vm_snapshot_creation_after_Instance_creation(self):
+        """
+        @summary: Test  if Snapshot creation is successful
+        after VM deployment
+        CLOUDSTACK-8830 : VM snapshot creation fails for 12 min
+
+        Step1: Create a VM with any Service offering
+        Step2: Create a VM snapshot
+        Step3: Verify is VM SS creation is failed
+        """
+
+        if self.hypervisor.lower() not in ['vmware']:
+            self.skipTest("This test case is only for vmware. Hence, skipping the test")
+        vm = VirtualMachine.create(
+            self.userapiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            templateid=self.template.id,
+            zoneid=self.zone.id
+        )
+
+        snapshot_created_1 = VmSnapshot.create(
+            self.userapiclient,
+            vm.id
+        )
+        self.assertIsNotNone(
+            snapshot_created_1,
+            "VM Snapshot creation failed"
+        )
+
+
 

@@ -27,6 +27,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.apache.cloudstack.ha.HAResource;
+import org.apache.cloudstack.kernel.Partition;
 import org.junit.Test;
 
 import com.cloud.agent.api.CheckOnHostCommand;
@@ -38,6 +40,11 @@ import com.cloud.resource.ResourceState;
 
 public class CheckOnHostCommandTest {
     public Host host = new Host() {
+        @Override
+        public PartitionType partitionType() {
+            return PartitionType.Host;
+        }
+
         @Override
         public Status getState() {
             return Status.Up;
@@ -197,7 +204,12 @@ public class CheckOnHostCommandTest {
         @Override
         public Long getClusterId() {
             return 3L;
-        };
+        }
+
+        @Override
+        public ResourceType resourceType() {
+            return ResourceType.Host;
+        }
 
         @Override
         public String getPublicIpAddress() {
@@ -251,6 +263,11 @@ public class CheckOnHostCommandTest {
 
         @Override
         public boolean isInMaintenanceStates() {
+            return false;
+        };
+
+        @Override
+        public boolean isDisabled() {
             return false;
         };
 

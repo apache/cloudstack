@@ -61,9 +61,7 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
 
     List<NetworkVO> listBy(long accountId, long networkId);
 
-    long countByZoneAndUri(long zoneId, String broadcastUri);
-
-    long countByZoneUriAndGuestType(long zoneId, String broadcastUri, GuestType guestType);
+    List<NetworkVO> listByZoneAndUriAndGuestType(long zoneId, String broadcastUri, GuestType guestType);
 
     List<NetworkVO> listByZone(long zoneId);
 
@@ -120,4 +118,6 @@ public interface NetworkDao extends GenericDao<NetworkVO, Long>, StateDao<State,
     List<NetworkVO> listByAclId(long aclId);
 
     int getNonSystemNetworkCountByVpcId(long vpcId);
+
+    List<NetworkVO> listNetworkVO(List<Long> idset);
 }

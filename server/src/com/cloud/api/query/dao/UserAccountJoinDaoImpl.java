@@ -58,6 +58,7 @@ public class UserAccountJoinDaoImpl extends GenericDaoBase<UserAccountJoinVO, Lo
         userResponse.setAccountId(usr.getAccountUuid());
         userResponse.setAccountName(usr.getAccountName());
         userResponse.setAccountType(usr.getAccountType());
+        userResponse.setUserSource(usr.getSource());
         userResponse.setCreated(usr.getCreated());
         userResponse.setDomainId(usr.getDomainUuid());
         userResponse.setDomainName(usr.getDomainName());

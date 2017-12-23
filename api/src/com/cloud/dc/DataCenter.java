@@ -18,15 +18,14 @@ package com.cloud.dc;
 
 import com.cloud.org.Grouping;
 import org.apache.cloudstack.acl.InfrastructureEntity;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.kernel.Partition;
 
 import java.util.Map;
 
 /**
  *
  */
-public interface DataCenter extends InfrastructureEntity, Grouping, Identity, InternalIdentity {
+public interface DataCenter extends InfrastructureEntity, Grouping, Partition {
 
     public enum NetworkType {
         Basic, Advanced,

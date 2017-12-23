@@ -1,4 +1,4 @@
-# Licensed to the Apache Software Foundation (ASF) under one
+#t	 Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
 # regarding copyright ownership.  The ASF licenses this file
@@ -674,6 +674,54 @@ test_data = {
         "cidr": "0.0.0.0/0",
         "protocol": "TCP"
     },
+    "nw_off_ncc_SharedSP": {
+        "name": 'SharedSP',
+        "displaytext": 'SharedSP',
+        "guestiptype": 'Isolated',
+        "supportedservices":
+            'Dhcp,Dns,SourceNat,Lb,StaticNat',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "serviceProviderList": {
+            "Dhcp": 'VirtualRouter',
+            "Dns": 'VirtualRouter',
+            "SourceNat": 'VirtualRouter',
+            "Lb": 'Netscaler',
+            "StaticNat": 'VirtualRouter'
+        }
+    },
+    "nw_off_ncc_DedicatedSP": {
+        "name": 'DedicatedSP',
+        "displaytext": 'DedicatedSP',
+        "guestiptype": 'Isolated',
+        "supportedservices":
+            'Dhcp,Dns,SourceNat,Lb,StaticNat',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "serviceProviderList": {
+            "Dhcp": 'VirtualRouter',
+            "Dns": 'VirtualRouter',
+            "SourceNat": 'VirtualRouter',
+            "Lb": 'Netscaler',
+            "StaticNat": 'VirtualRouter'
+        }
+    },
+    "NCC": {
+        "NCCIP": '10.102.195.215',
+    },
+    "NSShared": {
+        "NSIP": '10.102.195.210',
+    },
+    "NSDedicated": {
+        "NSIP": '10.102.195.212'
+    },
+    "servicepackage_shared": {
+        "name": "SharedSP",
+    },
+    "servicepackage_dedicated": {
+        "name": "DedicatedSP",
+    },
+
     "nw_off_isolated_persistent_netscaler": {
         "name": 'Netscaler',
         "displaytext": 'Netscaler',
@@ -730,6 +778,17 @@ test_data = {
         "privateport": 22,
         "publicport": 22,
         "protocol": "TCP"
+    },
+    "natrulerange": {
+        "privateport": 70,
+        "privateendport": 75,
+        "publicport": 70,
+        "publicendport": 75,
+        "protocol": "TCP"
+    },
+    "updatenatrulerange": {
+        "privateport": 50,
+        "privateendport": 55,
     },
    "egress_80": {
         "startport": 80,
@@ -935,13 +994,6 @@ test_data = {
         "url": "http://people.apache.org/~sanjeev/Rhel6-64bit.ova",
         "format": "OVA",
         "ostype": "Red Hat Enterprise Linux 6.0 (64-bit)"
-    },
-    "templateregister": {
-        "displaytext": "xs",
-        "name": "xs",
-        "passwordenabled": False,
-        "url": "http://people.apache.org/~sanjeev/ttylinux_pv.vhd.bz2",
-        "format": "VHD"
     },
     "security_group": {"name": "custom_Sec_Grp"},
     "ingress_rule": {

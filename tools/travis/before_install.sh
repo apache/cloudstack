@@ -23,6 +23,9 @@
 
 echo -e "#### System Information ####"
 
+echo -e "\nWho am I:"
+whoami
+
 echo -e "\nJava Version: "
 javac -version
 
@@ -76,7 +79,7 @@ fi
 sudo apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 1397BC53640DB551
 sudo sh -c 'echo "deb http://archive.ubuntu.com/ubuntu xenial main universe" >> /etc/apt/sources.list'
 sudo apt-get update -q -y > /dev/null
-sudo apt-get -q -y -V install freeipmi-common libfreeipmi16 libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool --no-install-recommends > /dev/null
+sudo apt-get -q -y -V install freeipmi-common libfreeipmi16 libgcrypt20 libgpg-error-dev libgpg-error0 libopenipmi0 ipmitool libpython-dev libssl-dev libffi-dev python-openssl build-essential --no-install-recommends > /dev/null
 
 ipmitool -V
 
@@ -97,7 +100,7 @@ pip install --user --upgrade pip
 
 for ((i=0;i<$RETRY_COUNT;i++))
 do
-  pip install --user --upgrade lxml paramiko nose texttable ipmisim > /tmp/piplog
+  pip install --user --upgrade lxml paramiko nose texttable ipmisim pyopenssl > /tmp/piplog
   if [[ $? -eq 0 ]]; then
     echo -e "\npython packages installed successfully"
     break;

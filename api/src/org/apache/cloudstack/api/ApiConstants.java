@@ -21,10 +21,13 @@ public class ApiConstants {
     public static final String ACCOUNTS = "accounts";
     public static final String ACCOUNT_TYPE = "accounttype";
     public static final String ACCOUNT_ID = "accountid";
+    public static final String ACTIVITY = "activity";
     public static final String ADDRESS = "address";
     public static final String ALGORITHM = "algorithm";
     public static final String ALLOCATED_ONLY = "allocatedonly";
+    public static final String ANNOTATION = "annotation";
     public static final String API_KEY = "apikey";
+    public static final String ASYNC_BACKUP = "asyncbackup";
     public static final String USER_API_KEY = "userapikey";
     public static final String APPLIED = "applied";
     public static final String LIST_LB_VMIPS = "lbvmips";
@@ -35,12 +38,15 @@ public class ApiConstants {
     public static final String BIND_PASSWORD = "bindpass";
     public static final String BYTES_READ_RATE = "bytesreadrate";
     public static final String BYTES_WRITE_RATE = "byteswriterate";
+    public static final String BYPASS_VLAN_OVERLAP_CHECK = "bypassvlanoverlapcheck";
     public static final String CATEGORY = "category";
     public static final String CAN_REVERT = "canrevert";
+    public static final String CA_CERTIFICATES = "cacertificates";
     public static final String CERTIFICATE = "certificate";
     public static final String CERTIFICATE_CHAIN = "certchain";
     public static final String CERTIFICATE_FINGERPRINT = "fingerprint";
     public static final String CERTIFICATE_ID = "certid";
+    public static final String CSR = "csr";
     public static final String PRIVATE_KEY = "privatekey";
     public static final String DOMAIN_SUFFIX = "domainsuffix";
     public static final String DNS_SEARCH_ORDER = "dnssearchorder";
@@ -54,6 +60,7 @@ public class ApiConstants {
     public static final String CLUSTER_ID = "clusterid";
     public static final String CLUSTER_NAME = "clustername";
     public static final String CLUSTER_TYPE = "clustertype";
+    public static final String CN = "cn";
     public static final String COMMAND = "command";
     public static final String CMD_EVENT_TYPE = "cmdeventtype";
     public static final String COMPONENT = "component";
@@ -95,6 +102,7 @@ public class ApiConstants {
     public static final String DOMAIN_ID = "domainid";
     public static final String DOMAIN__ID = "domainId";
     public static final String DURATION = "duration";
+    public static final String ELIGIBLE = "eligible";
     public static final String EMAIL = "email";
     public static final String END_DATE = "enddate";
     public static final String END_IP = "endip";
@@ -102,6 +110,7 @@ public class ApiConstants {
     public static final String END_PORT = "endport";
     public static final String ENTRY_TIME = "entrytime";
     public static final String EXPIRES = "expires";
+    public static final String FENCE = "fence";
     public static final String FETCH_LATEST = "fetchlatest";
     public static final String FIRSTNAME = "firstname";
     public static final String FORCED = "forced";
@@ -120,6 +129,9 @@ public class ApiConstants {
     public static final String GUEST_CIDR_ADDRESS = "guestcidraddress";
     public static final String GUEST_VLAN_RANGE = "guestvlanrange";
     public static final String HA_ENABLE = "haenable";
+    public static final String HA_PROVIDER = "haprovider";
+    public static final String HA_STATE = "hastate";
+    public static final String HEALTH = "health";
     public static final String HOST_ID = "hostid";
     public static final String HOST_NAME = "hostname";
     public static final String HYPERVISOR = "hypervisor";
@@ -163,6 +175,7 @@ public class ApiConstants {
     public static final String LUN = "lun";
     public static final String LBID = "lbruleid";
     public static final String MAX = "max";
+    public static final String MAC_ADDRESS = "macaddress";
     public static final String MAX_SNAPS = "maxsnaps";
     public static final String MEMORY = "memory";
     public static final String MODE = "mode";
@@ -216,6 +229,8 @@ public class ApiConstants {
     public static final String PUBLIC_END_PORT = "publicendport";
     public static final String PUBLIC_ZONE = "publiczone";
     public static final String RECEIVED_BYTES = "receivedbytes";
+    public static final String RECONNECT = "reconnect";
+    public static final String RECOVER = "recover";
     public static final String REQUIRES_HVM = "requireshvm";
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String RESPONSE = "response";
@@ -234,6 +249,7 @@ public class ApiConstants {
     public static final String SECURITY_GROUP_ID = "securitygroupid";
     public static final String SENT = "sent";
     public static final String SENT_BYTES = "sentbytes";
+    public static final String SERIAL = "serial";
     public static final String SERVICE_OFFERING_ID = "serviceofferingid";
     public static final String SESSIONKEY = "sessionkey";
     public static final String SHOW_CAPACITIES = "showcapacities";
@@ -373,6 +389,7 @@ public class ApiConstants {
     public static final String ROLE_NAME = "rolename";
     public static final String PERMISSION = "permission";
     public static final String RULE = "rule";
+    public static final String RULE_ID = "ruleid";
     public static final String RULE_ORDER = "ruleorder";
     public static final String USER = "user";
     public static final String ACTIVE_ONLY = "activeonly";
@@ -652,10 +669,22 @@ public class ApiConstants {
     public static final String OVM3_CLUSTER = "ovm3cluster";
     public static final String OVM3_VIP = "ovm3vip";
     public static final String CLEAN_UP_DETAILS = "cleanupdetails";
+    public static final String VIRTUAL_SIZE = "virtualsize";
+    public static final String NETSCALER_CONTROLCENTER_ID = "netscalercontrolcenterid";
+    public static final String NETSCALER_SERVICEPACKAGE_ID = "netscalerservicepackageid";
 
     public static final String ZONE_ID_LIST = "zoneids";
     public static final String DESTINATION_ZONE_ID_LIST = "destzoneids";
     public static final String ADMIN = "admin";
+    public static final String CHECKSUM_PARAMETER_PREFIX_DESCRIPTION = "The parameter containing the checksum will be considered a MD5sum if it is not prefixed\n"
+            + " and just a plain ascii/utf8 representation of a hexadecimal string. If it is required to\n"
+            + " use another algorithm the hexadecimal string is to be prefixed with a string of the form,\n"
+            + " \"{<algorithm>}\", not including the double quotes. In this <algorithm> is the exact string\n"
+            + " representing the java supported algorithm, i.e. MD5 or SHA-256. Note that java does not\n"
+            + " contain an algorithm called SHA256 or one called sha-256, only SHA-256.";
+
+    public static final String HAS_ANNOTATION = "hasannotation";
+    public static final String LAST_ANNOTATED = "lastannotated";
 
     public enum HostDetails {
         all, capacity, events, stats, min;
@@ -663,5 +692,9 @@ public class ApiConstants {
 
     public enum VMDetails {
         all, group, nics, stats, secgrp, tmpl, servoff, diskoff, iso, volume, min, affgrp;
+    }
+
+    public enum DomainDetails {
+        all, resource, min;
     }
 }

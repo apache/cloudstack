@@ -25,16 +25,6 @@
             <param name="ConversionPattern" value="%d{ABSOLUTE} %-5p [%c{1}] %m%n"/>
         </layout>
     </appender>
-<!-- 
-    <appender name="FILE_APPENDER" class="org.apache.log4j.DailyRollingFileAppender">
-        <param name="File" value="${catalina.home}/logs/webapp.txt"/>
-        <param name="DatePattern" value="'-'yyyy-MM-dd'.txt'"/>
-        <param name="Threshold" value="DEBUG"/>
-        <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d{yyyy-MM-dd HH:mm:ss} %-4p [%t] %C{2} - %m%n"/>
-        </layout>
-    </appender>
-    -->
 
     <!-- Spring -->
     <logger name="org.springframework" additivity="false">

@@ -482,4 +482,8 @@ public interface UserVmService {
      */
     public boolean isDisplayResourceEnabled(Long vmId);
 
+    void collectVmDiskStatistics(UserVm userVm);
+
+    void collectVmNetworkStatistics (UserVm userVm);
+
 }

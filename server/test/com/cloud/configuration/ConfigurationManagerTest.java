@@ -17,40 +17,34 @@
 
 package com.cloud.configuration;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
-import com.cloud.user.User;
-import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
-import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+
 import org.apache.cloudstack.api.command.admin.vlan.DedicatePublicIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.vlan.ReleasePublicIpRangeCmd;
+import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.AccountVlanMapVO;
@@ -72,13 +66,17 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
-import com.cloud.network.NetworkModel;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.offering.NetworkOffering;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -86,18 +84,34 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
 public class ConfigurationManagerTest {
 
     private static final Logger s_logger = Logger.getLogger(ConfigurationManagerTest.class);
 
+    @InjectMocks
     ConfigurationManagerImpl configurationMgr = new ConfigurationManagerImpl();
 
     DedicatePublicIpRangeCmd dedicatePublicIpRangesCmd = new DedicatePublicIpRangeCmdExtn();
@@ -114,6 +128,8 @@ public class ConfigurationManagerTest {
     ResourceLimitService _resourceLimitMgr;
     @Mock
     NetworkOrchestrationService _networkMgr;
+    @Mock
+    NetworkOfferingDao _networkOfferingDao;
     @Mock
     AccountDao _accountDao;
     @Mock
@@ -148,6 +164,8 @@ public class ConfigurationManagerTest {
     PhysicalNetworkDao _physicalNetworkDao;
     @Mock
     ImageStoreDao _imageStoreDao;
+    @Mock
+    ConfigurationDao _configDao;
 
     VlanVO vlan = new VlanVO(Vlan.VlanType.VirtualNetwork, "vlantag", "vlangateway", "vlannetmask", 1L, "iprange", 1L, 1L, null, null, null);
 
@@ -159,28 +177,6 @@ public class ConfigurationManagerTest {
     @Before
     public void setup() throws Exception {
         MockitoAnnotations.initMocks(this);
-        configurationMgr._accountMgr = _accountMgr;
-        configurationMgr._projectMgr = _projectMgr;
-        configurationMgr._resourceLimitMgr = _resourceLimitMgr;
-        configurationMgr._networkMgr = _networkMgr;
-        configurationMgr._accountDao = _accountDao;
-        configurationMgr._vlanDao = _vlanDao;
-        configurationMgr._accountVlanMapDao = _accountVlanMapDao;
-        configurationMgr._domainVlanMapDao = _domainVlanMapDao;
-        configurationMgr._publicIpAddressDao = _publicIpAddressDao;
-        configurationMgr._zoneDao = _zoneDao;
-        configurationMgr._firewallDao = _firewallDao;
-        configurationMgr._ipAddrMgr = _ipAddrMgr;
-        configurationMgr._networkModel = _networkModel;
-        configurationMgr._privateIpAddressDao = _privateIpAddressDao;
-        configurationMgr._volumeDao = _volumeDao;
-        configurationMgr._hostDao = _hostDao;
-        configurationMgr._vmInstanceDao = _vmInstanceDao;
-        configurationMgr._clusterDao = _clusterDao;
-        configurationMgr._podDao = _podDao;
-        configurationMgr._physicalNetworkDao = _physicalNetworkDao;
-        configurationMgr._imageStoreDao = _imageStoreDao;
-
 
         Account account = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         when(configurationMgr._accountMgr.getAccount(anyLong())).thenReturn(account);
@@ -490,6 +486,40 @@ public class ConfigurationManagerTest {
         } finally {
             txn.close("runReleaseNonDedicatedPublicIpRange");
         }
+    }
+
+    @Test
+    public void searchForNetworkOfferingsTest() {
+
+        final NetworkOfferingVO off1 = new NetworkOfferingVO("off1", "off1", Networks.TrafficType.Guest, false, false, null, null, false,
+                                                                          NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false,
+                                                                          false);
+        final NetworkOfferingVO off2 = new NetworkOfferingVO("off2", "off2", Networks.TrafficType.Guest, false, false, null, null, false,
+                                                                          NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false,
+                                                                          false);
+        final NetworkOfferingVO off3 = new NetworkOfferingVO("off3", "off3", Networks.TrafficType.Guest, false, false, null, null, false,
+                                                                          NetworkOffering.Availability.Optional, null, Network.GuestType.Isolated, true, false, false, false,
+                                                                          false);
+        List<NetworkOfferingVO> offerings = Arrays.asList(
+                off1,
+                off2,
+                off3
+        );
+
+        Mockito.when(_networkOfferingDao.createSearchCriteria()).thenReturn(Mockito.mock(SearchCriteria.class));
+        Mockito.when(_networkOfferingDao.search(Mockito.any(SearchCriteria.class), Mockito.any(Filter.class))).thenReturn(offerings);
+
+        ListNetworkOfferingsCmd cmd = Mockito.spy(ListNetworkOfferingsCmd.class);
+        Mockito.when(cmd.getPageSize()).thenReturn(10);
+
+        assertThat(configurationMgr.searchForNetworkOfferings(cmd).second(), is(3));
+
+        ConfigurationManagerImpl spy = Mockito.spy(configurationMgr);
+        Mockito.doReturn(false).when(spy).isOfferingForVpc(off1);
+        Mockito.doReturn(false).when(spy).isOfferingForVpc(off2);
+        Mockito.doReturn(true).when(spy).isOfferingForVpc(off3);
+        Mockito.when(cmd.getForVpc()).thenReturn(Boolean.FALSE);
+        assertThat(spy.searchForNetworkOfferings(cmd).second(), is(2));
     }
 
     @Test

@@ -246,8 +246,6 @@
                             data: {
                                 fetchLatest: data.fetchLatest,
                                 sortBy: 'usage',
-                                page: 0,
-                                pageSize: (pageSize > 8? 8: pageSize)
                             },
                             success: function(json) {
                                 var capacities = json.listcapacityresponse.capacity ?
@@ -269,7 +267,7 @@
                                             zoneID: capacity.zoneid, // Temporary fix for dashboard
                                             zoneName: capacity.zonename,
                                             type: cloudStack.converters.toCapacityCountType(capacity.type),
-                                            percent: parseInt(capacity.percentused),
+                                            percent: capacity.percentused,
                                             used: cloudStack.converters.convertByType(capacity.type, capacity.capacityused),
                                             total: cloudStack.converters.convertByType(capacity.type, capacity.capacitytotal)
                                         };

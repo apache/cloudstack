@@ -116,6 +116,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     Long countRunningByAccount(long accountId);
 
+    Long countByZoneAndState(long zoneId, State state);
+
     List<VMInstanceVO> listNonRemovedVmsByTypeAndNetwork(long networkId, VirtualMachine.Type... types);
 
     /**

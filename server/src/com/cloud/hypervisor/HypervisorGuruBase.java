@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Command;
@@ -29,9 +30,12 @@ import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.gpu.GPU;
+import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -56,6 +60,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     private NicDao _nicDao;
     @Inject
     private NetworkDao _networkDao;
+    @Inject
+    private NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
     private VMInstanceDao _virtualMachineDao;
     @Inject
@@ -134,7 +140,21 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         NicTO[] nics = new NicTO[nicProfiles.size()];
         int i = 0;
         for (NicProfile nicProfile : nicProfiles) {
-            nics[i++] = toNicTO(nicProfile);
+            if(vm.getType() == VirtualMachine.Type.NetScalerVm) {
+                nicProfile.setBroadcastType(BroadcastDomainType.Native);
+            }
+            NicTO nicTo = toNicTO(nicProfile);
+            final NetworkVO network = _networkDao.findByUuid(nicTo.getNetworkUuid());
+            if (network != null) {
+                final Map<NetworkOffering.Detail, String> details = networkOfferingDetailsDao.getNtwkOffDetails(network.getNetworkOfferingId());
+                if (details != null) {
+                    details.putIfAbsent(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
+                    details.putIfAbsent(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
+                    details.putIfAbsent(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
+                }
+                nicTo.setDetails(details);
+            }
+            nics[i++] = nicTo;
         }
 
         to.setNics(nics);

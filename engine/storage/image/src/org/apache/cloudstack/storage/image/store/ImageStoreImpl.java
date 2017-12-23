@@ -181,6 +181,11 @@ public class ImageStoreImpl implements ImageStoreEntity {
     }
 
     @Override
+    public String getUrl() {
+        return imageDataStoreVO.getUrl();
+    }
+
+    @Override
     public DataStoreTO getTO() {
         DataStoreTO to = getDriver().getStoreTO(this);
         if (to == null) {

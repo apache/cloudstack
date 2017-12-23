@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -348,10 +349,10 @@ public class ViewResponseHelper {
         return new ArrayList<StoragePoolResponse>(vrDataList.values());
     }
 
-    public static List<DomainResponse> createDomainResponse(ResponseView view, DomainJoinVO... domains) {
+    public static List<DomainResponse> createDomainResponse(ResponseView view, EnumSet<DomainDetails> details, DomainJoinVO... domains) {
         List<DomainResponse> respList = new ArrayList<DomainResponse>();
         for (DomainJoinVO vt : domains){
-            respList.add(ApiDBUtils.newDomainResponse(view, vt));
+            respList.add(ApiDBUtils.newDomainResponse(view, details, vt));
         }
         return respList;
     }

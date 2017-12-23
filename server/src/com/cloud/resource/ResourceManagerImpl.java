@@ -2272,7 +2272,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
 
                 try {
-                    SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart");
+                    SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart || systemctl restart cloudstack-agent");
+                    s_logger.debug("cloudstack-agent restart result: " + result.toString());
                 } catch (final SshException e) {
                     return false;
                 }
@@ -2513,6 +2514,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             sc.and(sc.entity().getPodId(), Op.EQ, podId);
         }
         sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        return sc.list();
+    }
+
+    @Override
+    public List<HostVO> listAllUpHosts(Type type, Long clusterId, Long podId, long dcId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        if (type != null) {
+            sc.and(sc.entity().getType(), Op.EQ, type);
+        }
+        if (clusterId != null) {
+            sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
+        }
+        if (podId != null) {
+            sc.and(sc.entity().getPodId(), Op.EQ, podId);
+        }
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
         return sc.list();
     }
 

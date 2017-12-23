@@ -25,7 +25,6 @@ import java.util.Objects;
 
 import javax.naming.ConfigurationException;
 
-import com.google.common.base.Preconditions;
 import net.nuage.vsp.acs.client.api.model.NuageVspUser;
 import net.nuage.vsp.acs.client.api.model.VspHost;
 import net.nuage.vsp.acs.client.common.NuageVspApiVersion;
@@ -33,6 +32,8 @@ import net.nuage.vsp.acs.client.common.NuageVspApiVersion;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.lang.builder.ToStringBuilder;
+
+import com.google.common.base.Preconditions;
 
 import com.cloud.util.NuageVspUtil;
 
@@ -265,7 +266,7 @@ public class NuageVspResourceConfiguration {
         verifyNotEmpty("API version", _apiVersion);
 
         try {
-                new NuageVspApiVersion(_apiVersion);
+            NuageVspApiVersion.fromString(_apiVersion);
         } catch(IllegalArgumentException e) {
             throw new ConfigurationException("Incorrect API version");
         }

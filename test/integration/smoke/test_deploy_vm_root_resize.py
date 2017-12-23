@@ -28,6 +28,7 @@ from marvin.lib.utils import cleanup_resources,validateList
 from marvin.lib.common import get_zone, get_domain, get_template,\
     list_volumes,list_storage_pools,list_configurations
 from marvin.codes import FAILED,INVALID_INPUT
+from marvin.cloudstackAPI import *
 from nose.plugins.attrib import attr
 from marvin.sshClient import SshClient
 import time
@@ -102,15 +103,6 @@ class TestDeployVmRootSize(cloudstackTestCase):
                         cls.updateclone = True
                         cls.restartreq = True
 
-             cls.tempobj = Template.register(cls.api_client,
-                                    cls.services["templateregister"],
-                                    hypervisor=cls.hypervisor,
-                                    zoneid=cls.zone.id,
-                                         account=cls.account.name,
-                                         domainid=cls.domain.id
-                                        )
-             cls.tempobj.download(cls.api_client)
-
              for strpool in list_pool_resp:
                 if strpool.type.lower() == "vmfs" or strpool.type.lower()== "networkfilesystem":
                     list_config_storage_response = list_configurations(
@@ -133,6 +125,11 @@ class TestDeployVmRootSize(cloudstackTestCase):
                         break
              if cls.restartreq:
                 cls.restartServer()
+
+                #Giving 30 seconds to management to warm-up,
+                #Experienced failures when trying to deploy a VM exactly when management came up
+                time.sleep(30)
+
         #create a service offering
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
@@ -158,7 +155,6 @@ class TestDeployVmRootSize(cloudstackTestCase):
                 Configurations.update(cls.api_client,
                                               "vmware.root.disk.controller",
                                               value=cls.defaultdiskcontroller)
-
 
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
@@ -197,10 +193,20 @@ class TestDeployVmRootSize(cloudstackTestCase):
         command = "service cloudstack-management start"
         sshClient.execute(command)
 
-        #time.sleep(cls.services["sleep"])
-        time.sleep(300)
+        #Waits for management to come up in 5 mins, when it's up it will continue
+        timeout = time.time() + 300
+        while time.time() < timeout:
+            if cls.isManagementUp() is True: return
+            time.sleep(5)
+        return cls.fail("Management server did not come up, failing")
 
-        return
+    @classmethod
+    def isManagementUp(cls):
+        try:
+            cls.api_client.listInfrastructure(listInfrastructure.listInfrastructureCmd())
+            return True
+        except Exception:
+            return False
 
     @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
     def test_00_deploy_vm_root_resize(self):
@@ -211,7 +217,6 @@ class TestDeployVmRootSize(cloudstackTestCase):
         # 2. root disk has new size per listVolumes
         # 3. Rejects non-supported hypervisor types
         """
-
 
         newrootsize = (self.template.size >> 30) + 2
         if(self.hypervisor.lower() == 'kvm' or self.hypervisor.lower() ==
@@ -224,7 +229,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
                         accountid=self.account.name,
                         domainid=self.domain.id,
                         serviceofferingid=self.services_offering_vmware.id,
-                        templateid=self.tempobj.id,
+                        templateid=self.template.id,
                         rootdisksize=newrootsize
                     )
 
@@ -238,9 +243,6 @@ class TestDeployVmRootSize(cloudstackTestCase):
                         templateid=self.template.id,
                         rootdisksize=newrootsize
             )
-
-
-
 
             list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
             self.debug(
@@ -303,7 +305,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
                     zoneid=self.zone.id,
                     domainid=self.account.domainid,
                     serviceofferingid=self.service_offering.id,
-                    templateid=self.tempobj.id,
+                    templateid=self.template.id,
                     rootdisksize=newrootsize
                 )
             except Exception as ex:
@@ -321,7 +323,6 @@ class TestDeployVmRootSize(cloudstackTestCase):
         newrootsize=0
         success=False
 
-
         if(self.hypervisor.lower() == 'kvm' or self.hypervisor.lower() ==
                 'xenserver'or self.hypervisor.lower() == 'vmware'  ):
             try:
@@ -332,7 +333,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
                         accountid=self.account.name,
                         domainid=self.domain.id,
                         serviceofferingid=self.services_offering_vmware.id,
-                        templateid=self.tempobj.id,
+                         templateid=self.template.id,
                         rootdisksize=newrootsize
                     )
 
@@ -355,8 +356,6 @@ class TestDeployVmRootSize(cloudstackTestCase):
         else:
                 self.debug("test 01 does not support hypervisor type " + self.hypervisor)
 
-
-
     @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true", BugId="CLOUDSTACK-6984")
     def test_02_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize less than template size
@@ -375,7 +374,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
                             accountid=self.account.name,
                             domainid=self.domain.id,
                             serviceofferingid=self.services_offering_vmware.id,
-                            templateid=self.tempobj.id,
+                            templateid=self.template.id,
                             rootdisksize=newrootsize
                         )
 
@@ -405,4 +404,5 @@ class TestDeployVmRootSize(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
+
 

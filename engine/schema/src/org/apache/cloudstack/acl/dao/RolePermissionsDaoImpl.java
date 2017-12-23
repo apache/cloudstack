@@ -29,6 +29,7 @@ import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.acl.RolePermission.Permission;
 import org.apache.cloudstack.acl.RolePermissionVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -147,6 +148,19 @@ public class RolePermissionsDaoImpl extends GenericDaoBase<RolePermissionVO, Lon
                 return true;
             }
         });
+    }
+
+    @Override
+    public boolean update(Role role, RolePermission rolePermission, Permission permission) {
+        if (role == null || rolePermission == null || permission == null) {
+            return false;
+        }
+        RolePermissionVO rolePermissionVO = findById(rolePermission.getId());
+        if (rolePermissionVO == null || role.getId() != rolePermission.getRoleId() || rolePermissionVO.getId() != rolePermission.getId()) {
+            return false;
+        }
+        rolePermissionVO.setPermission(permission);
+        return update(rolePermission.getId(), rolePermissionVO);
     }
 
     @Override

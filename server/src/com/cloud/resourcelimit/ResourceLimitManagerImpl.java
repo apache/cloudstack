@@ -26,9 +26,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -83,7 +86,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -107,7 +109,8 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService {
+@Local(value = {ResourceLimitService.class})
+public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService, Configurable{
     public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
 
     @Inject
@@ -205,7 +208,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         snapshotSizeSearch.join("snapshots", join2, snapshotSizeSearch.entity().getSnapshotId(), join2.entity().getId(), JoinBuilder.JoinType.INNER);
         snapshotSizeSearch.done();
 
-        _resourceCountCheckInterval = NumbersUtil.parseInt(_configDao.getValue(Config.ResourceCountCheckInterval.key()), 0);
+        _resourceCountCheckInterval = ResourceCountCheckInterval.value();
         if (_resourceCountCheckInterval > 0) {
             _rcExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ResourceCountChecker"));
         }
@@ -1059,6 +1062,16 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         } else {
             decrementResourceCount(accountId, type, delta);
         }
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ResourceLimitManagerImpl.class.getName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ResourceCountCheckInterval};
     }
 
     protected class ResourceCountCheckTask extends ManagedContextRunnable {

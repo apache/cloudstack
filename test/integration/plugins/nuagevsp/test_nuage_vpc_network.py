@@ -59,11 +59,13 @@ class TestNuageVpcNetwork(nuageTestCase):
         # 5. Create a VPC Network with Nuage VSP VPC Network offering and the
         #    created ACL list, check if it is successfully created, is in the
         #    "Implemented" state, and is added to the VPC VR.
-        # 6. Deploy a VM in the created VPC network, check if the VM is
+        # 6. Verify that the VPC VR has no Public IP and NIC as it is not the
+        #    Source NAT service provider.
+        # 7. Deploy a VM in the created VPC network, check if the VM is
         #    successfully deployed and is in the "Running" state.
-        # 7. Verify that the created ACL item is successfully implemented in
+        # 8. Verify that the created ACL item is successfully implemented in
         #    Nuage VSP.
-        # 8. Delete all the created objects (cleanup).
+        # 9. Delete all the created objects (cleanup).
 
         # Creating a VPC offering
         self.debug("Creating Nuage VSP VPC offering...")
@@ -98,6 +100,11 @@ class TestNuageVpcNetwork(nuageTestCase):
         self.validate_Network(vpc_network, state="Implemented")
         vr = self.get_Router(vpc_network)
         self.check_Router_state(vr, state="Running")
+
+        # Verifying that the VPC VR has no public IP and NIC
+        self.verify_VRWithoutPublicIPNIC(vr)
+        # Verifying that the VPC has no src NAT ip
+        self.verify_vpc_has_no_src_nat(vpc)
 
         # Deploying a VM in the VPC network
         vm = self.create_VM(vpc_network)

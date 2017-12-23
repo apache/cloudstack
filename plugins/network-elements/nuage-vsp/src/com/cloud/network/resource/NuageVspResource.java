@@ -20,7 +20,8 @@
 package com.cloud.network.resource;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import javax.naming.ConfigurationException;
 
@@ -31,6 +32,8 @@ import net.nuage.vsp.acs.client.api.NuageVspGuruClient;
 import net.nuage.vsp.acs.client.api.NuageVspManagerClient;
 import net.nuage.vsp.acs.client.api.NuageVspPluginClientLoader;
 import net.nuage.vsp.acs.client.api.model.VspHost;
+import net.nuage.vsp.acs.client.common.RequestType;
+import net.nuage.vsp.acs.client.common.model.NuageVspEntity;
 import net.nuage.vsp.acs.client.exception.NuageVspException;
 
 import org.apache.log4j.Logger;
@@ -48,8 +51,9 @@ import com.cloud.host.Host;
 import com.cloud.resource.ServerResource;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.mgmt.JmxUtil;
 
-public class NuageVspResource extends ManagerBase implements ServerResource {
+public class NuageVspResource extends ManagerBase implements ServerResource, VspStatisticsMBean {
     private static final Logger s_logger = Logger.getLogger(NuageVspResource.class);
 
     private String _guid;
@@ -73,7 +77,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
 
 
         if (!newVspHost.getApiVersion().isSupported()) {
-            s_logger.warn(String.format("[UPGRADE] API version %s of Nuage Vsp Device %s should be updated.", _vspHost.getApiVersion(), configuration.hostName()));
+            s_logger.warn(String.format("[UPGRADE] API version %s of Nuage Vsp Device %s should be updated.", newVspHost.getApiVersion(), configuration.hostName()));
         }
 
         _guid = configuration.guid();
@@ -87,12 +91,70 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
 
             _vspHost = newVspHost;
             _clientLoader = clientLoader;
-        } catch (ExecutionException e) {
+        } catch (NuageVspException e) {
             s_logger.error(e.getMessage(), e);
             throw new CloudRuntimeException(e.getMessage(), e);
         }
 
         return _vspHost;
+    }
+
+    @Override
+    public long getVSDStatistics() {
+        return _clientLoader.getNuageVspStatistics().getVsdCount();
+    }
+
+
+    @Override
+    public long getVsdStatisticsByEntityType(String entity) {
+        try {
+            NuageVspEntity nuageVspEntity = NuageVspEntity.valueOf(entity);
+            return _clientLoader.getNuageVspStatistics().getVsdCount(nuageVspEntity);
+        } catch (IllegalArgumentException e) {
+            return -1;
+        }
+    }
+
+    @Override
+    public long getVsdStatisticsByRequestType(String requestType) {
+        try {
+            RequestType requestTypeValue = RequestType.valueOf(requestType);
+            return _clientLoader.getNuageVspStatistics().getVsdCount(requestTypeValue);
+        } catch (IllegalArgumentException e) {
+            return -1;
+        }
+
+    }
+
+    @Override
+    public long getVsdStatisticsByEntityAndRequestType(String entity, String requestType) {
+        try {
+            RequestType requestTypeValue = RequestType.valueOf(requestType);
+            NuageVspEntity nuageVspEntity = NuageVspEntity.valueOf(entity);
+            return _clientLoader.getNuageVspStatistics().getVsdCount(nuageVspEntity, requestTypeValue);
+        } catch (IllegalArgumentException e) {
+            return -1;
+        }
+    }
+
+    private static Map<String, AtomicLong> convertHashMap(Map<RequestType, AtomicLong> map) {
+        return map.entrySet()
+                .stream()
+                .collect(Collectors.toMap(
+                        e -> e.getKey().toString(),
+                        Map.Entry::getValue)
+                );
+    }
+
+    @Override
+    public Map<String, Map<String, AtomicLong>> getVsdStatisticsReport() {
+       return _clientLoader.getNuageVspStatistics()
+                .getVsdCountReport()
+                .entrySet().stream()
+                .collect(Collectors.toMap(
+                        e -> e.getKey().toString(),
+                        e -> convertHashMap(e.getValue())
+                ));
     }
 
     @Override
@@ -113,11 +175,25 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
 
     @Override
     public boolean start() {
+        try {
+            JmxUtil.registerMBean("NuageVspResource", _name, new VspStatisticsMBeanImpl(this));
+        } catch (Exception e) {
+            s_logger.warn("Unable to initialize statistics Mbean", e);
+        }
+
         return true;
+
     }
 
     @Override
     public boolean stop() {
+
+        try {
+            JmxUtil.unregisterMBean("NuageVspResource", _name);
+        } catch (Exception e) {
+            s_logger.warn("Unable to initialize inaccurate clock", e);
+        }
+
         return true;
     }
 
@@ -155,7 +231,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource {
 
         try {
             login();
-        } catch (ExecutionException | ConfigurationException e) {
+        } catch (NuageVspException | ConfigurationException e) {
             s_logger.error("Failed to ping to Nuage VSD on " + _name + " as user " +_vspHost.getCmsUserLogin(), e);
             _shouldAudit = true;
             return null;

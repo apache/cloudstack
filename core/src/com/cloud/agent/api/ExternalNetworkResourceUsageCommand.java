@@ -20,12 +20,21 @@
 package com.cloud.agent.api;
 
 public class ExternalNetworkResourceUsageCommand extends Command {
+    Long networkid;
 
     public ExternalNetworkResourceUsageCommand() {
+    }
+
+    public ExternalNetworkResourceUsageCommand(Long networkid) {
+        this.networkid = networkid;
     }
 
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+
+    public Long getNetworkid() {
+        return networkid;
     }
 }

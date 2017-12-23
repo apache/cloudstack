@@ -23,7 +23,9 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.inject.Inject;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import com.cloud.network.router.NetworkHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
@@ -78,7 +80,6 @@ import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.OvsProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule;
-import com.cloud.network.lb.LoadBalancingRule.LbStickinessPolicy;
 import com.cloud.network.lb.LoadBalancingRulesManager;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
@@ -95,13 +96,11 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -170,6 +169,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
 
     @Inject
     protected RouterDeploymentDefinitionBuilder routerDeploymentDefinitionBuilder;
+
+    @Autowired
+    @Qualifier("networkHelper")
+    protected NetworkHelper _networkHelper;
 
     protected boolean canHandle(final Network network, final Service service) {
         final Long physicalNetworkId = _networkMdl.getPhysicalNetworkId(network);
@@ -302,104 +305,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         return result;
     }
 
-    /*
-     * This function detects numbers like 12 ,32h ,42m .. etc,. 1) plain number
-     * like 12 2) time or tablesize like 12h, 34m, 45k, 54m , here last
-     * character is non-digit but from known characters .
-     */
-    private static boolean containsOnlyNumbers(final String str, final String endChar) {
-        if (str == null) {
-            return false;
-        }
-
-        String number = str;
-        if (endChar != null) {
-            boolean matchedEndChar = false;
-            if (str.length() < 2) {
-                return false; // at least one numeric and one char. example:
-            }
-            // 3h
-            final char strEnd = str.toCharArray()[str.length() - 1];
-            for (final char c : endChar.toCharArray()) {
-                if (strEnd == c) {
-                    number = str.substring(0, str.length() - 1);
-                    matchedEndChar = true;
-                    break;
-                }
-            }
-            if (!matchedEndChar) {
-                return false;
-            }
-        }
-        try {
-            Integer.parseInt(number);
-        } catch (final NumberFormatException e) {
-            return false;
-        }
-        return true;
-    }
-
-    public static boolean validateHAProxyLBRule(final LoadBalancingRule rule) {
-        final String timeEndChar = "dhms";
-
-        if (rule.getSourcePortStart() == NetUtils.HAPROXY_STATS_PORT) {
-            s_logger.debug("Can't create LB on port 8081, haproxy is listening for  LB stats on this port");
-            return false;
-        }
-
-        for (final LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
-            final List<Pair<String, String>> paramsList = stickinessPolicy.getParams();
-
-            if (StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
-
-            } else if (StickinessMethodType.SourceBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
-                String tablesize = "200k"; // optional
-                String expire = "30m"; // optional
-
-                /* overwrite default values with the stick parameters */
-                for (final Pair<String, String> paramKV : paramsList) {
-                    final String key = paramKV.first();
-                    final String value = paramKV.second();
-                    if ("tablesize".equalsIgnoreCase(key)) {
-                        tablesize = value;
-                    }
-                    if ("expire".equalsIgnoreCase(key)) {
-                        expire = value;
-                    }
-                }
-                if (expire != null && !containsOnlyNumbers(expire, timeEndChar)) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: expire is not in timeformat: " + expire);
-                }
-                if (tablesize != null && !containsOnlyNumbers(tablesize, "kmg")) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: tablesize is not in size format: " + tablesize);
-
-                }
-            } else if (StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
-                String length = null; // optional
-                String holdTime = null; // optional
-
-                for (final Pair<String, String> paramKV : paramsList) {
-                    final String key = paramKV.first();
-                    final String value = paramKV.second();
-                    if ("length".equalsIgnoreCase(key)) {
-                        length = value;
-                    }
-                    if ("holdtime".equalsIgnoreCase(key)) {
-                        holdTime = value;
-                    }
-                }
-
-                if (length != null && !containsOnlyNumbers(length, null)) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: length is not a number: " + length);
-                }
-                if (holdTime != null && !containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(holdTime, null)) {
-                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: holdtime is not in timeformat: " + holdTime);
-                }
-            }
-        }
-        return true;
-    }
-
     @Override
     public boolean validateLBRule(final Network network, final LoadBalancingRule rule) {
         final List<LoadBalancingRule> rules = new ArrayList<LoadBalancingRule>();
@@ -409,7 +314,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
             if (routers == null || routers.isEmpty()) {
                 return true;
             }
-            return validateHAProxyLBRule(rule);
+            return _networkHelper.validateHAProxyLBRule(rule);
         }
         return true;
     }
