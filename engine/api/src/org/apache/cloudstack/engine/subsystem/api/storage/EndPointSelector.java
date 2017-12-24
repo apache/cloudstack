@@ -20,8 +20,6 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.List;
 
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-
 public interface EndPointSelector {
     EndPoint select(DataObject srcData, DataObject destData);
 
@@ -38,6 +36,4 @@ public interface EndPointSelector {
     EndPoint select(Scope scope, Long storeId);
 
     EndPoint select(DataStore store, String downloadUrl);
-
-    EndPoint selectHypervisorHostByType(Scope scope, HypervisorType htype);
 }

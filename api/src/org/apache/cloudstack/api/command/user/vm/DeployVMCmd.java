@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -194,7 +195,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             + " Example: dhcpoptionsnetworklist[0].dhcp:114=url&dhcpoptionsetworklist[0].networkid=networkid&dhcpoptionsetworklist[0].dhcp:66=www.test.com")
     private Map dhcpOptionsNetworkList;
 
-    @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST, type = CommandType.MAP, since = "4.10", description = "datadisk template to disk-offering mapping;" +
+    @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST, type = CommandType.MAP, since = "4.11", description = "datadisk template to disk-offering mapping;" +
             " an optional parameter used to create additional data disks from datadisk templates; can't be specified with diskOfferingId parameter")
     private Map dataDiskTemplateToDiskOfferingList;
 
@@ -454,11 +455,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             throw new InvalidParameterValueException("diskofferingid paramter can't be specified along with datadisktemplatetodiskofferinglist parameter");
         }
         HashMap<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap = new HashMap<Long, DiskOffering>();
-        if (dataDiskTemplateToDiskOfferingList != null && !dataDiskTemplateToDiskOfferingList.isEmpty()) {
+        if (MapUtils.isNotEmpty(dataDiskTemplateToDiskOfferingList)) {
             Collection dataDiskTemplatesCollection = dataDiskTemplateToDiskOfferingList.values();
-            Iterator iter = dataDiskTemplatesCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> dataDiskTemplates = (HashMap<String, String>)iter.next();
+            for (Object objDataDiskTemplates : dataDiskTemplateToDiskOfferingList.values()) {
+                HashMap<String, String> dataDiskTemplates = (HashMap<String, String>) objDataDiskTemplates;
                 Long dataDiskTemplateId;
                 DiskOffering dataDiskOffering = null;
                 VirtualMachineTemplate dataDiskTemplate= _entityMgr.findByUuid(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));

@@ -25,6 +25,8 @@ import java.net.URI;
 import java.net.URL;
 import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
+
+import com.cloud.configuration.Resource.ResourceType;
 import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -675,8 +677,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     private Answer execute(ResizeVolumeCommand cmd) {
         String path = cmd.getPath();
         String vmName = cmd.getInstanceName();
-        long newSize = cmd.getNewSize() / 1024;
-        long oldSize = cmd.getCurrentSize() / 1024;
+        long newSize = cmd.getNewSize() / ResourceType.bytesToKiB;
+        long oldSize = cmd.getCurrentSize() / ResourceType.bytesToKiB;
         boolean useWorkerVm = false;
 
         VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
@@ -689,9 +691,9 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         try {
             if (newSize < oldSize) {
                 throw new Exception(
-                        "VMware doesn't support shrinking volume from larger size: " + oldSize / (1024 * 1024) + " GB to a smaller size: " + newSize / (1024 * 1024) + " GB");
+                        "VMware doesn't support shrinking volume from larger size: " + oldSize / ResourceType.bytesToMiB + " GB to a smaller size: " + newSize / ResourceType.bytesToMiB + " GB");
             } else if (newSize == oldSize) {
-                return new ResizeVolumeAnswer(cmd, true, "success", newSize * 1024);
+                return new ResizeVolumeAnswer(cmd, true, "success", newSize * ResourceType.bytesToKiB);
             }
             if (vmName.equalsIgnoreCase("none")) {
                 // we need to spawn a worker VM to attach the volume to and
@@ -1782,7 +1784,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         }
                         tearDownVm(vmMo);
                     } else if (!hyperHost.createBlankVm(vmNameOnVcenter, vmInternalCSName, vmSpec.getCpus(), vmSpec.getMaxSpeed().intValue(), getReservedCpuMHZ(vmSpec),
-                            vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / (1024 * 1024)), getReservedMemoryMb(vmSpec), guestOsId, rootDiskDataStoreDetails.first(), false,
+                            vmSpec.getLimitCpuUse(), (int)(vmSpec.getMaxRam() / ResourceType.bytesToMiB), getReservedMemoryMb(vmSpec), guestOsId, rootDiskDataStoreDetails.first(), false,
                             controllerInfo, systemVm)) {
                         throw new Exception("Failed to create VM. vmName: " + vmInternalCSName);
                     }
@@ -2395,7 +2397,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     int getReservedMemoryMb(VirtualMachineTO vmSpec) {
         if (vmSpec.getDetails().get(VMwareGuru.VmwareReserveMemory.key()).equalsIgnoreCase("true")) {
-            return (int)(vmSpec.getMinRam() / (1024 * 1024));
+            return (int)(vmSpec.getMinRam() / ResourceType.bytesToMiB);
         }
         return 0;
     }
@@ -3145,7 +3147,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VirtualSwitchType switchType = VirtualSwitchType.StandardVirtualSwitch;
         String vlanId = Vlan.UNTAGGED;
 
-        if (nicTo.getName() != null && !nicTo.getName().isEmpty()) {
+        if (StringUtils.isNotBlank(nicTo.getName())) {
             // Format of network traffic label is <VSWITCH>,<VLANID>,<VSWITCHTYPE>
             // If all 3 fields are mentioned then number of tokens would be 3.
             // If only <VSWITCH>,<VLANID> are mentioned then number of tokens would be 2.

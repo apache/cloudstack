@@ -31,6 +31,10 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.exception.InternalErrorException;
+import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -43,9 +47,31 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class OVFHelper {
     private static final Logger s_logger = Logger.getLogger(OVFHelper.class);
 
+    /**
+     * Get disk virtual size given its values on fields: 'ovf:capacity' and 'ovf:capacityAllocationUnits'
+     * @param capacity capacity
+     * @param allocationUnits capacity allocation units
+     * @return disk virtual size
+     */
+    public static Long getDiskVirtualSize(Long capacity, String allocationUnits, String ovfFilePath) throws InternalErrorException {
+        if ((capacity != 0) && (allocationUnits != null)) {
+            long units = 1;
+            if (allocationUnits.equalsIgnoreCase("KB") || allocationUnits.equalsIgnoreCase("KiloBytes") || allocationUnits.equalsIgnoreCase("byte * 2^10")) {
+                units = ResourceType.bytesToKiB;
+            } else if (allocationUnits.equalsIgnoreCase("MB") || allocationUnits.equalsIgnoreCase("MegaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^20")) {
+                units = ResourceType.bytesToMiB;
+            } else if (allocationUnits.equalsIgnoreCase("GB") || allocationUnits.equalsIgnoreCase("GigaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^30")) {
+                units = ResourceType.bytesToGiB;
+            }
+            return capacity * units;
+        } else {
+            throw new InternalErrorException("Failed to read capacity and capacityAllocationUnits from the OVF file: " + ovfFilePath);
+        }
+    }
+
     public List<DatadiskTO> getOVFVolumeInfo(final String ovfFilePath) {
-        if (ovfFilePath == null || ovfFilePath.isEmpty()) {
-            return null;
+        if (StringUtils.isBlank(ovfFilePath)) {
+            return new ArrayList<DatadiskTO>();
         }
         ArrayList<OVFFile> vf = new ArrayList<OVFFile>();
         ArrayList<OVFDisk> vd = new ArrayList<OVFDisk>();
@@ -66,15 +92,15 @@ public class OVFHelper {
                     of._id = file.getAttribute("ovf:id");
                     s_logger.info("MDOVA getOVFVolumeInfo File Id = " + of._id);
                     String size = file.getAttribute("ovf:size");
-                    if (size != null && !size.isEmpty()) {
+                    if (StringUtils.isNotBlank(size)) {
                         of._size = Long.parseLong(size);
                     } else {
                         String dataDiskPath = ovfFile.getParent() + File.separator + of._href;
                         File this_file = new File(dataDiskPath);
                         of._size = this_file.length();
                     }
-                    of._iso = of._href.endsWith("iso");
-                    if (toggle && !of._iso) {
+                    of.isIso = of._href.endsWith("iso");
+                    if (toggle && !of.isIso) {
                         of._bootable = true;
                         toggle = !toggle;
                     }
@@ -85,11 +111,7 @@ public class OVFHelper {
                 Element disk = (Element)disks.item(i);
                 OVFDisk od = new OVFDisk();
                 String virtualSize = disk.getAttribute("ovf:capacity");
-                if (virtualSize == null || virtualSize.isEmpty()) {
-                    od._capacity = 0L;
-                } else {
-                    od._capacity = Long.parseLong(virtualSize);
-                }
+                od._capacity = NumberUtils.toLong(virtualSize, 0L);
                 String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
                 od._diskId = disk.getAttribute("ovf:diskId");
                 s_logger.info("MDOVA getOVFVolumeInfo Disk ovf:diskId  = " + od._diskId);
@@ -102,11 +124,11 @@ public class OVFHelper {
 
                     long units = 1;
                     if (allocationUnits.equalsIgnoreCase("KB") || allocationUnits.equalsIgnoreCase("KiloBytes") || allocationUnits.equalsIgnoreCase("byte * 2^10")) {
-                        units = 1024;
+                        units = ResourceType.bytesToKiB;
                     } else if (allocationUnits.equalsIgnoreCase("MB") || allocationUnits.equalsIgnoreCase("MegaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^20")) {
-                        units = 1024 * 1024;
+                        units = ResourceType.bytesToMiB;
                     } else if (allocationUnits.equalsIgnoreCase("GB") || allocationUnits.equalsIgnoreCase("GigaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^30")) {
-                        units = 1024 * 1024 * 1024;
+                        units = ResourceType.bytesToGiB;
                     }
                     od._capacity = od._capacity * units;
                     s_logger.info("MDOVA getOVFVolumeInfo Disk _capacity  = " + od._capacity);
@@ -122,12 +144,12 @@ public class OVFHelper {
 
         List<DatadiskTO> disksTO = new ArrayList<DatadiskTO>();
         for (OVFFile of : vf) {
-            if (of._id == null || of._id.isEmpty()){
+            if (StringUtils.isBlank(of._id)){
                 s_logger.error("The ovf file info is incomplete file info");
                 throw new CloudRuntimeException("The ovf file info has incomplete file info");
             }
             OVFDisk cdisk = getDisk(of._id, vd);
-            if (cdisk == null && !of._iso){
+            if (cdisk == null && !of.isIso){
                 s_logger.error("The ovf file info has incomplete disk info");
                 throw new CloudRuntimeException("The ovf file info has incomplete disk info");
             }
@@ -141,7 +163,7 @@ public class OVFHelper {
                 s_logger.error("One of the attached disk or iso does not exists " + dataDiskPath);
                 throw new CloudRuntimeException("One of the attached disk or iso as stated on OVF does not exists " + dataDiskPath);
             }
-            disksTO.add(new DatadiskTO(dataDiskPath, capacity, of._size, of._id, of._iso, of._bootable, controller, controllerSubType));
+            disksTO.add(new DatadiskTO(dataDiskPath, capacity, of._size, of._id, of.isIso, of._bootable, controller, controllerSubType));
         }
         //check if first disk is an iso move it to the end
         DatadiskTO fd = disksTO.get(0);
@@ -312,7 +334,7 @@ public class OVFHelper {
         public String _id;
         public Long _size;
         public boolean _bootable;
-        public boolean _iso;
+        public boolean isIso;
     }
 
     class OVFDisk {

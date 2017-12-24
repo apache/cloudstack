@@ -143,19 +143,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
             Element disk = (Element)ovfDoc.getElementsByTagName("Disk").item(0);
             virtualSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
             String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
-            if ((virtualSize != 0) && (allocationUnits != null)) {
-                long units = 1;
-                if (allocationUnits.equalsIgnoreCase("KB") || allocationUnits.equalsIgnoreCase("KiloBytes") || allocationUnits.equalsIgnoreCase("byte * 2^10")) {
-                    units = 1024;
-                } else if (allocationUnits.equalsIgnoreCase("MB") || allocationUnits.equalsIgnoreCase("MegaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^20")) {
-                    units = 1024 * 1024;
-                } else if (allocationUnits.equalsIgnoreCase("GB") || allocationUnits.equalsIgnoreCase("GigaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^30")) {
-                    units = 1024 * 1024 * 1024;
-                }
-                virtualSize = virtualSize * units;
-            } else {
-                throw new InternalErrorException("Failed to read capacity and capacityAllocationUnits from the OVF file: " + ovfFileName);
-            }
+            virtualSize = OVFHelper.getDiskVirtualSize(virtualSize, allocationUnits, ovfFileName);
             return virtualSize;
         } catch (Exception e) {
             String msg = "getTemplateVirtualSize: Unable to parse OVF XML document " + templatePath + " to get the virtual disk " + templateName + " size due to " + e;
@@ -186,19 +174,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
                 if (disk.getAttribute("ovf:fileRef").equals(fileId)) {
                     virtualSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
                     String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
-                    if ((virtualSize != 0) && (allocationUnits != null)) {
-                        long units = 1;
-                        if (allocationUnits.equalsIgnoreCase("KB") || allocationUnits.equalsIgnoreCase("KiloBytes") || allocationUnits.equalsIgnoreCase("byte * 2^10")) {
-                            units = 1024;
-                        } else if (allocationUnits.equalsIgnoreCase("MB") || allocationUnits.equalsIgnoreCase("MegaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^20")) {
-                            units = 1024 * 1024;
-                        } else if (allocationUnits.equalsIgnoreCase("GB") || allocationUnits.equalsIgnoreCase("GigaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^30")) {
-                            units = 1024 * 1024 * 1024;
-                        }
-                        virtualSize = virtualSize * units;
-                    } else {
-                        throw new InternalErrorException("Failed to read capacity and capacityAllocationUnits from the OVF file: " + ovfFilePath);
-                    }
+                    virtualSize = OVFHelper.getDiskVirtualSize(virtualSize, allocationUnits, ovfFilePath);
                     break;
                 }
             }

@@ -226,7 +226,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         DataObject obj = context.data;
         DataStore store = obj.getDataStore();
 
-        //VMTemplateVO vmTemplate = _templateDao.findById(obj.getId());
         VolumeDataStoreVO volStoreVO = _volumeStoreDao.findByStoreVolume(store.getId(), obj.getId());
         if (volStoreVO != null) {
             if (volStoreVO.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
@@ -320,7 +319,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
         }
         DataStore store = obj.getDataStore();
         GetDatadisksCommand cmd = new GetDatadisksCommand(obj.getTO());
-        //EndPoint ep = _defaultEpSelector.selectHypervisorHostByType(store.getScope(), HypervisorType.VMware);
         EndPoint ep = _defaultEpSelector.select(store);
         Answer answer = null;
         if (ep == null) {
@@ -350,7 +348,6 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             s_logger.debug("Create Datadisk template: " + dataDiskTemplate.getId());
         }
         CreateDatadiskTemplateCommand cmd = new CreateDatadiskTemplateCommand(dataDiskTemplate.getTO(), path, diskId, fileSize, bootable);
-        //EndPoint ep = _defaultEpSelector.selectHypervisorHostByType(dataDiskTemplate.getDataStore().getScope(), HypervisorType.VMware);
         EndPoint ep = _defaultEpSelector.select(dataDiskTemplate.getDataStore());
         if (ep == null) {
             errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
