@@ -281,9 +281,19 @@ class TestHostHA(cloudstackTestCase):
         ssh = SshClient(hostIp, 22, self.hostConfig["username"],
                     self.hostConfig["password"])
         ssh.scp(srcFile, "/root/test_host_ha.sh")
-        ssh.execute("nohup sh /root/test_host_ha.sh -t %s -d agent > /dev/null 2>&1 &\n" % timeout)
+        ssh.execute("nohup sh /root/test_host_ha.sh -t %s -d all > /dev/null 2>&1 &\n" % timeout)
         return
 
+    def stopAgentOnHost(self, hostIp, timeout):
+        srcFile = os.path.dirname(os.path.realpath(__file__)) + "/test_host_ha.sh"
+        if not(os.path.isfile(srcFile)):
+            self.logger.debug("File %s not found" % srcFile)
+            raise unittest.SkipTest("Script file %s required for HA not found" % srcFile)
+
+        ssh = SshClient(hostIp, 22, self.hostConfig["username"], self.hostConfig["password"])
+        ssh.scp(srcFile, "/root/test_host_ha.sh")
+        ssh.execute("nohup sh /root/test_host_ha.sh -t %s -d agent > /dev/null 2>&1 &\n" % timeout)
+        return
 
     @attr(
         tags=[
