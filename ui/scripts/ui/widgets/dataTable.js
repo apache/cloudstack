@@ -78,19 +78,12 @@
             return true;
         };
 
-        var splitTable = function() {
+        var reattachTable = function() {
             var $mainContainer = $('<div>')
                 .addClass('data-table')
                 .appendTo($table.parent())
-                .append(
-                    $table.detach()
+                .append($table.detach()
             );
-            $table = $mainContainer;
-            var $theadContainer = $('<div>').addClass('fixed-header').prependTo($table);
-            var $theadTable = $('<table>').appendTo($theadContainer).attr('nowrap', 'nowrap');
-            var $thead = $table.find('thead').detach().appendTo($theadTable);
-
-            return $thead;
         };
 
         /**
@@ -289,7 +282,7 @@
         var init = function() {
             var noSelect = options && options.noSelect == true ? true : false;
             if (!$table.closest('div.data-table').size() && !$table.hasClass('no-split')) {
-                splitTable();
+                reattachTable();
                 $table.find('tbody').closest('table').addClass('body');
             }
 

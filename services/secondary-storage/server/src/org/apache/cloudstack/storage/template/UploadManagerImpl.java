@@ -266,9 +266,12 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
         }
         // Create the directory structure so that its visible under apache server root
         String extractDir = "/var/www/html/userdata/";
-        Script command = new Script("mkdir", s_logger);
-        command.add("-p");
-        command.add(extractDir);
+        Script command = new Script("/bin/su", s_logger);
+        command.add("-s");
+        command.add("/bin/bash");
+        command.add("-c");
+        command.add("mkdir -p " + extractDir);
+        command.add("www-data");
         String result = command.execute();
         if (result != null) {
             String errorString = "Error in creating directory =" + result;
@@ -278,15 +281,6 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
 
         // Create a random file under the directory for security reasons.
         String uuid = cmd.getExtractLinkUUID();
-        command = new Script("touch", s_logger);
-        command.add(extractDir + uuid);
-        result = command.execute();
-        if (result != null) {
-            String errorString = "Error in creating file " + uuid + " ,error: " + result;
-            s_logger.warn(errorString);
-            return new CreateEntityDownloadURLAnswer(errorString, CreateEntityDownloadURLAnswer.RESULT_FAILURE);
-        }
-
         // Create a symbolic link from the actual directory to the template location. The entity would be directly visible under /var/www/html/userdata/cmd.getInstallPath();
         command = new Script("/bin/bash", s_logger);
         command.add("-c");
@@ -501,46 +495,20 @@ public class UploadManagerImpl extends ManagerBase implements UploadManager {
     }
 
     private boolean checkAndStartApache() {
-
         //Check whether the Apache server is running
-        Script command = new Script("/bin/bash", s_logger);
-        command.add("-c");
-        command.add("if [ -d /etc/apache2 ] ; then service apache2 status | grep pid; else service httpd status | grep pid; fi ");
+        Script command = new Script("/bin/systemctl", s_logger);
+        command.add("is-active");
+        command.add("apache2");
         String result = command.execute();
 
         //Apache Server is not running. Try to start it.
-        if (result != null) {
-
-            /*s_logger.warn("Apache server not running, trying to start it");
-            String port = Integer.toString(TemplateConstants.DEFAULT_TMPLT_COPY_PORT);
-            String intf = TemplateConstants.DEFAULT_TMPLT_COPY_INTF;
-
-            command = new Script("/bin/bash", s_logger);
-            command.add("-c");
-            command.add("iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j DROP;" +
-                        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j HTTP;" +
-                        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j DROP;" +
-                        "iptables -D INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j HTTP;" +
-                        "iptables -F HTTP;" +
-                        "iptables -X HTTP;" +
-                        "iptables -N HTTP;" +
-                        "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j DROP;" +
-                        "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j DROP;" +
-                        "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + port + " -j HTTP;" +
-                        "iptables -I INPUT -i " + intf + " -p tcp -m state --state NEW -m tcp --dport " + "443" + " -j HTTP;");
-
+        if (result != null && !result.equals("active")) {
+            command = new Script("/bin/systemctl", s_logger);
+            command.add("start");
+            command.add("apache2");
             result = command.execute();
             if (result != null) {
-                s_logger.warn("Error in opening up httpd port err=" + result );
-                return false;
-            }*/
-
-            command = new Script("/bin/bash", s_logger);
-            command.add("-c");
-            command.add("if [ -d /etc/apache2 ] ; then service apache2 start; else service httpd start; fi ");
-            result = command.execute();
-            if (result != null) {
-                s_logger.warn("Error in starting httpd service err=" + result);
+                s_logger.warn("Error in starting apache2 service err=" + result);
                 return false;
             }
         }

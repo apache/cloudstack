@@ -1285,7 +1285,7 @@ cloudStack.converters = {
             var disconnected = new Date();
             disconnected.setISO8601(UtcDate);
 
-            if (g_timezoneoffset != null) {
+            if (g_timezoneoffset != null && g_timezoneoffset != "null") {
                 localDate = disconnected.getTimePlusTimezoneOffset(g_timezoneoffset);
             } else {
                 var browserDate = new Date();

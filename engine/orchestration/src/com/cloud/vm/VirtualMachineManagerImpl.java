@@ -839,6 +839,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    private void setupAgentSecurity(final Host vmHost, final Map<String, String> sshAccessDetails, final VirtualMachine vm) throws AgentUnavailableException, OperationTimedoutException {
+        final String csr = caManager.generateKeyStoreAndCsr(vmHost, sshAccessDetails);
+        if (!Strings.isNullOrEmpty(csr)) {
+            final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
+            ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
+            final Certificate certificate = caManager.issueCertificate(csr, Arrays.asList(vm.getHostName(), vm.getInstanceName()),
+                    new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
+            final boolean result = caManager.deployCertificate(vmHost, certificate, false, sshAccessDetails);
+            if (!result) {
+                s_logger.error("Failed to setup certificate for system vm: " + vm.getInstanceName());
+            }
+        } else {
+            s_logger.error("Failed to setup keystore and generate CSR for system vm: " + vm.getInstanceName());
+        }
+    }
 
     @Override
     public void orchestrateStart(final String vmUuid, final Map<VirtualMachineProfile.Param, Object> params, final DeploymentPlan planToDeploy, final DeploymentPlanner planner)
@@ -1088,18 +1103,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             if (vmHost != null && (VirtualMachine.Type.ConsoleProxy.equals(vm.getType()) ||
                                     VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) && caManager.canProvisionCertificates()) {
                                 final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(vm);
-                                final String csr = caManager.generateKeyStoreAndCsr(vmHost, sshAccessDetails);
-                                if (!Strings.isNullOrEmpty(csr)) {
-                                    final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
-                                    ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
-                                    final Certificate certificate = caManager.issueCertificate(csr, Arrays.asList(vm.getHostName(), vm.getInstanceName()), new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
-                                    final boolean result = caManager.deployCertificate(vmHost, certificate, false, sshAccessDetails);
-                                    if (!result) {
-                                        s_logger.error("Failed to setup certificate for system vm: " + vm.getInstanceName());
+                                for (int retries = 3; retries > 0; retries--) {
+                                    try {
+                                        setupAgentSecurity(vmHost, sshAccessDetails, vm);
+                                        return;
+                                    } catch (final Exception e) {
+                                        s_logger.error("Retrying after catching exception while trying to secure agent for systemvm id=" + vm.getId(), e);
                                     }
-                                } else {
-                                    s_logger.error("Failed to setup keystore and generate CSR for system vm: " + vm.getInstanceName());
                                 }
+                                throw new CloudRuntimeException("Failed to setup and secure agent for systemvm id=" + vm.getId());
                             }
                             return;
                         } else {
@@ -4776,8 +4788,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
             s_logger.info("Unable to find vm " + work.getVmId());
+            throw new CloudRuntimeException("Unable to find VM id=" + work.getVmId());
         }
-        assert vm != null;
 
         orchestrateStop(vm.getUuid(), work.isCleanup());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);

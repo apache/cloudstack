@@ -29,7 +29,7 @@ from marvin.lib.base import (ServiceOffering,
                              NetworkOffering,
                              Network)
 from marvin.lib.common import (get_zone,
-                               get_template,
+                               get_test_template,
                                get_domain,
                                list_routers,
                                list_nat_rules,
@@ -51,12 +51,15 @@ class TestRouterDns(cloudstackTestCase):
 
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+
         cls.services['mode'] = cls.zone.networktype
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         cls.logger.debug("Creating Admin Account for domain %s on zone %s" % (cls.domain.id, cls.zone.id))
@@ -256,7 +259,7 @@ class TestRouterDns(cloudstackTestCase):
         result = None
         try:
             self.logger.debug("SSH into guest VM with IP: %s" % nat_rule1.ipaddress)
-            ssh = self.vm.get_ssh_client(ipaddress=nat_rule1.ipaddress, port=self.services['natrule1']["publicport"], retries=8)
+            ssh = self.vm.get_ssh_client(ipaddress=nat_rule1.ipaddress, port=self.services['natrule1']["publicport"], retries=15)
             result = str(ssh.execute("nslookup google.com"))
         except Exception as e:
             self.fail("Failed to SSH into VM - %s due to exception: %s" % (nat_rule1.ipaddress, e))
@@ -264,5 +267,5 @@ class TestRouterDns(cloudstackTestCase):
         if not result:
             self.fail("Did not to receive any response from the guest VM, failing.")
 
-        self.assertTrue("google.com" in result and "#53" in result,
+        self.assertTrue("google.com" in result and "10.1.1.1" in result,
                         "VR DNS should serve requests from guest network, unable to get valid nslookup result from guest VM.")

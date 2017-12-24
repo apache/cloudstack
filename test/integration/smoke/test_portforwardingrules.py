@@ -38,7 +38,7 @@ from marvin.lib.base import (PublicIPAddress,
                              User)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template)
+                               get_test_template)
 from marvin.lib.utils import validateList, cleanup_resources
 from marvin.codes import PASS
 from nose.plugins.attrib import attr
@@ -58,10 +58,10 @@ class TestPortForwardingRules(cloudstackTestCase):
             cls.zone = get_zone(
                 cls.api_client,
                 cls.testClient.getZoneForTests())
-            cls.template = get_template(
+            cls.template = get_test_template(
                 cls.api_client,
                 cls.zone.id,
-                cls.services["ostype"]
+                cls.hypervisor
             )
             if cls.zone.localstorageenabled:
                 cls.storagetype = 'local'
