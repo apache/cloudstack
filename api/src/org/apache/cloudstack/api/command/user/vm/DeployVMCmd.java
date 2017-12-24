@@ -454,28 +454,29 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         if (diskOfferingId != null && dataDiskTemplateToDiskOfferingList != null) {
             throw new InvalidParameterValueException("diskofferingid paramter can't be specified along with datadisktemplatetodiskofferinglist parameter");
         }
+        if (MapUtils.isEmpty(dataDiskTemplateToDiskOfferingList)) {
+            return new HashMap<Long, DiskOffering>();
+        }
+
         HashMap<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap = new HashMap<Long, DiskOffering>();
-        if (MapUtils.isNotEmpty(dataDiskTemplateToDiskOfferingList)) {
-            Collection dataDiskTemplatesCollection = dataDiskTemplateToDiskOfferingList.values();
-            for (Object objDataDiskTemplates : dataDiskTemplateToDiskOfferingList.values()) {
-                HashMap<String, String> dataDiskTemplates = (HashMap<String, String>) objDataDiskTemplates;
-                Long dataDiskTemplateId;
-                DiskOffering dataDiskOffering = null;
-                VirtualMachineTemplate dataDiskTemplate= _entityMgr.findByUuid(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
-                if (dataDiskTemplate == null) {
-                    dataDiskTemplate = _entityMgr.findById(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
-                    if (dataDiskTemplate == null)
-                        throw new InvalidParameterValueException("Unable to translate and find entity with datadisktemplateid " + dataDiskTemplates.get("datadisktemplateid"));
-                }
-                dataDiskTemplateId = dataDiskTemplate.getId();
-                dataDiskOffering = _entityMgr.findByUuid(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
-                if (dataDiskOffering == null) {
-                    dataDiskOffering = _entityMgr.findById(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
-                    if (dataDiskOffering == null)
-                        throw new InvalidParameterValueException("Unable to translate and find entity with diskofferingId " + dataDiskTemplates.get("diskofferingid"));
-                }
-                dataDiskTemplateToDiskOfferingMap.put(dataDiskTemplateId, dataDiskOffering);
+        for (Object objDataDiskTemplates : dataDiskTemplateToDiskOfferingList.values()) {
+            HashMap<String, String> dataDiskTemplates = (HashMap<String, String>) objDataDiskTemplates;
+            Long dataDiskTemplateId;
+            DiskOffering dataDiskOffering = null;
+            VirtualMachineTemplate dataDiskTemplate= _entityMgr.findByUuid(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
+            if (dataDiskTemplate == null) {
+                dataDiskTemplate = _entityMgr.findById(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
+                if (dataDiskTemplate == null)
+                    throw new InvalidParameterValueException("Unable to translate and find entity with datadisktemplateid " + dataDiskTemplates.get("datadisktemplateid"));
             }
+            dataDiskTemplateId = dataDiskTemplate.getId();
+            dataDiskOffering = _entityMgr.findByUuid(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
+            if (dataDiskOffering == null) {
+                dataDiskOffering = _entityMgr.findById(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
+                if (dataDiskOffering == null)
+                    throw new InvalidParameterValueException("Unable to translate and find entity with diskofferingId " + dataDiskTemplates.get("diskofferingid"));
+            }
+            dataDiskTemplateToDiskOfferingMap.put(dataDiskTemplateId, dataDiskOffering);
         }
         return dataDiskTemplateToDiskOfferingMap;
     }
