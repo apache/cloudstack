@@ -59,6 +59,7 @@
     </bean>
 
     <bean id="clusteredAgentManagerImpl" class="com.cloud.agent.manager.ClusteredAgentManagerImpl" />
+    <bean id="managementServiceConfigurationImpl" class="com.cloud.configuration.ManagementServiceConfigurationImpl" />
 
     <bean id="cloudOrchestrator"
         class="org.apache.cloudstack.engine.orchestration.CloudOrchestrator" />
