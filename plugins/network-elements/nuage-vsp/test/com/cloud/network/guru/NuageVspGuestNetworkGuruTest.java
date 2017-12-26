@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 
+import net.nuage.vsp.acs.client.api.model.NetworkRelatedVsdIds;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -37,6 +38,8 @@ import com.cloud.NuageTest;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
+import com.cloud.agent.api.manager.ImplementNetworkVspAnswer;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -80,9 +83,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
-import static com.cloud.network.manager.NuageVspManager.NuageVspIsolatedNetworkDomainTemplateName;
-import static com.cloud.network.manager.NuageVspManager.NuageVspSharedNetworkDomainTemplateName;
-import static com.cloud.network.manager.NuageVspManager.NuageVspVpcDomainTemplateName;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -130,10 +130,6 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
 
         when(_dataCenterDao.findById((Long)any())).thenReturn(dc);
 
-        when(_configurationDao.getValue(NuageVspIsolatedNetworkDomainTemplateName.key())).thenReturn("IsolatedDomainTemplate");
-        when(_configurationDao.getValue(NuageVspVpcDomainTemplateName.key())).thenReturn("VpcDomainTemplate");
-        when(_configurationDao.getValue(NuageVspSharedNetworkDomainTemplateName.key())).thenReturn("SharedDomainTemplate");
-
         when(_physicalNetworkDao.findById(any(Long.class))).thenReturn(physnet);
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList("VSP"));
         when(physnet.getId()).thenReturn(NETWORK_ID);
@@ -142,6 +138,7 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
         when(host.getId()).thenReturn(NETWORK_ID);
         when(_agentManager.easySend(eq(NETWORK_ID), any(Command.class))).thenReturn(new Answer(null));
+        when(_agentManager.easySend(eq(NETWORK_ID), any(ImplementNetworkVspCommand.class))).thenReturn(new ImplementNetworkVspAnswer(null, new NetworkRelatedVsdIds.Builder().build()));
         when(_nuageVspManager.getNuageVspHost(NETWORK_ID)).thenReturn(host);
 
         final NuageVspDeviceVO device = mock(NuageVspDeviceVO.class);

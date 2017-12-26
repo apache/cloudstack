@@ -25,6 +25,8 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
+import com.cloud.agent.api.ReplugNicAnswer;
+import com.cloud.agent.api.ReplugNicCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
@@ -69,6 +71,8 @@ public interface MockNetworkManager extends Manager {
     PlugNicAnswer plugNic(PlugNicCommand cmd);
 
     UnPlugNicAnswer unplugNic(UnPlugNicCommand cmd);
+
+    ReplugNicAnswer replugNic(ReplugNicCommand cmd);
 
     IpAssocAnswer ipAssoc(IpAssocVpcCommand cmd);
 

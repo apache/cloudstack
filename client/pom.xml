@@ -13,11 +13,11 @@
   <modelVersion>4.0.0</modelVersion>
   <artifactId>cloud-client-ui</artifactId>
   <name>Apache CloudStack Client UI</name>
-  <packaging>war</packaging>
+  <packaging>jar</packaging>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.10.0.0-SNAPSHOT</version>
+    <version>4.11.0.0-SNAPSHOT</version>
   </parent>
 
   <repositories>
@@ -28,6 +28,35 @@
   </repositories>
 
   <dependencies>
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-server</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-servlets</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-webapp</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-jmx</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-util</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <scope>runtime</scope>
+    </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-spring-module</artifactId>
@@ -61,6 +90,11 @@
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-acl-dynamic-role-based</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-ca-rootca</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -134,7 +168,7 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-  <groupId>org.apache.cloudstack</groupId>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-network-ovs</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -261,6 +295,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-outofbandmanagement-driver-nested-cloudstack</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-mom-rabbitmq</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -272,6 +311,11 @@
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-mom-kafka</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-ca</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -399,6 +443,16 @@
       <artifactId>cloud-plugin-database-quota</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-integrations-cloudian-connector</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-plugin-integrations-prometheus-exporter</artifactId>
+      <version>${project.version}</version>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -417,34 +471,17 @@
         </executions>
       </plugin>
       <plugin>
-        <groupId>com.googlecode.todomap</groupId>
-        <artifactId>maven-jettygzip-plugin</artifactId>
-        <version>0.0.4</version>
-        <configuration>
-          <webappDirectory>${project.build.directory}/generated-webapp</webappDirectory>
-          <outputDirectory>${project.build.directory}/generated-webapp</outputDirectory>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>prepare-package</phase>
-            <goals>
-              <goal>process</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-war-plugin</artifactId>
-        <version>2.5</version>
+        <artifactId>maven-jar-plugin</artifactId>
         <configuration>
-          <webXml>./target/generated-webapp/WEB-INF/web.xml</webXml>
-          <warSourceDirectory>./target/generated-webapp</warSourceDirectory>
           <archive>
             <manifest>
-              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+              <mainClass>org.apache.cloudstack.ServerDaemon</mainClass>
             </manifest>
             <manifestEntries>
+              <X-Git-Branch>${git.branch}</X-Git-Branch>
+              <X-Git-Tag>${git.tag}</X-Git-Tag>
+              <X-Git-Revision>${git.revision}</X-Git-Revision>
               <Implementation-Revision>${git.revision}</Implementation-Revision>
               <Implementation-Branch>${git.branch}</Implementation-Branch>
             </manifestEntries>
@@ -454,13 +491,23 @@
       <plugin>
         <groupId>org.eclipse.jetty</groupId>
         <artifactId>jetty-maven-plugin</artifactId>
-        <version>${cs.jetty.version}</version>
-         <dependencies>
+        <version>${cs.jetty-maven-plugin.version}</version>
+        <dependencies>
           <!-- specify the dependent jdbc driver here -->
           <dependency>
             <groupId>mysql</groupId>
             <artifactId>mysql-connector-java</artifactId>
             <version>${cs.mysql.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>${cs.bcprov.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk15on</artifactId>
+            <version>${cs.bcprov.version}</version>
           </dependency>
         </dependencies>
         <configuration>
@@ -473,28 +520,19 @@
               <maxIdleTime>60000</maxIdleTime>
             </connector>
           </connectors>
-          <webXml>${project.build.directory}/generated-webapp/WEB-INF/web.xml</webXml>
-          <webAppSourceDirectory>${project.build.directory}/generated-webapp</webAppSourceDirectory>
+          <webXml>${project.build.directory}/classes/META-INF/webapp/WEB-INF/web.xml</webXml>
+          <webAppSourceDirectory>${project.build.directory}/classes/META-INF/webapp/</webAppSourceDirectory>
           <webAppConfig>
             <contextPath>/client</contextPath>
-            <extraClasspath>${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
+            <extraClasspath>${project.build.directory}/conf/;${project.build.directory}/common;${project.build.directory}/utilities/scripts/db/;${project.build.directory}/utilities/scripts/db/db/</extraClasspath>
+            <webInfIncludeJarPattern>.*/cloud.*jar$|.*/classes/.*</webInfIncludeJarPattern>
           </webAppConfig>
-          
           <systemProperties>
               <systemProperty>
                  <name>log4j.configuration</name>
                  <value>log4j-cloud.xml</value>
               </systemProperty>
           </systemProperties>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.tomcat.maven</groupId>
-        <artifactId>tomcat7-maven-plugin</artifactId>
-        <configuration>
-          <path>/client</path>
-          <tomcatWebXml>${basedir}/WEB-INF/web.xml</tomcatWebXml>
-          <warSourceDirectory>${project.build.directory}/generated-webapp/</warSourceDirectory>
         </configuration>
       </plugin>
       <plugin>
@@ -508,35 +546,19 @@
             </goals>
             <configuration>
               <target>
-                <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
+                <copy todir="${project.build.directory}/common/scripts">
                   <fileset dir="${basedir}/../scripts"/>
                 </copy>
                 <!-- CLOUDSTACK-1304 -->
                 <chmod perm="755"
-                  file="${basedir}/target/generated-webapp/WEB-INF/classes/scripts/**" type="both"/>
-                <copy todir="${basedir}/target/generated-webapp/WEB-INF/">
+                  file="${project.build.directory}/common/scripts/**" type="both"/>
+                <copy todir="${project.build.directory}/classes/META-INF/webapp/WEB-INF/">
                   <fileset dir="${basedir}/WEB-INF/">
                     <include name="web.xml"/>
                   </fileset>
                 </copy>
-                <copy todir="${basedir}/target/generated-webapp">
+                <copy todir="${project.build.directory}/classes/META-INF/webapp">
                   <fileset dir="${basedir}/../ui"/>
-                </copy>
-                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
-                  <fileset dir="${basedir}/tomcatconf">
-                    <include name="*.in"/>
-                  </fileset>
-                  <globmapper from="*.in" to="*"/>
-                  <filterchain>
-                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${cs.replace.properties}"/>
-                    </filterreader>
-                  </filterchain>
-                </copy>
-                <copy overwrite="true" todir="${basedir}/target/generated-webapp/WEB-INF/classes">
-                  <fileset dir="${basedir}/tomcatconf">
-                    <exclude name="*.in"/>
-                  </fileset>
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/utilities/bin">
                   <fileset dir="${basedir}/../setup/bindir">
@@ -562,7 +584,7 @@
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/utilities/scripts/db">
                   <fileset dir="${basedir}/../setup/db">
-                    <include name="**/*"/>
+                    <include name="*"/>
                   </fileset>
                   <filterchain>
                     <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
@@ -571,7 +593,7 @@
                   </filterchain>
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/conf">
-                  <fileset dir="${basedir}/tomcatconf">
+                  <fileset dir="${basedir}/conf">
                     <include name="*.in"/>
                   </fileset>
                   <globmapper from="*.in" to="*"/>
@@ -582,7 +604,7 @@
                   </filterchain>
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/conf">
-                  <fileset dir="${basedir}/tomcatconf">
+                  <fileset dir="${basedir}/conf">
                     <exclude name="*.in"/>
                   </fileset>
                 </copy>
@@ -599,7 +621,7 @@
               <target if="${noredist}">
                 <echo>test</echo>
                 <replaceregexp
-                  file="${basedir}/target/generated-webapp/WEB-INF/classes/environment.properties"
+                  file="${basedir}/target/conf/environment.properties"
                   match="cloud-stack-components-specification=.*"
                   replace="cloud-stack-components-specification=components-nonoss.xml" byline="true"
                 />
@@ -614,11 +636,11 @@
             </goals>
             <configuration>
               <target if="${noredist}">
-                <replaceregexp file="${basedir}/target/generated-webapp/WEB-INF/web.xml"
+                <replaceregexp file="${basedir}/target/classes/META-INF/webapp/WEB-INF/web.xml"
                   match="classpath:componentContext.xml"
                   replace="classpath:nonossComponentContext.xml" byline="true"/>
                 <copy overwrite="true"
-                  todir="${basedir}/target/generated-webapp/WEB-INF/classes/scripts">
+                  todir="${basedir}/target/common/scripts">
                   <fileset dir="${basedir}/../plugins/network-elements/cisco-vnmc/scripts">
                     <include name="**/*"/>
                   </fileset>
@@ -649,11 +671,16 @@
                   <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
                 </artifactItem>
                 <artifactItem>
-                  <groupId>org.jasypt</groupId>
-                  <artifactId>jasypt</artifactId>
-                  <version>1.9.2</version>
+                  <groupId>org.bouncycastle</groupId>
+                  <artifactId>bcprov-jdk15on</artifactId>
                   <overWrite>false</overWrite>
-                  <outputDirectory>${project.build.directory}/pythonlibs</outputDirectory>
+                  <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                </artifactItem>
+                <artifactItem>
+                  <groupId>org.bouncycastle</groupId>
+                  <artifactId>bcpkix-jdk15on</artifactId>
+                  <overWrite>false</overWrite>
+                  <outputDirectory>${project.build.directory}/lib</outputDirectory>
                 </artifactItem>
               </artifactItems>
             </configuration>
@@ -670,6 +697,70 @@
               <inherited>false</inherited>
             </execution>
           </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.0.0</version>
+        <executions>
+          <execution>
+            <id>rebuild-war</id>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <artifactSet>
+                <includes>
+                  <include>*:*</include>
+                </includes>
+                <excludes>
+                  <exclude>junit:junit</exclude>
+                  <exclude>com.tngtech.java:junit-dataprovider</exclude>
+                  <exclude>org.mockito:mockito-all</exclude>
+                  <exclude>org.hamcrest:hamcrest-all</exclude>
+                  <exclude>org.powermock:powermock-module-junit4</exclude>
+                  <exclude>org.powermock:powermock-api-mockito</exclude>
+                  <exclude>org.springframework:spring-test</exclude>
+                  <exclude>org.apache.tomcat.embed:tomcat-embed-core</exclude>
+                  <exclude>org.apache.geronimo.specs:geronimo-servlet_3.0_spec</exclude>
+                  <exclude>org.apache.geronimo.specs:geronimo-javamail_1.4_spec</exclude>
+                  <exclude>org.bouncycastle:bcprov-jdk15on</exclude>
+                  <exclude>org.bouncycastle:bcpkix-jdk15on</exclude>
+                  <exclude>mysql:mysql-connector-java</exclude>
+                </excludes>
+              </artifactSet>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>org.apache.cloudstack.ServerDaemon</mainClass>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/spring.handlers</resource>
+                </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/spring.schemas</resource>
+                </transformer>
+              </transformers>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/VERSION.txt</exclude>
+                    <exclude>META-INF/LICENSE.txt</exclude>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                    <exclude>META-INF/MANIFEST.MF</exclude>
+                    <exclude>META-INF/maven/**</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
@@ -705,9 +796,8 @@
                 </goals>
                 <configuration>
                   <target>
-                    <copy todir="${basedir}/target/generated-webapp/WEB-INF/classes/vms">
+                    <copy todir="${basedir}/target/common/vms">
                       <fileset dir="${basedir}/../systemvm/dist">
-                        <include name="systemvm.zip"/>
                         <include name="systemvm.iso"/>
                       </fileset>
                     </copy>
@@ -783,7 +873,6 @@
                       <get src="http://downloads.sourceforge.net/sevenzip/7z920-x64.msi" dest="target" verbose="false" usetimestamp="true"/>
                       <get src="https://www.python.org/ftp/python/2.7.6/python-2.7.6.amd64.msi" dest="target" verbose="false" usetimestamp="true"/>
                       <get src="http://dev.mysql.com/get/Downloads/MySQL-5.1/mysql-5.1.73-winx64.msi" dest="target" verbose="false" usetimestamp="true"/>
-                      <get src="http://mirror.sdunix.com/apache/tomcat/tomcat-6/v6.0.39/bin/apache-tomcat-6.0.39.exe" dest="target" verbose="false" usetimestamp="true"/>
                       <get src="http://downloads.sourceforge.net/project/cdrtoolswin/1.0/Binaries/CDR-Tools.exe?r=&amp;ts=1398764640&amp;use_mirror=kaz" dest="target" verbose="false" usetimestamp="true"/>
                       <get src="https://bootstrap.pypa.io/ez_setup.py" dest="target" verbose="false" usetimestamp="true"/>
                     </target>
@@ -998,21 +1087,6 @@
         <dependency>
           <groupId>org.apache.cloudstack</groupId>
           <artifactId>cloud-plugin-network-f5</artifactId>
-          <version>${project.version}</version>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <id>midonet</id>
-      <activation>
-        <property>
-          <name>midonet</name>
-        </property>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.cloudstack</groupId>
-          <artifactId>cloud-plugin-network-midonet</artifactId>
           <version>${project.version}</version>
         </dependency>
       </dependencies>

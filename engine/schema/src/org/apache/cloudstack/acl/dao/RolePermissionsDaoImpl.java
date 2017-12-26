@@ -29,11 +29,11 @@ import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.acl.RolePermission.Permission;
 import org.apache.cloudstack.acl.RolePermissionVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -41,7 +41,6 @@ import java.util.List;
 import java.util.Set;
 
 @Component
-@Local(value = {RolePermissionsDao.class})
 public class RolePermissionsDaoImpl extends GenericDaoBase<RolePermissionVO, Long> implements RolePermissionsDao {
     protected static final Logger LOGGER = Logger.getLogger(RolePermissionsDaoImpl.class);
 
@@ -147,6 +146,19 @@ public class RolePermissionsDaoImpl extends GenericDaoBase<RolePermissionVO, Lon
                 return true;
             }
         });
+    }
+
+    @Override
+    public boolean update(Role role, RolePermission rolePermission, Permission permission) {
+        if (role == null || rolePermission == null || permission == null) {
+            return false;
+        }
+        RolePermissionVO rolePermissionVO = findById(rolePermission.getId());
+        if (rolePermissionVO == null || role.getId() != rolePermission.getRoleId() || rolePermissionVO.getId() != rolePermission.getId()) {
+            return false;
+        }
+        rolePermissionVO.setPermission(permission);
+        return update(rolePermission.getId(), rolePermissionVO);
     }
 
     @Override

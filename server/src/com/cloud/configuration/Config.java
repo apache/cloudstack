@@ -16,6 +16,15 @@
 // under the License.
 package com.cloud.configuration;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringTokenizer;
+
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
@@ -29,14 +38,6 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.ConfigKey;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.StringTokenizer;
 
 public enum Config {
 
@@ -181,14 +182,6 @@ public enum Config {
             "storage.pool.max.waitseconds",
             "3600",
             "Timeout (in seconds) to synchronize storage pool operations.",
-            null),
-    StorageTemplateCleanupEnabled(
-            "Storage",
-            ManagementServer.class,
-            Boolean.class,
-            "storage.template.cleanup.enabled",
-            "true",
-            "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled",
             null),
     PrimaryStorageDownloadWait(
             "Storage",
@@ -489,10 +482,7 @@ public enum Config {
             null),
 
     // Snapshots
-    SnapshotHourlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.hourly", "8", "Maximum hourly snapshots for a volume", null),
-    SnapshotDailyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.daily", "8", "Maximum daily snapshots for a volume", null),
-    SnapshotWeeklyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.weekly", "8", "Maximum weekly snapshots for a volume", null),
-    SnapshotMonthlyMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.max.monthly", "8", "Maximum monthly snapshots for a volume", null),
+
     SnapshotPollInterval(
             "Snapshots",
             SnapshotManager.class,
@@ -502,14 +492,6 @@ public enum Config {
             "The time interval in seconds when the management server polls for snapshots to be scheduled.",
             null),
     SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
-    BackupSnapshotAfterTakingSnapshot(
-            "Snapshots",
-            SnapshotManager.class,
-            Boolean.class,
-            "snapshot.backup.rightafter",
-            "true",
-            "backup snapshot right after snapshot is taken",
-            null),
     KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
 
     // Advanced
@@ -814,7 +796,14 @@ public enum Config {
             "600",
             "Time Interval to fetch the LB health check states (in sec)",
             null),
-
+    NCCCmdTimeOut(
+            "Advanced",
+            ManagementServer.class,
+            Long.class,
+            "ncc.command.timeout",
+            "600000", // 10 minutes
+            "Command Timeout Interval (in millisec)",
+            null),
     DirectAttachNetworkEnabled(
             "Advanced",
             ManagementServer.class,
@@ -865,6 +854,7 @@ public enum Config {
             "The interval (in milliseconds) when vm stats are retrieved from agents.",
             null),
     VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
+    VolumeStatsInterval("Advanced", ManagementServer.class, Integer.class, "volume.stats.interval", "60000", "Interval (in seconds) to report volume statistics.", null),
     VmTransitionWaitInterval(
             "Advanced",
             ManagementServer.class,
@@ -1214,24 +1204,6 @@ public enum Config {
     VmwareHungWorkerTimeout("Advanced", ManagementServer.class, Long.class, "vmware.hung.wokervm.timeout", "7200", "Worker VM timeout in seconds", null),
     VmwareVcenterSessionTimeout("Advanced", ManagementServer.class, Long.class, "vmware.vcenter.session.timeout", "1200", "VMware client timeout in seconds", null),
 
-    // Midonet
-    MidoNetAPIServerAddress(
-            "Network",
-            ManagementServer.class,
-            String.class,
-            "midonet.apiserver.address",
-            "http://localhost:8081",
-            "Specify the address at which the Midonet API server can be contacted (if using Midonet)",
-            null),
-    MidoNetProviderRouterId(
-            "Network",
-            ManagementServer.class,
-            String.class,
-            "midonet.providerrouter.id",
-            "d7c5e6a3-e2f4-426b-b728-b7ce6a0448e5",
-            "Specifies the UUID of the Midonet provider router (if using Midonet)",
-            null),
-
     // KVM
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
     KvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
@@ -1455,15 +1427,6 @@ public enum Config {
             "The default maximum secondary storage space (in GiB) that can be used for an account",
             null),
 
-    ResourceCountCheckInterval(
-            "Advanced",
-            ManagementServer.class,
-            Long.class,
-            "resourcecount.check.interval",
-            "0",
-            "Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task",
-            "Seconds"),
-
     //disabling lb as cluster sync does not work with distributed cluster
     SubDomainNetworkAccess(
             "Advanced",
@@ -1498,24 +1461,6 @@ public enum Config {
             "agent.load.threshold",
             "0.7",
             "Percentage (as a value between 0 and 1) of connected agents after which agent load balancing will start happening",
-            null),
-
-    JSONDefaultContentType(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "json.content.type",
-            "application/json; charset=UTF-8",
-            "Http response content type for JSON",
-            null),
-
-    EnableSecureSessionCookie(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "enable.secure.session.cookie",
-            "false",
-            "Session cookie's secure flag is enabled if true. Use this only when using HTTPS",
             null),
 
     DefaultMaxDomainUserVms("Domain Defaults", ManagementServer.class, Long.class, "max.domain.user.vms", "40", "The default maximum number of user VMs that can be deployed for a domain", null),
@@ -1951,7 +1896,7 @@ public enum Config {
             NetworkOrchestrationService.class,
             Integer.class,
             "router.aggregation.command.each.timeout",
-            "3",
+            "600",
             "timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ",
             null),
 

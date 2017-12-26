@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
+import com.google.common.base.Strings;
 
 @Entity
 @Table(name = "user")
@@ -257,6 +258,9 @@ public class UserAccountVO implements UserAccount, InternalIdentity {
 
     @Override
     public String getTimezone() {
+        if (Strings.isNullOrEmpty(timezone)) {
+            return "UTC";
+        }
         return timezone;
     }
 

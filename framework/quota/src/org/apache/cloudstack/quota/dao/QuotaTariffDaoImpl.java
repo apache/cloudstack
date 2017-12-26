@@ -16,6 +16,15 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.cloudstack.quota.constant.QuotaTypes;
+import org.apache.cloudstack.quota.vo.QuotaTariffVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -24,19 +33,8 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
-import org.apache.cloudstack.quota.constant.QuotaTypes;
-import org.apache.cloudstack.quota.vo.QuotaTariffVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
 
 @Component
-@Local(value = {QuotaTariffDao.class})
 public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> implements QuotaTariffDao {
     private static final Logger s_logger = Logger.getLogger(QuotaTariffDaoImpl.class.getName());
 
@@ -55,6 +53,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         listAllIncludedUsageType.done();
     }
 
+    @Override
     public QuotaTariffVO findTariffPlanByUsageType(final int quotaType, final Date effectiveDate) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaTariffVO>() {
             @Override
@@ -77,6 +76,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         });
     }
 
+    @Override
     public List<QuotaTariffVO> listAllTariffPlans() {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaTariffVO>>() {
             @Override
@@ -86,6 +86,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         });
     }
 
+    @Override
     public List<QuotaTariffVO> listAllTariffPlans(final Date effectiveDate) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaTariffVO>>() {
             @Override
@@ -110,6 +111,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         });
     }
 
+    @Override
     public Boolean updateQuotaTariff(final QuotaTariffVO plan) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<Boolean>() {
             @Override
@@ -119,6 +121,7 @@ public class QuotaTariffDaoImpl extends GenericDaoBase<QuotaTariffVO, Long> impl
         });
     }
 
+    @Override
     public QuotaTariffVO addQuotaTariff(final QuotaTariffVO plan) {
         if (plan.getIdObj() != null) {
             throw new IllegalStateException("The QuotaTariffVO being added should not have an Id set ");

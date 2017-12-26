@@ -25,6 +25,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -350,4 +351,20 @@ public class VolumeDataStoreDaoImpl extends GenericDaoBase<VolumeDataStoreVO, Lo
         return listIncludingRemovedBy(sc);
     }
 
+    @Override
+    public boolean updateVolumeId(long srcVolId, long destVolId) {
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        try {
+            VolumeDataStoreVO volumeDataStoreVO = findByVolume(srcVolId);
+            if(volumeDataStoreVO != null) {
+                txn.start();
+                volumeDataStoreVO.setVolumeId(destVolId);
+                update(volumeDataStoreVO.getId(), volumeDataStoreVO);
+                txn.commit();
+            }
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Unable to update the volume id for volume store ref", e);
+        }
+        return true;
+    }
 }

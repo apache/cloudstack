@@ -29,6 +29,7 @@ from marvin.cloudstackAPI import (listInternalLoadBalancerVMs,
                                   startInternalLoadBalancerVM)
 # Import System Modules
 from nose.plugins.attrib import attr
+from unittest import skip
 import copy
 import time
 
@@ -1428,6 +1429,7 @@ class TestNuageInternalLb(nuageTestCase):
             http_rule["publicport"])
 
         # Verifying Internal LB (wget) traffic tests
+        # Bug CLOUDSTACK-9749
         self.verify_lb_wget_file(
             wget_file_1, [internal_vm_1, internal_vm_1_1, internal_vm_1_2])
         self.verify_lb_wget_file(
@@ -1908,9 +1910,17 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
+        tries = 0
+        while tries < 120:
+            wget_file = self.wget_from_vm_cmd(
+                ssh_client, int_lb_rule_1.sourceipaddress,
+                self.test_data["http_rule"]["publicport"])
+            if wget_file != "":
+                break
+            self.debug("Waiting for the InternalLbVm in the Internal tier to "
+                       "be fully resolved for (wget) traffic test...")
+            time.sleep(5)
+            tries += 1
 
         # Verifying Internal LB (wget) traffic test
         self.verify_lb_wget_file(
@@ -1954,9 +1964,17 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
+        tries = 0
+        while tries < 120:
+            wget_file = self.wget_from_vm_cmd(
+                ssh_client, int_lb_rule_1.sourceipaddress,
+                self.test_data["http_rule"]["publicport"])
+            if wget_file != "":
+                break
+            self.debug("Waiting for the InternalLbVm in the Internal tier to "
+                       "be fully resolved for (wget) traffic test...")
+            time.sleep(5)
+            tries += 1
 
         # Verifying Internal LB (wget) traffic test
         self.verify_lb_wget_file(
@@ -2128,16 +2146,15 @@ class TestNuageInternalLb(nuageTestCase):
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         tries = 0
-        while tries < 25:
+        while tries < 120:
             wget_file = self.wget_from_vm_cmd(
                 ssh_client, int_lb_rule_1.sourceipaddress,
                 self.test_data["http_rule"]["publicport"])
             if wget_file != "":
                 break
-            self.debug("Waiting for the InternalLbVm and all the VMs in the "
-                       "Internal tier to be fully resolved for (wget) traffic "
-                       "test...")
-            time.sleep(60)
+            self.debug("Waiting for the InternalLbVm in the Internal tier to "
+                       "be fully resolved for (wget) traffic test...")
+            time.sleep(5)
             tries += 1
 
         # Verifying Internal LB (wget) traffic test
@@ -2252,6 +2269,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_lb_wget_file(
             wget_file, [internal_vm, internal_vm_1, internal_vm_2])
 
+    @skip
+    # Skip until CLOUDSTACK-9837 is fixed
     @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
     def test_08_nuage_internallb_appliance_operations_traffic(self):
         """Test Nuage VSP VPC Internal LB functionality with InternalLbVm
@@ -2489,11 +2508,20 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
+        tries = 0
+        while tries < 120:
+            wget_file = self.wget_from_vm_cmd(
+                ssh_client, int_lb_rule_1.sourceipaddress,
+                self.test_data["http_rule"]["publicport"])
+            if wget_file != "":
+                break
+            self.debug("Waiting for the InternalLbVm in the Internal tier to "
+                       "be fully resolved for (wget) traffic test...")
+            time.sleep(5)
+            tries += 1
 
         # Verifying Internal LB (wget) traffic test
+        # Bug CLOUDSTACK-9837
         self.verify_lb_wget_file(
             wget_file, [internal_vm, internal_vm_1, internal_vm_2])
 
@@ -2556,9 +2584,17 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
+        tries = 0
+        while tries < 120:
+            wget_file = self.wget_from_vm_cmd(
+                ssh_client, int_lb_rule_1.sourceipaddress,
+                self.test_data["http_rule"]["publicport"])
+            if wget_file != "":
+                break
+            self.debug("Waiting for the InternalLbVm in the Internal tier to "
+                       "be fully resolved for (wget) traffic test...")
+            time.sleep(5)
+            tries += 1
 
         # Verifying Internal LB (wget) traffic test
         self.verify_lb_wget_file(
@@ -2611,9 +2647,17 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Internal LB (wget) traffic test
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
+        tries = 0
+        while tries < 120:
+            wget_file = self.wget_from_vm_cmd(
+                ssh_client, int_lb_rule_1.sourceipaddress,
+                self.test_data["http_rule"]["publicport"])
+            if wget_file != "":
+                break
+            self.debug("Waiting for the InternalLbVm in the Internal tier to "
+                       "be fully resolved for (wget) traffic test...")
+            time.sleep(5)
+            tries += 1
 
         # Verifying Internal LB (wget) traffic test
         self.verify_lb_wget_file(

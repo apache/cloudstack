@@ -44,6 +44,10 @@ public class SamlUserAccountResponse extends AuthenticationCmdResponse {
     @Param(description = "The IDP ID")
     private String idpId;
 
+    @SerializedName("domainPath")
+    @Param(description = "The full qualified domain path")
+    private String domainPath;
+
     public SamlUserAccountResponse() {
         super();
         setObjectName("samluseraccount");
@@ -96,4 +100,13 @@ public class SamlUserAccountResponse extends AuthenticationCmdResponse {
     public void setIdpId(String idpId) {
         this.idpId = idpId;
     }
+
+    public String getDomainPath() {
+        return domainPath;
+    }
+
+    public void setDomainPath(String domainPath) {
+        this.domainPath = domainPath;
+    }
+
 }

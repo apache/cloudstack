@@ -241,7 +241,7 @@ public class HypervisorTemplateAdapterTest {
 
         TemplateProfile profile = mock(TemplateProfile.class);
         when(profile.getTemplate()).thenReturn(template);
-        when(profile.getZoneId()).thenReturn(1l);
+        when(profile.getZoneIdList()).thenReturn(null);
 
         TemplateApiResult result = mock(TemplateApiResult.class);
         when(result.isSuccess()).thenReturn(true);

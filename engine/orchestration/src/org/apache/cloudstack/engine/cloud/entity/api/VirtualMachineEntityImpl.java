@@ -207,9 +207,9 @@ public class VirtualMachineEntityImpl implements VirtualMachineEntity {
     }
 
     @Override
-    public void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException,
+    public void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params, boolean deployOnGivenHost) throws InsufficientCapacityException,
         ResourceUnavailableException {
-        manager.deployVirtualMachine(reservationId, this.vmEntityVO, caller, params);
+        manager.deployVirtualMachine(reservationId, this.vmEntityVO, caller, params, deployOnGivenHost);
     }
 
     @Override

@@ -16,13 +16,6 @@
 // under the License.
 package com.cloud.network.guru;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
@@ -63,6 +56,12 @@ import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
+
+import javax.inject.Inject;
+import java.util.List;
 
 public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     private static final Logger s_logger = Logger.getLogger(ExternalGuestNetworkGuru.class);
@@ -85,15 +84,16 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
 
     public ExternalGuestNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] {IsolationMethod.GRE, IsolationMethod.L3, IsolationMethod.VLAN};
+        _isolationMethods = new IsolationMethod[] {new IsolationMethod("GRE"), new IsolationMethod("L3"), new IsolationMethod("VLAN")};
     }
 
     @Override
     protected boolean canHandle(NetworkOffering offering, final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
         // This guru handles only Guest Isolated network that supports Source
         // nat service
-        if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == Network.GuestType.Isolated &&
-            isMyIsolationMethod(physicalNetwork) && !offering.isSystemOnly()) {
+        if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType())
+                && (offering.getGuestType() == Network.GuestType.Isolated || offering.getGuestType() == GuestType.L2)
+                && isMyIsolationMethod(physicalNetwork) && !offering.isSystemOnly()) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
@@ -296,12 +296,14 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             nic.setIPv4Gateway(config.getGateway());
 
             if (nic.getIPv4Address() == null) {
-                String guestIp = _ipAddrMgr.acquireGuestIpAddress(config, null);
-                if (guestIp == null) {
-                    throw new InsufficientVirtualNetworkCapacityException("Unable to acquire guest IP address for network " + config, DataCenter.class, dc.getId());
-                }
+                if (!_networkModel.listNetworkOfferingServices(config.getNetworkOfferingId()).isEmpty()) {
+                    String guestIp = _ipAddrMgr.acquireGuestIpAddress(config, null);
+                    if (guestIp == null) {
+                        throw new InsufficientVirtualNetworkCapacityException("Unable to acquire guest IP address for network " + config, DataCenter.class, dc.getId());
+                    }
 
-                nic.setIPv4Address(guestIp);
+                    nic.setIPv4Address(guestIp);
+                }
             } else {
                 long ipMask = NetUtils.ip2Long(nic.getIPv4Address()) & ~(0xffffffffffffffffl << (32 - cidrSize));
                 nic.setIPv4Address(NetUtils.long2Ip(cidrAddress | ipMask));

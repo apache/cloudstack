@@ -16,15 +16,16 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
-import com.google.common.collect.Maps;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Maps;
 
 public class LibvirtVMDef {
     private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
@@ -890,7 +891,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum NicModel {
+        public enum NicModel {
             E1000("e1000"), VIRTIO("virtio"), RTL8139("rtl8139"), NE2KPCI("ne2k_pci"), VMXNET3("vmxnet3");
             String _model;
 
@@ -925,6 +926,8 @@ public class LibvirtVMDef {
         private String _virtualPortInterfaceId;
         private int _vlanTag = -1;
         private boolean _pxeDisable = false;
+        private boolean _linkStateUp = true;
+        private Integer _slot;
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0);
@@ -1012,6 +1015,10 @@ public class LibvirtVMDef {
             return _networkName;
         }
 
+        public void setDevName(String networkName) {
+            _networkName = networkName;
+        }
+
         public String getMacAddress() {
             return _macAddr;
         }
@@ -1042,6 +1049,22 @@ public class LibvirtVMDef {
 
         public int getVlanTag() {
             return _vlanTag;
+        }
+
+        public void setSlot(Integer slot) {
+            _slot = slot;
+        }
+
+        public Integer getSlot() {
+            return _slot;
+        }
+
+        public void setLinkStateUp(boolean linkStateUp) {
+            _linkStateUp = linkStateUp;
+        }
+
+        public boolean isLinkStateUp() {
+            return _linkStateUp;
         }
 
         @Override
@@ -1085,6 +1108,12 @@ public class LibvirtVMDef {
             }
             if (_vlanTag > 0 && _vlanTag < 4095) {
                 netBuilder.append("<vlan trunk='no'>\n<tag id='" + _vlanTag + "'/>\n</vlan>");
+            }
+
+            netBuilder.append("<link state='" + (_linkStateUp ? "up" : "down") +"'/>\n");
+
+            if (_slot  != null) {
+                netBuilder.append(String.format("<address type='pci' domain='0x0000' bus='0x00' slot='0x%02x' function='0x0'/>\n", _slot));
             }
             netBuilder.append("</interface>\n");
             return netBuilder.toString();
@@ -1411,10 +1440,10 @@ public class LibvirtVMDef {
         public String toString() {
             StringBuilder scsiBuilder = new StringBuilder();
 
-            scsiBuilder.append(String.format("<controller type='scsi' index='%d' mode='virtio-scsi'>\n", this.index ));
+            scsiBuilder.append(String.format("<controller type='scsi' index='%d' model='virtio-scsi'>\n", this.index ));
             scsiBuilder.append(String.format("<address type='pci' domain='0x%04X' bus='0x%02X' slot='0x%02X' function='0x%01X'/>\n",
                     this.domain, this.bus, this.slot, this.function ) );
-            scsiBuilder.append("</controller>");
+            scsiBuilder.append("</controller>\n");
             return scsiBuilder.toString();
         }
     }
@@ -1609,6 +1638,67 @@ public class LibvirtVMDef {
             rngBuilder.append("<backend model='" + rngBackendModel + "'>" + path + "</backend>");
             rngBuilder.append("</rng>\n");
             return rngBuilder.toString();
+        }
+    }
+
+    public static class WatchDogDef {
+        enum WatchDogModel {
+            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288");
+            String model;
+
+            WatchDogModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        enum WatchDogAction {
+            RESET("reset"), SHUTDOWN("shutdown"), POWEROFF("poweroff"), PAUSE("pause"), NONE("none"), DUMP("dump");
+            String action;
+
+            WatchDogAction(String action) {
+                this.action = action;
+            }
+
+            @Override
+            public String toString() {
+                return action;
+            }
+        }
+
+        WatchDogModel model = WatchDogModel.I6300ESB;
+        WatchDogAction action = WatchDogAction.NONE;
+
+        public WatchDogDef(WatchDogAction action) {
+            this.action = action;
+        }
+
+        public WatchDogDef(WatchDogModel model) {
+            this.model = model;
+        }
+
+        public WatchDogDef(WatchDogAction action, WatchDogModel model) {
+            this.action = action;
+            this.model = model;
+        }
+
+        public WatchDogAction getAction() {
+            return action;
+        }
+
+        public WatchDogModel getModel() {
+            return model;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder wacthDogBuilder = new StringBuilder();
+            wacthDogBuilder.append("<watchdog model='" + model + "' action='" + action + "'/>\n");
+            return wacthDogBuilder.toString();
         }
     }
 

@@ -165,4 +165,11 @@ public interface VpcManager {
         validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner, Long aclId);
 
     List<PrivateGateway> getVpcPrivateGateways(long vpcId);
+
+    /**
+     * Checks if the specified offering needs a public src nat ip or not.
+     * @param vpcOfferingId
+     * @return
+     */
+    boolean isSrcNatIpRequired(long vpcOfferingId);
 }

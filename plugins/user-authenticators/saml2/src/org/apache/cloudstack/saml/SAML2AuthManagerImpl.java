@@ -16,13 +16,34 @@
 // under the License.
 package org.apache.cloudstack.saml;
 
-import com.cloud.domain.Domain;
-import com.cloud.user.DomainManager;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import com.cloud.user.dao.UserDao;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.AdapterBase;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SignatureException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.inject.Inject;
+import javax.xml.stream.FactoryConfigurationError;
+
 import org.apache.cloudstack.api.command.AuthorizeSAMLSSOCmd;
 import org.apache.cloudstack.api.command.GetServiceProviderMetaDataCmd;
 import org.apache.cloudstack.api.command.ListAndSwitchSAMLAccountCmd;
@@ -34,9 +55,11 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
 import org.apache.cloudstack.framework.security.keystore.KeystoreVO;
+import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.log4j.Logger;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.opensaml.DefaultBootstrap;
 import org.opensaml.common.xml.SAMLConstants;
 import org.opensaml.saml2.metadata.ContactPerson;
@@ -61,32 +84,13 @@ import org.opensaml.xml.security.credential.UsageType;
 import org.opensaml.xml.security.keyinfo.KeyInfoHelper;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import javax.xml.stream.FactoryConfigurationError;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.SignatureException;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
+import com.cloud.domain.Domain;
+import com.cloud.user.DomainManager;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.UserDao;
+import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.component.AdapterBase;
 
 @Component
 public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManager, Configurable {
@@ -141,12 +145,14 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
         KeystoreVO keyStoreVO = _ksDao.findByName(SAMLPluginConstants.SAMLSP_KEYPAIR);
         if (keyStoreVO == null) {
             try {
-                KeyPair keyPair = SAMLUtils.generateRandomKeyPair();
-                _ksDao.save(SAMLPluginConstants.SAMLSP_KEYPAIR, SAMLUtils.savePrivateKey(keyPair.getPrivate()), SAMLUtils.savePublicKey(keyPair.getPublic()), "samlsp-keypair");
+                KeyPair keyPair = CertUtils.generateRandomKeyPair(4096);
+                _ksDao.save(SAMLPluginConstants.SAMLSP_KEYPAIR,
+                        CertUtils.privateKeyToPem(keyPair.getPrivate()),
+                        CertUtils.publicKeyToPem(keyPair.getPublic()), "samlsp-keypair");
                 keyStoreVO = _ksDao.findByName(SAMLPluginConstants.SAMLSP_KEYPAIR);
                 s_logger.info("No SAML keystore found, created and saved a new Service Provider keypair");
-            } catch (NoSuchProviderException | NoSuchAlgorithmException e) {
-                s_logger.error("Unable to create and save SAML keypair: " + e.toString());
+            } catch (final NoSuchProviderException | NoSuchAlgorithmException | IOException e) {
+                s_logger.error("Unable to create and save SAML keypair, due to: ", e);
             }
         }
 
@@ -160,8 +166,19 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
         KeyPair spKeyPair = null;
         X509Certificate spX509Key = null;
         if (keyStoreVO != null) {
-            PrivateKey privateKey = SAMLUtils.loadPrivateKey(keyStoreVO.getCertificate());
-            PublicKey publicKey = SAMLUtils.loadPublicKey(keyStoreVO.getKey());
+
+            PrivateKey privateKey = null;
+            try {
+                privateKey = CertUtils.pemToPrivateKey(keyStoreVO.getCertificate());
+            } catch (final InvalidKeySpecException | IOException e) {
+                s_logger.error("Failed to read private key, due to error: ", e);
+            }
+            PublicKey publicKey = null;
+            try {
+                publicKey = CertUtils.pemToPublicKey(keyStoreVO.getKey());
+            } catch (final InvalidKeySpecException | IOException e) {
+                s_logger.error("Failed to read public key, due to error: ", e);
+            }
             if (privateKey != null && publicKey != null) {
                 spKeyPair = new KeyPair(publicKey, privateKey);
                 KeystoreVO x509VO = _ksDao.findByName(SAMLPluginConstants.SAMLSP_X509CERT);
@@ -174,8 +191,8 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
                         out.flush();
                         _ksDao.save(SAMLPluginConstants.SAMLSP_X509CERT, Base64.encodeBase64String(bos.toByteArray()), "", "samlsp-x509cert");
                         bos.close();
-                    } catch (NoSuchAlgorithmException | NoSuchProviderException | CertificateEncodingException | SignatureException | InvalidKeyException | IOException e) {
-                        s_logger.error("SAML Plugin won't be able to use X509 signed authentication");
+                    } catch (final NoSuchAlgorithmException | NoSuchProviderException | CertificateException | SignatureException | InvalidKeyException | IOException | OperatorCreationException e) {
+                        s_logger.error("SAML plugin won't be able to use X509 signed authentication", e);
                     }
                 } else {
                     try {

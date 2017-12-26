@@ -90,6 +90,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithException;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.net.NetUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAccessVpnService, Configurable {
     private final static Logger s_logger = Logger.getLogger(RemoteAccessVpnManagerImpl.class);
@@ -380,8 +381,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         if (!username.matches("^[a-zA-Z0-9][a-zA-Z0-9@._-]{2,63}$")) {
             throw new InvalidParameterValueException("Username has to be begin with an alphabet have 3-64 characters including alphabets, numbers and the set '@.-_'");
         }
-        if (!password.matches("^[a-zA-Z0-9][a-zA-Z0-9@#+=._-]{2,31}$")) {
-            throw new InvalidParameterValueException("Password has to be 3-32 characters including alphabets, numbers and the set '@#+=.-_'");
+        if (!password.matches("^[a-zA-Z0-9][a-zA-Z0-9@+=._-]{2,31}$")) {
+            throw new InvalidParameterValueException("Password has to be 3-32 characters including alphabets, numbers and the set '@+=.-_'");
         }
 
         return Transaction.execute(new TransactionCallback<VpnUser>() {
@@ -508,6 +509,12 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
 
         s_logger.debug("Applying vpn users for " + owner);
         List<RemoteAccessVpnVO> vpns = _remoteAccessVpnDao.findByAccount(vpnOwnerId);
+
+        if (CollectionUtils.isEmpty(vpns)) {
+            s_logger.debug("There are no remote access vpns configured on this account  " + owner +" to apply vpn user, failing add vpn user ");
+            return false;
+        }
+
         RemoteAccessVpnVO vpnTemp  = null;
 
         List<VpnUserVO> users = _vpnUsersDao.listByAccount(vpnOwnerId);

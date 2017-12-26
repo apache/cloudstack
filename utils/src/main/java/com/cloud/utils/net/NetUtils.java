@@ -44,6 +44,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
+import org.apache.commons.validator.routines.RegexValidator;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.IteratorUtil;
@@ -83,9 +84,19 @@ public class NetUtils {
     public final static int DEFAULT_AUTOSCALE_POLICY_INTERVAL_TIME = 30;
     public final static int DEFAULT_AUTOSCALE_POLICY_QUIET_TIME = 5 * 60;
     private final static Random s_rand = new Random(System.currentTimeMillis());
+    private final static long prefix = 0x1e;
 
-    public static long createSequenceBasedMacAddress(final long macAddress) {
-        return macAddress | 0x060000000000l | (long)s_rand.nextInt(32768) << 25 & 0x00fffe000000l;
+    public static long createSequenceBasedMacAddress(final long macAddress, long globalConfig) {
+        /*
+            Logic for generating MAC address:
+            Mac = B1:B2:B3:B4:B5:B6 (Bx is a byte).
+            B1 -> Presently controlled by prefix variable. The value should be such that the MAC is local and unicast.
+            B2 -> This will be configurable for each deployment/installation. Controlled by the global config MACIdentifier
+            B3 -> A randomly generated number between 0 - 255
+            B4,5,6 -> These bytes are based on the unique DB identifier associated with the IP address for which MAC is generated (refer to mac_address field in user_ip_address table).
+         */
+
+        return macAddress | prefix<<40 | globalConfig << 32 & 0x00ff00000000l | (long)s_rand.nextInt(255) << 24;
     }
 
     public static String getHostName() {
@@ -881,7 +892,7 @@ public class NetUtils {
         Long[] cidrBLong = cidrToLong(cidrB);
 
         long shift = MAX_CIDR - cidrBLong[1];
-        return cidrALong[0] >> shift == cidrBLong[0] >> shift;
+        return (cidrALong[0] >> shift == cidrBLong[0] >> shift) && (cidrALong[1] >= cidrBLong[1]);
     }
 
     static boolean areCidrsNotEmpty(String cidrA, String cidrB) {
@@ -1147,22 +1158,43 @@ public class NetUtils {
         // 10.0.0.0 - 10.255.255.255 (10/8 prefix)
         // 172.16.0.0 - 172.31.255.255 (172.16/12 prefix)
         // 192.168.0.0 - 192.168.255.255 (192.168/16 prefix)
-
-        final String cidr1 = "10.0.0.0/8";
-        final String cidr2 = "172.16.0.0/12";
-        final String cidr3 = "192.168.0.0/16";
+        // RFC 6598 - The IETF detailed shared address space for use in ISP CGN
+        // deployments and NAT devices that can handle the same addresses occurring both on inbound and outbound interfaces.
+        // ARIN returned space to the IANA as needed for this allocation.
+        // The allocated address block is 100.64.0.0/10
+        final String[] allowedNetBlocks = {"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10"};
 
         if (!isValidCIDR(cidr)) {
             s_logger.warn("Cidr " + cidr + " is not valid");
             return false;
         }
 
-        if (isNetworkAWithinNetworkB(cidr, cidr1) || isNetworkAWithinNetworkB(cidr, cidr2) || isNetworkAWithinNetworkB(cidr, cidr3)) {
-            return true;
-        } else {
-            s_logger.warn("cidr " + cidr + " is not RFC 1918 compliant");
+        for (String block: allowedNetBlocks) {
+            if (isNetworkAWithinNetworkB(cidr, block)) {
+                return true;
+            }
+        }
+
+        // not in allowedNetBlocks - return false
+        s_logger.warn("cidr " + cidr + " is not RFC 1918 or 6598 compliant");
+        return false;
+    }
+
+    public static boolean isValidMac(final String macAddr) {
+            RegexValidator mv = new RegexValidator("^(?:[0-9a-f]{1,2}([-:\\.]))(?:[0-9a-f]{1,2}\\1){4}[0-9a-f]{1,2}$", false);
+            return mv.isValid(macAddr);
+    }
+
+    public static boolean isUnicastMac(final String macAddr) {
+        String std = standardizeMacAddress(macAddr);
+        if(std == null) {
             return false;
         }
+        long stdl = mac2Long(std);
+        // libvirt refuses to attach a mac address that is multicast, as defined
+        // by the least significant bit of the first octet of the mac.
+        long mask = 0x1l << 40l;
+        return ((stdl & mask) == mask) ? false : true;
     }
 
     public static boolean verifyInstanceName(final String instanceName) {
@@ -1171,7 +1203,6 @@ public class NetUtils {
             s_logger.warn("Instance name can not contain hyphen, spaces and \"+\" char");
             return false;
         }
-
         return true;
     }
 
@@ -1441,6 +1472,15 @@ public class NetUtils {
         } catch (final IllegalArgumentException ex) {
             throw new IllegalArgumentException("Invalid IPv6 address: " + ex.getMessage());
         }
+    }
+
+    public static String standardizeMacAddress(final String macAddr) {
+        if (!isValidMac(macAddr)) {
+             return null;
+        }
+        String norm = macAddr.replace('.', ':');
+        norm = norm.replace('-',  ':');
+        return long2Mac(mac2Long(norm));
     }
 
     public static String standardizeIp6Cidr(final String ip6Cidr){

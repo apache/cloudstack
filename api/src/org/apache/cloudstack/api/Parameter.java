@@ -51,4 +51,6 @@ public @interface Parameter {
     RoleType[] authorized() default {};
 
     ApiArgValidator[] validations() default {};
+
+    boolean acceptedOnAdminPort() default true;
 }

@@ -32,11 +32,8 @@ import java.util.Properties;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
-import com.google.gson.Gson;
-
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.Agent.ExitStatus;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -62,8 +59,10 @@ import com.cloud.host.Host.Type;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.Script;
+import com.google.gson.Gson;
 
 /**
  *
@@ -240,9 +239,11 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
         _proxyVmId = NumbersUtil.parseLong(value, 0);
 
         if (_localgw != null) {
-            String mgmtHost = (String)params.get("host");
+            String mgmtHosts = (String)params.get("host");
             if (_eth1ip != null) {
-                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                for (final String mgmtHost : mgmtHosts.split(",")) {
+                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+                }
                 String internalDns1 = (String) params.get("internaldns1");
                 if (internalDns1 == null) {
                     s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");
@@ -315,20 +316,19 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
 
     private void launchConsoleProxy(final byte[] ksBits, final String ksPassword, final String encryptorPassword) {
         final Object resource = this;
+        s_logger.info("Building class loader for com.cloud.consoleproxy.ConsoleProxy");
+        final ClassLoader loader = ReflectUtil.getClassLoaderForName("console-proxy");
         if (_consoleProxyMain == null) {
+            s_logger.info("Running com.cloud.consoleproxy.ConsoleProxy with encryptor password=" + encryptorPassword);
             _consoleProxyMain = new Thread(new ManagedContextRunnable() {
                 @Override
                 protected void runInContext() {
                     try {
-                        Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
+                        Class<?> consoleProxyClazz = loader.loadClass("com.cloud.consoleproxy.ConsoleProxy");
                         try {
-                            s_logger.info("Invoke setEncryptorPassword(), ecnryptorPassword: " + encryptorPassword);
-                            Method methodSetup = consoleProxyClazz.getMethod("setEncryptorPassword", String.class);
-                            methodSetup.invoke(null, encryptorPassword);
-
                             s_logger.info("Invoke startWithContext()");
-                            Method method = consoleProxyClazz.getMethod("startWithContext", Properties.class, Object.class, byte[].class, String.class);
-                            method.invoke(null, _properties, resource, ksBits, ksPassword);
+                            Method method = consoleProxyClazz.getMethod("startWithContext", Properties.class, Object.class, byte[].class, String.class, String.class);
+                            method.invoke(null, _properties, resource, ksBits, ksPassword, encryptorPassword);
                         } catch (SecurityException e) {
                             s_logger.error("Unable to launch console proxy due to SecurityException", e);
                             System.exit(ExitStatus.Error.value());
@@ -357,7 +357,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
             s_logger.info("com.cloud.consoleproxy.ConsoleProxy is already running");
 
             try {
-                Class<?> consoleProxyClazz = Class.forName("com.cloud.consoleproxy.ConsoleProxy");
+                Class<?> consoleProxyClazz = loader.loadClass("com.cloud.consoleproxy.ConsoleProxy");
                 Method methodSetup = consoleProxyClazz.getMethod("setEncryptorPassword", String.class);
                 methodSetup.invoke(null, encryptorPassword);
             } catch (SecurityException e) {

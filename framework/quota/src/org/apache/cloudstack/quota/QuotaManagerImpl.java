@@ -16,12 +16,16 @@
 //under the License.
 package org.apache.cloudstack.quota;
 
-import com.cloud.usage.UsageVO;
-import com.cloud.usage.dao.UsageDao;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.Pair;
-import com.cloud.utils.component.ManagerBase;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.quota.constant.QuotaTypes;
@@ -39,19 +43,14 @@ import org.apache.cloudstack.utils.usage.UsageUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import com.cloud.usage.UsageVO;
+import com.cloud.usage.dao.UsageDao;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.component.ManagerBase;
 
 @Component
-@Local(value = QuotaManager.class)
 public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
     private static final Logger s_logger = Logger.getLogger(QuotaManagerImpl.class.getName());
 
@@ -360,7 +359,9 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
         BigDecimal rawusage;
         // get service offering details
         ServiceOfferingVO serviceoffering = _serviceOfferingDao.findServiceOffering(usageRecord.getVmInstanceId(), usageRecord.getOfferingId());
-        if (serviceoffering == null) return quotalist;
+        if (serviceoffering == null) {
+            return quotalist;
+        }
         rawusage = new BigDecimal(usageRecord.getRawUsage());
 
         QuotaTariffVO tariff = _quotaTariffDao.findTariffPlanByUsageType(QuotaTypes.CPU_NUMBER, usageRecord.getEndDate());

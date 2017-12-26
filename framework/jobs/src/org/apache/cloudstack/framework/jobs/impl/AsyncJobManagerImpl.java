@@ -33,10 +33,15 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.dao.VolumeDetailsDao;
+import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -58,6 +63,11 @@ import org.slf4j.MDC;
 
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHost;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
@@ -82,12 +92,13 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.mgmt.JmxUtil;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.storage.dao.VolumeDao;
 
 public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager, ClusterManagerListener, Configurable {
     // Advanced
-    private static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.expire.minutes", "1440",
+    public static final ConfigKey<Long> JobExpireMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.expire.minutes", "1440",
         "Time (in minutes) for async-jobs to be kept in system", true, ConfigKey.Scope.Global);
-    private static final ConfigKey<Long> JobCancelThresholdMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.cancel.threshold.minutes", "60",
+    public static final ConfigKey<Long> JobCancelThresholdMinutes = new ConfigKey<Long>("Advanced", Long.class, "job.cancel.threshold.minutes", "60",
         "Time (in minutes) for async-jobs to be forcely cancelled if it has been in process for long", true, ConfigKey.Scope.Global);
     private static final ConfigKey<Integer> VmJobLockTimeout = new ConfigKey<Integer>("Advanced",
             Integer.class, "vm.job.lock.timeout", "1800",
@@ -119,6 +130,18 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     private AsyncJobMonitor _jobMonitor;
     @Inject
     private VMInstanceDao _vmInstanceDao;
+    @Inject
+    private VolumeDetailsDao _volumeDetailsDao;
+    @Inject
+    private VolumeDao _volsDao;
+    @Inject
+    private SnapshotDao _snapshotDao;
+    @Inject
+    private SnapshotService snapshotSrv;
+    @Inject
+    private SnapshotDataFactory snapshotFactory;
+    @Inject
+    private SnapshotDetailsDao _snapshotDetailsDao;
 
     private volatile long _executionRunNumber = 1;
 
@@ -192,6 +215,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         try {
             @SuppressWarnings("rawtypes")
             final GenericDao dao = GenericDaoBase.getDao(job.getClass());
+
+            if (dao == null) {
+                throw new CloudRuntimeException(String.format("Failed to get dao from job's class=%s, for job id=%d, cmd=%s", job.getClass(), job.getId(), job.getCmd()));
+            }
 
             publishOnEventBus(job, "submit");
 
@@ -1012,6 +1039,21 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             s_logger.debug("Purge queue item for cancelled job-" + job.getId());
                         }
                         _queueMgr.purgeAsyncJobQueueItemId(job.getId());
+                        if (job.getInstanceType().equals(ApiCommandJobType.Volume.toString())) {
+
+                            try {
+                                _volumeDetailsDao.removeDetail(job.getInstanceId(), "SNAPSHOT_ID");
+                                _volsDao.remove(job.getInstanceId());
+                            } catch (Exception e) {
+                                s_logger.error("Unexpected exception while removing concurrent request meta data :" + e.getLocalizedMessage());
+                            }
+                        }
+                    }
+                    List<SnapshotDetailsVO> snapshotList = _snapshotDetailsDao.findDetails(AsyncJob.Constants.MS_ID, Long.toString(msid), false);
+                    for (SnapshotDetailsVO snapshotDetailsVO : snapshotList) {
+                        SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotDetailsVO.getResourceId(), DataStoreRole.Primary);
+                        snapshotSrv.processEventOnSnapshotObject(snapshot, Snapshot.Event.OperationFailed);
+                        _snapshotDetailsDao.removeDetail(snapshotDetailsVO.getResourceId(), AsyncJob.Constants.MS_ID);
                     }
                 }
             });

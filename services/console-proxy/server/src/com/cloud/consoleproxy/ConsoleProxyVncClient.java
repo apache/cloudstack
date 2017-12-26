@@ -190,6 +190,16 @@ public class ConsoleProxyVncClient extends ConsoleProxyClientBase {
             }
         }
 
+        if (event == InputEventType.MOUSE_SCROLL) {
+            if (code == -1) {
+                lastPointerMask = 8;
+            } else if (code == 1) {
+                lastPointerMask = 16;
+            } else if (code == 0) {
+                lastPointerMask = 0;
+            }
+        }
+
         sendModifierEvents(modifiers);
         client.sendClientMouseEvent(lastPointerMask, x, y, code, modifiers);
         if (lastPointerMask == 0)

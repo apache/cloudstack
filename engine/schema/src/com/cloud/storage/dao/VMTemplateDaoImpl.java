@@ -771,7 +771,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
             tmpltZoneVO = new VMTemplateZoneVO(zoneId, tmplt.getId(), new Date());
             _templateZoneDao.persist(tmpltZoneVO);
         } else {
-            tmpltZoneVO.setRemoved(null);
+            tmpltZoneVO.setRemoved(GenericDaoBase.DATE_TO_NULL);
             tmpltZoneVO.setLastUpdated(new Date());
             _templateZoneDao.update(tmpltZoneVO.getId(), tmpltZoneVO);
         }

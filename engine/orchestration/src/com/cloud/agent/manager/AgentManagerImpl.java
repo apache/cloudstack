@@ -37,6 +37,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -135,6 +136,8 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     private final Lock _agentStatusLock = new ReentrantLock();
 
     @Inject
+    protected CAManager caService;
+    @Inject
     protected EntityManager _entityMgr;
 
     protected NioServer _connection;
@@ -210,7 +213,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         _nodeId = ManagementServerNode.getManagementServerId();
         s_logger.info("Configuring AgentManagerImpl. management server node id(msid): " + _nodeId);
 
-        final long lastPing = (System.currentTimeMillis() >> 10) - (long) (PingTimeout.value() * PingInterval.value());
+        final long lastPing = (System.currentTimeMillis() >> 10) - getTimeout();
         _hostDao.markHostsAsDisconnected(_nodeId, lastPing);
 
         registerForHostEvents(new BehindOnPingListener(), true, true, false);
@@ -223,7 +226,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         // allow core threads to time out even when there are no items in the queue
         _connectExecutor.allowCoreThreadTimeOut(true);
 
-        _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10, this);
+        _connection = new NioServer("AgentManager", Port.value(), Workers.value() + 10, this, caService);
         s_logger.info("Listening on " + Port.value() + " with " + Workers.value() + " workers");
 
         // executes all agent commands other than cron and ping
@@ -238,8 +241,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return true;
     }
 
+    protected int getPingInterval() {
+        return PingInterval.value();
+    }
+
     protected long getTimeout() {
-        return (long) (PingTimeout.value() * PingInterval.value());
+        return (long) (Math.ceil(PingTimeout.value() * PingInterval.value()));
     }
 
     @Override
@@ -355,10 +362,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return null;
     }
 
-    protected int getPingInterval() {
-        return PingInterval.value();
-    }
-
     @Override
     public Answer send(final Long hostId, final Command cmd) throws AgentUnavailableException, OperationTimedoutException {
         final Commands cmds = new Commands(Command.OnError.Stop);
@@ -449,6 +452,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         final Command[] cmds = checkForCommandsAndTag(commands);
 
+        //check what agent is returned.
         final AgentAttache agent = getAttache(hostId);
         if (agent == null || agent.isClosed()) {
             throw new AgentUnavailableException("agent not logged into this management server", hostId);
@@ -619,7 +623,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
         }
 
-        _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), PingInterval.value(), PingInterval.value(), TimeUnit.SECONDS);
+        _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), getPingInterval(), getPingInterval(), TimeUnit.SECONDS);
 
         return true;
     }
@@ -812,6 +816,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                     s_logger.debug("The next status of agent " + hostId + "is " + nextStatus + ", current status is " + currentStatus);
                 }
             }
+            caService.purgeHostCertificate(host);
         }
 
         if (s_logger.isDebugEnabled()) {
@@ -1510,7 +1515,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         attache = createAttacheForDirectConnect(host, resource);
         final StartupAnswer[] answers = new StartupAnswer[cmds.length];
         for (int i = 0; i < answers.length; i++) {
-            answers[i] = new StartupAnswer(cmds[i], attache.getId(), PingInterval.value());
+            answers[i] = new StartupAnswer(cmds[i], attache.getId(), getPingInterval());
         }
         attache.process(answers);
 

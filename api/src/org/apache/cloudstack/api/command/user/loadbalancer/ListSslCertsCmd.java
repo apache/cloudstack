@@ -33,7 +33,7 @@ import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SslCertResponse;
 import org.apache.cloudstack.context.CallContext;
 
-import com.cloud.network.lb.CertService;
+import org.apache.cloudstack.network.tls.CertService;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = "listSslCerts", description = "Lists SSL certificates", responseObject = SslCertResponse.class,

@@ -113,7 +113,7 @@ public final class CitrixStopCommandWrapper extends CommandWrapper<StopCommand, 
                                 s_logger.info("Removed  network rules for vm " + command.getVmName());
                             }
                         }
-                        citrixResourceBase.shutdownVM(conn, vm, vmName);
+                        citrixResourceBase.shutdownVM(conn, vm, vmName, command.isForceStop());
                     }
                 } catch (final Exception e) {
                     final String msg = "Catch exception " + e.getClass().getName() + " when stop VM:" + command.getVmName() + " due to " + e.toString();

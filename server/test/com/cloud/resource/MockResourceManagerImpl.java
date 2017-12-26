@@ -359,6 +359,16 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         return null;
     }
 
+    @Override
+    public List<HostVO> listAllHosts(final Type type, final Long clusterId, final Long podId, final long dcId) {
+        return null;
+    }
+
+    @Override
+    public List<HostVO> listAllUpHosts(Type type, Long clusterId, Long podId, long dcId) {
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.resource.ResourceManager#listAllHostsInCluster(long)
      */

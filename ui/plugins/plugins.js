@@ -17,6 +17,7 @@
 (function($, cloudStack) {
   cloudStack.plugins = [
     //'testPlugin',
+    'cloudian',
     'quota'
   ];
 }(jQuery, cloudStack));

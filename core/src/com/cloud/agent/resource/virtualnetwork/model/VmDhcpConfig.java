@@ -22,10 +22,10 @@ package com.cloud.agent.resource.virtualnetwork.model;
 public class VmDhcpConfig extends ConfigBase {
     private String hostName;
     private String macAddress;
-    private String ipv4Adress;
+    private String ipv4Address;
     private String ipv6Address;
     private String ipv6Duid;
-    private String dnsAdresses;
+    private String dnsAddresses;
     private String defaultGateway;
     private String staticRoutes;
     private boolean defaultEntry;
@@ -34,15 +34,15 @@ public class VmDhcpConfig extends ConfigBase {
         super(VM_DHCP);
     }
 
-    public VmDhcpConfig(String hostName, String macAddress, String ipv4Adress, String ipv6Address, String ipv6Duid, String dnsAdresses, String defaultGateway,
+    public VmDhcpConfig(String hostName, String macAddress, String ipv4Address, String ipv6Address, String ipv6Duid, String dnsAddresses, String defaultGateway,
             String staticRoutes, boolean defaultEntry) {
         super(VM_DHCP);
         this.hostName = hostName;
         this.macAddress = macAddress;
-        this.ipv4Adress = ipv4Adress;
+        this.ipv4Address = ipv4Address;
         this.ipv6Address = ipv6Address;
         this.ipv6Duid = ipv6Duid;
-        this.dnsAdresses = dnsAdresses;
+        this.dnsAddresses = dnsAddresses;
         this.defaultGateway = defaultGateway;
         this.staticRoutes = staticRoutes;
         this.defaultEntry = defaultEntry;
@@ -64,12 +64,12 @@ public class VmDhcpConfig extends ConfigBase {
         this.macAddress = macAddress;
     }
 
-    public String getIpv4Adress() {
-        return ipv4Adress;
+    public String getIpv4Address() {
+        return ipv4Address;
     }
 
-    public void setIpv4Adress(String ipv4Adress) {
-        this.ipv4Adress = ipv4Adress;
+    public void setIpv4Address(String ipv4Address) {
+        this.ipv4Address = ipv4Address;
     }
 
     public String getIpv6Address() {
@@ -88,12 +88,12 @@ public class VmDhcpConfig extends ConfigBase {
         this.ipv6Duid = ipv6Duid;
     }
 
-    public String getDnsAdresses() {
-        return dnsAdresses;
+    public String getDnsAddresses() {
+        return dnsAddresses;
     }
 
-    public void setDnsAdresses(String dnsAdresses) {
-        this.dnsAdresses = dnsAdresses;
+    public void setDnsAddresses(String dnsAddresses) {
+        this.dnsAddresses = dnsAddresses;
     }
 
     public String getDefaultGateway() {

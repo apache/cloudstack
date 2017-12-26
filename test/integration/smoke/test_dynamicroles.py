@@ -394,6 +394,46 @@ class TestDynamicRoles(cloudstackTestCase):
             rule.update(self.apiclient, ruleorder=",".join(map(lambda x: x.id, permissions)))
             validate_permissions_list(permissions)
 
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    def test_rolepermission_lifecycle_update_permission(self):
+        """
+            Tests update of Allow to Deny permission of a rule
+        """
+        permissions = [self.rolepermission]
+
+        rule = permissions.pop(0)
+        rule.update(self.apiclient, ruleid=rule.id, permission='deny')
+
+        list_rolepermissions = RolePermission.list(self.apiclient, roleid=self.role.id)
+        self.assertEqual(
+            list_rolepermissions[0].permission,
+            'deny',
+            msg="List of role permissions do not match created list of permissions"
+        )
+
+        rule.update(self.apiclient, ruleid=rule.id, permission='allow')
+
+        list_rolepermissions = RolePermission.list(self.apiclient, roleid=self.role.id)
+        self.assertEqual(
+            list_rolepermissions[0].permission,
+            'allow',
+            msg="List of role permissions do not match created list of permissions"
+        )
+
+    @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
+    def test_rolepermission_lifecycle_update_permission_negative(self):
+        """
+            Tests negative test for setting incorrect value as permission
+        """
+        permissions = [self.rolepermission]
+
+        rule = permissions.pop(0)
+        try:
+            rule.update(self.apiclient, ruleid=rule.id, permission='some_other_value')
+        except Exception:
+            pass
+        else:
+            self.fail("Negative test: Setting permission to 'some_other_value' should not be successful, failing")
 
     @attr(tags=['advanced', 'simulator', 'basic', 'sg'], required_hardware=False)
     def test_rolepermission_lifecycle_concurrent_updates(self):

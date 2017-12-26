@@ -196,6 +196,9 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "size")
     private long size;
 
+    @Column(name = "physical_size")
+    private long physicalSize;
+
     @Column(name = "template_state")
     @Enumerated(EnumType.STRING)
     private State templateState;
@@ -407,6 +410,10 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public long getSize() {
         return size;
+    }
+
+    public long getPhysicalSize() {
+        return physicalSize;
     }
 
     public boolean isDestroyed() {

@@ -20,15 +20,18 @@
 package com.cloud.hypervisor.kvm.resource;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.naming.ConfigurationException;
 
-import com.google.common.base.Strings;
 import org.apache.log4j.Logger;
 import org.libvirt.LibvirtException;
+
+import com.google.common.base.Strings;
 
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.exception.InternalErrorException;
@@ -53,6 +56,8 @@ public class BridgeVifDriver extends VifDriverBase {
     public void configure(Map<String, Object> params) throws ConfigurationException {
 
         super.configure(params);
+
+        getPifs();
 
         // Set the domr scripts directory
         params.put("domr.scripts.dir", "scripts/network/domr/kvm");
@@ -80,12 +85,125 @@ public class BridgeVifDriver extends VifDriverBase {
         if (libvirtVersion == null) {
             libvirtVersion = 0L;
         }
+    }
 
-        try {
-            createControlNetwork();
-        } catch (LibvirtException e) {
-            throw new ConfigurationException(e.getMessage());
+    public void getPifs() {
+        final File dir = new File("/sys/devices/virtual/net");
+        final File[] netdevs = dir.listFiles();
+        final List<String> bridges = new ArrayList<String>();
+        for (File netdev : netdevs) {
+            final File isbridge = new File(netdev.getAbsolutePath() + "/bridge");
+            final String netdevName = netdev.getName();
+            s_logger.debug("looking in file " + netdev.getAbsolutePath() + "/bridge");
+            if (isbridge.exists()) {
+                s_logger.debug("Found bridge " + netdevName);
+                bridges.add(netdevName);
+            }
         }
+
+        String guestBridgeName = _libvirtComputingResource.getGuestBridgeName();
+        String publicBridgeName = _libvirtComputingResource.getPublicBridgeName();
+
+        for (final String bridge : bridges) {
+            s_logger.debug("looking for pif for bridge " + bridge);
+            final String pif = getPif(bridge);
+            if (_libvirtComputingResource.isPublicBridge(bridge)) {
+                _pifs.put("public", pif);
+            }
+            if (guestBridgeName != null && bridge.equals(guestBridgeName)) {
+                _pifs.put("private", pif);
+            }
+            _pifs.put(bridge, pif);
+        }
+
+        // guest(private) creates bridges on a pif, if private bridge not found try pif direct
+        // This addresses the unnecessary requirement of someone to create an unused bridge just for traffic label
+        if (_pifs.get("private") == null) {
+            s_logger.debug("guest(private) traffic label '" + guestBridgeName + "' not found as bridge, looking for physical interface");
+            final File dev = new File("/sys/class/net/" + guestBridgeName);
+            if (dev.exists()) {
+                s_logger.debug("guest(private) traffic label '" + guestBridgeName + "' found as a physical device");
+                _pifs.put("private", guestBridgeName);
+            }
+        }
+
+        // public creates bridges on a pif, if private bridge not found try pif direct
+        // This addresses the unnecessary requirement of someone to create an unused bridge just for traffic label
+        if (_pifs.get("public") == null) {
+            s_logger.debug("public traffic label '" + publicBridgeName+ "' not found as bridge, looking for physical interface");
+            final File dev = new File("/sys/class/net/" + publicBridgeName);
+            if (dev.exists()) {
+                s_logger.debug("public traffic label '" + publicBridgeName + "' found as a physical device");
+                _pifs.put("public", publicBridgeName);
+            }
+        }
+
+        s_logger.debug("done looking for pifs, no more bridges");
+    }
+
+    private String getPif(final String bridge) {
+        String pif = matchPifFileInDirectory(bridge);
+        final File vlanfile = new File("/proc/net/vlan/" + pif);
+
+        if (vlanfile.isFile()) {
+            pif = Script.runSimpleBashScript("grep ^Device\\: /proc/net/vlan/" + pif + " | awk {'print $2'}");
+        }
+
+        return pif;
+    }
+
+    private String matchPifFileInDirectory(final String bridgeName) {
+        final File brif = new File("/sys/devices/virtual/net/" + bridgeName + "/brif");
+
+        if (!brif.isDirectory()) {
+            final File pif = new File("/sys/class/net/" + bridgeName);
+            if (pif.isDirectory()) {
+                // if bridgeName already refers to a pif, return it as-is
+                return bridgeName;
+            }
+            s_logger.debug("failing to get physical interface from bridge " + bridgeName + ", does " + brif.getAbsolutePath() + "exist?");
+            return "";
+        }
+
+        final File[] interfaces = brif.listFiles();
+
+        for (File anInterface : interfaces) {
+            final String fname = anInterface.getName();
+            s_logger.debug("matchPifFileInDirectory: file name '" + fname + "'");
+            if (isInterface(fname)) {
+                return fname;
+            }
+        }
+
+        s_logger.debug("failing to get physical interface from bridge " + bridgeName + ", did not find an eth*, bond*, team*, vlan*, em*, p*p*, ens*, eno*, enp*, or enx* in " + brif.getAbsolutePath());
+        return "";
+    }
+
+    private static final String [] IF_NAME_PATTERNS = {
+            "^eth",
+            "^bond",
+            "^vlan",
+            "^vx",
+            "^em",
+            "^ens",
+            "^eno",
+            "^enp",
+            "^team",
+            "^enx",
+            "^p\\d+p\\d+"
+    };
+
+    /**
+     * @param fname
+     * @return
+     */
+    private static boolean isInterface(final String fname) {
+        StringBuilder commonPattern = new StringBuilder();
+        for (final String ifNamePattern : IF_NAME_PATTERNS) {
+            commonPattern.append("|(").append(ifNamePattern).append(".*)");
+        }
+
+        return fname.matches(commonPattern.toString());
     }
 
     @Override
@@ -161,12 +279,23 @@ public class BridgeVifDriver extends VifDriverBase {
         if (nic.getPxeDisable() == true) {
             intf.setPxeDisable(true);
         }
+
         return intf;
     }
 
     @Override
     public void unplug(LibvirtVMDef.InterfaceDef iface) {
         deleteVnetBr(iface.getBrName());
+    }
+
+    @Override
+    public void attach(LibvirtVMDef.InterfaceDef iface) {
+        Script.runSimpleBashScript("brctl addif " + iface.getBrName() + " " + iface.getDevName());
+    }
+
+    @Override
+    public void detach(LibvirtVMDef.InterfaceDef iface) {
+        Script.runSimpleBashScript("test -d /sys/class/net/" + iface.getBrName() + "/brif/" + iface.getDevName() + " && brctl delif " + iface.getBrName() + " " + iface.getDevName());
     }
 
     private String setVnetBrName(String pifName, String vnetId) {
@@ -272,10 +401,6 @@ public class BridgeVifDriver extends VifDriverBase {
         }
     }
 
-    private void createControlNetwork() throws LibvirtException {
-        createControlNetwork(_bridges.get("linklocal"));
-    }
-
     private void deleteExistingLinkLocalRouteTable(String linkLocalBr) {
         Script command = new Script("/bin/bash", _timeout);
         command.add("-c");
@@ -304,16 +429,21 @@ public class BridgeVifDriver extends VifDriverBase {
         }
     }
 
-    private void createControlNetwork(String privBrName) {
-        deleteExistingLinkLocalRouteTable(privBrName);
-        if (!isBridgeExists(privBrName)) {
-            Script.runSimpleBashScript("brctl addbr " + privBrName + "; ip link set " + privBrName + " up; ip address add 169.254.0.1/16 dev " + privBrName, _timeout);
-        }
-
+    private void createControlNetwork() {
+        createControlNetwork(_bridges.get("linklocal"));
     }
 
-    private boolean isBridgeExists(String bridgeName) {
-        File f = new File("/sys/devices/virtual/net/" + bridgeName);
+    @Override
+    public void createControlNetwork(String privBrName)  {
+        deleteExistingLinkLocalRouteTable(privBrName);
+        if (!isExistingBridge(privBrName)) {
+            Script.runSimpleBashScript("brctl addbr " + privBrName + "; ip link set " + privBrName + " up; ip address add 169.254.0.1/16 dev " + privBrName, _timeout);
+        }
+    }
+
+    @Override
+    public boolean isExistingBridge(String bridgeName) {
+        File f = new File("/sys/devices/virtual/net/" + bridgeName + "/bridge");
         if (f.exists()) {
             return true;
         } else {

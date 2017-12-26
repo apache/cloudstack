@@ -18,6 +18,7 @@ package com.cloud.network.guru;
 
 import javax.inject.Inject;
 
+import com.cloud.network.NetworkModel;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.Pod;
@@ -131,7 +132,7 @@ public class StorageNetworkGuru extends PodBasedNetworkGuru implements NetworkGu
 
         vlan = ip.getVlan();
         nic.setIPv4Address(ip.getIpAddress());
-        nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.getMac())));
+        nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.getMac(), NetworkModel.MACIdentifier.value())));
         nic.setFormat(AddressFormat.Ip4);
         nic.setIPv4Netmask(ip.getNetmask());
         nic.setBroadcastType(BroadcastDomainType.Storage);

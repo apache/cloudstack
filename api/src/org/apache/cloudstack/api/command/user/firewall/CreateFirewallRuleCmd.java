@@ -350,6 +350,11 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     }
 
     @Override
+    public List<String> getDestinationCidrList(){
+        return null;
+    }
+
+    @Override
     public Class<?> getEntityType() {
         return FirewallRule.class;
     }

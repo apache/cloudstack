@@ -745,12 +745,19 @@
                         }
                     },
                     dataProvider: function(args) {
+                        var data = {
+                            page: args.page,
+                            pageSize: pageSize,
+                            networkid: args.context.networks[0].id,
+                            listAll: true
+                        };
+                        var keyword = (((args || {}).filterBy || {}).search || {}).value;
+                        if (keyword) {
+                            data.keyword = keyword;
+                        }
                         $.ajax({
                             url: createURL('listLoadBalancers'),
-                            data: {
-                                networkid: args.context.networks[0].id,
-                                listAll: true
-                            },
+                            data: data,
                             success: function(json) {
                                 var items = json.listloadbalancersresponse.loadbalancer;
                                 if (items != null) {

@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import java.io.File;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +29,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.capacity.Capacity;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade222to224 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade222to224.class);
@@ -50,13 +49,14 @@ public class Upgrade222to224 implements DbUpgrade {
     }
 
     @Override
-    public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-222to224.sql");
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-222to224.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-222to224.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(script)};
+        return new InputStream[] {script};
     }
 
     private void fixRelatedFkeyOnNetworksTable(Connection conn) throws SQLException {
@@ -96,13 +96,14 @@ public class Upgrade222to224 implements DbUpgrade {
     }
 
     @Override
-    public File[] getCleanupScripts() {
-        String file = Script.findScript("", "db/schema-222to224-cleanup.sql");
-        if (file == null) {
-            throw new CloudRuntimeException("Unable to find the upgrade script, schema-222to224-cleanup.sql");
+    public InputStream[] getCleanupScripts() {
+        final String scriptFile = "META-INF/db/schema-222to224-cleanup.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(file)};
+        return new InputStream[] {script};
     }
 
     private void checkForDuplicatePublicNetworks(Connection conn) {

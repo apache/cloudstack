@@ -24,11 +24,9 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.RoleVO;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import java.util.List;
 
 @Component
-@Local(value = {RoleDao.class})
 public class RoleDaoImpl extends GenericDaoBase<RoleVO, Long> implements RoleDao {
     private final SearchBuilder<RoleVO> RoleByNameSearch;
     private final SearchBuilder<RoleVO> RoleByTypeSearch;

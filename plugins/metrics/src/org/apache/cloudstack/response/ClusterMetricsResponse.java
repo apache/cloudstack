@@ -128,10 +128,10 @@ public class ClusterMetricsResponse extends ClusterResponse {
         }
     }
 
-    public void setCpuMaxDeviation(final Double maxCpuDeviation, final Double totalCpuUsed, final Long totalHosts) {
-        if (maxCpuDeviation != null && totalCpuUsed != null && totalHosts != null && totalHosts != 0) {
-            final Double averageCpuUsage = totalCpuUsed / totalHosts;
-            this.cpuMaxDeviation = String.format("%.2f%%", (maxCpuDeviation - averageCpuUsage) * 100.0 / averageCpuUsage);
+    public void setCpuMaxDeviation(final Double maxCpuUsagePercentage, final Double totalCpuUsedPercentage, final Long totalHosts) {
+        if (maxCpuUsagePercentage != null && totalCpuUsedPercentage != null && totalHosts != null && totalHosts != 0) {
+            final Double averageCpuUsagePercentage = totalCpuUsedPercentage / totalHosts;
+            this.cpuMaxDeviation = String.format("%.2f%%", (maxCpuUsagePercentage - averageCpuUsagePercentage) / averageCpuUsagePercentage);
         }
     }
 
@@ -172,15 +172,15 @@ public class ClusterMetricsResponse extends ClusterResponse {
         }
     }
 
-    public void setCpuAllocatedThreshold(final Long cpuAllocated, final Long cpuUsed, final Double overCommitRatio, final Double threshold) {
-        if (cpuAllocated != null && cpuUsed != null && overCommitRatio != null && threshold != null && cpuUsed != 0) {
-            this.cpuAllocatedThresholdExceeded = (1.0 * cpuAllocated * overCommitRatio / cpuUsed) > threshold;
+    public void setCpuAllocatedThreshold(final Long cpuAllocated, final Long cpuTotal, final Double threshold) {
+        if (cpuAllocated != null && cpuTotal != null && threshold != null && cpuTotal != 0) {
+            this.cpuAllocatedThresholdExceeded = (1.0 * cpuAllocated / cpuTotal) > threshold;
         }
     }
 
-    public void setCpuAllocatedDisableThreshold(final Long cpuAllocated, final Long cpuUsed, final Double overCommitRatio, final Float threshold) {
-        if (cpuAllocated != null && cpuUsed != null && overCommitRatio != null && threshold != null && cpuUsed != 0) {
-            this.cpuAllocatedDisableThresholdExceeded = (1.0 * cpuAllocated * overCommitRatio / cpuUsed) > threshold;
+    public void setCpuAllocatedDisableThreshold(final Long cpuAllocated, final Long cpuTotal, final Float threshold) {
+        if (cpuAllocated != null && cpuTotal != null && threshold != null && cpuTotal != 0) {
+            this.cpuAllocatedDisableThresholdExceeded = (1.0 * cpuAllocated / cpuTotal) > threshold;
         }
     }
 
@@ -197,15 +197,15 @@ public class ClusterMetricsResponse extends ClusterResponse {
     }
 
 
-    public void setMemoryAllocatedThreshold(final Long memAllocated, final Long memTotal, final Double overCommitRatio, final Double threshold) {
-        if (memAllocated != null && memTotal != null && overCommitRatio != null && threshold != null && memTotal != 0) {
-            this.memoryAllocatedThresholdExceeded = (1.0 * memAllocated * overCommitRatio / memTotal) > threshold;
+    public void setMemoryAllocatedThreshold(final Long memAllocated, final Long memTotal, final Double threshold) {
+        if (memAllocated != null && memTotal != null && threshold != null && memTotal != 0) {
+            this.memoryAllocatedThresholdExceeded = (1.0 * memAllocated / memTotal) > threshold;
         }
     }
 
-    public void setMemoryAllocatedDisableThreshold(final Long memAllocated, final Long memTotal, final Double overCommitRatio, final Float threshold) {
-        if (memAllocated != null && memTotal != null && overCommitRatio != null && threshold != null && memTotal != 0) {
-            this.memoryAllocatedDisableThresholdExceeded = (1.0 * memAllocated * overCommitRatio / memTotal) > threshold;
+    public void setMemoryAllocatedDisableThreshold(final Long memAllocated, final Long memTotal, final Float threshold) {
+        if (memAllocated != null && memTotal != null && threshold != null && memTotal != 0) {
+            this.memoryAllocatedDisableThresholdExceeded = (1.0 * memAllocated / memTotal) > threshold;
         }
     }
 }

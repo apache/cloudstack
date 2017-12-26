@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
-import javax.ejb.Local;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
@@ -37,7 +35,6 @@ import com.cloud.utils.PropertiesUtil;
  * @config {@table || Param Name | Description | Values | Default || || path |
  *         path to the properties _file | String | db/db.properties || * }
  **/
-@Local(value = {StorageComponent.class})
 public class PropertiesStorage implements StorageComponent {
     private static final Logger s_logger = Logger.getLogger(PropertiesStorage.class);
     Properties _properties = new Properties();
@@ -51,6 +48,9 @@ public class PropertiesStorage implements StorageComponent {
 
     @Override
     public synchronized void persist(String key, String value) {
+        if (!loadFromFile(_file)) {
+            s_logger.error("Failed to load changes and then write to them");
+        }
         _properties.setProperty(key, value);
         FileOutputStream output = null;
         try {
@@ -63,6 +63,20 @@ public class PropertiesStorage implements StorageComponent {
         } finally {
             IOUtils.closeQuietly(output);
         }
+    }
+
+    private synchronized boolean loadFromFile(final File file) {
+        try {
+            PropertiesUtil.loadFromFile(_properties, file);
+            _file = file;
+        } catch (FileNotFoundException e) {
+            s_logger.error("How did we get here? ", e);
+            return false;
+        } catch (IOException e) {
+            s_logger.error("IOException: ", e);
+            return false;
+        }
+        return true;
     }
 
     @Override
@@ -86,17 +100,7 @@ public class PropertiesStorage implements StorageComponent {
                 return false;
             }
         }
-        try {
-            PropertiesUtil.loadFromFile(_properties, file);
-            _file = file;
-        } catch (FileNotFoundException e) {
-            s_logger.error("How did we get here? ", e);
-            return false;
-        } catch (IOException e) {
-            s_logger.error("IOException: ", e);
-            return false;
-        }
-        return true;
+        return loadFromFile(file);
     }
 
     @Override

@@ -28,6 +28,8 @@ from marvin.codes import PASS
 
 import time
 import logging
+import random
+
 
 class Services:
     """Test VPC network services - Port Forwarding Rules Test Data Class.
@@ -165,11 +167,12 @@ class TestPrivateGwACL(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"])
+            cls.hypervisor)
 
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -243,14 +246,19 @@ class TestPrivateGwACL(cloudstackTestCase):
 
         qresultset = self.dbclient.execute(
             "select vnet from op_dc_vnet_alloc where physical_network_id=\
-            (select id from physical_network where uuid='%s' ) and taken is NULL and reservation_id is NULL and account_id is NULL ORDER BY id DESC;" % physical_network.id
-        )
+            (select id from physical_network where uuid='%s');" % physical_network.id)
         self.assertEqual(validateList(qresultset)[0],
                          PASS,
                          "Invalid sql query response"
                          )
-        vlans = qresultset
-        vlan_1 = int(vlans[0][0])
+
+        # Find all the vlans that are for dynamic vlan allocation
+        dc_vlans = sorted(map(lambda x: x[0], qresultset))
+
+        # Use VLAN id that is not in physical network vlan range for dynamic vlan allocation
+        vlan_1 = int(physical_network.vlan.split('-')[-1]) + 1
+        if vlan_1 in dc_vlans:
+            vlan_1 = dc_vlans[-1] + random.randint(1, 5)
 
         acl = self.createACL(vpc)
         self.createACLItem(acl.id)
@@ -328,14 +336,19 @@ class TestPrivateGwACL(cloudstackTestCase):
 
         qresultset = self.dbclient.execute(
             "select vnet from op_dc_vnet_alloc where physical_network_id=\
-            (select id from physical_network where uuid='%s' ) and taken is NULL and reservation_id is NULL and account_id is NULL ORDER BY id DESC;" % physical_network.id
-        )
+            (select id from physical_network where uuid='%s');" % physical_network.id)
         self.assertEqual(validateList(qresultset)[0],
                          PASS,
                          "Invalid sql query response"
-        )
-        vlans = qresultset
-        vlan_1 = int(vlans[0][0])
+                         )
+
+        # Find all the vlans that are for dynamic vlan allocation
+        dc_vlans = sorted(map(lambda x: x[0], qresultset))
+
+        # Use VLAN id that is not in physical network vlan range for dynamic vlan allocation
+        vlan_1 = int(physical_network.vlan.split('-')[-1]) + 1
+        if vlan_1 in dc_vlans:
+            vlan_1 = dc_vlans[-1] + random.randint(1, 5)
 
         acl1 = self.createACL(vpc_1)
         self.createACLItem(acl1.id, cidr = "0.0.0.0/0")
@@ -376,13 +389,25 @@ class TestPrivateGwACL(cloudstackTestCase):
         physical_network = self.get_guest_traffic_physical_network(self.apiclient, self.zone.id)
         if not physical_network:
             self.fail("No Physical Networks found!")
+
         qresultset = self.dbclient.execute(
             "select vnet from op_dc_vnet_alloc where physical_network_id=\
-            (select id from physical_network where uuid='%s' ) and taken is NULL and reservation_id is NULL and account_id is NULL ORDER BY id DESC;" % physical_network.id
-        )
-        vlans = qresultset
-        vlan_1 = int(vlans[0][0])
+            (select id from physical_network where uuid='%s');" % physical_network.id)
+        self.assertEqual(validateList(qresultset)[0],
+                         PASS,
+                         "Invalid sql query response"
+                         )
 
+        # Find all the vlans that are for dynamic vlan allocation
+        dc_vlans = sorted(map(lambda x: x[0], qresultset))
+
+        # Use VLAN id that is not in physical network vlan range for dynamic vlan allocation
+        vlan_1 = int(physical_network.vlan.split('-')[-1]) + 1
+        if vlan_1 in dc_vlans:
+            vlan_1 = dc_vlans[-1] + random.randint(1, 5)
+
+        acl1 = self.createACL(vpc_1)
+        self.createACLItem(acl1.id, cidr = "0.0.0.0/0")
         net_offering_no_lb = "network_offering_no_lb"
 
         network_1 = self.createNetwork(vpc_1, gateway = '10.0.0.1')
@@ -695,10 +720,10 @@ class TestPrivateGwACL(cloudstackTestCase):
         succeeded_pings = 0
         minimum_vms_to_pass = 2
         for vm_ip in vms_ips:
-            ssh_command = "ping -c 3 %s" % vm_ip
+            ssh_command = "ping -c 5 %s" % vm_ip
 
             # Should be able to SSH VM
-            result = 'failed'
+            packet_loss = 100
             try:
                 self.logger.debug("SSH into VM: %s" % public_ip.ipaddress.ipaddress)
 
@@ -706,18 +731,21 @@ class TestPrivateGwACL(cloudstackTestCase):
 
                 self.logger.debug("Sleeping for %s seconds in order to get the firewall applied..." % sleep_time)
                 time.sleep(sleep_time)
-                sleep_time += sleep_time
 
                 self.logger.debug("Ping to VM inside another Network Tier")
-                result = str(ssh.execute(ssh_command))
+                result = ssh.execute(ssh_command)
 
-                self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count("3 received")))
+                for line in result:
+                    if "packet loss" in line:
+                        packet_loss = int(line.split("% packet loss")[0].split(" ")[-1])
+                        break
+
+                self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, packet_loss < 50))
             except Exception as e:
-                self.fail("SSH Access failed for %s: %s" % \
-                          (virtual_machine, e)
-                          )
+                self.fail("SSH Access failed for %s: %s" % (virtual_machine, e))
 
-            succeeded_pings += result.count("3 received")
+            if packet_loss < 50:
+                succeeded_pings += 1
 
 
         self.assertTrue(succeeded_pings >= minimum_vms_to_pass,

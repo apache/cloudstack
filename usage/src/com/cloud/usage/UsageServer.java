@@ -16,19 +16,13 @@
 // under the License.
 package com.cloud.usage;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-
 import org.apache.commons.daemon.Daemon;
 import org.apache.commons.daemon.DaemonContext;
 import org.apache.commons.daemon.DaemonInitException;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
-import org.apache.log4j.xml.DOMConfigurator;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-import org.springframework.util.Log4jConfigurer;
 
-import com.cloud.utils.PropertiesUtil;
+import com.cloud.utils.LogUtils;
 import com.cloud.utils.component.ComponentContext;
 
 public class UsageServer implements Daemon {
@@ -83,28 +77,7 @@ public class UsageServer implements Daemon {
     }
 
     static private void initLog4j() {
-        File file = PropertiesUtil.findConfigFile("log4j-cloud.xml");
-        if (file != null) {
-            System.out.println("log4j configuration found at " + file.getAbsolutePath());
-            try {
-                Log4jConfigurer.initLogging(file.getAbsolutePath());
-            } catch (FileNotFoundException e) {
-                s_logger.info("[ignored] log initialisation ;)" + e.getLocalizedMessage(), e);
-            }
-            DOMConfigurator.configureAndWatch(file.getAbsolutePath());
-
-        } else {
-            file = PropertiesUtil.findConfigFile("log4j-cloud.properties");
-            if (file != null) {
-                System.out.println("log4j configuration found at " + file.getAbsolutePath());
-                try {
-                    Log4jConfigurer.initLogging(file.getAbsolutePath());
-                } catch (FileNotFoundException e) {
-                    s_logger.info("[ignored] log properties initialization :)" + e.getLocalizedMessage(), e);
-                }
-                PropertyConfigurator.configureAndWatch(file.getAbsolutePath());
-            }
-        }
+        LogUtils.initLog4j("log4j-cloud.xml");
     }
 
 }

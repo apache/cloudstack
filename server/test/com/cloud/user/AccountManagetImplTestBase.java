@@ -69,6 +69,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.SSHKeyPairDao;
 import com.cloud.user.dao.UserAccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.vm.VirtualMachineManager;
@@ -189,7 +190,8 @@ public class AccountManagetImplTestBase {
     ServiceOfferingDao _offeringDao;
     @Mock
     OrchestrationService _orchSrvc;
-
+    @Mock
+    SSHKeyPairDao _sshKeyPairDao;
 
     AccountManagerImpl accountManager;
 

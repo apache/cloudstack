@@ -53,14 +53,14 @@ public final class LibvirtCheckOnHostCommandWrapper extends CommandWrapper<Check
         try {
             final Boolean result = future.get();
             if (result) {
-                return new Answer(command, false, "Heart is still beating...");
+                return new Answer(command, false, "Heart is beating...");
             } else {
                 return new Answer(command);
             }
         } catch (final InterruptedException e) {
-            return new Answer(command, false, "can't get status of host:");
+            return new Answer(command, false, "CheckOnHostCommand: can't get status of host: InterruptedException");
         } catch (final ExecutionException e) {
-            return new Answer(command, false, "can't get status of host:");
+            return new Answer(command, false, "CheckOnHostCommand: can't get status of host: ExecutionException");
         }
     }
 }

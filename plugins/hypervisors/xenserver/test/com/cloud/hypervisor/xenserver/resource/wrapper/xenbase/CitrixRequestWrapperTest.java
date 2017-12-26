@@ -436,7 +436,6 @@ public class CitrixRequestWrapperTest {
         final Answer answer = wrapper.execute(resizeCommand, citrixResourceBase);
         verify(citrixResourceBase, times(1)).getConnection();
 
-        assertFalse(answer.getResult());
     }
 
     @Test

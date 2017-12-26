@@ -356,7 +356,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         return
 
 
-    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false", BugId="CLOUDSTACK-6984")
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_01_stop_vm(self):
         """Test Stop Virtual Machine
         """
@@ -370,6 +370,40 @@ class TestVMLifeCycle(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to stop VM: %s" % e)
         return
+
+
+    @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
+    def test_01_stop_vm_forced(self):
+        """Test Force Stop Virtual Machine
+        """
+        try:
+            self.small_virtual_machine.stop(self.apiclient, forced=True)
+        except Exception as e:
+            self.fail("Failed to stop VM: %s" % e)
+
+        list_vm_response = VirtualMachine.list(
+                                            self.apiclient,
+                                            id=self.small_virtual_machine.id
+                                            )
+        self.assertEqual(
+                            isinstance(list_vm_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+
+        self.assertNotEqual(
+                            len(list_vm_response),
+                            0,
+                            "Check VM avaliable in List Virtual Machines"
+                        )
+
+        self.assertEqual(
+                            list_vm_response[0].state,
+                            "Stopped",
+                            "Check virtual machine is in stopped state"
+                        )
+        return
+
 
     @attr(tags = ["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_02_start_vm(self):

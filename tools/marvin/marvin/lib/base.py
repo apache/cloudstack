@@ -449,7 +449,7 @@ class VirtualMachine:
                hostid=None, keypair=None, ipaddress=None, mode='default',
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
-               rootdiskcontroller=None):
+               rootdiskcontroller=None, macaddress=None):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -539,6 +539,9 @@ class VirtualMachine:
         if "userdata" in services:
             cmd.userdata = base64.urlsafe_b64encode(services["userdata"])
 
+        if "dhcpoptionsnetworklist" in services:
+            cmd.dhcpoptionsnetworklist = services["dhcpoptionsnetworklist"]
+
         cmd.details = [{}]
 
         if customcpunumber:
@@ -562,6 +565,11 @@ class VirtualMachine:
         # program default access to ssh
         if mode.lower() == 'basic':
             cls.ssh_access_group(apiclient, cmd)
+
+        if macaddress:
+            cmd.macaddress = macaddress
+        elif macaddress in services:
+            cmd.macaddress = services["macaddress"]
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
@@ -775,7 +783,7 @@ class VirtualMachine:
         cmd.id = volume.id
         return apiclient.detachVolume(cmd)
 
-    def add_nic(self, apiclient, networkId, ipaddress=None):
+    def add_nic(self, apiclient, networkId, ipaddress=None, macaddress=None, dhcpoptions=None):
         """Add a NIC to a VM"""
         cmd = addNicToVirtualMachine.addNicToVirtualMachineCmd()
         cmd.virtualmachineid = self.id
@@ -783,6 +791,11 @@ class VirtualMachine:
 
         if ipaddress:
             cmd.ipaddress = ipaddress
+        if dhcpoptions:
+            cmd.dhcpoptions = dhcpoptions
+
+        if macaddress:
+            cmd.macaddress = macaddress
 
         return apiclient.addNicToVirtualMachine(cmd)
 
@@ -1097,7 +1110,7 @@ class Snapshot:
 
     @classmethod
     def create(cls, apiclient, volume_id, account=None,
-               domainid=None, projectid=None, locationtype=None):
+               domainid=None, projectid=None, locationtype=None, asyncbackup=None):
         """Create Snapshot"""
         cmd = createSnapshot.createSnapshotCmd()
         cmd.volumeid = volume_id
@@ -1109,6 +1122,8 @@ class Snapshot:
             cmd.projectid = projectid
         if locationtype:
             cmd.locationtype = locationtype
+	if asyncbackup:
+	    cmd.asyncbackup = asyncbackup
         return Snapshot(apiclient.createSnapshot(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -1210,13 +1225,16 @@ class Template:
     @classmethod
     def register(cls, apiclient, services, zoneid=None,
                  account=None, domainid=None, hypervisor=None,
-                 projectid=None, details=None):
+                 projectid=None, details=None, randomize_name=True):
         """Create template from URL"""
 
         # Create template from Virtual machine and Volume ID
         cmd = registerTemplate.registerTemplateCmd()
         cmd.displaytext = services["displaytext"]
-        cmd.name = "-".join([services["name"], random_gen()])
+        if randomize_name:
+            cmd.name = "-".join([services["name"], random_gen()])
+        else:
+            cmd.name = services["name"]
         cmd.format = services["format"]
         if hypervisor:
             cmd.hypervisor = hypervisor
@@ -1253,6 +1271,7 @@ class Template:
             "ispublic"] if "ispublic" in services else False
         cmd.isextractable = services[
             "isextractable"] if "isextractable" in services else False
+        cmd.isdynamicallyscalable=services["isdynamicallyscalable"] if "isdynamicallyscalable" in services else False
         cmd.passwordenabled = services[
             "passwordenabled"] if "passwordenabled" in services else False
 
@@ -1647,6 +1666,30 @@ class NATRule:
             cmd.vmguestip = vmguestip
 
         return NATRule(apiclient.createPortForwardingRule(cmd).__dict__)
+
+    @classmethod
+    def update(self, apiclient, id, virtual_machine, services, fordisplay=False,
+           vmguestip=None):
+        """Create Port forwarding rule"""
+        cmd = updatePortForwardingRule.updatePortForwardingRuleCmd()
+        cmd.id = id
+
+        if "privateport" in services:
+            cmd.privateport = services["privateport"]
+
+        if "privateendport" in services:
+            cmd.privateendport = services["privateendport"]
+
+        if vmguestip:
+            cmd.vmguestip = vmguestip
+
+        if fordisplay:
+            cmd.fordisplay = fordisplay
+
+        if virtual_machine.id:
+            cmd.virtualmachineid = virtual_machine.id
+
+        return NATRule(apiclient.updatePortForwardingRule(cmd).__dict__)
 
     def delete(self, apiclient):
         """Delete port forwarding"""
@@ -2174,7 +2217,7 @@ class NetworkOffering:
         cmd.traffictype = services["traffictype"]
 
         if "useVpc" in services:
-            cmd.useVpc = services["useVpc"]
+            cmd.forvpc = (services["useVpc"] == "on")
         cmd.serviceproviderlist = []
         if "serviceProviderList" in services:
             for service, provider in services["serviceProviderList"].items():
@@ -2200,6 +2243,14 @@ class NetworkOffering:
             cmd.ispersistent = services["ispersistent"]
         if "egress_policy" in services:
             cmd.egressdefaultpolicy = services["egress_policy"]
+        if "tags" in services:
+            cmd.tags = services["tags"]
+        cmd.details = [{}]
+        if "servicepackageuuid" in services:
+            cmd.details[0]["servicepackageuuid"] = services["servicepackageuuid"]
+        if "servicepackagedescription" in services:
+            cmd.details[0]["servicepackagedescription"] = services["servicepackagedescription"]
+
 
         cmd.availability = 'Optional'
 
@@ -2932,6 +2983,13 @@ class Network:
         if cleanup:
             cmd.cleanup = cleanup
         return(apiclient.restartNetwork(cmd))
+
+    def migrate(self, apiclient, network_offering_id, resume=False):
+        cmd = migrateNetwork.migrateNetworkCmd()
+        cmd.networkid = self.id
+        cmd.networkofferingid = network_offering_id
+        cmd.resume = resume
+        return(apiclient.migrateNetwork(cmd))
 
     @classmethod
     def list(cls, apiclient, **kwargs):
@@ -3888,7 +3946,7 @@ class Configurations:
     """Manage Configuration"""
 
     @classmethod
-    def update(cls, apiclient, name, value=None, zoneid=None):
+    def update(cls, apiclient, name, value=None, zoneid=None, clusterid=None, storageid=None):
         """Updates the specified configuration"""
 
         cmd = updateConfiguration.updateConfigurationCmd()
@@ -3897,7 +3955,12 @@ class Configurations:
 
         if zoneid:
             cmd.zoneid = zoneid
+        if clusterid:
+            cmd.clusterid = clusterid
+        if storageid:
+            cmd.storageid=storageid
         apiclient.updateConfiguration(cmd)
+
 
     @classmethod
     def list(cls, apiclient, **kwargs):
@@ -4353,6 +4416,15 @@ class VPC:
         if displaytext:
             cmd.displaytext = displaytext
         return (apiclient.updateVPC(cmd))
+
+    def migrate(self, apiclient, vpc_offering_id, vpc_network_offering_ids, resume=False):
+        cmd = migrateVPC.migrateVPCCmd()
+        cmd.vpcid = self.id
+        cmd.vpcofferingid = vpc_offering_id
+        cmd.tiernetworkofferings = vpc_network_offering_ids
+        cmd.resume = resume
+        return(apiclient.migrateVPC(cmd))
+
 
     def delete(self, apiclient):
         """Delete VPC network"""
@@ -5184,3 +5256,49 @@ class StorageNetworkIpRange:
         cmd = listStorageNetworkIpRange.listStorageNetworkIpRangeCmd()
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listStorageNetworkIpRange(cmd))
+
+class RegisteredServicePackage:
+    """Manage ServicePackage registered with NCC"""
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def list(cls, apiclient, **kwargs):
+        """Lists service packages published by NCC"""
+
+        cmd = listRegisteredServicePackages.listRegisteredServicePackagesCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return(apiclient.listRegisteredServicePackages(cmd))
+
+
+class ResourceDetails:
+
+    @classmethod
+    def create(cls, apiclient, resourceid, resourcetype, details, fordisplay):
+        """Create resource detail"""
+
+        cmd = addResourceDetail.addResourceDetailCmd()
+        cmd.resourceid = resourceid
+        cmd.resourcetype = resourcetype
+        cmd.fordisplay = fordisplay
+        cmd.details = []
+        for key, value in details.items():
+            cmd.details.append({
+                'key': key,
+                'value': value
+            })
+        return Tag(apiclient.createTags(cmd).__dict__)
+
+    @classmethod
+    def list(self, apiclient, **kwargs):
+        cmd = listResourceDetails.listResourceDetailsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return (apiclient.listResourceDetails(cmd))
+
+    @classmethod
+    def delete(self, apiclient, resourceid, resourcetype):
+        cmd = removeResourceDetail.removeResourceDetailCmd()
+        cmd.resourceid = resourceid
+        cmd.resourcetype = resourcetype
+        return (apiclient.removeResourceDetail(cmd))

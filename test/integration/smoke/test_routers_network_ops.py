@@ -39,7 +39,7 @@ from marvin.lib.base import (ServiceOffering,
                              Router,
                              EgressFireWallRule)
 from marvin.lib.common import (get_zone,
-                               get_template,
+                               get_test_template,
                                get_domain,
                                list_virtual_machines,
                                list_networks,
@@ -67,57 +67,6 @@ def check_router_command(virtual_machine, public_ip, ssh_command, check_string, 
     return result.count(check_string)
 
 
-class Templates:
-    """Test data for templates
-    """
-
-    def __init__(self):
-        self.templates = {
-            "macchinina": {
-                "kvm": {
-                    "name": "tiny-kvm",
-                    "displaytext": "macchinina kvm",
-                    "format": "qcow2",
-                    "hypervisor": "kvm",
-                    "ostype": "Other Linux (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
-                    "requireshvm": "True",
-                    "ispublic": "True",
-                },
-                "xenserver": {
-                    "name": "tiny-xen",
-                    "displaytext": "macchinina xen",
-                    "format": "vhd",
-                    "hypervisor": "xen",
-                    "ostype": "Other Linux (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
-                    "requireshvm": "True",
-                    "ispublic": "True",
-                },
-                "hyperv": {
-                    "name": "tiny-hyperv",
-                    "displaytext": "macchinina xen",
-                    "format": "vhd",
-                    "hypervisor": "hyperv",
-                    "ostype": "Other Linux (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-hyperv.vhd.zip",
-                    "requireshvm": "True",
-                    "ispublic": "True",
-                },
-                "vmware": {
-                    "name": "tiny-vmware",
-                    "displaytext": "macchinina vmware",
-                    "format": "ova",
-                    "hypervisor": "vmware",
-                    "ostype": "Other Linux (64-bit)",
-                    "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
-                    "requireshvm": "True",
-                    "ispublic": "True",
-                },
-            }
-        }
-
-
 class TestRedundantIsolateNetworks(cloudstackTestCase):
 
     @classmethod
@@ -137,16 +86,11 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
-        macchinina = Templates().templates["macchinina"]
         cls.hypervisor = cls.testClient.getHypervisorInfo()
-        cls.logger.debug("Downloading Template: %s from: %s" % (macchinina[cls.hypervisor.lower()],
-                         macchinina[cls.hypervisor.lower()]["url"]))
-        cls.template = Template.register(cls.api_client, macchinina[cls.hypervisor.lower()],
-                       cls.zone.id, hypervisor=cls.hypervisor.lower(), domainid=cls.domain.id)
-        cls.template.download(cls.api_client)
 
+        cls.template = get_test_template(cls.api_client, cls.zone.id, cls.hypervisor)
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template"
+            assert False, "get_test_template() failed to return template"
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
@@ -185,8 +129,7 @@ class TestRedundantIsolateNetworks(cloudstackTestCase):
 
         cls._cleanup = [
                         cls.service_offering,
-                        cls.account,
-                        cls.template
+                        cls.account
                         ]
 
         return
@@ -712,11 +655,12 @@ class TestIsolatedNetworks(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 

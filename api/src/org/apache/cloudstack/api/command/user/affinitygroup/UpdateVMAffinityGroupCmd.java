@@ -92,10 +92,6 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
     }
 
     public List<Long> getAffinityGroupIdList() {
-        if (affinityGroupNameList != null && affinityGroupIdList != null) {
-            throw new InvalidParameterValueException("affinitygroupids parameter is mutually exclusive with affinitygroupnames parameter");
-        }
-
         // transform group names to ids here
         if (affinityGroupNameList != null) {
             List<Long> affinityGroupIds = new ArrayList<Long>();
@@ -138,6 +134,14 @@ public class UpdateVMAffinityGroupCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException {
+        if (affinityGroupNameList != null && affinityGroupIdList != null) {
+            throw new InvalidParameterValueException("affinitygroupids parameter is mutually exclusive with affinitygroupnames parameter");
+        }
+
+        if (affinityGroupNameList == null && affinityGroupIdList == null) {
+            throw new InvalidParameterValueException("affinitygroupids parameter or affinitygroupnames parameter must be given");
+        }
+
         CallContext.current().setEventDetails("VM ID: " + getId());
         UserVm result = _affinityGroupService.updateVMAffinityGroups(getId(), getAffinityGroupIdList());
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();

@@ -47,6 +47,7 @@ import com.cloud.network.Networks.IsolationType;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.db.DB;
@@ -83,8 +84,8 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
     IpAddressManager _ipAddrMgr;
 
     @Override
-    protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
-        // this guru handles system Direct pod based network
+    protected boolean canHandle(NetworkOffering offering, DataCenter dc, PhysicalNetwork physnet) {
+        // this guru handles system Direct pod based network in Basic zones only (no isolation type specified)
         if (dc.getNetworkType() == NetworkType.Basic && isMyTrafficType(offering.getTrafficType())) {
             return true;
         } else {

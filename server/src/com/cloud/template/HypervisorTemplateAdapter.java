@@ -159,14 +159,31 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
         }
 
+        List<Long> zones = profile.getZoneIdList();
+
+        //zones is null when this template is to be registered to all zones
+        if (zones == null){
+            createTemplateWithinZone(null, profile, template);
+        }
+        else {
+            for (Long zId : zones) {
+                createTemplateWithinZone(zId, profile, template);
+            }
+        }
+        _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
+        return template;
+    }
+
+    private void createTemplateWithinZone(Long zId, TemplateProfile profile, VMTemplateVO template) {
         // find all eligible image stores for this zone scope
-        List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(profile.getZoneId()));
+        List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(zId));
         if (imageStores == null || imageStores.size() == 0) {
             throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
         }
 
         Set<Long> zoneSet = new HashSet<Long>();
-        Collections.shuffle(imageStores); // For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
+        Collections.shuffle(imageStores);
+        // For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
         for (DataStore imageStore : imageStores) {
             // skip data stores for a disabled zone
             Long zoneId = imageStore.getScope().getScopeId();
@@ -179,23 +196,22 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
                 // Check if zone is disabled
                 if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
-                    s_logger.info("Zone " + zoneId + " is disabled, so skip downloading template to its image store " + imageStore.getId());
+                    s_logger.info("Zone " + zoneId + " is disabled. Skip downloading template to its image store " + imageStore.getId());
                     continue;
                 }
 
                 // Check if image store has enough capacity for template
                 if (!_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
-                    s_logger.info("Image store doesn't has enough capacity, so skip downloading template to this image store " + imageStore.getId());
+                    s_logger.info("Image store doesn't have enough capacity. Skip downloading template to this image store " + imageStore.getId());
                     continue;
                 }
                 // We want to download private template to one of the image store in a zone
-                if(isPrivateTemplate(template) && zoneSet.contains(zoneId)){
+                if (isPrivateTemplate(template) && zoneSet.contains(zoneId)) {
                     continue;
-                }else {
+                } else {
                     zoneSet.add(zoneId);
                 }
             }
-
             TemplateInfo tmpl = imageFactory.getTemplate(template.getId(), imageStore);
             CreateTemplateContext<TemplateApiResult> context = new CreateTemplateContext<TemplateApiResult>(null, tmpl);
             AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> caller = AsyncCallbackDispatcher.create(this);
@@ -203,9 +219,6 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             caller.setContext(context);
             imageService.createTemplateAsync(tmpl, imageStore, caller);
         }
-        _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
-
-        return template;
     }
 
     @Override
@@ -222,8 +235,15 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                     throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
                 }
 
+                if (profile.getZoneIdList() != null && profile.getZoneIdList().size() > 1)
+                    throw new CloudRuntimeException("Operation is not supported for more than one zone id at a time");
+
+                Long zoneId = null;
+                if (profile.getZoneIdList() != null)
+                    zoneId = profile.getZoneIdList().get(0);
+
                 // find all eligible image stores for this zone scope
-                List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(profile.getZoneId()));
+                List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(zoneId));
                 if (imageStores == null || imageStores.size() == 0) {
                     throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
                 }
@@ -233,25 +253,27 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 Collections.shuffle(imageStores); // For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
                 for (DataStore imageStore : imageStores) {
                     // skip data stores for a disabled zone
-                    Long zoneId = imageStore.getScope().getScopeId();
+                    Long zoneId_is = imageStore.getScope().getScopeId();
                     if (zoneId != null) {
-                        DataCenterVO zone = _dcDao.findById(zoneId);
+                        DataCenterVO zone = _dcDao.findById(zoneId_is);
                         if (zone == null) {
-                            s_logger.warn("Unable to find zone by id " + zoneId + ", so skip downloading template to its image store " + imageStore.getId());
+                            s_logger.warn("Unable to find zone by id " + zoneId_is +
+                                        ", so skip downloading template to its image store " + imageStore.getId());
                             continue;
                         }
 
                         // Check if zone is disabled
                         if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
-                            s_logger.info("Zone " + zoneId + " is disabled, so skip downloading template to its image store " + imageStore.getId());
+                            s_logger.info("Zone " + zoneId_is +
+                                    " is disabled, so skip downloading template to its image store " + imageStore.getId());
                             continue;
                         }
 
                         // We want to download private template to one of the image store in a zone
-                        if (isPrivateTemplate(template) && zoneSet.contains(zoneId)) {
+                        if (isPrivateTemplate(template) && zoneSet.contains(zoneId_is)) {
                             continue;
                         } else {
-                            zoneSet.add(zoneId);
+                            zoneSet.add(zoneId_is);
                         }
 
                     }
@@ -363,8 +385,17 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
         VMTemplateVO template = profile.getTemplate();
 
+        if (profile.getZoneIdList() != null && profile.getZoneIdList().size() > 1)
+            throw new CloudRuntimeException("Operation is not supported for more than one zone id at a time");
+
+        Long zoneId = null;
+        if (profile.getZoneIdList() != null)
+            zoneId = profile.getZoneIdList().get(0);
+
         // find all eligible image stores for this template
-        List<DataStore> imageStores = templateMgr.getImageStoreByTemplate(template.getId(), profile.getZoneId());
+        List<DataStore> imageStores = templateMgr.getImageStoreByTemplate(template.getId(),
+                                            zoneId);
+
         if (imageStores == null || imageStores.size() == 0) {
             // already destroyed on image stores
             s_logger.info("Unable to find image store still having template: " + template.getName() + ", so just mark the template removed");
@@ -427,7 +458,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             }
         }
         if (success) {
-            if ((imageStores.size() > 1) && (profile.getZoneId() != null)) {
+            if ((imageStores.size() > 1) && (profile.getZoneIdList() != null)) {
                 //if template is stored in more than one image stores, and the zone id is not null, then don't delete other templates.
                 return success;
             }
@@ -467,13 +498,13 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     public TemplateProfile prepareDelete(DeleteTemplateCmd cmd) {
         TemplateProfile profile = super.prepareDelete(cmd);
         VMTemplateVO template = profile.getTemplate();
-        Long zoneId = profile.getZoneId();
+        List<Long> zoneIdList = profile.getZoneIdList();
 
         if (template.getTemplateType() == TemplateType.SYSTEM) {
             throw new InvalidParameterValueException("The DomR template cannot be deleted.");
         }
 
-        if (zoneId != null && (storeMgr.getImageStore(zoneId) == null)) {
+        if (zoneIdList != null && (storeMgr.getImageStore(zoneIdList.get(0)) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
         }
 
@@ -483,9 +514,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     @Override
     public TemplateProfile prepareDelete(DeleteIsoCmd cmd) {
         TemplateProfile profile = super.prepareDelete(cmd);
-        Long zoneId = profile.getZoneId();
+        List<Long> zoneIdList = profile.getZoneIdList();
 
-        if (zoneId != null && (storeMgr.getImageStore(zoneId) == null)) {
+        if (zoneIdList != null &&
+                (storeMgr.getImageStore(zoneIdList.get(0)) == null)) {
             throw new InvalidParameterValueException("Failed to find a secondary storage in the specified zone.");
         }
 

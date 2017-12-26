@@ -1765,11 +1765,11 @@ class TestNetworks_2(cloudstackTestCase):
         return
 
     @attr(tags=["advanced"], required_hardware="true")
-    def test_14_list_public_ipadress_by_associated_networkid(self):
+    def test_14_list_public_ipaddress_by_associated_networkid(self):
         """
         @summary: Test List Public IPAddress with associatednetworkid
         @Steps
-        Step1: Listing all the public ipadresses for a user before creating
+        Step1: Listing all the public ipaddresses for a user before creating
                a public ipaddress
         Step2: Verifying no Public ipaddress are listed
         Step3: Creating a network
@@ -1781,11 +1781,11 @@ class TestNetworks_2(cloudstackTestCase):
         Step8: Verifying the list public ipaddress size is 1
         Step9: Verifying the details of the public ipaddress
         """
-        # Listing all the public ipadresses for a user
-        list_public_ipadress_before = PublicIPAddress.list(self.userapiclient)
+        # Listing all the public ipaddresses for a user
+        list_public_ipaddress_before = PublicIPAddress.list(self.userapiclient)
         # Verifying No VPCs are listed
         self.assertIsNone(
-            list_public_ipadress_before,
+            list_public_ipaddress_before,
             "Public ipaddresses listed for newly created user"
         )
         # Listing Network Offerings

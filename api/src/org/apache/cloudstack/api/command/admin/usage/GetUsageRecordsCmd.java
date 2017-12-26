@@ -19,6 +19,8 @@ package org.apache.cloudstack.api.command.admin.usage;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.Logger;
 
@@ -31,6 +33,7 @@ import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.apache.cloudstack.usage.Usage;
 
 import com.cloud.utils.Pair;
@@ -76,6 +79,9 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     @Parameter(name = ApiConstants.USAGE_ID, type = CommandType.STRING, description = "List usage records for the specified usage UUID. Can be used only together with TYPE parameter.")
     private String usageId;
 
+    @Parameter(name = ApiConstants.INCLUDE_TAGS, type = CommandType.BOOLEAN, description = "Flag to enable display of Tags for a resource")
+    private Boolean includeTags;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -115,6 +121,10 @@ public class GetUsageRecordsCmd extends BaseListCmd {
         this.accountName = accountName;
     }
 
+    public Boolean getIncludeTags() {
+        return includeTags;
+    }
+
     public void setDomainId(Long domainId) {
         this.domainId = domainId;
     }
@@ -150,12 +160,18 @@ public class GetUsageRecordsCmd extends BaseListCmd {
         Pair<List<? extends Usage>, Integer> usageRecords = _usageService.getUsageRecords(this);
         ListResponse<UsageRecordResponse> response = new ListResponse<UsageRecordResponse>();
         List<UsageRecordResponse> usageResponses = new ArrayList<UsageRecordResponse>();
+        Map<String, Set<ResourceTagResponse>> resourceTagResponseMap = null;
         if (usageRecords != null) {
+            //read the resource tags details for all the resources in usage data and store in Map
+            if(null != includeTags && includeTags) {
+                resourceTagResponseMap =  _responseGenerator.getUsageResourceTags();
+            }
             for (Usage usageRecord : usageRecords.first()) {
-                UsageRecordResponse usageResponse = _responseGenerator.createUsageResponse(usageRecord);
+                UsageRecordResponse usageResponse = _responseGenerator.createUsageResponse(usageRecord, resourceTagResponseMap);
                 usageResponse.setObjectName("usagerecord");
                 usageResponses.add(usageResponse);
             }
+
             response.setResponses(usageResponses, usageRecords.second());
         }
 

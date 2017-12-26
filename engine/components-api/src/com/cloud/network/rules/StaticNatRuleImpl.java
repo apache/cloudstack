@@ -150,6 +150,11 @@ public class StaticNatRuleImpl implements StaticNatRule {
     }
 
     @Override
+    public List<String> getDestinationCidrList(){
+        return null;
+    }
+
+    @Override
     public Class<?> getEntityType() {
         return FirewallRule.class;
     }

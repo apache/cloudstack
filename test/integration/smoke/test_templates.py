@@ -17,8 +17,11 @@
 """ BVT tests for Templates ISO
 """
 #Import Local Modules
+from marvin.cloudstackException import *
+from marvin.cloudstackAPI import *
 from marvin.codes import FAILED
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackAPI import listZones
 from marvin.lib.utils import random_gen, cleanup_resources
 from marvin.lib.base import (Account,
                              ServiceOffering,
@@ -80,6 +83,203 @@ def create(apiclient, services, volumeid=None, account=None, domainid=None, proj
     if projectid:
         cmd.projectid = projectid
     return apiclient.createTemplate(cmd)
+
+class TestCreateTemplateWithChecksum(cloudstackTestCase):
+    def setUp(self):
+        self.testClient = super(TestCreateTemplateWithChecksum, self).getClsTestClient()
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+        self.services = self.testClient.getParsedTestDataConfig()
+        self.unsupportedHypervisor = False
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        if self.hypervisor.lower() in ['lxc']:
+            # Template creation from root volume is not supported in LXC
+            self.unsupportedHypervisor = True
+            return
+
+        # Get Zone, Domain and templates
+        self.domain = get_domain(self.apiclient)
+        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+
+        if "kvm" in self.hypervisor.lower():
+            self.test_template = registerTemplate.registerTemplateCmd()
+            self.test_template = registerTemplate.registerTemplateCmd()
+            self.test_template.checksum = "{SHA-1}" + "6952e58f39b470bd166ace11ffd20bf479bed936"
+            self.test_template.hypervisor = self.hypervisor
+            self.test_template.zoneid = self.zone.id
+            self.test_template.name = 'test sha-2333'
+            self.test_template.displaytext = 'test sha-1'
+            self.test_template.url = "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2"
+            self.test_template.format = "QCOW2"
+            self.test_template.ostypeid = self.getOsType("Other Linux (64-bit)")
+            self.md5 = "88c60fd500ce7ced985cf845df0db9da"
+            self.sha256 = "bc4cc040bbab843000fab78db6cb4a33f3a06ae1ced2cf563d36b38c7fee3049"
+
+        if "vmware" in self.hypervisor.lower():
+            self.test_template = registerTemplate.registerTemplateCmd()
+            self.test_template = registerTemplate.registerTemplateCmd()
+            self.test_template.checksum = "{SHA-1}" + "178639bd5ec089a27f6d39025be28c3de5d9393b"
+            self.test_template.hypervisor = self.hypervisor
+            self.test_template.zoneid = self.zone.id
+            self.test_template.name = 'test sha-2333'
+            self.test_template.displaytext = 'test sha-1'
+            self.test_template.url = "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova"
+            self.test_template.format = "OVA"
+            self.test_template.ostypeid = self.getOsType("Other Linux (64-bit)")
+            self.md5 = "3c23ac66bac7888dc7c972783646c644"
+            self.sha256 = "97aaa096d419522158c54f83eb61d9242d9f6bca9166fd4030d73683d647c7e7"
+
+        if "xen" in self.hypervisor.lower():
+            self.test_template = registerTemplate.registerTemplateCmd()
+            self.test_template = registerTemplate.registerTemplateCmd()
+            self.test_template.checksum = "{SHA-1}" + "80af2c18f96e94273188808c3d56e561a1cda717"
+            self.test_template.hypervisor = self.hypervisor
+            self.test_template.zoneid = self.zone.id
+            self.test_template.name = 'test sha-2333'
+            self.test_template.displaytext = 'test sha-1'
+            self.test_template.url = "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2"
+            self.test_template.format = "VHD"
+            self.test_template.ostypeid = self.getOsType("Other Linux (64-bit)")
+            self.md5 = "1662bbf224e41bb62b1dee043d785731"
+            self.sha256 = "80fba5a7a83842ec4e5f67cc6755d61d4fca46ae170d59b0c6ed47ebf7162722"
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                            %s" % self.hypervisor)
+        return
+
+    def tearDown(self):
+        try:
+            # Clean up the created templates
+            for temp in self.cleanup:
+                cmd = deleteTemplate.deleteTemplateCmd()
+                cmd.id = temp.id
+                cmd.zoneid = self.zone.id
+                self.apiclient.deleteTemplate(cmd)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_02_create_template_with_checksum_sha1(self):
+        template = self.registerTemplate(self.test_template)
+        self.download(self.apiclient, template.id)
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_03_create_template_with_checksum_sha256(self):
+        self.test_template.checksum = "{SHA-256}" + self.sha256
+        template = self.registerTemplate(self.test_template)
+        self.download(self.apiclient, template.id)
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_04_create_template_with_checksum_md5(self):
+        self.test_template.checksum = "{md5}" + self.md5
+        template = self.registerTemplate(self.test_template)
+        self.download(self.apiclient, template.id)
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_02_1_create_template_with_checksum_sha1_negative(self):
+        self.test_template.checksum = "{sha-1}" + "someInvalidValue"
+        template = self.registerTemplate(self.test_template)
+
+        try:
+            self.download(self.apiclient, template.id)
+        except Exception as e:
+            print "Negative Test Passed - Exception Occurred Under template download " \
+                  "%s" % GetDetailExceptionInfo(e)
+        else:
+            self.fail("Negative Test Failed - Exception DID NOT Occurred Under template download ")
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_03_1_create_template_with_checksum_sha256_negative(self):
+        self.test_template.checksum = "{SHA-256}" + "someInvalidValue"
+        template = self.registerTemplate(self.test_template)
+
+        try:
+            self.download(self.apiclient, template.id)
+        except Exception as e:
+            print "Negative Test Passed - Exception Occurred Under template download " \
+                  "%s" % GetDetailExceptionInfo(e)
+        else:
+            self.fail("Negative Test Failed - Exception DID NOT Occurred Under template download ")
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_04_1_create_template_with_checksum_md5_negative(self):
+        self.test_template.checksum = "{md5}" + "someInvalidValue"
+        template = self.registerTemplate(self.test_template)
+
+        try:
+            self.download(self.apiclient, template.id)
+        except Exception as e:
+            print "Negative Test Passed - Exception Occurred Under template download " \
+                  "%s" % GetDetailExceptionInfo(e)
+        else:
+            self.fail("Negative Test Failed - Exception DID NOT Occurred Under template download ")
+
+    @attr(tags=["advanced", "smoke"], required_hardware="true")
+    def test_05_create_template_with_no_checksum(self):
+        self.test_template.checksum = None
+        template = self.registerTemplate(self.test_template)
+        self.download(self.apiclient, template.id)
+
+    def registerTemplate(self, cmd):
+        temp = self.apiclient.registerTemplate(cmd)[0]
+        if not temp:
+            self.cleanup.append(temp)
+        return temp
+
+    def getOsType(self, param):
+        cmd = listOsTypes.listOsTypesCmd()
+        cmd.description = param
+        return self.apiclient.listOsTypes(cmd)[0].id
+
+    def download(self, apiclient, template_id, retries=12, interval=5):
+        """Check if template download will finish in 1 minute"""
+        while retries > -1:
+            time.sleep(interval)
+            template_response = Template.list(
+                apiclient,
+                id=template_id,
+                zoneid=self.zone.id,
+                templatefilter='self'
+            )
+
+            if isinstance(template_response, list):
+                template = template_response[0]
+                if not hasattr(template, 'status') or not template or not template.status:
+                    retries = retries - 1
+                    continue
+
+                # If template is ready,
+                # template.status = Download Complete
+                # Downloading - x% Downloaded
+                # if Failed
+                # Error - Any other string
+                if 'Failed' in template.status:
+                    raise Exception(
+                        "Failed to download template: status - %s" %
+                        template.status)
+
+                elif template.status == 'Download Complete' and template.isready:
+                    return
+
+                elif 'Downloaded' in template.status:
+                    retries = retries - 1
+                    continue
+
+                elif 'Installing' not in template.status:
+                    if retries >= 0:
+                        retries = retries - 1
+                        continue
+                    raise Exception(
+                        "Error in downloading template: status - %s" %
+                        template.status)
+
+            else:
+                retries = retries - 1
+        raise Exception("Template download failed exception.")
 
 
 class TestCreateTemplate(cloudstackTestCase):
@@ -793,4 +993,201 @@ class TestTemplates(cloudstackTestCase):
                         'SYSTEM',
                         "ListTemplates should not list any system templates"
                         )
+        return
+		
+class TestCopyDeleteTemplate(cloudstackTestCase):
+
+    def setUp(self):
+
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+        if self.unsupportedHypervisor:
+            self.skipTest("Skipping test because unsupported hypervisor\
+                    %s" % self.hypervisor)
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created templates
+            cleanup_resources(self.apiclient, self.cleanup)
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestCopyDeleteTemplate, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls._cleanup = []
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.unsupportedHypervisor = False
+        cls.hypervisor = testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() in ['lxc']:
+            # Template creation from root volume is not supported in LXC
+            cls.unsupportedHypervisor = True
+            return
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
+        try:
+            cls.disk_offering = DiskOffering.create(
+                                    cls.apiclient,
+                                    cls.services["disk_offering"]
+                                    )
+            cls._cleanup.append(cls.disk_offering)
+            template = get_template(
+                            cls.apiclient,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+            if template == FAILED:
+                assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+
+            cls.services["template"]["ostypeid"] = template.ostypeid
+            cls.services["template_2"]["ostypeid"] = template.ostypeid
+            cls.services["ostypeid"] = template.ostypeid
+
+            cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+            cls.services["volume"]["diskoffering"] = cls.disk_offering.id
+            cls.services["volume"]["zoneid"] = cls.zone.id
+            cls.services["sourcezoneid"] = cls.zone.id
+            cls.account = Account.create(
+                            cls.apiclient,
+                            cls.services["account"],
+                            domainid=cls.domain.id
+                            )
+            cls._cleanup.append(cls.account)
+            cls.service_offering = ServiceOffering.create(
+                                            cls.apiclient,
+                                            cls.services["service_offerings"]["tiny"]
+                                            )
+            cls._cleanup.append(cls.service_offering)
+            #create virtual machine
+            cls.virtual_machine = VirtualMachine.create(
+                                    cls.apiclient,
+                                    cls.services["virtual_machine"],
+                                    templateid=template.id,
+                                    accountid=cls.account.name,
+                                    domainid=cls.account.domainid,
+                                    serviceofferingid=cls.service_offering.id,
+                                    mode=cls.services["mode"]
+                                    )
+            #Stop virtual machine
+            cls.virtual_machine.stop(cls.apiclient)
+
+            list_volume = Volume.list(
+                                   cls.apiclient,
+                                   virtualmachineid=cls.virtual_machine.id,
+                                   type='ROOT',
+                                   listall=True
+                                   )
+
+            cls.volume = list_volume[0]
+        except Exception as e:
+            cls.tearDownClass()
+            raise unittest.SkipTest("Exception in setUpClass: %s" % e)
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.apiclient = super(TestCopyDeleteTemplate, cls).getClsTestClient().getApiClient()
+            #Cleanup resources used
+            cleanup_resources(cls.apiclient, cls._cleanup)
+
+        except Exception as e:
+           raise Exception("Warning: Exception during cleanup : %s" % e) 
+
+        return
+
+
+
+    @attr(tags=["advanced", "advancedns"], required_hardware="false")
+    def test_09_copy_delete_template(self):
+	cmd = listZones.listZonesCmd()
+        zones = self.apiclient.listZones(cmd)
+        if not isinstance(zones, list):
+            raise Exception("Failed to find zones.")
+        if len(zones) < 2:
+            self.skipTest(
+                "Skipping test due to there are less than two zones.")
+        return
+			
+	self.sourceZone = zones[0]
+	self.destZone = zones[1]
+            
+        template = Template.create(
+                                self.apiclient,
+                                self.services["template"],
+                                self.volume.id,
+                                account=self.account.name,
+                                domainid=self.account.domainid
+                                )
+        self.cleanup.append(template)
+
+        self.debug("Created template with ID: %s" % template.id)
+
+        list_template_response = Template.list(
+                                    self.apiclient,
+                                    templatefilter=\
+                                    self.services["templatefilter"],
+                                    id=template.id
+                                    )
+
+        self.assertEqual(
+                            isinstance(list_template_response, list),
+                            True,
+                            "Check list response returns a valid list"
+                        )
+        #Verify template response to check whether template added successfully
+        self.assertNotEqual(
+                            len(list_template_response),
+                            0,
+                            "Check template available in List Templates"
+                        )
+	#Copy template from zone1 to zone2
+        copytemplate = Template.copy(
+            cls.apiclient,
+            zoneid=cls.sourceZone.id,
+            destzoneid = cls.destZone.id
+        )
+        cls._cleanup.append(cls.copytemplate)
+
+        list_template_response = Template.list(
+            self.apiclient,
+	    templatefilter=self.services["template"]["templatefilter"],
+            id=self.template.id,
+            zoneid=self.destZone.id
+        )
+        self.assertEqual(
+            list_template_response,
+            None,
+            "Check template available in List Templates"
+        )
+
+        self.deltemplate = list_template_response[0]
+
+        self.debug("Deleting template: %s" % self.deltemplate)
+        # Delete the template
+        self.deltemplate.delete(self.apiclient)
+        self.debug("Delete template: %s successful" % self.deltemplate)
+
+        copytemplate = Template.copy(
+            self.apiclient,
+            zoneid=self.sourceZone.id,
+            destzoneid = self.destZone.id
+        )
+
+        removed = cls.dbclient.execute("select removed from template_zone_ref where zone_id='%s' and template_id='%s';" % self.destZone.id, self.template.id)
+
+        self.assertEqual(
+            removed,
+            NULL,
+            "Removed state is not correct."
+        )
         return

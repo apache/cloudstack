@@ -568,6 +568,10 @@ cloudStack.docs = {
         desc: 'Number of guest networks/accounts that will share this device',
         externalLink: ''
     },
+    helpNetscalerServicePackages: {
+        desc: 'Choose the Netscaler Service Package you want to use.',
+        externalLink: ''
+    },
     // Add network offering
     helpNetworkOfferingName: {
         desc: 'Any desired name for the network offering',
@@ -1197,7 +1201,7 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpRegisterTemplateZone: {
-        desc: 'Choose the zone where you want the template to be available, or All Zones to make it available throughout the cloud',
+        desc: 'Choose one or more zones where you want the template to be available, or All Zones to make it available throughout the cloud. (Tip: Use Ctrl to choose multiple zones)',
         externalLink: ''
     },
     helpRegisterTemplateHypervisor: {

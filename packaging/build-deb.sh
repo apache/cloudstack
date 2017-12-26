@@ -58,6 +58,6 @@ dch -b -v "${VERSION}~${DISTCODE}" -u low -m "Apache CloudStack Release ${VERSIO
 sed -i '0,/ UNRELEASED;/s// unstable;/g' debian/changelog
 
 dpkg-checkbuilddeps
-dpkg-buildpackage -uc -us
+dpkg-buildpackage -uc -us -b
 
 /bin/mv /tmp/changelog.orig debian/changelog

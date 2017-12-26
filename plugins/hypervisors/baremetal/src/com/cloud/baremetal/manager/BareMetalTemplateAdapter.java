@@ -84,20 +84,22 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
     @Override
     public VMTemplateVO create(TemplateProfile profile) {
         VMTemplateVO template = persistTemplate(profile, State.Active);
-        Long zoneId = profile.getZoneId();
+        List<Long> zones = profile.getZoneIdList();
 
         // create an entry at template_store_ref with store_id = null to represent that this template is ready for use.
         TemplateDataStoreVO vmTemplateHost =
             new TemplateDataStoreVO(null, template.getId(), new Date(), 100, Status.DOWNLOADED, null, null, null, null, template.getUrl());
         this._tmpltStoreDao.persist(vmTemplateHost);
 
-        if (zoneId == null || zoneId == -1) {
+        if (zones == null) {
             List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
             if (dcs != null && dcs.size() > 0) {
                 templateCreateUsage(template, dcs.get(0).getId());
             }
         } else {
-            templateCreateUsage(template, zoneId);
+            for (Long zoneId: zones) {
+                templateCreateUsage(template, zoneId);
+            }
         }
 
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
@@ -123,8 +125,12 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
         boolean success = true;
         String zoneName;
 
-        if (!template.isCrossZones() && profile.getZoneId() != null) {
-            zoneName = profile.getZoneId().toString();
+        if (profile.getZoneIdList() != null && profile.getZoneIdList().size() > 1)
+            throw new CloudRuntimeException("Operation is not supported for more than one zone id at a time");
+
+        if (!template.isCrossZones() && profile.getZoneIdList() != null) {
+            //get the first element in the list
+            zoneName = profile.getZoneIdList().get(0).toString();
         } else {
             zoneName = "all zones";
         }
@@ -154,21 +160,22 @@ public class BareMetalTemplateAdapter extends TemplateAdapterBase implements Tem
             }
         }
 
-        if (profile.getZoneId() != null) {
-            UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), profile.getZoneId(), templateId, null);
+        if (profile.getZoneIdList() != null) {
+            UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), profile.getZoneIdList().get(0),
+                                            templateId, null);
             _usageEventDao.persist(usageEvent);
+
+            VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(profile.getZoneIdList().get(0), templateId);
+
+            if (templateZone != null) {
+                _tmpltZoneDao.remove(templateZone.getId());
+            }
         } else {
             List<DataCenterVO> dcs = _dcDao.listAllIncludingRemoved();
             for (DataCenterVO dc : dcs) {
                 UsageEventVO usageEvent = new UsageEventVO(eventType, account.getId(), dc.getId(), templateId, null);
                 _usageEventDao.persist(usageEvent);
             }
-        }
-
-        VMTemplateZoneVO templateZone = _tmpltZoneDao.findByZoneTemplate(profile.getZoneId(), templateId);
-
-        if (templateZone != null) {
-            _tmpltZoneDao.remove(templateZone.getId());
         }
 
         s_logger.debug("Successfully marked template host refs for template: " + template.getName() + " as destroyed in zone: " + zoneName);

@@ -146,6 +146,6 @@ public class SshHelperTest {
         Mockito.verify(conn).openSession();
 
         PowerMockito.verifyStatic();
-        Thread.sleep(Mockito.anyLong());
+
     }
 }

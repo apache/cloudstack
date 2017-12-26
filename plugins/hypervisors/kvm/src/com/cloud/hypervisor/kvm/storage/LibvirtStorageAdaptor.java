@@ -659,25 +659,25 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         s_logger.info("Attempting to create volume " + name + " (" + pool.getType().toString() + ") in pool "
                 + pool.getUuid() + " with size " + size);
 
-        switch (pool.getType()){
-        case RBD:
-            return createPhysicalDiskOnRBD(name, pool, format, provisioningType, size);
-        case NetworkFilesystem:
-        case Filesystem:
-            switch (format){
-            case QCOW2:
-                return createPhysicalDiskByQemuImg(name, pool, format, provisioningType, size);
-            case RAW:
-                return createPhysicalDiskByQemuImg(name, pool, format, provisioningType, size);
-            case DIR:
+        switch (pool.getType()) {
+            case RBD:
                 return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
-            case TAR:
-                return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+            case NetworkFilesystem:
+            case Filesystem:
+                switch (format) {
+                    case QCOW2:
+                        return createPhysicalDiskByQemuImg(name, pool, format, provisioningType, size);
+                    case RAW:
+                        return createPhysicalDiskByQemuImg(name, pool, format, provisioningType, size);
+                    case DIR:
+                        return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                    case TAR:
+                        return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                    default:
+                        throw new CloudRuntimeException("Unexpected disk format is specified.");
+                }
             default:
-                throw new CloudRuntimeException("Unexpected disk format is specified.");
-            }
-        default:
-            return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
         }
     }
 
@@ -745,50 +745,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         disk.setFormat(format);
         disk.setSize(actualSize);
         disk.setVirtualSize(virtualSize);
-        return disk;
-    }
-
-    private KVMPhysicalDisk createPhysicalDiskOnRBD(String name, KVMStoragePool pool,
-            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
-        String volPath = null;
-
-        /**
-         * To have RBD function properly we want RBD images of format 2
-         * libvirt currently defaults to format 1
-         *
-         * This has been fixed in libvirt 1.2.2, but that's not upstream
-         * in all distributions
-         *
-         * For that reason we use the native RBD bindings to create the
-         * RBD image until libvirt creates RBD format 2 by default
-         */
-
-        try {
-            s_logger.info("Creating RBD image " + pool.getSourceDir() + "/" + name + " with size " + size);
-
-            Rados r = new Rados(pool.getAuthUserName());
-            r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
-            r.confSet("key", pool.getAuthSecret());
-            r.confSet("client_mount_timeout", "30");
-            r.connect();
-            s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
-
-            IoCTX io = r.ioCtxCreate(pool.getSourceDir());
-            Rbd rbd = new Rbd(io);
-            rbd.create(name, size, rbdFeatures, rbdOrder);
-
-            r.ioCtxDestroy(io);
-        } catch (RadosException e) {
-            throw new CloudRuntimeException(e.toString());
-        } catch (RbdException e) {
-            throw new CloudRuntimeException(e.toString());
-        }
-
-        volPath = pool.getSourceDir() + "/" + name;
-        KVMPhysicalDisk disk = new KVMPhysicalDisk(volPath, name, pool);
-        disk.setFormat(PhysicalDiskFormat.RAW);
-        disk.setSize(size);
-        disk.setVirtualSize(size);
         return disk;
     }
 

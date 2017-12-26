@@ -29,18 +29,19 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
@@ -83,7 +84,6 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
 import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
@@ -107,7 +107,7 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
-public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService {
+public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLimitService, Configurable{
     public static final Logger s_logger = Logger.getLogger(ResourceLimitManagerImpl.class);
 
     @Inject
@@ -205,7 +205,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         snapshotSizeSearch.join("snapshots", join2, snapshotSizeSearch.entity().getSnapshotId(), join2.entity().getId(), JoinBuilder.JoinType.INNER);
         snapshotSizeSearch.done();
 
-        _resourceCountCheckInterval = NumbersUtil.parseInt(_configDao.getValue(Config.ResourceCountCheckInterval.key()), 0);
+        _resourceCountCheckInterval = ResourceCountCheckInterval.value();
         if (_resourceCountCheckInterval > 0) {
             _rcExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("ResourceCountChecker"));
         }
@@ -873,8 +873,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
         ResourceCountVO accountRC = _resourceCountDao.findByOwnerAndType(accountId, ResourceOwnerType.Account, type);
         long oldCount = 0;
-        if (accountRC != null)
+        if (accountRC != null) {
             oldCount = accountRC.getCount();
+        }
 
         if (type == Resource.ResourceType.user_vm) {
             newCount = _userVmDao.countAllocatedVMsForAccount(accountId);
@@ -1004,10 +1005,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             dedicatedCount += new Long(ips.size());
         }
         allocatedCount = _ipAddressDao.countAllocatedIPsForAccount(accountId);
-        if (dedicatedCount > allocatedCount)
+        if (dedicatedCount > allocatedCount) {
             return dedicatedCount;
-        else
+        } else {
             return allocatedCount;
+        }
     }
 
     @Override
@@ -1050,8 +1052,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public void changeResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
 
         // meaning that the display flag is not changed so neither increment or decrement
-        if (displayResource == null)
+        if (displayResource == null) {
             return;
+        }
 
         // Increment because the display is turned on.
         if (displayResource) {
@@ -1059,6 +1062,16 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         } else {
             decrementResourceCount(accountId, type, delta);
         }
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ResourceLimitManagerImpl.class.getName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ResourceCountCheckInterval};
     }
 
     protected class ResourceCountCheckTask extends ManagedContextRunnable {

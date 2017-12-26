@@ -38,7 +38,7 @@ import com.cloud.utils.fsm.StateObject;
 public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable, Displayable {
 
     public enum GuestType {
-        Shared, Isolated
+        Shared, Isolated, L2
     }
 
     public String updatingInSequence ="updatingInSequence";
@@ -47,7 +47,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         private static List<Service> supportedServices = new ArrayList<Service>();
 
         public static final Service Vpn = new Service("Vpn", Capability.SupportedVpnProtocols, Capability.VpnTypes);
-        public static final Service Dhcp = new Service("Dhcp");
+        public static final Service Dhcp = new Service("Dhcp", Capability.ExtraDhcpOptions);
         public static final Service Dns = new Service("Dns", Capability.AllowDnsSuffixModification);
         public static final Service Gateway = new Service("Gateway");
         public static final Service Firewall = new Service("Firewall", Capability.SupportedProtocols, Capability.MultipleIps, Capability.TrafficStatistics,
@@ -218,6 +218,7 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
         public static final Capability RegionLevelVpc = new Capability("RegionLevelVpc");
         public static final Capability NoVlan = new Capability("NoVlan");
         public static final Capability PublicAccess = new Capability("PublicAccess");
+        public static final Capability ExtraDhcpOptions = new Capability("ExtraDhcpOptions");
 
         private final String name;
 
@@ -277,10 +278,24 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
     public class IpAddresses {
         private String ip4Address;
         private String ip6Address;
+        private String macAddress;
+
+        public String getMacAddress() {
+            return macAddress;
+        }
+
+        public void setMacAddress(String macAddress) {
+            this.macAddress = macAddress;
+        }
 
         public IpAddresses(String ip4Address, String ip6Address) {
             setIp4Address(ip4Address);
             setIp6Address(ip6Address);
+        }
+
+        public IpAddresses(String ipAddress, String ip6Address, String macAddress) {
+            this(ipAddress, ip6Address);
+            setMacAddress(macAddress);
         }
 
         public String getIp4Address() {

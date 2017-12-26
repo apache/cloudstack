@@ -393,6 +393,10 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
             }
 
             removeClustersCrossingThreshold(prioritizedClusterIds, avoid, vmProfile, plan);
+            String hostTagOnOffering = offering.getHostTag();
+            if (hostTagOnOffering != null) {
+                removeClustersWithoutMatchingTag(prioritizedClusterIds, hostTagOnOffering);
+            }
 
         } else {
             if (s_logger.isDebugEnabled()) {
@@ -517,6 +521,18 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         }
 
         return result;
+
+    }
+
+    private void removeClustersWithoutMatchingTag(List<Long> clusterListForVmAllocation, String hostTagOnOffering) {
+
+        List<Long> matchingClusters = hostDao.listClustersByHostTag(hostTagOnOffering);
+
+        clusterListForVmAllocation.retainAll(matchingClusters);
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("The clusterId list for the given offering tag: " + clusterListForVmAllocation);
+        }
 
     }
 

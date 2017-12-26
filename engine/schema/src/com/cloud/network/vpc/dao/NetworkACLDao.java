@@ -16,8 +16,14 @@
 // under the License.
 package com.cloud.network.vpc.dao;
 
+import java.util.List;
+
 import com.cloud.network.vpc.NetworkACLVO;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDao;
 
 public interface NetworkACLDao extends GenericDao<NetworkACLVO, Long> {
+
+    @DB
+    List<NetworkACLVO> listByVpcId(long vpcId);
 }

@@ -163,6 +163,11 @@ public class SnapshotVO implements Snapshot {
     }
 
     @Override
+    public long getSnapshotId() {
+        return id;
+    }
+
+    @Override
     public short getsnapshotType() {
         return snapshotType;
     }

@@ -82,4 +82,11 @@ public class VpcGatewayDaoImpl extends GenericDaoBase<VpcGatewayVO, Long> implem
         sc.setParameters("type", type);
         return listBy(sc);
     }
+
+    @Override
+    public List<VpcGatewayVO> listByVpcId(long vpcId) {
+        SearchCriteria<VpcGatewayVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vpcId", vpcId);
+        return listBy(sc);
+    }
 }

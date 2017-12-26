@@ -55,6 +55,8 @@ public interface StorageManager extends StorageService {
                     " default will be to infer from vm.allocation.algorithm", true, ConfigKey.Scope.Global, null);
     static final ConfigKey<String> ImageStoreAllocationAlgorithm = new ConfigKey(String.class, "image.store.allocation.algorithm", "Advanced", "random",
             "'random', 'firstfit', 'userdispersing', 'firstfitleastconsumed' : Order in which image stores will be considered for allocation..", true, ConfigKey.Scope.Global, null);
+    static final ConfigKey<Boolean> TemplateCleanupEnabled = new ConfigKey<Boolean>(Boolean.class, "storage.template.cleanup.enabled", "Storage", "true",
+            "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled", false, ConfigKey.Scope.Global, null);
 
     /**
      * Returns a comma separated list of tags for the specified storage pool

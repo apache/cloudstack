@@ -20,12 +20,14 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.util.List;
+import java.io.File;
 
+import com.cloud.utils.Pair;
+import com.cloud.utils.ssh.SshHelper;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
-import org.libvirt.LibvirtException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.StopAnswer;
@@ -36,11 +38,14 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import org.libvirt.LibvirtException;
 
 @ResourceWrapper(handles =  StopCommand.class)
 public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand, Answer, LibvirtComputingResource> {
 
     private static final Logger s_logger = Logger.getLogger(LibvirtStopCommandWrapper.class);
+    private static final String CMDLINE_PATH = "/var/cache/cloud/cmdline";
+    private static final String CMDLINE_BACKUP_PATH = "/var/cache/cloud/cmdline.backup";
 
     @Override
     public Answer execute(final StopCommand command, final LibvirtComputingResource libvirtComputingResource) {
@@ -59,15 +64,29 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
                 s_logger.debug("Failed to get vm status in case of checkboforecleanup is true", e);
             }
         }
-
+        File pemFile = new File(LibvirtComputingResource.SSHPRVKEYPATH);
         try {
+            if(vmName.startsWith("s-") || vmName.startsWith("v-")){
+                //move the command line file to backup.
+                s_logger.debug("backing up the cmdline");
+                try{
+                    Pair<Boolean, String> ret = SshHelper.sshExecute(command.getControlIp(), 3922, "root", pemFile, null,"mv -f "+CMDLINE_PATH+" "+CMDLINE_BACKUP_PATH);
+                    if(!ret.first()){
+                        s_logger.debug("Failed to backup cmdline file due to "+ret.second());
+                    }
+                } catch (Exception e){
+                    s_logger.debug("Failed to backup cmdline file due to "+e.getMessage());
+                }
+            }
+
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vmName);
 
             final List<DiskDef> disks = libvirtComputingResource.getDisks(conn, vmName);
             final List<InterfaceDef> ifaces = libvirtComputingResource.getInterfaces(conn, vmName);
 
             libvirtComputingResource.destroyNetworkRulesForVM(conn, vmName);
-            final String result = libvirtComputingResource.stopVM(conn, vmName);
+            final String result = libvirtComputingResource.stopVM(conn, vmName, command.isForceStop());
+
             if (result == null) {
                 for (final DiskDef disk : disks) {
                     libvirtComputingResource.cleanupDisk(disk);
@@ -83,6 +102,17 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
 
             return new StopAnswer(command, result, true);
         } catch (final LibvirtException e) {
+            s_logger.debug("unable to stop VM:"+vmName+" due to"+e.getMessage());
+            try{
+                if(vmName.startsWith("s-") || vmName.startsWith("v-"))
+                    s_logger.debug("restoring cmdline file from backup");
+                Pair<Boolean, String> ret = SshHelper.sshExecute(command.getControlIp(), 3922, "root", pemFile, null, "mv "+CMDLINE_BACKUP_PATH+" "+CMDLINE_PATH);
+                if(!ret.first()){
+                    s_logger.debug("unable to restore cmdline due to "+ret.second());
+                }
+            }catch (final Exception ex){
+                s_logger.debug("unable to restore cmdline due to:"+ex.getMessage());
+            }
             return new StopAnswer(command, e.getMessage(), false);
         }
     }

@@ -15,8 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-/var/log/cloudstack/agent/cloudstack-agent.out
-/var/log/cloudstack/agent/cloudstack-agent.err
+@AGENTLOG@
+/var/log/cloudstack/agent/security_group.log
 {
     copytruncate
     daily

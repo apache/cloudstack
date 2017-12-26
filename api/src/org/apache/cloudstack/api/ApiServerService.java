@@ -43,7 +43,4 @@ public interface ApiServerService {
 
     public Class<?> getCmdClass(String cmdName);
 
-    public String getJSONContentType();
-
-    public boolean isSecureSessionCookieEnabled();
 }

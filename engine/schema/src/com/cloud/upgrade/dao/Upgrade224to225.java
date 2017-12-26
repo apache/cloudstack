@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import java.io.File;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,19 +28,19 @@ import java.util.List;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade224to225 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade224to225.class);
 
     @Override
-    public File[] getPrepareScripts() {
-        String file = Script.findScript("", "db/schema-224to225.sql");
-        if (file == null) {
-            throw new CloudRuntimeException("Unable to find the upgrade script, schema-224to225.sql");
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-224to225.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(file)};
+        return new InputStream[] {script};
     }
 
     @Override
@@ -54,13 +54,14 @@ public class Upgrade224to225 implements DbUpgrade {
     }
 
     @Override
-    public File[] getCleanupScripts() {
-        String file = Script.findScript("", "db/schema-224to225-cleanup.sql");
-        if (file == null) {
-            throw new CloudRuntimeException("Unable to find the cleanup script, schema-224to225-cleanup.sql");
+    public InputStream[] getCleanupScripts() {
+        final String scriptFile = "META-INF/db/schema-224to225-cleanup.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(file)};
+        return new InputStream[] {script};
     }
 
     @Override

@@ -24,4 +24,5 @@ import com.cloud.network.Network;
 public interface RedundantResource {
      public void configureResource(Network network);
      public int getResourceCount(Network network);
+     public void finalize(Network network, boolean success);
 }

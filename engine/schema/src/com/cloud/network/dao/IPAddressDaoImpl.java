@@ -135,8 +135,9 @@ public class IPAddressDaoImpl extends GenericDaoBase<IPAddressVO, Long> implemen
         AllocatedIpCountForAccount.select(null, Func.COUNT, AllocatedIpCountForAccount.entity().getAddress());
         AllocatedIpCountForAccount.and("account", AllocatedIpCountForAccount.entity().getAllocatedToAccountId(), Op.EQ);
         AllocatedIpCountForAccount.and("allocated", AllocatedIpCountForAccount.entity().getAllocatedTime(), Op.NNULL);
-        AllocatedIpCountForAccount.and("network", AllocatedIpCountForAccount.entity().getAssociatedWithNetworkId(), Op.NNULL);
-        AllocatedIpCountForAccount.done();
+        AllocatedIpCountForAccount.and().op("network", AllocatedIpCountForAccount.entity().getAssociatedWithNetworkId(), Op.NNULL);
+        AllocatedIpCountForAccount.or("vpc", AllocatedIpCountForAccount.entity().getVpcId(), Op.NNULL);
+        AllocatedIpCountForAccount.cp();AllocatedIpCountForAccount.done();
 
         CountFreePublicIps = createSearchBuilder(Long.class);
         CountFreePublicIps.select(null, Func.COUNT, null);

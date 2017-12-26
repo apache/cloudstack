@@ -79,6 +79,8 @@ public interface Snapshot extends ControlledEntity, Identity, InternalIdentity, 
 
     String getName();
 
+    long getSnapshotId();
+
     Date getCreated();
 
     Type getRecurringType();

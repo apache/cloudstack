@@ -216,11 +216,8 @@ class serviceOpsUbuntu(serviceOps):
 class serviceOpsRedhat7(serviceOps):
     def isServiceRunning(self, servicename):
         try:
-            o = bash("systemctl status " + servicename)
-            if "running" in o.getStdout() or "start" in o.getStdout() or "Running" in o.getStdout():
-                return True
-            else:
-                return False
+            o = bash("systemctl is-active " + servicename)
+            return "inactive" not in o.getStdout()
         except:
             return False
 

@@ -26,8 +26,11 @@ from marvin.lib.base import (Account,
 from marvin.cloudstackAPI import (enableNuageUnderlayVlanIpRange,
                                   disableNuageUnderlayVlanIpRange,
                                   listNuageUnderlayVlanIpRanges)
+from marvin.lib.common import list_virtual_machines
+
 # Import System Modules
 from nose.plugins.attrib import attr
+import threading
 import copy
 import time
 
@@ -150,7 +153,7 @@ class TestNuageStaticNat(nuageTestCase):
 
         # wget from VM
         tries = 0
-        max_tries = 3 if non_default_nic else 10
+        max_tries = 3 if non_default_nic else 120
         filename = None
         headers = None
         while tries < max_tries:
@@ -162,30 +165,31 @@ class TestNuageStaticNat(nuageTestCase):
             except Exception as e:
                 self.debug("Failed to wget from VM - %s" % e)
                 self.debug("Retrying wget from VM after some time...")
-                time.sleep(60)
+                time.sleep(5)
                 tries += 1
 
-        if not filename and not headers:
-            if non_default_nic:
-                self.debug("Failed to wget from VM via this NIC as it is not "
-                           "the default NIC")
-            else:
-                self.fail("Failed to wget from VM")
+        try:
+            if not filename and not headers:
+                if non_default_nic:
+                    self.debug("Failed to wget from VM via this NIC as it "
+                               "is not the default NIC")
+                else:
+                    self.fail("Failed to wget from VM")
+        finally:
+            # Removing Ingress Firewall/Network ACL rule
+            self.debug("Removing the created Ingress Firewall/Network ACL "
+                       "rule in the network...")
+            public_http_rule.delete(self.api_client)
 
-        # Removing Ingress Firewall/Network ACL rule
-        self.debug("Removing the created Ingress Firewall/Network ACL "
-                   "rule in the network...")
-        public_http_rule.delete(self.api_client)
+            # VSD verification
+            with self.assertRaises(Exception):
+                self.verify_vsd_firewall_rule(public_http_rule)
+            self.debug("Ingress Firewall/Network ACL rule successfully "
+                       "deleted in VSD")
 
-        # VSD verification
-        with self.assertRaises(Exception):
-            self.verify_vsd_firewall_rule(public_http_rule)
-        self.debug("Ingress Firewall/Network ACL rule successfully "
-                   "deleted in VSD")
-
-        self.debug("Successfully verified Static NAT traffic by performing "
-                   "wget traffic test with the given Static NAT enabled "
-                   "public IP - %s" % public_ip)
+            self.debug("Successfully verified Static NAT traffic by "
+                       "performing wget traffic test with the given Static "
+                       "NAT enabled public IP - %s" % public_ip)
 
     # wget_from_internet - From within the given VM (ssh client),
     # fetches index.html file of an Internet web server, wget www.google.com
@@ -240,30 +244,31 @@ class TestNuageStaticNat(nuageTestCase):
 
         # SSH into VM
         ssh_client = None
-        if non_default_nic:
+        try:
+            if non_default_nic:
+                with self.assertRaises(Exception):
+                    self.ssh_into_VM(vm, public_ip, negative_test=True)
+                self.debug("Can not SSH into the VM via this NIC as it is "
+                           "not the default NIC")
+            else:
+                ssh_client = self.ssh_into_VM(vm, public_ip)
+
+            # wget from Internet
+            test_result = None
+            if ssh_client and self.isInternetConnectivityAvailable:
+                timeout = 100 if negative_test else 300
+                test_result = self.wget_from_Internet(ssh_client, timeout)
+        finally:
+            # Removing Ingress Firewall/Network ACL rule
+            self.debug("Removing the created Ingress Firewall/Network ACL "
+                       "rule in the network...")
+            public_ssh_rule.delete(self.api_client)
+
+            # VSD verification
             with self.assertRaises(Exception):
-                self.ssh_into_VM(vm, public_ip, negative_test=True)
-            self.debug("Can not SSH into the VM via this NIC as it is not the "
-                       "default NIC")
-        else:
-            ssh_client = self.ssh_into_VM(vm, public_ip)
-
-        # wget from Internet
-        test_result = None
-        if ssh_client and self.isInternetConnectivityAvailable:
-            timeout = 100 if negative_test else 300
-            test_result = self.wget_from_Internet(ssh_client, timeout)
-
-        # Removing Ingress Firewall/Network ACL rule
-        self.debug("Removing the created Ingress Firewall/Network ACL "
-                   "rule in the network...")
-        public_ssh_rule.delete(self.api_client)
-
-        # VSD verification
-        with self.assertRaises(Exception):
-            self.verify_vsd_firewall_rule(public_ssh_rule)
-        self.debug("Ingress Firewall/Network ACL rule successfully "
-                   "deleted in VSD")
+                self.verify_vsd_firewall_rule(public_ssh_rule)
+            self.debug("Ingress Firewall/Network ACL rule successfully "
+                       "deleted in VSD")
 
         # Removing Egress Network ACL rule
         if vpc and self.http_proxy:
@@ -292,6 +297,17 @@ class TestNuageStaticNat(nuageTestCase):
                 self.debug("Skipped Static NAT Internet traffic "
                            "(wget www.google.com) test from VM as there is no "
                            "Internet connectivity in the data center")
+
+    # enable_staticNat_on_a_starting_vm - Enables Static Nat on a starting VM
+    # in the given network with the given public IP.
+    def enable_staticNat_on_a_starting_vm(self):
+        self.debug("Enables Static Nat on a starting VM in the network - %s "
+                   "with the given public IP - %s" %
+                   (self.network, self.public_ip))
+        time.sleep(15)
+        vm_list = list_virtual_machines(self.api_client, listall=True)
+        self.create_StaticNatRule_For_VM(
+            vm_list[0], self.public_ip, self.network)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_01_nuage_StaticNAT_public_ip_range(self):
@@ -449,6 +465,18 @@ class TestNuageStaticNat(nuageTestCase):
         del network_offering["serviceProviderList"]["StaticNat"]
         net_off_5 = self.create_NetworkOffering(network_offering)
         self.validate_NetworkOffering(net_off_5, state="Enabled")
+
+        self.debug("Creating persistent Nuage VSP Isolated Network offering "
+                   "without VR so no userData and Dns...")
+        network_offering = copy.deepcopy(
+                self.test_data["nuagevsp"]["isolated_network_offering"])
+        network_offering["ispersistent"] = "True"
+        network_offering["supportedservices"] = \
+            'Dhcp,SourceNat,Connectivity,StaticNat,Firewall'
+        del network_offering["serviceProviderList"]["UserData"]
+        del network_offering["serviceProviderList"]["Dns"]
+        net_off_6 = self.create_NetworkOffering(network_offering)
+        self.validate_NetworkOffering(net_off_6, state="Enabled")
 
         # Creating Isolated networks, and deploying VMs
         self.debug("Creating an Isolated network with Static NAT service "
@@ -703,6 +731,57 @@ class TestNuageStaticNat(nuageTestCase):
         self.debug("Acquired public IP in the created Isolated network "
                    "successfully released in CloudStack")
         self.delete_VM(vm_5)
+
+        self.debug("Creating a persistent Isolated network with Static NAT "
+                   "service without UserData Dns, so without VR")
+        network_6 = self.create_Network(net_off_6, gateway='10.6.1.1')
+        self.validate_Network(network_6, state="Implemented")
+
+        self.debug("Deploying a VM in the created Isolated network...")
+        vm_6 = self.create_VM(network_6)
+        self.validate_Network(network_6, state="Implemented")
+
+        with self.assertRaises(Exception):
+            self.get_Router(network_6)
+
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_6)
+        self.verify_vsd_vm(vm_6)
+
+        # Creating Static NAT rule
+        self.debug("Creating Static NAT rule in the created Isolated network "
+                   "with its deployed VM...")
+        public_ip = self.acquire_PublicIPAddress(network_6)
+        self.validate_PublicIPAddress(public_ip, network_6)
+        self.create_StaticNatRule_For_VM(vm_6, public_ip, network_6)
+
+        # VSD verification for Static NAT functionality
+        self.verify_vsd_floating_ip(network_6, vm_6, public_ip.ipaddress)
+
+        # Deleting Static NAT Rule
+        self.debug("Deleting Static NAT Rule for the deployed VM...")
+        self.delete_StaticNatRule_For_VM(public_ip)
+        with self.assertRaises(Exception):
+            self.validate_PublicIPAddress(
+                    public_ip, network_6, static_nat=True, vm=vm_6)
+        self.debug("Static NAT Rule for the deployed VM successfully deleted "
+                   "in CloudStack")
+
+        # VSD verification
+        with self.assertRaises(Exception):
+            self.verify_vsd_floating_ip(network_6, vm_6, public_ip.ipaddress)
+        self.debug("Floating IP for the deployed VM successfully deleted in "
+                   "VSD")
+
+        # Releasing acquired public IP
+        self.debug("Releasing the acquired public IP in the created Isolated "
+                   "network...")
+        public_ip.delete(self.api_client)
+        with self.assertRaises(Exception):
+            self.validate_PublicIPAddress(public_ip, network_6)
+        self.debug("Acquired public IP in the created Isolated network "
+                   "successfully released in CloudStack")
+        self.delete_VM(vm_6)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_04_nuage_StaticNAT_vpc_networks(self):
@@ -990,11 +1069,28 @@ class TestNuageStaticNat(nuageTestCase):
             self.test_data["nuagevsp"]["isolated_network_offering"])
         self.validate_NetworkOffering(net_off, state="Enabled")
 
+        self.debug("Creating persistent Nuage VSP Isolated Network offering "
+                   "without VR so no userData and Dns...")
+        network_offering = copy.deepcopy(
+                self.test_data["nuagevsp"]["isolated_network_offering"])
+        network_offering["ispersistent"] = "True"
+        network_offering["supportedservices"] = \
+            'Dhcp,SourceNat,Connectivity,StaticNat,Firewall'
+        del network_offering["serviceProviderList"]["UserData"]
+        del network_offering["serviceProviderList"]["Dns"]
+        net_off_2 = self.create_NetworkOffering(network_offering)
+        self.validate_NetworkOffering(net_off_2, state="Enabled")
+
         # Creating Isolated network, deploying VMs, and verifying Static NAT
         # traffic
         self.debug("Creating an Isolated network with Static NAT service...")
         network = self.create_Network(net_off, gateway='10.1.1.1')
         self.validate_Network(network, state="Allocated")
+
+        self.debug("Creating a persistent Isolated network with Static NAT "
+                   "service without UserData Dns, so without VR")
+        network_2 = self.create_Network(net_off_2, gateway='10.2.1.1')
+        self.validate_Network(network_2, state="Implemented")
 
         self.debug("Deploying a VM in the created Isolated network...")
         vm_1 = self.create_VM(network)
@@ -1002,11 +1098,18 @@ class TestNuageStaticNat(nuageTestCase):
         vr = self.get_Router(network)
         self.check_Router_state(vr, state="Running")
         self.check_VM_state(vm_1, state="Running")
+        vm_21 = self.create_VM(network_2)
+        self.validate_Network(network_2, state="Implemented")
+
+        with self.assertRaises(Exception):
+            self.get_Router(network_2)
 
         # VSD verification
         self.verify_vsd_network(self.domain.id, network)
         self.verify_vsd_router(vr)
         self.verify_vsd_vm(vm_1)
+        self.verify_vsd_network(self.domain.id, network_2)
+        self.verify_vsd_vm(vm_21)
 
         # Creating Static NAT rule
         self.debug("Creating Static NAT rule for the deployed VM in the "
@@ -1016,23 +1119,34 @@ class TestNuageStaticNat(nuageTestCase):
         self.create_StaticNatRule_For_VM(vm_1, public_ip_1, network)
         self.validate_PublicIPAddress(
             public_ip_1, network, static_nat=True, vm=vm_1)
+        public_ip_21 = self.acquire_PublicIPAddress(network_2)
+        self.validate_PublicIPAddress(public_ip_21, network_2)
+        self.create_StaticNatRule_For_VM(vm_21, public_ip_21, network_2)
+        self.validate_PublicIPAddress(
+                public_ip_21, network_2, static_nat=True, vm=vm_21)
 
         # VSD verification for Static NAT functionality
         self.verify_vsd_floating_ip(network, vm_1, public_ip_1.ipaddress)
+        self.verify_vsd_floating_ip(network_2, vm_21, public_ip_21.ipaddress)
 
         # Verifying Static NAT traffic
         self.verify_StaticNAT_traffic(network, public_ip_1)
+        self.verify_StaticNAT_traffic(network_2, public_ip_21)
 
         # Verifying Static NAT traffic (wget www.google.com) to the Internet
         # from the deployed VM
         self.verify_StaticNAT_Internet_traffic(vm_1, network, public_ip_1)
+        self.verify_StaticNAT_Internet_traffic(vm_21, network_2, public_ip_21)
 
         self.debug("Deploying another VM in the created Isolated network...")
         vm_2 = self.create_VM(network)
         self.check_VM_state(vm_2, state="Running")
+        vm_22 = self.create_VM(network_2)
+        self.check_VM_state(vm_22, state="Running")
 
         # VSD verification
         self.verify_vsd_vm(vm_2)
+        self.verify_vsd_vm(vm_22)
 
         # Creating Static NAT rule
         self.debug("Creating Static NAT rule for the deployed VM in the "
@@ -1043,15 +1157,24 @@ class TestNuageStaticNat(nuageTestCase):
         self.validate_PublicIPAddress(
             public_ip_2, network, static_nat=True, vm=vm_2)
 
+        public_ip_22 = self.acquire_PublicIPAddress(network_2)
+        self.validate_PublicIPAddress(public_ip_22, network_2)
+        self.create_StaticNatRule_For_VM(vm_22, public_ip_22, network_2)
+        self.validate_PublicIPAddress(
+                public_ip_22, network_2, static_nat=True, vm=vm_22)
+
         # VSD verification for Static NAT functionality
         self.verify_vsd_floating_ip(network, vm_2, public_ip_2.ipaddress)
+        self.verify_vsd_floating_ip(network_2, vm_22, public_ip_22.ipaddress)
 
         # Verifying Static NAT traffic
         self.verify_StaticNAT_traffic(network, public_ip_2)
+        self.verify_StaticNAT_traffic(network_2, public_ip_22)
 
         # Verifying Static NAT traffic (wget www.google.com) to the Internet
         # from the deployed VM
         self.verify_StaticNAT_Internet_traffic(vm_2, network, public_ip_2)
+        self.verify_StaticNAT_Internet_traffic(vm_22, network_2, public_ip_22)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
     def test_06_nuage_StaticNAT_vpc_network_traffic(self):
@@ -1579,7 +1702,7 @@ class TestNuageStaticNat(nuageTestCase):
         self.verify_vsd_floating_ip(network_2, vm, public_ip_2.ipaddress)
 
         # Verifying Static NAT traffic
-        with self.assertRaises(Exception):
+        with self.assertRaises(AssertionError):
             self.verify_StaticNAT_traffic(network_1, public_ip_1)
         self.debug("Static NAT rule not enabled in this VM NIC")
         self.verify_StaticNAT_traffic(network_2, public_ip_2)
@@ -2086,3 +2209,74 @@ class TestNuageStaticNat(nuageTestCase):
         # from the deployed VM
         self.verify_StaticNAT_Internet_traffic(
             vpc_vm, vpc_tier, public_ip_2, vpc=vpc)
+
+    # Bug CLOUDSTACK-9751
+    @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
+    def test_11_nuage_enable_staticNat_when_vr_is_in_starting_state(self):
+        """Test Nuage VSP Static NAT functionality by enabling Static Nat when
+        VR is in starting state
+        """
+
+        # 1. Create a Nuage VSP Isolated network offering.
+        # 2. Create an Isolated network with above created offering.
+        # 3. Deploy a VM in the above created Isolated network,
+        #    which starts a VR.
+        # 4. While VR is in the starting state, acquire a public IP and enable
+        #    static nat in another thread.
+        # 5. Verify that Static NAT is successfully enabled in both CloudStack
+        #    and VSD.
+        # 6. Delete all the created objects (cleanup).
+
+        # Creating network offering
+        self.debug("Creating Nuage VSP Isolated Network offering with Static "
+                   "NAT service provider as NuageVsp...")
+        net_off = self.create_NetworkOffering(
+            self.test_data["nuagevsp"]["isolated_network_offering"])
+        self.validate_NetworkOffering(net_off, state="Enabled")
+
+        # Creating an Isolated network
+        self.debug("Creating an Isolated network with Static NAT service...")
+        self.network = self.create_Network(net_off, gateway='10.1.1.1')
+        self.validate_Network(self.network, state="Allocated")
+
+        # Acquiring a Public IP
+        self.debug("Acquiring a Public IP in the created Isolated network...")
+        self.public_ip = self.acquire_PublicIPAddress(self.network)
+        self.validate_PublicIPAddress(self.public_ip, self.network)
+
+        # Enabling Static NAT on a starting VM
+        self.debug("Creating a thread for enabling Static Nat on a starting "
+                   "VM...")
+        static_nat_thread = threading.Thread(
+            name='enable_static_nat',
+            target=self.enable_staticNat_on_a_starting_vm)
+        static_nat_thread.start()
+
+        vm = self.create_VM(self.network)
+
+        # Check the status of Static Nat thread and if it is not finished then
+        # below command will wait for it to finish
+        self.debug("Waiting for for enabling Static Nat on a starting VM "
+                   "thread to finish...")
+        static_nat_thread.join()
+
+        # CloudStack verification for the implemented Isolated Network
+        self.validate_Network(self.network, state="Implemented")
+        vr = self.get_Router(self.network)
+        self.check_Router_state(vr, state="Running")
+        self.check_VM_state(vm, state="Running")
+
+        # VSD verification for the implemented Isolated Network
+        self.verify_vsd_network(self.domain.id, self.network)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(vm)
+
+        # CloudStack verification for Static NAT functionality
+        self.validate_PublicIPAddress(
+            self.public_ip, self.network, static_nat=True, vm=vm)
+
+        # VSD verification for Static NAT functionality
+        self.verify_vsd_floating_ip(self.network, vm, self.public_ip.ipaddress)
+
+        # Verifying Static NAT traffic
+        self.verify_StaticNAT_traffic(self.network, self.public_ip)

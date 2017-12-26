@@ -20,6 +20,7 @@
 package com.cloud.agent.api.routing;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import com.cloud.agent.api.Command;
 
@@ -38,11 +39,24 @@ public abstract class NetworkElementCommand extends Command {
     public static final String VPC_PRIVATE_GATEWAY = "vpc.gateway.private";
     public static final String FIREWALL_EGRESS_DEFAULT = "firewall.egress.default";
     public static final String ROUTER_MONITORING_ENABLE = "router.monitor.enable";
+    public static final String NETWORK_PUB_LAST_IP = "network.public.last.ip";
 
     private String routerAccessIp;
 
     protected NetworkElementCommand() {
         super();
+    }
+
+    public void setAccessDetail(final Map<String, String> details) {
+        if (details == null) {
+            return;
+        }
+        for (final Map.Entry<String, String> detail : details.entrySet()) {
+            if (detail == null) {
+                continue;
+            }
+            setAccessDetail(detail.getKey(), detail.getValue());
+        }
     }
 
     public void setAccessDetail(final String name, final String value) {

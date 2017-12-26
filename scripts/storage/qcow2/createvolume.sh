@@ -22,7 +22,7 @@
 # createvol.sh -- install a volume
 
 usage() {
-  printf "Usage: %s: -t <volume-fs> -n <volumename> -f <root disk file> -s <size in Gigabytes> -c <md5 cksum> -d <descr> -h  [-u]\n" $(basename $0) >&2
+  printf "Usage: %s: -t <volume-fs> -n <volumename> -f <root disk file> -s <size in Gigabytes> -c <snapshot name> -d <descr> -h  [-u]\n" $(basename $0) >&2
 }
 
 
@@ -37,27 +37,6 @@ then
        qemu_img="qemu-img"
    fi
 fi
-
-
-verify_cksum() {
-  digestalgo=""
-  case ${#1} in
-        32) digestalgo="md5sum" ;;
-        40) digestalgo="sha1sum" ;;
-        56) digestalgo="sha224sum" ;;
-        64) digestalgo="sha256sum" ;;
-        96) digestalgo="sha384sum" ;;
-        128) digestalgo="sha512sum" ;;
-        *) echo "Please provide valid cheksum" ; exit 3 ;;
-  esac
-  echo  "$1  $2" | $digestalgo  -c --status
-  #printf "$1\t$2" | $digestalgo  -c --status
-  if [ $? -gt 0 ] 
-  then
-    printf "Checksum failed, not proceeding with install\n"
-    exit 3
-  fi
-}
 
 untar() {
   local ft=$(file $1| awk -F" " '{print $2}')
@@ -167,7 +146,6 @@ do
 		volimg="$OPTARG"
 		;;
   s)	sflag=1
-		sflag=1
 		;;
   c)	cflag=1
 		snapshotName="$OPTARG"

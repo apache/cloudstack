@@ -23,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 
@@ -142,8 +143,11 @@ public final class CitrixCreateVMSnapshotCommandWrapper extends CommandWrapper<C
             }
             // calculate used capacity for this VM snapshot
             for (final VolumeObjectTO volumeTo : command.getVolumeTOs()) {
-                final long size = citrixResourceBase.getVMSnapshotChainSize(conn, volumeTo, command.getVmName());
-                volumeTo.setSize(size);
+                try {
+                    final long size = citrixResourceBase.getVMSnapshotChainSize(conn, volumeTo, command.getVmName(), vmSnapshotName);
+                    volumeTo.setSize(size);
+                } catch (final CloudRuntimeException cre) {
+                }
             }
 
             success = true;

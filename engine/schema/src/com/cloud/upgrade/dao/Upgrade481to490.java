@@ -17,21 +17,19 @@
 
 package com.cloud.upgrade.dao;
 
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.db.ScriptRunner;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.log4j.Logger;
-
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Map;
+
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.db.ScriptRunner;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade481to490 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade481to490.class);
@@ -52,12 +50,14 @@ public class Upgrade481to490 implements DbUpgrade {
     }
 
     @Override
-    public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-481to490.sql");
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-481to490.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-481to490.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
-        return new File[] {new File(script)};
+
+        return new InputStream[] {script};
     }
 
     @Override
@@ -115,32 +115,31 @@ public class Upgrade481to490 implements DbUpgrade {
 
         migrateAccountsToDefaultRoles(conn);
 
-        final Map<String, String> apiMap = PropertiesUtil.processConfigFile(new String[] { PropertiesUtil.getDefaultApiCommandsFileName() });
-        if (apiMap == null || apiMap.isEmpty()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("The commands.properties file and default role permissions were not found. " +
-                        "Assuming new installation, configuring default role-api mappings.");
-            }
-            String script = Script.findScript("", "db/create-default-role-api-mappings.sql");
-            if (script == null) {
-                s_logger.error("Unable to find default role-api mapping sql file, please configure api per role manually");
-                return;
-            }
-            try(final FileReader reader = new FileReader(new File(script))) {
-                ScriptRunner runner = new ScriptRunner(conn, false, true);
-                runner.runScript(reader);
-            } catch (SQLException | IOException e) {
-                s_logger.error("Unable to insert default api-role mappings from file: " + script + ". Please configure api per role manually, giving up!", e);
-            }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Configuring default role-api mappings, use migrate-dynamicroles.py instead if you want to migrate rules from an existing commands.properties file");
+        }
+        final String scriptFile = "META-INF/db/create-default-role-api-mappings.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            s_logger.error("Unable to find default role-api mapping sql file, please configure api per role manually");
+            return;
+        }
+        try(final InputStreamReader reader = new InputStreamReader(script)) {
+            ScriptRunner runner = new ScriptRunner(conn, false, true);
+            runner.runScript(reader);
+        } catch (SQLException | IOException e) {
+            s_logger.error("Unable to insert default api-role mappings from file: " + script + ". Please configure api per role manually, giving up!", e);
         }
     }
 
     @Override
-    public File[] getCleanupScripts() {
-        String script = Script.findScript("", "db/schema-481to490-cleanup.sql");
+    public InputStream[] getCleanupScripts() {
+        final String scriptFile = "META-INF/db/schema-481to490-cleanup.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-481to490-cleanup.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
-        return new File[] {new File(script)};
+
+        return new InputStream[] {script};
     }
 }

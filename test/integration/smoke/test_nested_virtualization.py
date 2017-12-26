@@ -30,7 +30,7 @@ from marvin.lib.base import (Account,
                              Network)
 from marvin.lib.common import (get_zone,
                                get_domain,
-                               get_template)
+                               get_test_template)
 from nose.plugins.attrib import attr
 from marvin.sshClient import SshClient
 import logging
@@ -49,6 +49,7 @@ class TestNestedVirtualization(cloudstackTestCase):
         cls.logger.addHandler(cls.stream_handler)
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.hypervisor = get_hypervisor_type(cls.apiclient)
         cls.services['mode'] = cls.zone.networktype
         cls.services["isolated_network"]["zoneid"] = cls.zone.id
         cls.domain = get_domain(cls.apiclient)
@@ -57,13 +58,12 @@ class TestNestedVirtualization(cloudstackTestCase):
             cls.services["service_offerings"]["tiny"]
         )
         cls.account = Account.create(cls.apiclient, services=cls.services["account"])
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
-        cls.hypervisor = get_hypervisor_type(cls.apiclient)
-        
+
         cls.isolated_network_offering = NetworkOffering.create(
                                                 cls.apiclient,
                                                 cls.services["isolated_network_offering"])
@@ -71,8 +71,8 @@ class TestNestedVirtualization(cloudstackTestCase):
         cls.isolated_network_offering.update(cls.apiclient, state='Enabled')
         
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
-            
+            assert False, "get_test_template() failed to return template"
+
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = cls.template.id
 
@@ -149,4 +149,3 @@ class TestNestedVirtualization(cloudstackTestCase):
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception, e:
             raise Exception("Cleanup failed with %s" % e)
-    

@@ -33,6 +33,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -259,6 +260,7 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -289,7 +291,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.user.dao.UserStatisticsDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.EnumUtils;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.DomainRouterVO;
@@ -311,6 +312,8 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.user.AccountManager;
+import com.cloud.network.dao.FirewallRulesDcidrsDao;
 
 public class ApiDBUtils {
     private static ManagementServer s_ms;
@@ -371,6 +374,7 @@ public class ApiDBUtils {
     static ConfigurationDao s_configDao;
     static ConsoleProxyDao s_consoleProxyDao;
     static FirewallRulesCidrsDao s_firewallCidrsDao;
+    static FirewallRulesDcidrsDao s_firewallDcidrsDao;
     static VMInstanceDao s_vmDao;
     static ResourceLimitService s_resourceLimitMgr;
     static ProjectService s_projectMgr;
@@ -542,6 +546,8 @@ public class ApiDBUtils {
     private ConsoleProxyDao consoleProxyDao;
     @Inject
     private FirewallRulesCidrsDao firewallCidrsDao;
+    @Inject
+    private FirewallRulesDcidrsDao firewalDcidrsDao;
     @Inject
     private VMInstanceDao vmDao;
     @Inject
@@ -718,6 +724,7 @@ public class ApiDBUtils {
         s_configDao = configDao;
         s_consoleProxyDao = consoleProxyDao;
         s_firewallCidrsDao = firewallCidrsDao;
+        s_firewallDcidrsDao  = firewalDcidrsDao;
         s_vmDao = vmDao;
         s_resourceLimitMgr = resourceLimitMgr;
         s_projectMgr = projectMgr;
@@ -915,6 +922,10 @@ public class ApiDBUtils {
 
     public static VmStats getVmStatistics(long hostId) {
         return s_statsCollector.getVmStats(hostId);
+    }
+
+    public static VolumeStats getVolumeStatistics(String volumeUuid) {
+        return s_statsCollector.getVolumeStats(volumeUuid);
     }
 
     public static StorageStats getSecondaryStorageStatistics(long id) {
@@ -1275,10 +1286,14 @@ public class ApiDBUtils {
         return s_networkModel.getDedicatedNetworkDomain(networkId);
     }
 
-    public static float getCpuOverprovisioningFactor() {
-        String opFactor = s_configDao.getValue(CapacityManager.CpuOverprovisioningFactorCK);
-        float cpuOverprovisioningFactor = NumbersUtil.parseFloat(opFactor, 1);
-        return cpuOverprovisioningFactor;
+    public static float getCpuOverprovisioningFactor(long clusterId) {
+        float opFactor = CapacityManager.CpuOverprovisioningFactor.valueIn(clusterId);
+        return opFactor;
+    }
+
+    public static float getMemOverprovisioningFactor(long clusterId) {
+        float opFactor = CapacityManager.MemOverprovisioningFactor.valueIn(clusterId);
+        return opFactor;
     }
 
     public static boolean isExtractionDisabled() {
@@ -1297,6 +1312,10 @@ public class ApiDBUtils {
 
     public static List<String> findFirewallSourceCidrs(long id) {
         return s_firewallCidrsDao.getSourceCidrs(id);
+    }
+
+    public static List<String> findFirewallDestCidrs(long id){
+        return s_firewallDcidrsDao.getDestCidrs(id);
     }
 
     public static Account getProjectOwner(long projectId) {
@@ -1707,6 +1726,9 @@ public class ApiDBUtils {
 
     public static UserResponse newUserResponse(UserAccountJoinVO usr, Long domainId) {
         UserResponse response = s_userAccountJoinDao.newUserResponse(usr);
+        if(!AccountManager.UseSecretKeyInResponse.value()){
+            response.setSecretKey(null);
+        }
         // Populate user account role information
         if (usr.getAccountRoleId() != null) {
             Role role = s_roleService.findRole( usr.getAccountRoleId());
@@ -1836,8 +1858,8 @@ public class ApiDBUtils {
         return s_imageStoreJoinDao.newImageStoreView(vr);
     }
 
-    public static DomainResponse newDomainResponse(ResponseView view, DomainJoinVO ve) {
-        return s_domainJoinDao.newDomainResponse(view, ve);
+    public static DomainResponse newDomainResponse(ResponseView view, EnumSet<DomainDetails> details, DomainJoinVO ve) {
+        return s_domainJoinDao.newDomainResponse(view, details, ve);
     }
 
     public static AccountResponse newAccountResponse(ResponseView view, AccountJoinVO ve) {

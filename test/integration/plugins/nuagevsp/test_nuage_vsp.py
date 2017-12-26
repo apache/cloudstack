@@ -173,11 +173,13 @@ class TestNuageVsp(nuageTestCase):
         # 4. Deploy a VM in the created Isolated network, check if the Isolated
         #    network state is changed to "Implemented", and both the VM & VR
         #    are successfully deployed and are in the "Running" state.
-        # 5. Deploy one more VM in the created Isolated network, check if the
+        # 5. Verify that the VPC VR has no Public IP and NIC as it is not the
+        #    Source NAT service provider.
+        # 6. Deploy one more VM in the created Isolated network, check if the
         #    VM is successfully deployed and is in the "Running" state.
-        # 6. Delete the created Isolated Network after destroying its VMs,
+        # 7. Delete the created Isolated Network after destroying its VMs,
         #    check if the Isolated network is successfully deleted.
-        # 7. Delete all the created objects (cleanup).
+        # 8. Delete all the created objects (cleanup).
 
         for zone in self.zones:
             self.debug("Zone - %s" % zone.name)
@@ -205,6 +207,9 @@ class TestNuageVsp(nuageTestCase):
             vr = self.get_Router(network)
             self.check_Router_state(vr, state="Running")
             self.check_VM_state(vm_1, state="Running")
+
+            # Verifying that the VR has no public IP and NIC
+            self.verify_VRWithoutPublicIPNIC(vr)
 
             # VSD verification
             self.verify_vsd_network(self.domain.id, network)

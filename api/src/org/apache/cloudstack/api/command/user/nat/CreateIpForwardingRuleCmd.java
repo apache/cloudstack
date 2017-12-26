@@ -324,6 +324,11 @@ public class CreateIpForwardingRuleCmd extends BaseAsyncCreateCmd implements Sta
     }
 
     @Override
+    public List<String> getDestinationCidrList(){
+        return null;
+    }
+
+    @Override
     public Class<?> getEntityType() {
         return FirewallRule.class;
     }

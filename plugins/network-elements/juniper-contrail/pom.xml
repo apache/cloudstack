@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack-plugins</artifactId>
-    <version>4.10.0.0-SNAPSHOT</version>
+    <version>4.11.0.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <repositories>
@@ -96,6 +96,12 @@
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-spring-lifecycle</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-security</artifactId>
+      <version>${cs.jetty.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

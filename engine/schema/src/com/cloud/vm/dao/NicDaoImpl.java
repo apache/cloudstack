@@ -45,6 +45,7 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     private SearchBuilder<NicVO> NonReleasedSearch;
     private GenericSearchBuilder<NicVO, Integer> deviceIdSearch;
     private GenericSearchBuilder<NicVO, Integer> CountByForStartingVms;
+    private SearchBuilder<NicVO> PeerRouterSearch;
 
     @Inject
     VMInstanceDao _vmDao;
@@ -60,12 +61,14 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         AllFieldsSearch.and("network", AllFieldsSearch.entity().getNetworkId(), Op.EQ);
         AllFieldsSearch.and("gateway", AllFieldsSearch.entity().getIPv4Gateway(), Op.EQ);
         AllFieldsSearch.and("vmType", AllFieldsSearch.entity().getVmType(), Op.EQ);
-        AllFieldsSearch.and("address", AllFieldsSearch.entity().getIPv4Address(), Op.EQ);
+        AllFieldsSearch.and("address", AllFieldsSearch.entity().getIPv4Address(), Op.LIKE);
         AllFieldsSearch.and("isDefault", AllFieldsSearch.entity().isDefaultNic(), Op.EQ);
         AllFieldsSearch.and("broadcastUri", AllFieldsSearch.entity().getBroadcastUri(), Op.EQ);
         AllFieldsSearch.and("secondaryip", AllFieldsSearch.entity().getSecondaryIp(), Op.EQ);
         AllFieldsSearch.and("nicid", AllFieldsSearch.entity().getId(), Op.EQ);
         AllFieldsSearch.and("strategy", AllFieldsSearch.entity().getReservationStrategy(), Op.EQ);
+        AllFieldsSearch.and("reserverName",AllFieldsSearch.entity().getReserver(),Op.EQ);
+        AllFieldsSearch.and("macAddress", AllFieldsSearch.entity().getMacAddress(), Op.EQ);
         AllFieldsSearch.done();
 
         IpSearch = createSearchBuilder(String.class);
@@ -93,6 +96,12 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         join1.and("state", join1.entity().getState(), Op.EQ);
         CountByForStartingVms.join("vm", join1, CountByForStartingVms.entity().getInstanceId(), join1.entity().getId(), JoinBuilder.JoinType.INNER);
         CountByForStartingVms.done();
+
+        PeerRouterSearch = createSearchBuilder();
+        PeerRouterSearch.and("instanceId", PeerRouterSearch.entity().getInstanceId(), Op.NEQ);
+        PeerRouterSearch.and("macAddress", PeerRouterSearch.entity().getMacAddress(), Op.EQ);
+        PeerRouterSearch.and("vmType", PeerRouterSearch.entity().getVmType(), Op.EQ);
+        PeerRouterSearch.done();
     }
 
     @Override
@@ -191,10 +200,26 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
     }
 
     @Override
+    public NicVO findByNetworkIdAndMacAddress(long networkId, String mac) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("macAddress", mac);
+        return findOneBy(sc);
+    }
+
+    @Override
     public NicVO findDefaultNicForVM(long instanceId) {
         SearchCriteria<NicVO> sc = AllFieldsSearch.create();
         sc.setParameters("instance", instanceId);
         sc.setParameters("isDefault", 1);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public NicVO getControlNicForVM(long vmId){
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instance", vmId);
+        sc.setParameters("reserverName", "ControlNetworkGuru");
         return findOneBy(sc);
     }
 
@@ -301,5 +326,26 @@ public class NicDaoImpl extends GenericDaoBase<NicVO, Long> implements NicDao {
         sc.setJoinParameters("vm", "state", VirtualMachine.State.Starting);
         List<Integer> results = customSearch(sc, null);
         return results.get(0);
+    }
+
+    @Override
+    public Long getPeerRouterId(String publicMacAddress, final long routerId) {
+        final SearchCriteria<NicVO> sc = PeerRouterSearch.create();
+        sc.setParameters("instanceId", routerId);
+        sc.setParameters("macAddress", publicMacAddress);
+        sc.setParameters("vmType", VirtualMachine.Type.DomainRouter);
+        NicVO nicVo = findOneBy(sc);
+        if (nicVo != null) {
+            return nicVo.getInstanceId();
+        }
+        return null;
+    }
+
+    @Override
+    public List<NicVO> listByVmIdAndKeyword(long instanceId, String keyword) {
+        SearchCriteria<NicVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instance", instanceId);
+        sc.setParameters("address", "%" + keyword + "%");
+        return listBy(sc);
     }
 }

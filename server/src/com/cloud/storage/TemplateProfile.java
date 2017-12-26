@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -36,7 +38,7 @@ public class TemplateProfile {
     Boolean isExtractable;
     ImageFormat format;
     Long guestOsId;
-    Long zoneId;
+    List<Long> zoneIdList;
     HypervisorType hypervisorType;
     String accountName;
     Long domainId;
@@ -51,8 +53,8 @@ public class TemplateProfile {
     TemplateType templateType;
 
     public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
-            Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId, HypervisorType hypervisorType,
-            String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, Map details, Boolean sshKeyEnabled) {
+                           Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, List<Long> zoneIdList, HypervisorType hypervisorType,
+                           String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, Map details, Boolean sshKeyEnabled) {
         this.templateId = templateId;
         this.userId = userId;
         this.name = name;
@@ -66,7 +68,7 @@ public class TemplateProfile {
         this.isExtractable = isExtractable;
         this.format = format;
         this.guestOsId = guestOsId;
-        this.zoneId = zoneId;
+        this.zoneIdList = zoneIdList;
         this.hypervisorType = hypervisorType;
         this.accountName = accountName;
         this.domainId = domainId;
@@ -80,11 +82,15 @@ public class TemplateProfile {
     public TemplateProfile(Long userId, VMTemplateVO template, Long zoneId) {
         this.userId = userId;
         this.template = template;
-        this.zoneId = zoneId;
+        if (zoneId != null) {
+            this.zoneIdList = new ArrayList<>();
+            this.zoneIdList.add(zoneId);
+        }
+        else this.zoneIdList = null;
     }
 
     public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
-            Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
+            Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, List<Long> zoneId,
 
             HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details,
             Boolean sshKeyEnabled, Long imageStoreId, Boolean isDynamicallyScalable, TemplateType templateType) {
@@ -219,12 +225,8 @@ public class TemplateProfile {
         this.guestOsId = id;
     }
 
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-    public void setZoneId(Long id) {
-        this.zoneId = id;
+    public List<Long> getZoneIdList() {
+        return zoneIdList;
     }
 
     public HypervisorType getHypervisorType() {

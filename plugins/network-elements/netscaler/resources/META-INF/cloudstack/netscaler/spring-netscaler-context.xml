@@ -26,10 +26,11 @@
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd"
                       >
-
+    <bean id="netScalerServicePackageDaoImpl" class="com.cloud.network.dao.NetScalerServicePackageDaoImpl" />
+    <bean id="netScalerControlCenterDaoImpl" class="com.cloud.network.dao.NetScalerControlCenterDaoImpl" />
     <bean id="netScalerPodDaoImpl" class="com.cloud.network.dao.NetScalerPodDaoImpl" />
     <bean id="netscalerElement" class="com.cloud.network.element.NetscalerElement" >
         <property name="name" value="Netscaler"/>
     </bean>
-
+    <bean id="NetScalerVMManager" class="com.cloud.network.vm.NetScalerVMManagerImpl" />
 </beans>

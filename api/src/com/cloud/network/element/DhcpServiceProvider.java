@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.element;
 
+import java.util.Map;
+
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -33,4 +35,6 @@ public interface DhcpServiceProvider extends NetworkElement {
         throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException;
 
     boolean removeDhcpSupportForSubnet(Network network) throws ResourceUnavailableException;
+
+    boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions);
 }

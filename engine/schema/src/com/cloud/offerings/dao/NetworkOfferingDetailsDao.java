@@ -21,9 +21,9 @@ import java.util.Map;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingDetailsVO;
-import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 
-public interface NetworkOfferingDetailsDao extends GenericDao<NetworkOfferingDetailsVO, Long> {
+public interface NetworkOfferingDetailsDao extends ResourceDetailsDao<NetworkOfferingDetailsVO> {
 
     Map<NetworkOffering.Detail, String> getNtwkOffDetails(long offeringId);
 

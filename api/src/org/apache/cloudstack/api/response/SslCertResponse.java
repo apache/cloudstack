@@ -24,7 +24,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.network.lb.SslCert;
+import org.apache.cloudstack.network.tls.SslCert;
 import com.cloud.serializer.Param;
 
 //import org.apache.cloudstack.api.EntityReference;
@@ -72,6 +72,10 @@ public class SslCertResponse extends BaseResponse {
     @Param(description = "List of loabalancers this certificate is bound to")
     List<String> lbIds;
 
+    @SerializedName(ApiConstants.NAME)
+    @Param(description = "name")
+    private String name;
+
     public SslCertResponse() {
     }
 
@@ -81,6 +85,10 @@ public class SslCertResponse extends BaseResponse {
 
     public void setCertificate(String cert) {
         this.certificate = cert;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 
     public void setAccountName(String accountName) {

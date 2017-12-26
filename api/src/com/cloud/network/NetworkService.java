@@ -19,6 +19,7 @@ package com.cloud.network;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
@@ -26,6 +27,7 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
+import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -34,10 +36,12 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 
@@ -78,6 +82,24 @@ public interface NetworkService {
 
     Network updateGuestNetwork(long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, Long networkOfferingId,
         Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String newUUID, boolean updateInSequence, boolean forced);
+
+    /**
+     * Migrate a network from one physical network to another physical network
+     * @param networkId of the network that needs to be migrated
+     * @param networkOfferingId new network offering id for the network
+     * @param resume if previous migration failed try to resume of just fail directly because anomaly is detected
+     * @return the migrated network
+     */
+    Network migrateGuestNetwork(long networkId, long networkOfferingId, Account callerAccount, User callerUser, boolean resume);
+
+    /**
+     * Migrate a vpc from on physical network to another physical network
+     * @param vpcId the id of the vpc that needs to be migrated
+     * @param vpcNetworkofferingId the new vpc offering id
+     * @param resume if previous migration failed try to resume of just fail directly because anomaly is detected
+     * @return the migrated vpc
+     */
+    Vpc migrateVpcNetwork(long vpcId, long vpcNetworkofferingId, Map<String, String> networkToOffering, Account account, User callerUser, boolean resume);
 
     PhysicalNetwork createPhysicalNetwork(Long zoneId, String vnetRange, String networkSpeed, List<String> isolationMethods, String broadcastDomainRange, Long domainId,
         List<String> tags, String name);
@@ -180,4 +202,10 @@ public interface NetworkService {
     IpAddress updateIP(Long id, String customId, Boolean displayIp);
 
     boolean configureNicSecondaryIp(NicSecondaryIp secIp, boolean isZoneSgEnabled);
+
+    List<? extends NicSecondaryIp> listVmNicSecondaryIps(ListNicsCmd listNicsCmd);
+
+    AcquirePodIpCmdResponse allocatePodIp(Account account, String zoneId, String podId) throws ResourceAllocationException, ConcurrentOperationException;
+
+    boolean releasePodIp(ReleasePodIpCmdByAdmin ip) throws CloudRuntimeException;
 }

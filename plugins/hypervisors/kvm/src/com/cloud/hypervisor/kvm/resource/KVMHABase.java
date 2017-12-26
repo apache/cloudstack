@@ -179,4 +179,9 @@ public class KVMHABase {
 
         return result;
     }
+
+    public Boolean checkingHB() {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

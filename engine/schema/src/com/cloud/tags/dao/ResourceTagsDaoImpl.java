@@ -17,8 +17,12 @@
 package com.cloud.tags.dao;
 
 import java.util.List;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.HashSet;
 
-
+import org.apache.cloudstack.api.response.ResourceTagResponse;
 import org.springframework.stereotype.Component;
 
 import com.cloud.server.ResourceTag;
@@ -38,6 +42,8 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
         AllFieldsSearch.and("resourceId", AllFieldsSearch.entity().getResourceId(), Op.EQ);
         AllFieldsSearch.and("uuid", AllFieldsSearch.entity().getResourceUuid(), Op.EQ);
         AllFieldsSearch.and("resourceType", AllFieldsSearch.entity().getResourceType(), Op.EQ);
+        AllFieldsSearch.and("key", AllFieldsSearch.entity().getKey(), Op.EQ);
+        AllFieldsSearch.and("resourceUuid", AllFieldsSearch.entity().getResourceUuid(), Op.EQ);
         AllFieldsSearch.done();
     }
 
@@ -58,6 +64,15 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
         return listBy(sc);
     }
 
+    @Override
+    public ResourceTag findByKey(long resourceId, ResourceObjectType resourceType, String key) {
+        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("resourceType", resourceType);
+        sc.setParameters("key", key);
+        return findOneBy(sc);
+    }
+
     @Override public void updateResourceId(long srcId, long destId, ResourceObjectType resourceType) {
         SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", srcId);
@@ -66,5 +81,43 @@ public class ResourceTagsDaoImpl extends GenericDaoBase<ResourceTagVO, Long> imp
             tag.setResourceId(destId);
             update(tag.getId(), tag);
         }
+    }
+
+    @Override
+    public Map<String, Set<ResourceTagResponse>> listTags() {
+        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+        List<ResourceTagVO> resourceTagList = listBy(sc);
+        Map<String, Set<ResourceTagResponse>> resourceTagMap = new HashMap();
+        String resourceKey = null;
+        ResourceTagResponse resourceTagResponse = null;
+        for (ResourceTagVO resourceTagVO : resourceTagList) {
+            resourceTagResponse = new ResourceTagResponse();
+            resourceTagResponse.setKey(resourceTagVO.getKey());
+            resourceTagResponse.setValue(resourceTagVO.getValue());
+            Set<ResourceTagResponse> resourceTagSet = new HashSet();
+            resourceKey = resourceTagVO.getResourceId() + ":" + resourceTagVO.getResourceType();
+            if(resourceTagMap.get(resourceKey) != null) {
+                resourceTagSet = resourceTagMap.get(resourceKey);
+            }
+            resourceTagSet.add(resourceTagResponse);
+            resourceTagMap.put(resourceKey, resourceTagSet);
+        }
+        return resourceTagMap;
+    }
+
+    @Override
+    public void removeByResourceIdAndKey(long resourceId, ResourceObjectType resourceType, String key) {
+        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("resourceType", resourceType);
+        sc.setParameters("key", key);
+        remove(sc);
+    }
+
+    @Override
+    public List<? extends ResourceTag> listByResourceUuid(String resourceUuid) {
+        SearchCriteria<ResourceTagVO> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceUuid", resourceUuid);
+        return listBy(sc);
     }
 }

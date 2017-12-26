@@ -25,12 +25,12 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
@@ -39,6 +39,7 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
@@ -52,6 +53,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
@@ -69,8 +71,10 @@ import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
+import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.router.VirtualRouter.RedundantState;
 import com.cloud.network.router.VirtualRouter.Role;
+import com.cloud.network.rules.LbStickinessMethod;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.resource.ResourceManager;
@@ -86,6 +90,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.user.dao.UserDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
@@ -99,7 +104,6 @@ import com.cloud.vm.VirtualMachineProfile.Param;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 
-@Local(value = { NetworkHelper.class })
 public class NetworkHelperImpl implements NetworkHelper {
 
     private static final Logger s_logger = Logger.getLogger(NetworkHelperImpl.class);
@@ -147,6 +151,8 @@ public class NetworkHelperImpl implements NetworkHelper {
     protected VirtualMachineManager _itMgr;
     @Inject
     protected IpAddressManager _ipAddrMgr;
+    @Inject
+    ConfigurationDao _configDao;
 
     protected final Map<HypervisorType, ConfigKey<String>> hypervisorsMap = new HashMap<>();
 
@@ -743,7 +749,7 @@ public class NetworkHelperImpl implements NetworkHelper {
                 gatewayNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
                 gatewayNic.setIsolationUri(guestNetwork.getBroadcastUri());
                 gatewayNic.setMode(guestNetwork.getMode());
-                final String gatewayCidr = guestNetwork.getCidr();
+                final String gatewayCidr = _networkModel.getValidNetworkCidr(guestNetwork);
                 gatewayNic.setIPv4Netmask(NetUtils.getCidrNetmask(gatewayCidr));
             } else {
                 gatewayNic.setDefaultNic(true);
@@ -770,5 +776,105 @@ public class NetworkHelperImpl implements NetworkHelper {
 
     public static void setVMInstanceName(final String vmInstanceName) {
         s_vmInstanceName = vmInstanceName;
+    }
+    @Override
+    public boolean validateHAProxyLBRule(final LoadBalancingRule rule) {
+        final String timeEndChar = "dhms";
+        int haproxy_stats_port = Integer.parseInt(_configDao.getValue(Config.NetworkLBHaproxyStatsPort.key()));
+        if (rule.getSourcePortStart() == haproxy_stats_port) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Can't create LB on port "+ haproxy_stats_port +", haproxy is listening for  LB stats on this port");
+            }
+            return false;
+        }
+
+        for (final LoadBalancingRule.LbStickinessPolicy stickinessPolicy : rule.getStickinessPolicies()) {
+            final List<Pair<String, String>> paramsList = stickinessPolicy.getParams();
+
+            if (LbStickinessMethod.StickinessMethodType.LBCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
+
+            } else if (LbStickinessMethod.StickinessMethodType.SourceBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
+                String tablesize = "200k"; // optional
+                String expire = "30m"; // optional
+
+                /* overwrite default values with the stick parameters */
+                for (final Pair<String, String> paramKV : paramsList) {
+                    final String key = paramKV.first();
+                    final String value = paramKV.second();
+                    if ("tablesize".equalsIgnoreCase(key)) {
+                        tablesize = value;
+                    }
+                    if ("expire".equalsIgnoreCase(key)) {
+                        expire = value;
+                    }
+                }
+                if (expire != null && !containsOnlyNumbers(expire, timeEndChar)) {
+                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: expire is not in timeformat: " + expire);
+                }
+                if (tablesize != null && !containsOnlyNumbers(tablesize, "kmg")) {
+                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: tablesize is not in size format: " + tablesize);
+
+                }
+            } else if (LbStickinessMethod.StickinessMethodType.AppCookieBased.getName().equalsIgnoreCase(stickinessPolicy.getMethodName())) {
+                String length = null; // optional
+                String holdTime = null; // optional
+
+                for (final Pair<String, String> paramKV : paramsList) {
+                    final String key = paramKV.first();
+                    final String value = paramKV.second();
+                    if ("length".equalsIgnoreCase(key)) {
+                        length = value;
+                    }
+                    if ("holdtime".equalsIgnoreCase(key)) {
+                        holdTime = value;
+                    }
+                }
+
+                if (length != null && !containsOnlyNumbers(length, null)) {
+                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: length is not a number: " + length);
+                }
+                if (holdTime != null && !containsOnlyNumbers(holdTime, timeEndChar) && !containsOnlyNumbers(holdTime, null)) {
+                    throw new InvalidParameterValueException("Failed LB in validation rule id: " + rule.getId() + " Cause: holdtime is not in timeformat: " + holdTime);
+                }
+            }
+        }
+        return true;
+    }
+
+    /*
+     * This function detects numbers like 12 ,32h ,42m .. etc,. 1) plain number
+     * like 12 2) time or tablesize like 12h, 34m, 45k, 54m , here last
+     * character is non-digit but from known characters .
+     */
+    private static boolean containsOnlyNumbers(final String str, final String endChar) {
+        if (str == null) {
+            return false;
+        }
+
+        String number = str;
+        if (endChar != null) {
+            boolean matchedEndChar = false;
+            if (str.length() < 2) {
+                return false; // at least one numeric and one char. example:
+            }
+            // 3h
+            final char strEnd = str.toCharArray()[str.length() - 1];
+            for (final char c : endChar.toCharArray()) {
+                if (strEnd == c) {
+                    number = str.substring(0, str.length() - 1);
+                    matchedEndChar = true;
+                    break;
+                }
+            }
+            if (!matchedEndChar) {
+                return false;
+            }
+        }
+        try {
+            Integer.parseInt(number);
+        } catch (final NumberFormatException e) {
+            return false;
+        }
+        return true;
     }
 }

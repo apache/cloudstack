@@ -220,4 +220,8 @@ public class VpcGatewayVO implements VpcGateway {
     public Class<?> getEntityType() {
         return VpcGateway.class;
     }
+
+    public void setVpcId(Long vpcId) {
+        this.vpcId = vpcId;
+    }
 }
