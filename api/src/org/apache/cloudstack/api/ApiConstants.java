@@ -205,6 +205,7 @@ public class ApiConstants {
     public static final String OUTOFBANDMANAGEMENT_POWERSTATE = "outofbandmanagementpowerstate";
     public static final String OUTOFBANDMANAGEMENT_ENABLED = "outofbandmanagementenabled";
     public static final String PARAMS = "params";
+    public static final String PARENT_ID = "parentid";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
     public static final String PASSWORD = "password";
     public static final String SHOULD_UPDATE_PASSWORD = "update_passwd_on_host";
@@ -274,6 +275,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String START_DATE = "startdate";
+    public static final String START_ID = "startid";
     public static final String START_IP = "startip";
     public static final String START_IPV6 = "startipv6";
     public static final String START_PORT = "startport";
@@ -332,6 +334,7 @@ public class ApiConstants {
     public static final String COUNT = "count";
     public static final String TRAFFIC_TYPE = "traffictype";
     public static final String NETWORK_OFFERING_ID = "networkofferingid";
+    public static final String TIER_NETWORK_OFFERINGS = "tiernetworkofferings";
     public static final String NETWORK_IDS = "networkids";
     public static final String NETWORK_ID = "networkid";
     public static final String NIC_ID = "nicid";
@@ -375,6 +378,7 @@ public class ApiConstants {
     public static final String ZONE_TOKEN = "zonetoken";
     public static final String DHCP_PROVIDER = "dhcpprovider";
     public static final String RESULT = "success";
+    public static final String RESUME = "resume";
     public static final String LUN_ID = "lunId";
     public static final String IQN = "iqn";
     public static final String AGGREGATE_NAME = "aggregatename";

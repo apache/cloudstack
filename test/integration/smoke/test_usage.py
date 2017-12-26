@@ -680,26 +680,12 @@ class TestVolumeUsage(cloudstackTestCase):
             "Check VOLUME.DELETE in events table"
         )
         self.hypervisor = str(get_hypervisor_type(self.apiclient)).lower()
-        if self.hypervisor == "vmware":
-            self.testdata["coreos_volume"][
-                "url"] = self.testdata["coreos_volume"]["urlvmware"]
-            self.testdata["coreos_volume"]["format"] = "OVA"
-        elif self.hypervisor == "xenserver":
-            self.testdata["coreos_volume"][
-                "url"] = self.testdata["coreos_volume"]["urlxen"]
-            self.testdata["coreos_volume"]["format"] = "VHD"
-        elif self.hypervisor == "kvm":
-            self.testdata["coreos_volume"][
-                "url"] = self.testdata["coreos_volume"]["urlkvm"]
-            self.testdata["coreos_volume"]["format"] = "QCOW2"
-        elif self.hypervisor == "hyperv":
-            self.testdata["coreos_volume"][
-                "url"] = self.testdata["coreos_volume"]["urlxen"]
-            self.testdata["coreos_volume"]["format"] = "VHD"
-
+        volume_template = self.testdata["test_templates"][self.hypervisor]
+        volume_template["diskname"] = "Volume_tiny"
+        volume_template["format"] = volume_template["format"].upper()
         volume_uploaded = Volume.upload(
             self.apiclient,
-            self.testdata["coreos_volume"],
+            volume_template,
             self.zone.id,
             account=self.account.name,
             domainid=self.account.domainid)

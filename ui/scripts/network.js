@@ -800,16 +800,23 @@
 
                         rootAdminAddGuestNetwork: $.extend({}, addGuestNetworkDialog.def, {
                             isHeader: true
+                        }),
+
+                        rootAdminAddL2Network: $.extend({}, addL2GuestNetwork.def, {
+                            isHeader: true
                         })
 
                     },
                     id: 'networks',
+                    preFilter: function(args) {
+                        if (isAdmin() || isDomainAdmin()) {
+                            return []
+                        }
+                        return ['account']
+                    },
                     fields: {
                         name: {
                             label: 'label.name'
-                        },
-                        account: {
-                            label: 'label.account'
                         },
                         type: {
                             label: 'label.type'
@@ -819,6 +826,27 @@
                         },
                         ip6cidr: {
                             label: 'label.ipv6.CIDR'
+                        },
+                        account: {
+                            label: 'label.account'
+                        },
+                        zonename: {
+                            label: 'label.zone'
+                        },
+                        state: {
+                            converter: function(str) {
+                                // For localization
+                                return str;
+                            },
+                            label: 'label.state',
+                            indicator: {
+                                'Allocated': 'on',
+                                'Released': 'off',
+                                'Destroy': 'off',
+                                'Shutdown': 'off',
+                                'Setup': 'on',
+                                'Implemented': 'on'
+                            }
                         }
                     },
 
@@ -954,7 +982,8 @@
                             path: 'network.ipAddresses',
                             label: 'label.menu.ipaddresses',
                             preFilter: function(args) {
-                                if (args.context.networks[0].state == 'Destroyed')
+                                if (args.context.networks[0].state == 'Destroyed' ||
+                                    args.context.networks[0].type == 'L2')
                                     return false;
 
                                 return true;
@@ -970,6 +999,11 @@
                                     notification: function(args) {
                                         return 'label.edit.network.details';
                                     }
+                                },
+                                preFilter: function(args) {
+                                    if (args.context.networks[0].state == 'Destroyed')
+                                        return false;
+                                    return true;
                                 },
                                 action: function(args) {
                                     var data = {
@@ -1051,8 +1085,13 @@
                                 }
                             },
 
-                            'restart': {
+                            restart: {
                                 label: 'label.restart.network',
+                                preFilter: function(args) {
+                                    if (args.context.networks[0].state == 'Destroyed')
+                                        return false;
+                                    return true;
+                                },
                                 createForm: {
                                     title: 'label.restart.network',
                                     desc: 'message.restart.network',
@@ -1108,6 +1147,11 @@
 
                             remove: {
                                 label: 'label.action.delete.network',
+                                preFilter: function(args) {
+                                    if (args.context.networks[0].state == 'Destroyed')
+                                        return false;
+                                    return true;
+                                },
                                 messages: {
                                     confirm: function(args) {
                                         return 'message.action.delete.network';
@@ -1615,11 +1659,14 @@
                                                     networkid: args.context.networks[0].id
                                                 },
                                                 dataType: 'json',
-                                                async: true,
+                                                async: false,
                                                 success: function(json) {
                                                     var response = json.listegressfirewallrulesresponse.firewallrule ?
                                                         json.listegressfirewallrulesresponse.firewallrule : [];
 
+                                                    if (response.length > 0) {
+                                                        isConfigRulesMsgShown = true;
+                                                    }
                                                     args.response.success({
                                                         data: $.map(response, function(rule) {
                                                             if (rule.protocol == 'all') {
@@ -1879,6 +1926,12 @@
                 listView: {
                     id: 'ipAddresses',
                     label: 'label.ips',
+                    preFilter: function(args) {
+                        if (isAdmin()) {
+                            return ['account']
+                        }
+                        return []
+                    },
                     fields: {
                         ipaddress: {
                             label: 'label.ips',
@@ -1890,11 +1943,17 @@
                                 return text;
                             }
                         },
-                        zonename: {
-                            label: 'label.zone'
+                        associatednetworkname: {
+                            label: 'label.network'
                         },
                         virtualmachinedisplayname: {
                             label: 'label.vm.name'
+                        },
+                        account: {
+                            label: 'label.account'
+                        },
+                        zonename: {
+                            label: 'label.zone'
                         },
                         state: {
                             converter: function(str) {

@@ -449,12 +449,23 @@ public class AffinityGroupServiceImpl extends ManagerBase implements AffinityGro
                 throw new InvalidParameterValueException("Unable to find affinity group by id " + affinityGroupId);
             } else {
                 // verify permissions
-                _accountMgr.checkAccess(caller, null, true, owner, ag);
-                // Root admin has access to both VM and AG by default, but make sure the
-                // owner of these entities is same
-                if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
-                    if (ag.getAccountId() != owner.getAccountId()) {
-                        throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's account");
+                if (ag.getAclType() == ACLType.Domain) {
+                    _accountMgr.checkAccess(caller, null, false, owner, ag);
+                    // make sure the affinity group is available in that domain
+                    if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
+                        if (!isAffinityGroupAvailableInDomain(ag.getId(), owner.getDomainId())) {
+                            throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's domain");
+                        }
+                    }
+                } else {
+                    _accountMgr.checkAccess(caller, null, true, owner, ag);
+                    // Root admin has access to both VM and AG by default,
+                    // but
+                    // make sure the owner of these entities is same
+                    if (caller.getId() == Account.ACCOUNT_ID_SYSTEM || _accountMgr.isRootAdmin(caller.getId())) {
+                        if (ag.getAccountId() != owner.getAccountId()) {
+                            throw new PermissionDeniedException("Affinity Group " + ag + " does not belong to the VM's account");
+                        }
                     }
                 }
             }

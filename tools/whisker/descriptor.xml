@@ -2420,10 +2420,6 @@ Innovation Centre, 2006 (http://www.it-innovation.soton.ac.uk).
             name='Adiscon GmbH'
             url='http://www.adiscon.com/' />
         <organisation
-            id='person:patrick.debois'
-            name='Patrick Debois'
-            url='http://www.jedi.be/blog/' />
-        <organisation
         	id='dojofoundation.org'
         	name='The Dojo Foundation'
         	url='http://dojofoundation.org/' />
@@ -2436,7 +2432,7 @@ This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
     </primary-notice>
     <primary-organisation id='apache.org'/> 
-    <within dir='patches/systemvm/debian/config/etc/apache2'>
+    <within dir='systemvm/debian/etc/apache2'>
         <with-license id='ApacheLicenseVersion2'>
             <copyright-notice>
 Copyright (c) 2012 The Apache Software Foundation
@@ -2447,7 +2443,7 @@ Copyright (c) 2012 The Apache Software Foundation
             </by-organisation>
         </with-license>
     </within>
-    <within dir='patches/systemvm/debian/config/etc'>
+    <within dir='systemvm/debian/etc'>
         <public-domain>
             <by-organisation id='adiscon.com'>
                 <resource name='rsyslog.conf' />
@@ -2458,14 +2454,14 @@ Copyright (c) 2012 The Apache Software Foundation
             </by-organisation>
         </public-domain>
     </within>
-    <within dir='patches/systemvm/debian/config/root/redundant_router'>
+    <within dir='systemvm/debian/root/redundant_router'>
         <public-domain>
             <by-organisation id='netfilter.org'>
                 <resource name='conntrackd.conf.templ' />
             </by-organisation>
         </public-domain>
     </within>
-    <within dir='patches/systemvm/debian/config/etc/ssh/'>
+    <within dir='systemvm/debian/etc/ssh/'>
         <with-license id='BSD2ClauseGeneric'>
             <copyright-notice />
             <by-organisation id='openssh.org'>
@@ -2642,31 +2638,6 @@ Copyright (c) 2010-2011 OpenStack, LLC.
 				<resource name='swift' />
 			</by-organisation>
 		</with-license>
-    </within>
-    <within dir='tools/appliance/definitions/{devcloud,systemvmtemplate,systemvmtemplate64}'>
-        <with-license id='MIT'>
-            <copyright-notice>
-Copyright (c) 2010-2012 Patrick Debois
-            </copyright-notice>
-            <by-organisation id='person:patrick.debois'>
-                <resource name='base.sh' source='https://github.com/jedi4ever/veewee' />
-                <resource name='cleanup.sh' source='https://github.com/jedi4ever/veewee' />
-                <resource name='definition.rb' source='https://github.com/jedi4ever/veewee' />
-                <resource name='preseed.cfg' source='https://github.com/jedi4ever/veewee' />
-                <resource name='zerodisk.sh' source='https://github.com/jedi4ever/veewee' />
-            </by-organisation>
-        </with-license>
-    </within>
-    <within dir='tools/devcloud/src/deps/boxes/basebox-build'>
-        <with-license id='MIT'>
-            <copyright-notice>
-Copyright (c) 2010-2012 Patrick Debois
-            </copyright-notice>
-            <by-organisation id='person:patrick.debois'>
-                <resource name='definition.rb' source='https://github.com/jedi4ever/veewee' />
-                <resource name='preseed.cfg' source='https://github.com/jedi4ever/veewee' />
-            </by-organisation>
-        </with-license>
     </within>
     <within dir='utils/src/org/apache/commons/httpclient/contrib/ssl'>
         <with-license id='ApacheLicenseVersion2'>

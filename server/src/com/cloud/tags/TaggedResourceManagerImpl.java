@@ -24,6 +24,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.network.vpc.VpcOfferingVO;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -127,7 +129,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         s_typeMap.put(ResourceObjectType.LBStickinessPolicy, LBStickinessPolicyVO.class);
         s_typeMap.put(ResourceObjectType.LBHealthCheckPolicy, LBHealthCheckPolicyVO.class);
         s_typeMap.put(ResourceObjectType.SnapshotPolicy, SnapshotPolicyVO.class);
-
+        s_typeMap.put(ResourceObjectType.NetworkOffering, NetworkOfferingVO.class);
+        s_typeMap.put(ResourceObjectType.VpcOffering, VpcOfferingVO.class);
     }
 
     @Inject

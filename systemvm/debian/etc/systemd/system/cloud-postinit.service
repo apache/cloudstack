@@ -1,0 +1,14 @@
+[Unit]
+Description=CloudStack post-patching init script
+After=cloud-early-config.service network.target local-fs.target
+Before=ssh.service
+Requires=network.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/cloud/bin/setup/postinit.sh
+RemainAfterExit=true
+TimeoutStartSec=10min

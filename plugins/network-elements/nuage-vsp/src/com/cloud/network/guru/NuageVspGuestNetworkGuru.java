@@ -223,7 +223,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
                 implemented.setCidr(network.getCidr());
             }
 
-            VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(implemented);
+            VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(implemented, true);
             String tenantId = context.getDomain().getName() + "-" + context.getAccount().getAccountId();
             String broadcastUriStr = implemented.getUuid() + "/" + vspNetwork.getVirtualRouterIp();
             implemented.setBroadcastUri(Networks.BroadcastDomainType.Vsp.toUri(broadcastUriStr));
@@ -268,22 +268,20 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
     }
 
     private void saveNetworkAndVpcDetails(VspNetwork vspNetwork, NetworkRelatedVsdIds networkRelatedVsdIds, Long vpcId) {
-
-
         if (!vspNetwork.isShared() && !vspNetwork.getNetworkRelatedVsdIds().equals(networkRelatedVsdIds)) {
             Map<String, String> networkDetails = constructNetworkDetails(networkRelatedVsdIds, vspNetwork.isVpc());
 
+            long networkId = vspNetwork.getId();
+
             for (Map.Entry<String, String> networkDetail : networkDetails.entrySet()) {
-                NetworkDetailVO networkDetailVO = new NetworkDetailVO(vspNetwork.getId(), networkDetail.getKey(), networkDetail.getValue(), false);
-                _networkDetailsDao.persist(networkDetailVO);
+                _networkDetailsDao.addDetail(networkId, networkDetail.getKey(), networkDetail.getValue(), false);
             }
 
             if(vspNetwork.isVpc()) {
                 Map<String, String> vpcDetails = constructVpcDetails(networkRelatedVsdIds);
 
                 for (Map.Entry<String, String> vpcDetail : vpcDetails.entrySet()) {
-                    VpcDetailVO vpcDetailVO = new VpcDetailVO(vpcId, vpcDetail.getKey(), vpcDetail.getValue(), false);
-                    _vpcDetailsDao.persist(vpcDetailVO);
+                    _vpcDetailsDao.addDetail(vpcId, vpcDetail.getKey(), vpcDetail.getValue(), false);
                 }
             }
         }
@@ -354,6 +352,16 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
 
             HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
             VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(vm.getVirtualMachine().getDomainId(), network);
+
+            if (vm.getType() == VirtualMachine.Type.DomainRouter && vspNetwork.getVirtualRouterIp().equals("null")) {
+                //In case of upgrade network offering
+                vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(vm.getVirtualMachine().getDomainId(), network, true);
+                String broadcastUriStr = network.getUuid() + "/" + vspNetwork.getVirtualRouterIp();
+                NetworkVO updatedNetwork = _networkDao.createForUpdate(network.getId());
+                updatedNetwork.setBroadcastUri(Networks.BroadcastDomainType.Vsp.toUri(broadcastUriStr));
+                _networkDao.update(updatedNetwork.getId(), updatedNetwork);
+                network = _networkDao.findById(network.getId());
+            }
 
             if (vspNetwork.isShared()) {
                 vspNetwork = _nuageVspEntityBuilder.updateVspNetworkByPublicIp(vspNetwork, network, nic.getIPv4Address());
@@ -623,6 +631,17 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Handling trash() call back to delete the network " + network.getName() + " with uuid " + network.getUuid() + " from VSP");
             }
+
+            boolean networkMigrationCopy = network.getRelated() != network.getId();
+
+            cleanUpNetworkCaching(network.getId());
+            if (networkMigrationCopy) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Network " + network.getName() + " is a copy of a migrated network. Cleaning up network details of related network.");
+                }
+                cleanUpNetworkCaching(network.getRelated());
+            }
+
             VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
             HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
             TrashNetworkVspCommand cmd = new TrashNetworkVspCommand(vspNetwork);
@@ -638,6 +657,12 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru {
             _networkDao.releaseFromLockTable(network.getId());
         }
         return super.trash(network, offering);
+    }
+
+    private void cleanUpNetworkCaching(long id) {
+        _networkDetailsDao.removeDetail(id, NuageVspManager.NETWORK_METADATA_VSD_DOMAIN_ID);
+        _networkDetailsDao.removeDetail(id, NuageVspManager.NETWORK_METADATA_VSD_ZONE_ID);
+        _networkDetailsDao.removeDetail(id, NuageVspManager.NETWORK_METADATA_VSD_SUBNET_ID);
     }
 
     private boolean networkHasDns(Network network) {

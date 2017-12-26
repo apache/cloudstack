@@ -338,6 +338,7 @@ var dictionary = {
     "label.add.isolated.guest.network": "Adiciona Rede Guest Isolada",
     "label.add.isolated.guest.network.with.sourcenat": "Adicionar rede Guest isolada com SourceNat",
     "label.add.isolated.network": "Adiciona Rede Isolada",
+    "label.add.l2.guest.network":"Add L2 Guest Network",
     "label.add.ldap.account": "Adicionar Conta LDAP",
     "label.add.list.name": "Nome de Lista ACL",
     "label.add.load.balancer": "Adicionar Load Balance",

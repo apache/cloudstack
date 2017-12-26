@@ -18,6 +18,8 @@
  */
 package com.cloud.hypervisor.kvm.resource;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -42,6 +44,8 @@ public class OvsVifDriver extends VifDriverBase {
     public void configure(Map<String, Object> params) throws ConfigurationException {
         super.configure(params);
 
+        getPifs();
+
         String networkScriptsDir = (String)params.get("network.scripts.dir");
         if (networkScriptsDir == null) {
             networkScriptsDir = "scripts/vm/network/vnet";
@@ -49,8 +53,27 @@ public class OvsVifDriver extends VifDriverBase {
 
         String value = (String)params.get("scripts.timeout");
         _timeout = NumbersUtil.parseInt(value, 30 * 60) * 1000;
+    }
 
-        createControlNetwork(_bridges.get("linklocal"));
+    public void getPifs() {
+        final String cmdout = Script.runSimpleBashScript("ovs-vsctl list-br | sed '{:q;N;s/\\n/%/g;t q}'");
+        s_logger.debug("cmdout was " + cmdout);
+        final List<String> bridges = Arrays.asList(cmdout.split("%"));
+        for (final String bridge : bridges) {
+            s_logger.debug("looking for pif for bridge " + bridge);
+            // String pif = getOvsPif(bridge);
+            // Not really interested in the pif name at this point for ovs
+            // bridges
+            final String pif = bridge;
+            if (_libvirtComputingResource.isPublicBridge(bridge)) {
+                _pifs.put("public", pif);
+            }
+            if (_libvirtComputingResource.isGuestBridge(bridge)) {
+                _pifs.put("private", pif);
+            }
+            _pifs.put(bridge, pif);
+        }
+        s_logger.debug("done looking for pifs, no more bridges");
     }
 
     @Override
@@ -132,6 +155,17 @@ public class OvsVifDriver extends VifDriverBase {
         // Libvirt apparently takes care of this, see BridgeVifDriver unplug
     }
 
+
+    @Override
+    public void attach(LibvirtVMDef.InterfaceDef iface) {
+        Script.runSimpleBashScript("ovs-vsctl add-port " + iface.getBrName() + " " + iface.getDevName());
+    }
+
+    @Override
+    public void detach(LibvirtVMDef.InterfaceDef iface) {
+        Script.runSimpleBashScript("ovs-vsctl port-to-br " + iface.getDevName() + " && ovs-vsctl del-port " + iface.getBrName() + " " + iface.getDevName());
+    }
+
     private void deleteExitingLinkLocalRouteTable(String linkLocalBr) {
         Script command = new Script("/bin/bash", _timeout);
         command.add("-c");
@@ -156,14 +190,16 @@ public class OvsVifDriver extends VifDriverBase {
         }
     }
 
-    private void createControlNetwork(String privBrName) {
+    @Override
+    public void createControlNetwork(String privBrName) {
         deleteExitingLinkLocalRouteTable(privBrName);
-        if (!isBridgeExists(privBrName)) {
+        if (!isExistingBridge(privBrName)) {
             Script.runSimpleBashScript("ovs-vsctl add-br " + privBrName + "; ip link set " + privBrName + " up; ip address add 169.254.0.1/16 dev " + privBrName, _timeout);
         }
     }
 
-    private boolean isBridgeExists(String bridgeName) {
+    @Override
+    public boolean isExistingBridge(String bridgeName) {
         Script command = new Script("/bin/sh", _timeout);
         command.add("-c");
         command.add("ovs-vsctl br-exists " + bridgeName);

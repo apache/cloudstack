@@ -798,7 +798,6 @@
                   <target>
                     <copy todir="${basedir}/target/common/vms">
                       <fileset dir="${basedir}/../systemvm/dist">
-                        <include name="systemvm.zip"/>
                         <include name="systemvm.iso"/>
                       </fileset>
                     </copy>

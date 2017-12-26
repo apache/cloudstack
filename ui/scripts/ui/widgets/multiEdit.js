@@ -579,7 +579,7 @@
 
             var $dataList = $listView.addClass('multi-edit-add-list').dialog({
                 dialogClass: 'multi-edit-add-list panel',
-                width: 825,
+                width: 900,
                 title: label,
                 buttons: [{
                     text: _l('label.apply'),

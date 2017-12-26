@@ -223,6 +223,10 @@ public class NetworkOfferingVO implements NetworkOffering {
         return tags;
     }
 
+    public void setTags(String tags) {
+        this.tags = tags;
+    }
+
     public void setName(String name) {
         this.name = name;
     }

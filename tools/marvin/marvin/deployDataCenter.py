@@ -456,6 +456,9 @@ class DeployDataCenters(object):
             phynet.zoneid = zoneid
             phynet.name = net.name
             phynet.isolationmethods = net.isolationmethods
+            if net.tags:
+                phynet.tags = net.tags
+
             phynetwrk = self.__apiClient.createPhysicalNetwork(phynet)
             if phynetwrk.id:
                 self.__tcRunLogger.\

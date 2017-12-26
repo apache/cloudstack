@@ -29,7 +29,7 @@ from marvin.lib.base import (ServiceOffering,
                              NetworkOffering,
                              Network)
 from marvin.lib.common import (get_zone,
-                               get_template,
+                               get_test_template,
                                get_domain,
                                list_routers,
                                list_nat_rules,
@@ -54,11 +54,12 @@ class TestRouterDnsService(cloudstackTestCase):
 
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
@@ -92,8 +93,8 @@ class TestRouterDnsService(cloudstackTestCase):
                                       zoneid=cls.zone.id)
 
         cls.logger.debug("Creating guest VM for Account %s using offering %s" % (cls.account.name, cls.service_offering.id))
-        cls.services["virtual_machine"]["displayname"] = VM1_NAME;
-        cls.services["virtual_machine"]["name"] = VM1_NAME;
+        cls.services["virtual_machine"]["displayname"] = VM1_NAME
+        cls.services["virtual_machine"]["name"] = VM1_NAME
         cls.vm1 = VirtualMachine.create(cls.api_client,
                                          cls.services["virtual_machine"],
                                          templateid=cls.template.id,
@@ -102,10 +103,10 @@ class TestRouterDnsService(cloudstackTestCase):
                                          serviceofferingid=cls.service_offering.id,
                                          networkids=[str(cls.network.id)])
         cls.vm1.password = "password"
-        cls.logger.debug("Created VM named %s" % VM1_NAME);
-                
-        cls.services["virtual_machine"]["displayname"] = VM2_NAME;
-        cls.services["virtual_machine"]["name"] = VM2_NAME;
+        cls.logger.debug("Created VM named %s" % VM1_NAME)
+
+        cls.services["virtual_machine"]["displayname"] = VM2_NAME
+        cls.services["virtual_machine"]["name"] = VM2_NAME
         cls.vm2 = VirtualMachine.create(cls.api_client,
                                          cls.services["virtual_machine"],
                                          templateid=cls.template.id,
@@ -114,7 +115,7 @@ class TestRouterDnsService(cloudstackTestCase):
                                          serviceofferingid=cls.service_offering.id,
                                          networkids=[str(cls.network.id)])
         cls.vm2.password = "password"
-        cls.logger.debug("Created VM named %s" % VM2_NAME);
+        cls.logger.debug("Created VM named %s" % VM2_NAME)
 
         cls.services["natrule1"] = {
             "privateport": 22,
@@ -256,7 +257,7 @@ class TestRouterDnsService(cloudstackTestCase):
         result1 = None
         try:
             self.logger.debug("SSH into guest VM with IP: %s" % nat_rule1.ipaddress)
-            ssh = self.vm1.get_ssh_client(ipaddress=nat_rule1.ipaddress, port=self.services['natrule1']["publicport"], retries=8)
+            ssh = self.vm1.get_ssh_client(ipaddress=nat_rule1.ipaddress, port=self.services['natrule1']["publicport"], retries=15)
             result1 = str(ssh.execute("nslookup %s" % VM1_NAME))
             self.logger.debug("nslookup %s: %s " % (VM1_NAME, result1))
             result2 = str(ssh.execute("nslookup %s" % VM2_NAME))
@@ -267,9 +268,9 @@ class TestRouterDnsService(cloudstackTestCase):
         if not result1:
             self.fail("Did not to receive any response from the guest VM, failing.")
 
-        self.assertTrue(VM1_NAME in result1 and "#53" in result1,
+        self.assertTrue(VM1_NAME in result1 and "10.1.1.1" in result1,
                         "VR DNS should serve requests from guest network, ping for %s successful." % VM1_NAME)
-        self.assertTrue(VM2_NAME in result2 and "#53" in result2,
+        self.assertTrue(VM2_NAME in result2 and "10.1.1.1" in result2,
                         "VR DNS should serve requests from guest network, ping for %s successful." % VM2_NAME)
         
         return

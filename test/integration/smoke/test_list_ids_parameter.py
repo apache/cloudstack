@@ -29,7 +29,7 @@ from marvin.lib.base import (Account,
                              VmSnapshot,
                              VirtualMachine)
 from marvin.lib.common import (get_domain,
-                                get_zone, get_template)
+                                get_zone, get_test_template)
 from marvin.codes import FAILED, PASS
 from nose.plugins.attrib import attr
 #Import System modules
@@ -62,14 +62,14 @@ class TestListIdsParams(cloudstackTestCase):
                                             cls.services["service_offerings"]["tiny"]
                                             )
 
-        template = get_template(
+        template = get_test_template(
                             cls.apiclient,
                             cls.zone.id,
-                            cls.services["ostype"]
+                            cls.hypervisor
                             )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
-            
+            assert False, "get_test_template() failed to return template"
+
         cls.services["template"]["ostypeid"] = template.ostypeid
         cls.services["template_2"]["ostypeid"] = template.ostypeid
         cls.services["ostypeid"] = template.ostypeid
@@ -105,20 +105,20 @@ class TestListIdsParams(cloudstackTestCase):
                                 mode=cls.services["mode"]
                                 )
 
-        #Take 3 VM1 Snapshots
-        #PLEASE UNCOMMENT ONCE VM SNAPSHOT DELAY BUG AFTER VM CREATION IS FIXED
-        """cls.vmsnapshot_1 = VmSnapshot.create(
-                                cls.apiclient,
-                                cls.virtual_machine_1.id
-                            )
-        cls.vmsnapshot_2 = VmSnapshot.create(
-                                cls.apiclient,
-                                cls.virtual_machine_1.id
-                            )
-        cls.vmsnapshot_3 = VmSnapshot.create(
-                                cls.apiclient,
-                                cls.virtual_machine_1.id
-                            )"""
+#        Take 3 VM1 Snapshots
+#        PLEASE UNCOMMENT ONCE VM SNAPSHOT DELAY BUG AFTER VM CREATION IS FIXED
+#        cls.vmsnapshot_1 = VmSnapshot.create(
+#                                cls.apiclient,
+#                                cls.virtual_machine_1.id
+#                            )
+#        cls.vmsnapshot_2 = VmSnapshot.create(
+#                                cls.apiclient,
+#                                cls.virtual_machine_1.id
+#                            )
+#        cls.vmsnapshot_3 = VmSnapshot.create(
+#                                cls.apiclient,
+#                                cls.virtual_machine_1.id
+#                            )
 
         #Stop VMs
         cls.virtual_machine_1.stop(cls.apiclient)
@@ -229,7 +229,7 @@ class TestListIdsParams(cloudstackTestCase):
             3,
             "ListVolumes response expected 3 Volumes, received %s" % len(list_volume_response)
         )
-        
+
     @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
     def test_02_list_templates(self):
         """Test listing Templates using 'ids' parameter
@@ -273,23 +273,23 @@ class TestListIdsParams(cloudstackTestCase):
             "ListSnapshots response expected 3 Snapshots, received %s" % len(list_snapshot_response)
         )
 
-    #PLEASE UNCOMMENT ONCE VM SNAPSHOT DELAY BUG AFTER VM CREATION IS FIXED
-    #@attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
-    #def test_04_list_vm_snapshots(self):
-        """Test listing VMSnapshots using 'vmsnapshotids' parameter
-        """
-        """list_vm_snapshot_response = VmSnapshot.list(
-                                        self.apiclient,
-                                        vmsnapshotids=[self.vmsnapshot_1.id, self.vmsnapshot_2.id, self.vmsnapshot_3.id],
-                                        listall=True
-                                        )
-        self.assertEqual(
-            isinstance(list_vm_snapshot_response, list),
-            True,
-            "ListVMSnapshots response was not a valid list"
-        )
-        self.assertEqual(
-            len(list_vm_snapshot_response),
-            3,
-            "ListVMSnapshots response expected 3 VMSnapshots, received %s" % len(list_vm_snapshot_response)
-        )"""
+#    PLEASE UNCOMMENT ONCE VM SNAPSHOT DELAY BUG AFTER VM CREATION IS FIXED
+#    @attr(tags = ["advanced", "advancedns", "smoke", "basic"], required_hardware="false")
+#    def test_04_list_vm_snapshots(self):
+#        """Test listing VMSnapshots using 'vmsnapshotids' parameter
+#        """
+#        list_vm_snapshot_response = VmSnapshot.list(
+#                                        self.apiclient,
+#                                        vmsnapshotids=[self.vmsnapshot_1.id, self.vmsnapshot_2.id, self.vmsnapshot_3.id],
+#                                        listall=True
+#                                        )
+#        self.assertEqual(
+#            isinstance(list_vm_snapshot_response, list),
+#            True,
+#            "ListVMSnapshots response was not a valid list"
+#        )
+#        self.assertEqual(
+#            len(list_vm_snapshot_response),
+#            3,
+#            "ListVMSnapshots response expected 3 VMSnapshots, received %s" % len(list_vm_snapshot_response)
+#        )

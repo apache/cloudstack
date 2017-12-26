@@ -506,3 +506,10 @@ CREATE TABLE `cloud_usage`.`usage_snapshot_on_primary` (
   `deleted` datetime,
   INDEX `i_usage_snapshot_on_primary` (`account_id`,`id`,`vm_id`,`created`)
 ) ENGINE=InnoDB CHARSET=utf8;
+
+-- Change monitor patch for apache2 in systemvm
+UPDATE `cloud`.`monitoring_services` SET pidfile="/var/run/apache2/apache2.pid" WHERE process_name="apache2" AND service_name="apache2";
+
+-- Use 'Other Linux 64-bit' as guest os for the default systemvmtemplate for VMware
+-- This fixes a memory allocation issue to systemvms on VMware/ESXi
+UPDATE `cloud`.`vm_template` SET guest_os_id=99 WHERE id=8;

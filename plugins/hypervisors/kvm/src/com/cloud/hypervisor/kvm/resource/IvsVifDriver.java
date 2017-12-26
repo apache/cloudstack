@@ -74,8 +74,6 @@ public class IvsVifDriver extends VifDriverBase {
         if (libvirtVersion == null) {
             libvirtVersion = 0L;
         }
-
-        createControlNetwork(_bridges.get("linklocal"));
     }
 
     @Override
@@ -144,6 +142,17 @@ public class IvsVifDriver extends VifDriverBase {
     @Override
     public void unplug(InterfaceDef iface) {
     }
+
+    @Override
+    public void attach(LibvirtVMDef.InterfaceDef iface) {
+        Script.runSimpleBashScript("/usr/sbin/ivs-ctl add-port " + iface.getDevName());
+    }
+
+    @Override
+    public void detach(LibvirtVMDef.InterfaceDef iface) {
+        Script.runSimpleBashScript("/usr/sbin/ivs-ctl del-port " + iface.getDevName());
+    }
+
 
     private void createControlNetwork() throws LibvirtException {
         createControlNetwork(_bridges.get("linklocal"));
@@ -268,7 +277,8 @@ public class IvsVifDriver extends VifDriverBase {
         }
     }
 
-    private void createControlNetwork(String privBrName) {
+    @Override
+    public void createControlNetwork(String privBrName) {
         deleteExitingLinkLocalRouteTable(privBrName);
         if (!isBridgeExists(privBrName)) {
             Script.runSimpleBashScript("brctl addbr " + privBrName + "; ip link set " + privBrName + " up; ip address add 169.254.0.1/16 dev " + privBrName, _timeout);

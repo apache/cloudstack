@@ -246,6 +246,7 @@ public class Networks {
          * encode a string into a BroadcastUri
          * @param candidate the input string
          * @return an URI containing an appropriate (possibly given) scheme and the value
+         *
          */
         public static URI fromString(String candidate) {
             try {

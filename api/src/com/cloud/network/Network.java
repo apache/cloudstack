@@ -38,7 +38,7 @@ import com.cloud.utils.fsm.StateObject;
 public interface Network extends ControlledEntity, StateObject<Network.State>, InternalIdentity, Identity, Serializable, Displayable {
 
     public enum GuestType {
-        Shared, Isolated
+        Shared, Isolated, L2
     }
 
     public String updatingInSequence ="updatingInSequence";
