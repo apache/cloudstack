@@ -2634,7 +2634,7 @@
                                         //hide/show service fields ***** (end) *****
 
                                         //show LB InlineMode dropdown only when (1)LB service is checked and LB service provider is F5BigIp (2)Firewall service is checked and Firewall service provider is JuniperSRX
-                                        if ((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp') &&
+                                        if ((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && ((args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp') || (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler')) &&
                                             (args.$form.find('.form-item[rel=\"service.Firewall.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Firewall.provider\"]').find('select').val() == 'JuniperSRX')) {
                                             args.$form.find('.form-item[rel=\"service.Lb.inlineModeDropdown\"]').css('display', 'inline-block');
                                         } else {
@@ -3267,7 +3267,7 @@
                                             inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticLb';
                                             inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
                                             serviceCapabilityIndex++;
-                                        } else if ((key == 'service.Lb.inlineModeDropdown') && ("Lb" in serviceProviderMap) && (serviceProviderMap.Lb == "F5BigIp")) {
+                                        } else if ((key == 'service.Lb.inlineModeDropdown') && ("Lb" in serviceProviderMap) && ((serviceProviderMap.Lb == "F5BigIp") || (serviceProviderMap.Lb == "Netscaler"))) {
                                             if (value == 'true') { //CS-16605 do not pass parameter if value is 'false'(side by side)
                                                 inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
                                                 inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'InlineMode';

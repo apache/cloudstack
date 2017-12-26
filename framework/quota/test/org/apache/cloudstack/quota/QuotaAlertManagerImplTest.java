@@ -16,6 +16,32 @@
 // under the License.
 package org.apache.cloudstack.quota;
 
+import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+import java.util.TimeZone;
+
+import javax.mail.MessagingException;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.quota.constant.QuotaConfig;
+import org.apache.cloudstack.quota.dao.QuotaAccountDao;
+import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
+import org.apache.cloudstack.quota.vo.QuotaAccountVO;
+import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
+
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.user.Account;
@@ -24,75 +50,35 @@ import com.cloud.user.UserVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
 import com.cloud.utils.db.TransactionLegacy;
-import junit.framework.TestCase;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.quota.constant.QuotaConfig;
-import org.apache.cloudstack.quota.dao.QuotaAccountDao;
-import org.apache.cloudstack.quota.dao.QuotaEmailTemplatesDao;
-import org.apache.cloudstack.quota.dao.QuotaUsageDao;
-import org.apache.cloudstack.quota.vo.QuotaAccountVO;
-import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.Spy;
-import org.mockito.runners.MockitoJUnitRunner;
 
-import javax.mail.MessagingException;
-import javax.naming.ConfigurationException;
-import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
+import junit.framework.TestCase;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaAlertManagerImplTest extends TestCase {
 
     @Mock
-    AccountDao accountDao;
+    private AccountDao accountDao;
     @Mock
-    QuotaAccountDao quotaAcc;
+    private QuotaAccountDao quotaAcc;
     @Mock
-    UserDao userDao;
+    private UserDao userDao;
     @Mock
-    DomainDao domainDao;
+    private DomainDao domainDao;
     @Mock
-    QuotaEmailTemplatesDao quotaEmailTemplateDao;
+    private QuotaEmailTemplatesDao quotaEmailTemplateDao;
     @Mock
-    ConfigurationDao configDao;
+    private ConfigurationDao configDao;
     @Mock
-    QuotaUsageDao quotaUsage;
-    @Mock
-    QuotaAlertManagerImpl.EmailQuotaAlert emailQuotaAlert;
+    private QuotaAlertManagerImpl.EmailQuotaAlert emailQuotaAlert;
 
     @Spy
-    QuotaAlertManagerImpl quotaAlertManager = new QuotaAlertManagerImpl();
-
-    private void injectMockToField(Object mock, String fieldName) throws NoSuchFieldException, IllegalAccessException {
-        Field f = QuotaAlertManagerImpl.class.getDeclaredField(fieldName);
-        f.setAccessible(true);
-        f.set(quotaAlertManager, mock);
-    }
+    @InjectMocks
+    private QuotaAlertManagerImpl quotaAlertManager = new QuotaAlertManagerImpl();
 
     @Before
     public void setup() throws IllegalAccessException, NoSuchFieldException, ConfigurationException {
         // Dummy transaction stack setup
         TransactionLegacy.open("QuotaAlertManagerImplTest");
-
-        injectMockToField(accountDao, "_accountDao");
-        injectMockToField(quotaAcc, "_quotaAcc");
-        injectMockToField(userDao, "_userDao");
-        injectMockToField(domainDao, "_domainDao");
-        injectMockToField(quotaEmailTemplateDao, "_quotaEmailTemplateDao");
-        injectMockToField(configDao, "_configDao");
-        injectMockToField(quotaUsage, "_quotaUsage");
-        injectMockToField(emailQuotaAlert, "_emailQuotaAlert");
     }
 
     @Test
@@ -149,8 +135,7 @@ public class QuotaAlertManagerImplTest extends TestCase {
         quotaAccount.setQuotaAlertDate(null);
         quotaAccount.setQuotaEnforce(0);
 
-        QuotaAlertManagerImpl.DeferredQuotaEmail email = new QuotaAlertManagerImpl.DeferredQuotaEmail(account, quotaAccount, new BigDecimal(100),
-                QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW);
+        QuotaAlertManagerImpl.DeferredQuotaEmail email = new QuotaAlertManagerImpl.DeferredQuotaEmail(account, quotaAccount, new BigDecimal(100), QuotaConfig.QuotaEmailTemplateTypes.QUOTA_LOW);
 
         QuotaEmailTemplatesVO quotaEmailTemplatesVO = new QuotaEmailTemplatesVO();
         quotaEmailTemplatesVO.setTemplateSubject("Low quota");
@@ -172,8 +157,8 @@ public class QuotaAlertManagerImplTest extends TestCase {
         Mockito.when(userDao.listByAccount(Mockito.anyLong())).thenReturn(users);
 
         quotaAlertManager.sendQuotaAlert(email);
-        assertTrue(email.getSendDate()!= null);
-        Mockito.verify(emailQuotaAlert, Mockito.times(1)).sendQuotaAlert(Mockito.anyList(), Mockito.anyString(), Mockito.anyString());
+        assertTrue(email.getSendDate() != null);
+        Mockito.verify(emailQuotaAlert, Mockito.times(1)).sendQuotaAlert(Mockito.anyListOf(String.class), Mockito.anyString(), Mockito.anyString());
     }
 
     @Test
@@ -182,7 +167,7 @@ public class QuotaAlertManagerImplTest extends TestCase {
         assertTrue(QuotaAlertManagerImpl.getDifferenceDays(now, now) == 0L);
         Calendar c = Calendar.getInstance();
         c.setTimeZone(TimeZone.getTimeZone("UTC"));
-        Calendar c2 = (Calendar) c.clone();
+        Calendar c2 = (Calendar)c.clone();
         c2.add(Calendar.DATE, 1);
         assertEquals(1L, QuotaAlertManagerImpl.getDifferenceDays(c.getTime(), c2.getTime()));
     }

@@ -16,6 +16,17 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.APICommand;
+
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -23,18 +34,7 @@ import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
 import com.google.common.base.Strings;
-import org.apache.cloudstack.api.APICommand;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-@Local(value = APIChecker.class)
 public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
 
     @Inject

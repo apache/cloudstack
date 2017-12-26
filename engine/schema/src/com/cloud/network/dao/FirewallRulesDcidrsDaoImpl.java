@@ -25,12 +25,10 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import org.springframework.stereotype.Component;
 
-import javax.ejb.Local;
 import java.util.ArrayList;
 import java.util.List;
 
 @Component
-@Local(value = FirewallRulesDcidrsDao.class)
 public class FirewallRulesDcidrsDaoImpl extends GenericDaoBase<FirewallRulesDestCidrsVO, Long> implements FirewallRulesDcidrsDao {
 
     protected final SearchBuilder<FirewallRulesDestCidrsVO> cidrsSearch;

@@ -43,6 +43,8 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.configuration.Config;
@@ -939,7 +941,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                         s_logger.warn("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " + newCount + ") for type " + type +
                                       " for account ID " + accountId + " is fixed during resource count recalculation.");
                     }
-
                     return newCount;
                 }
             });
@@ -1030,10 +1031,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
             dedicatedCount += new Long(ips.size());
         }
         allocatedCount = _ipAddressDao.countAllocatedIPsForAccount(accountId);
-        if (dedicatedCount > allocatedCount)
+        if (dedicatedCount > allocatedCount) {
             return dedicatedCount;
-        else
+        } else {
             return allocatedCount;
+        }
     }
 
     @Override
@@ -1076,8 +1078,9 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     public void changeResourceCount(long accountId, ResourceType type, Boolean displayResource, Long... delta) {
 
         // meaning that the display flag is not changed so neither increment or decrement
-        if (displayResource == null)
+        if (displayResource == null) {
             return;
+        }
 
         // Increment because the display is turned on.
         if (displayResource) {

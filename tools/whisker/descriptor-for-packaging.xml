@@ -1959,10 +1959,10 @@ below. If you did not receive this Content directly from the Eclipse Foundation,
 the following is provided for informational purposes only, and you should look
 to the Redistributor's license for terms and conditions of use.
 
-Foundation Dependencies ASM EclipseLink JPA ANTLR Java Persistence API (JPA) 1.0
-- EJB 3.0 Java Persistence API (JPA) 2.0 EARLY ACCESS EclipseLink MOXy Java
-Architecture for XML Binding (JAXB) Java Mail Java Activation Framework
-Streaming API for XML (StAX) EclipseLink SDO Service Data Objects (SDO)
+Foundation Dependencies ASM EclipseLink JPA ANTLR Java Persistence API (JPA) 2.0
+EARLY ACCESS EclipseLink MOXy Java Architecture for XML Binding (JAXB) 
+Java Mail Java Activation Framework Streaming API for XML (StAX) 
+EclipseLink SDO Service Data Objects (SDO) 
 Utilities Java Connector Xerces WSDL4J 1.6.2 ASM v1.5.3
 
 The EclipseLink Project includes ASM for the purpose of byte code weaving. The
@@ -2019,19 +2019,19 @@ EclipseLink Project to enable the MOXY component's implementation of JAXB.
 
 JAXB Libraries:
 
-/jlib/moxy/javax.xml.bind_2.1.12.v20090708-1500.jar /jlib/moxy/jaxb-impl.jar
-/jlib/moxy/jaxb.xjc.jar Java Persistence (JPA) 1.0 - EJB 3.0
+/jlib/moxy/javax.xml.bind_2.1.12.v20090708-1500.jar 
+/jlib/moxy/jaxb-impl.jar
+/jlib/moxy/jaxb.xjc.jar
 
-The Java Persistence API, included with EJB 3.0, is available for download from
-the ejb-api directory in the glassfish CVS repository.It is distributed under
-CDDLv1.0 . The jar is being shipped as an OSGi bundle and is required for
-compilation of some container based fuctionality.
+Java Persistence (JPA) 2.0:
 
-Java Persistence (JPA) 2.0.
-
-EclipseLink is the Java Persistence (JPA) 2.0 Reference Implementation (JSR
-317). The JPA 2.0 specification API is included in EclipseLink under the EPL and
-EDL licenses.
+The Java Persistence API used is available in the Maven central repository 
+under the "org.eclipse.persistence" groupId. This jar is being shipped as
+an OSGi bundle and is required for compilation of some container based 
+functionality. The JAR "javax.persistence" is distributed under Eclipse 
+Public License v1.0 and Eclipse Distribution License v. 1.0 licenses. 
+EclipseLink is the Java Persistence (JPA) 2.0 Reference Implementation
+(JSR 317).
 
 Java Mail v1.4
 
@@ -2723,10 +2723,6 @@ Copyright (c) 2003-2007 Luck Consulting Pty Ltd
             <copyright-notice>
 Copyright (c) 2006 Sun Microsystems, Inc. All rights reserved.
             </copyright-notice>
-            <by-organisation id='glassfish.org'>
-                <resource name='cloud-ejb-api-3.0.jar' source='http://repo1.maven.org/maven2/javax/ejb/ejb-api/3.0/ejb-api-3.0-sources.jar' notice='cddlnotice' />
-                <resource name='cloud-jstl-1.2.jar' source='http://jstl.java.net/' notice='cddlnotice' />
-            </by-organisation>
         </with-license>
         <with-license id='CDDL'>
             <copyright-notice>

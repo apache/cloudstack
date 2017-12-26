@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import java.io.File;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,23 +25,20 @@ import java.sql.SQLException;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade227to228Premium extends Upgrade227to228 {
     final static Logger s_logger = Logger.getLogger(Upgrade227to228Premium.class);
 
     @Override
-    public File[] getPrepareScripts() {
-        File[] scripts = super.getPrepareScripts();
-        File[] newScripts = new File[2];
-        newScripts[0] = scripts[0];
-
-        String file = Script.findScript("", "db/schema-227to228-premium.sql");
-        if (file == null) {
-            throw new CloudRuntimeException("Unable to find the upgrade script, schema-227to228-premium.sql");
+    public InputStream[] getPrepareScripts() {
+        InputStream[] newScripts = new InputStream[2];
+        newScripts[0] = super.getPrepareScripts()[0];
+        final String scriptFile = "META-INF/db/schema-227to228-premium.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
-
-        newScripts[1] = new File(file);
+        newScripts[1] = script;
 
         return newScripts;
     }
@@ -51,11 +48,6 @@ public class Upgrade227to228Premium extends Upgrade227to228 {
         addSourceIdColumn(conn);
         addNetworkIdsToUserStats(conn);
         super.performDataMigration(conn);
-    }
-
-    @Override
-    public File[] getCleanupScripts() {
-        return null;
     }
 
     private void addSourceIdColumn(Connection conn) {

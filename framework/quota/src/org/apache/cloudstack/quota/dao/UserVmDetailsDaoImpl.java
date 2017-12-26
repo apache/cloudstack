@@ -20,17 +20,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
-
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.quota.vo.UserVmDetailVO;
+import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 
 @Component
-@Local(value = UserVmDetailsDao.class)
 public class UserVmDetailsDaoImpl extends GenericDaoBase<UserVmDetailVO, Long> implements UserVmDetailsDao {
     private SearchBuilder<UserVmDetailVO> AllFieldsSearch;
 

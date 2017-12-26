@@ -20,12 +20,11 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
+import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
@@ -37,7 +36,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 
 @Component
-@Local(value = { QuotaCreditsDao.class })
 public class QuotaCreditsDaoImpl extends GenericDaoBase<QuotaCreditsVO, Long> implements QuotaCreditsDao {
 
     @Inject
