@@ -427,57 +427,35 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 }
             }
         }
-        String name = cmd.getName();
         String gatewayIp = cmd.getGatewayIp();
 
         if (!NetUtils.isValidIp4(gatewayIp) && !NetUtils.verifyDomainName(gatewayIp)) {
             throw new InvalidParameterValueException("The customer gateway ip/Domain " + gatewayIp + " is invalid!");
         }
-        if (name == null) {
-            name = "VPN-" + gatewayIp;
-        }
         String guestCidrList = cmd.getGuestCidrList();
         if (!NetUtils.isValidCidrList(guestCidrList)) {
             throw new InvalidParameterValueException("The customer gateway peer cidr list " + guestCidrList + " contains an invalid cidr!");
         }
-        String ipsecPsk = cmd.getIpsecPsk();
         String ikePolicy = cmd.getIkePolicy();
-        String espPolicy = cmd.getEspPolicy();
         if (!NetUtils.isValidS2SVpnPolicy("ike", ikePolicy)) {
             throw new InvalidParameterValueException("The customer gateway IKE policy" + ikePolicy + " is invalid!  Verify the required Diffie Hellman (DH) group is specified.");
         }
+        String espPolicy = cmd.getEspPolicy();
         if (!NetUtils.isValidS2SVpnPolicy("esp", espPolicy)) {
             throw new InvalidParameterValueException("The customer gateway ESP policy" + espPolicy + " is invalid!");
         }
         Long ikeLifetime = cmd.getIkeLifetime();
-        if (ikeLifetime == null) {
-            // Default value of lifetime is 1 day
-            ikeLifetime = (long)86400;
-        }
-        if (ikeLifetime > 86400) {
+        if (ikeLifetime != null && ikeLifetime > 86400) {
             throw new InvalidParameterValueException("The IKE lifetime " + ikeLifetime + " of vpn connection is invalid!");
         }
         Long espLifetime = cmd.getEspLifetime();
-        if (espLifetime == null) {
-            // Default value of lifetime is 1 hour
-            espLifetime = (long)3600;
-        }
-        if (espLifetime > 86400) {
+        if (espLifetime != null && espLifetime > 86400) {
             throw new InvalidParameterValueException("The ESP lifetime " + espLifetime + " of vpn connection is invalid!");
-        }
-
-        Boolean dpd = cmd.getDpd();
-        if (dpd == null) {
-            dpd = false;
-        }
-
-        Boolean encap = cmd.getEncap();
-        if (encap == null) {
-            encap = false;
         }
 
         checkCustomerGatewayCidrList(guestCidrList);
 
+        String name = cmd.getName();
         long accountId = gw.getAccountId();
         Site2SiteCustomerGatewayVO existedGw = _customerGatewayDao.findByNameAndAccountId(name, accountId);
         if (existedGw != null && existedGw.getId() != gw.getId()) {
@@ -489,11 +467,11 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         gw.setGuestCidrList(guestCidrList);
         gw.setIkePolicy(ikePolicy);
         gw.setEspPolicy(espPolicy);
-        gw.setIpsecPsk(ipsecPsk);
+        gw.setIpsecPsk(cmd.getIpsecPsk());
         gw.setIkeLifetime(ikeLifetime);
         gw.setEspLifetime(espLifetime);
-        gw.setDpd(dpd);
-        gw.setEncap(encap);
+        gw.setDpd(cmd.getDpd());
+        gw.setEncap(cmd.getEncap());
         _customerGatewayDao.persist(gw);
         return gw;
     }
