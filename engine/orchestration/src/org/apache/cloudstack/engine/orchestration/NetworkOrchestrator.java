@@ -292,7 +292,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
     List<NetworkGuru> networkGurus;
 
-
+    @Override
     public List<NetworkGuru> getNetworkGurus() {
         return networkGurus;
     }
@@ -1156,7 +1156,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 }
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Asking " + element.getName() + " to implemenet " + network);
+                    s_logger.debug("Asking " + element.getName() + " to implement " + network);
                 }
 
                 if (!element.implement(network, offering, dest, context)) {
@@ -2207,8 +2207,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         + zone.getName());
             }
             if (! UuidUtils.validateUUID(vlanId)){
-                // For Isolated networks, don't allow to create network with vlan that already exists in the zone
-                if (ntwkOff.getGuestType() == GuestType.Isolated) {
+                // For Isolated and L2 networks, don't allow to create network with vlan that already exists in the zone
+                if (ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L2) {
                     if (_networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), null).size() > 0) {
                         throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists or overlaps with other network vlans in zone " + zoneId);
                     } else {
@@ -2289,8 +2289,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // with different Cidrs for the same Shared network
         final boolean cidrRequired = zone.getNetworkType() == NetworkType.Advanced
                 && ntwkOff.getTrafficType() == TrafficType.Guest
-                && (ntwkOff.getGuestType() == GuestType.Shared || ntwkOff.getGuestType() == GuestType.Isolated && !_networkModel.areServicesSupportedByNetworkOffering(
-                        ntwkOff.getId(), Service.SourceNat));
+                && (ntwkOff.getGuestType() == GuestType.Shared || (ntwkOff.getGuestType() == GuestType.Isolated
+                && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))
+                || ntwkOff.getGuestType() == GuestType.L2 && !_networkModel.listNetworkOfferingServices(ntwkOff.getId()).isEmpty());
         if (cidr == null && ip6Cidr == null && cidrRequired) {
             throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required when create network of" + " type " + Network.GuestType.Shared
                     + " and network of type " + GuestType.Isolated + " with service " + Service.SourceNat.getName() + " disabled");
@@ -2560,7 +2561,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             s_logger.debug("Unable to find network with id: " + networkId);
             return false;
         }
-
         // Make sure that there are no user vms in the network that are not Expunged/Error
         final List<UserVmVO> userVms = _userVmDao.listByNetworkIdAndStates(networkId);
 
@@ -2644,7 +2644,9 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     public void doInTransactionWithoutResult(final TransactionStatus status) {
                         final NetworkGuru guru = AdapterBase.getAdapterByName(networkGurus, networkFinal.getGuruName());
 
-                        guru.trash(networkFinal, _networkOfferingDao.findById(networkFinal.getNetworkOfferingId()));
+                        if (!guru.trash(networkFinal, _networkOfferingDao.findById(networkFinal.getNetworkOfferingId()))) {
+                            throw new CloudRuntimeException("Failed to trash network.");
+                        }
 
                         if (!deleteVlansInNetwork(networkFinal.getId(), context.getCaller().getId(), callerAccount)) {
                             s_logger.warn("Failed to delete network " + networkFinal + "; was unable to cleanup corresponding ip ranges");

@@ -82,7 +82,7 @@ class UpdateConfigTestCase(SystemVMTestCase):
     basic_dhcp_entry = {
         "host_name":"VM-58976c22-0832-451e-9ab2-039e9f27e415",
         "mac_address":"02:00:26:c3:00:02",
-        "ipv4_adress":"172.16.1.102",
+        "ipv4_address":"172.16.1.102",
         "ipv6_duid":"00:03:00:01:02:00:26:c3:00:02",
         "default_gateway":"172.16.1.1",
         "default_entry":True,
@@ -372,7 +372,7 @@ class UpdateConfigTestCase(SystemVMTestCase):
             ipb = ".".join(octets[0:3])
             ipa = "%s.%s" % (ipb, n)
             gw = "%s.1" % ipb
-            self.basic_dhcp_entry['ipv4_adress'] =  ipa
+            self.basic_dhcp_entry['ipv4_address'] =  ipa
             self.basic_dhcp_entry['default_gateway'] =  gw
             self.basic_dhcp_entry['host_name'] =  "host_%s" % (ipa)
             self.update_config(self.basic_dhcp_entry)
@@ -382,7 +382,7 @@ class UpdateConfigTestCase(SystemVMTestCase):
         assert port.is_listening(53)
         assert port.is_listening(67)
         for o in configs:
-            line = "%s,%s,%s,infinite" % (o['mac_address'], o['ipv4_adress'], o['host_name'])
+            line = "%s,%s,%s,infinite" % (o['mac_address'], o['ipv4_address'], o['host_name'])
             assert file.has_line("/etc/dhcphosts.txt", line)
         config['add'] = False
         self.update_config(config)
@@ -400,7 +400,7 @@ class UpdateConfigTestCase(SystemVMTestCase):
             o['add'] = False
             self.update_config(o)
         for o in configs:
-            line = "%s,%s,%s,infinite" % (o['mac_address'], o['ipv4_adress'], o['host_name'])
+            line = "%s,%s,%s,infinite" % (o['mac_address'], o['ipv4_address'], o['host_name'])
             assert file.has_line("/etc/dhcphosts.txt", line) is False
         # If the network gets deleted so should the vpn
         assert not file.exists("/etc/ipsec.d/ipsec.vpn-%s.conf" % vpn_config['peer_gateway_ip'])

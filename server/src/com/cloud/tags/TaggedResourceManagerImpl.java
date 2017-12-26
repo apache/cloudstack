@@ -130,6 +130,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         s_typeMap.put(ResourceObjectType.LBStickinessPolicy, LBStickinessPolicyVO.class);
         s_typeMap.put(ResourceObjectType.LBHealthCheckPolicy, LBHealthCheckPolicyVO.class);
         s_typeMap.put(ResourceObjectType.SnapshotPolicy, SnapshotPolicyVO.class);
+        s_typeMap.put(ResourceObjectType.NetworkOffering, NetworkOfferingVO.class);
+        s_typeMap.put(ResourceObjectType.VpcOffering, VpcOfferingVO.class);
     }
 
     @Inject

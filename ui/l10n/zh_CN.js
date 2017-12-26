@@ -338,6 +338,7 @@ var dictionary = {
     "label.add.isolated.guest.network": "添加隔离的来宾网络",
     "label.add.isolated.guest.network.with.sourcenat": "添加隔离的来宾网络并启用 SourceNat",
     "label.add.isolated.network": "添加隔离网络",
+    "label.add.l2.guest.network":"Add L2 Guest Network",
     "label.add.ldap.account": "添加 LDAP 账户",
     "label.add.list.name": "ACL 列表名称",
     "label.add.load.balancer": "添加负载平衡器",

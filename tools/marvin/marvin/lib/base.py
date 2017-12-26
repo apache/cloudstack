@@ -1225,13 +1225,16 @@ class Template:
     @classmethod
     def register(cls, apiclient, services, zoneid=None,
                  account=None, domainid=None, hypervisor=None,
-                 projectid=None, details=None):
+                 projectid=None, details=None, randomize_name=True):
         """Create template from URL"""
 
         # Create template from Virtual machine and Volume ID
         cmd = registerTemplate.registerTemplateCmd()
         cmd.displaytext = services["displaytext"]
-        cmd.name = "-".join([services["name"], random_gen()])
+        if randomize_name:
+            cmd.name = "-".join([services["name"], random_gen()])
+        else:
+            cmd.name = services["name"]
         cmd.format = services["format"]
         if hypervisor:
             cmd.hypervisor = hypervisor
@@ -2240,6 +2243,8 @@ class NetworkOffering:
             cmd.ispersistent = services["ispersistent"]
         if "egress_policy" in services:
             cmd.egressdefaultpolicy = services["egress_policy"]
+        if "tags" in services:
+            cmd.tags = services["tags"]
         cmd.details = [{}]
         if "servicepackageuuid" in services:
             cmd.details[0]["servicepackageuuid"] = services["servicepackageuuid"]
@@ -2978,6 +2983,13 @@ class Network:
         if cleanup:
             cmd.cleanup = cleanup
         return(apiclient.restartNetwork(cmd))
+
+    def migrate(self, apiclient, network_offering_id, resume=False):
+        cmd = migrateNetwork.migrateNetworkCmd()
+        cmd.networkid = self.id
+        cmd.networkofferingid = network_offering_id
+        cmd.resume = resume
+        return(apiclient.migrateNetwork(cmd))
 
     @classmethod
     def list(cls, apiclient, **kwargs):
@@ -4406,6 +4418,15 @@ class VPC:
             cmd.displaytext = displaytext
         return (apiclient.updateVPC(cmd))
 
+    def migrate(self, apiclient, vpc_offering_id, vpc_network_offering_ids, resume=False):
+        cmd = migrateVPC.migrateVPCCmd()
+        cmd.vpcid = self.id
+        cmd.vpcofferingid = vpc_offering_id
+        cmd.tiernetworkofferings = vpc_network_offering_ids
+        cmd.resume = resume
+        return(apiclient.migrateVPC(cmd))
+
+
     def delete(self, apiclient):
         """Delete VPC network"""
 
@@ -5251,3 +5272,34 @@ class RegisteredServicePackage:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listRegisteredServicePackages(cmd))
 
+
+class ResourceDetails:
+
+    @classmethod
+    def create(cls, apiclient, resourceid, resourcetype, details, fordisplay):
+        """Create resource detail"""
+
+        cmd = addResourceDetail.addResourceDetailCmd()
+        cmd.resourceid = resourceid
+        cmd.resourcetype = resourcetype
+        cmd.fordisplay = fordisplay
+        cmd.details = []
+        for key, value in details.items():
+            cmd.details.append({
+                'key': key,
+                'value': value
+            })
+        return Tag(apiclient.createTags(cmd).__dict__)
+
+    @classmethod
+    def list(self, apiclient, **kwargs):
+        cmd = listResourceDetails.listResourceDetailsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return (apiclient.listResourceDetails(cmd))
+
+    @classmethod
+    def delete(self, apiclient, resourceid, resourcetype):
+        cmd = removeResourceDetail.removeResourceDetailCmd()
+        cmd.resourceid = resourceid
+        cmd.resourcetype = resourcetype
+        return (apiclient.removeResourceDetail(cmd))

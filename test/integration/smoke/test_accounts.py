@@ -32,7 +32,7 @@ from marvin.lib.base import (Domain,
                              PublicIPAddress)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_test_template,
                                list_accounts,
                                list_virtual_machines,
                                list_service_offering,
@@ -128,11 +128,12 @@ class TestAccounts(cloudstackTestCase):
 
         cls.services = Services().services
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
@@ -270,11 +271,12 @@ class TestRemoveUserFromAccount(cloudstackTestCase):
 
         cls.services = Services().services
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
@@ -948,6 +950,7 @@ class TestAddVmToSubDomain(cloudstackTestCase):
         cls.services = Services().services
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
         cls.sub_domain = Domain.create(
             cls.api_client,
@@ -983,10 +986,10 @@ class TestAddVmToSubDomain(cloudstackTestCase):
             cls.sub_domain,
             cls.service_offering
         ]
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.vm_1 = VirtualMachine.create(
@@ -1717,12 +1720,13 @@ class TestDomainForceRemove(cloudstackTestCase):
         cls.services = Services().services
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
 
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id

@@ -81,7 +81,7 @@ public class ImageStoreUtil {
             return "";
         }
 
-        if (output.contains("ISO 9660") && isCorrectExtension(uripath, "iso")) {
+        if ((output.startsWith("ISO 9660") || output.startsWith("DOS/MBR")) && isCorrectExtension(uripath, "iso")) {
             s_logger.debug("File at path " + path + " looks like an iso : " + output);
             return "";
         }

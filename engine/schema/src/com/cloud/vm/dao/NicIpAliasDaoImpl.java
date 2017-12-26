@@ -172,4 +172,14 @@ public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implem
         List<NicIpAliasVO> list = listBy(sc);
         return list.size();
     }
+
+    @Override
+    public int moveIpAliases(long fromNicId, long toNicId) {
+        SearchCriteria<NicIpAliasVO> sc = AllFieldsSearch.create();
+        sc.setParameters("nicId", fromNicId);
+
+        NicIpAliasVO update = createForUpdate();
+        update.setNicId(toNicId);
+        return update(update, sc);
+    }
 }

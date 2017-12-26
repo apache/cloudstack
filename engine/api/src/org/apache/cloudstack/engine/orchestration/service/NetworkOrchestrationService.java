@@ -130,6 +130,11 @@ public interface NetworkOrchestrationService {
     Map<Integer, String> getExtraDhcpOptions(long nicId);
 
     /**
+     * Returns all extra dhcp options which are set on the provided nic
+     * @param nicId
+     * @return map which maps the dhcp value on it's option code
+     */
+    /**
      * prepares vm nic change for migration
      *
      * This method will be called in migration transaction before the vm migration.
@@ -275,4 +280,6 @@ public interface NetworkOrchestrationService {
     int getResourceCount(Network network);
 
     void finalizeUpdateInSequence(Network network, boolean success);
+
+    List<NetworkGuru> getNetworkGurus();
 }

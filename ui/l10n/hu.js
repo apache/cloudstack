@@ -338,6 +338,7 @@ var dictionary = {
     "label.add.isolated.guest.network": "Izolált vendég hálózat felvétele",
     "label.add.isolated.guest.network.with.sourcenat": "Add Isolated Guest Network with SourceNat",
     "label.add.isolated.network": "Izolált hálózat felvétele",
+    "label.add.l2.guest.network":"Add L2 Guest Network",
     "label.add.ldap.account": "LDAP hozzáférés felvétele",
     "label.add.list.name": "ACL lista név",
     "label.add.load.balancer": "Terheléselosztó felvétele",

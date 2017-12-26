@@ -19,13 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.util.List;
-
-import org.apache.log4j.Logger;
-import org.libvirt.Connect;
-import org.libvirt.Domain;
-import org.libvirt.LibvirtException;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
@@ -36,6 +29,12 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.VifDriver;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import org.apache.log4j.Logger;
+import org.libvirt.Connect;
+import org.libvirt.Domain;
+import org.libvirt.LibvirtException;
+
+import java.util.List;
 
 @ResourceWrapper(handles =  PlugNicCommand.class)
 public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCommand, Answer, LibvirtComputingResource> {
@@ -61,7 +60,7 @@ public final class LibvirtPlugNicCommandWrapper extends CommandWrapper<PlugNicCo
                 }
                 nicnum++;
             }
-            final VifDriver vifDriver = libvirtComputingResource.getVifDriver(nic.getType());
+            final VifDriver vifDriver = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName());
             final InterfaceDef interfaceDef = vifDriver.plug(nic, "Other PV", "");
             vm.attachDevice(interfaceDef.toString());
 

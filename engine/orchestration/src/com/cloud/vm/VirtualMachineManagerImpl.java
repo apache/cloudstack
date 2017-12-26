@@ -38,8 +38,8 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
-import com.cloud.agent.api.AttachOrDettachConfigDriveCommand;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
@@ -59,6 +59,7 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.Outcome;
 import org.apache.cloudstack.framework.jobs.dao.VmWorkJobDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
+import org.apache.cloudstack.framework.jobs.impl.JobSerializerHelper;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
@@ -70,13 +71,13 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
 import com.cloud.agent.api.AgentControlCommand;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AttachOrDettachConfigDriveCommand;
 import com.cloud.agent.api.CheckVirtualMachineAnswer;
 import com.cloud.agent.api.CheckVirtualMachineCommand;
 import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
@@ -89,6 +90,8 @@ import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.ReplugNicAnswer;
+import com.cloud.agent.api.ReplugNicCommand;
 import com.cloud.agent.api.RestoreVMSnapshotAnswer;
 import com.cloud.agent.api.RestoreVMSnapshotCommand;
 import com.cloud.agent.api.ScaleVmCommand;
@@ -836,6 +839,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    private void setupAgentSecurity(final Host vmHost, final Map<String, String> sshAccessDetails, final VirtualMachine vm) throws AgentUnavailableException, OperationTimedoutException {
+        final String csr = caManager.generateKeyStoreAndCsr(vmHost, sshAccessDetails);
+        if (!Strings.isNullOrEmpty(csr)) {
+            final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
+            ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
+            final Certificate certificate = caManager.issueCertificate(csr, Arrays.asList(vm.getHostName(), vm.getInstanceName()),
+                    new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
+            final boolean result = caManager.deployCertificate(vmHost, certificate, false, sshAccessDetails);
+            if (!result) {
+                s_logger.error("Failed to setup certificate for system vm: " + vm.getInstanceName());
+            }
+        } else {
+            s_logger.error("Failed to setup keystore and generate CSR for system vm: " + vm.getInstanceName());
+        }
+    }
 
     @Override
     public void orchestrateStart(final String vmUuid, final Map<VirtualMachineProfile.Param, Object> params, final DeploymentPlan planToDeploy, final DeploymentPlanner planner)
@@ -1085,18 +1103,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             if (vmHost != null && (VirtualMachine.Type.ConsoleProxy.equals(vm.getType()) ||
                                     VirtualMachine.Type.SecondaryStorageVm.equals(vm.getType())) && caManager.canProvisionCertificates()) {
                                 final Map<String, String> sshAccessDetails = _networkMgr.getSystemVMAccessDetails(vm);
-                                final String csr = caManager.generateKeyStoreAndCsr(vmHost, sshAccessDetails);
-                                if (!Strings.isNullOrEmpty(csr)) {
-                                    final Map<String, String> ipAddressDetails = new HashMap<>(sshAccessDetails);
-                                    ipAddressDetails.remove(NetworkElementCommand.ROUTER_NAME);
-                                    final Certificate certificate = caManager.issueCertificate(csr, Arrays.asList(vm.getHostName(), vm.getInstanceName()), new ArrayList<>(ipAddressDetails.values()), CAManager.CertValidityPeriod.value(), null);
-                                    final boolean result = caManager.deployCertificate(vmHost, certificate, false, sshAccessDetails);
-                                    if (!result) {
-                                        s_logger.error("Failed to setup certificate for system vm: " + vm.getInstanceName());
+                                for (int retries = 3; retries > 0; retries--) {
+                                    try {
+                                        setupAgentSecurity(vmHost, sshAccessDetails, vm);
+                                        return;
+                                    } catch (final Exception e) {
+                                        s_logger.error("Retrying after catching exception while trying to secure agent for systemvm id=" + vm.getId(), e);
                                     }
-                                } else {
-                                    s_logger.error("Failed to setup keystore and generate CSR for system vm: " + vm.getInstanceName());
                                 }
+                                throw new CloudRuntimeException("Failed to setup and secure agent for systemvm id=" + vm.getId());
                             }
                             return;
                         } else {
@@ -3635,6 +3650,36 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    @Override
+    public boolean replugNic(final Network network, final NicTO nic, final VirtualMachineTO vm, final ReservationContext context, final DeployDestination dest) throws ConcurrentOperationException,
+            ResourceUnavailableException, InsufficientCapacityException {
+        boolean result = true;
+
+        final VMInstanceVO router = _vmDao.findById(vm.getId());
+        if (router.getState() == State.Running) {
+            try {
+                final ReplugNicCommand replugNicCmd = new ReplugNicCommand(nic, vm.getName(), vm.getType(), vm.getDetails());
+                final Commands cmds = new Commands(Command.OnError.Stop);
+                cmds.addCommand("replugnic", replugNicCmd);
+                _agentMgr.send(dest.getHost().getId(), cmds);
+                final ReplugNicAnswer replugNicAnswer = cmds.getAnswer(ReplugNicAnswer.class);
+                if (replugNicAnswer == null || !replugNicAnswer.getResult()) {
+                    s_logger.warn("Unable to replug nic for vm " + vm.getName());
+                    result = false;
+                }
+            } catch (final OperationTimedoutException e) {
+                throw new AgentUnavailableException("Unable to plug nic for router " + vm.getName() + " in network " + network, dest.getHost().getId(), e);
+            }
+        } else {
+            s_logger.warn("Unable to apply ReplugNic, vm " + router + " is not in the right state " + router.getState());
+
+            throw new ResourceUnavailableException("Unable to apply ReplugNic on the backend," + " vm " + vm + " is not in the right state", DataCenter.class,
+                                                   router.getDataCenterId());
+        }
+
+        return result;
+    }
+
     public boolean plugNic(final Network network, final NicTO nic, final VirtualMachineTO vm, final ReservationContext context, final DeployDestination dest) throws ConcurrentOperationException,
     ResourceUnavailableException, InsufficientCapacityException {
         boolean result = true;
@@ -3647,7 +3692,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 cmds.addCommand("plugnic", plugNicCmd);
                 _agentMgr.send(dest.getHost().getId(), cmds);
                 final PlugNicAnswer plugNicAnswer = cmds.getAnswer(PlugNicAnswer.class);
-                if (!(plugNicAnswer != null && plugNicAnswer.getResult())) {
+                if (plugNicAnswer == null || !plugNicAnswer.getResult()) {
                     s_logger.warn("Unable to plug nic for vm " + vm.getName());
                     result = false;
                 }
@@ -3683,7 +3728,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 _agentMgr.send(dest.getHost().getId(), cmds);
 
                 final UnPlugNicAnswer unplugNicAnswer = cmds.getAnswer(UnPlugNicAnswer.class);
-                if (!(unplugNicAnswer != null && unplugNicAnswer.getResult())) {
+                if (unplugNicAnswer == null || !unplugNicAnswer.getResult()) {
                     s_logger.warn("Unable to unplug nic from router " + router);
                     result = false;
                 }
@@ -4743,8 +4788,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, work.getVmId());
         if (vm == null) {
             s_logger.info("Unable to find vm " + work.getVmId());
+            throw new CloudRuntimeException("Unable to find VM id=" + work.getVmId());
         }
-        assert vm != null;
 
         orchestrateStop(vm.getUuid(), work.isCleanup());
         return new Pair<JobInfo.Status, String>(JobInfo.Status.SUCCEEDED, null);

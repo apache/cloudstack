@@ -338,6 +338,7 @@ var dictionary = {
     "label.add.isolated.guest.network": "分離ゲストネットワークの追加",
     "label.add.isolated.guest.network.with.sourcenat": "分離ゲストネットワーク(送信元NAT)の追加",
     "label.add.isolated.network": "分離されたネットワークの追加",
+    "label.add.l2.guest.network":"Add L2 Guest Network",
     "label.add.ldap.account": "LDAP アカウントの追加",
     "label.add.list.name": "ACL 一覧名",
     "label.add.load.balancer": "ロード バランサーの追加",

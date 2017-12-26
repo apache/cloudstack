@@ -2452,7 +2452,7 @@ This product includes software developed at
 The Apache Software Foundation (http://www.apache.org/).
     </primary-notice>
     <primary-organisation id='apache.org'/> 
-    <within dir='patches/systemvm/debian/config/etc/apache2'>
+    <within dir='systemvm/debian/etc/apache2'>
         <with-license id='ApacheLicenseVersion2'>
             <copyright-notice>
 Copyright (c) 2012 The Apache Software Foundation
@@ -2463,7 +2463,7 @@ Copyright (c) 2012 The Apache Software Foundation
             </by-organisation>
         </with-license>
     </within>
-    <within dir='patches/systemvm/debian/config/etc'>
+    <within dir='systemvm/debian/etc'>
         <public-domain>
             <by-organisation id='adiscon.com'>
                 <resource name='rsyslog.conf' />
@@ -2474,14 +2474,14 @@ Copyright (c) 2012 The Apache Software Foundation
             </by-organisation>
         </public-domain>
     </within>
-    <within dir='patches/systemvm/debian/config/root/redundant_router'>
+    <within dir='systemvm/debian/root/redundant_router'>
         <public-domain>
             <by-organisation id='netfilter.org'>
                 <resource name='conntrackd.conf.templ' />
             </by-organisation>
         </public-domain>
     </within>
-    <within dir='patches/systemvm/debian/config/etc/ssh/'>
+    <within dir='systemvm/debian/etc/ssh/'>
         <with-license id='BSD2ClauseGeneric'>
             <copyright-notice />
             <by-organisation id='openssh.org'>

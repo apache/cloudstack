@@ -22,6 +22,7 @@ import java.util.Random;
 
 import javax.inject.Inject;
 
+import com.cloud.network.Network.GuestType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -199,7 +200,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             if (userSpecified.getCidr() != null) {
                 network.setCidr(userSpecified.getCidr());
                 network.setGateway(userSpecified.getGateway());
-            } else {
+            } else if (offering.getGuestType() == GuestType.Shared || !_networkModel.listNetworkOfferingServices(offering.getId()).isEmpty()) {
                 final String guestNetworkCidr = dc.getGuestNetworkCidr();
                 if (guestNetworkCidr != null) {
                     final String[] cidrTuple = guestNetworkCidr.split("\\/");
@@ -369,14 +370,16 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                     guestIp = network.getGateway();
                 } else {
                     guestIp = _ipAddrMgr.acquireGuestIpAddress(network, nic.getRequestedIPv4());
-                    if (guestIp == null) {
+                    if (guestIp == null && !_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
                         throw new InsufficientVirtualNetworkCapacityException("Unable to acquire Guest IP" + " address for network " + network, DataCenter.class,
                                 dc.getId());
                     }
                 }
 
                 nic.setIPv4Address(guestIp);
-                nic.setIPv4Netmask(NetUtils.cidr2Netmask(_networkModel.getValidNetworkCidr(network)));
+                if (network.getCidr() != null) {
+                    nic.setIPv4Netmask(NetUtils.cidr2Netmask(_networkModel.getValidNetworkCidr(network)));
+                }
 
                 nic.setIPv4Dns1(dc.getDns1());
                 nic.setIPv4Dns2(dc.getDns2());

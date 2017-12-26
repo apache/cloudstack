@@ -91,8 +91,9 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
     protected boolean canHandle(NetworkOffering offering, final NetworkType networkType, final PhysicalNetwork physicalNetwork) {
         // This guru handles only Guest Isolated network that supports Source
         // nat service
-        if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == Network.GuestType.Isolated &&
-            isMyIsolationMethod(physicalNetwork) && !offering.isSystemOnly()) {
+        if (networkType == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType())
+                && (offering.getGuestType() == Network.GuestType.Isolated || offering.getGuestType() == GuestType.L2)
+                && isMyIsolationMethod(physicalNetwork) && !offering.isSystemOnly()) {
             return true;
         } else {
             s_logger.trace("We only take care of Guest networks of type   " + GuestType.Isolated + " in zone of type " + NetworkType.Advanced);
@@ -295,12 +296,14 @@ public class ExternalGuestNetworkGuru extends GuestNetworkGuru {
             nic.setIPv4Gateway(config.getGateway());
 
             if (nic.getIPv4Address() == null) {
-                String guestIp = _ipAddrMgr.acquireGuestIpAddress(config, null);
-                if (guestIp == null) {
-                    throw new InsufficientVirtualNetworkCapacityException("Unable to acquire guest IP address for network " + config, DataCenter.class, dc.getId());
-                }
+                if (!_networkModel.listNetworkOfferingServices(config.getNetworkOfferingId()).isEmpty()) {
+                    String guestIp = _ipAddrMgr.acquireGuestIpAddress(config, null);
+                    if (guestIp == null) {
+                        throw new InsufficientVirtualNetworkCapacityException("Unable to acquire guest IP address for network " + config, DataCenter.class, dc.getId());
+                    }
 
-                nic.setIPv4Address(guestIp);
+                    nic.setIPv4Address(guestIp);
+                }
             } else {
                 long ipMask = NetUtils.ip2Long(nic.getIPv4Address()) & ~(0xffffffffffffffffl << (32 - cidrSize));
                 nic.setIPv4Address(NetUtils.long2Ip(cidrAddress | ipMask));

@@ -69,6 +69,9 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
                description = "maximum number of concurrent connections supported by the network offering")
     private Integer maxConnections;
 
+    @Parameter(name = ApiConstants.TAGS, type = CommandType.STRING, description = "the tags for the network offering.", length = 4096)
+    private String tags;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -103,6 +106,10 @@ public class UpdateNetworkOfferingCmd extends BaseCmd {
 
     public Boolean getKeepAliveEnabled() {
         return keepAliveEnabled;
+    }
+
+    public String getTags() {
+        return tags;
     }
 
     /////////////////////////////////////////////////////

@@ -35,7 +35,7 @@
     </repository>
   </repositories>
   <properties>
-      <nuage.vsp.client.version>1.0.5</nuage.vsp.client.version>
+      <nuage.vsp.client.version>1.0.6</nuage.vsp.client.version>
   </properties>
   <dependencies>
     <dependency>

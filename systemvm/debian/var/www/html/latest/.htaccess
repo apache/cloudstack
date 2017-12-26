@@ -1,0 +1,23 @@
+Options +FollowSymLinks
+RewriteEngine On
+
+#http://<routerIP>/latest/user-data  and .../user-data/  (both yield user-data file)
+#http://<routerIP>/latest/meta-data and .../meta-data/   (dir listing of meta-data)
+RewriteRule ^user-data/?$  ../userdata/%{REMOTE_ADDR}/user-data [L,NC,QSA]
+RewriteRule ^meta-data/?$  ../metadata/%{REMOTE_ADDR}/meta-data [L,NC,QSA]
+
+#http://<routerIP/latest/meta-data/foo and .../foo/  (yield metadata/$IP/foo)
+RewriteRule ^meta-data/(.+[^/])/?$  ../metadata/%{REMOTE_ADDR}/$1 [L,NC,QSA]
+
+#http://<routerIP>/latest/foo and .../foo/ (yield metadata/$IP/foo)
+#are these used?
+RewriteRule ^availability-zone/?$  ../metadata/%{REMOTE_ADDR}/availability-zone [L,NC,QSA]
+RewriteRule ^cloud-identifier/?$  ../metadata/%{REMOTE_ADDR}/cloud-identifier [L,NC,QSA]
+RewriteRule ^instance-id/?$  ../metadata/%{REMOTE_ADDR}/instance-id [L,NC,QSA]
+RewriteRule ^local-hostname/?$  ../metadata/%{REMOTE_ADDR}/local-hostname [L,NC,QSA]
+RewriteRule ^local-ipv4/?$  ../metadata/%{REMOTE_ADDR}/local-ipv4 [L,NC,QSA]
+RewriteRule ^public-hostname/?$  ../metadata/%{REMOTE_ADDR}/public-hostname [L,NC,QSA]
+RewriteRule ^public-ipv4/?$  ../metadata/%{REMOTE_ADDR}/public-ipv4 [L,NC,QSA]
+RewriteRule ^public-keys/?$  ../metadata/%{REMOTE_ADDR}/public-keys [L,NC,QSA]
+RewriteRule ^service-offering/?$  ../metadata/%{REMOTE_ADDR}/service-offering [L,NC,QSA]
+RewriteRule ^vm-id/?$  ../metadata/%{REMOTE_ADDR}/vm-id [L,NC,QSA]

@@ -133,6 +133,7 @@ known_categories = {
     'Pool': 'Pool',
     'VPC': 'VPC',
     'PrivateGateway': 'VPC',
+    'migrateVpc': 'VPC',
     'Simulator': 'simulator',
     'StaticRoute': 'VPC',
     'Tags': 'Resource tags',

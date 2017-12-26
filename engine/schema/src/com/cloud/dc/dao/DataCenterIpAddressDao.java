@@ -23,17 +23,17 @@ import com.cloud.utils.db.GenericDao;
 
 public interface DataCenterIpAddressDao extends GenericDao<DataCenterIpAddressVO, Long> {
 
-    public DataCenterIpAddressVO takeIpAddress(long dcId, long podId, long instanceId, String reservationId);
+    DataCenterIpAddressVO takeIpAddress(long dcId, long podId, long instanceId, String reservationId);
 
-    public DataCenterIpAddressVO takeDataCenterIpAddress(long dcId, String reservationId);
+    DataCenterIpAddressVO takeDataCenterIpAddress(long dcId, String reservationId);
 
-    public void addIpRange(long dcId, long podId, String start, String end);
+    void addIpRange(long dcId, long podId, String start, String end);
 
-    public void releaseIpAddress(String ipAddress, long dcId, Long instanceId);
+    void releaseIpAddress(String ipAddress, long dcId, Long instanceId);
 
-    public void releaseIpAddress(long nicId, String reservationId);
+    void releaseIpAddress(long nicId, String reservationId);
 
-    public void releaseIpAddress(long nicId);
+    void releaseIpAddress(long nicId);
 
     boolean mark(long dcId, long podId, String ip);
 
@@ -45,8 +45,11 @@ public interface DataCenterIpAddressDao extends GenericDao<DataCenterIpAddressVO
 
     int countIPs(long dcId, boolean onlyCountAllocated);
 
+    int countIpAddressUsage(final String ipAddress, final long podId, final long dcId, final boolean onlyCountAllocated);
+
     boolean deleteIpAddressByPod(long podId);
 
     void releasePodIpAddress(long id);
 
+    boolean deleteIpAddressByPodDc(String ipAddress, long podId, long dcId);
 }

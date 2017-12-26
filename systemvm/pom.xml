@@ -52,10 +52,10 @@
       <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <configuration>
-          <finalName>systemvm</finalName>
+          <finalName>agent</finalName>
           <appendAssemblyId>false</appendAssemblyId>
           <descriptors>
-            <descriptor>systemvm-descriptor.xml</descriptor>
+            <descriptor>systemvm-agent-descriptor.xml</descriptor>
           </descriptors>
         </configuration>
         <executions>
@@ -84,11 +84,11 @@
                 <resource>
                   <directory>target</directory>
                   <includes>
-                    <include>systemvm.zip</include>
+                    <include>agent.zip</include>
                   </includes>
                 </resource>
                 <resource>
-                  <directory>patches/debian/config/root/.ssh</directory>
+                  <directory>debian/root/.ssh</directory>
                   <includes>
                     <include>authorized_keys</include>
                   </includes>
@@ -111,29 +111,14 @@
               <target>
                 <mkdir dir="${basedir}/dist" />
                 <mkdir dir="${basedir}/target/build-patch" />
-                <mkdir dir="${basedir}/target/build-patch/usr/sbin" />
                 <copy overwrite="true" todir="${basedir}/target/build-patch">
-                  <fileset dir="${basedir}/patches/debian/config/">
+                  <fileset dir="${basedir}/debian/">
                     <include name="**/*" />
-                  </fileset>
-                  <fileset dir="${basedir}/patches/debian/vpn/">
-                    <include name="**/*" />
-                  </fileset>
-                  <fileset dir="${basedir}/patches/debian/xe/">
-                    <include name="**/*" />
-                    <exclude name="**/xe-*" />
-                    <exclude name="**/xen-*" />
                   </fileset>
                 </copy>
                 <copy overwrite="true" todir="${basedir}/target/build-patch/opt/cloud/bin/">
                   <fileset dir="${basedir}/../scripts/util/">
                     <include name="**/keystore-*" />
-                  </fileset>
-                </copy>
-                <copy overwrite="true" todir="${basedir}/target/build-patch/usr/sbin/">
-                  <fileset dir="${basedir}/patches/debian/xe/">
-                    <include name="**/xe-*" />
-                    <include name="**/xen-*" />
                   </fileset>
                 </copy>
                 <tar destfile="${basedir}/target/patch.tar">
@@ -180,7 +165,7 @@
            <argument>-r</argument>
            <argument>-o</argument>
            <argument>systemvm.iso</argument>
-           <argument>systemvm.zip</argument>
+           <argument>agent.zip</argument>
            <argument>cloud-scripts.tgz</argument>
            <argument>authorized_keys</argument>
          </arguments>

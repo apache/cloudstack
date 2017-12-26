@@ -35,6 +35,7 @@ from marvin.lib.base import (Domain,
                              Router,
                              ServiceOffering,
                              StaticNATRule,
+                             ResourceDetails,
                              VirtualMachine,
                              VPC,
                              VpcOffering,
@@ -42,15 +43,16 @@ from marvin.lib.base import (Domain,
 from marvin.lib.common import (get_domain,
                                get_template,
                                get_zone)
-from marvin.cloudstackAPI import restartVPC, listNuageUnderlayVlanIpRanges
+from marvin.cloudstackAPI import (restartVPC,
+                                  listNuageUnderlayVlanIpRanges)
 # Import System Modules
+from retry import retry
 import importlib
 import functools
 import logging
 import socket
-import sys
 import time
-from retry import retry
+import sys
 from nuage_vsp_statistics import VsdDataCollector
 
 
@@ -112,6 +114,7 @@ class nuageTestCase(cloudstackTestCase):
     @classmethod
     def setUpClass(cls):
         cls.debug("setUpClass nuageTestCase")
+        cls._cleanup = []
 
         # We want to fail quicker, if it's a failure
         socket.setdefaulttimeout(60)
@@ -139,8 +142,7 @@ class nuageTestCase(cloudstackTestCase):
             cls.api_client,
             cls.test_data["service_offering"]
         )
-        cls._cleanup = [cls.service_offering]
-
+        cls._cleanup.append(cls.service_offering)
         cls.debug("setUpClass nuageTestCase [DONE]")
 
     @classmethod
@@ -385,7 +387,7 @@ class nuageTestCase(cloudstackTestCase):
     @needscleanup
     def create_Network(cls, nw_off, gateway="10.1.1.1",
                        netmask="255.255.255.0", vpc=None, acl_list=None,
-                       testdata=None, account=None):
+                       testdata=None, account=None, vlan=None):
         if not account:
             account = cls.account
         cls.debug("Creating a network in the account - %s" % account.name)
@@ -401,6 +403,7 @@ class nuageTestCase(cloudstackTestCase):
                                  networkofferingid=nw_off.id,
                                  zoneid=cls.zone.id,
                                  gateway=gateway,
+                                 vlan=vlan,
                                  vpcid=vpc.id if vpc else cls.vpc.id
                                  if hasattr(cls, "vpc") else None,
                                  aclid=acl_list.id if acl_list else None
@@ -987,6 +990,23 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully verified the creation and state of Network "
                    "- %s in VSD" % network.name)
 
+    def verify_vsd_network_not_present(self, network, vpc=None):
+        self.debug("Verifying the creation and state of Network - %s in VSD" %
+                   network.name)
+        ext_network_filter = self.get_externalID_filter(vpc.id) if vpc \
+            else self.get_externalID_filter(network.id)
+
+        vsd_domain = self.vsd.get_domain(filter=ext_network_filter)
+        if vsd_domain is None:
+            return
+
+        vsd_zone = self.vsd.get_zone(filter=ext_network_filter)
+        if vsd_zone is None:
+            return
+        vsd_subnet = self.vsd.get_subnet(
+            filter=self.get_externalID_filter(network.id))
+        self.assertEqual(vsd_subnet, None, "Network is present on the vsd.")
+
     # get_subnet_id - Calculates and returns the subnet ID in VSD with the
     # given CloudStack network ID and subnet gateway
     def get_subnet_id(self, network_id, gateway):
@@ -1300,3 +1320,21 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully verified the creation and state of Network "
                    "Firewall (Ingress/Egress ACL) rule with ID - %s in VSD" %
                    firewall_rule.id)
+
+    def add_resource_tag(self, resource_id, resource_type, key, value,
+                         fordisplay=False):
+        details = {key: value}
+        return ResourceDetails.create(self.api_client, resourceid=resource_id,
+                                      resourcetype=resource_type,
+                                      details=details, fordisplay=fordisplay)
+
+    def list_resource_tag(self, resource_id, resource_type, key,
+                          fordisplay=False):
+        return ResourceDetails.list(self.api_client, resourceid=resource_id,
+                                    resourcetype=resource_type, key=key,
+                                    fordisplay=fordisplay)
+
+    def delete_resource_tag(self, resource_id, resource_type):
+        return ResourceDetails.delete(self.api_client,
+                                      resourceid=resource_id,
+                                      resourcetype=resource_type)

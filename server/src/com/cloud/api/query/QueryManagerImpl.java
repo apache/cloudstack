@@ -520,6 +520,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String keyword = cmd.getKeyword();
         Integer entryTime = cmd.getEntryTime();
         Integer duration = cmd.getDuration();
+        Long startId = cmd.getStartId();
 
         Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(
                 cmd.getDomainId(), cmd.isRecursive(), null);
@@ -542,7 +543,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("createDateG", sb.entity().getCreateDate(), SearchCriteria.Op.GTEQ);
         sb.and("createDateL", sb.entity().getCreateDate(), SearchCriteria.Op.LTEQ);
         sb.and("state", sb.entity().getState(), SearchCriteria.Op.NEQ);
-        sb.and("startId", sb.entity().getStartId(), SearchCriteria.Op.EQ);
+        sb.or("startId", sb.entity().getStartId(), SearchCriteria.Op.EQ);
         sb.and("createDate", sb.entity().getCreateDate(), SearchCriteria.Op.BETWEEN);
         sb.and("displayEvent", sb.entity().getDisplay(), SearchCriteria.Op.EQ);
         sb.and("archived", sb.entity().getArchived(), SearchCriteria.Op.EQ);
@@ -559,6 +560,13 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (id != null) {
             sc.setParameters("id", id);
+        }
+
+        if (startId != null) {
+            sc.setParameters("startId", startId);
+            if (id == null) {
+                sc.setParameters("id", startId);
+            }
         }
 
         if (keyword != null) {

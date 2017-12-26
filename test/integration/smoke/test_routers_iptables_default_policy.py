@@ -35,7 +35,7 @@ from marvin.lib.base import (stopRouter,
                              LoadBalancerRule)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_test_template,
                                list_routers,
                                list_hosts)
 from marvin.lib.utils import (cleanup_resources,
@@ -214,10 +214,12 @@ class TestVPCIpTablesPolicies(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
-        cls.template = get_template(
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.template = get_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"])
+            cls.hypervisor)
+
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
@@ -366,11 +368,12 @@ class TestRouterIpTablesPolicies(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
-        cls.template = get_template(
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.template = get_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"])
-        
+            cls.hypervisor)
+
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id

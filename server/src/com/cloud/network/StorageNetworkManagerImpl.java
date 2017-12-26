@@ -77,12 +77,21 @@ public class StorageNetworkManagerImpl extends ManagerBase implements StorageNet
         if (pod == null) {
             throw new CloudRuntimeException("Cannot find pod " + podId);
         }
-        String[] IpRange = pod.getDescription().split("-");
-        if ((IpRange[0] == null || IpRange[1] == null) || (!NetUtils.isValidIp(IpRange[0]) || !NetUtils.isValidIp(IpRange[1]))) {
-            return;
-        }
-        if (NetUtils.ipRangesOverlap(startIp, endIp, IpRange[0], IpRange[1])) {
-            throw new InvalidParameterValueException("The Storage network Start IP and endIP address range overlap with private IP :" + IpRange[0] + ":" + IpRange[1]);
+
+        final String[] existingPodIpRanges = pod.getDescription().split(",");
+
+        for(String podIpRange: existingPodIpRanges) {
+            final String[] existingPodIpRange = podIpRange.split("-");
+
+            if (existingPodIpRange.length > 1) {
+                if (!NetUtils.isValidIp(existingPodIpRange[0]) || !NetUtils.isValidIp(existingPodIpRange[1])) {
+                    continue;
+                }
+
+                if (NetUtils.ipRangesOverlap(startIp, endIp, existingPodIpRange[0], existingPodIpRange[1])) {
+                    throw new InvalidParameterValueException("The Storage network Start IP and endIP address range overlap with private IP :" + existingPodIpRange[0] + ":" + existingPodIpRange[1]);
+                }
+            }
         }
     }
 

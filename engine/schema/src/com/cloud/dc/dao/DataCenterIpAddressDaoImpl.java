@@ -98,6 +98,16 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
     }
 
     @Override
+    public boolean deleteIpAddressByPodDc(String ipAddress, long podId, long dcId) {
+        SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
+        sc.setParameters("ipAddress", ipAddress);
+        sc.setParameters("pod", podId);
+        sc.setParameters("dc", dcId);
+
+        return remove(sc) > 0;
+    }
+
+    @Override
     public boolean mark(long dcId, long podId, String ip) {
         SearchCriteria<DataCenterIpAddressVO> sc = AllFieldsSearch.create();
         sc.setParameters("pod", podId);
@@ -246,6 +256,22 @@ public class DataCenterIpAddressDaoImpl extends GenericDaoBase<DataCenterIpAddre
         sc.setParameters("data_center_id", dcId);
         List<Integer> count = customSearch(sc, null);
         return count.get(0);
+    }
+
+    @Override
+    public int countIpAddressUsage(final String ipAddress, final long podId, final long dcId, final boolean onlyCountAllocated) {
+        SearchCriteria<DataCenterIpAddressVO> sc = createSearchCriteria();
+
+        if(onlyCountAllocated) {
+            sc.addAnd("takenAt", SearchCriteria.Op.NNULL);
+        }
+
+        sc.addAnd("ipAddress", SearchCriteria.Op.EQ, ipAddress);
+        sc.addAnd("podId", SearchCriteria.Op.EQ, podId);
+        sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, dcId);
+
+        List<DataCenterIpAddressVO> result = listBy(sc);
+        return result.size();
     }
 
     public DataCenterIpAddressDaoImpl() {

@@ -50,7 +50,6 @@ env:
              smoke/test_hostha_simulator
              smoke/test_host_annotations
              smoke/test_host_maintenance
-             smoke/test_hosts
              smoke/test_internal_lb
              smoke/test_iso
              smoke/test_list_ids_parameter
@@ -116,8 +115,7 @@ env:
              component/test_acl_sharednetwork_deployVM-impersonation
              component/test_affinity_groups_projects
              component/test_cpu_domain_limits
-             component/test_cpu_limits
-             component/test_volumes"
+             component/test_cpu_limits"
 
     - TESTS="component/test_cpu_max_limits
              component/test_acl_isolatednetwork
@@ -145,10 +143,12 @@ env:
              component/test_snapshots
              component/test_stopped_vm"
 
-    - TESTS="component/test_resource_limits
-             component/test_tags
+    - TESTS="component/test_resource_limits"
+
+    - TESTS="component/test_tags
              component/test_templates
-             component/test_update_vm"
+             component/test_update_vm
+             component/test_volumes"
 
     - TESTS="component/test_vpc
              component/test_vpc_network

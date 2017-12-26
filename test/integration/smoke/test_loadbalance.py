@@ -40,14 +40,14 @@ class TestLoadBalance(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
-        template = get_template(
+        cls.hypervisor = testClient.getHypervisorInfo()
+        template = get_test_template(
                             cls.apiclient,
                             cls.zone.id,
-                            cls.services["ostype"]
-                            )
+                            cls.hypervisor)
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
-        
+            assert False, "get_test_template() failed to return template"
+
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
         #Create an account, network, VM and IP addresses
@@ -120,29 +120,30 @@ class TestLoadBalance(cloudstackTestCase):
         cleanup_resources(cls.apiclient, cls._cleanup)
         return
 
-    def try_ssh(self, ip_addr, unameCmd):
+    def try_ssh(self, ip_addr, unameCmd, firstAttempt=False):
         try:
             self.debug(
                 "SSH into VM (IPaddress: %s) & NAT Rule (Public IP: %s)" %
                 (self.vm_1.ipaddress, ip_addr)
             )
-           # If Round Robin Algorithm is chosen,
+            retries = 3
+            if firstAttempt:
+                retries = 30
+            # If Round Robin Algorithm is chosen,
             # each ssh command should alternate between VMs
-
             ssh_1  = SshClient(
                 ip_addr,
                 self.services['lbrule']["publicport"],
                 self.vm_1.username,
                 self.vm_1.password,
-                retries=10
+                retries=retries
             )
             unameCmd.append(ssh_1.execute("uname")[0])
             self.debug(unameCmd)
         except Exception as e:
             self.fail("%s: SSH failed for VM with IP Address: %s" %
                                     (e, ip_addr))
-        time.sleep(10)
-        return
+        time.sleep(5)
 
     @attr(tags = ["advanced", "advancedns", "smoke"], required_hardware="true")
     def test_01_create_lb_rule_src_nat(self):
@@ -256,7 +257,7 @@ class TestLoadBalance(cloudstackTestCase):
 
 
         unameResults = []
-        self.try_ssh(src_nat_ip_addr.ipaddress, unameResults)
+        self.try_ssh(src_nat_ip_addr.ipaddress, unameResults, True)
         self.try_ssh(src_nat_ip_addr.ipaddress, unameResults)
         self.try_ssh(src_nat_ip_addr.ipaddress, unameResults)
         self.try_ssh(src_nat_ip_addr.ipaddress, unameResults)

@@ -24,7 +24,9 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.CreateDiskOfferingCmd;
@@ -157,6 +159,24 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
     public Pod createPod(long zoneId, String name, String startIp, String endIp, String gateway, String netmask, String allocationState) {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#createPodIpRange(org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd)
+     */
+    @Override
+    public Pod createPodIpRange(CreateManagementNetworkIpRangeCmd cmd) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /* (non-Javadoc)
+     * @see com.cloud.configuration.ConfigurationService#deletePodIpRange(org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd)
+     */
+    @Override
+    public void deletePodIpRange(DeleteManagementNetworkIpRangeCmd cmd) throws ResourceUnavailableException, ConcurrentOperationException {
+        // TODO Auto-generated method stub
+        return;
     }
 
     /* (non-Javadoc)

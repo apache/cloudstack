@@ -867,6 +867,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // verify permissions
         _accountMgr.checkAccess(ctx.getCallingAccount(), null, false, vpc);
+        _resourceTagDao.removeByIdAndType(vpcId, ResourceObjectType.Vpc);
 
         return destroyVpc(vpc, ctx.getCallingAccount(), ctx.getCallingUserId());
     }
@@ -1642,7 +1643,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         final Long nextMac = mac + 1;
                         dc.setMacAddress(nextMac);
 
-                        s_logger.info("creating private ip adress for vpc (" + ipAddress + ", " + privateNtwk.getId() + ", " + nextMac + ", " + vpcId + ", " + isSourceNat + ")");
+                        s_logger.info("creating private ip address for vpc (" + ipAddress + ", " + privateNtwk.getId() + ", " + nextMac + ", " + vpcId + ", " + isSourceNat + ")");
                         privateIp = new PrivateIpVO(ipAddress, privateNtwk.getId(), nextMac, vpcId, isSourceNat);
                         _privateIpDao.persist(privateIp);
 
@@ -1748,6 +1749,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_DELETE, eventDescription = "deleting private gateway")
     @DB
     public boolean deleteVpcPrivateGateway(final long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException {
+        final VpcGatewayVO gatewayToBeDeleted = _vpcGatewayDao.findById(gatewayId);
+        if (gatewayToBeDeleted == null) {
+            s_logger.debug("VPC gateway is already deleted for id=" + gatewayId);
+            return true;
+        }
 
         final VpcGatewayVO gatewayVO = _vpcGatewayDao.acquireInLockTable(gatewayId);
         if (gatewayVO == null || gatewayVO.getType() != VpcGateway.Type.Private) {

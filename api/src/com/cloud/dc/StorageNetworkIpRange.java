@@ -21,20 +21,19 @@ import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 public interface StorageNetworkIpRange extends InfrastructureEntity, InternalIdentity, Identity {
-
     Integer getVlan();
 
-    String getPodUuid();
+    String getGateway();
+
+    String getNetmask();
 
     String getStartIp();
 
     String getEndIp();
 
-    String getNetworkUuid();
-
     String getZoneUuid();
 
-    String getNetmask();
+    String getPodUuid();
 
-    String getGateway();
+    String getNetworkUuid();
 }

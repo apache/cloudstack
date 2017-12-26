@@ -55,11 +55,11 @@ public class PodResponse extends BaseResponse {
 
     @SerializedName("startip")
     @Param(description = "the starting IP for the Pod")
-    private String startIp;
+    private List<String> startIp;
 
     @SerializedName("endip")
     @Param(description = "the ending IP for the Pod")
-    private String endIp;
+    private List<String> endIp;
 
     @SerializedName("allocationstate")
     @Param(description = "the allocation state of the Pod")
@@ -117,19 +117,19 @@ public class PodResponse extends BaseResponse {
         this.netmask = netmask;
     }
 
-    public String getStartIp() {
+    public List<String> getStartIp() {
         return startIp;
     }
 
-    public void setStartIp(String startIp) {
+    public void setStartIp(List<String> startIp) {
         this.startIp = startIp;
     }
 
-    public String getEndIp() {
+    public List<String> getEndIp() {
         return endIp;
     }
 
-    public void setEndIp(String endIp) {
+    public void setEndIp(List<String> endIp) {
         this.endIp = endIp;
     }
 

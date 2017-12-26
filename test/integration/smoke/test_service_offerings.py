@@ -31,7 +31,7 @@ from marvin.lib.common import (list_service_offering,
                                list_virtual_machines,
                                get_domain,
                                get_zone,
-                               get_template)
+                               get_test_template)
 from nose.plugins.attrib import attr
 
 
@@ -163,14 +163,13 @@ class TestServiceOfferings(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
-        template = get_template(
+        template = get_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return\
-                    template with description %s" % cls.services["ostype"]
+            assert False, "get_test_template() failed to return template"
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -386,7 +385,7 @@ class TestServiceOfferings(cloudstackTestCase):
             "Check CPU Speed for small offering"
         )
 
-        range = 20
+        range = 25
         if self.hypervisor.lower() == "hyperv":
             range = 200
         # TODO: Find the memory allocated to VM on hyperv hypervisor using

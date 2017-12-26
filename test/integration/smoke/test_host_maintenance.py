@@ -89,14 +89,14 @@ class TestHostMaintenance(cloudstackTestCase):
     
     def createVMs(self, hostId, number):
         
-        self.template = get_template(
+        self.template = get_test_template(
             self.apiclient,
             self.zone.id,
-            self.services["ostype"]
+            self.hypervisor
         )
             
         if self.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % self.services["ostype"]
+            assert False, "get_test_template() failed to return template"
             
         self.logger.debug("Using template %s " % self.template.id)
                 

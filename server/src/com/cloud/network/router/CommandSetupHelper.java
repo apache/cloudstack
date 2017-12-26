@@ -475,7 +475,7 @@ public class CommandSetupHelper {
 
     public void createAssociateIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, final Commands cmds, final long vmId) {
         final String ipAssocCommand = "IPAssocCommand";
-        createRedundantAssociateIPCommands(router, ips, cmds, ipAssocCommand, vmId);
+        createRedundantAssociateIPCommands(router, ips, cmds, ipAssocCommand, false);
     }
 
     public void createNetworkACLsCommands(final List<? extends NetworkACLItem> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId,
@@ -645,7 +645,7 @@ public class CommandSetupHelper {
 
         final String ipAssocCommand = "IPAssocVpcCommand";
         if (router.getIsRedundantRouter()) {
-            createRedundantAssociateIPCommands(router, ips, cmds, ipAssocCommand, 0);
+            createRedundantAssociateIPCommands(router, ips, cmds, ipAssocCommand, true);
             return;
         }
 
@@ -742,7 +742,7 @@ public class CommandSetupHelper {
         }
     }
 
-    public void createRedundantAssociateIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, final Commands cmds, final String ipAssocCommand, final long vmId) {
+    public void createRedundantAssociateIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, final Commands cmds, final String ipAssocCommand, final boolean isVPC) {
 
         // Ensure that in multiple vlans case we first send all ip addresses of
         // vlan1, then all ip addresses of vlan2, etc..
@@ -840,7 +840,16 @@ public class CommandSetupHelper {
             }
 
             // for network if the ips does not have any rules, then only last ip
-            List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(associatedWithNetworkId, null);
+            final List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(associatedWithNetworkId, null);
+            boolean hasSourceNat = false;
+            if (isVPC && userIps.size() > 0 && userIps.get(0) != null) {
+                // All ips should belong to a VPC
+                final Long vpcId = userIps.get(0).getVpcId();
+                final List<IPAddressVO> sourceNatIps = _ipAddressDao.listByAssociatedVpc(vpcId, true);
+                if (sourceNatIps != null && sourceNatIps.size() > 0) {
+                    hasSourceNat = true;
+                }
+            }
 
             int ipsWithrules = 0;
             int ipsStaticNat = 0;
@@ -864,7 +873,7 @@ public class CommandSetupHelper {
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
 
             // if there is 1 static nat then it will be checked for remove at the resource
-            if (ipsWithrules == 0 && ipsStaticNat == 0) {
+            if (ipsWithrules == 0 && ipsStaticNat == 0 && !hasSourceNat) {
                 // there is only one ip address for the network.
                 cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "true");
             } else {

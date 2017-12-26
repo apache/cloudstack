@@ -29,6 +29,7 @@ from marvin.cloudstackAPI import (listInternalLoadBalancerVMs,
                                   startInternalLoadBalancerVM)
 # Import System Modules
 from nose.plugins.attrib import attr
+from unittest import skip
 import copy
 import time
 
@@ -2268,6 +2269,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_lb_wget_file(
             wget_file, [internal_vm, internal_vm_1, internal_vm_2])
 
+    @skip
+    # Skip until CLOUDSTACK-9837 is fixed
     @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
     def test_08_nuage_internallb_appliance_operations_traffic(self):
         """Test Nuage VSP VPC Internal LB functionality with InternalLbVm

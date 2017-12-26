@@ -30,7 +30,7 @@ from marvin.lib.base import Account, VirtualMachine, ServiceOffering
 from marvin.lib.utils import cleanup_resources
 
 #common - commonly used methods for all tests are listed here
-from marvin.lib.common import get_zone, get_domain, get_template
+from marvin.lib.common import get_zone, get_domain, get_test_template
 
 from marvin.cloudstackAPI.addIpToNic import addIpToNicCmd
 from marvin.cloudstackAPI.removeIpFromNic import removeIpFromNicCmd
@@ -50,11 +50,12 @@ class TestDeployVM(cloudstackTestCase):
         # Get Zone, Domain and Default Built-in template
         self.domain = get_domain(self.apiclient)
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
+        self.hypervisor = self.testClient.getHypervisorInfo()
         self.testdata["mode"] = self.zone.networktype
-        self.template = get_template(self.apiclient, self.zone.id, self.testdata["ostype"])
+        self.template = get_test_template(self.apiclient, self.zone.id, self.hypervisor)
 
         if self.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % self.testdata["ostype"]
+            assert False, "get_test_template() failed to return template"
 
         #create a user account
         self.account = Account.create(

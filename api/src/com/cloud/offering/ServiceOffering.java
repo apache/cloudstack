@@ -31,7 +31,7 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
     public static final String routerDefaultOffUniqueName = "Cloud.Com-SoftwareRouter";
     public static final String elbVmDefaultOffUniqueName = "Cloud.Com-ElasticLBVm";
     public static final String internalLbVmDefaultOffUniqueName = "Cloud.Com-InternalLBVm";
-    // leaving cloud.com references as these are identifyers and no real world adresses (check against DB)
+    // leaving cloud.com references as these are identifyers and no real world addresses (check against DB)
 
     public enum StorageType {
         local, shared
