@@ -16,6 +16,15 @@
 //under the License.
 package org.apache.cloudstack.quota.dao;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.QueryBuilder;
@@ -25,22 +34,11 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.TransactionStatus;
 
-import org.apache.cloudstack.quota.vo.QuotaUsageVO;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import javax.ejb.Local;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 @Component
-@Local(value = {QuotaUsageDao.class})
 public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implements QuotaUsageDao {
     private static final Logger s_logger = Logger.getLogger(QuotaUsageDaoImpl.class);
 
+    @Override
     public BigDecimal findTotalQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
         List<QuotaUsageVO> quotaUsage = findQuotaUsage(accountId, domainId, null, startDate, endDate);
         BigDecimal total = new BigDecimal(0);
@@ -50,6 +48,7 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
         return total;
     }
 
+    @Override
     public List<QuotaUsageVO> findQuotaUsage(final Long accountId, final Long domainId, final Integer usageType, final Date startDate, final Date endDate) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<List<QuotaUsageVO>>() {
             @Override
@@ -88,6 +87,7 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
         });
     }
 
+    @Override
     public QuotaUsageVO findLastQuotaUsageEntry(final Long accountId, final Long domainId, final Date beforeThis) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaUsageVO>() {
             @Override
@@ -104,6 +104,7 @@ public class QuotaUsageDaoImpl extends GenericDaoBase<QuotaUsageVO, Long> implem
         });
     }
 
+    @Override
     public QuotaUsageVO persistQuotaUsage(final QuotaUsageVO quotaUsage) {
         return Transaction.execute(TransactionLegacy.USAGE_DB, new TransactionCallback<QuotaUsageVO>() {
             @Override

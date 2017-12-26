@@ -2859,35 +2859,42 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     private Vlan commitVlan(final Long zoneId, final Long podId, final String startIP, final String endIP, final String newVlanGatewayFinal, final String newVlanNetmaskFinal,
             final String vlanId, final Boolean forVirtualNetwork, final Long networkId, final Long physicalNetworkId, final String startIPv6, final String endIPv6,
             final String ip6Gateway, final String ip6Cidr, final Domain domain, final Account vlanOwner, final Network network, final Pair<Boolean, Pair<String, String>> sameSubnet) {
-        return Transaction.execute(new TransactionCallback<Vlan>() {
-            @Override
-            public Vlan doInTransaction(final TransactionStatus status) {
-                String newVlanNetmask = newVlanNetmaskFinal;
-                String newVlanGateway = newVlanGatewayFinal;
+        final GlobalLock commitVlanLock = GlobalLock.getInternLock("CommitVlan");
+        commitVlanLock.lock(5);
+        s_logger.debug("Acquiring lock for committing vlan");
+        try {
+            return Transaction.execute(new TransactionCallback<Vlan>() {
+                @Override
+                public Vlan doInTransaction(final TransactionStatus status) {
+                    String newVlanNetmask = newVlanNetmaskFinal;
+                    String newVlanGateway = newVlanGatewayFinal;
 
-                if ((sameSubnet == null || !sameSubnet.first()) && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestType.Shared
-                        && _vlanDao.listVlansByNetworkId(networkId) != null) {
-                    final Map<Capability, String> dhcpCapabilities = _networkSvc.getNetworkOfferingServiceCapabilities(_networkOfferingDao.findById(network.getNetworkOfferingId()),
+                    if ((sameSubnet == null || !sameSubnet.first()) && network.getTrafficType() == TrafficType.Guest && network.getGuestType() == GuestType.Shared
+                            && _vlanDao.listVlansByNetworkId(networkId) != null) {
+                        final Map<Capability, String> dhcpCapabilities = _networkSvc.getNetworkOfferingServiceCapabilities(_networkOfferingDao.findById(network.getNetworkOfferingId()),
                             Service.Dhcp);
-                    final String supportsMultipleSubnets = dhcpCapabilities.get(Capability.DhcpAccrossMultipleSubnets);
-                    if (supportsMultipleSubnets == null || !Boolean.valueOf(supportsMultipleSubnets)) {
-                        throw new  InvalidParameterValueException("The dhcp service provider for this network does not support dhcp across multiple subnets");
+                        final String supportsMultipleSubnets = dhcpCapabilities.get(Capability.DhcpAccrossMultipleSubnets);
+                        if (supportsMultipleSubnets == null || !Boolean.valueOf(supportsMultipleSubnets)) {
+                            throw new  InvalidParameterValueException("The dhcp service provider for this network does not support dhcp across multiple subnets");
+                        }
+                        s_logger.info("adding a new subnet to the network " + network.getId());
+                    } else if (sameSubnet != null) {
+                        // if it is same subnet the user might not send the vlan and the
+                        // netmask details. so we are
+                        // figuring out while validation and setting them here.
+                        newVlanGateway = sameSubnet.second().first();
+                        newVlanNetmask = sameSubnet.second().second();
                     }
-                    s_logger.info("adding a new subnet to the network " + network.getId());
-                } else if (sameSubnet != null) {
-                    // if it is same subnet the user might not send the vlan and the
-                    // netmask details. so we are
-                    // figuring out while validation and setting them here.
-                    newVlanGateway = sameSubnet.second().first();
-                    newVlanNetmask = sameSubnet.second().second();
+                    final Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId,
+                            false, domain, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
+                    // create an entry in the nic_secondary table. This will be the new
+                    // gateway that will be configured on the corresponding routervm.
+                    return vlan;
                 }
-                final Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId,
-                        false, domain, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
-                // create an entry in the nic_secondary table. This will be the new
-                // gateway that will be configured on the corresponding routervm.
-                return vlan;
-            }
-        });
+            });
+        } finally {
+            commitVlanLock.unlock();
+        }
     }
 
     public NetUtils.SupersetOrSubset checkIfSubsetOrSuperset(String vlanGateway, String vlanNetmask, String newVlanGateway, String newVlanNetmask, final String newStartIP, final String newEndIP) {

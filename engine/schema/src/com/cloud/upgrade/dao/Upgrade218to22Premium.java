@@ -16,26 +16,23 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import java.io.File;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade218to22Premium extends Upgrade218to22 {
     @Override
-    public File[] getPrepareScripts() {
-        File[] scripts = super.getPrepareScripts();
-        File[] newScripts = new File[2];
-        newScripts[0] = scripts[0];
-
-        String file = Script.findScript("", "db/schema-21to22-premium.sql");
-        if (file == null) {
-            throw new CloudRuntimeException("Unable to find the upgrade script, schema-21to22-premium.sql");
+    public InputStream[] getPrepareScripts() {
+        InputStream[] newScripts = new InputStream[2];
+        newScripts[0] = super.getPrepareScripts()[0];
+        final String scriptFile = "META-INF/db/schema-21to22-premium.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
-
-        newScripts[1] = new File(file);
+        newScripts[1] = script;
 
         return newScripts;
     }
@@ -45,15 +42,6 @@ public class Upgrade218to22Premium extends Upgrade218to22 {
         super.performDataMigration(conn);
         updateUserStats(conn);
         updateUsageIpAddress(conn);
-    }
-
-    @Override
-    public File[] getCleanupScripts() {
-        File[] scripts = super.getCleanupScripts();
-        File[] newScripts = new File[1];
-        // Change the array to 2 when you add in the scripts for premium.
-        newScripts[0] = scripts[0];
-        return newScripts;
     }
 
     private void updateUserStats(Connection conn) {

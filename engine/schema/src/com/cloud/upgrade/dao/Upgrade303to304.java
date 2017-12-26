@@ -17,7 +17,7 @@
 
 package com.cloud.upgrade.dao;
 
-import java.io.File;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -48,7 +48,7 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
     }
 
     @Override
-    public File[] getPrepareScripts() {
+    public InputStream[] getPrepareScripts() {
         return null;
     }
 
@@ -389,7 +389,7 @@ public class Upgrade303to304 extends Upgrade30xBase implements DbUpgrade {
     }
 
     @Override
-    public File[] getCleanupScripts() {
+    public InputStream[] getCleanupScripts() {
         return null;
     }
 }

@@ -96,19 +96,19 @@ public class AcquireIPAddressResponse  extends BaseResponse implements Controlle
  private Boolean isSystem;
 
  @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
- @Param(description = "virutal machine id the ip address is assigned to (not null only for static nat Ip)")
+ @Param(description = "virtual machine id the ip address is assigned to (not null only for static nat Ip)")
  private String virtualMachineId;
 
  @SerializedName("vmipaddress")
- @Param(description = "virutal machine (dnat) ip address (not null only for static nat Ip)")
+ @Param(description = "virtual machine (dnat) ip address (not null only for static nat Ip)")
  private String virtualMachineIp;
 
  @SerializedName("virtualmachinename")
- @Param(description = "virutal machine name the ip address is assigned to (not null only for static nat Ip)")
+ @Param(description = "virtual machine name the ip address is assigned to (not null only for static nat Ip)")
  private String virtualMachineName;
 
  @SerializedName("virtualmachinedisplayname")
- @Param(description = "virutal machine display name the ip address is assigned to (not null only for static nat Ip)")
+ @Param(description = "virtual machine display name the ip address is assigned to (not null only for static nat Ip)")
  private String virtualMachineDisplayName;
 
  @SerializedName(ApiConstants.ASSOCIATED_NETWORK_ID)

@@ -16,8 +16,8 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -44,20 +44,20 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
-import com.cloud.utils.script.Script;
 
 public class Upgrade218to22 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade218to22.class);
     boolean _basicZone;
 
     @Override
-    public File[] getPrepareScripts() {
-        String file = Script.findScript("", "db/schema-21to22.sql");
-        if (file == null) {
-            throw new CloudRuntimeException("Unable to find the upgrade script, schema-21to22.sql");
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-21to22.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(file)};
+        return new InputStream[] {script};
     }
 
     protected void upgradeStoragePools(Connection conn) {
@@ -768,10 +768,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param conn
-     * @throws SQLException
-     */
     private void updateDatacenterWithServices(Connection conn) throws SQLException {
         try (PreparedStatement updateDataCenter =
             conn.prepareStatement("UPDATE data_center SET networktype=?, dns_provider=?, gateway_provider=?, firewall_provider=?, dhcp_provider=?, lb_provider=?, vpn_provider=?, userdata_provider=?");) {
@@ -812,11 +808,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param conn
-     * @return
-     * @throws SQLException
-     */
     private ArrayList<Object[]> retrieveDataCenters(Connection conn) throws SQLException {
         PreparedStatement selectDcData = conn.prepareStatement("SELECT id, guest_network_cidr, domain FROM data_center");
         ResultSet dcData = selectDcData.executeQuery();
@@ -833,11 +824,6 @@ public class Upgrade218to22 implements DbUpgrade {
         return dcs;
     }
 
-    /**
-     * @return
-     * @throws SQLException
-     * @throws CloudRuntimeException
-     */
     private long retrieveNetworkOfferingId(Connection conn, String type) throws SQLException, CloudRuntimeException {
         long networkOfferingId;
         try (
@@ -855,14 +841,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param conn
-     * @param managementNetworkOfferingId
-     * @param controlNetworkOfferingId
-     * @param storageNetworkOfferingId
-     * @param dc
-     * @throws SQLException
-     */
     private void updateBasicNetworkingDataCenter(Connection conn, long managementNetworkOfferingId, long controlNetworkOfferingId, long storageNetworkOfferingId, Object[] dc)
             throws SQLException {
         Long dcId = (Long)dc[0];
@@ -892,13 +870,6 @@ public class Upgrade218to22 implements DbUpgrade {
         updateConsoleProxies(conn, dcId, mgmtNetworkId, controlNetworkId, basicDefaultDirectNetworkId, "Basic");
     }
 
-    /**
-     * @param conn
-     * @param dcId
-     * @param controlNetworkId
-     * @param basicDefaultDirectNetworkId
-     * @throws SQLException
-     */
     private void retrieveAndUpdateDomainRouters(Connection conn, Long dcId, long controlNetworkId, long basicDefaultDirectNetworkId) throws SQLException {
         try (PreparedStatement selectVmInstanceData =
             conn.prepareStatement("SELECT vm_instance.id, vm_instance.domain_id, vm_instance.account_id, domain_router.gateway, domain_router.guest_ip_address, domain_router.domain, domain_router.dns1, domain_router.dns2, domain_router.vnet FROM vm_instance INNER JOIN domain_router ON vm_instance.id=domain_router.id WHERE vm_instance.removed IS NULL AND vm_instance.type='DomainRouter' AND vm_instance.data_center_id=?");) {
@@ -917,12 +888,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param conn
-     * @param dcId
-     * @param networkId
-     * @throws SQLException
-     */
     private void updateVlanWithNetworkForDataCenter(Connection conn, Long dcId, long networkId) throws SQLException {
         try (PreparedStatement selectVlanId = conn.prepareStatement("SELECT id FROM vlan WHERE vlan_type='DirectAttached' AND data_center_id=?");) {
             selectVlanId.setLong(1, dcId);
@@ -936,16 +901,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param conn
-     * @param managementNetworkOfferingId
-     * @param publicNetworkOfferingId
-     * @param controlNetworkOfferingId
-     * @param storageNetworkOfferingId
-     * @param dc
-     * @throws SQLException
-     * @throws CloudRuntimeException
-     */
     private void updateAdvancedNetworkingDataCenter(Connection conn, long managementNetworkOfferingId, long publicNetworkOfferingId, long controlNetworkOfferingId,
             long storageNetworkOfferingId, Object[] dc) throws SQLException, CloudRuntimeException {
         Long dcId = (Long)dc[0];
@@ -984,11 +939,6 @@ public class Upgrade218to22 implements DbUpgrade {
         updateConsoleProxies(conn, dcId, mgmtNetworkId, controlNetworkId, publicNetworkId, "Advanced");
     }
 
-    /**
-     * @param dcId
-     * @return
-     * @throws SQLException
-     */
     private ArrayList<Object[]> retrieveRouters(Connection conn, Long dcId) throws SQLException {
         ArrayList<Object[]> routers = new ArrayList<Object[]>();
         try (PreparedStatement selectRouterData =
@@ -1012,28 +962,12 @@ public class Upgrade218to22 implements DbUpgrade {
         return routers;
     }
 
-    /**
-     * @param conn
-     * @param dc
-     * @param dcId
-     * @param controlNetworkId
-     * @param publicNetworkId
-     * @param routers
-     * @throws SQLException
-     */
     private void updateRouters(Connection conn, Object[] dc, Long dcId, long controlNetworkId, long publicNetworkId, ArrayList<Object[]> routers) throws SQLException {
         for (Object[] router : routers) {
             updateRouter(conn, dc, dcId, controlNetworkId, publicNetworkId, router);
         }
     }
-    /**
-     * @param conn
-     * @param dcId
-     * @param controlNetworkId
-     * @param basicDefaultDirectNetworkId
-     * @param routers
-     * @throws SQLException
-     */
+
     private void updateRouters(Connection conn, Long dcId, long controlNetworkId, long basicDefaultDirectNetworkId, ArrayList<Object[]> routers) throws SQLException {
         for (Object[] router : routers) {
             s_logger.debug("Updating domR with network id in basic zone id=" + dcId);
@@ -1043,16 +977,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-
-    /**
-     * @param conn
-     * @param dc
-     * @param dcId
-     * @param controlNetworkId
-     * @param publicNetworkId
-     * @param router
-     * @throws SQLException
-     */
     private void updateRouter(Connection conn, Object[] dc, Long dcId, long controlNetworkId, long publicNetworkId, Object[] router) throws SQLException {
         String vnet = (String)router[7];
         String reservationId = null;
@@ -1077,11 +1001,6 @@ public class Upgrade218to22 implements DbUpgrade {
         upgradeDomR(conn, dcId, (Long)router[0], publicNetworkId, virtualNetworkId, controlNetworkId, "Advanced", vnet);
     }
 
-    /**
-     * @param router
-     * @param virtualNetworkId
-     * @throws SQLException
-     */
     private void updateNetworkForRouter(Connection conn, Object[] router, long virtualNetworkId) throws SQLException {
         try (PreparedStatement updateDomainRouter = conn.prepareStatement("UPDATE domain_router SET network_id = ? WHERE id = ? ");) {
             updateDomainRouter.setLong(1, virtualNetworkId);
@@ -1091,12 +1010,6 @@ public class Upgrade218to22 implements DbUpgrade {
         s_logger.debug("Network inserted for " + router[0] + " id = " + virtualNetworkId);
     }
 
-    /**
-     * @param conn
-     * @param dc
-     * @param dcId
-     * @throws SQLException
-     */
     private void createDirectNetworks(Connection conn, Object[] dc, Long dcId) throws SQLException {
         // Create direct networks
         try (PreparedStatement selectVlanData = conn.prepareStatement("SELECT id, vlan_id, vlan_gateway, vlan_netmask FROM vlan WHERE vlan_type='DirectAttached' AND data_center_id=?");) {
@@ -1122,17 +1035,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param conn
-     * @param dc
-     * @param dcId
-     * @param vlanNetworkMap
-     * @param vlanId
-     * @param tag
-     * @param gateway
-     * @param cidr
-     * @throws SQLException
-     */
     private void retrieveAccountDataAndCreateNetwork(Connection conn, Object[] dc, Long dcId, HashMap<String, Long> vlanNetworkMap, long vlanId, String tag, String gateway,
             String cidr) throws SQLException {
         Long accountId = 1L;
@@ -1156,12 +1058,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param accountId
-     * @param domainId
-     * @return
-     * @throws SQLException
-     */
     private Long retrieveDomainId(Connection conn,Long accountId) throws SQLException {
         try (PreparedStatement pstmt = conn.prepareStatement("SELECT domain_id FROM account WHERE id=?");) {
             pstmt.setLong(1, accountId);
@@ -1175,11 +1071,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param basicDefaultDirectNetworkId
-     * @param vlanId
-     * @throws SQLException
-     */
     private void updateVlanNetworkForTag(Connection conn, long basicDefaultDirectNetworkId, long vlanId) throws SQLException {
         try (PreparedStatement pstmt = conn.prepareStatement("UPDATE vlan SET network_id=? WHERE id=?");) {
             pstmt.setLong(1, basicDefaultDirectNetworkId);
@@ -1188,22 +1079,10 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param vlanNetworkMap
-     * @param vlanId
-     * @param tag
-     * @throws SQLException
-     */
     private void updateNetworkInVlanTableforTag(Connection conn, HashMap<String, Long> vlanNetworkMap, long vlanId, String tag) throws SQLException {
         updateVlanNetworkForTag(conn, vlanId, vlanNetworkMap.get(tag));
     }
 
-    /**
-     * @param conn
-     * @param dcId
-     * @return
-     * @throws SQLException
-     */
     private ArrayList<Object[]> retrieveDhcpServers(Connection conn, Long dcId) throws SQLException {
         // Create DHCP domRs - Direct networks
         try (PreparedStatement pstmt =
@@ -1222,15 +1101,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param conn
-     * @param dcId
-     * @param controlNetworkId
-     * @param routerId
-     * @param directIp
-     * @throws SQLException
-     * @throws CloudRuntimeException
-     */
     private void updateDhcpServerData(Connection conn, Long dcId, long controlNetworkId, Long routerId, String directIp) throws SQLException, CloudRuntimeException {
         try (
                 PreparedStatement pstmt =
@@ -1257,13 +1127,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param conn
-     * @param directNetworkId
-     * @return
-     * @throws SQLException
-     * @throws CloudRuntimeException
-     */
     private String retrieveGateway(Connection conn, Long directNetworkId) throws SQLException, CloudRuntimeException {
         try (PreparedStatement selectGateway = conn.prepareStatement("SELECT gateway from networks where id=?");) {
             selectGateway.setLong(1, directNetworkId);
@@ -1277,11 +1140,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param routerId
-     * @param directNetworkId
-     * @throws SQLException
-     */
     private void updateDomainRouter(Connection conn, Long routerId, Long directNetworkId) throws SQLException {
         try (PreparedStatement updateDomainRouter = conn.prepareStatement("UPDATE domain_router SET network_id = ? WHERE id = ? ");) {
             updateDomainRouter.setLong(1, directNetworkId);
@@ -1290,14 +1148,6 @@ public class Upgrade218to22 implements DbUpgrade {
         }
     }
 
-    /**
-     * @param conn
-     * @param dcId
-     * @param mgmtNetworkId
-     * @param controlNetworkId
-     * @param publicNetworkId
-     * @throws SQLException
-     */
     private void updateConsoleProxies(Connection conn, Long dcId, long mgmtNetworkId, long controlNetworkId, long publicNetworkId, String networkingType) throws SQLException {
         // Upgrade ConsoleProxy
         try (PreparedStatement selectInstanceIds = conn.prepareStatement("SELECT vm_instance.id FROM vm_instance WHERE removed IS NULL AND type='ConsoleProxy' AND data_center_id=?");) {
@@ -2299,13 +2149,14 @@ public class Upgrade218to22 implements DbUpgrade {
     }
 
     @Override
-    public File[] getCleanupScripts() {
-        String file = Script.findScript("", "db/schema-21to22-cleanup.sql");
-        if (file == null) {
-            throw new CloudRuntimeException("Unable to find the upgrade script, schema-21to22-cleanup.sql");
+    public InputStream[] getCleanupScripts() {
+        final String scriptFile = "META-INF/db/schema-21to22-cleanup.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(file)};
+        return new InputStream[] {script};
     }
 
     @Override

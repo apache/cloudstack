@@ -85,10 +85,9 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -453,20 +452,17 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         availableVersions = ImmutableList.copyOf(sortedVersions);
     }
 
-    protected void runScript(Connection conn, File file) {
+    protected void runScript(Connection conn, InputStream file) {
 
-        try (FileReader reader = new FileReader(file);) {
+        try (InputStreamReader reader = new InputStreamReader(file)) {
             ScriptRunner runner = new ScriptRunner(conn, false, true);
             runner.runScript(reader);
-        } catch (FileNotFoundException e) {
-            s_logger.error("Unable to find upgrade script: " + file.getAbsolutePath(), e);
-            throw new CloudRuntimeException("Unable to find upgrade script: " + file.getAbsolutePath(), e);
         } catch (IOException e) {
-            s_logger.error("Unable to read upgrade script: " + file.getAbsolutePath(), e);
-            throw new CloudRuntimeException("Unable to read upgrade script: " + file.getAbsolutePath(), e);
+            s_logger.error("Unable to read upgrade script", e);
+            throw new CloudRuntimeException("Unable to read upgrade script", e);
         } catch (SQLException e) {
-            s_logger.error("Unable to execute upgrade script: " + file.getAbsolutePath(), e);
-            throw new CloudRuntimeException("Unable to execute upgrade script: " + file.getAbsolutePath(), e);
+            s_logger.error("Unable to execute upgrade script", e);
+            throw new CloudRuntimeException("Unable to execute upgrade script", e);
         }
 
     }
@@ -555,9 +551,9 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                     s_logger.error(errorMessage, e);
                     throw new CloudRuntimeException(errorMessage, e);
                 }
-                File[] scripts = upgrade.getPrepareScripts();
+                InputStream[] scripts = upgrade.getPrepareScripts();
                 if (scripts != null) {
-                    for (File script : scripts) {
+                    for (InputStream script : scripts) {
                         runScript(conn, script);
                     }
                 }
@@ -591,11 +587,11 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                     throw new CloudRuntimeException("Unable to cleanup the database", e);
                 }
 
-                File[] scripts = upgrade.getCleanupScripts();
+                InputStream[] scripts = upgrade.getCleanupScripts();
                 if (scripts != null) {
-                    for (File script : scripts) {
+                    for (InputStream script : scripts) {
                         runScript(conn, script);
-                        s_logger.debug("Cleanup script " + script.getAbsolutePath() + " is executed successfully");
+                        s_logger.debug("Cleanup script " + upgrade.getClass().getSimpleName() + " is executed successfully");
                     }
                 }
                 txn.commit();
@@ -681,8 +677,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         }
 
         @Override
-        public File[] getPrepareScripts() {
-            return new File[0];
+        public InputStream[] getPrepareScripts() {
+            return new InputStream[0];
         }
 
         @Override
@@ -691,8 +687,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         }
 
         @Override
-        public File[] getCleanupScripts() {
-            return new File[0];
+        public InputStream[] getCleanupScripts() {
+            return new InputStream[0];
         }
 
     }

@@ -23,17 +23,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 import javax.inject.Inject;
-
-import com.cloud.utils.fsm.StateMachine2;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.event.EventCategory;
@@ -44,9 +41,9 @@ import com.cloud.storage.Snapshot.State;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
 
 @Component
-@Local(value = {SnapshotStateListener.class})
 public class SnapshotStateListener implements StateListener<State, Event, SnapshotVO> {
 
     protected static EventBus s_eventBus = null;
@@ -74,17 +71,18 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
 
     @Override
     public boolean postStateTransitionEvent(StateMachine2.Transition<State, Event> transition, SnapshotVO vo, boolean status, Object opaque) {
-      pubishOnEventBus(transition.getEvent().name(), "postStateTransitionEvent", vo, transition.getCurrentState(), transition.getToState());
-      return true;
+        pubishOnEventBus(transition.getEvent().name(), "postStateTransitionEvent", vo, transition.getCurrentState(), transition.getToState());
+        return true;
     }
 
-  private void pubishOnEventBus(String event, String status, Snapshot vo, State oldState, State newState) {
+    private void pubishOnEventBus(String event, String status, Snapshot vo, State oldState, State newState) {
 
         String configKey = Config.PublishResourceStateEvent.key();
         String value = s_configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
-        if(!configValue)
+        if(!configValue) {
             return;
+        }
         try {
             s_eventBus = ComponentContext.getComponent(EventBus.class);
         } catch (NoSuchBeanDefinitionException nbe) {
@@ -93,8 +91,8 @@ public class SnapshotStateListener implements StateListener<State, Event, Snapsh
 
         String resourceName = getEntityFromClassName(Snapshot.class.getName());
         org.apache.cloudstack.framework.events.Event eventMsg =
-            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName,
-                vo.getUuid());
+                new org.apache.cloudstack.framework.events.Event(ManagementService.Name, EventCategory.RESOURCE_STATE_CHANGE_EVENT.getName(), event, resourceName,
+                        vo.getUuid());
         Map<String, String> eventDescription = new HashMap<String, String>();
         eventDescription.put("resource", resourceName);
         eventDescription.put("id", vo.getUuid());
