@@ -410,6 +410,17 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return max;
     }
 
+    public long findDefaultResourceLimitForDomain(ResourceType resourceType) {
+        Long resourceLimit = null;
+        resourceLimit = domainResourceLimitMap.get(resourceType);
+        if (resourceLimit != null && (resourceType == ResourceType.primary_storage || resourceType == ResourceType.secondary_storage)) {
+                resourceLimit = resourceLimit * ResourceType.bytesToGiB;
+        } else {
+            resourceLimit = Long.valueOf(Resource.RESOURCE_UNLIMITED);
+        }
+        return resourceLimit;
+    }
+
     @Override
     @DB
     public void checkResourceLimit(final Account account, final ResourceType type, long... count) throws ResourceAllocationException {
