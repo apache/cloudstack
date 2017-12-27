@@ -24,11 +24,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.network.vpc.VpcOfferingVO;
-import com.cloud.offerings.NetworkOfferingVO;
-import com.cloud.storage.SnapshotPolicyVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.context.CallContext;
@@ -56,18 +51,21 @@ import com.cloud.network.dao.Site2SiteVpnConnectionVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayVO;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.network.rules.PortForwardingRuleVO;
-import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.security.SecurityGroupRuleVO;
+import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLVO;
 import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
+import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.projects.ProjectVO;
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
@@ -77,6 +75,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
 import com.cloud.user.OwnedBy;
 import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
@@ -86,6 +85,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.snapshot.VMSnapshotVO;
@@ -146,7 +146,6 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     @Inject
     AccountDao _accountDao;
 
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         return true;
@@ -195,6 +194,20 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             domainId = ((SecurityGroupVO)SecurityGroup).getDomainId();
         }
 
+        // if the resource type is network acl, get the accountId and domainId from VPC following: NetworkACLItem -> NetworkACL -> VPC
+        if (resourceType == ResourceObjectType.NetworkACL) {
+            NetworkACLItemVO aclItem = (NetworkACLItemVO)entity;
+            Object networkACL = _entityMgr.findById(s_typeMap.get(ResourceObjectType.NetworkACLList), aclItem.getAclId());
+            Long vpcId = ((NetworkACLVO)networkACL).getVpcId();
+
+            if (vpcId != null && vpcId != 0) {
+                Object vpc = _entityMgr.findById(s_typeMap.get(ResourceObjectType.Vpc), vpcId);
+
+                accountId = ((VpcVO)vpc).getAccountId();
+                domainId = ((VpcVO)vpc).getDomainId();
+            }
+        }
+
         if (entity instanceof OwnedBy) {
             accountId = ((OwnedBy)entity).getAccountId();
         }
@@ -207,8 +220,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             accountId = Account.ACCOUNT_ID_SYSTEM;
         }
 
-        if ((domainId == null) || ((accountId != null) && (domainId.longValue() == -1)))
-        {
+        if ((domainId == null) || ((accountId != null) && (domainId.longValue() == -1))) {
             domainId = _accountDao.getDomainIdForGivenAccountId(accountId);
         }
         return new Pair<Long, Long>(accountId, domainId);
@@ -238,7 +250,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 for (String key : tags.keySet()) {
                     for (String resourceId : resourceIds) {
-                        if (!resourceType.resourceTagsSupport())  {
+                        if (!resourceType.resourceTagsSupport()) {
                             throw new InvalidParameterValueException("The resource type " + resourceType + " doesn't support resource tags");
                         }
 
@@ -249,9 +261,8 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
                         Long domainId = accountDomainPair.second();
                         Long accountId = accountDomainPair.first();
 
-                        if ((domainId != null) && (domainId == -1))
-                        {
-                           throw new CloudRuntimeException("Invalid DomainId : -1");
+                        if ((domainId != null) && (domainId == -1)) {
+                            throw new CloudRuntimeException("Invalid DomainId : -1");
                         }
                         if (accountId != null) {
                             _accountMgr.checkAccess(caller, null, false, _accountMgr.getAccount(accountId));
@@ -290,10 +301,10 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         Object entity = _entityMgr.findById(clazz, resourceId);
         if (entity != null && entity instanceof Identity) {
             return ((Identity)entity).getUuid();
-       }
+        }
 
-           return resourceId;
-       }
+        return resourceId;
+    }
 
     @Override
     @DB
