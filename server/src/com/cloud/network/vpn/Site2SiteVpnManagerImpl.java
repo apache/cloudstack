@@ -456,10 +456,12 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         checkCustomerGatewayCidrList(guestCidrList);
 
         String name = cmd.getName();
-        long accountId = gw.getAccountId();
-        Site2SiteCustomerGatewayVO existedGw = _customerGatewayDao.findByNameAndAccountId(name, accountId);
-        if (existedGw != null && existedGw.getId() != gw.getId()) {
-            throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!");
+        if (name != null) {
+            long accountId = gw.getAccountId();
+            Site2SiteCustomerGatewayVO existedGw = _customerGatewayDao.findByNameAndAccountId(name, accountId);
+            if (existedGw != null && existedGw.getId() != gw.getId()) {
+                throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!");
+            }
         }
 
         gw.setName(name);
