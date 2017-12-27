@@ -534,5 +534,9 @@ CREATE TABLE IF NOT EXISTS `cloud`.`domain_details` (
     CONSTRAINT `fk_domain_details__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
 )ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE cloud.ldap_configuration ADD COLUMN domain_id bigint(20) DEFAULT null;
+ALTER TABLE cloud.ldap_configuration ADD COLUMN domain_id BIGINT(20) DEFAULT NULL;
+ALTER TABLE cloud.ldap_trust_map ADD COLUMN account_id BIGINT(20) DEFAULT 0;
+ALTER TABLE cloud.ldap_trust_map DROP FOREIGN KEY fk_ldap_trust_map__domain_id;
+DROP INDEX uk_ldap_trust_map__domain_id ON cloud.ldap_trust_map;
+CREATE UNIQUE INDEX uk_ldap_trust_map__bind_location ON ldap_trust_map (domain_id, account_id);
 
