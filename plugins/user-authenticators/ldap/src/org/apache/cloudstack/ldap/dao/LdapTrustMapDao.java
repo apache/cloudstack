@@ -24,4 +24,5 @@ import com.cloud.utils.db.GenericDao;
 
 public interface LdapTrustMapDao extends GenericDao<LdapTrustMapVO, Long> {
     LdapTrustMapVO findByDomainId(long domainId);
+    LdapTrustMapVO findByAccount(long domainId, Long accountId);
 }

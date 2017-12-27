@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.cloudstack.api.command.LdapAddConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
+import org.apache.cloudstack.api.command.LinkAccountToLdapCmd;
 import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
@@ -28,6 +29,7 @@ import org.apache.cloudstack.api.response.LdapUserResponse;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.PluggableService;
+import org.apache.cloudstack.api.response.LinkAccountToLdapResponse;
 import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
 
 public interface LdapManager extends PluggableService {
@@ -68,4 +70,6 @@ public interface LdapManager extends PluggableService {
     LinkDomainToLdapResponse linkDomainToLdap(LinkDomainToLdapCmd cmd);
 
     LdapTrustMapVO getDomainLinkedToLdap(long domainId);
+
+    LinkAccountToLdapResponse linkAccountToLdap(LinkAccountToLdapCmd linkAccountToLdapCmd);
 }

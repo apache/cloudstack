@@ -34,6 +34,7 @@ public class LdapTrustMapDaoImpl extends GenericDaoBase<LdapTrustMapVO, Long> im
         super();
         domainIdSearch = createSearchBuilder();
         domainIdSearch.and("domainId", domainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        domainIdSearch.and("account_id", domainIdSearch.entity().getAccountId(),SearchCriteria.Op.EQ);
         domainIdSearch.done();
     }
 
@@ -41,6 +42,15 @@ public class LdapTrustMapDaoImpl extends GenericDaoBase<LdapTrustMapVO, Long> im
     public LdapTrustMapVO findByDomainId(long domainId) {
         final SearchCriteria<LdapTrustMapVO> sc = domainIdSearch.create();
         sc.setParameters("domainId", domainId);
+        sc.setParameters("account_id", 0);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public LdapTrustMapVO findByAccount(long domainId, Long accountId) {
+        final SearchCriteria<LdapTrustMapVO> sc = domainIdSearch.create();
+        sc.setParameters("domainId", domainId);
+        sc.setParameters("account_id", accountId);
         return findOneBy(sc);
     }
 }

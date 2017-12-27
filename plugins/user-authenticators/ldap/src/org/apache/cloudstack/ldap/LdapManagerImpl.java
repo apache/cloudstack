@@ -23,8 +23,7 @@ import java.util.List;
 import javax.inject.Inject;
 import javax.naming.NamingException;
 import javax.naming.ldap.LdapContext;
-
-import com.cloud.domain.dao.DomainDao;
+import java.util.UUID;
 
 import org.apache.cloudstack.api.LdapValidator;
 import org.apache.cloudstack.api.command.LDAPConfigCmd;
@@ -36,9 +35,11 @@ import org.apache.cloudstack.api.command.LdapImportUsersCmd;
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapListUsersCmd;
 import org.apache.cloudstack.api.command.LdapUserSearchCmd;
+import org.apache.cloudstack.api.command.LinkAccountToLdapCmd;
 import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
+import org.apache.cloudstack.api.response.LinkAccountToLdapResponse;
 import org.apache.cloudstack.api.response.LinkDomainToLdapResponse;
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao;
 import org.apache.cloudstack.ldap.dao.LdapTrustMapDao;
@@ -49,6 +50,9 @@ import org.springframework.stereotype.Component;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.Account;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 
 @Component
@@ -60,6 +64,9 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 
     @Inject
     private DomainDao domainDao;
+
+    @Inject
+    private AccountDao accountDao;
 
     @Inject
     private LdapContextFactory _ldapContextFactory;
@@ -210,6 +217,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         cmdList.add(LDAPConfigCmd.class);
         cmdList.add(LDAPRemoveCmd.class);
         cmdList.add(LinkDomainToLdapCmd.class);
+        cmdList.add(LinkAccountToLdapCmd.class);
         return cmdList;
     }
 
@@ -317,7 +325,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         //Account type should be 0 or 2. check the constants in com.cloud.user.Account
         Validate.isTrue(accountType==0 || accountType==2, "accountype should be either 0(normal user) or 2(domain admin)");
         LinkType linkType = LdapManager.LinkType.valueOf(type.toUpperCase());
-        LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, linkType, name, accountType));
+        LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, linkType, name, accountType, 0));
         DomainVO domain = domainDao.findById(vo.getDomainId());
         String domainUuid = "<unknown>";
         if (domain == null) {
@@ -332,5 +340,33 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
     @Override
     public LdapTrustMapVO getDomainLinkedToLdap(long domainId){
         return _ldapTrustMapDao.findByDomainId(domainId);
+    }
+
+    @Override public LinkAccountToLdapResponse linkAccountToLdap(LinkAccountToLdapCmd cmd) {
+        Validate.notNull(_ldapConfiguration.getBaseDn(cmd.getDomainId()), "can not configure an ldap server and an ldap group/ou to a domain");
+        Validate.notNull(cmd.getDomainId(), "domainId cannot be null.");
+        Validate.notEmpty(cmd.getAccountName(), "accountName cannot be empty.");
+        Validate.notEmpty(cmd.getLdapDomain(), "ldapDomain cannot be empty, please supply a GROUP or OU name");
+        Validate.notNull(cmd.getType(), "type cannot be null. It should either be GROUP or OU");
+        Validate.notEmpty(cmd.getLdapDomain(), "GROUP or OU name cannot be empty");
+
+        LinkType linkType = LdapManager.LinkType.valueOf(cmd.getType().toUpperCase());
+        Account account = accountDao.findActiveAccount(cmd.getAccountName(),cmd.getDomainId());
+        if (account == null) {
+            account = new AccountVO(cmd.getAccountName(), cmd.getDomainId(), null, cmd.getAccountType(), UUID.randomUUID().toString());
+            accountDao.persist((AccountVO)account);
+        }
+        Long accountId = account.getAccountId();
+        LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(cmd.getDomainId(), linkType, cmd.getLdapDomain(), cmd.getAccountType(), accountId));
+        DomainVO domain = domainDao.findById(vo.getDomainId());
+        String domainUuid = "<unknown>";
+        if (domain == null) {
+            s_logger.error("no domain in database for id " + vo.getDomainId());
+        } else {
+            domainUuid = domain.getUuid();
+        }
+
+        LinkAccountToLdapResponse response = new LinkAccountToLdapResponse(domainUuid, vo.getType().toString(), vo.getName(), vo.getAccountType(), account.getUuid(), cmd.getAccountName());
+        return response;
     }
 }
