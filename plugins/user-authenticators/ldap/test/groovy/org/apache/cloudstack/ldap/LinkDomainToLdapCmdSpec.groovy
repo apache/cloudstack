@@ -60,7 +60,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
             thrown(ServerApiException)
     }
     def "test valid params without admin"(){
-        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(1, "GROUP", "CN=test,DC=ccp,DC=citrix,DC=com", (short)2)
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse("1", "GROUP", "CN=test,DC=ccp,DC=citrix,DC=com", (short)2)
         _ldapManager.linkDomainToLdap(_,_,_,_) >> response
         when:
             linkDomainToLdapCmd.execute()
@@ -71,7 +71,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
     }
 
     def "test with valid params and with disabled admin"() {
-        def domainId = 1;
+        def domainId = "1";
         def type = "GROUP";
         def name = "CN=test,DC=ccp,DC=Citrix,DC=com"
         def accountType = 2;
@@ -99,13 +99,13 @@ class LinkDomainToLdapCmdSpec extends Specification {
     }
 
     def "test with valid params and with admin who exist in cloudstack already"() {
-        def domainId = 1;
+        def domainId = 1L;
         def type = "GROUP";
         def name = "CN=test,DC=ccp,DC=Citrix,DC=com"
         def accountType = 2;
         def username = "admin"
 
-        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId, type, name, (short)accountType)
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId.toString(), type, name, (short)accountType)
         _ldapManager.linkDomainToLdap(_,_,_,_) >> response
         _ldapManager.getUser(username, type, name) >> new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", false)
 
@@ -122,21 +122,21 @@ class LinkDomainToLdapCmdSpec extends Specification {
         LinkDomainToLdapResponse result = (LinkDomainToLdapResponse)linkDomainToLdapCmd.getResponseObject()
         result.getObjectName() == "LinkDomainToLdap"
         result.getResponseName() == linkDomainToLdapCmd.getCommandName()
-        result.getDomainId() == domainId
+        result.getDomainId() == domainId.toString()
         result.getType() == type
         result.getName() == name
         result.getAdminId() == null
     }
 
     def "test with valid params and with admin who doesnt exist in cloudstack"() {
-        def domainId = 1;
+        def domainId = 1L;
         def type = "GROUP";
         def name = "CN=test,DC=ccp,DC=Citrix,DC=com"
         def accountType = 2;
         def username = "admin"
         def accountId = 24
 
-        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId, type, name, (short)accountType)
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId.toString(), type, name, (short)accountType)
         _ldapManager.linkDomainToLdap(_,_,_,_) >> response
         _ldapManager.getUser(username, type, name) >> new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", false)
 
@@ -157,20 +157,20 @@ class LinkDomainToLdapCmdSpec extends Specification {
         LinkDomainToLdapResponse result = (LinkDomainToLdapResponse)linkDomainToLdapCmd.getResponseObject()
         result.getObjectName() == "LinkDomainToLdap"
         result.getResponseName() == linkDomainToLdapCmd.getCommandName()
-        result.getDomainId() == domainId
+        result.getDomainId() == domainId.toString()
         result.getType() == type
         result.getName() == name
         result.getAdminId() == String.valueOf(accountId)
     }
 
     def "test when admin doesnt exist in ldap"() {
-        def domainId = 1;
+        def domainId = 1L;
         def type = "GROUP";
         def name = "CN=test,DC=ccp,DC=Citrix,DC=com"
         def accountType = 2;
         def username = "admin"
 
-        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId, type, name, (short)accountType)
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId.toString(), type, name, (short)accountType)
         _ldapManager.linkDomainToLdap(_,_,_,_) >> response
         _ldapManager.getUser(username, type, name) >> {throw new NoLdapUserMatchingQueryException("get ldap user failed from mock")}
 
@@ -185,7 +185,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
         LinkDomainToLdapResponse result = (LinkDomainToLdapResponse)linkDomainToLdapCmd.getResponseObject()
         result.getObjectName() == "LinkDomainToLdap"
         result.getResponseName() == linkDomainToLdapCmd.getCommandName()
-        result.getDomainId() == domainId
+        result.getDomainId() == domainId.toString()
         result.getType() == type
         result.getName() == name
         result.getAdminId() == null
@@ -195,14 +195,14 @@ class LinkDomainToLdapCmdSpec extends Specification {
      * api should not fail in this case as link domain to ldap is successful
      */
     def "test when create user account throws a run time exception"() {
-        def domainId = 1;
+        def domainId = 1L;
         def type = "GROUP";
         def name = "CN=test,DC=ccp,DC=Citrix,DC=com"
         def accountType = 2;
         def username = "admin"
         def accountId = 24
 
-        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId, type, name, (short)accountType)
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId.toString(), type, name, (short)accountType)
         _ldapManager.linkDomainToLdap(_,_,_,_) >> response
         _ldapManager.getUser(username, type, name) >> new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", false)
 
@@ -223,7 +223,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
         LinkDomainToLdapResponse result = (LinkDomainToLdapResponse)linkDomainToLdapCmd.getResponseObject()
         result.getObjectName() == "LinkDomainToLdap"
         result.getResponseName() == linkDomainToLdapCmd.getCommandName()
-        result.getDomainId() == domainId
+        result.getDomainId() == domainId.toString()
         result.getType() == type
         result.getName() == name
         result.getAdminId() == null

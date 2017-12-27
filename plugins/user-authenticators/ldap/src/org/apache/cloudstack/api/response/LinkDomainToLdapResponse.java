@@ -27,11 +27,16 @@ public class LinkDomainToLdapResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "id of the Domain which is linked to LDAP")
-    private long domainId;
+    private String domainId;
 
+    @Deprecated
     @SerializedName(ApiConstants.NAME)
     @Param(description = "name of the group or OU in LDAP which is linked to the domain")
     private String name;
+
+    @SerializedName(ApiConstants.LDAP_DOMAIN)
+    @Param(description = "name of the group or OU in LDAP which is linked to the domain")
+    private String ldapDomain;
 
     @SerializedName(ApiConstants.TYPE)
     @Param(description = "type of the name in LDAP which is linke to the domain")
@@ -45,19 +50,25 @@ public class LinkDomainToLdapResponse extends BaseResponse {
     @Param(description = "Domain Admin accountId that is created")
     private String adminId;
 
-    public LinkDomainToLdapResponse(long domainId, String type, String name, short accountType) {
+    public LinkDomainToLdapResponse(String domainId, String type, String ldapDomain, short accountType) {
         this.domainId = domainId;
-        this.name = name;
+        this.name = ldapDomain;
+        this.ldapDomain = ldapDomain;
         this.type = type;
         this.accountType = accountType;
     }
 
-    public long getDomainId() {
+    public String getDomainId() {
         return domainId;
     }
 
+    public String getLdapDomain() {
+        return ldapDomain == null ? name : ldapDomain;
+    }
+
+    @Deprecated
     public String getName() {
-        return name;
+        return ldapDomain == null ? name : ldapDomain;
     }
 
     public String getType() {

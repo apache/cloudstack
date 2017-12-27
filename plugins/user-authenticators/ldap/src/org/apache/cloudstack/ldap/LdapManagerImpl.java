@@ -44,6 +44,8 @@ import org.apache.commons.lang.Validate;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.utils.Pair;
 
@@ -53,6 +55,9 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 
     @Inject
     private LdapConfigurationDao _ldapConfigurationDao;
+
+    @Inject
+    private DomainDao domainDao;
 
     @Inject
     private LdapContextFactory _ldapContextFactory;
@@ -270,7 +275,14 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         Validate.isTrue(accountType==0 || accountType==2, "accountype should be either 0(normal user) or 2(domain admin)");
         LinkType linkType = LdapManager.LinkType.valueOf(type.toUpperCase());
         LdapTrustMapVO vo = _ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, linkType, name, accountType));
-        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(vo.getDomainId(), vo.getType().toString(), vo.getName(), vo.getAccountType());
+        DomainVO domain = domainDao.findById(vo.getDomainId());
+        String domainUuid = "<unknown>";
+        if (domain == null) {
+            s_logger.error("no domain in database for id " + vo.getDomainId());
+        } else {
+            domainUuid = domain.getUuid();
+        }
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainUuid, vo.getType().toString(), vo.getName(), vo.getAccountType());
         return response;
     }
 
