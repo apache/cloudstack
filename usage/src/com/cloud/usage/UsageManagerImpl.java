@@ -985,7 +985,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
     private boolean isVolumeEvent(String eventType) {
         return eventType != null &&
-                (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) || eventType.equals(EventTypes.EVENT_VOLUME_DELETE) || eventType.equals(EventTypes.EVENT_VOLUME_RESIZE));
+                (eventType.equals(EventTypes.EVENT_VOLUME_CREATE) || eventType.equals(EventTypes.EVENT_VOLUME_DELETE) || eventType.equals(EventTypes.EVENT_VOLUME_RESIZE) || eventType.equals(EventTypes.EVENT_VOLUME_UPLOAD));
     }
 
     private boolean isTemplateEvent(String eventType) {
@@ -1390,6 +1390,21 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
         long volId = event.getResourceId();
 
+        if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType())) {
+            //For volumes which are 'attached' successfully, set the 'deleted' column in the usage_storage table,
+            //so that the secondary storage should stop accounting and only primary will be accounted.
+            SearchCriteria<UsageStorageVO> sc = _usageStorageDao.createSearchCriteria();
+            sc.addAnd("id", SearchCriteria.Op.EQ, volId);
+            sc.addAnd("storageType", SearchCriteria.Op.EQ, StorageTypes.VOLUME);
+            List<UsageStorageVO> volumesVOs = _usageStorageDao.search(sc, null);
+            if (volumesVOs != null) {
+                if (volumesVOs.size() == 1) {
+                    s_logger.debug("Setting the volume with id: " + volId + " to 'deleted' in the usage_storage table.");
+                    volumesVOs.get(0).setDeleted(event.getCreateDate());
+                    _usageStorageDao.update(volumesVOs.get(0));
+                }
+            }
+        }
         if (EventTypes.EVENT_VOLUME_CREATE.equals(event.getType()) || EventTypes.EVENT_VOLUME_RESIZE.equals(event.getType())) {
             SearchCriteria<UsageVolumeVO> sc = _usageVolumeDao.createSearchCriteria();
             sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
@@ -1430,6 +1445,32 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 volumesVO.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
                 _usageVolumeDao.update(volumesVO);
             }
+        } else if (EventTypes.EVENT_VOLUME_UPLOAD.equals(event.getType())) {
+            //For Upload event add an entry to the usage_storage table.
+            SearchCriteria<UsageStorageVO> sc = _usageStorageDao.createSearchCriteria();
+            sc.addAnd("accountId", SearchCriteria.Op.EQ, event.getAccountId());
+            sc.addAnd("id", SearchCriteria.Op.EQ, volId);
+            sc.addAnd("deleted", SearchCriteria.Op.NULL);
+            List<UsageStorageVO> volumesVOs = _usageStorageDao.search(sc, null);
+
+            if (volumesVOs.size() > 0) {
+                //This is a safeguard to avoid double counting of volumes.
+                s_logger.error("Found duplicate usage entry for volume: " + volId + " assigned to account: " + event.getAccountId() + "; marking as deleted...");
+            }
+            for (UsageStorageVO volumesVO : volumesVOs) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("deleting volume: " + volumesVO.getId() + " from account: " + volumesVO.getAccountId());
+                }
+                volumesVO.setDeleted(event.getCreateDate());
+                _usageStorageDao.update(volumesVO);
+            }
+
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("create volume with id : " + volId + " for account: " + event.getAccountId());
+            }
+            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+            UsageStorageVO volumeVO = new UsageStorageVO(volId, event.getZoneId(), event.getAccountId(), acct.getDomainId(), StorageTypes.VOLUME, event.getTemplateId(), event.getSize(), event.getCreateDate(), null);
+            _usageStorageDao.persist(volumeVO);
         }
     }
 

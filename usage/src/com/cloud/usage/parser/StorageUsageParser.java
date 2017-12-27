@@ -180,6 +180,10 @@ public class StorageUsageParser {
                 usage_type = UsageTypes.SNAPSHOT;
                 usageDesc += "Snapshot ";
                 break;
+            case StorageTypes.VOLUME:
+                usage_type = UsageTypes.VOLUME_SECONDARY;
+                usageDesc += "Volume ";
+                break;
         }
         //Create the usage record
         usageDesc += "Id:" + storageId + " Size:" + size;

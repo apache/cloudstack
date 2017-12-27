@@ -42,6 +42,7 @@ public class UsageTypes {
     public static final int VM_DISK_BYTES_READ = 23;
     public static final int VM_DISK_BYTES_WRITE = 24;
     public static final int VM_SNAPSHOT = 25;
+    public static final int VOLUME_SECONDARY = 26;
 
     public static List<UsageTypeResponse> listUsageTypes() {
         List<UsageTypeResponse> responseList = new ArrayList<UsageTypeResponse>();
