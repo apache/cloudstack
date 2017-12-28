@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+import javax.annotation.Nonnull;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -88,32 +90,48 @@ public class VmwareHelper {
         return deviceNumber == 7;
     }
 
+    @Nonnull
+    private static VirtualDeviceConnectInfo getVirtualDeviceConnectInfo(boolean connected, boolean connectOnStart) {
+        VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
+        connectInfo.setAllowGuestControl(true);
+        connectInfo.setConnected(connected);
+        connectInfo.setStartConnected(connectOnStart);
+        return connectInfo;
+    }
+
+    @Nonnull
+    private static VirtualEthernetCard createVirtualEthernetCard(VirtualEthernetCardType deviceType) {
+        VirtualEthernetCard nic;
+        switch (deviceType) {
+            case E1000:
+                nic = new VirtualE1000();
+                break;
+
+            case PCNet32:
+                nic = new VirtualPCNet32();
+                break;
+
+            case Vmxnet2:
+                nic = new VirtualVmxnet2();
+                break;
+
+            case Vmxnet3:
+                nic = new VirtualVmxnet3();
+                break;
+
+            default:
+                assert (false);
+                nic = new VirtualE1000();
+        }
+        return nic;
+    }
+
     public static VirtualDevice prepareNicOpaque(VirtualMachineMO vmMo, VirtualEthernetCardType deviceType, String portGroupName,
             String macAddress, int contextNumber, boolean connected, boolean connectOnStart) throws Exception {
 
         assert(vmMo.getRunningHost().hasOpaqueNSXNetwork());
 
-        VirtualEthernetCard nic;
-        switch (deviceType) {
-        case E1000:
-            nic = new VirtualE1000();
-            break;
-
-        case PCNet32:
-            nic = new VirtualPCNet32();
-            break;
-
-        case Vmxnet2:
-            nic = new VirtualVmxnet2();
-            break;
-
-        case Vmxnet3:
-            nic = new VirtualVmxnet3();
-            break;
-
-        default:
-            nic = new VirtualE1000();
-        }
+        VirtualEthernetCard nic = createVirtualEthernetCard(deviceType);
 
         VirtualEthernetCardOpaqueNetworkBackingInfo nicBacking = new VirtualEthernetCardOpaqueNetworkBackingInfo();
         nicBacking.setOpaqueNetworkId("br-int");
@@ -121,54 +139,42 @@ public class VmwareHelper {
 
         nic.setBacking(nicBacking);
 
-        VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
-        connectInfo.setAllowGuestControl(true);
-        connectInfo.setConnected(connected);
-        connectInfo.setStartConnected(connectOnStart);
         nic.setAddressType("Manual");
-        nic.setConnectable(connectInfo);
+        nic.setConnectable(getVirtualDeviceConnectInfo(connected, connectOnStart));
         nic.setMacAddress(macAddress);
         nic.setKey(-contextNumber);
         return nic;
     }
 
+    public static void updateNicDevice(VirtualDevice nic, ManagedObjectReference morNetwork, String portGroupName) throws Exception {
+        VirtualEthernetCardNetworkBackingInfo nicBacking = new VirtualEthernetCardNetworkBackingInfo();
+        nicBacking.setDeviceName(portGroupName);
+        nicBacking.setNetwork(morNetwork);
+        nic.setBacking(nicBacking);
+    }
+
+    public static void updateDvNicDevice(VirtualDevice nic, ManagedObjectReference morNetwork, String dvSwitchUuid) throws Exception {
+        final VirtualEthernetCardDistributedVirtualPortBackingInfo dvPortBacking = new VirtualEthernetCardDistributedVirtualPortBackingInfo();
+        final DistributedVirtualSwitchPortConnection dvPortConnection = new DistributedVirtualSwitchPortConnection();
+
+        dvPortConnection.setSwitchUuid(dvSwitchUuid);
+        dvPortConnection.setPortgroupKey(morNetwork.getValue());
+        dvPortBacking.setPort(dvPortConnection);
+        nic.setBacking(dvPortBacking);
+    }
+
     public static VirtualDevice prepareNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType, String portGroupName,
             String macAddress, int contextNumber, boolean connected, boolean connectOnStart) throws Exception {
 
-        VirtualEthernetCard nic;
-        switch (deviceType) {
-        case E1000:
-            nic = new VirtualE1000();
-            break;
-
-        case PCNet32:
-            nic = new VirtualPCNet32();
-            break;
-
-        case Vmxnet2:
-            nic = new VirtualVmxnet2();
-            break;
-
-        case Vmxnet3:
-            nic = new VirtualVmxnet3();
-            break;
-
-        default:
-            assert (false);
-            nic = new VirtualE1000();
-        }
+        VirtualEthernetCard nic = createVirtualEthernetCard(deviceType);
 
         VirtualEthernetCardNetworkBackingInfo nicBacking = new VirtualEthernetCardNetworkBackingInfo();
         nicBacking.setDeviceName(portGroupName);
         nicBacking.setNetwork(morNetwork);
         nic.setBacking(nicBacking);
 
-        VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
-        connectInfo.setAllowGuestControl(true);
-        connectInfo.setConnected(connected);
-        connectInfo.setStartConnected(connectOnStart);
         nic.setAddressType("Manual");
-        nic.setConnectable(connectInfo);
+        nic.setConnectable(getVirtualDeviceConnectInfo(connected, connectOnStart));
         nic.setMacAddress(macAddress);
         nic.setKey(-contextNumber);
         return nic;
@@ -177,43 +183,18 @@ public class VmwareHelper {
     public static VirtualDevice prepareDvNicDevice(VirtualMachineMO vmMo, ManagedObjectReference morNetwork, VirtualEthernetCardType deviceType, String dvPortGroupName,
             String dvSwitchUuid, String macAddress, int contextNumber, boolean connected, boolean connectOnStart) throws Exception {
 
-        VirtualEthernetCard nic;
-        switch (deviceType) {
-        case E1000:
-            nic = new VirtualE1000();
-            break;
-
-        case PCNet32:
-            nic = new VirtualPCNet32();
-            break;
-
-        case Vmxnet2:
-            nic = new VirtualVmxnet2();
-            break;
-
-        case Vmxnet3:
-            nic = new VirtualVmxnet3();
-            break;
-
-        default:
-            assert (false);
-            nic = new VirtualE1000();
-        }
+        VirtualEthernetCard nic = createVirtualEthernetCard(deviceType);
 
         final VirtualEthernetCardDistributedVirtualPortBackingInfo dvPortBacking = new VirtualEthernetCardDistributedVirtualPortBackingInfo();
         final DistributedVirtualSwitchPortConnection dvPortConnection = new DistributedVirtualSwitchPortConnection();
-        final VirtualDeviceConnectInfo connectInfo = new VirtualDeviceConnectInfo();
 
         dvPortConnection.setSwitchUuid(dvSwitchUuid);
         dvPortConnection.setPortgroupKey(morNetwork.getValue());
         dvPortBacking.setPort(dvPortConnection);
         nic.setBacking(dvPortBacking);
 
-        connectInfo.setAllowGuestControl(true);
-        connectInfo.setConnected(connected);
-        connectInfo.setStartConnected(connectOnStart);
         nic.setAddressType("Manual");
-        nic.setConnectable(connectInfo);
+        nic.setConnectable(getVirtualDeviceConnectInfo(connected, connectOnStart));
         nic.setMacAddress(macAddress);
         nic.setKey(-contextNumber);
         return nic;

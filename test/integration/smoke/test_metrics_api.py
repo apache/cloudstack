@@ -49,10 +49,10 @@ class TestMetrics(cloudstackTestCase):
             self.apiclient,
             self.services["service_offering"]
         )
-        self.template = get_template(
+        self.template = get_test_template(
             self.apiclient,
             self.zone.id,
-            self.services["ostype"]
+            self.hypervisor
         )
 
         self.cleanup = []

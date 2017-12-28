@@ -31,7 +31,7 @@ from marvin.lib.base import (Account,
                              VirtualMachine)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_test_template,
                                list_hosts,
                                list_routers,
                                list_networks,
@@ -57,17 +57,15 @@ class TestRouterServices(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.hypervisor = testClient.getHypervisorInfo()
         cls.services['mode'] = cls.zone.networktype
-        template = get_template(
+        template = get_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         if template == FAILED:
-            cls.fail(
-                "get_template() failed to return template\
-                        with description %s" %
-                cls.services["ostype"])
+            cls.fail("get_test_template() failed to return template")
 
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
@@ -171,7 +169,7 @@ class TestRouterServices(cloudstackTestCase):
                 self.apiclient.connection.user,
                 self.apiclient.connection.passwd,
                 router.linklocalip,
-                "service dnsmasq status",
+                "systemctl is-active dnsmasq",
                 hypervisor=self.hypervisor
             )
         else:
@@ -184,7 +182,7 @@ class TestRouterServices(cloudstackTestCase):
                     host.user,
                     host.passwd,
                     router.linklocalip,
-                    "service dnsmasq status"
+                    "systemctl is-active dnsmasq"
                 )
 
             except KeyError:
@@ -195,7 +193,7 @@ class TestRouterServices(cloudstackTestCase):
         self.debug("Dnsmasq process status: %s" % res)
 
         self.assertEqual(
-            res.count("running"),
+            res.count("active"),
             1,
             "Check dnsmasq service is running or not"
         )
@@ -251,7 +249,7 @@ class TestRouterServices(cloudstackTestCase):
                 self.apiclient.connection.user,
                 self.apiclient.connection.passwd,
                 router.linklocalip,
-                "service dnsmasq status",
+                "systemctl is-active dnsmasq",
                 hypervisor=self.hypervisor
             )
         else:
@@ -264,7 +262,7 @@ class TestRouterServices(cloudstackTestCase):
                     host.user,
                     host.passwd,
                     router.linklocalip,
-                    "service dnsmasq status"
+                    "systemctl is-active dnsmasq"
                 )
             except KeyError:
                 self.skipTest(
@@ -273,7 +271,7 @@ class TestRouterServices(cloudstackTestCase):
         res = str(result)
         self.debug("Dnsmasq process status: %s" % res)
         self.assertEqual(
-            res.count("running"),
+            res.count("active"),
             1,
             "Check dnsmasq service is running or not"
         )
@@ -285,7 +283,7 @@ class TestRouterServices(cloudstackTestCase):
                 self.apiclient.connection.user,
                 self.apiclient.connection.passwd,
                 router.linklocalip,
-                "service haproxy status",
+                "systemctl is-active haproxy",
                 hypervisor=self.hypervisor
             )
         else:
@@ -298,7 +296,7 @@ class TestRouterServices(cloudstackTestCase):
                     host.user,
                     host.passwd,
                     router.linklocalip,
-                    "service haproxy status"
+                    "systemctl is-active haproxy"
                 )
             except KeyError:
                 self.skipTest(
@@ -306,7 +304,7 @@ class TestRouterServices(cloudstackTestCase):
                             to check router services")
         res = str(result)
         self.assertEqual(
-            res.count("running"),
+            res.count("active"),
             1,
             "Check haproxy service is running or not"
         )

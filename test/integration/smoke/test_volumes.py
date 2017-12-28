@@ -24,7 +24,8 @@ from marvin.cloudstackAPI import (deleteVolume,
                                   resizeVolume)
 #from marvin.sshClient import SshClient
 from marvin.lib.utils import (cleanup_resources,
-                              format_volume_to_ext3)
+                              format_volume_to_ext3,
+                              wait_until)
 from marvin.lib.base import (ServiceOffering,
                              VirtualMachine,
                              Account,
@@ -245,6 +246,8 @@ class TestCreateVolume(cloudstackTestCase):
                 ret = checkVolumeSize(ssh_handle=ssh,volume_name=volume_name,size_to_verify=vol_sz)
             elif list_volume_response[0].hypervisor.lower() == "hyperv":
                 ret = checkVolumeSize(ssh_handle=ssh,volume_name="/dev/sdb",size_to_verify=vol_sz)
+            elif list_volume_response[0].hypervisor.lower() == "vmware":
+                ret = checkVolumeSize(ssh_handle=ssh,volume_name="/dev/sda",size_to_verify=vol_sz)
             else:
                 ret = checkVolumeSize(ssh_handle=ssh,volume_name="/dev/sdb",size_to_verify=vol_sz)
             self.debug(" Volume Size Expected %s  Actual :%s" %(vol_sz,ret[1]))
@@ -814,7 +817,7 @@ class TestVolumes(cloudstackTestCase):
         host = Host.list(
             self.apiclient,
             type='Routing',
-            virtualmachineid=list_vm.id
+            id=list_vm.hostid
         )[0]
         list_pods = get_pod(self.apiclient, self.zone.id, host.podid)
 
@@ -857,15 +860,20 @@ class TestVolumes(cloudstackTestCase):
         self.assertEqual(root_volume.podname, list_pods.name)
 
     def wait_for_attributes_and_return_root_vol(self):
-
-        for i in range(60):
+        def checkVolumeResponse():
             list_volume_response = Volume.list(
                 self.apiClient,
                 virtualmachineid=self.virtual_machine.id,
                 type='ROOT',
                 listall=True
             )
-            if list_volume_response[0].virtualsize is not None:
-                return list_volume_response[0]
 
-            time.sleep(1)
+            if isinstance(list_volume_response, list) and list_volume_response[0].virtualsize is not None:
+                return True, list_volume_response[0]
+            return False, None
+
+        # sleep interval is 1s, retries is 360, this will sleep atmost 360 seconds, or 6 mins
+        res, response = wait_until(1, 360, checkVolumeResponse)
+        if not res:
+            self.fail("Failed to return root volume response")
+        return response

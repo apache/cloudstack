@@ -83,9 +83,6 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 
-import static com.cloud.network.manager.NuageVspManager.NuageVspIsolatedNetworkDomainTemplateName;
-import static com.cloud.network.manager.NuageVspManager.NuageVspSharedNetworkDomainTemplateName;
-import static com.cloud.network.manager.NuageVspManager.NuageVspVpcDomainTemplateName;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -132,10 +129,6 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(dc.getGuestNetworkCidr()).thenReturn("10.1.1.1/24");
 
         when(_dataCenterDao.findById((Long)any())).thenReturn(dc);
-
-        when(_configurationDao.getValue(NuageVspIsolatedNetworkDomainTemplateName.key())).thenReturn("IsolatedDomainTemplate");
-        when(_configurationDao.getValue(NuageVspVpcDomainTemplateName.key())).thenReturn("VpcDomainTemplate");
-        when(_configurationDao.getValue(NuageVspSharedNetworkDomainTemplateName.key())).thenReturn("SharedDomainTemplate");
 
         when(_physicalNetworkDao.findById(any(Long.class))).thenReturn(physnet);
         when(physnet.getIsolationMethods()).thenReturn(Arrays.asList("VSP"));

@@ -24,11 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
-
-import net.juniper.contrail.api.ApiConnector;
-import net.juniper.contrail.api.types.ServiceInstance;
 
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.network.contrail.api.response.ServiceInstanceResponse;
@@ -63,7 +59,9 @@ import com.cloud.vm.VirtualMachineName;
 import com.cloud.vm.dao.UserVmDao;
 import com.google.gson.Gson;
 
-@Local(value = {ServiceManager.class})
+import net.juniper.contrail.api.ApiConnector;
+import net.juniper.contrail.api.types.ServiceInstance;
+
 public class ServiceManagerImpl implements ServiceManager {
     private static final Logger s_logger = Logger.getLogger(ServiceManager.class);
 

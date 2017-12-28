@@ -107,6 +107,8 @@
 
     <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />
 
+    <bean id="NetworkMigrationManagerImpl" class="com.cloud.network.NetworkMigrationManagerImpl" />
+
 
     <bean id="alertManagerImpl" class="com.cloud.alert.AlertManagerImpl" />
 

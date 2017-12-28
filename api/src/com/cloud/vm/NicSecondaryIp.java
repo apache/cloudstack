@@ -32,7 +32,11 @@ public interface NicSecondaryIp extends ControlledEntity, Identity, InternalIden
 
     long getNicId();
 
+    void setNicId(long nicId);
+
     String getIp4Address();
+
+    String getIp6Address();
 
     long getNetworkId();
 

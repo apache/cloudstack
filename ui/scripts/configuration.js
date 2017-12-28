@@ -2403,13 +2403,19 @@
                                         //*** VPC checkbox ***
                                         var $useVpc = args.$form.find('.form-item[rel=\"useVpc\"]');
                                         var $useVpcCb = $useVpc.find("input[type=checkbox]");
+                                        var $supportedServices = args.$form.find('.form-item[rel=\"supportedServices\"]');
                                         if ($guestTypeField.val() == 'Shared') { //Shared network offering
                                             $useVpc.hide();
+                                            $supportedServices.css('display', 'inline-block');
                                             if ($useVpcCb.is(':checked')) { //if useVpc is checked,
                                                 $useVpcCb.removeAttr("checked"); //remove "checked" attribute in useVpc
                                             }
-                                        } else { //Isolated network offering
+                                        } else if ($guestTypeField.val() == 'Isolated') { //Isolated network offering
                                             $useVpc.css('display', 'inline-block');
+                                            $supportedServices.css('display', 'inline-block');
+                                        } else if ($guestTypeField.val() == 'L2') {
+                                            $useVpc.hide();
+                                            $supportedServices.hide();
                                         }
                                         var $providers = $useVpcCb.closest('form').find('.dynamic-input select[name!="service.Connectivity.provider"]');
                                         var $optionsOfProviders = $providers.find('option');
@@ -2634,7 +2640,7 @@
                                         //hide/show service fields ***** (end) *****
 
                                         //show LB InlineMode dropdown only when (1)LB service is checked and LB service provider is F5BigIp (2)Firewall service is checked and Firewall service provider is JuniperSRX
-                                        if ((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp') &&
+                                        if ((args.$form.find('.form-item[rel=\"service.Lb.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && ((args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'F5BigIp') || (args.$form.find('.form-item[rel=\"service.Lb.provider\"]').find('select').val() == 'Netscaler')) &&
                                             (args.$form.find('.form-item[rel=\"service.Firewall.isEnabled\"]').find('input[type=checkbox]').is(':checked') == true) && (args.$form.find('.form-item[rel=\"service.Firewall.provider\"]').find('select').val() == 'JuniperSRX')) {
                                             args.$form.find('.form-item[rel=\"service.Lb.inlineModeDropdown\"]').css('display', 'inline-block');
                                         } else {
@@ -2754,6 +2760,9 @@
                                                 }, {
                                                     id: 'Shared',
                                                     description: 'Shared'
+                                                }, {
+                                                    id: 'L2',
+                                                    description: 'L2'
                                                 }]
                                             });
 
@@ -2766,10 +2775,9 @@
                                                     $form.find('.form-item[rel=isPersistent]').find('input[type=checkbox]').attr("disabled", "disabled");
 
 
-                                                } else { //$(this).val() == "Isolated"
+                                                } else if ($(this).val() == "Isolated" || $(this).val() == "L2") {
                                                     $form.find('.form-item[rel=specifyVlan]').find('input[type=checkbox]').removeAttr("disabled"); //make it editable
                                                     $form.find('.form-item[rel=isPersistent]').find('input[type=checkbox]').removeAttr("disabled");
-
                                                 }
                                             });
                                         }
@@ -3267,7 +3275,7 @@
                                             inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'ElasticLb';
                                             inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilityvalue'] = true; //because this checkbox's value == "on"
                                             serviceCapabilityIndex++;
-                                        } else if ((key == 'service.Lb.inlineModeDropdown') && ("Lb" in serviceProviderMap) && (serviceProviderMap.Lb == "F5BigIp")) {
+                                        } else if ((key == 'service.Lb.inlineModeDropdown') && ("Lb" in serviceProviderMap) && ((serviceProviderMap.Lb == "F5BigIp") || (serviceProviderMap.Lb == "Netscaler"))) {
                                             if (value == 'true') { //CS-16605 do not pass parameter if value is 'false'(side by side)
                                                 inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].service'] = 'lb';
                                                 inputData['servicecapabilitylist[' + serviceCapabilityIndex + '].capabilitytype'] = 'InlineMode';
@@ -3369,6 +3377,12 @@
                                         inputData['isPersistent'] = true;
                                     } else { //Isolated Network with Non-persistent network
                                         delete inputData.isPersistent; //if Persistent checkbox is unchecked, do not pass isPersistent parameter to API call since we need to keep API call's size as small as possible (p.s. isPersistent is defaulted as false at server-side)
+                                    }
+                                } else if (inputData['guestIpType'] == "L2") {
+                                    if (inputData['specifyVlan'] == 'on') { //specifyVlan checkbox is checked
+                                        inputData['specifyVlan'] = true;
+                                    } else { //specifyVlan checkbox is unchecked
+                                        delete inputData.specifyVlan; //if specifyVlan checkbox is unchecked, do not pass specifyVlan parameter to API call since we need to keep API call's size as small as possible (p.s. specifyVlan is defaulted as false at server-side)
                                     }
                                 }
 

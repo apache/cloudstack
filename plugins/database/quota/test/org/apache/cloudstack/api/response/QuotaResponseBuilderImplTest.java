@@ -16,14 +16,17 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.user.dao.UserDao;
-import com.cloud.utils.db.TransactionLegacy;
-import junit.framework.TestCase;
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.command.QuotaEmailTemplateListCmd;
 import org.apache.cloudstack.api.command.QuotaEmailTemplateUpdateCmd;
 import org.apache.cloudstack.quota.QuotaService;
@@ -36,7 +39,7 @@ import org.apache.cloudstack.quota.vo.QuotaBalanceVO;
 import org.apache.cloudstack.quota.vo.QuotaCreditsVO;
 import org.apache.cloudstack.quota.vo.QuotaEmailTemplatesVO;
 import org.apache.cloudstack.quota.vo.QuotaTariffVO;
-import org.joda.time.DateTime;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -44,13 +47,15 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.lang.reflect.Field;
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.user.dao.UserDao;
+import com.cloud.utils.db.TransactionLegacy;
 
-import javax.inject.Inject;
+import junit.framework.TestCase;
 
 @RunWith(MockitoJUnitRunner.class)
 public class QuotaResponseBuilderImplTest extends TestCase {
@@ -218,13 +223,24 @@ public class QuotaResponseBuilderImplTest extends TestCase {
     }
 
     @Test
-    public void testStartOfNextDay() {
-        DateTime now = new DateTime();
-        DateTime nextDay = new DateTime(quotaResponseBuilder.startOfNextDay(now.toDate()));
-        DateTime nextDay2 = new DateTime(quotaResponseBuilder.startOfNextDay());
-        assertTrue(now.toLocalDate().equals(nextDay.minusDays(1).toLocalDate()));
-        assertTrue(now.toLocalDate().equals(nextDay2.minusDays(1).toLocalDate()));
+    public void testStartOfNextDayWithoutParameters() {
+        Date nextDate = quotaResponseBuilder.startOfNextDay();
+
+        LocalDateTime tomorrowAtStartOfTheDay = LocalDate.now().atStartOfDay().plusDays(1);
+        Date expectedNextDate = Date.from(tomorrowAtStartOfTheDay.atZone(ZoneId.systemDefault()).toInstant());
+
+        Assert.assertEquals(expectedNextDate, nextDate);
     }
 
+    @Test
+    public void testStartOfNextDayWithParameter() {
+        Date anyDate = new Date(1242421545757532l);
 
+        Date nextDayDate = quotaResponseBuilder.startOfNextDay(anyDate);
+
+        LocalDateTime nextDayLocalDateTimeAtStartOfTheDay = anyDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().plusDays(1).atStartOfDay();
+        Date expectedNextDate = Date.from(nextDayLocalDateTimeAtStartOfTheDay.atZone(ZoneId.systemDefault()).toInstant());
+
+        Assert.assertEquals(expectedNextDate, nextDayDate);
+    }
 }

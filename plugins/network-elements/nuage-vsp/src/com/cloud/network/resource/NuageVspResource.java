@@ -248,7 +248,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource, Vsp
             return wrapper.execute(cmd, this);
         } catch (final Exception e) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Received unsupported command " + cmd.toString());
+                s_logger.debug("Received unsupported command " + cmd.toString(), e);
             }
             return Answer.createUnsupportedCommandAnswer(cmd);
         }

@@ -175,4 +175,3 @@ class TestHostAnnotations(cloudstackTestCase):
         else:
             self.fail("AddAnnotation is allowed for on an unknown entityType")
 
-        return self.added_annotations[-1]

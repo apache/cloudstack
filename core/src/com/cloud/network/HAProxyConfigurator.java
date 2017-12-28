@@ -48,7 +48,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     private static String[] defaultsSection = {"defaults", "\tlog     global", "\tmode    tcp", "\toption  dontlognull", "\tretries 3", "\toption redispatch",
         "\toption forwardfor", "\toption forceclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
 
-    private static String[] defaultListen = {"listen  vmops 0.0.0.0:9", "\toption transparent"};
+    private static String[] defaultListen = {"listen  vmops", "\tbind 0.0.0.0:9", "\toption transparent"};
 
     @Override
     public String[] generateConfiguration(final List<PortForwardingRuleTO> fwRules) {
@@ -100,7 +100,10 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         final List<String> result = new ArrayList<String>();
         // add line like this: "listen  65_37_141_30-80 65.37.141.30:80"
         StringBuilder sb = new StringBuilder();
-        sb.append("listen ").append(poolName).append(" ").append(publicIP).append(":").append(publicPort);
+        sb.append("listen ").append(poolName);
+        result.add(sb.toString());
+        sb = new StringBuilder();
+        sb.append("\tbind ").append(publicIP).append(":").append(publicPort);
         result.add(sb.toString());
         sb = new StringBuilder();
         // FIXME sb.append("\t").append("balance ").append(algorithm);
@@ -474,9 +477,12 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         final String algorithm = lbTO.getAlgorithm();
 
         final List<String> result = new ArrayList<String>();
-        // add line like this: "listen  65_37_141_30-80 65.37.141.30:80"
+        // add line like this: "listen  65_37_141_30-80\n\tbind 65.37.141.30:80"
         sb = new StringBuilder();
-        sb.append("listen ").append(poolName).append(" ").append(publicIP).append(":").append(publicPort);
+        sb.append("listen ").append(poolName);
+        result.add(sb.toString());
+        sb = new StringBuilder();
+        sb.append("\tbind ").append(publicIP).append(":").append(publicPort);
         result.add(sb.toString());
         sb = new StringBuilder();
         sb.append("\t").append("balance ").append(algorithm);
@@ -552,7 +558,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     }
 
     private String generateStatsRule(final LoadBalancerConfigCommand lbCmd, final String ruleName, final String statsIp) {
-        final StringBuilder rule = new StringBuilder("\nlisten ").append(ruleName).append(" ").append(statsIp).append(":").append(lbCmd.lbStatsPort);
+        final StringBuilder rule = new StringBuilder("\nlisten ").append(ruleName).append("\n\tbind ").append(statsIp).append(":").append(lbCmd.lbStatsPort);
         // TODO DH: write test for this in both cases
         if (!lbCmd.keepAliveEnabled) {
             s_logger.info("Haproxy mode http enabled");

@@ -107,6 +107,7 @@ public class BrocadeVcsGuestNetworkGuruTest {
         guru._ntwkOfferingSrvcDao = nosd;
         guru._dcDao = dcdao;
         guru._agentMgr = agentmgr;
+        ((GuestNetworkGuru)guru)._networkModel = netmodel;
 
         final DataCenterVO dc = mock(DataCenterVO.class);
         when(dc.getNetworkType()).thenReturn(NetworkType.Advanced);
@@ -162,6 +163,8 @@ public class BrocadeVcsGuestNetworkGuruTest {
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
 
         when(nosd.areServicesSupportedByNetworkOffering(NETWORK_ID, Service.Connectivity)).thenReturn(true);
+
+        when(netmodel.listNetworkOfferingServices(NETWORK_ID)).thenReturn(Arrays.asList(Service.Connectivity));
 
         final DeploymentPlan plan = mock(DeploymentPlan.class);
         final Network network = mock(Network.class);

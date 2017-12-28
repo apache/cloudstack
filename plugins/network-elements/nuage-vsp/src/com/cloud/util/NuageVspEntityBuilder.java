@@ -19,6 +19,7 @@
 
 package com.cloud.util;
 
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -146,8 +147,7 @@ public class NuageVspEntityBuilder {
         List<NetworkVO> allSharedNetworks = _networkDao.listByGuestType(Network.GuestType.Shared);
         for (NetworkVO sharedNetwork : allSharedNetworks) {
             if (_networkModel.isNetworkAvailableInDomain(sharedNetwork.getId(), domain.getId())) {
-                NetworkOffering networkOffering = _networkOfferingDao.findById(sharedNetwork.getNetworkOfferingId());
-                String preConfiguredDomainTemplateName = NuageVspUtil.getPreConfiguredDomainTemplateName(_configurationDao, _networkDetailsDao, sharedNetwork, networkOffering);
+                String preConfiguredDomainTemplateName = _nuageVspManager.getPreConfiguredDomainTemplateName(sharedNetwork);
                 if (!sharedNetworkUuids.containsKey(preConfiguredDomainTemplateName)) {
                     sharedNetworkUuids.put(preConfiguredDomainTemplateName, Lists.<String>newArrayList());
                 }
@@ -160,11 +160,18 @@ public class NuageVspEntityBuilder {
     }
 
     public VspNetwork buildVspNetwork(Network network) {
-        return buildVspNetwork(network.getDomainId(), network);
+        return buildVspNetwork(network.getDomainId(), network, false);
     }
 
-    //TODO:Sigert implement caching in this function. retrieve data
     public VspNetwork buildVspNetwork(long domainId, Network network) {
+        return buildVspNetwork(domainId, network, false);
+    }
+
+    public VspNetwork buildVspNetwork(Network network, boolean recalculateBroadcastUri) {
+        return buildVspNetwork(network.getDomainId(), network, recalculateBroadcastUri);
+    }
+
+    public VspNetwork buildVspNetwork(long domainId, Network network, boolean recalculateBroadcastUri) {
         VspNetwork.Builder vspNetworkBuilder = new VspNetwork.Builder()
                 .id(network.getId())
                 .uuid(network.getUuid())
@@ -241,14 +248,14 @@ public class NuageVspEntityBuilder {
         boolean firewallServiceSupported = _networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.Firewall);
         vspNetworkBuilder.firewallServiceSupported(firewallServiceSupported);
 
-        String preConfiguredDomainTemplateName = NuageVspUtil.getPreConfiguredDomainTemplateName(_configurationDao, _networkDetailsDao, network, networkOffering);
+        String preConfiguredDomainTemplateName = _nuageVspManager.getPreConfiguredDomainTemplateName(network);
         vspNetworkBuilder.domainTemplateName(preConfiguredDomainTemplateName);
 
         if (usesVirtualRouter(networkOffering.getId())) {
             try {
                 List<Pair<String, String>> ipAddressRanges =
                         networkOffering.getGuestType() == Network.GuestType.Shared ? getSharedIpAddressRanges(network.getId()) : getIpAddressRanges(network);
-                String virtualRouterIp = getVirtualRouterIP(network, ipAddressRanges);
+                String virtualRouterIp = getVirtualRouterIP(network, ipAddressRanges, recalculateBroadcastUri);
                 vspNetworkBuilder.virtualRouterIp(virtualRouterIp);
             } catch (InsufficientVirtualNetworkCapacityException ex) {
                 s_logger.error("There is an insufficient network capacity in network " + network.getId(), ex);
@@ -333,9 +340,19 @@ public class NuageVspEntityBuilder {
         return null;
     }
 
-    private String getVirtualRouterIP(Network network, List<Pair<String, String>> ipAddressRanges) throws InsufficientVirtualNetworkCapacityException {
-        if (network.getBroadcastUri() != null) {
+    private String getVirtualRouterIP(Network network, List<Pair<String, String>> ipAddressRanges, boolean recalculateBroadcastUri) throws InsufficientVirtualNetworkCapacityException {
+        //Add a check to see if a VR should be present in the offering or not?
+        if (!recalculateBroadcastUri && network.getBroadcastUri() != null) {
             return network.getBroadcastUri().getPath().substring(1);
+        }
+        ensureIpCapacity(network, ipAddressRanges);
+
+        if(network.getGuestType() == Network.GuestType.Shared) {
+            return ipAddressRanges.stream()
+                                  .sorted(Comparator.comparingLong(p -> NetUtils.ip2Long(p.getLeft())))
+                                  .findFirst()
+                                  .map(Pair::getLeft)
+                                  .orElseThrow(() -> new IllegalArgumentException("Shared network without ip ranges? How can this happen?"));
         }
 
         Pair<String, String> lowestIpAddressRange = null;
@@ -352,6 +369,33 @@ public class NuageVspEntityBuilder {
             }
         }
 
+
+        Network networkToCheck;
+        if (isMigratingNetwork(network)) {
+            networkToCheck = _networkDao.findById(network.getRelated());
+        } else {
+            networkToCheck = network;
+        }
+
+        Long freeIp = _networkModel.getAvailableIps(networkToCheck, null)
+                                   .stream()
+                                   .findFirst()
+                                   .orElseThrow(() -> new InsufficientVirtualNetworkCapacityException("There is no free ip available for the VirtualRouter.",
+                                                                                                      Network.class,
+                                                                                                      network.getId()));
+
+        return NetUtils.long2Ip(freeIp);
+    }
+
+    private boolean isMigratingNetwork(Network network) {
+        return network.getRelated() != network.getId();
+    }
+
+    private void ensureIpCapacity(Network network, List<Pair<String, String>> ipAddressRanges) throws InsufficientVirtualNetworkCapacityException {
+        long ipCount = ipAddressRanges.stream()
+                                      .mapToLong(this::getIpCount)
+                                      .sum();
+
         if (ipCount == 0) {
             throw new InsufficientVirtualNetworkCapacityException("VSP allocates an IP for VirtualRouter." + " But no ip address ranges are specified", Network.class,
                     network.getId());
@@ -359,12 +403,10 @@ public class NuageVspEntityBuilder {
             throw new InsufficientVirtualNetworkCapacityException("VSP allocates an IP for VirtualRouter." + " So, subnet should have atleast minimum 3 hosts", Network.class,
                     network.getId());
         }
+    }
 
-        String virtualRouterIp = lowestIpAddressRange.getLeft();
-        long lowestIp = NetUtils.ip2Long(lowestIpAddressRange.getLeft());
-        lowestIp = lowestIp + 1;
-        lowestIpAddressRange.setLeft(NetUtils.long2Ip(lowestIp));
-        return virtualRouterIp;
+    private long getIpCount(Pair<String, String> ipAddressRange) {
+        return NetUtils.ip2Long(ipAddressRange.getRight()) - NetUtils.ip2Long(ipAddressRange.getLeft()) + 1;
     }
 
     public VspVm buildVspVm(VirtualMachine vm, Network network) {

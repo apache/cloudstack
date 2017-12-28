@@ -17,11 +17,8 @@
 
 package com.cloud.hypervisor.ovm3.resources;
 
-import org.joda.time.Duration;
-
-import javax.ejb.Local;
-
 import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.routing.IpAssocCommand;
@@ -36,7 +33,6 @@ import com.cloud.hypervisor.ovm3.objects.Connection;
 import com.cloud.hypervisor.ovm3.objects.Xen;
 import com.cloud.utils.ExecutionResult;
 
-@Local(value = VirtualRouterDeployer.class)
 public class Ovm3VirtualRoutingResource implements VirtualRouterDeployer {
     private final Logger logger = Logger
             .getLogger(Ovm3VirtualRoutingResource.class);

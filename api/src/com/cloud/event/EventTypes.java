@@ -130,6 +130,7 @@ public class EventTypes {
     public static final String EVENT_NETWORK_CREATE = "NETWORK.CREATE";
     public static final String EVENT_NETWORK_DELETE = "NETWORK.DELETE";
     public static final String EVENT_NETWORK_UPDATE = "NETWORK.UPDATE";
+    public static final String EVENT_NETWORK_MIGRATE = "NETWORK.MIGRATE";
     public static final String EVENT_FIREWALL_OPEN = "FIREWALL.OPEN";
     public static final String EVENT_FIREWALL_CLOSE = "FIREWALL.CLOSE";
     public static final String EVENT_FIREWALL_UPDATE = "FIREWALL.UPDATE";
@@ -295,6 +296,9 @@ public class EventTypes {
     public static final String EVENT_VLAN_IP_RANGE_DELETE = "VLAN.IP.RANGE.DELETE";
     public static final String EVENT_VLAN_IP_RANGE_DEDICATE = "VLAN.IP.RANGE.DEDICATE";
     public static final String EVENT_VLAN_IP_RANGE_RELEASE = "VLAN.IP.RANGE.RELEASE";
+
+    public static final String EVENT_MANAGEMENT_IP_RANGE_CREATE = "MANAGEMENT.IP.RANGE.CREATE";
+    public static final String EVENT_MANAGEMENT_IP_RANGE_DELETE = "MANAGEMENT.IP.RANGE.DELETE";
 
     public static final String EVENT_STORAGE_IP_RANGE_CREATE = "STORAGE.IP.RANGE.CREATE";
     public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";
@@ -760,6 +764,9 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_DELETE, Vlan.class);
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_DEDICATE, Vlan.class);
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_RELEASE, Vlan.class);
+
+        entityEventDetails.put(EVENT_MANAGEMENT_IP_RANGE_CREATE, Pod.class);
+        entityEventDetails.put(EVENT_MANAGEMENT_IP_RANGE_DELETE, Pod.class);
 
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_CREATE, StorageNetworkIpRange.class);
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_DELETE, StorageNetworkIpRange.class);

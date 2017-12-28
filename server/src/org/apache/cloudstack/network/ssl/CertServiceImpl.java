@@ -16,47 +16,6 @@
 // under the License.
 package org.apache.cloudstack.network.ssl;
 
-import com.cloud.domain.DomainVO;
-import com.cloud.domain.dao.DomainDao;
-import com.cloud.event.ActionEvent;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.network.dao.LoadBalancerCertMapDao;
-import com.cloud.network.dao.LoadBalancerCertMapVO;
-import com.cloud.network.dao.LoadBalancerVO;
-import com.cloud.network.dao.SslCertDao;
-import com.cloud.network.dao.SslCertVO;
-import org.apache.cloudstack.network.tls.CertService;
-import com.cloud.network.rules.LoadBalancer;
-import com.cloud.projects.Project;
-import com.cloud.projects.ProjectService;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.security.CertificateHelper;
-import com.google.common.base.Preconditions;
-import com.google.common.base.Strings;
-import org.apache.cloudstack.acl.SecurityChecker;
-import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
-import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
-import org.apache.cloudstack.api.response.SslCertResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.util.io.pem.PemObject;
-import org.bouncycastle.util.io.pem.PemReader;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-import javax.ejb.Local;
-import javax.inject.Inject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.StringReader;
@@ -89,7 +48,48 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-@Local(value = {CertService.class})
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.SecurityChecker;
+import org.apache.cloudstack.api.command.user.loadbalancer.DeleteSslCertCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.ListSslCertsCmd;
+import org.apache.cloudstack.api.command.user.loadbalancer.UploadSslCertCmd;
+import org.apache.cloudstack.api.response.SslCertResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.network.tls.CertService;
+import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.io.pem.PemObject;
+import org.bouncycastle.util.io.pem.PemReader;
+
+import com.cloud.domain.DomainVO;
+import com.cloud.domain.dao.DomainDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.dao.LoadBalancerCertMapDao;
+import com.cloud.network.dao.LoadBalancerCertMapVO;
+import com.cloud.network.dao.LoadBalancerVO;
+import com.cloud.network.dao.SslCertDao;
+import com.cloud.network.dao.SslCertVO;
+import com.cloud.network.rules.LoadBalancer;
+import com.cloud.projects.Project;
+import com.cloud.projects.ProjectService;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.security.CertificateHelper;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
+
 public class CertServiceImpl implements CertService {
 
     private static final Logger s_logger = Logger.getLogger(CertServiceImpl.class);
@@ -438,6 +438,7 @@ public class CertServiceImpl implements CertService {
         }
     }
 
+    @Override
     public Certificate parseCertificate(final String cert) {
         Preconditions.checkArgument(!Strings.isNullOrEmpty(cert));
         final PemReader certPem = new PemReader(new StringReader(cert));

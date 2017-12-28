@@ -93,8 +93,23 @@ public interface NetworkOrchestrationService {
         boolean errorIfAlreadySetup, Long domainId, ACLType aclType, Boolean subdomainAccess, Long vpcId, Boolean isDisplayNetworkEnabled)
         throws ConcurrentOperationException;
 
-    void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks) throws InsufficientCapacityException,
+    void allocate(VirtualMachineProfile vm, LinkedHashMap<? extends Network, List<? extends NicProfile>> networks, Map<String, Map<Integer, String>> extraDhcpOptions) throws InsufficientCapacityException,
         ConcurrentOperationException;
+
+    /**
+     * configures the provided dhcp options on the given nic.
+     * @param network of the nic
+     * @param nicId
+     * @param extraDhcpOptions
+     */
+    void configureExtraDhcpOptions(Network network, long nicId, Map<Integer, String> extraDhcpOptions);
+
+    /**
+     * configures dhcp options on the given nic.
+     * @param network of the nic
+     * @param nicId
+     */
+    void configureExtraDhcpOptions(Network network, long nicId);
 
     void prepare(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) throws InsufficientCapacityException, ConcurrentOperationException,
         ResourceUnavailableException;
@@ -112,6 +127,13 @@ public interface NetworkOrchestrationService {
     Pair<? extends NetworkGuru, ? extends Network> implementNetwork(long networkId, DeployDestination dest, ReservationContext context)
         throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException;
 
+    Map<Integer, String> getExtraDhcpOptions(long nicId);
+
+    /**
+     * Returns all extra dhcp options which are set on the provided nic
+     * @param nicId
+     * @return map which maps the dhcp value on it's option code
+     */
     /**
      * prepares vm nic change for migration
      *
@@ -157,6 +179,8 @@ public interface NetworkOrchestrationService {
         InsufficientCapacityException;
 
     boolean reallocate(VirtualMachineProfile vm, DataCenterDeployment dest) throws InsufficientCapacityException, ConcurrentOperationException;
+
+    void saveExtraDhcpOptions(String networkUuid, Long nicId, Map<String, Map<Integer, String>> extraDhcpOptionMap);
 
     /**
      * @param requested
@@ -256,4 +280,6 @@ public interface NetworkOrchestrationService {
     int getResourceCount(Network network);
 
     void finalizeUpdateInSequence(Network network, boolean success);
+
+    List<NetworkGuru> getNetworkGurus();
 }

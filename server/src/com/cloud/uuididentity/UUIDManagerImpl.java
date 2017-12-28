@@ -18,7 +18,6 @@ package com.cloud.uuididentity;
 
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.context.CallContext;
@@ -31,7 +30,6 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Local(value = {UUIDManager.class})
 public class UUIDManagerImpl implements UUIDManager {
 
     @Inject
@@ -44,8 +42,9 @@ public class UUIDManagerImpl implements UUIDManager {
     @Override
     public <T> void checkUuid(String uuid, Class<T> entityType) {
 
-        if (uuid == null)
+        if (uuid == null) {
             return;
+        }
 
         Account caller = CallContext.current().getCallingAccount();
 
@@ -60,16 +59,19 @@ public class UUIDManagerImpl implements UUIDManager {
     @Override
     public <T> void checkUuidSimple(String uuid, Class<T> entityType) {
 
-        if (uuid == null)
+        if (uuid == null) {
             return;
+        }
 
         // check format
-        if (!IsUuidFormat(uuid))
+        if (!IsUuidFormat(uuid)) {
             throw new InvalidParameterValueException("UUID: " + uuid + " doesn't follow the UUID format");
+        }
 
         // check unique
-        if (!IsUuidUnique(entityType, uuid))
+        if (!IsUuidUnique(entityType, uuid)) {
             throw new InvalidParameterValueException("UUID: " + uuid + " already exists so can't create/update with custom id");
+        }
 
     }
 
@@ -83,10 +85,11 @@ public class UUIDManagerImpl implements UUIDManager {
     public <T> boolean IsUuidUnique(Class<T> entityType, String uuid) {
 
         T obj = _entityMgr.findByUuid(entityType, uuid);
-        if (obj != null)
+        if (obj != null) {
             return false;
-        else
+        } else {
             return true;
+        }
     }
 
     @Override
@@ -96,8 +99,9 @@ public class UUIDManagerImpl implements UUIDManager {
             int retry = UUID_RETRY;
             while (retry-- != 0) {  // there might be collision so retry
                 String uuid = UUID.randomUUID().toString();
-                if (IsUuidUnique(entityType, uuid))
+                if (IsUuidUnique(entityType, uuid)) {
                     return uuid;
+                }
             }
 
             throw new CloudRuntimeException("Unable to generate a unique uuid, please try again");

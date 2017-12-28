@@ -2758,7 +2758,7 @@ Within the deps/awsapi-lib directory
         from VMware, Inc  http://www.vmware.com/ 
             rabbitmq-client.jar  from http://www.rabbitmq.com/java-client.html
 
-Within the patches/systemvm/debian/config/etc directory
+Within the systemvm/debian/etc directory
     placed in the public domain
         by Adiscon GmbH  http://www.adiscon.com/ 
             rsyslog.conf 
@@ -2766,14 +2766,14 @@ Within the patches/systemvm/debian/config/etc directory
             dnsmasq.conf 
             vpcdnsmasq.conf 
 
-Within the patches/systemvm/debian/config/etc/apache2 directory
+Within the systemvm/debian/config/etc/apache2 directory
     licensed under the Apache License, Version 2 http://www.apache.org/licenses/LICENSE-2.0.txt  (as above)
     Copyright (c) 2012 The Apache Software Foundation
         from The Apache Software Foundation  http://www.apache.org/ 
             httpd.conf 
             vhost.template
 
-Within the patches/systemvm/debian/config/etc/ssh/ directory
+Within the systemvm/debian/etc/ssh/ directory
     licensed under the BSD (2-clause) http://www.opensource.org/licenses/BSD-2-Clause  (as follows)
  
             
@@ -2804,7 +2804,7 @@ Within the patches/systemvm/debian/config/etc/ssh/ directory
         from OpenSSH Project  http://www.openssh.org/ 
             sshd_config 
 
-Within the patches/systemvm/debian/config/root/redundant_router directory
+Within the systemvm/debian/root/redundant_router directory
     placed in the public domain
         by The netfilter.org project  http://www.netfilter.org/ 
             conntrackd.conf.templ 

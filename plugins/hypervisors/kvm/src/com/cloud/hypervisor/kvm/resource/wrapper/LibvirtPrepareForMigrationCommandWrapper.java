@@ -19,12 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.net.URISyntaxException;
-
-import org.apache.log4j.Logger;
-import org.libvirt.Connect;
-import org.libvirt.LibvirtException;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.PrepareForMigrationAnswer;
 import com.cloud.agent.api.PrepareForMigrationCommand;
@@ -37,6 +31,11 @@ import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.storage.Volume;
+import org.apache.log4j.Logger;
+import org.libvirt.Connect;
+import org.libvirt.LibvirtException;
+
+import java.net.URISyntaxException;
 
 @ResourceWrapper(handles =  PrepareForMigrationCommand.class)
 public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapper<PrepareForMigrationCommand, Answer, LibvirtComputingResource> {
@@ -60,7 +59,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vm.getName());
             for (final NicTO nic : nics) {
-                libvirtComputingResource.getVifDriver(nic.getType()).plug(nic, null, "");
+                libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "");
             }
 
             /* setup disks, e.g for iso */

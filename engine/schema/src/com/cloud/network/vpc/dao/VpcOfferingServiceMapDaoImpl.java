@@ -97,7 +97,6 @@ public class VpcOfferingServiceMapDaoImpl extends GenericDaoBase<VpcOfferingServ
     @Override
     public List<String> listServicesForVpcOffering(long offId) {
         SearchCriteria<String> sc = ServicesSearch.create();
-        ;
         sc.setParameters("offeringId", offId);
         return customSearch(sc, null);
     }

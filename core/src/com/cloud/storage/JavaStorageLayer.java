@@ -26,10 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
-@Local(value = StorageLayer.class)
 public class JavaStorageLayer implements StorageLayer {
 
     String _name;
@@ -150,8 +148,9 @@ public class JavaStorageLayer implements StorageLayer {
             return mountPaths;
         }
         for (File file : files) {
-            if (file.getName().startsWith(String.valueOf(msHostId) + "."))
+            if (file.getName().startsWith(String.valueOf(msHostId) + ".")) {
                 mountPaths.add(file.getAbsolutePath());
+            }
         }
         return mountPaths;
     }
@@ -208,8 +207,9 @@ public class JavaStorageLayer implements StorageLayer {
                 dir = new File(dirPath);
                 if (!dir.exists()) {
                     success = dir.mkdir();
-                    if (_makeWorldWriteable)
+                    if (_makeWorldWriteable) {
                         success = success && setWorldReadableAndWriteable(dir);
+                    }
                 }
             }
 
@@ -284,32 +284,24 @@ public class JavaStorageLayer implements StorageLayer {
 
     @Override
     public void setName(String name) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void setConfigParams(Map<String, Object> params) {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public Map<String, Object> getConfigParams() {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public int getRunLevel() {
-        // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
     public void setRunLevel(int level) {
-        // TODO Auto-generated method stub
-
     }
 
 }

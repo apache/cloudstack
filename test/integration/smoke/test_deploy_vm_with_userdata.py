@@ -19,7 +19,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import (ServiceOffering,
                                          VirtualMachine,
                                          Account)
-from marvin.lib.common import get_template, get_zone, list_virtual_machines
+from marvin.lib.common import get_test_template, get_zone, list_virtual_machines
 from marvin.lib.utils import cleanup_resources
 from nose.plugins.attrib import attr
 from marvin.codes import FAILED
@@ -37,6 +37,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         cls.services = testClient.getParsedTestDataConfig()
 
         cls.zone = get_zone(cls.apiClient, testClient.getZoneForTests())
+        cls.hypervisor = testClient.getHypervisorInfo()
         if cls.zone.localstorageenabled:
             #For devcloud since localstroage is enabled
             cls.services["service_offerings"]["tiny"]["storagetype"] = "local"
@@ -46,14 +47,14 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         )
         cls.account = Account.create(cls.apiClient, services=cls.services["account"])
         cls.cleanup = [cls.account]
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.apiClient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
 
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_test_template() failed to return template"
 
         cls.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,\
@@ -68,7 +69,7 @@ class TestDeployVmWithUserData(cloudstackTestCase):
         cls.services["virtual_machine"]["userdata"] = user_data
 
     def setup(self):
-            self.hypervisor = self.testClient.getHypervisorInfo()
+        self.hypervisor = self.testClient.getHypervisorInfo()
 
     @attr(tags=["devcloud", "basic", "advanced", "post"], required_hardware="true")
     def test_deployvm_userdata_post(self):

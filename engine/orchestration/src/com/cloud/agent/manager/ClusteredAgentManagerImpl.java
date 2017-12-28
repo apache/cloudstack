@@ -519,7 +519,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                         sslEngine.setUseClientMode(true);
                         sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
                         sslEngine.beginHandshake();
-                        if (!Link.doHandshake(ch1, sslEngine, true)) {
+                        if (!Link.doHandshake(ch1, sslEngine)) {
                             ch1.close();
                             throw new IOException(String.format("SSL: Handshake failed with peer management server '%s' on %s:%d ", peerName, ip, port));
                         }

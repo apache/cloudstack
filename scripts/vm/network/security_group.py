@@ -485,7 +485,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
 
     #add secodnary nic ips to ipset
     secIpSet = "1"
-    ips = sec_ips.split(':')
+    ips = sec_ips.split(';')
     ips.pop()
     if ips[0] == "0":
         secIpSet = "0";

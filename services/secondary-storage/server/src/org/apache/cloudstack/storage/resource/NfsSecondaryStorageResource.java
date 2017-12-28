@@ -235,8 +235,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String nfsVersionParam = (String)params.get("nfsVersion");
             try {
                 nfsVersion = Integer.valueOf(nfsVersionParam);
-            }
-            catch (NumberFormatException e){
+            } catch (NumberFormatException e){
                 s_logger.error("Couldn't cast " + nfsVersionParam + " to integer");
                 return null;
             }
@@ -521,12 +520,8 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     bufferWriter.write("uniquename=" + destData.getName());
                     bufferWriter.write("\n");
                     bufferWriter.write("filename=" + fileName);
-                    bufferWriter.write("\n");
-                    long size = _storage.getSize(destFileFullPath);
-                    bufferWriter.write("size=" + size);
-                    bufferWriter.close();
-                    writer.close();
-
+                }
+                try {
                     /**
                      * Snapshots might be in either QCOW2 or RAW image format
                      *
@@ -2273,9 +2268,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (!_inSystemVM) {
             return;
         }
-        Script command = new Script("/bin/bash", s_logger);
-        command.add("-c");
-        command.add("if [ -f /etc/init.d/ssh ]; then service ssh restart; else service sshd restart; fi ");
+        Script command = new Script("/bin/systemctl", s_logger);
+        command.add("restart");
+        command.add("ssh");
         String result = command.execute();
         if (result != null) {
             s_logger.warn("Error in starting sshd service err=" + result);

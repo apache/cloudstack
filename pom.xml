@@ -1,23 +1,21 @@
 <!--
-
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
-
--->
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~   http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing,
+  ~ software distributed under the License is distributed on an
+  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  ~ KIND, either express or implied.  See the License for the
+  ~ specific language governing permissions and limitations
+  ~ under the License.
+  -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
@@ -58,7 +56,7 @@
     <cs.configuration.version>1.10</cs.configuration.version>
     <cs.logging.version>1.1.1</cs.logging.version>
     <cs.discovery.version>0.5</cs.discovery.version>
-    <cs.ejb.version>3.0</cs.ejb.version>
+    
     <!-- do not forget to also upgrade hamcrest library with junit -->
     <cs.junit.version>4.12</cs.junit.version>
     <cs.hamcrest.version>1.3</cs.hamcrest.version>
@@ -122,8 +120,9 @@
     <cs.cxf.version>3.2.0</cs.cxf.version>
     <cs.groovy.version>2.4.12</cs.groovy.version>
     <cs.nitro.version>10.1</cs.nitro.version>
-    <cs.wiremock.version>2.8.0</cs.wiremock.version>
-    <cs.jetty.version>9.2.22.v20170606</cs.jetty.version>
+    <cs.wiremock.version>2.11.0</cs.wiremock.version>
+    <cs.jetty.version>9.4.7.v20170914</cs.jetty.version>
+    <cs.jetty-maven-plugin.version>9.2.22.v20170606</cs.jetty-maven-plugin.version>
   </properties>
 
   <distributionManagement>
@@ -342,11 +341,6 @@
             <groupId>log4j</groupId>
           </exclusion>
         </exclusions>
-      </dependency>
-      <dependency>
-        <groupId>javax.ejb</groupId>
-        <artifactId>ejb-api</artifactId>
-        <version>${cs.ejb.version}</version>
       </dependency>
       <dependency>
         <groupId>com.googlecode.java-ipv6</groupId>
@@ -886,17 +880,9 @@
               <exclude>services/secondary-storage/conf/agent.properties</exclude>
               <exclude>services/secondary-storage/conf/environment.properties</exclude>
               <exclude>test/systemvm/README.md</exclude>
-              <exclude>tools/appliance/.ruby-version</exclude>
-              <exclude>tools/vagrant/systemvm/vagrant.pub</exclude>
-              <exclude>tools/vagrant/systemvm/.ruby-version</exclude>
               <exclude>tools/devcloud/basebuild/puppet-devcloudinitial/files/network.conf</exclude>
-              <exclude>tools/appliance/definitions/devcloud/*</exclude>
-              <exclude>tools/appliance/definitions/systemvmtemplate/*</exclude>
-              <exclude>tools/appliance/definitions/systemvm64template/*</exclude>
-              <exclude>tools/appliance/definitions/builtin/*</exclude>
+              <exclude>tools/appliance/*/template.json</exclude>
               <exclude>tools/cli/cloudmonkey.egg-info/*</exclude>
-              <exclude>tools/devcloud/src/deps/boxes/basebox-build/definition.rb</exclude>
-              <exclude>tools/devcloud/src/deps/boxes/basebox-build/preseed.cfg</exclude>
               <exclude>tools/marvin/Marvin.egg-info/*</exclude>
               <exclude>ui/css/token-input-facebook.css</exclude>
               <exclude>ui/l10n/*</exclude>
@@ -926,35 +912,11 @@
               <exclude>ui/lib/reset.css</exclude>
               <exclude>ui/lib/require.js</exclude>
               <exclude>utils/testsmallfileinactive</exclude>
-              <exclude>systemvm/conf/agent.properties</exclude>
-              <exclude>systemvm/conf/environment.properties</exclude>
-              <exclude>systemvm/js/jquery.js</exclude>
-              <exclude>systemvm/js/jquery.flot.navigate.js</exclude>
-              <exclude>systemvm/patches/debian/systemvm.vmx</exclude>
-              <exclude>systemvm/patches/debian/config/root/.ssh/authorized_keys</exclude>
-              <exclude>systemvm/patches/debian/config/etc/apache2/httpd.conf</exclude>
-              <exclude>systemvm/patches/debian/config/etc/apache2/vhost.template</exclude>
-              <exclude>systemvm/patches/debian/config/etc/dnsmasq.conf.tmpl</exclude>
-              <exclude>systemvm/patches/debian/config/etc/vpcdnsmasq.conf</exclude>
-              <exclude>systemvm/patches/debian/config/etc/ssh/sshd_config</exclude>
-              <exclude>systemvm/patches/debian/config/etc/rsyslog.conf</exclude>
-              <exclude>systemvm/patches/debian/config/etc/logrotate.conf</exclude>
-              <exclude>systemvm/patches/debian/config/etc/logrotate.d/*</exclude>
-              <exclude>systemvm/patches/debian/config/etc/sysctl.conf</exclude>
-              <exclude>systemvm/patches/debian/config/root/redundant_router/keepalived.conf.templ</exclude>
-              <exclude>systemvm/patches/debian/config/root/redundant_router/arping_gateways.sh.templ</exclude>
-              <exclude>systemvm/patches/debian/config/root/redundant_router/conntrackd.conf.templ</exclude>
-              <exclude>systemvm/patches/debian/vpn/etc/ipsec.conf</exclude>
-              <exclude>systemvm/patches/debian/vpn/etc/ppp/options.xl2tpd</exclude>
-              <exclude>systemvm/patches/debian/vpn/etc/xl2tpd/xl2tpd.conf</exclude>
-              <exclude>systemvm/patches/debian/vpn/etc/ipsec.secrets</exclude>
-              <exclude>systemvm/patches/debian/config/etc/haproxy/haproxy.cfg</exclude>
-              <exclude>systemvm/patches/debian/config/etc/cloud-nic.rules</exclude>
-              <exclude>systemvm/patches/debian/config/etc/modprobe.d/aesni_intel</exclude>
-              <exclude>systemvm/patches/debian/config/etc/rc.local</exclude>
-              <exclude>systemvm/patches/debian/config/var/www/html/userdata/.htaccess</exclude>
-              <exclude>systemvm/patches/debian/config/var/www/html/latest/.htaccess</exclude>
-              <exclude>systemvm/patches/debian/vpn/etc/ipsec.d/l2tp.conf</exclude>
+              <exclude>systemvm/agent/conf/agent.properties</exclude>
+              <exclude>systemvm/agent/conf/environment.properties</exclude>
+              <exclude>systemvm/agent/js/jquery.js</exclude>
+              <exclude>systemvm/agent/js/jquery.flot.navigate.js</exclude>
+              <exclude>systemvm/debian/**</exclude>
               <exclude>tools/transifex/.tx/config</exclude>
               <exclude>tools/logo/apache_cloudstack.png</exclude>
               <exclude>tools/marvin/marvin/sandbox/advanced/sandbox.cfg</exclude>

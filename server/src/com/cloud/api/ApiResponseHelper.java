@@ -162,18 +162,21 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
+import com.cloud.vm.NicExtraDhcpOptionVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -233,6 +236,7 @@ import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.OvsProviderResponse;
@@ -317,6 +321,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -349,6 +354,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private ClusterDetailsDao _clusterDetailsDao;
     @Inject
     private ResourceTagDao _resourceTagDao;
+    @Inject
+    private NicExtraDhcpOptionDao _nicExtraDhcpOptionDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -938,10 +945,18 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public PodResponse createPodResponse(Pod pod, Boolean showCapacities) {
         String[] ipRange = new String[2];
+        List<String> startIp = new ArrayList<String>();
+        List<String> endIp = new ArrayList<String>();
+
         if (pod.getDescription() != null && pod.getDescription().length() > 0) {
-            ipRange = pod.getDescription().split("-");
-        } else {
-            ipRange[0] = pod.getDescription();
+            final String[] existingPodIpRanges = pod.getDescription().split(",");
+
+            for(String podIpRange: existingPodIpRanges) {
+                final String[] existingPodIpRange = podIpRange.split("-");
+
+                startIp.add(((existingPodIpRange.length > 0) && (existingPodIpRange[0] != null)) ? existingPodIpRange[0] : "");
+                endIp.add(((existingPodIpRange.length > 1) && (existingPodIpRange[1] != null)) ? existingPodIpRange[1] : "");
+            }
         }
 
         PodResponse podResponse = new PodResponse();
@@ -953,8 +968,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             podResponse.setZoneName(zone.getName());
         }
         podResponse.setNetmask(NetUtils.getCidrNetmask(pod.getCidrSize()));
-        podResponse.setStartIp(ipRange[0]);
-        podResponse.setEndIp(((ipRange.length > 1) && (ipRange[1] != null)) ? ipRange[1] : "");
+        podResponse.setStartIp(startIp);
+        podResponse.setEndIp(endIp);
         podResponse.setGateway(pod.getGateway());
         podResponse.setAllocationState(pod.getAllocationState().toString());
         if (showCapacities != null && showCapacities) {
@@ -1998,7 +2013,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // FIXME - either set netmask or cidr
         response.setCidr(network.getCidr());
-        response.setNetworkCidr((network.getNetworkCidr()));
+        if (network.getNetworkCidr() != null) {
+            response.setNetworkCidr((network.getNetworkCidr()));
+        }
         // If network has reservation its entire network cidr is defined by
         // getNetworkCidr()
         // if no reservation is present then getCidr() will define the entire
@@ -3577,30 +3594,75 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    /**
+     * The resulting Response attempts to be in line with what is returned from
+     * @see com.cloud.api.query.dao.UserVmJoinDaoImpl#setUserVmResponse(ResponseView, UserVmResponse, UserVmJoinVO)
+     */
     @Override
     public NicResponse createNicResponse(Nic result) {
         NicResponse response = new NicResponse();
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, result.getInstanceId());
         UserVmJoinVO userVm = _entityMgr.findById(UserVmJoinVO.class, result.getInstanceId());
+        List<NicExtraDhcpOptionVO> nicExtraDhcpOptionVOs = _nicExtraDhcpOptionDao.listByNicId(result.getId());
 
+        // The numbered comments are to keep track of the data returned from here and UserVmJoinDaoImpl.setUserVmResponse()
+        // the data can't be identical but some tidying up/unifying might be possible
+        /*1: nicUuid*/
         response.setId(result.getUuid());
+        /*2: networkUuid*/
         response.setNetworkid(network.getUuid());
-
+        /*3: vmId*/
         if (vm != null) {
             response.setVmId(vm.getUuid());
         }
 
         if (userVm != null){
             if (userVm.getTrafficType() != null) {
+                /*4: trafficType*/
                 response.setTrafficType(userVm.getTrafficType().toString());
             }
             if (userVm.getGuestType() != null) {
+                /*5: guestType*/
                 response.setType(userVm.getGuestType().toString());
             }
         }
+        /*6: ipAddress*/
         response.setIpaddress(result.getIPv4Address());
-
+        /*7: gateway*/
+        response.setGateway(result.getIPv4Gateway());
+        /*8: netmask*/
+        response.setNetmask(result.getIPv4Netmask());
+        /*9: networkName*/
+        if(userVm != null && userVm.getNetworkName() != null) {
+            response.setNetworkName(userVm.getNetworkName());
+        }
+        /*10: macAddress*/
+        response.setMacAddress(result.getMacAddress());
+        /*11: IPv6Address*/
+        if (result.getIPv6Address() != null) {
+            response.setIp6Address(result.getIPv6Address());
+        }
+        /*12: IPv6Gateway*/
+        if (result.getIPv6Gateway() != null) {
+            response.setIp6Gateway(result.getIPv6Gateway());
+        }
+        /*13: IPv6Cidr*/
+        if (result.getIPv6Cidr() != null) {
+            response.setIp6Cidr(result.getIPv6Cidr());
+        }
+        /*14: deviceId*/
+        response.setDeviceId(String.valueOf(result.getDeviceId()));
+        /*15: broadcastURI*/
+        if (result.getBroadcastUri() != null) {
+            response.setBroadcastUri(result.getBroadcastUri().toString());
+        }
+        /*16: isolationURI*/
+        if (result.getIsolationUri() != null) {
+            response.setIsolationUri(result.getIsolationUri().toString());
+        }
+        /*17: default*/
+        response.setIsDefault(result.isDefaultNic());
         if (result.getSecondaryIp()) {
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(result.getId());
             if (secondaryIps != null) {
@@ -3614,22 +3676,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setSecondaryIps(ipList);
             }
         }
+        /*18: extra dhcp options */
+        List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = nicExtraDhcpOptionVOs
+                .stream()
+                .map(vo -> new NicExtraDhcpOptionResponse(Dhcp.DhcpOptionCode.valueOfInt(vo.getCode()).getName(), vo.getCode(), vo.getValue()))
+                .collect(Collectors.toList());
 
-        response.setGateway(result.getIPv4Gateway());
-        response.setNetmask(result.getIPv4Netmask());
-        response.setMacAddress(result.getMacAddress());
-
-        if (result.getIPv6Address() != null) {
-            response.setIp6Address(result.getIPv6Address());
-        }
-
-        if (result.getIPv6Cidr() != null) {
-            response.setIp6Cidr(result.getIPv6Cidr());
-        }
-
-        response.setDeviceId(String.valueOf(result.getDeviceId()));
-
-        response.setIsDefault(result.isDefaultNic());
+        response.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
 
         if (result instanceof NicVO){
             if (((NicVO)result).getNsxLogicalSwitchUuid() != null){

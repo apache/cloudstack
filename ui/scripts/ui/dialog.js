@@ -271,6 +271,18 @@
                                 $dependsOn.attr('checked', true);
                             }
                         }
+                    } else  if (typeof(field.isHidden) == 'function') {
+                        //If a checkbox depends on a field. Call the isHidden function of the checkbox.
+                        $dependsOn.bind('change', function(event) {
+                            var $target = $(this);
+                            var $dependent = $target.closest('form').find('[depends-on=\'' + dependsOn + '\']');
+                            $dependsOn.attr('checked', isChecked);
+                            if (field.isHidden(args)) {
+                                $dependent.hide();
+                            } else {
+                                $dependent.show();
+                            }
+                        });
                     }
                 }
 
@@ -885,7 +897,7 @@
 
             $listView.dialog({
                 dialogClass: 'multi-edit-add-list panel',
-                width: 825,
+                width: 900,
                 title: _l('Select VM'),
                 buttons: [{
                     text: _l('label.apply'),

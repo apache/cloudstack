@@ -338,6 +338,7 @@ var dictionary = {
     "label.add.isolated.guest.network": "Legg til Isolert gjestenettverk",
     "label.add.isolated.guest.network.with.sourcenat": "Legg til isolert gjestenettverk med kilde-NAT",
     "label.add.isolated.network": "Legg Til Isolert Nettverk",
+    "label.add.l2.guest.network":"Add L2 Guest Network",
     "label.add.ldap.account": "Legg til LDAP-konto",
     "label.add.list.name": "ACL listenavn",
     "label.add.load.balancer": "Legg til lastbalanserer",

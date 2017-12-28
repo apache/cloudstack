@@ -34,20 +34,21 @@ class TestNetworkACL(cloudstackTestCase):
         cls.services = testClient.getParsedTestDataConfig()
 
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.hypervisor = testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.apiclient)
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
         cls.account = Account.create(cls.apiclient, services=cls.services["account"])
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
-        
+
         if cls.template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services["ostype"]
+            assert False, "get_test_template() failed to return template"
 
         cls.debug("Successfully created account: %s, id: \
                    %s" % (cls.account.name,\

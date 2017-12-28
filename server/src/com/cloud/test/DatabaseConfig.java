@@ -43,6 +43,7 @@ import com.cloud.service.dao.ServiceOfferingDaoImpl;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.dao.DiskOfferingDaoImpl;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
@@ -639,7 +640,7 @@ public class DatabaseConfig {
             stmt.setLong(8, 0);
             stmt.setString(9, hostAddress);
             stmt.setString(10, hostPath);
-            stmt.setDate(11, new Date(new java.util.Date().getTime()));
+            stmt.setDate(11, new Date(DateUtil.currentGMTTime().getTime()));
             stmt.setLong(12, podId);
             stmt.setString(13, Status.Up.toString());
             stmt.setLong(14, clusterId);

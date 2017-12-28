@@ -88,6 +88,9 @@ public class ApiConstants {
     public static final String UTILIZATION = "utilization";
     public static final String DRIVER = "driver";
     public static final String ROOT_DISK_SIZE = "rootdisksize";
+    public static final String DHCP_OPTIONS_NETWORK_LIST = "dhcpoptionsnetworklist";
+    public static final String DHCP_OPTIONS = "dhcpoptions";
+    public static final String DHCP_PREFIX = "dhcp:";
     public static final String DISPLAY_NAME = "displayname";
     public static final String DISPLAY_NETWORK = "displaynetwork";
     public static final String DISPLAY_NIC = "displaynic";
@@ -111,6 +114,10 @@ public class ApiConstants {
     public static final String END_PORT = "endport";
     public static final String ENTRY_TIME = "entrytime";
     public static final String EXPIRES = "expires";
+    public static final String EXTRA_DHCP_OPTION = "extradhcpoption";
+    public static final String EXTRA_DHCP_OPTION_NAME = "extradhcpoptionname";
+    public static final String EXTRA_DHCP_OPTION_CODE = "extradhcpoptioncode";
+    public static final String EXTRA_DHCP_OPTION_VALUE = "extradhcpvalue";
     public static final String FENCE = "fence";
     public static final String FETCH_LATEST = "fetchlatest";
     public static final String FIRSTNAME = "firstname";
@@ -198,6 +205,7 @@ public class ApiConstants {
     public static final String OUTOFBANDMANAGEMENT_POWERSTATE = "outofbandmanagementpowerstate";
     public static final String OUTOFBANDMANAGEMENT_ENABLED = "outofbandmanagementenabled";
     public static final String PARAMS = "params";
+    public static final String PARENT_ID = "parentid";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
     public static final String PASSWORD = "password";
     public static final String SHOULD_UPDATE_PASSWORD = "update_passwd_on_host";
@@ -242,6 +250,7 @@ public class ApiConstants {
     public static final String SCHEDULE = "schedule";
     public static final String SCOPE = "scope";
     public static final String SECRET_KEY = "usersecretkey";
+    public static final String SECONDARY_IP = "secondaryip";
     public static final String SINCE = "since";
     public static final String KEY = "key";
     public static final String SEARCH_BASE = "searchbase";
@@ -266,6 +275,7 @@ public class ApiConstants {
     public static final String SNAPSHOT_QUIESCEVM = "quiescevm";
     public static final String SOURCE_ZONE_ID = "sourcezoneid";
     public static final String START_DATE = "startdate";
+    public static final String START_ID = "startid";
     public static final String START_IP = "startip";
     public static final String START_IPV6 = "startipv6";
     public static final String START_PORT = "startport";
@@ -309,6 +319,7 @@ public class ApiConstants {
     public static final String REMOVE_VLAN = "removevlan";
     public static final String VLAN_ID = "vlanid";
     public static final String ISOLATED_PVLAN = "isolatedpvlan";
+    public static final String ISOLATION_URI = "isolationuri";
     public static final String VM_AVAILABLE = "vmavailable";
     public static final String VM_LIMIT = "vmlimit";
     public static final String VM_TOTAL = "vmtotal";
@@ -323,6 +334,7 @@ public class ApiConstants {
     public static final String COUNT = "count";
     public static final String TRAFFIC_TYPE = "traffictype";
     public static final String NETWORK_OFFERING_ID = "networkofferingid";
+    public static final String TIER_NETWORK_OFFERINGS = "tiernetworkofferings";
     public static final String NETWORK_IDS = "networkids";
     public static final String NETWORK_ID = "networkid";
     public static final String NIC_ID = "nicid";
@@ -366,6 +378,7 @@ public class ApiConstants {
     public static final String ZONE_TOKEN = "zonetoken";
     public static final String DHCP_PROVIDER = "dhcpprovider";
     public static final String RESULT = "success";
+    public static final String RESUME = "resume";
     public static final String LUN_ID = "lunId";
     public static final String IQN = "iqn";
     public static final String AGGREGATE_NAME = "aggregatename";
@@ -410,6 +423,7 @@ public class ApiConstants {
     public static final String CAPACITY_IOPS = "capacityiops";
     public static final String NETWORK_SPEED = "networkspeed";
     public static final String BROADCAST_DOMAIN_RANGE = "broadcastdomainrange";
+    public static final String BROADCAST_URI = "broadcasturi";
     public static final String ISOLATION_METHOD = "isolationmethod";
     public static final String ISOLATION_METHODS = "isolationmethods";
     public static final String PHYSICAL_NETWORK_ID = "physicalnetworkid";
@@ -536,6 +550,8 @@ public class ApiConstants {
     public static final String NICIRA_NVP_DEVICE_NAME = "niciradevicename";
     public static final String NICIRA_NVP_GATEWAYSERVICE_UUID = "l3gatewayserviceuuid";
     public static final String NICIRA_NVP_L2_GATEWAYSERVICE_UUID = "l2gatewayserviceuuid";
+    public static final String NSX_LOGICAL_SWITCH = "nsxlogicalswitch";
+    public static final String NSX_LOGICAL_SWITCH_PORT = "nsxlogicalswitchport";
     public static final String S3_ACCESS_KEY = "accesskey";
     public static final String S3_SECRET_KEY = "secretkey";
     public static final String S3_END_POINT = "endpoint";
@@ -665,6 +681,7 @@ public class ApiConstants {
     public static final String SUPPORTS_PUBLIC_ACCESS = "supportspublicaccess";
     public static final String REGION_LEVEL_VPC = "regionlevelvpc";
     public static final String STRECHED_L2_SUBNET = "strechedl2subnet";
+    public static final String NETWORK_NAME = "networkname";
     public static final String NETWORK_SPANNED_ZONES = "zonesnetworkspans";
     public static final String METADATA = "metadata";
     public static final String PHYSICAL_SIZE = "physicalsize";

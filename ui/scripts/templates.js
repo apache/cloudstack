@@ -55,12 +55,24 @@
                             label: 'label.community'
                         }
                     },
+                    preFilter: function() {
+                        if (isAdmin()||isDomainAdmin()) {
+                            return []
+                        }
+                        return ['account']
+                    },
                     fields: {
                         name: {
                             label: 'label.name'
                         },
                         hypervisor: {
                             label: 'label.hypervisor'
+                        },
+                        ostypename: {
+                            label: 'label.os.type'
+                        },
+                        account: {
+                            label: 'label.account'
                         }
                     },
 
@@ -2038,9 +2050,21 @@
                             label: 'label.community'
                         }
                     },
+                    preFilter: function() {
+                        if (isAdmin()||isDomainAdmin()) {
+                            return []
+                        }
+                        return ['account']
+                    },
                     fields: {
                         name: {
                             label: 'label.name'
+                        },
+                        ostypename: {
+                            label: 'label.os.type'
+                        },
+                        account: {
+                            label: 'label.account'
                         }
                     },
 
@@ -2347,7 +2371,10 @@
                                             id: item.id,
                                             name: item.name,
                                             description: item.description,
+                                            ostypename: item.ostypename,
                                             ostypeid: item.ostypeid,
+                                            account: item.account,
+                                            domain: item.domain,
                                             zones: item.zonename,
                                             zoneids: [item.zoneid]
                                         };

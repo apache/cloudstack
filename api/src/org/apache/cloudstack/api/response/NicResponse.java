@@ -29,15 +29,15 @@ import java.util.List;
 @EntityReference(value = Nic.class)
 public class NicResponse extends BaseResponse {
 
-    @SerializedName("id")
+    @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the nic")
     private String id;
 
-    @SerializedName("networkid")
+    @SerializedName(ApiConstants.NETWORK_ID)
     @Param(description = "the ID of the corresponding network")
     private String networkId;
 
-    @SerializedName("networkname")
+    @SerializedName(ApiConstants.NETWORK_NAME)
     @Param(description = "the name of the corresponding network")
     private String networkName;
 
@@ -53,11 +53,11 @@ public class NicResponse extends BaseResponse {
     @Param(description = "the ip address of the nic")
     private String ipaddress;
 
-    @SerializedName("isolationuri")
+    @SerializedName(ApiConstants.ISOLATION_URI)
     @Param(description = "the isolation uri of the nic")
     private String isolationUri;
 
-    @SerializedName("broadcasturi")
+    @SerializedName(ApiConstants.BROADCAST_URI)
     @Param(description = "the broadcast uri of the nic")
     private String broadcastUri;
 
@@ -73,7 +73,7 @@ public class NicResponse extends BaseResponse {
     @Param(description = "true if nic is default, false otherwise")
     private Boolean isDefault;
 
-    @SerializedName("macaddress")
+    @SerializedName(ApiConstants.MAC_ADDRESS)
     @Param(description = "true if nic is default, false otherwise")
     private String macAddress;
 
@@ -89,9 +89,13 @@ public class NicResponse extends BaseResponse {
     @Param(description = "the IPv6 address of network")
     private String ip6Address;
 
-    @SerializedName("secondaryip")
+    @SerializedName(ApiConstants.SECONDARY_IP)
     @Param(description = "the Secondary ipv4 addr of nic")
     private List<NicSecondaryIpResponse> secondaryIps;
+
+    @SerializedName(ApiConstants.EXTRA_DHCP_OPTION)
+    @Param(description = "the extra dhcp options on the nic", since = "4.11.0")
+    private List<NicExtraDhcpOptionResponse> extraDhcpOptions;
 
     @SerializedName(ApiConstants.DEVICE_ID)
     @Param(description = "device id for the network when plugged into the virtual machine", since = "4.4")
@@ -101,11 +105,11 @@ public class NicResponse extends BaseResponse {
     @Param(description = "Id of the vm to which the nic belongs")
     private String vmId;
 
-    @SerializedName("nsxlogicalswitch")
+    @SerializedName(ApiConstants.NSX_LOGICAL_SWITCH)
     @Param(description = "Id of the NSX Logical Switch (if NSX based), null otherwise", since="4.6.0")
     private String nsxLogicalSwitch;
 
-    @SerializedName("nsxlogicalswitchport")
+    @SerializedName(ApiConstants.NSX_LOGICAL_SWITCH_PORT)
     @Param(description = "Id of the NSX Logical Switch Port (if NSX based), null otherwise", since="4.6.0")
     private String nsxLogicalSwitchPort;
 
@@ -179,6 +183,10 @@ public class NicResponse extends BaseResponse {
 
     public void setDeviceId(String deviceId) {
         this.deviceId = deviceId;
+    }
+
+    public void setExtraDhcpOptions(List<NicExtraDhcpOptionResponse> extraDhcpOptions) {
+        this.extraDhcpOptions = extraDhcpOptions;
     }
 
     @Override

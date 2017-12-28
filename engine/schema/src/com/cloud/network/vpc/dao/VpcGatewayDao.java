@@ -30,4 +30,6 @@ public interface VpcGatewayDao extends GenericDao<VpcGatewayVO, Long> {
     List<VpcGatewayVO> listByVpcIdAndType(long vpcId, VpcGateway.Type type);
 
     List<VpcGatewayVO> listByAclIdAndType(long aclId, VpcGateway.Type type);
+
+    List<VpcGatewayVO> listByVpcId(long vpcId);
 }

@@ -1070,10 +1070,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     private void startAdditionalServices() {
-
-        Script command = new Script("/bin/bash", s_logger);
-        command.add("-c");
-        command.add("if [ -d /etc/apache2 ] ; then service apache2 stop; else service httpd stop; fi ");
+        Script command = new Script("/bin/systemctl", s_logger);
+        command.add("stop");
+        command.add("apache2");
         String result = command.execute();
         if (result != null) {
             s_logger.warn("Error in stopping httpd service err=" + result);
@@ -1088,21 +1087,25 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         result = command.execute();
         if (result != null) {
-            s_logger.warn("Error in opening up httpd port err=" + result);
+            s_logger.warn("Error in opening up apache2 port err=" + result);
             return;
         }
 
-        command = new Script("/bin/bash", s_logger);
-        command.add("-c");
-        command.add("if [ -d /etc/apache2 ] ; then service apache2 start; else service httpd start; fi ");
+        command = new Script("/bin/systemctl", s_logger);
+        command.add("start");
+        command.add("apache2");
         result = command.execute();
         if (result != null) {
-            s_logger.warn("Error in starting httpd service err=" + result);
+            s_logger.warn("Error in starting apache2 service err=" + result);
             return;
         }
-        command = new Script("mkdir", s_logger);
-        command.add("-p");
-        command.add("/var/www/html/copy/template");
+
+        command = new Script("/bin/su", s_logger);
+        command.add("-s");
+        command.add("/bin/bash");
+        command.add("-c");
+        command.add("mkdir -p /var/www/html/copy/template");
+        command.add("www-data");
         result = command.execute();
         if (result != null) {
             s_logger.warn("Error in creating directory =" + result);

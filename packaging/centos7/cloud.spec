@@ -104,6 +104,7 @@ Requires: bridge-utils
 Requires: ebtables
 Requires: iptables
 Requires: ethtool
+Requires: net-tools
 Requires: iproute
 Requires: ipset
 Requires: perl
@@ -500,7 +501,6 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %attr(0755,root,root) %{_bindir}/%{name}-sysvmadm
 %attr(0755,root,root) %{_bindir}/%{name}-setup-encryption
 %{_datadir}/%{name}-management/setup/*.sql
-%{_datadir}/%{name}-management/setup/db/*.sql
 %{_datadir}/%{name}-management/setup/*.sh
 %{_datadir}/%{name}-management/setup/server-setup.xml
 %{_datadir}/%{name}-management/webapp/*

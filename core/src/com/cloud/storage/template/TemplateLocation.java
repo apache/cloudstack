@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Properties;
+import java.util.Arrays;
 
 import org.apache.log4j.Logger;
 
@@ -81,12 +82,12 @@ public class TemplateLocation {
         boolean purged = true;
         String[] files = _storage.listFiles(_templatePath);
         for (String file : files) {
-            boolean r = _storage.delete(file);
-            if (!r) {
+            boolean isRemoved = _storage.delete(file);
+            if (!isRemoved) {
                 purged = false;
             }
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug((r ? "R" : "Unable to r") + "emove " + file);
+                s_logger.debug((isRemoved ? "Removed " : "Unable to remove") + file);
             }
         }
 
@@ -97,43 +98,60 @@ public class TemplateLocation {
         try (FileInputStream strm = new FileInputStream(_file);) {
             _props.load(strm);
         } catch (IOException e) {
-            s_logger.warn("Unable to load the template properties", e);
+            s_logger.warn("Unable to load the template properties for '" + _file + "': ", e);
         }
 
         for (ImageFormat format : ImageFormat.values()) {
-            String ext = _props.getProperty(format.getFileExtension());
+            String currentExtension = format.getFileExtension();
+            String ext = _props.getProperty(currentExtension);
             if (ext != null) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("File extension '" + currentExtension + "' was found in '" + _file + "'.");
+                }
                 FormatInfo info = new FormatInfo();
                 info.format = format;
-                info.filename = _props.getProperty(format.getFileExtension() + ".filename");
+                info.filename = _props.getProperty(currentExtension + ".filename");
                 if (info.filename == null) {
+                    if (s_logger.isDebugEnabled()) {
+                        s_logger.debug("Property '" + currentExtension + ".filename' was not found in '" + _file + "'. Current format is ignored.");
+                    }
                     continue;
                 }
-                info.size = NumbersUtil.parseLong(_props.getProperty(format.getFileExtension() + ".size"), -1);
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Property '" + currentExtension + ".filename' was found in '" + _file + "'. Current format will be parsed.");
+                }
+                info.size = NumbersUtil.parseLong(_props.getProperty(currentExtension + ".size"), -1);
                 _props.setProperty("physicalSize", Long.toString(info.size));
-                info.virtualSize = NumbersUtil.parseLong(_props.getProperty(format.getFileExtension() + ".virtualsize"), -1);
+                info.virtualSize = NumbersUtil.parseLong(_props.getProperty(currentExtension + ".virtualsize"), -1);
                 _formats.add(info);
 
                 if (!checkFormatValidity(info)) {
                     _isCorrupted = true;
                     s_logger.warn("Cleaning up inconsistent information for " + format);
                 }
+            } else {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Format extension '" + currentExtension + "' wasn't found in '" + _file + "'.");
+                }
             }
         }
 
         if (_props.getProperty("uniquename") == null || _props.getProperty("virtualsize") == null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Property 'uniquename' or 'virtualsize' weren't found in '" + _file + "'. Loading failed.");
+            }
             return false;
         }
-
         return (_formats.size() > 0);
     }
 
     public boolean save() {
         for (FormatInfo info : _formats) {
-            _props.setProperty(info.format.getFileExtension(), "true");
-            _props.setProperty(info.format.getFileExtension() + ".filename", info.filename);
-            _props.setProperty(info.format.getFileExtension() + ".size", Long.toString(info.size));
-            _props.setProperty(info.format.getFileExtension() + ".virtualsize", Long.toString(info.virtualSize));
+            String formatExtension = info.format.getFileExtension();
+            _props.setProperty(formatExtension, "true");
+            _props.setProperty(formatExtension + ".filename", info.filename);
+            _props.setProperty(formatExtension + ".size", Long.toString(info.size));
+            _props.setProperty(formatExtension + ".virtualsize", Long.toString(info.virtualSize));
         }
         try (FileOutputStream strm =  new FileOutputStream(_file);) {
             _props.store(strm, "");
@@ -205,10 +223,11 @@ public class TemplateLocation {
             FormatInfo info = it.next();
             if (info.format == format) {
                 it.remove();
-                _props.remove(format.getFileExtension());
-                _props.remove(format.getFileExtension() + ".filename");
-                _props.remove(format.getFileExtension() + ".size");
-                _props.remove(format.getFileExtension() + ".virtualsize");
+                String formatExtension = format.getFileExtension();
+                _props.remove(formatExtension);
+                for(String propertySuffix : Arrays.asList("filename","size","virtualsize")) {
+                        _props.remove(formatExtension + "." + propertySuffix);
+                }
                 return info;
             }
         }

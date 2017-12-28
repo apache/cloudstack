@@ -100,7 +100,7 @@ class TestHostHA(cloudstackTestCase):
 
 
     def createVMs(self, hostId, number, local):
-        
+
         self.template = get_template(
             self.apiclient,
             self.zone.id,
@@ -297,7 +297,6 @@ class TestHostHA(cloudstackTestCase):
         ssh.execute("nohup sh /root/test_host_ha.sh -t %s -d agent > /dev/null 2>&1 &\n" % timeout)
         return
 
-
     @attr(
         tags=[
             "advanced",
@@ -308,7 +307,7 @@ class TestHostHA(cloudstackTestCase):
             "sg"],
         required_hardware="true")
     def test_01_host_ha_with_nfs_storagepool_with_vm(self):
-        
+
         if not(self.isOnlyNFSStorageAvailable()):
             raise unittest.SkipTest("Skipping this test as this is for NFS store only.")
 
@@ -385,7 +384,7 @@ class TestHostHA(cloudstackTestCase):
             "sg"],
         required_hardware="true")
     def test_02_host_ha_with_local_storage_and_nfs(self):
-    
+
         if not(self.isLocalAndNFSStorageAvailable()):
             raise unittest.SkipTest("Skipping this test as this is for Local storage and NFS storage only.")
 
@@ -462,7 +461,7 @@ class TestHostHA(cloudstackTestCase):
             "sg"],
         required_hardware="true")
     def test_03_host_ha_with_only_local_storage(self):
-    
+
         if not(self.isOnlyLocalStorageAvailable()):
             raise unittest.SkipTest("Skipping this test as this is for Local storage only.")
 
