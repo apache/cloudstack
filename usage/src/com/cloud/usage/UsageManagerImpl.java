@@ -57,6 +57,7 @@ import com.cloud.usage.dao.UsageNetworkDao;
 import com.cloud.usage.dao.UsageNetworkOfferingDao;
 import com.cloud.usage.dao.UsagePortForwardingRuleDao;
 import com.cloud.usage.dao.UsageSecurityGroupDao;
+import com.cloud.usage.dao.UsageVMSnapshotOnPrimaryDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
 import com.cloud.usage.dao.UsageVMSnapshotDao;
@@ -75,6 +76,7 @@ import com.cloud.usage.parser.VMSnapshotUsageParser;
 import com.cloud.usage.parser.VPNUserUsageParser;
 import com.cloud.usage.parser.VmDiskUsageParser;
 import com.cloud.usage.parser.VolumeUsageParser;
+import com.cloud.usage.parser.VMSanpshotOnPrimaryParser;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
@@ -87,6 +89,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
@@ -144,6 +147,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     ConfigurationDao _configDao;
     @Inject
     private UsageVMSnapshotDao _usageVMSnapshotDao;
+    @Inject
+    private UsageVMSnapshotOnPrimaryDao _usageSnapshotOnPrimaryDao;
     @Inject
     private QuotaManager _quotaManager;
     @Inject
@@ -939,6 +944,18 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("VM Snapshot usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
             }
         }
+        parsed = VMSnapshotUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (s_logger.isDebugEnabled()) {
+            if (!parsed) {
+                s_logger.debug("VM Snapshot usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+            }
+        }
+        parsed = VMSanpshotOnPrimaryParser.parse(account, currentStartDate, currentEndDate);
+        if (s_logger.isDebugEnabled()) {
+            if (!parsed) {
+                s_logger.debug("VM Snapshot on primary usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+            }
+        }
         return parsed;
     }
 
@@ -968,6 +985,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             createSecurityGroupEvent(event);
         } else if (isVmSnapshotEvent(eventType)) {
             createVMSnapshotEvent(event);
+        } else if (isVmSnapshotOnPrimaryEvent(eventType)) {
+            createVmSnapshotOnPrimaryEvent(event);
         }
     }
 
@@ -1041,6 +1060,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (eventType == null)
             return false;
         return (eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_CREATE) || eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_DELETE));
+    }
+
+    private boolean isVmSnapshotOnPrimaryEvent(String eventType) {
+        if (eventType == null)
+            return false;
+        return (eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_ON_PRIMARY) || eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY));
     }
 
     private void createVMHelperEvent(UsageEventVO event) {
@@ -1804,6 +1829,43 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         Long domainId = acct.getDomainId();
         UsageVMSnapshotVO vsVO = new UsageVMSnapshotVO(volumeId, zoneId, accountId, domainId, vmId, offeringId, size, created, null);
         _usageVMSnapshotDao.persist(vsVO);
+    }
+
+    private void createVmSnapshotOnPrimaryEvent(UsageEventVO event) {
+        Long vmId = event.getResourceId();
+        String name = event.getResourceName();
+        if (EventTypes.EVENT_VM_SNAPSHOT_ON_PRIMARY.equals(event.getType())) {
+            Long zoneId = event.getZoneId();
+            Long accountId = event.getAccountId();
+            long physicalsize = (event.getSize() == null) ? 0 : event.getSize();
+            long virtualsize = (event.getVirtualSize() == null) ? 0 : event.getVirtualSize();
+            Date created = event.getCreateDate();
+            Account acct = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+            Long domainId = acct.getDomainId();
+            UsageSnapshotOnPrimaryVO vsVO = new UsageSnapshotOnPrimaryVO(vmId, zoneId, accountId, domainId, vmId, name, 0, virtualsize, physicalsize, created, null);
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("createSnapshotOnPrimaryEvent UsageSnapshotOnPrimaryVO " + vsVO);
+            }
+            _usageSnapshotOnPrimaryDao.persist(vsVO);
+        } else if (EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY.equals(event.getType())) {
+            QueryBuilder<UsageSnapshotOnPrimaryVO> sc = QueryBuilder.create(UsageSnapshotOnPrimaryVO.class);
+            sc.and(sc.entity().getAccountId(), SearchCriteria.Op.EQ, event.getAccountId());
+            sc.and(sc.entity().getId(), SearchCriteria.Op.EQ, vmId);
+            sc.and(sc.entity().getName(), SearchCriteria.Op.EQ, name);
+            sc.and(sc.entity().getDeleted(), SearchCriteria.Op.NULL);
+            List<UsageSnapshotOnPrimaryVO> vmsnaps = sc.list();
+            if (vmsnaps.size() > 1) {
+                s_logger.warn("More that one usage entry for vm snapshot: " + name + " for vm id:" + vmId + " assigned to account: " + event.getAccountId()
+                        + "; marking them all as deleted...");
+            }
+            for (UsageSnapshotOnPrimaryVO vmsnap : vmsnaps) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("deleting vm snapshot name: " + vmsnap.getName() + " from account: " + vmsnap.getAccountId());
+                }
+                vmsnap.setDeleted(event.getCreateDate()); // there really shouldn't be more than one
+                _usageSnapshotOnPrimaryDao.updateDeleted(vmsnap);
+            }
+        }
     }
 
     private class Heartbeat extends ManagedContextRunnable {

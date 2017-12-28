@@ -42,6 +42,8 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -97,7 +99,6 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         SnapshotInfo parentSnapshot = snapshot.getParent();
 
         if (parentSnapshot != null && snapshot.getPath().equalsIgnoreCase(parentSnapshot.getPath())) {
-            s_logger.debug("backup an empty snapshot");
             // don't need to backup this snapshot
             SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(parentSnapshot.getId(), DataStoreRole.Image);
             if (parentSnapshotOnBackupStore != null && parentSnapshotOnBackupStore.getState() == State.Ready) {
@@ -254,7 +255,6 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         if (snapshotVO.getState() == Snapshot.State.CreatedOnPrimary) {
-            s_logger.debug("delete snapshot on primary storage:");
             snapshotVO.setState(Snapshot.State.Destroyed);
             snapshotDao.update(snapshotId, snapshotVO);
             return true;
@@ -428,6 +428,8 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                                 SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(), parentSnapshotId);
                                 if (snapshotDataStoreVO != null) {
                                     parentSnapshotId = snapshotDataStoreVO.getParentSnapshotId();
+                                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY, parent.getAccountId(), parent.getDataCenterId(), parent.getId(),
+                                            parent.getName(), null, null, 0L, 0L, parent.getClass().getName(), parent.getUuid());
                                     snapshotStoreDao.remove(snapshotDataStoreVO.getId());
                                 } else {
                                     parentSnapshotId = null;

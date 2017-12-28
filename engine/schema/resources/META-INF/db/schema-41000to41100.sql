@@ -490,6 +490,23 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '7.2.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.1.0' AND guest_os_id not in (1,2,3,4,56,101,56,58,93,94,50,51,87,88,89,90,91,92,26,27,28,29,40,41,42,43,44,45,96,97,107,108,109,110,151,152,153);
 
+-- Add table to track primary storage in use for snapshots
+DROP TABLE IF EXISTS `cloud_usage`.`usage_snapshot_on_primary`;
+CREATE TABLE `cloud_usage`.`usage_snapshot_on_primary` (
+  `id` bigint(20) unsigned NOT NULL,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `domain_id` bigint(20) unsigned NOT NULL,
+  `vm_id` bigint(20) unsigned NOT NULL,
+  `name` varchar(128),
+  `type` int(1) unsigned NOT NULL,
+  `physicalsize` bigint(20),
+  `virtualsize` bigint(20),
+  `created` datetime NOT NULL,
+  `deleted` datetime,
+  INDEX `i_usage_snapshot_on_primary` (`account_id`,`id`,`vm_id`,`created`)
+) ENGINE=InnoDB CHARSET=utf8;
+
 -- Change monitor patch for apache2 in systemvm
 UPDATE `cloud`.`monitoring_services` SET pidfile="/var/run/apache2/apache2.pid" WHERE process_name="apache2" AND service_name="apache2";
 

@@ -49,6 +49,8 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.log4j.Logger;
 
 import com.cloud.storage.CreateSnapshotPayload;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
@@ -216,6 +218,8 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         try {
             result = future.get();
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_ON_PRIMARY, snap.getAccountId(), snap.getDataCenterId(), snap.getId(),
+                    snap.getName(), null, null, snapshotOnPrimary.getSize(), snapshotOnPrimary.getSize(), snap.getClass().getName(), snap.getUuid());
             return result;
         } catch (InterruptedException e) {
             s_logger.debug("Failed to create snapshot", e);
