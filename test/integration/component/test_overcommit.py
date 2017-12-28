@@ -100,7 +100,6 @@ class Overcommit (cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient)
         cls.testdata["mode"] = cls.zone.networktype
-        #cls.testdata["configurableData"]["password"] = "xenroot"
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 

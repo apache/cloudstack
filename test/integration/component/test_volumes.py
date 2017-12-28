@@ -75,9 +75,6 @@ class TestAttachVolume(cloudstackTestCase):
             cls.zone.id,
             cls.testdata["ostype"]
         )
-        #cls.testdata["zoneid"] = cls.zone.id
-        #cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
-        #cls.testdata["virtual_machine"]["template"] = template.id
         # get max data volumes limit based on the hypervisor type and version
         listHost = Host.list(
             cls.api_client,
