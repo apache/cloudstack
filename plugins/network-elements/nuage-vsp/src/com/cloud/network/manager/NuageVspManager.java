@@ -19,6 +19,11 @@
 
 package com.cloud.network.manager;
 
+import java.util.List;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+
 import com.cloud.agent.api.manager.EntityExistsCommand;
 import com.cloud.api.commands.AddNuageVspDeviceCmd;
 import com.cloud.api.commands.AssociateNuageVspDomainTemplateCmd;
@@ -35,11 +40,7 @@ import com.cloud.network.Network;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.utils.component.PluggableService;
 
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 
-
-import java.util.List;
 
 public interface NuageVspManager extends PluggableService {
 
@@ -85,6 +86,8 @@ public interface NuageVspManager extends PluggableService {
     String NETWORK_METADATA_VSD_ZONE_ID = "vsdZoneId";
 
     String NETWORK_METADATA_VSD_SUBNET_ID = "vsdSubnetId";
+
+    String NETWORK_METADATA_VSD_MANAGED = "isVsdManaged";
 
     String CMSID_CONFIG_KEY = "nuagevsp.cms.id";
 

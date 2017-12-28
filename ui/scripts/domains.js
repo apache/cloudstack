@@ -269,6 +269,12 @@
                                 });
                             }
 
+                            if (args.data.domainid != null && args.data.domainid.length > 0) {
+                                $.extend(data, {
+                                    domainid: args.data.domainid
+                                });
+                            }
+
                             $.ajax({
                                 url: createURL('createDomain'),
                                 data: data,
@@ -308,7 +314,14 @@
                                     validation: {
                                         required: false
                                     }
-                                }
+                                },
+                                domainid: {
+                                    label: 'label.domain.id',
+                                    docID: 'helpDomainId',
+                                    validation: {
+                                        required: false
+                                        }
+                                    }
                             }
                         }
                     },

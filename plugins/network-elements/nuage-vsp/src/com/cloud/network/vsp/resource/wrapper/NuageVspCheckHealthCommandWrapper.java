@@ -23,20 +23,21 @@ import javax.naming.ConfigurationException;
 
 import net.nuage.vsp.acs.client.exception.NuageVspException;
 
-import com.cloud.agent.api.element.ShutDownVpcVspCommand;
+import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.network.resource.NuageVspResource;
 import com.cloud.resource.ResourceWrapper;
 
-@ResourceWrapper(handles =  ShutDownVpcVspCommand.class)
-public final class NuageVspShutdownVpcCommandWrapper extends NuageVspCommandWrapper<ShutDownVpcVspCommand> {
+@ResourceWrapper(handles = CheckHealthCommand.class)
+public class NuageVspCheckHealthCommandWrapper extends NuageVspCommandWrapper<CheckHealthCommand> {
 
-    @Override public boolean executeNuageVspCommand(ShutDownVpcVspCommand cmd, NuageVspResource nuageVspResource) throws ConfigurationException, NuageVspException {
-        nuageVspResource.getNuageVspElementClient().shutdownVpc(cmd.getDomainUuid(), cmd.getVpcUuid(), cmd.getDomainTemplateName(), cmd.getDomainRouterUuids(), cmd.getRelatedVsdIds());
-        return true;
+    @Override
+    public boolean executeNuageVspCommand(CheckHealthCommand cmd, NuageVspResource nuageVspResource) throws ConfigurationException, NuageVspException {
+        return nuageVspResource.getStatus();
     }
 
-    @Override public StringBuilder fillDetail(StringBuilder stringBuilder, ShutDownVpcVspCommand cmd) {
-        return stringBuilder.append("Shutdown VPC " + cmd.getVpcUuid());
+    @Override
+    public StringBuilder fillDetail(StringBuilder stringBuilder, CheckHealthCommand cmd) {
+        return stringBuilder.append("Check Health");
     }
 
 }

@@ -20,6 +20,7 @@
 package com.cloud.agent.api.manager;
 
 import net.nuage.vsp.acs.client.api.model.NetworkRelatedVsdIds;
+import net.nuage.vsp.acs.client.api.model.VspNetwork;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
@@ -30,8 +31,11 @@ import com.cloud.agent.api.guru.ImplementNetworkVspCommand;
 public class ImplementNetworkVspAnswer extends Answer {
     private NetworkRelatedVsdIds networkRelatedVsdIds;
 
-    public ImplementNetworkVspAnswer(ImplementNetworkVspCommand command, NetworkRelatedVsdIds networkRelatedVsdIds) {
+    private VspNetwork vspNetwork;
+
+    public ImplementNetworkVspAnswer(ImplementNetworkVspCommand command, VspNetwork vspNetwork, NetworkRelatedVsdIds networkRelatedVsdIds) {
         super(command);
+        this.vspNetwork = vspNetwork;
         this.networkRelatedVsdIds = networkRelatedVsdIds;
     }
 
@@ -41,5 +45,9 @@ public class ImplementNetworkVspAnswer extends Answer {
 
     public NetworkRelatedVsdIds getNetworkRelatedVsdIds() {
         return networkRelatedVsdIds;
+    }
+
+    public VspNetwork getVspNetwork() {
+        return vspNetwork;
     }
 }

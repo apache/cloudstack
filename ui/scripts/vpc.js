@@ -3948,7 +3948,9 @@
                                     required: true
                                 }
                             },
-
+                            externalId: {
+                            label: 'label.guest.externalId'
+                            },
                             aclid: {
                                 label: 'label.acl',
                                 select: function(args) {
@@ -4040,11 +4042,17 @@
                                 zoneId: args.context.vpc[0].zoneid
                         });
 
+                        if (args.data.externalId != null && args.data.externalId.length > 0) {
+                            $.extend(dataObj, {
+                                externalid: args.data.externalId
+                            });
+                        }
 
-                        if (args.data.aclid != '')
+                        if (args.data.aclid != '') {
                             $.extend(dataObj, {
                                 aclid: args.data.aclid
                             });
+                        }
 
                         if (args.$form.find('.form-item[rel=vlan]').is(':visible')) {
                             $.extend(dataObj, {

@@ -20,6 +20,7 @@
 package com.cloud.network.resource;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -152,10 +153,23 @@ public class NuageVspResourceTest extends NuageTest {
 
         VspNetwork vspNetwork = buildVspNetwork();
         VspDhcpDomainOption vspDhcpOptions = buildspDhcpDomainOption();
-        ImplementNetworkVspCommand cmd = new ImplementNetworkVspCommand(vspNetwork, vspDhcpOptions);
+        ImplementNetworkVspCommand cmd = new ImplementNetworkVspCommand(vspNetwork, vspDhcpOptions, false);
         ImplementNetworkVspAnswer implNtwkAns = (ImplementNetworkVspAnswer)_resource.executeRequest(cmd);
         assertTrue(implNtwkAns.getResult());
         verify(_mockNuageVspGuruClient).implement(vspNetwork, vspDhcpOptions);
+    }
+
+    @Test
+    public void testImplementVsdManagedNetworkVspCommand() throws Exception {
+        _resource.configure("NuageVspResource", _hostDetails);
+
+        VspNetwork vspNetwork = buildVspNetwork();
+        VspDhcpDomainOption vspDhcpOptions = buildspDhcpDomainOption();
+        when(_mockNuageVspGuruClient.addPermissionL3Network(vspNetwork)).thenReturn(vspNetwork);
+        ImplementNetworkVspCommand cmd = new ImplementNetworkVspCommand(vspNetwork, vspDhcpOptions, true);
+        ImplementNetworkVspAnswer implNtwkAns = (ImplementNetworkVspAnswer)_resource.executeRequest(cmd);
+        assertTrue(implNtwkAns.getResult());
+        verify(_mockNuageVspGuruClient).addPermissionL3Network(vspNetwork);
     }
 
     @Test
@@ -220,7 +234,7 @@ public class NuageVspResourceTest extends NuageTest {
     public void testShutDownVpcVspCommand() throws Exception {
         _resource.configure("NuageVspResource", _hostDetails);
 
-        ShutDownVpcVspCommand cmd = new ShutDownVpcVspCommand("domainUuid", "vpcUuid", "domainTemplateName", Lists.<String>newArrayList());
+        ShutDownVpcVspCommand cmd = new ShutDownVpcVspCommand("domainUuid", "vpcUuid", "domainTemplateName", Lists.<String>newArrayList(), new HashMap<>());
         Answer shutVpcAns = _resource.executeRequest(cmd);
         assertTrue(shutVpcAns.getResult());
     }

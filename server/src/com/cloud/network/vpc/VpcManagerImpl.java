@@ -38,6 +38,9 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
@@ -45,8 +48,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
@@ -2316,7 +2317,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public Network createVpcGuestNetwork(final long ntwkOffId, final String name, final String displayText, final String gateway, final String cidr, final String vlanId,
             String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk, final long zoneId, final ACLType aclType, final Boolean subdomainAccess,
-            final long vpcId, final Long aclId, final Account caller, final Boolean isDisplayNetworkEnabled) throws ConcurrentOperationException, InsufficientCapacityException,
+            final long vpcId, final Long aclId, final Account caller, final Boolean isDisplayNetworkEnabled, String externalId) throws ConcurrentOperationException, InsufficientCapacityException,
             ResourceAllocationException {
 
         final Vpc vpc = getActiveVpc(vpcId);
@@ -2341,7 +2342,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Create network
         final Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, false, networkDomain, owner, domainId, pNtwk, zoneId, aclType,
-                subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled, null);
+                                                                 subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled, null, externalId);
 
         if (guestNetwork != null) {
             guestNetwork.setNetworkACLId(aclId);

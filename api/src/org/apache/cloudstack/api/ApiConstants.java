@@ -654,6 +654,7 @@ public class ApiConstants {
     public static final String IAM_ALLOW_DENY = "permission";
     public static final String ENTITY_TYPE = "entitytype";
     public static final String ENTITY_ID = "entityid";
+    public static final String EXTERNAL_ID = "externalid";
     public static final String ACCESS_TYPE = "accesstype";
 
     public static final String RESOURCE_DETAILS = "resourcedetails";
@@ -705,6 +706,7 @@ public class ApiConstants {
 
     public static final String HAS_ANNOTATION = "hasannotation";
     public static final String LAST_ANNOTATED = "lastannotated";
+
 
     public enum HostDetails {
         all, capacity, events, stats, min;
