@@ -54,10 +54,10 @@ public class MockResourceLimitManagerImpl extends ManagerBase implements Resourc
     }
 
     /* (non-Javadoc)
-     * @see com.cloud.user.ResourceLimitService#searchForLimits(java.lang.Long, java.lang.Long, java.lang.Long, java.lang.Integer, java.lang.Long, java.lang.Long)
+     * @see com.cloud.user.ResourceLimitService#searchForLimits(java.lang.Long, java.lang.Long, java.lang.Long, com.cloud.user.ResourceLimitService, java.lang.Long, java.lang.Long)
      */
     @Override
-    public List<? extends ResourceLimit> searchForLimits(Long id, Long accountId, Long domainId, Integer type, Long startIndex, Long pageSizeVal) {
+    public List<? extends ResourceLimit> searchForLimits(Long id, Long accountId, Long domainId, ResourceType resourceType, Long startIndex, Long pageSizeVal) {
         // TODO Auto-generated method stub
         return null;
     }

@@ -68,11 +68,11 @@ public interface ResourceLimitService {
      *            TODO
      * @param domainId
      *            TODO
-     * @param type
+     * @param resourceType
      *            TODO
      * @return a list of limits that match the criteria
      */
-    public List<? extends ResourceLimit> searchForLimits(Long id, Long accountId, Long domainId, Integer type, Long startIndex, Long pageSizeVal);
+    public List<? extends ResourceLimit> searchForLimits(Long id, Long accountId, Long domainId, ResourceType resourceType, Long startIndex, Long pageSizeVal);
 
     /**
      * Finds the resource limit for a specified account and type. If the account has an infinite limit, will check

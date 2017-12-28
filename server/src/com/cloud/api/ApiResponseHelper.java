@@ -422,7 +422,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             populateAccount(resourceLimitResponse, limit.getOwnerId());
             populateDomain(resourceLimitResponse, accountTemp.getDomainId());
         }
-        resourceLimitResponse.setResourceType(Integer.toString(limit.getType().getOrdinal()));
+        resourceLimitResponse.setResourceType(limit.getType());
 
         if ((limit.getType() == ResourceType.primary_storage || limit.getType() == ResourceType.secondary_storage) && limit.getMax() >= 0) {
             resourceLimitResponse.setMax((long)Math.ceil((double)limit.getMax() / ResourceType.bytesToGiB));
@@ -448,7 +448,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             populateDomain(resourceCountResponse, resourceCount.getOwnerId());
         }
 
-        resourceCountResponse.setResourceType(Integer.toString(resourceCount.getType().getOrdinal()));
+        resourceCountResponse.setResourceType(resourceCount.getType());
         resourceCountResponse.setResourceCount(resourceCount.getCount());
         resourceCountResponse.setObjectName("resourcecount");
         return resourceCountResponse;
