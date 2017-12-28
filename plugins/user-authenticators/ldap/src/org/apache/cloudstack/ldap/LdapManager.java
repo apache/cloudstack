@@ -73,5 +73,9 @@ public interface LdapManager extends PluggableService {
 
     List<LdapTrustMapVO> getDomainLinkage(long domainId);
 
+    LdapTrustMapVO getAccountLinkedToLdap(long domainId, long accountId);
+
+    LdapTrustMapVO getLinkedLdapGroup(long domainId, String group);
+
     LinkAccountToLdapResponse linkAccountToLdap(LinkAccountToLdapCmd linkAccountToLdapCmd);
 }

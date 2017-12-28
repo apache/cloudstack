@@ -27,5 +27,6 @@ import java.util.List;
 public interface LdapTrustMapDao extends GenericDao<LdapTrustMapVO, Long> {
     LdapTrustMapVO findByDomainId(long domainId);
     LdapTrustMapVO findByAccount(long domainId, Long accountId);
+    LdapTrustMapVO findGroupInDomain(long domainId, String group);
     List<LdapTrustMapVO> searchByDomainId(long domainId);
 }

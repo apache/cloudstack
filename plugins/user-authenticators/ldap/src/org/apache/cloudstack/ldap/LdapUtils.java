@@ -68,7 +68,7 @@ public final class LdapUtils {
                 memberships.add(String.valueOf(values.next()));
             }
         }
-        return null;
+        return memberships;
     }
 
     private LdapUtils() {

@@ -44,7 +44,7 @@ import java.util.UUID;
     requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LinkAccountToLdapCmd extends BaseCmd {
     public static final Logger LOGGER = Logger.getLogger(LinkAccountToLdapCmd.class.getName());
-    public static final String APINAME = "linkAccountToLdap";
+    public static final String APINAME = "LinkAccountToLdap";
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "The id of the domain that is to contain the linked account.")
     private Long domainId;
@@ -98,7 +98,7 @@ public class LinkAccountToLdapCmd extends BaseCmd {
                     LOGGER.debug("ldap user with username " + admin + " is disabled in the given group/ou");
                 }
             }
-            response.setObjectName("LinkAccountToLdap");
+            response.setObjectName(APINAME);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } catch (final InvalidParameterValueException e) {

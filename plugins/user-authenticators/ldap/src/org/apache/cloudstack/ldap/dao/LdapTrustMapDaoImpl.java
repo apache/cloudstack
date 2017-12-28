@@ -31,6 +31,7 @@ import java.util.List;
 @Component
 public class LdapTrustMapDaoImpl extends GenericDaoBase<LdapTrustMapVO, Long> implements LdapTrustMapDao  {
     private final SearchBuilder<LdapTrustMapVO> domainIdSearch;
+    private final SearchBuilder<LdapTrustMapVO> groupSearch;
 
     public LdapTrustMapDaoImpl() {
         super();
@@ -38,6 +39,10 @@ public class LdapTrustMapDaoImpl extends GenericDaoBase<LdapTrustMapVO, Long> im
         domainIdSearch.and("domainId", domainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
         domainIdSearch.and("account_id", domainIdSearch.entity().getAccountId(),SearchCriteria.Op.EQ);
         domainIdSearch.done();
+        groupSearch = createSearchBuilder();
+        groupSearch.and("domainId", groupSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
+        groupSearch.and("name", groupSearch.entity().getName(),SearchCriteria.Op.EQ);
+        groupSearch.done();
     }
 
     @Override
@@ -54,6 +59,15 @@ public class LdapTrustMapDaoImpl extends GenericDaoBase<LdapTrustMapVO, Long> im
         sc.setParameters("domainId", domainId);
         sc.setParameters("account_id", accountId);
         return findOneBy(sc);
+    }
+
+    @Override
+    public LdapTrustMapVO findGroupInDomain(long domainId, String group){
+        final SearchCriteria<LdapTrustMapVO> sc = groupSearch.create();
+        sc.setParameters("domainId", domainId);
+        sc.setParameters("name", group);
+        return findOneBy(sc);
+
     }
 
     @Override
