@@ -2098,7 +2098,7 @@ class TestMoveUser(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.testdata['mode'] = cls.zone.networktype
 
-        cls.template = get_template(
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
             cls.testdata["ostype"]

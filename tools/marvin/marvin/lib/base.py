@@ -279,7 +279,7 @@ class User:
         cmd.domain = domain
 
         return api_client.moveUser(cmd)
-    
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """Lists users and provides detailed account information for
