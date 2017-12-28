@@ -2525,7 +2525,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (userData != null) {
             // check and replace newlines
             userData = userData.replace("\\n", "");
-            validateUserData(userData, httpMethod);
+            userData = validateUserData(userData, httpMethod);
             // update userData on domain router.
             updateUserdata = true;
         } else {
@@ -3396,7 +3396,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(owner, AccessType.UseEntry, false, template);
 
         // check if the user data is correct
-        validateUserData(userData, httpmethod);
+        userData = validateUserData(userData, httpmethod);
 
         // Find an SSH public key corresponding to the key pair name, if one is
         // given
@@ -3943,7 +3943,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-    private void validateUserData(String userData, HTTPMethod httpmethod) {
+    protected String validateUserData(String userData, HTTPMethod httpmethod) {
         byte[] decodedUserData = null;
         if (userData != null) {
             if (!Base64.isBase64(userData)) {
@@ -3971,7 +3971,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (decodedUserData == null || decodedUserData.length < 1) {
                 throw new InvalidParameterValueException("User data is too short");
             }
+            // Re-encode so that the '=' paddings are added if necessary since 'isBase64' does not require it, but python does on the VR.
+            return Base64.encodeBase64String(decodedUserData);
         }
+        return null;
     }
 
     @Override

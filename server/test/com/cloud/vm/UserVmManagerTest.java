@@ -48,6 +48,7 @@ import com.cloud.user.User;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.uservm.UserVm;
 import org.junit.Assert;
+import org.apache.cloudstack.api.BaseCmd;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -1056,4 +1057,16 @@ public class UserVmManagerTest {
         _userVmMgr.persistDeviceBusInfo(_vmMock, "lsilogic");
         verify(_vmDao, times(1)).saveDetails(any(UserVmVO.class));
     }
+
+    @Test
+    public void testValideBase64WithoutPadding() {
+        // fo should be encoded in base64 either as Zm8 or Zm8=
+        String encodedUserdata = "Zm8";
+        String encodedUserdataWithPadding = "Zm8=";
+
+        // Verify that we accept both but return the padded version
+        assertTrue("validate return the value with padding", encodedUserdataWithPadding.equals(_userVmMgr.validateUserData(encodedUserdata, BaseCmd.HTTPMethod.GET)));
+        assertTrue("validate return the value with padding", encodedUserdataWithPadding.equals(_userVmMgr.validateUserData(encodedUserdataWithPadding, BaseCmd.HTTPMethod.GET)));
+    }
+
 }
