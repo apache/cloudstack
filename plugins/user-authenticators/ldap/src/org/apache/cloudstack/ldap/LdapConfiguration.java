@@ -257,7 +257,9 @@ public class LdapConfiguration implements Configurable{
                 getFirstnameAttribute(domainId),
                 getLastnameAttribute(domainId),
                 getCommonNameAttribute(),
-                getUserAccountControlAttribute()};
+                getUserAccountControlAttribute(),
+                getUserMemberOfAttribute(domainId)
+        };
     }
 
     public int getScope() {

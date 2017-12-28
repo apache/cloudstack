@@ -342,6 +342,11 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         return _ldapTrustMapDao.findByDomainId(domainId);
     }
 
+    @Override
+    public List<LdapTrustMapVO> getDomainLinkage(long domainId){
+        return _ldapTrustMapDao.searchByDomainId(domainId);
+    }
+
     @Override public LinkAccountToLdapResponse linkAccountToLdap(LinkAccountToLdapCmd cmd) {
         Validate.notNull(_ldapConfiguration.getBaseDn(cmd.getDomainId()), "can not configure an ldap server and an ldap group/ou to a domain");
         Validate.notNull(cmd.getDomainId(), "domainId cannot be null.");

@@ -58,6 +58,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
         final String firstname = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getFirstnameAttribute(domainId));
         final String lastname = LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getLastnameAttribute(domainId));
         final String principal = result.getNameInNamespace();
+        final List<String> memberships = LdapUtils.getAttributeValues(attributes, _ldapConfiguration.getUserMemberOfAttribute(domainId));
 
         String domain = principal.replace("cn=" + LdapUtils.getAttributeValue(attributes, _ldapConfiguration.getCommonNameAttribute()) + ",", "");
         domain = domain.replace("," + _ldapConfiguration.getBaseDn(domainId), "");
@@ -65,7 +66,7 @@ public class OpenLdapUserManagerImpl implements LdapUserManager {
 
         boolean disabled = isUserDisabled(result);
 
-        return new LdapUser(username, email, firstname, lastname, principal, domain, disabled);
+        return new LdapUser(username, email, firstname, lastname, principal, domain, disabled, memberships);
     }
 
     private String generateSearchFilter(final String username, Long domainId) {

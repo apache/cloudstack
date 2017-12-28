@@ -144,7 +144,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
         userAccountDao.getUserAccount(username, domainId) >> userAccount
         userAccount.getId() >> 1
         ldapManager.getDomainLinkedToLdap(domainId) >> new LdapTrustMapVO(domainId, type, name, (short)2)
-        ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", true)
+        ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", true, null)
         //user should be disabled in cloudstack
         accountManager.disableUser(1) >> userAccount
 
@@ -173,7 +173,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
         ldapManager.isLdapEnabled() >> true
         userAccountDao.getUserAccount(username, domainId) >> null
         ldapManager.getDomainLinkedToLdap(domainId) >> new LdapTrustMapVO(domainId, type, name, (short)0)
-        ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false)
+        ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false, null)
         ldapManager.canAuthenticate(_, _, _) >> true
         //user should be created in cloudstack
         accountManager.createUserAccount(username, "", "firstname", "lastname", "email", null, username, (short) 2, domainId, username, null, _, _, User.Source.LDAP) >> Mock(UserAccount)
@@ -206,7 +206,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
         userAccount.getId() >> 1
         userAccount.getState() >> Account.State.disabled.toString()
         ldapManager.getDomainLinkedToLdap(domainId) >> new LdapTrustMapVO(domainId, type, name, (short)2)
-        ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false)
+        ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false, null)
         ldapManager.canAuthenticate(_, _, _) >> true
         //user should be enabled in cloudstack if disabled
         accountManager.enableUser(1) >> userAccount
@@ -237,7 +237,7 @@ class LdapAuthenticatorSpec extends spock.lang.Specification {
         UserAccount userAccount = Mock(UserAccount)
         userAccountDao.getUserAccount(username, domainId) >> userAccount
         ldapManager.getDomainLinkedToLdap(domainId) >> new LdapTrustMapVO(domainId, type, name, (short)2)
-        ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false)
+        ldapManager.getUser(username, type.toString(), name) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false, null)
         ldapManager.canAuthenticate(_, _, _) >> false
 
         when:

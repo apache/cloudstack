@@ -26,6 +26,8 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 
+import java.util.List;
+
 @Component
 public class LdapTrustMapDaoImpl extends GenericDaoBase<LdapTrustMapVO, Long> implements LdapTrustMapDao  {
     private final SearchBuilder<LdapTrustMapVO> domainIdSearch;
@@ -53,4 +55,12 @@ public class LdapTrustMapDaoImpl extends GenericDaoBase<LdapTrustMapVO, Long> im
         sc.setParameters("account_id", accountId);
         return findOneBy(sc);
     }
+
+    @Override
+    public List<LdapTrustMapVO> searchByDomainId(long domainId) {
+        final SearchCriteria<LdapTrustMapVO> sc = domainIdSearch.create();
+        sc.setParameters("domainId", domainId);
+        return search(sc,null);
+    }
+
 }
