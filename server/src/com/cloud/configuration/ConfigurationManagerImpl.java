@@ -1099,11 +1099,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return true;
     }
 
-    private String getVlanNumberFromUri(String vlan) {
+    /**
+     * Get vlan number from vlan uri
+     * @param vlan
+     * @return
+     */
+    protected String getVlanNumberFromUri(String vlan) {
+        URI uri;
         try {
-            return BroadcastDomainType.getValue(vlan);
+            uri = new URI(vlan);
+            String vlanId = BroadcastDomainType.getValue(uri);
+            if (vlanId == null || !uri.getScheme().equalsIgnoreCase("vlan")) {
+                throw new CloudRuntimeException("Vlan parameter : " + vlan + " is not in valid format");
+            }
+            return vlanId;
         } catch (URISyntaxException e) {
-            throw new CloudRuntimeException("Invalid vlan parameter: " + vlan);
+            throw new CloudRuntimeException("Invalid vlan parameter: " + vlan + " can't get vlan number from it due to: " + e.getMessage());
         }
     }
 
