@@ -762,7 +762,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         try {
             _agentMgr.reconnect(host.getId());
         } catch (Exception e ) {
-            s_logger.debug("failed to reconnect host "+host);
+            s_logger.info("failed to reconnect host "+host);
         }
         return lbDeviceVo;
     }

@@ -103,7 +103,7 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
     @Override
     public void execute() {
         try {
-            Host result =_resourceService.reconnectHost(this);
+            Host result = _resourceService.reconnectHost(this);
             HostResponse response = _responseGenerator.createHostResponse(result);
             response.setResponseName(getCommandName());
             this.setResponseObject(response);
