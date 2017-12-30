@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.springframework.stereotype.Component;
 
@@ -119,6 +120,10 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     @Override
     public boolean deleteUser(DeleteUserCmd deleteUserCmd) {
         // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override public boolean moveUser(MoveUserCmd moveUserCmd) {
         return false;
     }
 

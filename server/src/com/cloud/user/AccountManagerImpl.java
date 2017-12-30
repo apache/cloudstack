@@ -52,6 +52,7 @@ import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -1686,29 +1687,89 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_DELETE, eventDescription = "deleting User")
     public boolean deleteUser(DeleteUserCmd deleteUserCmd) {
-        long id = deleteUserCmd.getId();
-
-        UserVO user = _userDao.findById(id);
-
-        if (user == null) {
-            throw new InvalidParameterValueException("The specified user doesn't exist in the system");
-        }
+        UserVO user = getValidUserVO(deleteUserCmd.getId());
 
         Account account = _accountDao.findById(user.getAccountId());
 
         // don't allow to delete the user from the account of type Project
+        checkAccountAndAccess(user, account);
+        return _userDao.remove(deleteUserCmd.getId());
+    }
+
+    @ActionEvent(eventType = EventTypes.EVENT_USER_MOVE, eventDescription = "moving User to a new account")
+    public boolean moveUser(MoveUserCmd cmd) {
+        UserVO user = getValidUserVO(cmd.getId());
+        Account oldAccount = _accountDao.findById(user.getAccountId());
+        checkAccountAndAccess(user, oldAccount);
+        long domainId = oldAccount.getDomainId();
+
+        long newAccountId = getNewAccountId(cmd, domainId);
+
+        if(newAccountId == user.getAccountId()) {
+            // could do a not silent fail but the objective of the user is reached
+            return true; // no need to create a new user object for this user
+        }
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                UserVO newUser = new UserVO(user);
+                user.setExternalEntity(user.getUuid());
+                user.setUuid(UUID.randomUUID().toString());
+                _userDao.update(user.getId(),user);
+                newUser.setAccountId(newAccountId);
+                boolean success = _userDao.remove(cmd.getId());
+                UserVO persisted = _userDao.persist(newUser);
+                return success && persisted.getUuid().equals(user.getExternalEntity());
+            }
+        });
+    }
+
+    private long getNewAccountId(MoveUserCmd cmd, long domainId) {
+        Account newAccount = null;
+        if (StringUtils.isNotBlank(cmd.getAccountName())) {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Getting id for account by name '" + cmd.getAccountName() + "' in domain " + domainId);
+            }
+            newAccount = _accountDao.findEnabledAccount(cmd.getAccountName(), domainId);
+        }
+        if (newAccount == null && cmd.getAccountId() != null) {
+            newAccount = _accountDao.findById(cmd.getAccountId());
+        }
+        if (newAccount == null) {
+            throw new CloudRuntimeException("no account name or account id. this should have been caught before this point");
+        }
+        long newAccountId = newAccount.getAccountId();
+
+        if(newAccount.getDomainId() != domainId) {
+            // not in scope
+            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in annother domain is not supported!");
+        }
+        return newAccountId;
+    }
+
+    private void checkAccountAndAccess(UserVO user, Account account) {
+        // don't allow to delete the user from the account of type Project
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("Project users cannot be deleted or moved.");
+        }
+
+        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
+        CallContext.current().putContextParameter(User.class, user.getUuid());
+    }
+
+    private UserVO getValidUserVO(long id) {
+        UserVO user = _userDao.findById(id);
+
+        if (user == null || user.getRemoved() != null) {
             throw new InvalidParameterValueException("The specified user doesn't exist in the system");
         }
 
         // don't allow to delete default user (system and admin users)
         if (user.isDefault()) {
-            throw new InvalidParameterValueException("The user is default and can't be removed");
+            throw new InvalidParameterValueException("The user is default and can't be (re)moved");
         }
 
-        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
-        CallContext.current().putContextParameter(User.class, user.getUuid());
-        return _userDao.remove(id);
+        return user;
     }
 
     protected class AccountCleanupTask extends ManagedContextRunnable {

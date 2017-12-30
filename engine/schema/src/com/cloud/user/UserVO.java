@@ -127,7 +127,25 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.source = source;
     }
 
-    @Override
+    public UserVO(UserVO user) {
+        this.setAccountId(user.getAccountId());
+        this.setUsername(user.getUsername());
+        this.setPassword(user.getPassword());
+        this.setFirstname(user.getFirstname());
+        this.setLastname(user.getLastname());
+        this.setEmail(user.getEmail());
+        this.setTimezone(user.getTimezone());
+        this.setUuid(user.getUuid());
+        this.setSource(user.getSource());
+        this.setApiKey(user.getApiKey());
+        this.setSecretKey(user.getSecretKey());
+        this.setExternalEntity(user.getExternalEntity());
+        this.setRegistered(user.isRegistered());
+        this.setRegistrationToken(user.getRegistrationToken());
+        this.setState(user.getState());
+    }
+
+        @Override
     public long getId() {
         return id;
     }

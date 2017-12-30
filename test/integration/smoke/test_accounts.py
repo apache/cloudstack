@@ -2086,3 +2086,140 @@ class TestDomainForceRemove(cloudstackTestCase):
             domain.delete(self.apiclient, cleanup=False)
         return
 
+class TestMoveUser(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestMoveUser, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
+
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.testdata['mode'] = cls.zone.networktype
+
+        cls.template = get_test_template(
+            cls.api_client,
+            cls.zone.id,
+            cls.testdata["ostype"]
+        )
+
+        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
+        cls._cleanup = []
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            # Clean up, terminate the created resources
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        self.testdata = self.testClient.getParsedTestDataConfig()
+        self.account1 = Account.create(
+            self.apiclient,
+            self.testdata["acl"]["accountD1"],
+            domainid=self.domain.id
+        )
+        self.cleanup.append(self.account1)
+
+        self.account2 = Account.create(
+            self.apiclient,
+            self.testdata["acl"]["accountD1A"],
+            domainid=self.domain.id
+        )
+        self.cleanup.append(self.account2)
+
+        self.user = User.create(
+            self.apiclient,
+            self.testdata["user"],
+            account=self.account1.name,
+            domainid=self.account1.domainid
+        )
+
+        return
+
+    def tearDown(self):
+        try:
+            # Clean up, terminate the created resources
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["domains", "advanced", "advancedns", "simulator","dvs"], required_hardware="false")
+    def test_move_user_to_accountID(self):
+
+        self.user.move(self.api_client, dest_accountid=self.account2.id)
+
+        self.assertEqual(
+            self.account2.name,
+            self.user.list(self.apiclient, id=self.user.id)[0].account,
+            "Check user source of created user"
+        )
+        return
+
+    @attr(tags=["domains", "advanced", "advancedns", "simulator","dvs"], required_hardware="false")
+    def test_move_user_to_account_name(self):
+
+        self.user.move(self.api_client, dest_account=self.account2.name)
+
+        self.assertEqual(
+            self.account2.name,
+            self.user.list(self.apiclient, id=self.user.id)[0].account,
+            "Check user source of created user"
+        )
+        return
+
+    @attr(tags=["domains", "advanced", "advancedns", "simulator","dvs"], required_hardware="false")
+    def test_move_user_to_different_domain(self):
+        domain2 = Domain.create(self.api_client,
+                                self.testdata["domain"],
+                                parentdomainid=self.domain.id
+                                )
+        self.cleanup.append(domain2)
+
+        account_different_domain = Account.create(
+            self.apiclient,
+            self.testdata["acl"]["accountD1B"],
+            domainid=domain2.id
+        )
+        self.cleanup.append(account_different_domain)
+        try:
+            self.user.move(self.api_client, dest_account=account_different_domain.name)
+        except Exception:
+            pass
+        else:
+            self.fail("It should not be allowed to move users across accounts in different domains, failing")
+
+        account_different_domain.delete(self.api_client)
+        return
+
+    @attr(tags=["domains", "advanced", "advancedns", "simulator","dvs"], required_hardware="false")
+    def test_move_user_incorrect_account_id(self):
+
+        try:
+            self.user.move(self.api_client, dest_accountid='incorrect-account-id')
+        except Exception:
+            pass
+        else:
+            self.fail("moving to non-existing account should not be possible, failing")
+        return
+
+    @attr(tags=["domains", "advanced", "advancedns", "simulator","dvs"], required_hardware="false")
+    def test_move_user_incorrect_account_name(self):
+
+        try:
+            self.user.move(self.api_client, dest_account='incorrect-account-name')
+        except Exception:
+            pass
+        else:
+            self.fail("moving to non-existing account should not be possible, failing")
+        return

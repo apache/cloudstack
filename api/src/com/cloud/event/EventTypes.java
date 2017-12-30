@@ -198,6 +198,7 @@ public class EventTypes {
     public static final String EVENT_USER_CREATE = "USER.CREATE";
     public static final String EVENT_USER_DELETE = "USER.DELETE";
     public static final String EVENT_USER_DISABLE = "USER.DISABLE";
+    public static final String EVENT_USER_MOVE = "USER.MOVE";
     public static final String EVENT_USER_UPDATE = "USER.UPDATE";
     public static final String EVENT_USER_ENABLE = "USER.ENABLE";
     public static final String EVENT_USER_LOCK = "USER.LOCK";

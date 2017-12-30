@@ -267,6 +267,19 @@ class User:
         cmd.id = self.id
         apiclient.deleteUser(cmd)
 
+    def move(self, api_client, dest_accountid = None, dest_account = None, domain= None):
+
+        if all([dest_account, dest_accountid]) is None:
+            raise Exception("Please add either destination account or destination account ID.")
+
+        cmd = moveUser.moveUserCmd()
+        cmd.id = self.id
+        cmd.accountid = dest_accountid
+        cmd.account = dest_account
+        cmd.domain = domain
+
+        return api_client.moveUser(cmd)
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """Lists users and provides detailed account information for

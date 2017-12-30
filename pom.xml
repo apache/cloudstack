@@ -94,7 +94,7 @@
     <cs.aws.sdk.version>1.11.213</cs.aws.sdk.version>
     <cs.jackson.version>2.9.2</cs.jackson.version>
     <cs.lang.version>2.6</cs.lang.version>
-    <cs.commons-lang3.version>3.4</cs.commons-lang3.version>
+    <cs.commons-lang3.version>3.6</cs.commons-lang3.version>
     <cs.commons-io.version>2.6</cs.commons-io.version>
     <cs.commons-fileupload.version>1.3.3</cs.commons-fileupload.version>
     <cs.commons-collections.version>4.1</cs.commons-collections.version>

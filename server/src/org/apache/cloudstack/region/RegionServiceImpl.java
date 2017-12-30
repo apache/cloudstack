@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.DisableUserCmd;
 import org.apache.cloudstack.api.command.admin.user.EnableUserCmd;
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.user.region.ListRegionsCmd;
 
@@ -149,6 +150,14 @@ public class RegionServiceImpl extends ManagerBase implements RegionService, Man
     @Override
     public boolean deleteUser(DeleteUserCmd cmd) {
         return _regionMgr.deleteUser(cmd);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean moveUser(MoveUserCmd cmd) {
+        return _regionMgr.moveUser(cmd);
     }
 
     /**
