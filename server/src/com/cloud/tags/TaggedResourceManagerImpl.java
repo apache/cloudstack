@@ -310,21 +310,9 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_TAGS_DELETE, eventDescription = "deleting resource tags")
     public boolean deleteTags(List<String> resourceIds, ResourceObjectType resourceType, Map<String, String> tags) {
+
         Account caller = CallContext.current().getCallingAccount();
-
-        SearchBuilder<ResourceTagVO> sb = _resourceTagDao.createSearchBuilder();
-        sb.and().op("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.IN);
-        sb.or("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.IN);
-        sb.cp();
-        sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
-
-        SearchCriteria<ResourceTagVO> sc = sb.create();
-        sc.setParameters("resourceId", resourceIds.toArray());
-        sc.setParameters("resourceUuid", resourceIds.toArray());
-        sc.setParameters("resourceType", resourceType);
-
-        List<? extends ResourceTag> resourceTags = _resourceTagDao.search(sc, null);
-        ;
+        List<? extends ResourceTag> resourceTags = getResourceTags(resourceIds, resourceType);
         final List<ResourceTag> tagsToRemove = new ArrayList<ResourceTag>();
 
         // Finalize which tags should be removed
@@ -372,6 +360,48 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
         });
 
         return true;
+    }
+
+    private List<? extends ResourceTag>  getResourceTags(final List<String> resourceIds, ResourceObjectType resourceType) {
+
+        List<String> uuids = new ArrayList<String>();
+        List<String> internalIds = new ArrayList<String>();
+        for(String resourceId : resourceIds){
+            if(resourceId.matches("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")){
+                uuids.add(resourceId);
+            }else{
+                try {
+                    Long.parseLong(resourceId);
+                } catch (final NumberFormatException e) {
+                    throw new InvalidParameterValueException("Invalid resourceId");
+                }
+                internalIds.add(resourceId);
+            }
+        }
+
+        SearchBuilder<ResourceTagVO> sb = _resourceTagDao.createSearchBuilder();
+
+        if(!uuids.isEmpty() && !internalIds.isEmpty()){
+            throw new InvalidParameterValueException("Expecting only uuids or Ids");
+        }else if (!uuids.isEmpty()){
+            sb.and("resourceUuid", sb.entity().getResourceUuid(), SearchCriteria.Op.IN);
+        }else if (!internalIds.isEmpty()){
+            sb.and("resourceId", sb.entity().getResourceId(), SearchCriteria.Op.IN);
+        }
+
+        sb.and("resourceType", sb.entity().getResourceType(), SearchCriteria.Op.EQ);
+
+        SearchCriteria<ResourceTagVO> sc = sb.create();
+
+        if (!uuids.isEmpty()){
+            sc.setParameters("resourceUuid", resourceIds.toArray());
+        }else if (!internalIds.isEmpty()){
+            sc.setParameters("resourceId", resourceIds.toArray());
+        }
+
+        sc.setParameters("resourceType", resourceType);
+        return _resourceTagDao.search(sc, null);
+
     }
 
     @Override
