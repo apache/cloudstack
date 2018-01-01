@@ -100,7 +100,7 @@ class TestVMOwnership(cloudstackTestCase):
         cls._cleanup = []
         cls.testClient = super(TestVMOwnership, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)

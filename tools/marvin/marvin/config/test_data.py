@@ -42,13 +42,12 @@ test_data = {
         "displaytext": "Test project"
     },
     "publiciprange": {
-        "gateway": "",
-        "netmask": "",
-        "startip": "",
-        "endip": "",
+        "gateway": "10.6.0.254",
+        "netmask": "255.255.255.0",
+        "startip": "10.6.0.2",
+        "endip": "10.6.0.20",
         "forvirtualnetwork": "true",
-        "vlan": "",
-        "zoneid": ""
+        "vlan": "300"
     },
     "private_gateway": {
         "ipaddress": "172.16.1.2",
@@ -1131,12 +1130,9 @@ test_data = {
         "cidrlist": '0.0.0.0/0',
     },
     "vpncustomergateway": {
-        "ipsecpsk": "secreatKey",
-        "ikepolicy": "aes128-sha1",
-        "ikelifetime": "86400",
-        "esppolicy": "aes128-sha1",
-        "epslifetime": "3600",
-        "dpd": "false"
+        "esppolicy": "3des-md5;modp1536",
+        "ikepolicy": "3des-md5;modp1536",
+        "ipsecpsk": "ipsecpsk"
     },
     "vlan_ip_range": {
         "startip": "",
@@ -1939,7 +1935,7 @@ test_data = {
                     "bootable": True,
                     "ispublic": False,
                     "url": "http://dl.openvm.eu/cloudstack/iso/TinyCore-8.0.iso",
-                    "ostype": 'CentOS 6.3 (64-bit)',
+                    "ostype": 'Other Linux (64-bit)',
                     "mode": 'HTTP_DOWNLOAD'
         },
      "setHostConfigurationForIngressRule": False,

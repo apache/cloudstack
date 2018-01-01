@@ -633,6 +633,8 @@ class TestResizeVolume(cloudstackTestCase):
             result = self.chk_volume_resize(self.apiclient, vm)
             if result:
                 try:
+                    if 'kvm' in self.hypervisor.lower():
+                        self.virtual_machine.stop(self.apiclient)
                     virtualmachine_snapshot = VmSnapshot.create \
                         (self.apiclient, self.virtual_machine.id)
                     virtulmachine_snapshot_list = VmSnapshot. \
@@ -647,7 +649,7 @@ class TestResizeVolume(cloudstackTestCase):
                                      virtulmachine_snapshot_list[0].id,
                                      "Virtual Machine Snapshot id do not match")
                 except Exception as  e:
-                    raise Exception("Exception while performing"
+                    raise Exception("Issue CLOUDSTACK-10080: Exception while performing"
                                     " vmsnapshot: %s" % e)
             else:
                 self.debug("volume resize failed for root volume")
@@ -760,7 +762,7 @@ class TestResizeVolume(cloudstackTestCase):
                     restorerootvolume = list_restorevolume_response[0]
                     self.assertEqual(rootvolume.size, restorerootvolume.size,
                                      "root volume  and restore root"
-                                     " volume size differs")
+                                     " volume size differs - CLOUDSTACK-10079")
                 except Exception as e:
                     raise Exception("Warning: Exception "
                                     "during VM migration: %s" % e)
@@ -924,7 +926,7 @@ class TestResizeVolume(cloudstackTestCase):
             rootvol = Volume(rootvolume.__dict__)
             newsize = (rootvolume.size >> 30) - 1
             success = False
-            if rootvolume is not None:
+            if rootvolume is not None and 'vmware' in vm.hypervisor.lower():
                 try:
                     rootvol.resize(self.apiclient, size=newsize)
                 except Exception as e:
@@ -935,6 +937,8 @@ class TestResizeVolume(cloudstackTestCase):
             raise Exception("Warning: Exception "
                             "during executing test resize"
                             " volume with less value : %s" % e)
+            if rootvol is not None and 'kvm' or 'xenserver' in vm.hypervisor.lower():
+                rootvol.resize(self.apiclient, size=newsize)
 
     @attr(tags=["advanced"], required_hrdware="true")
     def test_7_usage_events_after_rootvolume_resized_(self):

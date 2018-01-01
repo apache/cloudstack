@@ -999,7 +999,7 @@ class Volume:
         cmd.zoneid = services["zoneid"]
         if "size" in services:
             cmd.size = services["size"]
-        if services["ispublic"]:
+        if "ispublic" in services:
             cmd.ispublic = services["ispublic"]
         else:
             cmd.ispublic = False

@@ -62,7 +62,8 @@ class TestPersistentNetworks(cloudstackTestCase):
 
         # Fill services from the external config file
         cls.services = cls.testClient.getParsedTestDataConfig()
-
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
+            0].__dict__
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -174,8 +175,8 @@ class TestPersistentNetworks(cloudstackTestCase):
             sshClient = SshClient(
                 host=sourceip,
                 port=self.services['configurableData']['host']["publicport"],
-                user=self.services['configurableData']['host']["username"],
-                passwd=self.services['configurableData']['host']["password"])
+                user=self.hostConfig['username'],
+                passwd=self.hostConfig["password"])
             res = sshClient.execute("ping -c 1 %s" % (
                 router.linklocalip
             ))
@@ -429,7 +430,8 @@ class TestPersistentNetworks(cloudstackTestCase):
         isolated_network.update(
             self.apiclient,
             networkofferingid=self.isolated_persistent_network_offering.id,
-            changecidr=changecidr)
+            changecidr=changecidr,
+            forced=True)
 
         try:
             virtual_machine = VirtualMachine.create(
@@ -1539,9 +1541,12 @@ class TestPersistentNetworks(cloudstackTestCase):
                     self.assertEqual(validateList(hosts)[0],PASS,"Check list host returns a valid list")
                     host = hosts[0]
                     result = get_process_status(
-                    host.ipaddress,22, self.services["acl"]["host"]["username"],self.services["acl"]["host"]["password"], router.linklocalip,
+                        host.ipaddress,22,
+                        self.hostConfig["username"],
+                        self.hostConfig["password"],
+                        router.linklocalip,
                     "iptables -I INPUT 1 -j DROP"
-                )
+                    )
                 except Exception as e:
                     raise Exception("Exception raised in accessing/running the command on hosts  : %s " % e)
         except Exception as e:
@@ -2043,7 +2048,8 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
 
         # Fill services from the external config file
         cls.services = cls.testClient.getParsedTestDataConfig()
-
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
+            0].__dict__
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
@@ -2153,8 +2159,8 @@ class TestRestartPersistentNetwork(cloudstackTestCase):
             sshClient = SshClient(
                 host=sourceip,
                 port=self.services['configurableData']['host']["publicport"],
-                user=self.services['configurableData']['host']["username"],
-                passwd=self.services['configurableData']['host']["password"])
+                user=self.hostConfig['username'],
+                passwd=self.hostConfig['password'])
             res = sshClient.execute("ping -c 1 %s" % (
                 router.linklocalip
             ))
@@ -3094,6 +3100,7 @@ class TestVPCNetworkOperations(cloudstackTestCase):
                     persistent_network_2.id
                 )
 
+            # CLOUDSTACK-8451 needs to be fixed in order to work
             self.CheckIngressEgressConnectivityofVM(
                 virtual_machine_1,
                 ipaddress_1.ipaddress.ipaddress)
