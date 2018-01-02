@@ -1378,7 +1378,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             }
         }
 
-        boolean isSourceNat = isSourceNatAvailableForNetwork(networkId, owner, ipToAssoc, network);
+        boolean isSourceNat = isSourceNatAvailableForNetwork(owner, ipToAssoc, network);
 
         s_logger.debug("Associating ip " + ipToAssoc + " to network " + network);
 
@@ -1416,12 +1416,12 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
     }
 
-    protected boolean isSourceNatAvailableForNetwork(long networkId, Account owner, IPAddressVO ipToAssoc, Network network) {
+    protected boolean isSourceNatAvailableForNetwork(Account owner, IPAddressVO ipToAssoc, Network network) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         boolean sharedSourceNat = offering.getSharedSourceNat();
         boolean isSourceNat = false;
         if (!sharedSourceNat) {
-            if (getExistingSourceNatInNetwork(owner.getId(), networkId) == null) {
+            if (getExistingSourceNatInNetwork(owner.getId(), network.getId()) == null) {
                 if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null && !ipToAssoc.isPortable()) {
                     if (network.getState() == Network.State.Allocated) {
                         //prevent associating an ip address to an allocated (unimplemented network).
