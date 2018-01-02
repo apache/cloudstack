@@ -24,10 +24,8 @@ import com.cloud.user.DomainService
 import com.cloud.user.User
 import com.cloud.user.UserAccountVO
 import com.cloud.user.UserVO
-import org.apache.cloudstack.api.command.LdapCreateAccountCmd
 import org.apache.cloudstack.api.command.LdapImportUsersCmd
 import org.apache.cloudstack.api.response.LdapUserResponse
-import org.apache.cloudstack.context.CallContext
 import org.apache.cloudstack.ldap.LdapManager
 import org.apache.cloudstack.ldap.LdapUser
 
@@ -55,7 +53,7 @@ class LdapImportUsersCmdSpec extends spock.lang.Specification {
         List<LdapUser> users = new ArrayList()
         users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
         users.add(new LdapUser("bob", "bob@test.com", "Robert", "Young", "cn=bob,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
-        ldapManager.getUsers() >> users
+        ldapManager.getUsers(null) >> users
         LdapUserResponse response1 = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering")
         LdapUserResponse response2 = new LdapUserResponse("bob", "bob@test.com", "Robert", "Young", "cn=bob,ou=engineering,dc=cloudstack,dc=org", "engineering")
         ldapManager.createLdapUserResponse(_) >>> [response1, response2]
@@ -83,7 +81,7 @@ class LdapImportUsersCmdSpec extends spock.lang.Specification {
         List<LdapUser> users = new ArrayList()
         users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
         users.add(new LdapUser("bob", "bob@test.com", "Robert", "Young", "cn=bob,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
-        ldapManager.getUsersInGroup("TestGroup") >> users
+        ldapManager.getUsersInGroup("TestGroup", null) >> users
         LdapUserResponse response1 = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering")
         LdapUserResponse response2 = new LdapUserResponse("bob", "bob@test.com", "Robert", "Young", "cn=bob,ou=engineering,dc=cloudstack,dc=org", "engineering")
         ldapManager.createLdapUserResponse(_) >>> [response1, response2]
@@ -112,7 +110,7 @@ class LdapImportUsersCmdSpec extends spock.lang.Specification {
         List<LdapUser> users = new ArrayList()
         users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
         users.add(new LdapUser("bob", "bob@test.com", "Robert", "Young", "cn=bob,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
-        ldapManager.getUsersInGroup("TestGroup") >> users
+        ldapManager.getUsersInGroup("TestGroup", null) >> users
         LdapUserResponse response1 = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering")
         LdapUserResponse response2 = new LdapUserResponse("bob", "bob@test.com", "Robert", "Young", "cn=bob,ou=engineering,dc=cloudstack,dc=org", "engineering")
         ldapManager.createLdapUserResponse(_) >>> [response1, response2]
@@ -141,7 +139,7 @@ class LdapImportUsersCmdSpec extends spock.lang.Specification {
         List<LdapUser> users = new ArrayList()
         users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
         users.add(new LdapUser("bob", "bob@test.com", "Robert", "Young", "cn=bob,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
-        ldapManager.getUsers() >> users
+        ldapManager.getUsers(null) >> users
         LdapUserResponse response1 = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering")
         LdapUserResponse response2 = new LdapUserResponse("bob", "bob@test.com", "Robert", "Young", "cn=bob,ou=engineering,dc=cloudstack,dc=org", "engineering")
         ldapManager.createLdapUserResponse(_) >>> [response1, response2]
@@ -205,7 +203,7 @@ class LdapImportUsersCmdSpec extends spock.lang.Specification {
         def ldapManager = Mock(LdapManager)
         List<LdapUser> users = new ArrayList()
         users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
-        ldapManager.getUsers() >> users
+        ldapManager.getUsers(null) >> users
         LdapUserResponse response1 = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering")
         ldapManager.createLdapUserResponse(_) >>> response1
 
@@ -235,7 +233,7 @@ class LdapImportUsersCmdSpec extends spock.lang.Specification {
         def ldapManager = Mock(LdapManager)
         List<LdapUser> users = new ArrayList()
         users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
-        ldapManager.getUsers() >> users
+        ldapManager.getUsers(null) >> users
         LdapUserResponse response1 = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering")
         ldapManager.createLdapUserResponse(_) >>> response1
 
@@ -264,7 +262,7 @@ class LdapImportUsersCmdSpec extends spock.lang.Specification {
         def ldapManager = Mock(LdapManager)
         List<LdapUser> users = new ArrayList()
         users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
-        ldapManager.getUsers() >> users
+        ldapManager.getUsers(null) >> users
         LdapUserResponse response1 = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering")
         ldapManager.createLdapUserResponse(_) >>> response1
 

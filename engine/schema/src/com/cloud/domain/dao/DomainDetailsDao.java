@@ -14,16 +14,21 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package groovy.org.apache.cloudstack.ldap
+package com.cloud.domain.dao;
 
-import org.apache.cloudstack.ldap.dao.LdapConfigurationDaoImpl
+import java.util.Map;
 
-class LdapConfigurationDaoImplSpec extends spock.lang.Specification {
-    def "Test setting up of a LdapConfigurationDao"() {
-		given: "We have an LdapConfigurationDao implementation"
-        def ldapConfigurationDaoImpl = new LdapConfigurationDaoImpl();
-		expect: "that hostnameSearch and listDomainConfigurationsSearch is configured"
-        ldapConfigurationDaoImpl.hostnameSearch != null;
-        ldapConfigurationDaoImpl.listDomainConfigurationsSearch != null
-    }
+import com.cloud.domain.DomainDetailVO;
+import com.cloud.utils.db.GenericDao;
+
+public interface DomainDetailsDao extends GenericDao<DomainDetailVO, Long> {
+    Map<String, String> findDetails(long domainId);
+
+    void persist(long domainId, Map<String, String> details);
+
+    DomainDetailVO findDetail(long domainId, String name);
+
+    void deleteDetails(long domainId);
+
+    void update(long domainId, Map<String, String> details);
 }

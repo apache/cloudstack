@@ -39,6 +39,10 @@ import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 
+/**
+ * @deprecated use the more dynamic ConfigKey
+ */
+@Deprecated
 public enum Config {
 
     // Alert
@@ -1814,42 +1818,6 @@ public enum Config {
                 + "If it is set to -1, then it means always use single-part upload to upload object to S3. ",
             null),
 
-    // Ldap
-    LdapBasedn("Advanced", ManagementServer.class, String.class, "ldap.basedn", null, "Sets the basedn for LDAP", null),
-    LdapBindPassword("Advanced", ManagementServer.class, String.class, "ldap.bind.password", null, "Sets the bind password for LDAP", null),
-    LdapBindPrincipal("Advanced", ManagementServer.class, String.class, "ldap.bind.principal", null, "Sets the bind principal for LDAP", null),
-    LdapEmailAttribute("Advanced", ManagementServer.class, String.class, "ldap.email.attribute", "mail", "Sets the email attribute used within LDAP", null),
-    LdapFirstnameAttribute(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "ldap.firstname.attribute",
-            "givenname",
-            "Sets the firstname attribute used within LDAP",
-            null),
-    LdapLastnameAttribute("Advanced", ManagementServer.class, String.class, "ldap.lastname.attribute", "sn", "Sets the lastname attribute used within LDAP", null),
-    LdapUsernameAttribute("Advanced", ManagementServer.class, String.class, "ldap.username.attribute", "uid", "Sets the username attribute used within LDAP", null),
-    LdapUserObject("Advanced", ManagementServer.class, String.class, "ldap.user.object", "inetOrgPerson", "Sets the object type of users within LDAP", null),
-    LdapSearchGroupPrinciple(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "ldap.search.group.principle",
-            null,
-            "Sets the principle of the group that users must be a member of",
-            null),
-    LdapTrustStore("Advanced", ManagementServer.class, String.class, "ldap.truststore", null, "Sets the path to the truststore to use for SSL", null),
-    LdapTrustStorePassword("Advanced", ManagementServer.class, String.class, "ldap.truststore.password", null, "Sets the password for the truststore", null),
-    LdapGroupObject("Advanced", ManagementServer.class, String.class, "ldap.group.object", "groupOfUniqueNames", "Sets the object type of groups within LDAP", null),
-    LdapGroupUniqueMemberAttribute(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "ldap.group.user.uniquemember",
-            "uniquemember",
-            "Sets the attribute for uniquemembers within a group",
-            null),
-
     // VMSnapshots
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
     VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", null),
@@ -1979,17 +1947,6 @@ public enum Config {
         _scope = ConfigKey.Scope.Global.toString();
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, String scope) {
-        _category = category;
-        _componentClass = componentClass;
-        _type = type;
-        _name = name;
-        _defaultValue = defaultValue;
-        _description = description;
-        _range = range;
-        _scope = scope;
-    }
-
     public String getCategory() {
         return _category;
     }
@@ -2008,10 +1965,6 @@ public enum Config {
 
     public Class<?> getType() {
         return _type;
-    }
-
-    public Class<?> getComponentClass() {
-        return _componentClass;
     }
 
     public String getScope() {
@@ -2080,9 +2033,5 @@ public enum Config {
             categories.add((String)key);
         }
         return categories;
-    }
-
-    public static List<Config> getConfigListByScope(String scope) {
-        return s_scopeLevelConfigsMap.get(scope);
     }
 }

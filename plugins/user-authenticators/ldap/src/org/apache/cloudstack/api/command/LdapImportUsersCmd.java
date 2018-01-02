@@ -142,9 +142,9 @@ public class LdapImportUsersCmd extends BaseListCmd {
         try {
             if (StringUtils.isNotBlank(groupName)) {
 
-                users = _ldapManager.getUsersInGroup(groupName);
+                users = _ldapManager.getUsersInGroup(groupName, domainId);
             } else {
-                users = _ldapManager.getUsers();
+                users = _ldapManager.getUsers(domainId);
             }
         } catch (NoLdapUserMatchingQueryException ex) {
             users = new ArrayList<LdapUser>();

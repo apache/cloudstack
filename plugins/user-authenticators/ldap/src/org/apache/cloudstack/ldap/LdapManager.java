@@ -18,7 +18,10 @@ package org.apache.cloudstack.ldap;
 
 import java.util.List;
 
+import org.apache.cloudstack.api.command.LdapAddConfigurationCmd;
+import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd;
 import org.apache.cloudstack.api.command.LdapListConfigurationCmd;
+import org.apache.cloudstack.api.command.LinkDomainToLdapCmd;
 import org.apache.cloudstack.api.response.LdapConfigurationResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 
@@ -31,23 +34,30 @@ public interface LdapManager extends PluggableService {
 
     enum LinkType { GROUP, OU;}
 
-    LdapConfigurationResponse addConfiguration(String hostname, int port) throws InvalidParameterValueException;
+    LdapConfigurationResponse addConfiguration(final LdapAddConfigurationCmd cmd) throws InvalidParameterValueException;
 
-    boolean canAuthenticate(String principal, String password);
+    @Deprecated
+    LdapConfigurationResponse addConfiguration(String hostname, int port, Long domainId) throws InvalidParameterValueException;
+
+    boolean canAuthenticate(String principal, String password, final Long domainId);
 
     LdapConfigurationResponse createLdapConfigurationResponse(LdapConfigurationVO configuration);
 
     LdapUserResponse createLdapUserResponse(LdapUser user);
 
-    LdapConfigurationResponse deleteConfiguration(String hostname) throws InvalidParameterValueException;
+    LdapConfigurationResponse deleteConfiguration(LdapDeleteConfigurationCmd cmd) throws InvalidParameterValueException;
 
-    LdapUser getUser(final String username) throws NoLdapUserMatchingQueryException;
+    @Deprecated
+    LdapConfigurationResponse deleteConfiguration(String hostname, int port, Long domainId) throws InvalidParameterValueException;
 
-    LdapUser getUser(String username, String type, String name) throws NoLdapUserMatchingQueryException;
+    // TODO username is only unique withing domain scope (add domain id to call)
+    LdapUser getUser(final String username, Long domainId) throws NoLdapUserMatchingQueryException;
 
-    List<LdapUser> getUsers() throws NoLdapUserMatchingQueryException;
+    LdapUser getUser(String username, String type, String name, Long domainId) throws NoLdapUserMatchingQueryException;
 
-    List<LdapUser> getUsersInGroup(String groupName) throws NoLdapUserMatchingQueryException;
+    List<LdapUser> getUsers(Long domainId) throws NoLdapUserMatchingQueryException;
+
+    List<LdapUser> getUsersInGroup(String groupName, Long domainId) throws NoLdapUserMatchingQueryException;
 
     boolean isLdapEnabled();
 
@@ -55,7 +65,7 @@ public interface LdapManager extends PluggableService {
 
     List<LdapUser> searchUsers(String query) throws NoLdapUserMatchingQueryException;
 
-    LinkDomainToLdapResponse linkDomainToLdap(Long domainId, String type, String name, short accountType);
+    LinkDomainToLdapResponse linkDomainToLdap(LinkDomainToLdapCmd cmd);
 
-    public LdapTrustMapVO getDomainLinkedToLdap(long domainId);
+    LdapTrustMapVO getDomainLinkedToLdap(long domainId);
 }
