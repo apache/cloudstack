@@ -1378,21 +1378,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             }
         }
 
-        NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        boolean sharedSourceNat = offering.isSharedSourceNat();
-        boolean isSourceNat = false;
-        if (!sharedSourceNat) {
-            if (getExistingSourceNatInNetwork(owner.getId(), networkId) == null) {
-                if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null && !ipToAssoc.isPortable()) {
-                    if (network.getState() == Network.State.Allocated) {
-                        //prevent associating an ip address to an allocated (unimplemented network).
-                        //it will cause the ip to become source nat, and it can't be disassociated later on.
-                        throw new InvalidParameterValueException("Network is in allocated state, implement network first before acquiring an IP address");
-                    }
-                    isSourceNat = true;
-                }
-            }
-        }
+        boolean isSourceNat = isSourceNatAvailableForNetwork(networkId, owner, ipToAssoc, network);
 
         s_logger.debug("Associating ip " + ipToAssoc + " to network " + network);
 
@@ -1428,6 +1414,25 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                 }
             }
         }
+    }
+
+    protected boolean isSourceNatAvailableForNetwork(long networkId, Account owner, IPAddressVO ipToAssoc, Network network) {
+        NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
+        boolean sharedSourceNat = offering.getSharedSourceNat();
+        boolean isSourceNat = false;
+        if (!sharedSourceNat) {
+            if (getExistingSourceNatInNetwork(owner.getId(), networkId) == null) {
+                if (network.getGuestType() == GuestType.Isolated && network.getVpcId() == null && !ipToAssoc.isPortable()) {
+                    if (network.getState() == Network.State.Allocated) {
+                        //prevent associating an ip address to an allocated (unimplemented network).
+                        //it will cause the ip to become source nat, and it can't be disassociated later on.
+                        throw new InvalidParameterValueException("Network is in allocated state, implement network first before acquiring an IP address");
+                    }
+                    isSourceNat = true;
+                }
+            }
+        }
+        return isSourceNat;
     }
 
     protected boolean isSharedNetworkOfferingWithServices(long networkOfferingId) {

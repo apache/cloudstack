@@ -17,7 +17,10 @@
 
 package com.cloud.network;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -32,12 +35,20 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network.Service;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.StaticNat;
 import com.cloud.network.rules.StaticNatImpl;
+import com.cloud.offerings.NetworkOfferingVO;
+import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.user.AccountVO;
 import com.cloud.utils.net.Ip;
 
 public class IpAddressManagerTest {
@@ -45,15 +56,76 @@ public class IpAddressManagerTest {
     @Mock
     IPAddressDao _ipAddrDao;
 
+    @Mock
+    NetworkDao _networkDao;
+
+    @Mock
+    NetworkOfferingDao _networkOfferingDao;
+
+    @Mock
+    NetworkModel _networkModel;
+
+    @Spy
     @InjectMocks
     IpAddressManagerImpl _ipManager;
 
     @InjectMocks
     NetworkModelImpl networkModel = Mockito.spy(new NetworkModelImpl());
 
+    IPAddressVO ipAddressVO;
+
+    NetworkVO networkAllocated;
+
+    NetworkVO networkImplemented;
+
+    NetworkVO networkNat;
+
+    AccountVO account;
+
     @Before
-    public void setup() {
+    public void setup() throws ResourceUnavailableException {
         MockitoAnnotations.initMocks(this);
+
+        ipAddressVO = new IPAddressVO(new Ip("192.0.0.1"), 1L, 1L, 1L,false);
+        ipAddressVO.setAllocatedToAccountId(1L);
+
+        IPAddressVO sourceNat = new IPAddressVO(new Ip("192.0.0.2"), 1L, 1L, 1L,true);
+
+        networkAllocated = Mockito.mock(NetworkVO.class);
+        when(networkAllocated.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(networkAllocated.getNetworkOfferingId()).thenReturn(8L);
+        when(networkAllocated.getState()).thenReturn(Network.State.Allocated);
+        when(networkAllocated.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(networkAllocated.getVpcId()).thenReturn(null);
+
+        networkImplemented = Mockito.mock(NetworkVO.class);
+        when(networkImplemented.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(networkImplemented.getNetworkOfferingId()).thenReturn(8L);
+        when(networkImplemented.getState()).thenReturn(Network.State.Implemented);
+        when(networkImplemented.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(networkImplemented.getVpcId()).thenReturn(null);
+
+        networkNat = Mockito.mock(NetworkVO.class);
+        when(networkNat.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(networkNat.getNetworkOfferingId()).thenReturn(8L);
+        when(networkNat.getState()).thenReturn(Network.State.Implemented);
+        when(networkNat.getGuestType()).thenReturn(Network.GuestType.Isolated);
+        when(networkNat.getId()).thenReturn(3L);
+        when(networkNat.getVpcId()).thenReturn(null);
+
+        account = new AccountVO("admin", 1L, null, (short) 1, 1L, "c65a73d5-ebbd-11e7-8f45-107b44277808");
+        account.setId(1L);
+
+        NetworkOfferingVO networkOfferingVO = Mockito.mock(NetworkOfferingVO.class);
+        networkOfferingVO.setSharedSourceNat(false);
+
+        Mockito.when(_networkDao.findById(1L)).thenReturn(networkAllocated);
+        Mockito.when(_networkDao.findById(2L)).thenReturn(networkImplemented);
+        Mockito.when(_networkDao.findById(3L)).thenReturn(networkNat);
+        Mockito.when(_networkOfferingDao.findById(Mockito.anyLong())).thenReturn(networkOfferingVO);
+        doReturn(null).when(_ipManager).getExistingSourceNatInNetwork(1L, 1L);
+        doReturn(sourceNat).when(_ipManager).getExistingSourceNatInNetwork(1L, 3L);
+        when(_networkModel.areServicesSupportedInNetwork(0L, Network.Service.SourceNat)).thenReturn(true);
     }
 
     @Test
@@ -115,6 +187,28 @@ public class IpAddressManagerTest {
 
         Mockito.verify(networkModel).listNetworkOfferingServices(Mockito.anyLong());
         Assert.assertFalse(result);
+    }
+
+    @Test
+    public void assertSourceNatImplementedNetwork() {
+
+        boolean isSourceNat = _ipManager.isSourceNatAvailableForNetwork(1L, account, ipAddressVO, networkImplemented);
+
+        assertTrue("Source NAT should be true", isSourceNat);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void assertSourceNatAllocatedNetwork() {
+
+        _ipManager.isSourceNatAvailableForNetwork(2L, account, ipAddressVO, networkAllocated);
+    }
+
+    @Test
+    public void assertExistingSourceNatAllocatedNetwork() {
+
+        boolean isSourceNat = _ipManager.isSourceNatAvailableForNetwork(3L, account, ipAddressVO, networkNat);
+
+        assertFalse("Source NAT should be false", isSourceNat);
     }
 
     @Test
