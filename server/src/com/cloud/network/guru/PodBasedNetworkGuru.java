@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.network.guru;
 
+import com.cloud.dc.dao.DataCenterDao.PrivateAllocationData;
 import com.cloud.vm.VirtualMachine;
 import java.util.Random;
 
@@ -40,7 +41,6 @@ import com.cloud.network.StorageNetworkManager;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
@@ -120,17 +120,15 @@ public class PodBasedNetworkGuru extends AdapterBase implements NetworkGuru {
         throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException {
         Pod pod = dest.getPod();
 
-        boolean forSystemVms = (vm.getType().equals(VirtualMachine.Type.ConsoleProxy) ||
-                                vm.getType().equals(VirtualMachine.Type.SecondaryStorageVm)) ? true : false;
-        Pair<Pair<String, Long>, Integer> result = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId(), forSystemVms);
+        boolean forSystemVms = vm.getType().equals(VirtualMachine.Type.ConsoleProxy) || vm.getType().equals(VirtualMachine.Type.SecondaryStorageVm);
+        PrivateAllocationData result = _dcDao.allocatePrivateIpAddress(dest.getDataCenter().getId(), dest.getPod().getId(), nic.getId(), context.getReservationId(), forSystemVms);
         if (result == null) {
             throw new InsufficientAddressCapacityException("Unable to get a management ip address", Pod.class, pod.getId());
         }
-        Pair<String, Long> ip = result.first();
-        Integer vlan = result.second();
+        Integer vlan = result.getVlan();
 
-        nic.setIPv4Address(ip.first());
-        nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ip.second(), NetworkModel.MACIdentifier.value())));
+        nic.setIPv4Address(result.getIpAddress());
+        nic.setMacAddress(NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(result.getMacAddress(), NetworkModel.MACIdentifier.value())));
         nic.setIPv4Gateway(pod.getGateway());
         nic.setFormat(AddressFormat.Ip4);
         String netmask = NetUtils.getCidrNetmask(pod.getCidrSize());
