@@ -24,7 +24,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.RoleType;
-import org.apache.commons.lang.NotImplementedException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -123,21 +122,20 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
                     // new user that is in ldap; authenticate and create
                     User user = _accountManager.createUser(username, "", ldapUser.getFirstname(), ldapUser.getLastname(), ldapUser.getEmail(), null, accountName,
                             domainId, UUID.randomUUID().toString(), User.Source.LDAP);
-                    // TODO check error conditions and account (id or name)
-                    /*
-                     * throw new CloudRuntimeException("The domain " + domainId + " does not exist; unable to create user");
-                     * throw new CloudRuntimeException("The user cannot be created as domain " + domain.getName() + " is being deleted");
-                     * throw new InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId + " to create user");
-                     * throw new PermissionDeniedException("Account id : " + account.getId() + " is a system account, can't add a user to it");
-                     * throw new CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
-                     * throw new CloudRuntimeException("Failed to encode password");
+                    /* expected error conditions:
+                     *
+                     * caught in APIServlet: CloudRuntimeException("The domain " + domainId + " does not exist; unable to create user");
+                     * caught in APIServlet: CloudRuntimeException("The user cannot be created as domain " + domain.getName() + " is being deleted");
+                     * would have been thrown above: InvalidParameterValueException("Unable to find account " + accountName + " in domain id=" + domainId + " to create user");
+                     * we are system user: PermissionDeniedException("Account id : " + account.getId() + " is a system account, can't add a user to it");
+                     * serious and must be thrown: CloudRuntimeException("The user " + userName + " already exists in domain " + domainId);
+                     * fatal system error and must be thrown: CloudRuntimeException("Failed to encode password");
                      */
                     userAccount = _accountManager.getUserAccountById(user.getId());
                 } else {
                     // not a new user, check if mapped group has changed
                     if(userAccount.getAccountId() != mapping.getAccountId()) {
-                        // TODO move user when #2301 is merged
-                        throw new NotImplementedException("move user will be implemented when #2301 is merged");
+                        _accountManager.moveUser(userAccount.getId(),userAccount.getDomainId(),mapping.getAccountId());
                     }
                     // else { the user hasn't changed in ldap, the ldap group stayed the same, hurray, pass, fun thou self a lot of fun }
                 }
