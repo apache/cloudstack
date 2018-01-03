@@ -427,8 +427,8 @@ test_data = {
         "displaytext": "MySharedOffering",
         "guestiptype": "Shared",
         "supportedservices": "Dhcp,Dns,UserData",
-        "specifyVlan": "True",
-        "specifyIpRanges": "True",
+        "specifyVlan": "False",
+        "specifyIpRanges": "False",
         "traffictype": "GUEST",
         "tags": "native",
         "serviceProviderList": {
@@ -491,6 +491,12 @@ test_data = {
         "supportedservices":
             "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat,NetworkACL"
     },
+    "vpc_offering_reduced": {
+        "name": "VPC reduced off",
+        "displaytext": "VPC reduced off",
+        "supportedservices":
+            "Dhcp,Dns,SourceNat,UserData,StaticNat,NetworkACL"
+    },
     "vpc_offering_multi_lb": {
         "name": "VPC offering with multiple Lb service providers",
         "displaytext": "VPC offering with multiple Lb service providers",
@@ -506,12 +512,6 @@ test_data = {
             "StaticNat": 'VpcVirtualRouter',
             "NetworkACL": 'VpcVirtualRouter'
         }
-    },
-    "vpc_offering_native": {
-        "name": "VPC native off",
-        "displaytext": "VPC native off",
-        "supportedservices":
-            "Dhcp,Dns,SourceNat,UserData,StaticNat,NetworkACL"
     },
     "vpc": {
         "name": "TestVPC",
@@ -662,6 +662,26 @@ test_data = {
             "Lb": "VpcVirtualRouter"
         }
     },
+    "nw_offering_reduced_vpc": {
+        "name": 'Reduced Network for VPC',
+        "displaytext": 'Reduced Network for VPC',
+        "guestiptype": 'Isolated',
+        "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,'
+                             'Dns',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "tags": "native",
+        "useVpc": 'on',
+        "ispersistent": 'True',
+        "serviceProviderList": {
+            "Dhcp": "VpcVirtualRouter",
+            "StaticNat": "VpcVirtualRouter",
+            "SourceNat": "VpcVirtualRouter",
+            "NetworkACL": "VpcVirtualRouter",
+            "UserData": "VpcVirtualRouter",
+            "Dns": "VpcVirtualRouter"
+        }
+    },
     "nw_off_persistent_VPCVR_LB": {
         "name": "Persistent Network VPC with LB",
         "displaytext": "Persistent Network VPC No LB",
@@ -721,25 +741,6 @@ test_data = {
             "Lb": "VirtualRouter",
             "UserData": "VirtualRouter",
             "StaticNat": "VirtualRouter"
-        }
-    },
-    "vpc_network_offering_native": {
-        "name": 'vpc_net_off_marvin_native',
-        "displaytext": 'vpc_net_off_marvin_native',
-        "guestiptype": 'Isolated',
-        "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,Dns',
-        "traffictype": 'GUEST',
-        "availability": 'Optional',
-        "tags": "native",
-        "useVpc": 'on',
-        "ispersistent": 'True',
-        "serviceProviderList": {
-            "Dhcp": "VpcVirtualRouter",
-            "StaticNat": "VpcVirtualRouter",
-            "SourceNat": "VpcVirtualRouter",
-            "NetworkACL": "VpcVirtualRouter",
-            "UserData": "VpcVirtualRouter",
-            "Dns": "VpcVirtualRouter"
         }
     },
     "fwrule": {

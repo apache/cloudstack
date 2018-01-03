@@ -16,34 +16,44 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.network;
 
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.log4j.Logger;
+
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCmd;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
-
-import java.util.HashMap;
-import java.util.Map;
 
 import com.cloud.event.EventTypes;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.user.Account;
 import com.cloud.user.User;
 
-@APICommand(name = "migrateVPC", description = "moves a vpc to another physical network", responseObject = VpcResponse.class, responseView = ResponseObject.ResponseView.Restricted, entityType = {Vpc.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = MigrateVPCCmd.APINAME,
+            description = "moves a vpc to another physical network",
+            responseObject = VpcResponse.class,
+            responseView = ResponseObject.ResponseView.Restricted,
+            entityType = {Vpc.class},
+            requestHasSensitiveInfo = false,
+            responseHasSensitiveInfo = false,
+            since = "4.11.0",
+            authorized = {RoleType.Admin})
 public class MigrateVPCCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateVPCCmd.class.getName());
 
-    private static final String s_name = "migratevpcresponse";
+    public static final String APINAME = "migrateVPC";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -86,7 +96,7 @@ public class MigrateVPCCmd extends BaseAsyncCmd {
         }
 
         for (HashMap<String, String> map : tierNetworkOfferings.values()) {
-             flatMap.put(map.get("networkid"), map.get("networkofferingid"));
+            flatMap.put(map.get("networkid"), map.get("networkofferingid"));
         }
 
         return flatMap;
@@ -98,7 +108,7 @@ public class MigrateVPCCmd extends BaseAsyncCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override

@@ -43,7 +43,7 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import javax.inject.Inject;
 import java.util.List;
 
-@APICommand(name = ListNuageVspDomainTemplatesCmd.APINAME, responseObject = BaseResponse.class, description = "Lists Nuage VSP domain templates", since = "4.11", responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.User})
+@APICommand(name = ListNuageVspDomainTemplatesCmd.APINAME, responseObject = BaseResponse.class, description = "Lists Nuage VSP domain templates", since = "4.11.0", responseHasSensitiveInfo = false, authorized = {RoleType.Admin, RoleType.DomainAdmin, RoleType.User})
 public class ListNuageVspDomainTemplatesCmd extends BaseCmd {
     static final String APINAME = "listNuageVspDomainTemplates";
 
