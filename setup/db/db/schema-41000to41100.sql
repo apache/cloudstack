@@ -460,7 +460,3 @@ CREATE TABLE `cloud`.`nic_extra_dhcp_options` (
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_nic_extra_dhcp_options_nic_id` FOREIGN KEY (`nic_id`) REFERENCES `nics`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-UPDATE `cloud`.`configuration` SET `description`='Default API port. To disable set it to 0 or negative.' WHERE `name`='integration.api.port';
-
-UPDATE `cloud`.`configuration` SET `description`='Interval (in days) to check sanity of usage data. To disable set it to 0 or negative.' WHERE `name`='usage.sanity.check.interval';
