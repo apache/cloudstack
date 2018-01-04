@@ -32,6 +32,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.StringWriter;
 
@@ -52,15 +53,21 @@ public class NfsSecondaryStorageResourceTest {
     @Test
     @PrepareForTest(NfsSecondaryStorageResource.class)
     public void testSwiftWriteMetadataFile() throws Exception {
-        String expected = "uniquename=test\nfilename=testfile\nsize=100\nvirtualsize=1000";
+        String filename = "testfile";
+        try {
+            String expected = "uniquename=test\nfilename=" + filename + "\nsize=100\nvirtualsize=1000";
 
-        StringWriter stringWriter = new StringWriter();
-        BufferedWriter bufferWriter = new BufferedWriter(stringWriter);
-        PowerMockito.whenNew(BufferedWriter.class).withArguments(any(FileWriter.class)).thenReturn(bufferWriter);
+            StringWriter stringWriter = new StringWriter();
+            BufferedWriter bufferWriter = new BufferedWriter(stringWriter);
+            PowerMockito.whenNew(BufferedWriter.class).withArguments(any(FileWriter.class)).thenReturn(bufferWriter);
 
-        resource.swiftWriteMetadataFile("testfile", "test", "testfile", 100, 1000);
+            resource.swiftWriteMetadataFile(filename, "test", filename, 100, 1000);
 
-        Assert.assertEquals(expected, stringWriter.toString());
+            Assert.assertEquals(expected, stringWriter.toString());
+        } finally {
+            File remnance = new File(filename);
+            remnance.delete();
+        }
     }
 
     @Test
