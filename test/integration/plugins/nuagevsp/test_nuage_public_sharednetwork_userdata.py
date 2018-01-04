@@ -409,8 +409,8 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
         except Exception as e:
             self.debug("Deploy vm fails as expected with exception %s" % e)
             self.debug("Going to verify the exception message")
-            excetionmsg = "it is reserved for the VR in network"
-            if excetionmsg in str(e):
+            exceptionmsg = "it is reserved for the VR in network"
+            if exceptionmsg in str(e):
                 self.debug("correct exception is raised")
             else:
                 self.fail("correct exception is not raised")
@@ -705,8 +705,8 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
                        "fails as expected with exception %s" % e)
             self.debug("Going to verify the exception message")
             self.delete_subnet_verify(self.shared_network_all, subnet2)
-            excetionmsg = "Failed to deploy VM"
-            if excetionmsg in str(e):
+            exceptionmsg = "Unable to start VM instance"
+            if exceptionmsg in str(e):
                 self.debug("correct exception is raised")
             else:
                 self.fail("correct exception is not raised")
@@ -739,8 +739,8 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
             self.debug("Going to verify the exception message")
             self.delete_subnet_verify(
                 self.shared_network_domain_with_subdomain_d11, subnet2)
-            excetionmsg = "Failed to deploy VM"
-            if excetionmsg in str(e):
+            exceptionmsg = "Unable to start VM instance"
+            if exceptionmsg in str(e):
                 self.debug("correct exception is raised")
             else:
                 self.fail("correct exception is not raised")
@@ -772,8 +772,8 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
             self.debug("Going to verify the exception message")
             self.delete_subnet_verify(
                 self.shared_network_domain_d11, subnet2)
-            excetionmsg = "Failed to deploy VM"
-            if excetionmsg in str(e):
+            exceptionmsg = "Unable to start VM instance"
+            if exceptionmsg in str(e):
                 self.debug("correct exception is raised")
             else:
                 self.fail("correct exception is not raised")
@@ -805,8 +805,8 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
             self.debug("Going to verify the exception message")
             self.delete_subnet_verify(
                 self.shared_network_account_d111a, subnet2)
-            excetionmsg = "Failed to deploy VM"
-            if excetionmsg in str(e):
+            exceptionmsg = "Unable to start VM instance"
+            if exceptionmsg in str(e):
                 self.debug("correct exception is raised")
             else:
                 self.fail("correct exception is not raised")
