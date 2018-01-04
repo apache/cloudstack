@@ -168,7 +168,7 @@ public class AlertsSyslogAppender extends AppenderSkeleton {
                 if (ip.equalsIgnoreCase("localhost")) {
                     continue;
                 }
-                if (!NetUtils.isValidIp(ip)) {
+                if (!NetUtils.isValidIp4(ip)) {
                     return false;
                 }
             } else

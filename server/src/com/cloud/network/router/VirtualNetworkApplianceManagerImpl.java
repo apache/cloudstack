@@ -1383,7 +1383,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     // networking setup, DomR may have two interfaces while both
                     // are on the same subnet
                     _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
-                    if (NetUtils.isValidCIDR(_mgmtCidr)) {
+                    if (NetUtils.isValidIp4Cidr(_mgmtCidr)) {
                         buf.append(" mgmtcidr=").append(_mgmtCidr);
                         buf.append(" localgw=").append(dest.getPod().getGateway());
                     }
@@ -1955,7 +1955,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             final List<String> destCidr = new ArrayList<String>();
 
             sourceCidr.add(network.getCidr());
-            destCidr.add(NetUtils.ALL_CIDRS);
+            destCidr.add(NetUtils.ALL_IP4_CIDRS);
 
             final FirewallRule rule = new FirewallRuleVO(null, null, null, null, "all", networkId, network.getAccountId(), network.getDomainId(), Purpose.Firewall, sourceCidr,
                     destCidr, null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);

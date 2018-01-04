@@ -1169,12 +1169,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (ipv4) {
             // if end ip is not specified, default it to startIp
             if (startIP != null) {
-                if (!NetUtils.isValidIp(startIP)) {
+                if (!NetUtils.isValidIp4(startIP)) {
                     throw new InvalidParameterValueException("Invalid format for the startIp parameter");
                 }
                 if (endIP == null) {
                     endIP = startIP;
-                } else if (!NetUtils.isValidIp(endIP)) {
+                } else if (!NetUtils.isValidIp4(endIP)) {
                     throw new InvalidParameterValueException("Invalid format for the endIp parameter");
                 }
             }
@@ -1193,10 +1193,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     throw new InvalidParameterValueException("Invalid gateway IP provided. Either the IP is broadcast or network IP.");
                 }
 
-                if (!NetUtils.isValidIp(gateway)) {
+                if (!NetUtils.isValidIp4(gateway)) {
                     throw new InvalidParameterValueException("Invalid gateway");
                 }
-                if (!NetUtils.isValidNetmask(netmask)) {
+                if (!NetUtils.isValidIp4Netmask(netmask)) {
                     throw new InvalidParameterValueException("Invalid netmask");
                 }
 
@@ -2129,7 +2129,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("The network must be in " + Network.State.Implemented + " state. IP Reservation cannot be applied in "
                         + network.getState() + " state");
             }
-            if (!NetUtils.isValidCIDR(guestVmCidr)) {
+            if (!NetUtils.isValidIp4Cidr(guestVmCidr)) {
                 throw new InvalidParameterValueException("Invalid format of Guest VM CIDR.");
             }
             if (!NetUtils.validateGuestCidr(guestVmCidr)) {
@@ -4296,19 +4296,19 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         // VALIDATE IP INFO
         // if end ip is not specified, default it to startIp
-        if (!NetUtils.isValidIp(startIp)) {
+        if (!NetUtils.isValidIp4(startIp)) {
             throw new InvalidParameterValueException("Invalid format for the ip address parameter");
         }
         if (endIp == null) {
             endIp = startIp;
-        } else if (!NetUtils.isValidIp(endIp)) {
+        } else if (!NetUtils.isValidIp4(endIp)) {
             throw new InvalidParameterValueException("Invalid format for the endIp address parameter");
         }
 
-        if (!NetUtils.isValidIp(gateway)) {
+        if (!NetUtils.isValidIp4(gateway)) {
             throw new InvalidParameterValueException("Invalid gateway");
         }
-        if (!NetUtils.isValidNetmask(netmask)) {
+        if (!NetUtils.isValidIp4Netmask(netmask)) {
             throw new InvalidParameterValueException("Invalid netmask");
         }
 

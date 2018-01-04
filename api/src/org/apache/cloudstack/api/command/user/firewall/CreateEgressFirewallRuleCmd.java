@@ -246,10 +246,10 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
             String guestCidr = _networkService.getNetwork(getNetworkId()).getCidr();
 
             for (String cidr : getSourceCidrList()) {
-                if (!NetUtils.isValidCIDR(cidr)) {
+                if (!NetUtils.isValidIp4Cidr(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Source cidrs formatting error " + cidr);
                 }
-                if (cidr.equals(NetUtils.ALL_CIDRS)) {
+                if (cidr.equals(NetUtils.ALL_IP4_CIDRS)) {
                     continue;
                 }
                 if (!NetUtils.isNetworkAWithinNetworkB(cidr, guestCidr)) {
@@ -261,7 +261,7 @@ public class CreateEgressFirewallRuleCmd extends BaseAsyncCreateCmd implements F
         //Destination CIDR formatting check. Since it's optional param, no need to set a default as in the case of source.
         if(destCidrList != null){
             for(String cidr : destCidrList){
-                if(!NetUtils.isValidCIDR(cidr)) {
+                if(!NetUtils.isValidIp4Cidr(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Destination cidrs formatting error" + cidr);
                 }
             }
