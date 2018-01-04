@@ -983,15 +983,15 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     public void reconnect(final long hostId) throws AgentUnavailableException {
         HostVO host = _hostDao.findById(hostId);
         if (host == null) {
-            throw new CloudRuntimeException("Unable to find host " + hostId);
+            throw new CloudRuntimeException("Unable to find host: " + hostId);
         }
 
         if (host.getRemoved() != null) {
-            throw new CloudRuntimeException("Host has already been removed" + hostId);
+            throw new CloudRuntimeException("Host has already been removed: " + hostId);
         }
 
         if (host.getStatus() == Status.Disconnected) {
-            throw new CloudRuntimeException("Host is already disconnected, no work to be done");
+            s_logger.debug("Host is already disconnected, no work to be done: " + hostId);
         }
 
         if (host.getStatus() != Status.Up && host.getStatus() != Status.Alert && host.getStatus() != Status.Rebalancing) {

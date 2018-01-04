@@ -81,6 +81,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
@@ -284,7 +285,6 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
         Map<String, String> _configs;
         List<NetScalerControlCenterVO> ncc = _netscalerControlCenterDao.listAll();
         HostVO hostVO = null;
-        Map<String, Object> params;
         if (ncc.size() > 0) {
             NetScalerControlCenterVO nccVO = ncc.get(0);
             String ipAddress = nccVO.getNccip();
@@ -759,8 +759,8 @@ IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
 
         try {
             _agentMgr.reconnect(host.getId());
-        } catch (Exception e ) {
-            s_logger.info("failed to reconnect host " + host, e);
+        } catch (AgentUnavailableException e) {
+            s_logger.warn("failed to reconnect host " + host, e);
         }
         return lbDeviceVo;
     }

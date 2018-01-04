@@ -39,12 +39,6 @@ import javax.mail.URLName;
 import javax.mail.internet.InternetAddress;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
-import com.sun.mail.smtp.SMTPMessage;
-import com.sun.mail.smtp.SMTPSSLTransport;
-import com.sun.mail.smtp.SMTPTransport;
-
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -52,6 +46,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
@@ -85,6 +80,9 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.SearchCriteria;
+import com.sun.mail.smtp.SMTPMessage;
+import com.sun.mail.smtp.SMTPSSLTransport;
+import com.sun.mail.smtp.SMTPTransport;
 
 public class AlertManagerImpl extends ManagerBase implements AlertManager, Configurable {
     private static final Logger s_logger = Logger.getLogger(AlertManagerImpl.class.getName());
@@ -205,8 +203,9 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
         String capacityCheckPeriodStr = configs.get("capacity.check.period");
         if (capacityCheckPeriodStr != null) {
             _capacityCheckPeriod = Long.parseLong(capacityCheckPeriodStr);
-            if (_capacityCheckPeriod <= 0)
+            if (_capacityCheckPeriod <= 0) {
                 _capacityCheckPeriod = Long.parseLong(Config.CapacityCheckPeriod.getDefaultValue());
+            }
         }
 
         _timer = new Timer("CapacityChecker");
@@ -589,7 +588,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             alertType = AlertManager.AlertType.ALERT_TYPE_LOCAL_STORAGE;
             break;
 
-        //Pod Level
+            //Pod Level
         case Capacity.CAPACITY_TYPE_PRIVATE_IP:
             msgSubject = "System Alert: Number of unallocated private IPs is low in pod " + pod.getName() + " of availability zone " + dc.getName();
             totalStr = Double.toString(totalCapacity);
@@ -598,7 +597,7 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
             alertType = AlertManager.AlertType.ALERT_TYPE_PRIVATE_IP;
             break;
 
-        //Zone Level
+            //Zone Level
         case Capacity.CAPACITY_TYPE_SECONDARY_STORAGE:
             msgSubject = "System Alert: Low Available Secondary Storage in availability zone " + dc.getName();
             totalStr = formatBytesToMegabytes(totalCapacity);
@@ -746,22 +745,22 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
 
         // TODO:  make sure this handles SSL transport (useAuth is true) and regular
         public void sendAlert(AlertType alertType, long dataCenterId, Long podId, Long clusterId, String subject, String content) throws MessagingException,
-                UnsupportedEncodingException {
+        UnsupportedEncodingException {
             s_alertsLogger.warn("AlertType:: " + alertType + " | dataCenterId:: " + dataCenterId + " | podId:: " +
                     podId + " | clusterId:: " + clusterId + " | message:: " + subject);
             AlertVO alert = null;
             if ((alertType != AlertManager.AlertType.ALERT_TYPE_HOST) &&
-                (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM) &&
-                (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) &&
-                (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY) &&
-                (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) &&
-                (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC) &&
-                (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE) &&
-                (alertType != AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED) &&
-                (alertType != AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED) &&
-                (alertType != AlertManager.AlertType.ALERT_TYPE_OOBM_AUTH_ERROR) &&
-                (alertType != AlertManager.AlertType.ALERT_TYPE_HA_ACTION) &&
-                (alertType != AlertManager.AlertType.ALERT_TYPE_CA_CERT)) {
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_USERVM) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_DOMAIN_ROUTER) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_CONSOLE_PROXY) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_SSVM) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_STORAGE_MISC) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_MANAGMENT_NODE) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_RESOURCE_LIMIT_EXCEEDED) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_UPLOAD_FAILED) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_OOBM_AUTH_ERROR) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_HA_ACTION) &&
+                    (alertType != AlertManager.AlertType.ALERT_TYPE_CA_CERT)) {
                 alert = _alertDao.getLastAlert(alertType.getType(), dataCenterId, podId, clusterId);
             }
 
@@ -769,9 +768,8 @@ public class AlertManagerImpl extends ManagerBase implements AlertManager, Confi
                 // set up a new alert
                 AlertVO newAlert = new AlertVO();
                 newAlert.setType(alertType.getType());
-                //do not have a seperate column for content.
-                //appending the message to the subject for now.
-                newAlert.setSubject(subject+content);
+                newAlert.setSubject(subject);
+                newAlert.setContent(content);
                 newAlert.setClusterId(clusterId);
                 newAlert.setPodId(podId);
                 newAlert.setDataCenterId(dataCenterId);
