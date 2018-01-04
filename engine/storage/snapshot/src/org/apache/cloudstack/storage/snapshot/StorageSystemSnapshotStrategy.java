@@ -41,6 +41,8 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -90,6 +92,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     @Inject private VMInstanceDao vmInstanceDao;
     @Inject private VolumeDao volumeDao;
     @Inject private VolumeService volService;
+    @Inject private VolumeDetailsDao _volumeDetailsDaoImpl;
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshotInfo) {
@@ -169,6 +172,17 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         try {
             snapshotObj.processEvent(Snapshot.Event.DestroyRequested);
+            List<VolumeDetailVO> volumesFromSnapshot;
+            volumesFromSnapshot = _volumeDetailsDaoImpl.findDetails("SNAPSHOT_ID", String.valueOf(snapshotId), null);
+
+            if (volumesFromSnapshot.size() > 0) {
+                try {
+                    snapshotObj.processEvent(Snapshot.Event.OperationFailed);
+                } catch (NoTransitionException e1) {
+                    s_logger.debug("Failed to change snapshot state: " + e1.toString());
+                }
+                throw new InvalidParameterValueException("Unable to perform delete operation, Snapshot with id: " + snapshotId + " is in use  ");
+            }
         }
         catch (NoTransitionException e) {
             s_logger.debug("Failed to set the state to destroying: ", e);

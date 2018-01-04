@@ -55,9 +55,11 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
@@ -93,6 +95,8 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     private SnapshotDetailsDao _snapshotDetailsDao;
     @Inject
     private SyncQueueItemDao _syncQueueItemDao;
+    @Inject
+    VolumeDetailsDao _volumeDetailsDaoImpl;
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshot) {
@@ -278,6 +282,17 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         SnapshotObject obj = (SnapshotObject)snapshotOnImage;
         try {
             obj.processEvent(Snapshot.Event.DestroyRequested);
+            List<VolumeDetailVO> volumesFromSnapshot;
+            volumesFromSnapshot = _volumeDetailsDaoImpl.findDetails("SNAPSHOT_ID", String.valueOf(snapshotId), null);
+
+            if (volumesFromSnapshot.size() > 0) {
+                try {
+                    obj.processEvent(Snapshot.Event.OperationFailed);
+                } catch (NoTransitionException e1) {
+                    s_logger.debug("Failed to change snapshot state: " + e1.toString());
+                }
+                throw new InvalidParameterValueException("Unable to perform delete operation, Snapshot with id: " + snapshotId + " is in use  ");
+            }
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to set the state to destroying: ", e);
             return false;
