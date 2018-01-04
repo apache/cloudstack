@@ -34,7 +34,7 @@ where
       or service in ('NetworkACL')
     )
   );
-
+ 
 --Alter view template_view
  
 DROP VIEW IF EXISTS `cloud`.`template_view`;
