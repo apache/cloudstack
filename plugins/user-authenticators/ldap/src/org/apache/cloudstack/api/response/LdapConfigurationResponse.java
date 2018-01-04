@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.response;
 
 import com.google.gson.annotations.SerializedName;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
 import com.cloud.serializer.Param;
@@ -26,15 +27,15 @@ import org.apache.cloudstack.ldap.LdapConfiguration;
 
 @EntityReference(value = LdapConfiguration.class)
 public class LdapConfigurationResponse extends BaseResponse {
-    @SerializedName("hostname")
-    @Param(description = "hostname")
+    @SerializedName(ApiConstants.HOST_NAME)
+    @Param(description = "name of the host running the ldap server")
     private String hostname;
 
-    @SerializedName("port")
-    @Param(description = "port")
+    @SerializedName(ApiConstants.PORT)
+    @Param(description = "port teh ldap server is running on")
     private int port;
 
-    @SerializedName("domain_id")
+    @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "linked domain")
     private String domainId;
 

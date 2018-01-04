@@ -61,7 +61,7 @@ public class LinkDomainToLdapCmdTest implements LdapConfigurationChanger
     @Test
     public void execute() throws Exception {
 //      test with valid params and with admin who doesnt exist in cloudstack
-        long domainId = 1;
+        Long domainId = 1L;
         String type = "GROUP";
         String ldapDomain = "CN=test,DC=ccp,DC=Citrix,DC=com";
         short accountType = Account.ACCOUNT_TYPE_DOMAIN_ADMIN;
@@ -73,7 +73,7 @@ public class LinkDomainToLdapCmdTest implements LdapConfigurationChanger
         setHiddenField(linkDomainToLdapCmd, "domainId", domainId);
         setHiddenField(linkDomainToLdapCmd, "accountType", accountType);
 
-        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId, type, ldapDomain, (short)accountType);
+        LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId.toString(), type, ldapDomain, (short)accountType);
         when(ldapManager.linkDomainToLdap(linkDomainToLdapCmd)).thenReturn(response);
         when(ldapManager.getUser(username, type, ldapDomain, 1L)).thenReturn(new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", ldapDomain, "ccp", false, null));
 
@@ -89,7 +89,7 @@ public class LinkDomainToLdapCmdTest implements LdapConfigurationChanger
         LinkDomainToLdapResponse result = (LinkDomainToLdapResponse)linkDomainToLdapCmd.getResponseObject();
         assertEquals("objectName", "LinkDomainToLdap", result.getObjectName());
         assertEquals("commandName", linkDomainToLdapCmd.getCommandName(), result.getResponseName());
-        assertEquals("domainId", domainId, result.getDomainId());
+        assertEquals("domainId", domainId.toString(), result.getDomainId());
         assertEquals("type", type, result.getType());
         assertEquals("name", ldapDomain, result.getLdapDomain());
         assertEquals("accountId", String.valueOf(accountId), result.getAdminId());

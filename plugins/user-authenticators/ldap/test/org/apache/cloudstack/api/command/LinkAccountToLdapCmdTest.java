@@ -87,7 +87,7 @@ public class LinkAccountToLdapCmdTest implements LdapConfigurationChanger {
 
         linkAccountToLdapCmd.execute();
         LinkAccountToLdapResponse result = (LinkAccountToLdapResponse)linkAccountToLdapCmd.getResponseObject();
-        assertEquals("objectName", "LinkAccountToLdap", result.getObjectName());
+        assertEquals("objectName", linkAccountToLdapCmd.APINAME, result.getObjectName());
         assertEquals("commandName", linkAccountToLdapCmd.getCommandName(), result.getResponseName());
         assertEquals("domainId", String.valueOf(domainId), result.getDomainId());
         assertEquals("type", type, result.getType());

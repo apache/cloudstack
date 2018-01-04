@@ -40,11 +40,11 @@ import org.apache.log4j.Logger;
 import javax.inject.Inject;
 import java.util.UUID;
 
-@APICommand(name = "linkAccountToLdap", description = "link a cloudstack account to a group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.11.0",
-    requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = LinkAccountToLdapCmd.APINAME, description = "link a cloudstack account to a group or OU in ldap", responseObject = LinkDomainToLdapResponse.class, since = "4.11.0",
+    requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, authorized = {RoleType.Admin,RoleType.DomainAdmin})
 public class LinkAccountToLdapCmd extends BaseCmd {
     public static final Logger LOGGER = Logger.getLogger(LinkAccountToLdapCmd.class.getName());
-    public static final String APINAME = "LinkAccountToLdap";
+    public static final String APINAME = "linkAccountToLdap";
 
     @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = true, entityType = DomainResponse.class, description = "The id of the domain that is to contain the linked account.")
     private Long domainId;
