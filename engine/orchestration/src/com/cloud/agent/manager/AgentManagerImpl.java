@@ -992,6 +992,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         if (host.getStatus() == Status.Disconnected) {
             s_logger.debug("Host is already disconnected, no work to be done: " + hostId);
+            return;
         }
 
         if (host.getStatus() != Status.Up && host.getStatus() != Status.Alert && host.getStatus() != Status.Rebalancing) {
