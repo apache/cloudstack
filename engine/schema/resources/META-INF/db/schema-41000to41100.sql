@@ -516,3 +516,6 @@ UPDATE `cloud`.`vm_template` SET guest_os_id=99 WHERE id=8;
 
 -- Network External Ids
 ALTER TABLE `cloud`.`networks` ADD `external_id` varchar(255);
+
+--[CLOUDSTACK-9846] Make provision to store content and subject for Alerts in separate columns.
+ALTER TABLE `cloud.`alert` ADD COLUMN `content` VARCHAR(5000);

@@ -18,7 +18,6 @@ package com.cloud.resource;
 
 import java.util.List;
 
-import com.cloud.dc.DataCenter;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
 import org.apache.cloudstack.api.command.admin.host.AddHostCmd;
@@ -29,6 +28,8 @@ import org.apache.cloudstack.api.command.admin.host.ReconnectHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostCmd;
 import org.apache.cloudstack.api.command.admin.host.UpdateHostPasswordCmd;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
@@ -41,25 +42,17 @@ public interface ResourceService {
     /**
      * Updates a host
      *
-     * @param cmd
-     *            - the command specifying hostId
-     * @return hostObject
-     * @throws NoTransitionException
+     * @param cmd - the command specifying hostId
      */
     Host updateHost(UpdateHostCmd cmd) throws NoTransitionException;
 
     Host cancelMaintenance(CancelMaintenanceCmd cmd);
 
-    Host reconnectHost(ReconnectHostCmd cmd);
+    Host reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException;
 
     /**
      * We will automatically create an Apache CloudStack cluster to attach to the external cluster and return a hyper host to perform
      * host related operation within the cluster
-     *
-     * @param cmd
-     * @return
-     * @throws IllegalArgumentException
-     * @throws DiscoveryException
      */
     List<? extends Cluster> discoverCluster(AddClusterCmd cmd) throws IllegalArgumentException, DiscoveryException, ResourceInUseException;
 
@@ -75,12 +68,6 @@ public interface ResourceService {
 
     /**
      * Deletes a host
-     *
-     * @param hostId
-     *            TODO
-     * @param isForced
-     *            TODO
-     *
      * @param true if deleted, false otherwise
      */
     boolean deleteHost(long hostId, boolean isForced, boolean isForceDeleteStorage);

@@ -36,7 +36,7 @@ import com.cloud.resource.ServerResource;
  */
 public interface AgentManager {
     static final ConfigKey<Integer> Wait = new ConfigKey<Integer>("Advanced", Integer.class, "wait", "1800", "Time in seconds to wait for control commands to return",
-        true);
+            true);
 
     public enum TapAgentsAction {
         Add, Del, Contains,
@@ -143,7 +143,7 @@ public interface AgentManager {
 
     public void pullAgentOutMaintenance(long hostId);
 
-    boolean reconnect(long hostId);
+    void reconnect(long hostId) throws AgentUnavailableException;
 
     void rescan();
 

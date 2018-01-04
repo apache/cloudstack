@@ -28,12 +28,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import com.google.gson.Gson;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
@@ -41,6 +35,9 @@ import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationSe
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager.NetworkDevice;
 import org.apache.cloudstack.region.gslb.GslbServiceProvider;
+import org.apache.log4j.Logger;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -84,6 +81,7 @@ import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
+import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientNetworkCapacityException;
@@ -154,10 +152,11 @@ import com.cloud.utils.net.UrlUtil;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.VirtualMachineProfile;
+import com.google.gson.Gson;
 
 public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
-        implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager,
-        IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
+implements LoadBalancingServiceProvider, NetscalerLoadBalancerElementService, ExternalLoadBalancerDeviceManager,
+IpDeployer, StaticNatServiceProvider, GslbServiceProvider {
 
     private static final Logger s_logger = Logger.getLogger(NetscalerElement.class);
     public static final AutoScaleCounterType AutoScaleCounterSnmp = new AutoScaleCounterType("snmp");
@@ -218,7 +217,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
 
         boolean handleInAdvanceZone = (zone.getNetworkType() == NetworkType.Advanced
                 && (config.getGuestType() == Network.GuestType.Isolated
-                        || config.getGuestType() == Network.GuestType.Shared)
+                || config.getGuestType() == Network.GuestType.Shared)
                 && config.getTrafficType() == TrafficType.Guest);
         boolean handleInBasicZone = (zone.getNetworkType() == NetworkType.Basic
                 && config.getGuestType() == Network.GuestType.Shared && config.getTrafficType() == TrafficType.Guest);
@@ -242,7 +241,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
     @Override
     public boolean implement(Network guestConfig, NetworkOffering offering, DeployDestination dest,
             ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException,
-                    InsufficientNetworkCapacityException {
+    InsufficientNetworkCapacityException {
 
         if (!canHandle(guestConfig, Service.Lb)) {
             return false;
@@ -271,7 +270,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
             throw new ResourceUnavailableException(
                     "There are no NetScaler load balancer devices with the free capacity for implementing this network : "
                             + e.getMessage(),
-                    DataCenter.class, guestConfig.getDataCenterId());
+                            DataCenter.class, guestConfig.getDataCenterId());
         }
     }
 
@@ -286,7 +285,6 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         Map<String, String> _configs;
         List<NetScalerControlCenterVO> ncc = _netscalerControlCenterDao.listAll();
         HostVO hostVO = null;
-        Map<String, Object> params;
         if (ncc.size() > 0) {
             NetScalerControlCenterVO nccVO = ncc.get(0);
             String ipAddress = nccVO.getNccip();
@@ -414,7 +412,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
     @Override
     public boolean prepare(Network config, NicProfile nic, VirtualMachineProfile vm, DeployDestination dest,
             ReservationContext context) throws ConcurrentOperationException, InsufficientNetworkCapacityException,
-                    ResourceUnavailableException {
+    ResourceUnavailableException {
         return true;
     }
 
@@ -593,45 +591,45 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         boolean dedicatedUse = (configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED) != null)
                 ? Boolean.parseBoolean(configParams.get(ApiConstants.LOAD_BALANCER_DEVICE_DEDICATED)) : false;
 
-        if (dedicatedUse && !deviceName.equals(NetworkDevice.NetscalerVPXLoadBalancer.getName())) {
-            String msg = "Only Netscaler VPX load balancers can be specified for dedicated use";
-            s_logger.debug(msg);
-            throw new InvalidParameterValueException(msg);
-        }
+                if (dedicatedUse && !deviceName.equals(NetworkDevice.NetscalerVPXLoadBalancer.getName())) {
+                    String msg = "Only Netscaler VPX load balancers can be specified for dedicated use";
+                    s_logger.debug(msg);
+                    throw new InvalidParameterValueException(msg);
+                }
 
-        if (cmd.isGslbProvider()) {
+                if (cmd.isGslbProvider()) {
 
-            if (!deviceName.equals(NetworkDevice.NetscalerVPXLoadBalancer.getName())
-                    && !deviceName.equals(NetworkDevice.NetscalerMPXLoadBalancer.getName())) {
-                String msg = "Only Netscaler VPX or MPX load balancers can be specified as GSLB service provider";
-                s_logger.debug(msg);
-                throw new InvalidParameterValueException(msg);
-            }
+                    if (!deviceName.equals(NetworkDevice.NetscalerVPXLoadBalancer.getName())
+                            && !deviceName.equals(NetworkDevice.NetscalerMPXLoadBalancer.getName())) {
+                        String msg = "Only Netscaler VPX or MPX load balancers can be specified as GSLB service provider";
+                        s_logger.debug(msg);
+                        throw new InvalidParameterValueException(msg);
+                    }
 
-            if (cmd.getSitePublicIp() == null || cmd.getSitePrivateIp() == null) {
-                String msg = "Public and Privae IP needs to provided for NetScaler that will be GSLB provider";
-                s_logger.debug(msg);
-                throw new InvalidParameterValueException(msg);
-            }
+                    if (cmd.getSitePublicIp() == null || cmd.getSitePrivateIp() == null) {
+                        String msg = "Public and Privae IP needs to provided for NetScaler that will be GSLB provider";
+                        s_logger.debug(msg);
+                        throw new InvalidParameterValueException(msg);
+                    }
 
-            if (dedicatedUse) {
-                throw new InvalidParameterValueException(
-                        "NetScaler provisioned to be GSLB service provider can only be configured for shared usage.");
-            }
+                    if (dedicatedUse) {
+                        throw new InvalidParameterValueException(
+                                "NetScaler provisioned to be GSLB service provider can only be configured for shared usage.");
+                    }
 
-        }
+                }
 
-        if (cmd.isExclusiveGslbProvider() && !cmd.isGslbProvider()) {
-            throw new InvalidParameterValueException(
-                    "NetScaler can be provisioned to be exclusive GSLB service provider"
-                            + " only if its being configured as GSLB service provider also.");
-        }
+                if (cmd.isExclusiveGslbProvider() && !cmd.isGslbProvider()) {
+                    throw new InvalidParameterValueException(
+                            "NetScaler can be provisioned to be exclusive GSLB service provider"
+                                    + " only if its being configured as GSLB service provider also.");
+                }
 
-        ExternalLoadBalancerDeviceVO lbDeviceVO = addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(),
-                cmd.getUsername(), cmd.getPassword(), deviceName, new NetscalerResource(), cmd.isGslbProvider(),
-                cmd.isExclusiveGslbProvider(), cmd.getSitePublicIp(), cmd.getSitePrivateIp());
+                ExternalLoadBalancerDeviceVO lbDeviceVO = addExternalLoadBalancer(cmd.getPhysicalNetworkId(), cmd.getUrl(),
+                        cmd.getUsername(), cmd.getPassword(), deviceName, new NetscalerResource(), cmd.isGslbProvider(),
+                        cmd.isExclusiveGslbProvider(), cmd.getSitePublicIp(), cmd.getSitePrivateIp());
 
-        return lbDeviceVO;
+                return lbDeviceVO;
     }
 
     @Override
@@ -759,7 +757,11 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         });
         HostVO host = _hostDao.findById(lbDeviceVo.getHostId());
 
-        _agentMgr.reconnect(host.getId());
+        try {
+            _agentMgr.reconnect(host.getId());
+        } catch (AgentUnavailableException e) {
+            s_logger.warn("failed to reconnect host " + host, e);
+        }
         return lbDeviceVo;
     }
 
@@ -858,8 +860,9 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         boolean flag=false;
         try {
             result = _netscalerServicePackageDao.findByUuid(cmd.getId());
-            if (result == null)
+            if (result == null) {
                 throw new CloudRuntimeException("Record does not Exists in the Table");
+            }
 
             if(_networkOfferingDao.isUsingServicePackage(result.getUuid()))
             {
@@ -869,10 +872,11 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
             flag = _netscalerServicePackageDao.remove(result.getId());
 
         } catch (Exception e) {
-            if (e instanceof InvalidParameterValueException)
+            if (e instanceof InvalidParameterValueException) {
                 throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
-            else
-               throw e;
+            } else {
+                throw e;
+            }
 
         }
         return flag;
@@ -884,18 +888,19 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
     public boolean deleteNetscalerControlCenter(DeleteNetscalerControlCenterCmd cmd) throws CloudRuntimeException {
 
         NetScalerControlCenterVO result = _netscalerControlCenterDao.findByUuid(cmd.getId());
-        if (result == null)
+        if (result == null) {
             throw new CloudRuntimeException("External Netscaler Control Center Table does not contain record with this ID");
-        else {
+        } else {
             //ID list of Network Offering which are not removed and have service Package Uuid field not null.
             List<Long> servicePackageId_list = _networkOfferingDao.listNetworkOfferingID();
 
             if (servicePackageId_list.size() != 0) {
                 //VO list of Networks  which are using Network Offering.
                 List<NetworkVO> networkVO_list = _networkDao.listNetworkVO(servicePackageId_list);
-                if (networkVO_list != null && networkVO_list.size() != 0)
+                if (networkVO_list != null && networkVO_list.size() != 0) {
                     throw new CloudRuntimeException(
                             "ServicePackages published by NetScalerControlCenter are being used by NetworkOfferings. Try deleting NetworkOffering with ServicePackages and then delete NetScalerControlCenter.");
+                }
             }
         }
         try {
@@ -1466,8 +1471,9 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
     @DB
     public NetScalerControlCenterVO registerNetscalerControlCenter(RegisterNetscalerControlCenterCmd cmd) {
 
-        if (_netscalerControlCenterDao.listAll() != null && _netscalerControlCenterDao.listAll().size() != 0)
+        if (_netscalerControlCenterDao.listAll() != null && _netscalerControlCenterDao.listAll().size() != 0) {
             throw new CloudRuntimeException("One Netscaler Control Center already exist in the DataBase. At a time only one Netscaler Control Center is allowed");
+        }
 
         final RegisterNetscalerControlCenterCmd cmdinfo = cmd;
         String ipAddress = cmd.getIpaddress();
@@ -1511,7 +1517,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
         Long serviceOfferingId = cmd.getServiceOfferingId();
         DeploymentPlan plan = new DataCenterDeployment(dest.getDataCenter().getId());
         try {
-             resp =  _netScalerVMManager.deployNsVpx(cmd.getAccount(), dest, plan, serviceOfferingId, templateId);
+            resp =  _netScalerVMManager.deployNsVpx(cmd.getAccount(), dest, plan, serviceOfferingId, templateId);
         } catch (InsufficientCapacityException e) {
             e.printStackTrace();
         }
@@ -1520,7 +1526,7 @@ public class NetscalerElement extends ExternalLoadBalancerDeviceManagerImpl
 
     @Override
     public VirtualRouter stopNetscalerServiceVm(Long id, boolean forced, Account callingAccount, long callingUserId) throws ConcurrentOperationException,
-            ResourceUnavailableException {
+    ResourceUnavailableException {
         return _netScalerVMManager.stopNetScalerVm(id, forced, callingAccount, callingUserId);
     }
 }

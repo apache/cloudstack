@@ -41,4 +41,6 @@ public interface Alert extends Identity, InternalIdentity {
     boolean getArchived();
 
     String getName();
+
+    String getContent();
 }
