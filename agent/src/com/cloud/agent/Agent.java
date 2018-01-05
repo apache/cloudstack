@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.agent;
 
-import com.cloud.utils.UriUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -38,8 +37,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
-import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
 import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificate;
 import org.apache.cloudstack.ca.SetupCertificateAnswer;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
@@ -555,8 +552,6 @@ public class Agent implements HandlerFactory, IAgentControl {
                         answer = setupAgentKeystore((SetupKeyStoreCommand) cmd);
                     } else if (cmd instanceof SetupCertificateCommand && ((SetupCertificateCommand) cmd).isHandleByAgent()) {
                         answer = setupAgentCertificate((SetupCertificateCommand) cmd);
-                    } else if (cmd instanceof CheckUrlCommand) {
-                        answer = checkUrl((CheckUrlCommand) cmd);
                     } else if (cmd instanceof SetupDirectDownloadCertificate) {
                         answer = setupDirectDownloadCertificate((SetupDirectDownloadCertificate) cmd);
                     } else {
@@ -631,22 +626,6 @@ public class Agent implements HandlerFactory, IAgentControl {
         String importCmd = String.format(importCommandFormat, cerFile, keyStoreFile, certificateName, privatePassword);
         Script.runSimpleBashScript(importCmd);
         return new Answer(cmd, true, "Certificate " + certificateName + " imported");
-    }
-
-    private Answer checkUrl(CheckUrlCommand cmd) {
-        final String url = cmd.getUrl();
-        s_logger.debug("Checking URL: " + url);
-        boolean checkResult = true;
-        Long remoteSize = null;
-        try {
-            UriUtils.checkUrlExistence(url);
-            remoteSize = UriUtils.getRemoteSize(url);
-        }
-        catch (IllegalArgumentException e) {
-            s_logger.warn(e.getMessage());
-            checkResult = false;
-        }
-        return new CheckUrlAnswer(checkResult, remoteSize);
     }
 
     public Answer setupAgentKeystore(final SetupKeyStoreCommand cmd) {
