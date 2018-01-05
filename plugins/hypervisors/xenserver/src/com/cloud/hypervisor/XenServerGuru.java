@@ -22,6 +22,8 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -75,6 +77,8 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
     private UserVmDao _userVmDao;
     @Inject
     GuestOsDetailsDao _guestOsDetailsDao;
+    @Inject
+    EndPointSelector endPointSelector;
 
     private static final ConfigKey<Integer> MaxNumberOfVCPUSPerVM = new ConfigKey<Integer>("Advanced", Integer.class, "xen.vm.vcpu.max", "16",
             "Maximum number of VCPUs that VM can get in XenServer.", true, ConfigKey.Scope.Cluster);
@@ -183,19 +187,21 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
                 DataStoreTO destStore = destData.getDataStore();
                 if (srcStore instanceof NfsTO && destStore instanceof NfsTO) {
                     HostVO host = hostDao.findById(hostId);
+                    EndPoint ep = endPointSelector.selectOneHypervisorHostByZone(host.getDataCenterId(), HypervisorType.XenServer);
+                    host = hostDao.findById(ep.getId());
                     hostDao.loadDetails(host);
                     String hypervisorVersion = host.getHypervisorVersion();
                     String snapshotHotFixVersion = host.getDetail(XenserverConfigs.XS620HotFix);
                     if (hypervisorVersion != null && !hypervisorVersion.equalsIgnoreCase("6.1.0")) {
                         if (!(hypervisorVersion.equalsIgnoreCase("6.2.0") &&
                                 !(snapshotHotFixVersion != null && snapshotHotFixVersion.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004)))) {
-                            return new Pair<Boolean, Long>(Boolean.TRUE, new Long(host.getId()));
+                            return new Pair<>(Boolean.TRUE, ep.getId());
                         }
                     }
                 }
             }
         }
-        return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
+        return new Pair<>(Boolean.FALSE, hostId);
     }
 
     @Override

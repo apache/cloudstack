@@ -48,6 +48,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
@@ -83,7 +84,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     protected SearchBuilder<HostVO> IdStatusSearch;
     protected SearchBuilder<HostVO> TypeDcSearch;
-    protected SearchBuilder<HostVO> TypeDcStatusSearch;
     protected SearchBuilder<HostVO> TypeClusterStatusSearch;
     protected SearchBuilder<HostVO> MsStatusSearch;
     protected SearchBuilder<HostVO> DcPrivateIpAddressSearch;
@@ -126,6 +126,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     protected GenericSearchBuilder<HostVO, Long> ClustersForHostsNotOwnedByAnyMSSearch;
     protected GenericSearchBuilder<ClusterVO, Long> AllClustersSearch;
     protected SearchBuilder<HostVO> HostsInClusterSearch;
+    protected SearchBuilder<HostVO> HostByHypervisor;
 
     protected Attribute _statusAttr;
     protected Attribute _resourceStateAttr;
@@ -185,13 +186,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SecondaryStorageVMSearch.and("dc", SecondaryStorageVMSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         SecondaryStorageVMSearch.and("status", SecondaryStorageVMSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         SecondaryStorageVMSearch.done();
-
-        TypeDcStatusSearch = createSearchBuilder();
-        TypeDcStatusSearch.and("type", TypeDcStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
-        TypeDcStatusSearch.and("dc", TypeDcStatusSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
-        TypeDcStatusSearch.and("status", TypeDcStatusSearch.entity().getStatus(), SearchCriteria.Op.EQ);
-        TypeDcStatusSearch.and("resourceState", TypeDcStatusSearch.entity().getResourceState(), SearchCriteria.Op.EQ);
-        TypeDcStatusSearch.done();
 
         TypeClusterStatusSearch = createSearchBuilder();
         TypeClusterStatusSearch.and("type", TypeClusterStatusSearch.entity().getType(), SearchCriteria.Op.EQ);
@@ -407,6 +401,14 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         HostIdSearch.selectFields(HostIdSearch.entity().getId());
         HostIdSearch.and("dataCenterId", HostIdSearch.entity().getDataCenterId(), Op.EQ);
         HostIdSearch.done();
+
+        HostByHypervisor = createSearchBuilder();
+        HostByHypervisor.and("hypervisorType", HostByHypervisor.entity().getHypervisorType(), Op.EQ);
+        HostByHypervisor.and("status", HostByHypervisor.entity().getStatus(), Op.EQ);
+        HostByHypervisor.and("zoneId", HostByHypervisor.entity().getDataCenterId(), Op.EQ);
+        HostByHypervisor.and("resourceState", HostByHypervisor.entity().getResourceState(), Op.EQ);
+        HostByHypervisor.and("type", HostByHypervisor.entity().getType(), Op.EQ);
+        HostByHypervisor.done();
 
         _statusAttr = _allAttributes.get("status");
         _msIdAttr = _allAttributes.get("managementServerId");
@@ -691,6 +693,32 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         host.setDisconnectedOn(new Date());
         ub = getUpdateBuilder(host);
         update(ub, sc, null);
+    }
+
+    @Override
+    public HostVO findOneByZoneAndHypervisor(long zoneId, HypervisorType hypervisorType) {
+        return findOneByZoneAndHypervisorAndResourceState(zoneId, hypervisorType, ResourceState.Enabled);
+    }
+
+    private HostVO findOneByZoneAndHypervisorAndResourceState(long zoneId, HypervisorType hypervisorType, ResourceState enabled) {
+        SearchCriteria<HostVO> sc = HostByHypervisor.create();
+        sc.setParameters("hypervisorType", hypervisorType);
+        sc.setParameters("zoneId", zoneId);
+        sc.setParameters("status", Status.Up);
+        sc.setParameters("resourceState", enabled);
+        sc.setParameters("type", Type.Routing);
+
+        Filter filter = new Filter(1);
+        List<HostVO> hostVOList = listBy(sc, filter);
+        if (hostVOList.isEmpty()) {
+            return null;
+        }
+        return hostVOList.get(0);
+    }
+
+    @Override
+    public HostVO findOneDisabledByZoneAndHypervisor(long zoneId, HypervisorType hypervisorType) {
+        return findOneByZoneAndHypervisorAndResourceState(zoneId, hypervisorType, ResourceState.Disabled);
     }
 
     @Override
