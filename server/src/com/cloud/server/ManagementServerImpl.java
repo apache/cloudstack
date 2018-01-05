@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.server;
 
+import org.apache.cloudstack.api.command.admin.direct.download.UploadTemplateDirectDownloadCertificate;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -3026,6 +3027,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ConfigureOutOfBandManagementCmd.class);
         cmdList.add(IssueOutOfBandManagementPowerActionCmd.class);
         cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
+        cmdList.add(UploadTemplateDirectDownloadCertificate.class);
 
         return cmdList;
     }

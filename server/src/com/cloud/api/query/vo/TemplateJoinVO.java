@@ -256,6 +256,9 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
     @Column(name = "temp_zone_pair")
     private String tempZonePair; // represent a distinct (templateId, data_center_id) pair
 
+    @Column(name = "direct_download")
+    private boolean directDownload;
+
     public TemplateJoinVO() {
     }
 
@@ -541,6 +544,10 @@ public class TemplateJoinVO extends BaseViewVO implements ControlledViewEntity {
 
     public State getTemplateState() {
         return templateState;
+    }
+
+    public boolean isDirectDownload() {
+        return directDownload;
     }
 
     @Override

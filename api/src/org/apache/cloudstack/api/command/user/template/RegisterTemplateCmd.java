@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import com.cloud.hypervisor.Hypervisor;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.List;
@@ -69,7 +70,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     private String format;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "the target hypervisor for the template")
-    private String hypervisor;
+    protected String hypervisor;
 
     @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true if this template is a featured template, false otherwise")
     private Boolean featured;
@@ -139,6 +140,11 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ROUTING, type = CommandType.BOOLEAN, description = "true if the template type is routing i.e., if template is used to deploy router")
     protected Boolean isRoutingType;
+
+    @Parameter(name=ApiConstants.DIRECT_DOWNLOAD,
+            type = CommandType.BOOLEAN,
+            description = "true if template should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
+    private Boolean directDownload;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -234,6 +240,10 @@ public class RegisterTemplateCmd extends BaseCmd {
         return isRoutingType;
     }
 
+    public boolean isDirectDownload() {
+        return directDownload == null ? false : directDownload;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -259,6 +269,9 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceAllocationException {
+        if (isDirectDownload() && !hypervisor.equals(Hypervisor.HypervisorType.KVM.toString())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Parameter directdownload is only allowed for KVM templates");
+        }
         try {
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null) {

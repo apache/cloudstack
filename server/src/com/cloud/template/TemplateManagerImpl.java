@@ -26,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.cloud.deploy.DeployDestination;
 import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -451,10 +452,18 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     }
 
     @Override
-    public void prepareIsoForVmProfile(VirtualMachineProfile profile) {
+    public void prepareIsoForVmProfile(VirtualMachineProfile profile, DeployDestination dest) {
         UserVmVO vm = _userVmDao.findById(profile.getId());
         if (vm.getIsoId() != null) {
-            TemplateInfo template = prepareIso(vm.getIsoId(), vm.getDataCenterId());
+            Map<Volume, StoragePool> storageForDisks = dest.getStorageForDisks();
+            Long poolId = null;
+            for (StoragePool storagePool : storageForDisks.values()) {
+                if (poolId != null && storagePool.getId() != poolId) {
+                    throw new CloudRuntimeException("Cannot determine where to download iso");
+                }
+                poolId = storagePool.getId();
+            }
+            TemplateInfo template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
             if (template == null){
                 s_logger.error("Failed to prepare ISO on secondary or cache storage");
                 throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");
@@ -989,14 +998,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     // for ISO, we need to consider whether to copy to cache storage or not if it is not on NFS, since our hypervisor resource always assumes that they are in NFS
     @Override
-    public TemplateInfo prepareIso(long isoId, long dcId) {
-        TemplateInfo tmplt = _tmplFactory.getTemplate(isoId, DataStoreRole.Image, dcId);
+    public TemplateInfo prepareIso(long isoId, long dcId, Long hostId, Long poolId) {
+        TemplateInfo tmplt;
+        boolean bypassed = false;
+        if (_tmplFactory.isTemplateMarkedForDirectDownload(isoId)) {
+            tmplt = _tmplFactory.getReadyBypassedTemplateOnPrimaryStore(isoId, poolId, hostId);
+            bypassed = true;
+        } else {
+            tmplt = _tmplFactory.getTemplate(isoId, DataStoreRole.Image, dcId);
+        }
         if (tmplt == null || tmplt.getFormat() != ImageFormat.ISO) {
             s_logger.warn("ISO: " + isoId + " does not exist in vm_template table");
             return null;
         }
 
-        if (tmplt.getDataStore() != null && !(tmplt.getDataStore().getTO() instanceof NfsTO)) {
+        if (!bypassed && tmplt.getDataStore() != null && !(tmplt.getDataStore().getTO() instanceof NfsTO)) {
             // if it is s3, need to download into cache storage first
             Scope destScope = new ZoneScope(dcId);
             TemplateInfo cacheData = (TemplateInfo)cacheMgr.createCacheObject(tmplt, destScope);
@@ -1020,7 +1036,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
 
         // prepare ISO ready to mount on hypervisor resource level
-        TemplateInfo tmplt = prepareIso(isoId, vm.getDataCenterId());
+        TemplateInfo tmplt = prepareIso(isoId, vm.getDataCenterId(), vm.getHostId(), null);
 
         String vmName = vm.getInstanceName();
 
@@ -1601,7 +1617,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
                 TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
-                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), false, isDynamicScalingEnabled);
+                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), false, isDynamicScalingEnabled, false);
 
         if (sourceTemplateId != null) {
             if (s_logger.isDebugEnabled()) {
@@ -1693,6 +1709,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Override
     public Long getTemplateSize(long templateId, long zoneId) {
+        if (_tmplStoreDao.isTemplateMarkedForDirectDownload(templateId)) {
+            // check if template is marked for direct download
+            return _tmplStoreDao.getReadyBypassedTemplate(templateId).getSize();
+        }
         TemplateDataStoreVO templateStoreRef = _tmplStoreDao.findByTemplateZoneDownloadStatus(templateId, zoneId, VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
         if (templateStoreRef == null) {
             // check if it is ready on image cache stores

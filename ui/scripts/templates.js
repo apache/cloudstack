@@ -219,10 +219,12 @@
                                                     $form.find('.form-item[rel=keyboardType]').css('display', 'inline-block');
                                                     
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
+                                                    $form.find('.form-item[rel=directdownload]').hide();
                                                 } else if ($(this).val() == "XenServer") {
                                                 	$form.find('.form-item[rel=rootDiskControllerType]').hide();
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
-                                                    $form.find('.form-item[rel=keyboardType]').hide();	
+                                                    $form.find('.form-item[rel=keyboardType]').hide();
+                                                    $form.find('.form-item[rel=directdownload]').hide();
                                                     
                                                     if (isAdmin())
                                                         $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');    
@@ -232,13 +234,31 @@
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                     
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
+                                                    if ($(this).val() == "KVM") {
+                                                        $form.find('.form-item[rel=directdownload]').css('display', 'inline-block');
+                                                    } else {
+                                                        $form.find('.form-item[rel=directdownload]').hide();
+                                                    }
                                                 }
                                             });
 
                                             args.$select.trigger('change');
                                         }
                                     },
-
+                                    // For KVM only: Direct Download
+                                    directdownload : {
+                                        label: 'label.direct.download',
+                                        docID: 'helpRegisterTemplateDirectDownload',
+                                        isBoolean: true,
+                                        dependsOn: 'hypervisor',
+                                        isHidden: true
+                                    },
+                                    checksum: {
+                                        label: 'label.checksum',
+                                        dependsOn: 'directdownload',
+                                        isHidden: true
+                                    },
+                                    // Direct Download - End
                                     xenserverToolsVersion61plus: {
                                         label: 'label.xenserver.tools.version.61.plus',
                                         isBoolean: true,
@@ -529,8 +549,22 @@
                                     });
                                 }
                                 //XenServer only (ends here)
-                                
-                                
+
+                                // KVM only (starts here)
+                                if (args.$form.find('.form-item[rel=rootDiskControllerTypeKVM]').css("display") != "none" && args.data.rootDiskControllerTypeKVM != "") {
+                                    $.extend(data, {
+                                        'details[0].rootDiskController': args.data.rootDiskControllerTypeKVM
+                                    });
+                                }
+
+                                if (args.$form.find('.form-item[rel=directdownload]').css("display") != "none" && args.data.directdownload != "") {
+                                    $.extend(data, {
+                                        'directdownload': (args.data.directdownload == "on") ? "true" : "false",
+                                        'checksum': args.data.checksum
+                                    });
+                                }
+                                // KVM only (ends here)
+
                                 //VMware only (starts here)
                                 if (args.$form.find('.form-item[rel=rootDiskControllerType]').css("display") != "none" && args.data.rootDiskControllerType != "") {
                                     $.extend(data, {
@@ -927,6 +961,11 @@
                                             else
                                                 return cloudStack.converters.convertBytes(args);
                                         }
+                                    },
+                                    directdownload: {
+                                        label: 'label.direct.download',
+                                        isBoolean: true,
+                                        converter: cloudStack.converters.toBooleanText
                                     },
                                     isextractable: {
                                         label: 'label.extractable',
@@ -1529,6 +1568,18 @@
                                             required: true
                                         }
                                     },
+                                    // For KVM only: Direct Download
+                                    directdownload : {
+                                        label: 'label.direct.download',
+                                        docID: 'helpRegisterTemplateDirectDownload',
+                                        isBoolean: true
+                                    },
+                                    checksum: {
+                                        label: 'label.checksum',
+                                        dependsOn: 'directdownload',
+                                        isHidden: true
+                                    },
+                                    // Direct Download - End
                                     zone: {
                                         label: 'label.zone',
                                         docID: 'helpRegisterISOZone',
@@ -1639,7 +1690,8 @@
                                     url: args.data.url,
                                     zoneid: args.data.zone,
                                     isextractable: (args.data.isExtractable == "on"),
-                                    bootable: (args.data.isBootable == "on")
+                                    bootable: (args.data.isBootable == "on"),
+                                    directdownload: (args.data.directdownload == "on")
                                 };
 
                                 if (args.$form.find('.form-item[rel=osTypeId]').css("display") != "none") {
@@ -1655,6 +1707,11 @@
                                 if (args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
                                     $.extend(data, {
                                         isfeatured: (args.data.isFeatured == "on")
+                                    });
+                                }
+                                if (args.$form.find('.form-item[rel=checksum]').css("display") != "none") {
+                                    $.extend(data, {
+                                        checksum: args.data.checksum
                                     });
                                 }
 
@@ -1971,6 +2028,11 @@
                                         validation: {
                                             required: true
                                         }
+                                    },
+                                    directdownload: {
+                                        label: 'label.direct.download',
+                                        isBoolean: true,
+                                        converter: cloudStack.converters.toBooleanText
                                     },
                                     size: {
                                         label: 'label.size',

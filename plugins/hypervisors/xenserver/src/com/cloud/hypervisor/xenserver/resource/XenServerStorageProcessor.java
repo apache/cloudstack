@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.AttachPrimaryDataStoreAnswer;
@@ -1552,5 +1553,10 @@ public class XenServerStorageProcessor implements StorageProcessor {
             s_logger.debug("Failed to introduce object", e);
             return new Answer(cmd, false, e.toString());
         }
+    }
+
+    @Override
+    public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
+        return null;
     }
 }

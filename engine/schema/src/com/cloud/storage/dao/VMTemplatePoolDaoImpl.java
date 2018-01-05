@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import javax.inject.Inject;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -45,6 +47,9 @@ import com.cloud.utils.db.UpdateBuilder;
 @Local(value = {VMTemplatePoolDao.class})
 public class VMTemplatePoolDaoImpl extends GenericDaoBase<VMTemplateStoragePoolVO, Long> implements VMTemplatePoolDao {
     public static final Logger s_logger = Logger.getLogger(VMTemplatePoolDaoImpl.class.getName());
+
+    @Inject
+    DataStoreManager dataStoreManager;
 
     protected final SearchBuilder<VMTemplateStoragePoolVO> PoolSearch;
     protected final SearchBuilder<VMTemplateStoragePoolVO> TemplateSearch;

@@ -595,6 +595,11 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     }
 
     @Override
+    public HostVO findOneRandomRunningHostByHypervisor(HypervisorType type) {
+        return null;
+    }
+
+    @Override
     public boolean isHostGpuEnabled(long hostId) {
         // TODO Auto-generated method stub
         return false;

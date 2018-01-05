@@ -3279,7 +3279,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         UserVmVO vm = _vmDao.findById(profile.getId());
         Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
-        _templateMgr.prepareIsoForVmProfile(profile);
+        _templateMgr.prepareIsoForVmProfile(profile, dest);
         return true;
     }
 

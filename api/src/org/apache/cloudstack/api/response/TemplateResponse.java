@@ -187,6 +187,10 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
     @Param(description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     private Boolean isDynamicallyScalable;
 
+    @SerializedName(ApiConstants.DIRECT_DOWNLOAD)
+    @Param(description = "KVM Only: true if template is directly downloaded to Primary Storage bypassing Secondary Storage")
+    private Boolean directDownload;
+
     public TemplateResponse() {
         //  zones = new LinkedHashSet<TemplateZoneResponse>();
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -360,5 +364,13 @@ public class TemplateResponse extends BaseResponse implements ControlledViewEnti
 
     public String getZoneId() {
         return zoneId;
+    }
+
+    public void setDirectDownload(Boolean directDownload) {
+        this.directDownload = directDownload;
+    }
+
+    public Boolean getDirectDownload() {
+        return directDownload;
     }
 }

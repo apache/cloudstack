@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.template;
 
+import com.cloud.hypervisor.Hypervisor;
 import java.net.URISyntaxException;
 import java.util.List;
 
@@ -39,6 +40,9 @@ public class RegisterTemplateCmdByAdmin extends RegisterTemplateCmd {
 
     @Override
     public void execute() throws ResourceAllocationException{
+        if (isDirectDownload() && !hypervisor.equals(Hypervisor.HypervisorType.KVM.toString())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Parameter directdownload is only allowed for KVM templates");
+        }
         try {
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null){

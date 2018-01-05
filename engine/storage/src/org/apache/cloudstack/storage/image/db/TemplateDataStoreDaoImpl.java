@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.image.db;
 
+import org.apache.commons.collections.CollectionUtils;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -65,6 +66,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     private SearchBuilder<TemplateDataStoreVO> storeTemplateStateSearch;
     private SearchBuilder<TemplateDataStoreVO> storeTemplateDownloadStatusSearch;
     private SearchBuilder<TemplateDataStoreVO> downloadTemplateSearch;
+    private SearchBuilder<TemplateDataStoreVO> directDownloadTemplateSeach;
     private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update template_store_ref set download_url_created=? where store_id in (select id from image_store where data_center_id=?)";
 
     @Inject
@@ -138,6 +140,13 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         downloadTemplateSearch.and("download_url", downloadTemplateSearch.entity().getExtractUrl(), Op.NNULL);
         downloadTemplateSearch.and("destroyed", downloadTemplateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         downloadTemplateSearch.done();
+
+        directDownloadTemplateSeach = createSearchBuilder();
+        directDownloadTemplateSeach.and("template_id", directDownloadTemplateSeach.entity().getTemplateId(), Op.EQ);
+        directDownloadTemplateSeach.and("download_state", directDownloadTemplateSeach.entity().getDownloadState(), Op.EQ);
+        directDownloadTemplateSeach.and("store_id", directDownloadTemplateSeach.entity().getDataStoreId(), Op.NULL);
+        directDownloadTemplateSeach.and("state", directDownloadTemplateSeach.entity().getState(), Op.EQ);
+        directDownloadTemplateSeach.done();
 
         return true;
     }
@@ -531,4 +540,33 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
 
     }
 
+    @Override
+    public TemplateDataStoreVO createTemplateDirectDownloadEntry(long templateId, Long size) {
+        TemplateDataStoreVO templateDataStoreVO = new TemplateDataStoreVO();
+        templateDataStoreVO.setTemplateId(templateId);
+        templateDataStoreVO.setDataStoreRole(DataStoreRole.Image);
+        templateDataStoreVO.setState(State.Ready);
+        templateDataStoreVO.setDownloadState(Status.BYPASSED);
+        templateDataStoreVO.setSize(size == null ? 0l : size);
+        return templateDataStoreVO;
+    }
+
+    @Override
+    public TemplateDataStoreVO getReadyBypassedTemplate(long templateId) {
+        SearchCriteria<TemplateDataStoreVO> sc = directDownloadTemplateSeach.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("download_state", Status.BYPASSED);
+        sc.setParameters("state", State.Ready);
+        List<TemplateDataStoreVO> list = search(sc, null);
+        if (CollectionUtils.isEmpty(list) || list.size() > 1) {
+            return null;
+        }
+        return list.get(0);
+    }
+
+    @Override
+    public boolean isTemplateMarkedForDirectDownload(long templateId) {
+        TemplateDataStoreVO templateRef = getReadyBypassedTemplate(templateId);
+        return templateRef != null;
+    }
 }

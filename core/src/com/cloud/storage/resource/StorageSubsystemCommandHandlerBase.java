@@ -19,6 +19,7 @@
 
 package com.cloud.storage.resource;
 
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -61,6 +62,8 @@ public class StorageSubsystemCommandHandlerBase implements StorageSubsystemComma
             return execute((DettachCommand)command);
         } else if (command instanceof IntroduceObjectCmd) {
             return processor.introduceObject((IntroduceObjectCmd)command);
+        } else if (command instanceof DirectDownloadCommand) {
+            return processor.handleDownloadTemplateToPrimaryStorage((DirectDownloadCommand) command);
         }
         return new Answer((Command)command, false, "not implemented yet");
     }

@@ -19,6 +19,7 @@
 
 package com.cloud.storage.resource;
 
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.CreateObjectCommand;
@@ -65,4 +66,6 @@ public interface StorageProcessor {
     Answer introduceObject(IntroduceObjectCmd cmd);
 
     Answer forgetObject(ForgetObjectCmd cmd);
+
+    public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd);
 }

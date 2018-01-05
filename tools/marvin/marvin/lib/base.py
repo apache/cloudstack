@@ -1230,6 +1230,9 @@ class Template:
         elif "projectid" in services:
             cmd.projectid = services["projectid"]
 
+        if "directdownload" in services:
+            cmd.directdownload = services["directdownload"]
+
         # Register Template
         template = apiclient.registerTemplate(cmd)
 

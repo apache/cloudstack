@@ -22,6 +22,7 @@ package com.cloud.resource;
 import java.io.File;
 import java.util.UUID;
 
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.AttachAnswer;
@@ -229,6 +230,10 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     @Override
     public Answer forgetObject(ForgetObjectCmd cmd) {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
         return null;
     }
 }

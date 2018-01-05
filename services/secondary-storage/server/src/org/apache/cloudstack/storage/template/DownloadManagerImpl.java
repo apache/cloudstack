@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.storage.template;
 
+import com.cloud.storage.template.MetalinkTemplateDownloader;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -568,7 +569,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     }
                     TemplateDownloader td;
                     if ((uri != null) && (uri.getScheme() != null)) {
-                        if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
+                        if (uri.getPath().endsWith(".metalink")) {
+                            td = new MetalinkTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes);
+                        } else if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
                             td = new HttpTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy, resourceType);
                         } else if (uri.getScheme().equalsIgnoreCase("file")) {
                             td = new LocalTemplateDownloader(_storage, url, tmpDir, maxTemplateSizeInBytes, new Completion(jobId));

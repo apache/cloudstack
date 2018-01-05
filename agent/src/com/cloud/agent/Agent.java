@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.agent;
 
+import com.cloud.utils.UriUtils;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -77,6 +79,9 @@ import com.cloud.utils.nio.Task;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.google.common.base.Strings;
+import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
+import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
+import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificate;
 
 /**
  * @config
@@ -548,6 +553,10 @@ public class Agent implements HandlerFactory, IAgentControl {
                         answer = setupAgentKeystore((SetupKeyStoreCommand) cmd);
                     } else if (cmd instanceof SetupCertificateCommand && ((SetupCertificateCommand) cmd).isHandleByAgent()) {
                         answer = setupAgentCertificate((SetupCertificateCommand) cmd);
+                    } else if (cmd instanceof CheckUrlCommand) {
+                        answer = checkUrl((CheckUrlCommand) cmd);
+                    } else if (cmd instanceof SetupDirectDownloadCertificate) {
+                        answer = setupDirectDownloadCertificate((SetupDirectDownloadCertificate) cmd);
                     } else {
                         if (cmd instanceof ReadyCommand) {
                             processReadyCommand(cmd);
@@ -595,6 +604,47 @@ public class Agent implements HandlerFactory, IAgentControl {
                 }
             }
         }
+    }
+
+    private Answer setupDirectDownloadCertificate(SetupDirectDownloadCertificate cmd) {
+        String certificate = cmd.getCertificate();
+        String certificateName = cmd.getCertificateName();
+        s_logger.info("Importing certificate " + certificateName + " into keystore");
+
+        final File agentFile = PropertiesUtil.findConfigFile("agent.properties");
+        if (agentFile == null) {
+            return new Answer(cmd, false, "Failed to find agent.properties file");
+        }
+
+        final String keyStoreFile = agentFile.getParent() + "/" + KeyStoreUtils.defaultKeystoreFile;
+
+        String cerFile = agentFile.getParent() + "/" + certificateName + ".cer";
+        Script.runSimpleBashScript(String.format("echo '%s' > %s", certificate, cerFile));
+
+        String privatePasswordFormat = "sed -n '/keystore.passphrase/p' '%s' 2>/dev/null  | sed 's/keystore.passphrase=//g' 2>/dev/null";
+        String privatePasswordCmd = String.format(privatePasswordFormat, agentFile.getAbsolutePath());
+        String privatePassword = Script.runSimpleBashScript(privatePasswordCmd);
+
+        String importCommandFormat = "keytool -importcert -file %s -keystore %s -alias '%s' -storepass '%s' -noprompt";
+        String importCmd = String.format(importCommandFormat, cerFile, keyStoreFile, certificateName, privatePassword);
+        Script.runSimpleBashScript(importCmd);
+        return new Answer(cmd, true, "Certificate " + certificateName + " imported");
+    }
+
+    private Answer checkUrl(CheckUrlCommand cmd) {
+        final String url = cmd.getUrl();
+        s_logger.debug("Checking URL: " + url);
+        boolean checkResult = true;
+        Long remoteSize = null;
+        try {
+            UriUtils.checkUrlExistence(url);
+            remoteSize = UriUtils.getRemoteSize(url);
+        }
+        catch (IllegalArgumentException e) {
+            s_logger.warn(e.getMessage());
+            checkResult = false;
+        }
+        return new CheckUrlAnswer(checkResult, remoteSize);
     }
 
     public Answer setupAgentKeystore(final SetupKeyStoreCommand cmd) {

@@ -189,4 +189,6 @@ public interface ResourceManager extends ResourceService {
      * @return Details of groupNames and enabled VGPU type with remaining capacity.
      */
     HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUStatistics(HostVO host);
+
+    HostVO findOneRandomRunningHostByHypervisor(HypervisorType type);
 }

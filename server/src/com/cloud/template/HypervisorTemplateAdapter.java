@@ -22,6 +22,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceManager;
+import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
+import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
 import javax.ejb.Local;
 import javax.inject.Inject;
 
@@ -103,10 +109,31 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     DataCenterDao _dcDao;
     @Inject
     MessageBus _messageBus;
+    @Inject
+    ResourceManager resourceManager;
 
     @Override
     public String getName() {
         return TemplateAdapterType.Hypervisor.getName();
+    }
+
+    /**
+     * Validate on random running KVM host that URL is reachable
+     * @param url url
+     */
+    private Long performDirectDownloadUrlValidation(final String url) {
+        HostVO host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM);
+        if (host == null) {
+            throw new CloudRuntimeException("Couldn't find a host to validate URL " + url);
+        }
+        CheckUrlCommand cmd = new CheckUrlCommand(url);
+        s_logger.debug("Performing URL " + url + " validation on host " + host.getId());
+        Answer answer = _agentMgr.easySend(host.getId(), cmd);
+        if (answer == null || !answer.getResult()) {
+            throw new CloudRuntimeException("URL: " + url + " validation failed on host id " + host.getId());
+        }
+        CheckUrlAnswer ans = (CheckUrlAnswer) answer;
+        return ans.getTemplateSize();
     }
 
     @Override
@@ -114,6 +141,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
         UriUtils.validateUrl(ImageFormat.ISO.getFileExtension(), url);
+        if (cmd.isDirectDownload()) {
+            Long templateSize = performDirectDownloadUrlValidation(url);
+            profile.setSize(templateSize);
+        }
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
@@ -125,10 +156,22 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
         UriUtils.validateUrl(cmd.getFormat(), url);
+        if (cmd.isDirectDownload()) {
+            Long templateSize = performDirectDownloadUrlValidation(url);
+            profile.setSize(templateSize);
+        }
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
         return profile;
+    }
+
+    /**
+     * Persist template marking it for direct download to Primary Storage, skipping Secondary Storage
+     */
+    private void persistDirectDownloadTemplate(long templateId, Long size) {
+        TemplateDataStoreVO directDownloadEntry = templateDataStoreDao.createTemplateDirectDownloadEntry(templateId, size);
+        templateDataStoreDao.persist(directDownloadEntry);
     }
 
     @Override
@@ -140,45 +183,50 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
         }
 
-        // find all eligible image stores for this zone scope
-        List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(profile.getZoneId()));
-        if (imageStores == null || imageStores.size() == 0) {
-            throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
-        }
-
-        Set<Long> zoneSet = new HashSet<Long>();
-        Collections.shuffle(imageStores); // For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
-        for (DataStore imageStore : imageStores) {
-            // skip data stores for a disabled zone
-            Long zoneId = imageStore.getScope().getScopeId();
-            if (zoneId != null) {
-                DataCenterVO zone = _dcDao.findById(zoneId);
-                if (zone == null) {
-                    s_logger.warn("Unable to find zone by id " + zoneId + ", so skip downloading template to its image store " + imageStore.getId());
-                    continue;
-                }
-
-                // Check if zone is disabled
-                if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
-                    s_logger.info("Zone " + zoneId + " is disabled, so skip downloading template to its image store " + imageStore.getId());
-                    continue;
-                }
-
-                // We want to download private template to one of the image store in a zone
-                if(isPrivateTemplate(template) && zoneSet.contains(zoneId)){
-                    continue;
-                }else {
-                    zoneSet.add(zoneId);
-                }
-
+        if (profile.isDirectDownload()) {
+            //KVM direct download templates bypassing Secondary Storage
+            persistDirectDownloadTemplate(template.getId(), profile.getSize());
+        } else {
+            // find all eligible image stores for this zone scope
+            List<DataStore> imageStores = storeMgr.getImageStoresByScope(new ZoneScope(profile.getZoneId()));
+            if (imageStores == null || imageStores.size() == 0) {
+                throw new CloudRuntimeException("Unable to find image store to download template " + profile.getTemplate());
             }
 
-            TemplateInfo tmpl = imageFactory.getTemplate(template.getId(), imageStore);
-            CreateTemplateContext<TemplateApiResult> context = new CreateTemplateContext<TemplateApiResult>(null, tmpl);
-            AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> caller = AsyncCallbackDispatcher.create(this);
-            caller.setCallback(caller.getTarget().createTemplateAsyncCallBack(null, null));
-            caller.setContext(context);
-            imageService.createTemplateAsync(tmpl, imageStore, caller);
+            Set<Long> zoneSet = new HashSet<Long>();
+            Collections.shuffle(imageStores); // For private templates choose a random store. TODO - Have a better algorithm based on size, no. of objects, load etc.
+            for (DataStore imageStore : imageStores) {
+                // skip data stores for a disabled zone
+                Long zoneId = imageStore.getScope().getScopeId();
+                if (zoneId != null) {
+                    DataCenterVO zone = _dcDao.findById(zoneId);
+                    if (zone == null) {
+                        s_logger.warn("Unable to find zone by id " + zoneId + ", so skip downloading template to its image store " + imageStore.getId());
+                        continue;
+                    }
+
+                    // Check if zone is disabled
+                    if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
+                        s_logger.info("Zone " + zoneId + " is disabled, so skip downloading template to its image store " + imageStore.getId());
+                        continue;
+                    }
+
+                    // We want to download private template to one of the image store in a zone
+                    if (isPrivateTemplate(template) && zoneSet.contains(zoneId)) {
+                        continue;
+                    } else {
+                        zoneSet.add(zoneId);
+                    }
+
+                }
+
+                TemplateInfo tmpl = imageFactory.getTemplate(template.getId(), imageStore);
+                CreateTemplateContext<TemplateApiResult> context = new CreateTemplateContext<TemplateApiResult>(null, tmpl);
+                AsyncCallbackDispatcher<HypervisorTemplateAdapter, TemplateApiResult> caller = AsyncCallbackDispatcher.create(this);
+                caller.setCallback(caller.getTarget().createTemplateAsyncCallBack(null, null));
+                caller.setContext(context);
+                imageService.createTemplateAsync(tmpl, imageStore, caller);
+            }
         }
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
 

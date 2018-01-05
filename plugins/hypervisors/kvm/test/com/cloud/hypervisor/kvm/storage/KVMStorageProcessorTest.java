@@ -20,12 +20,32 @@ package com.cloud.hypervisor.kvm.storage;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.junit.Before;
 import org.junit.Test;
 
 public class KVMStorageProcessorTest {
+
+    @Mock
+    KVMStoragePoolManager storagePoolManager;
+    @Mock
+    LibvirtComputingResource resource;
+
+    private static final Long TEMPLATE_ID = 202l;
+    private static final String EXPECTED_DIRECT_DOWNLOAD_DIR = "template/2/202";
+
+    @Spy
+    @InjectMocks
+    private KVMStorageProcessor storageProcessor;
+
     @Before
     public void setUp() throws ConfigurationException {
+        MockitoAnnotations.initMocks(this);
+        storageProcessor = new KVMStorageProcessor(storagePoolManager, resource);
     }
 
     @Test

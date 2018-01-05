@@ -346,6 +346,14 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
+    public boolean isDirectDownload() {
+        if (this.imageVO == null) {
+            return false;
+        }
+        return this.imageVO.isDirectDownload();
+    }
+
+    @Override
     public String getName() {
         return imageVO.getName();
     }

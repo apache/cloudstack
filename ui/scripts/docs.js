@@ -1291,5 +1291,13 @@ cloudStack.docs = {
     helpVspRetryInterval: {
         desc: 'The interval of time in milliseconds to wait on failure before attempting to resend the command to Nuage VSD.  Valid values [0 - 10000].',
         externalLink: ''
+    },
+    helpRegisterISODirectDownload: {
+        desc: 'KVM Only: Secondary Storage is bypassed and ISO is downloaded to Primary Storage on deployment',
+        externalLink: ''
+    },
+    helpRegisterTemplateDirectDownload: {
+        desc: 'KVM Only: Secondary Storage is bypassed and template/ISO is downloaded to Primary Storage on deployment',
+        externalLink: ''
     }
 };

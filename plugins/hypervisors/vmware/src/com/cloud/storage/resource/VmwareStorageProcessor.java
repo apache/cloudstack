@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.storage.resource;
 
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -2224,5 +2225,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
         String templateUuid = UUID.nameUUIDFromBytes((templateName + "@" + storeIdentifier + "-" + hyperHost.getMor().getValue()).getBytes()).toString();
         templateUuid = templateUuid.replaceAll("-", "");
         return templateUuid;
+    }
+
+    @Override
+    public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
+        return null;
     }
 }

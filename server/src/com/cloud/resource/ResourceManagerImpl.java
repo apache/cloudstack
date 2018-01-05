@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.resource;
 
+import java.util.Random;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -48,6 +49,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -2527,6 +2529,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
         return pcs;
+    }
+
+    @Override
+    public HostVO findOneRandomRunningHostByHypervisor(HypervisorType type) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.EQ, type);
+        sc.and(sc.entity().getType(),Op.EQ, Type.Routing);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        sc.and(sc.entity().getRemoved(), Op.NULL);
+        List<HostVO> hosts = sc.list();
+        if (CollectionUtils.isEmpty(hosts)) {
+            return null;
+        } else {
+            Collections.shuffle(hosts, new Random(System.currentTimeMillis()));
+            return hosts.get(0);
+        }
     }
 
     @Override

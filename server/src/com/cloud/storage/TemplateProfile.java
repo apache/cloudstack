@@ -49,6 +49,8 @@ public class TemplateProfile {
     Map details;
     Boolean isDynamicallyScalable;
     TemplateType templateType;
+    Boolean directDownload;
+    Long size;
 
     public TemplateProfile(Long templateId, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHvm, String url,
             Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId, HypervisorType hypervisorType,
@@ -87,7 +89,7 @@ public class TemplateProfile {
             Boolean isPublic, Boolean featured, Boolean isExtractable, ImageFormat format, Long guestOsId, Long zoneId,
 
             HypervisorType hypervisorType, String accountName, Long domainId, Long accountId, String chksum, Boolean bootable, String templateTag, Map details,
-            Boolean sshKeyEnabled, Long imageStoreId, Boolean isDynamicallyScalable, TemplateType templateType) {
+            Boolean sshKeyEnabled, Long imageStoreId, Boolean isDynamicallyScalable, TemplateType templateType, Boolean directDownload) {
         this(templateId,
             userId,
             name,
@@ -113,6 +115,7 @@ public class TemplateProfile {
         this.templateTag = templateTag;
         this.isDynamicallyScalable = isDynamicallyScalable;
         this.templateType = templateType;
+        this.directDownload = directDownload;
     }
 
     public Long getTemplateId() {
@@ -313,5 +316,17 @@ public class TemplateProfile {
 
     public void setTemplateType(TemplateType templateType) {
         this.templateType = templateType;
+    }
+
+    public boolean isDirectDownload() {
+        return directDownload == null ? false : directDownload;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
     }
 }
