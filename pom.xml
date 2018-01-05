@@ -61,7 +61,7 @@
     <cs.junit.version>4.12</cs.junit.version>
     <cs.hamcrest.version>1.3</cs.hamcrest.version>
     <cs.junit.dataprovider.version>1.13.1</cs.junit.dataprovider.version>
-    <cs.bcprov.version>1.58</cs.bcprov.version>
+    <cs.bcprov.version>1.59</cs.bcprov.version>
     <cs.jsch.version>0.1.54</cs.jsch.version>
     <cs.jpa.version>2.2.0</cs.jpa.version>
     <cs.jasypt.version>1.9.2</cs.jasypt.version>
