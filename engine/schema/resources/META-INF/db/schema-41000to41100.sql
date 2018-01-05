@@ -516,3 +516,10 @@ UPDATE `cloud`.`vm_template` SET guest_os_id=99 WHERE id=8;
 
 -- Network External Ids
 ALTER TABLE `cloud`.`networks` ADD `external_id` varchar(255);
+
+-- Separate Subnet for CPVM and SSVM (system vms)
+ALTER TABLE `cloud`.`op_dc_ip_address_alloc`
+ADD COLUMN `forsystemvms` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'Indicates if IP is dedicated for CPVM or SSVM';
+
+ALTER TABLE `cloud`.`op_dc_ip_address_alloc`
+ADD COLUMN `vlan` INT(10) UNSIGNED NULL COMMENT 'Vlan the management network range is on';

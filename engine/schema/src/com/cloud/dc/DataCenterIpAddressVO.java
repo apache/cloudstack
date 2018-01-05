@@ -60,6 +60,12 @@ public class DataCenterIpAddressVO implements InternalIdentity {
     @Column(name = "mac_address")
     long macAddress;
 
+    @Column(name = "forsystemvms")
+    private boolean forSystemVms;
+
+    @Column(name = "vlan")
+    private Integer vlan;
+
     protected DataCenterIpAddressVO() {
     }
 
@@ -112,5 +118,13 @@ public class DataCenterIpAddressVO implements InternalIdentity {
 
     public long getMacAddress() {
         return macAddress;
+    }
+
+    public boolean isForSystemVms() {
+        return forSystemVms;
+    }
+
+    public Integer getVlan() {
+        return vlan;
     }
 }

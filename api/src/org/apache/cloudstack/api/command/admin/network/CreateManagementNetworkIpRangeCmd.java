@@ -85,6 +85,16 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
             description = "The ending IP address.")
     private String endIp;
 
+    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS,
+            type = CommandType.BOOLEAN,
+            description = "Specify if range is dedicated for CPVM and SSVM.")
+    private Boolean forSystemVms;
+
+    @Parameter(name = ApiConstants.VLAN,
+            type = CommandType.STRING,
+            description = "Optional. The vlan id the ip range sits on, default to Null when it is not specificed which means you network is not on any Vlan")
+    private String vlan;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -107,6 +117,17 @@ public class CreateManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     public String getEndIp() {
         return endIp;
+    }
+
+    public Boolean isForSystemVms() {
+        return forSystemVms == null ? Boolean.FALSE : forSystemVms;
+    }
+
+    public String getVlan() {
+        if (vlan == null || vlan.isEmpty()) {
+            vlan = "untagged";
+        }
+        return vlan;
     }
 
     @Override

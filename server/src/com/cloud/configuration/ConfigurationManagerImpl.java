@@ -17,6 +17,7 @@
 package com.cloud.configuration;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.util.ArrayList;
@@ -362,6 +363,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     public static final ConfigKey<Boolean> SystemVMUseLocalStorage = new ConfigKey<Boolean>(Boolean.class, "system.vm.use.local.storage", "Advanced", "false",
             "Indicates whether to use local storage pools or shared storage pools for system VMs.", false, ConfigKey.Scope.Zone, null);
+
+    private static final String DefaultForSystemVmsForPodIpRange = "0";
+    private static final String DefaultVlanForPodIpRange = Vlan.UNTAGGED.toString();
 
     private static final Set<Provider> VPC_ONLY_PROVIDERS = Sets.newHashSet(Provider.VPCVirtualRouter, Provider.JuniperContrailVpcRouter, Provider.InternalLbVm);
 
@@ -1095,6 +1099,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         return true;
     }
 
+    /**
+     * Get vlan number from vlan uri
+     * @param vlan
+     * @return
+     */
+    protected String getVlanNumberFromUri(String vlan) {
+        URI uri;
+        try {
+            uri = new URI(vlan);
+            String vlanId = BroadcastDomainType.getValue(uri);
+            if (vlanId == null || !uri.getScheme().equalsIgnoreCase("vlan")) {
+                throw new CloudRuntimeException("Vlan parameter : " + vlan + " is not in valid format");
+            }
+            return vlanId;
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException("Invalid vlan parameter: " + vlan + " can't get vlan number from it due to: " + e.getMessage());
+        }
+    }
+
     @Override
     @DB
     public Pod createPodIpRange(final CreateManagementNetworkIpRangeCmd cmd) {
@@ -1110,6 +1133,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String netmask = cmd.getNetmask();
         final String startIp = cmd.getStartIp();
         String endIp = cmd.getEndIp();
+        final boolean forSystemVms = cmd.isForSystemVms();
+        String vlan = cmd.getVlan();
+        if (!(Strings.isNullOrEmpty(vlan) || vlan.startsWith(BroadcastDomainType.Vlan.scheme()))) {
+            vlan = BroadcastDomainType.Vlan.toUri(vlan).toString();
+        }
+
+        String vlanNumberFromUri = getVlanNumberFromUri(vlan);
+        final Integer vlanId = vlanNumberFromUri.equals(Vlan.UNTAGGED.toString()) ? null : Integer.parseInt(vlanNumberFromUri);
 
         final HostPodVO pod = _podDao.findById(podId);
 
@@ -1188,10 +1219,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 public void doInTransactionWithoutResult(final TransactionStatus status) {
                     String ipRange = pod.getDescription();
 
+                    /*
+                     * POD Description is refactored to:
+                     * <START_IP>-<END_IP>-<FOR_SYSTEM_VMS>-<VLAN>,<START_IP>-<END_IP>-<FOR_SYSTEM_VMS>-<VLAN>,...
+                    */
+                    String range = startIp + "-" + endIpFinal + "-" + (forSystemVms ? "1" : "0") + "-" + (vlanId == null ? DefaultVlanForPodIpRange : vlanId);
                     if(ipRange != null && !ipRange.isEmpty())
-                        ipRange += ("," + startIp + "-" + endIpFinal);
+                        ipRange += ("," + range);
                     else
-                        ipRange = (startIp + "-" + endIpFinal);
+                        ipRange = (range);
 
                     pod.setDescription(ipRange);
 
@@ -1212,7 +1248,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         }
                     }
 
-                    _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal);
+                    _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal, forSystemVms, vlanId);
                 }
             });
         } catch (final Exception e) {
@@ -1229,6 +1265,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final long podId = cmd.getPodId();
         final String startIp = cmd.getStartIp();
         final String endIp = cmd.getEndIp();
+        String vlan = cmd.getVlan();
+        try {
+            vlan = BroadcastDomainType.getValue(vlan);
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException("Incorrect vlan " + vlan);
+        }
 
         final HostPodVO pod = _podDao.findById(podId);
 
@@ -1268,10 +1310,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final String[] existingPodIpRange = podIpRange.split("-");
 
             if(existingPodIpRange.length > 1) {
-                if (startIp.equals(existingPodIpRange[0]) && endIp.equals(existingPodIpRange[1])) {
+                if (startIp.equals(existingPodIpRange[0]) && endIp.equals(existingPodIpRange[1]) &&
+                        (existingPodIpRange.length > 3 ? vlan.equals(existingPodIpRange[3]) : vlan.equals(DefaultVlanForPodIpRange))) {
                     foundRange = true;
                 } else if (index >= 0) {
-                    newPodIpRanges[index--] = (existingPodIpRange[0] + "-" + existingPodIpRange[1]);
+                    newPodIpRanges[index--] = (existingPodIpRange[0] + "-" + existingPodIpRange[1] + "-" +
+                            (existingPodIpRange.length > 2 ? existingPodIpRange[2] : DefaultForSystemVmsForPodIpRange) + "-" +
+                            (existingPodIpRange.length > 3 ? existingPodIpRange[3] : DefaultVlanForPodIpRange));
                 }
             }
         }
@@ -1495,8 +1540,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Create the new pod in the database
         String ipRange;
+
         if (!Strings.isNullOrEmpty(startIp)) {
-            ipRange = startIp + "-" + endIp;
+            ipRange = startIp + "-" + endIp + "-" + DefaultForSystemVmsForPodIpRange + "-" + DefaultVlanForPodIpRange;
         } else {
             throw new InvalidParameterValueException("Start ip is required parameter");
         }
@@ -1517,7 +1563,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 final HostPodVO pod = _podDao.persist(podFinal);
 
                 if (!Strings.isNullOrEmpty(startIp)) {
-                    _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal);
+                    _zoneDao.addPrivateIpAddress(zoneId, pod.getId(), startIp, endIpFinal, false, null);
                 }
 
                 final String[] linkLocalIpRanges = getLinkLocalIPRange();

@@ -72,6 +72,12 @@ public class DeleteManagementNetworkIpRangeCmd extends BaseAsyncCmd {
             validations = ApiArgValidator.NotNullOrEmpty)
     private String endIp;
 
+    @Parameter(name = ApiConstants.VLAN,
+            type = CommandType.STRING,
+            required = true,
+            description = "The vlan id the ip range sits on")
+    private String vlan;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -86,6 +92,10 @@ public class DeleteManagementNetworkIpRangeCmd extends BaseAsyncCmd {
 
     public String getEndIp() {
         return endIp;
+    }
+
+    public String getVlan() {
+        return vlan;
     }
 
     @Override
