@@ -1340,6 +1340,21 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
+    public void cleanupSnapshotsByVolume(Long volumeId) {
+        List<SnapshotInfo> infos = snapshotFactory.getSnapshots(volumeId, DataStoreRole.Primary);
+        for(SnapshotInfo info: infos) {
+            try {
+               if(info != null) {
+                   snapshotSrv.deleteSnapshot(info);
+               }
+            } catch(CloudRuntimeException e) {
+                String msg = "Cleanup of Snapshot with uuid " + info.getUuid() + " in primary storage is failed. Ignoring";
+                s_logger.warn(msg);
+            }
+        }
+    }
+
+    @Override
     public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         VolumeInfo volume = volFactory.getVolume(volumeId);
