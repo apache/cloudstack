@@ -19,6 +19,7 @@
 
 package com.cloud.agent.direct.download;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
@@ -27,12 +28,14 @@ import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
 import org.apache.commons.httpclient.NoHttpResponseException;
 import org.apache.commons.httpclient.methods.GetMethod;
 import org.apache.commons.httpclient.params.HttpMethodParams;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
+import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.io.RandomAccessFile;
+import java.io.OutputStream;
+import java.io.IOException;
 import java.util.Map;
 
 public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
@@ -96,41 +99,31 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
 
     @Override
     public boolean downloadTemplate() {
-        File f = new File(getDownloadedFilePath());
+        try {
+            client.executeMethod(request);
+        } catch (IOException e) {
+            throw new CloudRuntimeException("Error on HTTP request: " + e.getMessage());
+        }
+        return performDownload();
+    }
+
+    protected boolean performDownload() {
         try (
                 InputStream in = request.getResponseBodyAsStream();
-                RandomAccessFile out = new RandomAccessFile(f, "rw");
+                OutputStream out = new FileOutputStream(getDownloadedFilePath());
         ) {
-            client.executeMethod(request);
-            out.seek(0);
             copyBytes(in, out);
         } catch (IOException e) {
-            s_logger.error("Error downloading template " + getTemplateId() + e.getMessage());
+            s_logger.error("Error downloading template " + getTemplateId() + " due to: " + e.getMessage());
             return false;
         }
         return true;
     }
 
-    protected boolean copyBytes(InputStream in, RandomAccessFile out) throws IOException {
-        int bytes;
+    protected void copyBytes(InputStream in, OutputStream out) throws IOException {
         byte[] block = new byte[CHUNK_SIZE];
-        long offset = 0;
-        boolean done = false;
-        while (!done) {
-            if ((bytes = in.read(block, 0, CHUNK_SIZE)) > -1) {
-                offset = writeBlock(bytes, out, block, offset);
-            } else {
-                done = true;
-            }
+        while (IOUtils.read(in, block) > 0) {
+            IOUtils.write(block, out);
         }
-        out.getFD().sync();
-        return false;
-    }
-
-    protected long writeBlock(int bytes, RandomAccessFile out, byte[] block, long offset) throws IOException {
-        out.write(block, 0, bytes);
-        offset += bytes;
-        out.seek(offset);
-        return offset;
     }
 }

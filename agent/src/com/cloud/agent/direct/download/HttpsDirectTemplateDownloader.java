@@ -33,8 +33,6 @@ import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -81,18 +79,11 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
 
     @Override
     public boolean downloadTemplate() {
-        File f = new File(getDownloadedFilePath());
-        try (
-                InputStream in = request.getResponseBodyAsStream();
-                RandomAccessFile out = new RandomAccessFile(f, "rw");
-        ) {
+        try {
             httpsClient.execute(req);
-            out.seek(0);
-            copyBytes(in, out);
         } catch (IOException e) {
-            s_logger.error("Error downloading template " + getTemplateId() + e.getMessage());
-            return false;
+            throw new CloudRuntimeException("Error on HTTPS request: " + e.getMessage());
         }
-        return true;
+        return performDownload();
     }
 }
