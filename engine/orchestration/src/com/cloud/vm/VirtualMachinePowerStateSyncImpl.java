@@ -24,7 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.log4j.Logger;
-import org.apache.cloudstack.framework.config.ConfigKey;
+import com.cloud.configuration.ManagementServiceConfiguration;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 
@@ -39,9 +39,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
     @Inject MessageBus _messageBus;
     @Inject VMInstanceDao _instanceDao;
     @Inject VirtualMachineManager _vmMgr;
-
-    protected final ConfigKey<Integer> PingInterval = new ConfigKey<Integer>(Integer.class, "ping.interval", "Advanced", "60",
-            "Interval to send application level pings to make sure the connection is still working", false);
+    @Inject ManagementServiceConfiguration mgmtServiceConf;
 
     public VirtualMachinePowerStateSyncImpl() {
     }
@@ -107,7 +105,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
                 s_logger.debug("Run missing VM report. current time: " + currentTime.getTime());
 
             // 2 times of sync-update interval for graceful period
-            long milliSecondsGracefullPeriod = PingInterval.value() * 2000L;
+            long milliSecondsGracefullPeriod = mgmtServiceConf.getPingInterval() * 2000L;
 
             for (VMInstanceVO instance : vmsThatAreMissingReport) {
 

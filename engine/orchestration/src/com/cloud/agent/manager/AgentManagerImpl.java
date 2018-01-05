@@ -38,6 +38,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.ca.CAManager;
+import com.cloud.configuration.ManagementServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -180,13 +181,12 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Inject
     ResourceManager _resourceMgr;
 
+    @Inject
+    ManagementServiceConfiguration mgmtServiceConf;
+
     protected final ConfigKey<Integer> Workers = new ConfigKey<Integer>("Advanced", Integer.class, "workers", "5",
                     "Number of worker threads handling remote agent connections.", false);
     protected final ConfigKey<Integer> Port = new ConfigKey<Integer>("Advanced", Integer.class, "port", "8250", "Port to listen on for remote agent connections.", false);
-    protected final ConfigKey<Integer> PingInterval = new ConfigKey<Integer>("Advanced", Integer.class, "ping.interval", "60",
-                    "Interval to send application level pings to make sure the connection is still working", false);
-    protected final ConfigKey<Float> PingTimeout = new ConfigKey<Float>("Advanced", Float.class, "ping.timeout", "2.5",
-                    "Multiplier to ping.interval before announcing an agent has timed out", true);
     protected final ConfigKey<Integer> AlertWait = new ConfigKey<Integer>("Advanced", Integer.class, "alert.wait", "1800",
                     "Seconds to wait before alerting on a disconnected agent", true);
     protected final ConfigKey<Integer> DirectAgentLoadSize = new ConfigKey<Integer>("Advanced", Integer.class, "direct.agent.load.size", "16",
@@ -206,14 +206,14 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
 
-        s_logger.info("Ping Timeout is " + PingTimeout.value());
+        s_logger.info("Ping Timeout is " + mgmtServiceConf.getPingTimeout());
 
         final int threads = DirectAgentLoadSize.value();
 
         _nodeId = ManagementServerNode.getManagementServerId();
         s_logger.info("Configuring AgentManagerImpl. management server node id(msid): " + _nodeId);
 
-        final long lastPing = (System.currentTimeMillis() >> 10) - getTimeout();
+        final long lastPing = (System.currentTimeMillis() >> 10) - mgmtServiceConf.getTimeout();
         _hostDao.markHostsAsDisconnected(_nodeId, lastPing);
 
         registerForHostEvents(new BehindOnPingListener(), true, true, false);
@@ -241,13 +241,6 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         return true;
     }
 
-    protected int getPingInterval() {
-        return PingInterval.value();
-    }
-
-    protected long getTimeout() {
-        return (long) (Math.ceil(PingTimeout.value() * PingInterval.value()));
-    }
 
     @Override
     public Task create(final Task.Type type, final Link link, final byte[] data) {
@@ -623,7 +616,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             }
         }
 
-        _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), getPingInterval(), getPingInterval(), TimeUnit.SECONDS);
+        _monitorExecutor.scheduleWithFixedDelay(new MonitorTask(), mgmtServiceConf.getPingInterval(), mgmtServiceConf.getPingInterval(), TimeUnit.SECONDS);
 
         return true;
     }
@@ -1192,7 +1185,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             cmd = cmds[i];
             if (cmd instanceof StartupRoutingCommand || cmd instanceof StartupProxyCommand || cmd instanceof StartupSecondaryStorageCommand ||
                             cmd instanceof StartupStorageCommand) {
-                answers[i] = new StartupAnswer((StartupCommand) cmds[i], 0, getPingInterval());
+                answers[i] = new StartupAnswer((StartupCommand) cmds[i], 0, mgmtServiceConf.getPingInterval());
                 break;
             }
         }
@@ -1252,16 +1245,16 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 try {
                     if (cmd instanceof StartupRoutingCommand) {
                         final StartupRoutingCommand startup = (StartupRoutingCommand) cmd;
-                        answer = new StartupAnswer(startup, attache.getId(), getPingInterval());
+                        answer = new StartupAnswer(startup, attache.getId(), mgmtServiceConf.getPingInterval());
                     } else if (cmd instanceof StartupProxyCommand) {
                         final StartupProxyCommand startup = (StartupProxyCommand) cmd;
-                        answer = new StartupAnswer(startup, attache.getId(), getPingInterval());
+                        answer = new StartupAnswer(startup, attache.getId(), mgmtServiceConf.getPingInterval());
                     } else if (cmd instanceof StartupSecondaryStorageCommand) {
                         final StartupSecondaryStorageCommand startup = (StartupSecondaryStorageCommand) cmd;
-                        answer = new StartupAnswer(startup, attache.getId(), getPingInterval());
+                        answer = new StartupAnswer(startup, attache.getId(), mgmtServiceConf.getPingInterval());
                     } else if (cmd instanceof StartupStorageCommand) {
                         final StartupStorageCommand startup = (StartupStorageCommand) cmd;
-                        answer = new StartupAnswer(startup, attache.getId(), getPingInterval());
+                        answer = new StartupAnswer(startup, attache.getId(), mgmtServiceConf.getPingInterval());
                     } else if (cmd instanceof ShutdownCommand) {
                         final ShutdownCommand shutdown = (ShutdownCommand) cmd;
                         final String reason = shutdown.getReason();
@@ -1515,7 +1508,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         attache = createAttacheForDirectConnect(host, resource);
         final StartupAnswer[] answers = new StartupAnswer[cmds.length];
         for (int i = 0; i < answers.length; i++) {
-            answers[i] = new StartupAnswer(cmds[i], attache.getId(), getPingInterval());
+            answers[i] = new StartupAnswer(cmds[i], attache.getId(), mgmtServiceConf.getPingInterval());
         }
         attache.process(answers);
 
@@ -1625,7 +1618,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
         protected List<Long> findAgentsBehindOnPing() {
             final List<Long> agentsBehind = new ArrayList<Long>();
-            final long cutoffTime = InaccurateClock.getTimeInSeconds() - getTimeout();
+            final long cutoffTime = InaccurateClock.getTimeInSeconds() - mgmtServiceConf.getTimeout();
             for (final Map.Entry<Long, Long> entry : _pingMap.entrySet()) {
                 if (entry.getValue() < cutoffTime) {
                     agentsBehind.add(entry.getKey());
@@ -1714,7 +1707,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, PingInterval, PingTimeout, Wait, AlertWait, DirectAgentLoadSize, DirectAgentPoolSize,
+        return new ConfigKey<?>[] { CheckTxnBeforeSending, Workers, Port, Wait, AlertWait, DirectAgentLoadSize, DirectAgentPoolSize,
                         DirectAgentThreadCap };
     }
 

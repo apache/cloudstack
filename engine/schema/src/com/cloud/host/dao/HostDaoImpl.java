@@ -30,8 +30,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
-import com.cloud.utils.NumbersUtil;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import com.cloud.configuration.ManagementServiceConfiguration;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -78,6 +77,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     private static final Logger state_logger = Logger.getLogger(ResourceState.class);
 
     private static final String LIST_CLUSTERID_FOR_HOST_TAG = "select distinct cluster_id from host join host_tags on host.id = host_tags.host_id and host_tags.tag = ?";
+
 
     protected SearchBuilder<HostVO> TypePodDcStatusSearch;
 
@@ -145,7 +145,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
     @Inject
     protected ClusterDao _clusterDao;
     @Inject
-    private ConfigurationDao _configDao;
+    ManagementServiceConfiguration mgmtServiceConf;
 
     public HostDaoImpl() {
         super();
@@ -993,9 +993,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
             }
         }
         if (event.equals(Event.ManagementServerDown)) {
-            Float pingTimeout = NumbersUtil.parseFloat(_configDao.getValue("ping.timeout"), 2.5f);
-            Integer pingInterval = NumbersUtil.parseInt(_configDao.getValue("ping.interval"), 60);
-            ub.set(host, _pingTimeAttr, ((System.currentTimeMillis() >> 10) - (long)(pingTimeout * pingInterval)));
+            ub.set(host, _pingTimeAttr, ((System.currentTimeMillis() >> 10) - mgmtServiceConf.getTimeout()));
         }
         int result = update(ub, sc, null);
         assert result <= 1 : "How can this update " + result + " rows? ";
