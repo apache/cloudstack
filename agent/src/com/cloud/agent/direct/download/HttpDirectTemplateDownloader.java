@@ -112,18 +112,11 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
                 InputStream in = request.getResponseBodyAsStream();
                 OutputStream out = new FileOutputStream(getDownloadedFilePath());
         ) {
-            copyBytes(in, out);
+            IOUtils.copy(in, out);
         } catch (IOException e) {
             s_logger.error("Error downloading template " + getTemplateId() + " due to: " + e.getMessage());
             return false;
         }
         return true;
-    }
-
-    protected void copyBytes(InputStream in, OutputStream out) throws IOException {
-        byte[] block = new byte[CHUNK_SIZE];
-        while (IOUtils.read(in, block) > 0) {
-            IOUtils.write(block, out);
-        }
     }
 }
