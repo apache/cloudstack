@@ -215,4 +215,6 @@ public interface AccountManager extends AccountService, Configurable{
             "false",
             "This parameter allows the users to enable or disable of showing secret key as a part of response for various APIs. By default it is set to false.",
             true);
+
+    boolean moveUser(long id, Long domainId, long accountId);
 }

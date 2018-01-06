@@ -147,6 +147,7 @@
   <bean id="engineDcDetailsDaoImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DcDetailsDaoImpl" />
   <bean id="diskOfferingJoinDaoImpl" class="com.cloud.api.query.dao.DiskOfferingJoinDaoImpl" />
   <bean id="domainDaoImpl" class="com.cloud.domain.dao.DomainDaoImpl" />
+  <bean id="domainDetailsDaoImpl" class="com.cloud.domain.dao.DomainDetailsDaoImpl" />
   <bean id="domainJoinDaoImpl" class="com.cloud.api.query.dao.DomainJoinDaoImpl" />
   <bean id="domainRouterDaoImpl" class="com.cloud.vm.dao.DomainRouterDaoImpl" />
   <bean id="domainRouterJoinDaoImpl" class="com.cloud.api.query.dao.DomainRouterJoinDaoImpl" />

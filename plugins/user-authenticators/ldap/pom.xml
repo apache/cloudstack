@@ -37,9 +37,9 @@
             <configuration>
               <sources>
                 <fileset>
-                  <directory>test/groovy</directory>
+                  <directory>test</directory>
                   <includes>
-                    <include>**/*.groovy</include>
+                    <include>groovy/**/*.groovy</include>
                   </includes>
                 </fileset>
               </sources>
@@ -70,7 +70,8 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <configuration>
           <includes>
-            <include>**/*Spec*</include>
+            <include>**/*Spec.groovy</include>
+            <include>**/*Test.java</include>
           </includes>
         </configuration>
       </plugin>
@@ -90,6 +91,7 @@
       </plugin>
 
     </plugins>
+    <testSourceDirectory>test</testSourceDirectory>
   </build>
   <dependencies>
     <!-- Mandatory dependencies for using Spock -->

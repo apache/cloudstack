@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.ldap;
+package com.cloud.domain;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -23,52 +23,54 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import com.cloud.utils.db.Encrypt;
 import org.apache.cloudstack.api.InternalIdentity;
 
 @Entity
-@Table(name = "ldap_configuration")
-public class LdapConfigurationVO implements InternalIdentity {
-    @Column(name = "hostname")
-    private String hostname;
-
+@Table(name = "domain_details")
+public class DomainDetailVO implements InternalIdentity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private Long id;
-
-    @Column(name = "port")
-    private int port;
+    private long id;
 
     @Column(name = "domain_id")
-    private Long domainId;
+    private long domainId;
 
-    public LdapConfigurationVO() {
+    @Column(name = "name")
+    private String name;
+
+    @Encrypt
+    @Column(name = "value")
+    private String value;
+
+    protected DomainDetailVO() {
     }
 
-    public LdapConfigurationVO(final String hostname, final int port, final Long domainId) {
-        this.hostname = hostname;
-        this.port = port;
+    public DomainDetailVO(long domainId, String name, String value) {
         this.domainId = domainId;
+        this.name = name;
+        this.value = value;
     }
 
-    public String getHostname() {
-        return hostname;
+    public long getDomainId() {
+        return domainId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getValue() {
+        return value;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
     }
 
     @Override
     public long getId() {
         return id;
-    }
-
-    public int getPort() {
-        return port;
-    }
-
-    public Long getDomainId() {
-        return domainId;
-    }
-
-    public void setId(final long id) {
-        this.id = id;
     }
 }

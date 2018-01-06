@@ -48,7 +48,7 @@ class LdapSearchUserCmdSpec extends spock.lang.Specification {
 	given: "We have an Ldap manager and ldap user search cmd"
         def ldapManager = Mock(LdapManager)
 		List<LdapUser> users = new ArrayList()
-		users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false))
+		users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null))
 		ldapManager.searchUsers(_) >> users
 		LdapUserResponse response = new LdapUserResponse("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null)
 		ldapManager.createLdapUserResponse(_) >> response

@@ -140,6 +140,7 @@ import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanningManager;
 import com.cloud.deploy.dao.PlannerHostReservationDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
+import com.cloud.domain.dao.DomainDetailsDaoImpl;
 import com.cloud.event.dao.EventDaoImpl;
 import com.cloud.event.dao.EventJoinDaoImpl;
 import com.cloud.event.dao.UsageEventDaoImpl;
@@ -148,8 +149,8 @@ import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
 import com.cloud.host.dao.HostTagsDaoImpl;
 import com.cloud.hypervisor.HypervisorGuruManagerImpl;
-import com.cloud.hypervisor.dao.HypervisorCapabilitiesDaoImpl;
 import com.cloud.hypervisor.XenServerGuru;
+import com.cloud.hypervisor.dao.HypervisorCapabilitiesDaoImpl;
 import com.cloud.network.ExternalDeviceUsageManager;
 import com.cloud.network.IpAddress;
 import com.cloud.network.IpAddressManagerImpl;
@@ -169,8 +170,8 @@ import com.cloud.network.as.dao.CounterDaoImpl;
 import com.cloud.network.dao.AccountGuestVlanMapDaoImpl;
 import com.cloud.network.dao.FirewallRulesCidrsDaoImpl;
 import com.cloud.network.dao.FirewallRulesDaoImpl;
-import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressDaoImpl;
 import com.cloud.network.dao.LBHealthCheckPolicyDaoImpl;
 import com.cloud.network.dao.LBStickinessPolicyDaoImpl;
 import com.cloud.network.dao.LoadBalancerDaoImpl;
@@ -308,7 +309,7 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDaoImpl;
     ConditionDaoImpl.class, ConfigurationDaoImpl.class, ConfigurationManagerImpl.class, ConfigurationServerImpl.class, ConsoleProxyDaoImpl.class,
     ContrailElementImpl.class, ContrailGuru.class, ContrailManagerImpl.class, CounterDaoImpl.class, DataCenterDaoImpl.class, DataCenterDetailsDaoImpl.class, DataCenterIpAddressDaoImpl.class,
     DataCenterJoinDaoImpl.class, DataCenterLinkLocalIpAddressDaoImpl.class, DataCenterVnetDaoImpl.class, DcDetailsDaoImpl.class, DedicatedResourceDaoImpl.class,
-    DiskOfferingDaoImpl.class, DiskOfferingJoinDaoImpl.class, DomainDaoImpl.class, DomainManagerImpl.class, DomainRouterDaoImpl.class, DomainRouterJoinDaoImpl.class,
+    DiskOfferingDaoImpl.class, DiskOfferingJoinDaoImpl.class, DomainDaoImpl.class, DomainDetailsDaoImpl.class, DomainManagerImpl.class, DomainRouterDaoImpl.class, DomainRouterJoinDaoImpl.class,
     EventDaoImpl.class, EventJoinDaoImpl.class, EventUtils.class, ExtensionRegistry.class, FirewallManagerImpl.class, FirewallRulesCidrsDaoImpl.class,
     FirewallRulesDaoImpl.class, GuestOSCategoryDaoImpl.class, GuestOSDaoImpl.class, HostDaoImpl.class, HostDetailsDaoImpl.class, HostJoinDaoImpl.class,
     HostPodDaoImpl.class, HostTagsDaoImpl.class, HostTransferMapDaoImpl.class, HypervisorCapabilitiesDaoImpl.class, HypervisorGuruManagerImpl.class,

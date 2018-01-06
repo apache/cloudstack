@@ -23,16 +23,11 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
-public class LinkDomainToLdapResponse extends BaseResponse {
+public class LinkAccountToLdapResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DOMAIN_ID)
     @Param(description = "id of the Domain which is linked to LDAP")
     private String domainId;
-
-    @Deprecated
-    @SerializedName(ApiConstants.NAME)
-    @Param(description = "name of the group or OU in LDAP which is linked to the domain")
-    private String name;
 
     @SerializedName(ApiConstants.LDAP_DOMAIN)
     @Param(description = "name of the group or OU in LDAP which is linked to the domain")
@@ -50,12 +45,18 @@ public class LinkDomainToLdapResponse extends BaseResponse {
     @Param(description = "Domain Admin accountId that is created")
     private String adminId;
 
-    public LinkDomainToLdapResponse(String domainId, String type, String ldapDomain, short accountType) {
+    @SerializedName(ApiConstants.ACCOUNT)
+    @Param(description = "name of the account")
+    private String accountName;
+
+
+    public LinkAccountToLdapResponse(String domainId, String type, String ldapDomain, short accountType, String adminId, String accountName) {
         this.domainId = domainId;
-        this.name = ldapDomain;
-        this.ldapDomain = ldapDomain;
         this.type = type;
+        this.ldapDomain = ldapDomain;
         this.accountType = accountType;
+        this.adminId = adminId;
+        this.accountName = accountName;
     }
 
     public String getDomainId() {
@@ -63,7 +64,7 @@ public class LinkDomainToLdapResponse extends BaseResponse {
     }
 
     public String getLdapDomain() {
-        return ldapDomain == null ? name : ldapDomain;
+        return ldapDomain;
     }
 
     public String getType() {
