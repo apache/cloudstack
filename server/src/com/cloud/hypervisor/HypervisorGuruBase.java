@@ -131,16 +131,15 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         Long minMemory = (long)(offering.getRamSize() / vmProfile.getMemoryOvercommitRatio());
         int minspeed = (int)(offering.getSpeed() / vmProfile.getCpuOvercommitRatio());
         int maxspeed = (offering.getSpeed());
-        VirtualMachineTO to =
-                new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), minspeed, maxspeed, minMemory * 1024l * 1024l,
-                        offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
+        VirtualMachineTO to = new VirtualMachineTO(vm.getId(), vm.getInstanceName(), vm.getType(), offering.getCpu(), minspeed, maxspeed, minMemory * 1024l * 1024l,
+                offering.getRamSize() * 1024l * 1024l, null, null, vm.isHaEnabled(), vm.limitCpuUse(), vm.getVncPassword());
         to.setBootArgs(vmProfile.getBootArgs());
 
         List<NicProfile> nicProfiles = vmProfile.getNics();
         NicTO[] nics = new NicTO[nicProfiles.size()];
         int i = 0;
         for (NicProfile nicProfile : nicProfiles) {
-            if(vm.getType() == VirtualMachine.Type.NetScalerVm) {
+            if (vm.getType() == VirtualMachine.Type.NetScalerVm) {
                 nicProfile.setBroadcastType(BroadcastDomainType.Native);
             }
             NicTO nicTo = toNicTO(nicProfile);
@@ -173,7 +172,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
         // Set GPU details
         ServiceOfferingDetailsVO offeringDetail = null;
-        if ((offeringDetail  = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
+        if ((offeringDetail = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.vgpuType.toString())) != null) {
             ServiceOfferingDetailsVO groupName = _serviceOfferingDetailsDao.findDetail(offering.getId(), GPU.Keys.pciDevice.toString());
             to.setGpuDevice(_resourceMgr.getGPUDevice(vm.getHostId(), groupName.getValue(), offeringDetail.getValue()));
         }
@@ -194,6 +193,13 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
     }
 
     @Override
+    /**
+     * The basic implementation assumes that the initial "host" defined to execute the command is the host that is in fact going to execute it.
+     * However, subclasses can extend this behavior, changing the host that is going to execute the command in runtime.
+     * The first element of the 'Pair' indicates if the hostId has been changed; this means, if you change the hostId, but you do not inform this action in the return 'Pair' object, we will use the original "hostId".
+     *
+     * Side note: it seems that the 'hostId' received here is normally the ID of the SSVM that has an entry at the host table. Therefore, this methods gives the opportunity to change from the SSVM to a real host to execute a command.
+     */
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         return new Pair<Boolean, Long>(Boolean.FALSE, new Long(hostId));
     }
