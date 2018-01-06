@@ -1229,7 +1229,7 @@ public class TemplateServiceImpl implements TemplateService {
                 dataDiskTemplate.processEvent(Event.OperationFailed);
                 dataDiskTemplateResult.setResult(result.getResult());
             }
-        } catch (Exception e) {
+        } catch (CloudRuntimeException e) {
             s_logger.debug("Failed to process create template callback", e);
             dataDiskTemplateResult.setResult(e.toString());
         }
