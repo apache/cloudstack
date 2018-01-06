@@ -106,7 +106,11 @@
                 });
 
                 $prev.click(function() {
-                    goTo(prevStepID);
+                    if (prevStepID === 'changeUser' && cloudStack.installWizard.changedFirstPassword) {
+                        goTo('intro');
+                    } else {
+                        goTo(prevStepID);
+                    }
                 });
 
                 return function(args) {
@@ -330,7 +334,8 @@
                 });
 
                 $advanced.click(function() {
-                    complete();
+                    state.isAdvancedUser = true;
+                    goTo('changeUser');
 
                     return false;
                 });
@@ -342,6 +347,27 @@
             },
 
             changeUser: function(args) {
+
+                if (cloudStack.installWizard.changedFirstPassword) {
+                    if (!state.isAdvancedUser) {
+                        $.ajax({
+                            url: createURL('listZones'),
+                            dataType: 'json',
+                            async: true,
+                            success: function(data) {
+                                if(data.listzonesresponse.zone) {
+                                    complete();
+                                } else {
+                                    goTo('addZoneIntro', 'newUser', $form);
+                                }
+                            }
+                        });
+                    } else {
+                        complete();
+                    }
+
+                    return $('<div>');
+                }
                 var $changeUser = $('<div></div>').addClass('step change-user');
                 var $form = $('<form></form>').appendTo($changeUser);
 
@@ -386,6 +412,12 @@
 
                 // Save event
                 $form.submit(function() {
+                    if ($form.find('input[name=password]').val() === 'password') {
+                        cloudStack.dialog.notice({ message: 'Password must not be the default.'});
+
+                        return false;
+                    }
+
                     if (!$form.valid()) return false;
 
                     var $loading = $('<div></div>').addClass('loading-overlay').prependTo($form);
@@ -393,7 +425,23 @@
                         data: cloudStack.serializeForm($form),
                         response: {
                             success: function(args) {
-                                goTo('addZoneIntro', 'newUser', $form);
+                                cloudStack.installWizard.changedFirstPassword = true;
+                                if (!state.isAdvancedUser) {
+                                    $.ajax({
+                                        url: createURL('listZones'),
+                                        dataType: 'json',
+                                        async: true,
+                                        success: function(data) {
+                                            if(data.listzonesresponse.zone) {
+                                                complete();
+                                            } else {
+                                                goTo('addZoneIntro', 'newUser', $form);
+                                            }
+                                        }
+                                    });
+                                } else {
+                                    complete();
+                                }
                             }
                         }
                     });
