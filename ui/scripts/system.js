@@ -54,6 +54,12 @@
                 var data = args.data ? args.data: {
                 };
                 var fields = {
+                    systemvms: {
+                        label: 'label.system.vms',
+                        isBoolean: true,
+                        docID: 'helpSetReservationSystemVms',
+                        defaultValue: data.systemvms
+                    },
                     account: {
                         label: 'label.account',
                         defaultValue: data.account
@@ -96,22 +102,40 @@
                         success: function (json) {
                             var domain = json.listdomainsresponse.domain[0];
 
+                            if (data.forSystemVms != null) {
+                                systemvms = '<li>' + _l('label.system.vms') + ': ' + data.forSystemVms + '</li>'
+                            }
                             if (data.account != null)
                                 cloudStack.dialog.notice({
-                                    message: '<ul><li>' + _l('label.account') + ': ' + data.account + '</li>' + '<li>' + _l('label.domain') + ': ' + domain.path + '</li></ul>'
+                                    message: '<ul><li>' + _l('label.account') + ': ' + data.account + '</li>' + '<li>' + _l('label.domain') + ': ' + domain.path + '</li>' + systemvms + '</ul>'
                                 });
                             else
                                 cloudStack.dialog.notice({
-                                    message: '<ul><li>' + _l('label.domain') + ': ' + domain.path + '</li></ul>'
+                                    message: '<ul><li>' + _l('label.domain') + ': ' + domain.path + '</li>' + systemvms + '</ul>'
                                 });
                         }
                     });
                 } else {
                     cloudStack.dialog.createForm({
                         form: {
-                            title: 'label.add.account',
-                            desc: '(optional) Please specify an account to be associated with this IP range.',
-                            fields: fields
+                            title: 'label.set.reservation',
+                            desc: 'label.set.reservation.desc',
+                            fields: fields,
+                            preFilter: function(args) {
+                                var $systemvms = args.$form.find('.form-item[rel=systemvms]');
+                                var $systemvmsCb = $systemvms.find('input[type=checkbox]');
+                                var $account = args.$form.find('.form-item[rel=account]');
+                                var $accountTxt = args.$form.find('input[name=account]');
+                                $systemvmsCb.change(function() {
+                                    if ($systemvmsCb.is(':checked')) {
+                                        $accountTxt.val('');
+                                        $accountTxt.attr('disabled', true);
+                                    }
+                                    else {
+                                        $accountTxt.attr('disabled', false);
+                                    }
+                                });
+                            }
                         },
                         after: function (args) {
                             var data = cloudStack.serializeForm(args.$form);
@@ -438,7 +462,7 @@
                                             'account': {
                                                 label: 'label.account',
                                                 custom: {
-                                                    buttonLabel: 'label.add.account',
+                                                    buttonLabel: 'label.set.reservation',
                                                     action: cloudStack.publicIpRangeAccount.dialog()
                                                 }
                                             },
@@ -466,6 +490,10 @@
                                                 if (args.data.account) {
                                                     if (args.data.account.account)
                                                         array1.push("&account=" + args.data.account.account);
+                                                    if (args.data.account.systemvms) {
+                                                        systvmsval = args.data.account.systemvms == "on" ? "true" : "false"
+                                                        array1.push("&forsystemvms=" + systvmsval);
+                                                    }
                                                     array1.push("&domainid=" + args.data.account.domainid);
                                                 }
 
@@ -627,7 +655,8 @@
                                                                 account: {
                                                                     _buttonLabel: item.account ? '[' + item.domain + '] ' + item.account: item.domain,
                                                                     account: item.account,
-                                                                    domainid: item.domainid
+                                                                    domainid: item.domainid,
+                                                                    forSystemVms: item.forsystemvms
                                                                 }
                                                             });
                                                         })

@@ -1488,6 +1488,8 @@ var dictionary = {
     "label.services": "Szolgáltatások",
     "label.session.expired": "A munkamenet lejárt",
     "label.set.default.NIC": "Alapértelmezett NIC beállítása",
+    "label.set.reservation": "Set reservation",
+    "label.set.reservation.desc": "(optional) Please specify an account to be associated with this IP range.<br/><br/>System VMs: Enable dedication of public IP range for SSVM and CPVM, account field disabled. Reservation strictness defined on 'system.vm.public.ip.reservation.mode.strictness'",
     "label.set.up.zone.type": "Zóna-típus beállítása",
     "label.settings": "Beállítások",
     "label.setup": "Beállítások",

@@ -290,7 +290,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                             long startIPLong = NetUtils.ip2Long(startIp);
                             long endIPLong = NetUtils.ip2Long(endIp);
                             config.savePublicIPRange(TransactionLegacy.currentTxn(), startIPLong, endIPLong, vlan.getDataCenterId(), vlan.getId(), vlan.getNetworkId(),
-                                    vlan.getPhysicalNetworkId());
+                                    vlan.getPhysicalNetworkId(), false);
                         }
                     });
 

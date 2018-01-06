@@ -1489,6 +1489,8 @@ var dictionary = {
     "label.services": "服务",
     "label.session.expired": "会话已过期",
     "label.set.default.NIC": "设置默认 NIC",
+    "label.set.reservation": "Set reservation",
+    "label.set.reservation.desc": "(optional) Please specify an account to be associated with this IP range.<br/><br/>System VMs: Enable dedication of public IP range for SSVM and CPVM, account field disabled. Reservation strictness defined on 'system.vm.public.ip.reservation.mode.strictness'",
     "label.set.up.zone.type": "设置资源域类型",
     "label.settings": "设置",
     "label.setup": "设置",

@@ -431,7 +431,7 @@ public class IPRangeConfig {
         List<String> problemIPs = null;
 
         if (type.equals("public")) {
-            problemIPs = savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkId, physicalNetworkId);
+            problemIPs = savePublicIPRange(txn, startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkId, physicalNetworkId, false);
         } else if (type.equals("private")) {
             problemIPs = savePrivateIPRange(txn, startIPLong, endIPLong, podId, zoneId);
         }
@@ -445,9 +445,9 @@ public class IPRangeConfig {
         return problemIPs;
     }
 
-    public Vector<String> savePublicIPRange(TransactionLegacy txn, long startIP, long endIP, long zoneId, long vlanDbId, Long sourceNetworkId, long physicalNetworkId) {
+    public Vector<String> savePublicIPRange(TransactionLegacy txn, long startIP, long endIP, long zoneId, long vlanDbId, Long sourceNetworkId, long physicalNetworkId, boolean forSystemVms) {
         String insertSql =
-            "INSERT INTO `cloud`.`user_ip_address` (public_ip_address, data_center_id, vlan_db_id, mac_address, source_network_id, physical_network_id, uuid) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?, ?, ?)";
+            "INSERT INTO `cloud`.`user_ip_address` (public_ip_address, data_center_id, vlan_db_id, mac_address, source_network_id, physical_network_id, uuid, forsystemvms) VALUES (?, ?, ?, (select mac_address from `cloud`.`data_center` where id=?), ?, ?, ?, ?)";
         String updateSql = "UPDATE `cloud`.`data_center` set mac_address = mac_address+1 where id=?";
         Vector<String> problemIPs = new Vector<String>();
 
@@ -468,6 +468,7 @@ public class IPRangeConfig {
                 insert_stmt.setLong(5, sourceNetworkId);
                 insert_stmt.setLong(6, physicalNetworkId);
                 insert_stmt.setString(7, UUID.randomUUID().toString());
+                insert_stmt.setBoolean(8, forSystemVms);
                 insert_stmt.executeUpdate();
                 update_stmt.setLong(1, zoneId);
                 update_stmt.executeUpdate();

@@ -524,6 +524,10 @@ ADD COLUMN `forsystemvms` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'Indicates if 
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc`
 ADD COLUMN `vlan` INT(10) UNSIGNED NULL COMMENT 'Vlan the management network range is on';
 
+-- CLOUDSTACK-10109: Enable dedication of public IPs to SSVM and CPVM
+ALTER TABLE `cloud`.`user_ip_address`
+ADD COLUMN `forsystemvms` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'true if IP is set to system vms, false if not';
+
 -- ldap binding on domain level
 CREATE TABLE IF NOT EXISTS `cloud`.`domain_details` (
     `id` bigint unsigned NOT NULL auto_increment,
@@ -539,4 +543,3 @@ ALTER TABLE cloud.ldap_trust_map ADD COLUMN account_id BIGINT(20) DEFAULT 0;
 ALTER TABLE cloud.ldap_trust_map DROP FOREIGN KEY fk_ldap_trust_map__domain_id;
 DROP INDEX uk_ldap_trust_map__domain_id ON cloud.ldap_trust_map;
 CREATE UNIQUE INDEX uk_ldap_trust_map__bind_location ON ldap_trust_map (domain_id, account_id);
-
