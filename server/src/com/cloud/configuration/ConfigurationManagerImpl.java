@@ -131,8 +131,10 @@ import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DataCenterDeployment;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.domain.Domain;
+import com.cloud.domain.DomainDetailVO;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.domain.dao.DomainDetailsDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
@@ -326,6 +328,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     StoragePoolDetailsDao _storagePoolDetailsDao;
     @Inject
     AccountDetailsDao _accountDetailsDao;
+    @Inject
+    DomainDetailsDao _domainDetailsDao;
     @Inject
     PrimaryDataStoreDao _storagePoolDao;
     @Inject
@@ -548,6 +552,21 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 _imageStoreDetailsDao.addDetail(resourceId, name, value, true);
                 break;
 
+            case Domain:
+                final DomainVO domain = _domainDao.findById(resourceId);
+                if (domain == null) {
+                    throw new InvalidParameterValueException("unable to find domain by id " + resourceId);
+                }
+                DomainDetailVO domainDetailVO = _domainDetailsDao.findDetail(resourceId, name);
+                if (domainDetailVO == null) {
+                    domainDetailVO = new DomainDetailVO(resourceId, name, value);
+                    _domainDetailsDao.persist(domainDetailVO);
+                } else {
+                    domainDetailVO.setValue(value);
+                    _domainDetailsDao.update(domainDetailVO.getId(), domainDetailVO);
+                }
+                break;
+
             default:
                 throw new InvalidParameterValueException("Scope provided is invalid");
             }
@@ -655,6 +674,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
         final Long imageStoreId = cmd.getImageStoreId();
+        final Long domainId = cmd.getDomainId();
         CallContext.current().setEventDetails(" Name: " + name + " New Value: " + (name.toLowerCase().contains("password") ? "*****" : value == null ? "" : value));
         // check if config value exists
         final ConfigurationVO config = _configDao.findByName(name);
@@ -698,6 +718,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (accountId != null) {
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
+            paramCountCheck++;
+        }
+        if (domainId != null) {
+            scope = ConfigKey.Scope.Domain.toString();
+            id = domainId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {
@@ -2883,8 +2908,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         String endIPv6 = cmd.getEndIpv6();
         final String ip6Gateway = cmd.getIp6Gateway();
         final String ip6Cidr = cmd.getIp6Cidr();
+        final Boolean forSystemVms = cmd.isForSystemVms();
 
         Account vlanOwner = null;
+
+        if (forSystemVms && accountName != null) {
+            throw new InvalidParameterValueException("Account name should not be provided when ForSystemVMs is enabled");
+        }
 
         final boolean ipv4 = startIP != null;
         final boolean ipv6 = startIPv6 != null;
@@ -3093,12 +3123,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             checkOverlapPrivateIpRange(zoneId, startIP, endIP);
         }
 
-        return commitVlan(zoneId, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId, forVirtualNetwork, networkId, physicalNetworkId, startIPv6, endIPv6, ip6Gateway,
+        return commitVlan(zoneId, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId, forVirtualNetwork, forSystemVms, networkId, physicalNetworkId, startIPv6, endIPv6, ip6Gateway,
                 ip6Cidr, domain, vlanOwner, network, sameSubnet);
     }
 
     private Vlan commitVlan(final Long zoneId, final Long podId, final String startIP, final String endIP, final String newVlanGatewayFinal, final String newVlanNetmaskFinal,
-            final String vlanId, final Boolean forVirtualNetwork, final Long networkId, final Long physicalNetworkId, final String startIPv6, final String endIPv6,
+            final String vlanId, final Boolean forVirtualNetwork, final Boolean forSystemVms, final Long networkId, final Long physicalNetworkId, final String startIPv6, final String endIPv6,
             final String ip6Gateway, final String ip6Cidr, final Domain domain, final Account vlanOwner, final Network network, final Pair<Boolean, Pair<String, String>> sameSubnet) {
         final GlobalLock commitVlanLock = GlobalLock.getInternLock("CommitVlan");
         commitVlanLock.lock(5);
@@ -3126,7 +3156,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         newVlanGateway = sameSubnet.second().first();
                         newVlanNetmask = sameSubnet.second().second();
                     }
-                    final Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId,
+                    final Vlan vlan = createVlanAndPublicIpRange(zoneId, networkId, physicalNetworkId, forVirtualNetwork, forSystemVms, podId, startIP, endIP, newVlanGateway, newVlanNetmask, vlanId,
                             false, domain, vlanOwner, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
                     // create an entry in the nic_secondary table. This will be the new
                     // gateway that will be configured on the corresponding routervm.
@@ -3246,7 +3276,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     @Override
     @DB
-    public Vlan createVlanAndPublicIpRange(final long zoneId, final long networkId, final long physicalNetworkId, final boolean forVirtualNetwork, final Long podId, final String startIP, final String endIP,
+    public Vlan createVlanAndPublicIpRange(final long zoneId, final long networkId, final long physicalNetworkId, final boolean forVirtualNetwork, final boolean forSystemVms, final Long podId, final String startIP, final String endIP,
             final String vlanGateway, final String vlanNetmask, String vlanId, boolean bypassVlanOverlapCheck, Domain domain, final Account vlanOwner, final String startIPv6, final String endIPv6, final String vlanIp6Gateway, final String vlanIp6Cidr) {
         final Network network = _networkModel.getNetwork(networkId);
 
@@ -3496,14 +3526,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Everything was fine, so persist the VLAN
         final VlanVO vlan = commitVlanAndIpRange(zoneId, networkId, physicalNetworkId, podId, startIP, endIP, vlanGateway, vlanNetmask, vlanId, domain, vlanOwner, vlanIp6Gateway, vlanIp6Cidr,
-                ipv4, zone, vlanType, ipv6Range, ipRange);
+                ipv4, zone, vlanType, ipv6Range, ipRange, forSystemVms);
 
         return vlan;
     }
 
     private VlanVO commitVlanAndIpRange(final long zoneId, final long networkId, final long physicalNetworkId, final Long podId, final String startIP, final String endIP,
             final String vlanGateway, final String vlanNetmask, final String vlanId, final Domain domain, final Account vlanOwner, final String vlanIp6Gateway, final String vlanIp6Cidr,
-            final boolean ipv4, final DataCenterVO zone, final VlanType vlanType, final String ipv6Range, final String ipRange) {
+            final boolean ipv4, final DataCenterVO zone, final VlanType vlanType, final String ipv6Range, final String ipRange, final boolean forSystemVms) {
         return Transaction.execute(new TransactionCallback<VlanVO>() {
             @Override
             public VlanVO doInTransaction(final TransactionStatus status) {
@@ -3514,7 +3544,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 // IPv6 use a used ip map, is different from ipv4, no need to save
                 // public ip range
                 if (ipv4) {
-                    if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId, physicalNetworkId)) {
+                    if (!savePublicIPRange(startIP, endIP, zoneId, vlan.getId(), networkId, physicalNetworkId, forSystemVms)) {
                         throw new CloudRuntimeException("Failed to save IPv4 range. Please contact Cloud Support.");
                     }
                 }
@@ -3536,8 +3566,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
                 } else if (domain != null) {
                     // This VLAN is domain-wide, so create a DomainVlanMapVO entry
-                    final DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
-                    _domainVlanMapDao.persist(domainVlanMapVO);
+                    //final DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
+                    //_domainVlanMapDao.persist(domainVlanMapVO);
                 } else if (podId != null) {
                     // This VLAN is pod-wide, so create a PodVlanMapVO entry
                     final PodVlanMapVO podVlanMapVO = new PodVlanMapVO(podId, vlan.getId());
@@ -3848,7 +3878,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     @DB
-    protected boolean savePublicIPRange(final String startIP, final String endIP, final long zoneId, final long vlanDbId, final long sourceNetworkid, final long physicalNetworkId) {
+    protected boolean savePublicIPRange(final String startIP, final String endIP, final long zoneId, final long vlanDbId, final long sourceNetworkid, final long physicalNetworkId, final boolean forSystemVms) {
         final long startIPLong = NetUtils.ip2Long(startIP);
         final long endIPLong = NetUtils.ip2Long(endIP);
 
@@ -3856,7 +3886,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             @Override
             public List<String> doInTransaction(final TransactionStatus status) {
                 final IPRangeConfig config = new IPRangeConfig();
-                return config.savePublicIPRange(TransactionLegacy.currentTxn(), startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkid, physicalNetworkId);
+                return config.savePublicIPRange(TransactionLegacy.currentTxn(), startIPLong, endIPLong, zoneId, vlanDbId, sourceNetworkid, physicalNetworkId, forSystemVms);
             }
         });
 

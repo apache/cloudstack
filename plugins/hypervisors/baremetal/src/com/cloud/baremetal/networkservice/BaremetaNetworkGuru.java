@@ -154,7 +154,7 @@ public class BaremetaNetworkGuru extends DirectPodBasedNetworkGuru {
         DataCenter dc = _dcDao.findById(pod.getDataCenterId());
         if (nic.getIPv4Address() == null) {
             s_logger.debug(String.format("Requiring ip address: %s", nic.getIPv4Address()));
-            PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), requiredIp, false);
+            PublicIp ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), requiredIp, false, false);
             nic.setIPv4Address(ip.getAddress().toString());
             nic.setFormat(AddressFormat.Ip4);
             nic.setIPv4Gateway(ip.getGateway());

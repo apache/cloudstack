@@ -105,6 +105,14 @@ public interface ResourceLimitService {
     public long findCorrectResourceLimitForDomain(Domain domain, ResourceType type);
 
     /**
+     * Finds the default resource limit for a specified type.
+     *
+     * @param resourceType
+     * @return resource limit
+     */
+    public long findDefaultResourceLimitForDomain(ResourceType resourceType);
+
+    /**
      * Increments the resource count
      *
      * @param accountId

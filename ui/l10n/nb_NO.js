@@ -1489,6 +1489,8 @@ var dictionary = {
     "label.services": "Tjenester",
     "label.session.expired": "Sesjon utløpt",
     "label.set.default.NIC": "Sett som standard NIC",
+    "label.set.reservation": "Set reservation",
+    "label.set.reservation.desc": "(optional) Please specify an account to be associated with this IP range.<br/><br/>System VMs: Enable dedication of public IP range for SSVM and CPVM, account field disabled. Reservation strictness defined on 'system.vm.public.ip.reservation.mode.strictness'",
     "label.set.up.zone.type": "Oppsett av sonetype",
     "label.settings": "Innstillinger",
     "label.setup": "Oppsett",

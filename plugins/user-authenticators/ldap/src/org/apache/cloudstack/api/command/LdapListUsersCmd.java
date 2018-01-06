@@ -83,7 +83,7 @@ public class LdapListUsersCmd extends BaseListCmd {
         List<LdapUserResponse> ldapResponses = null;
         final ListResponse<LdapUserResponse> response = new ListResponse<LdapUserResponse>();
         try {
-            final List<LdapUser> users = _ldapManager.getUsers();
+            final List<LdapUser> users = _ldapManager.getUsers(null);
             ldapResponses = createLdapUserResponse(users);
         } catch (final NoLdapUserMatchingQueryException ex) {
             ldapResponses = new ArrayList<LdapUserResponse>();

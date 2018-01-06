@@ -338,6 +338,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             final ConfigurationVO apiPortConfig = values.get(0);
             if (apiPortConfig.getValue() != null) {
                 apiPort = Integer.parseInt(apiPortConfig.getValue());
+                apiPort = (apiPort <= 0) ? null : apiPort;
             }
         }
 

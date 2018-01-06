@@ -3387,7 +3387,7 @@ class PublicIpRange:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, account=None, domainid=None):
+    def create(cls, apiclient, services, account=None, domainid=None, forsystemvms=None):
         """Create VlanIpRange"""
 
         cmd = createVlanIpRange.createVlanIpRangeCmd()
@@ -3405,6 +3405,8 @@ class PublicIpRange:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
+        if forsystemvms:
+            cmd.forsystemvms = forsystemvms
 
         return PublicIpRange(apiclient.createVlanIpRange(cmd).__dict__)
 

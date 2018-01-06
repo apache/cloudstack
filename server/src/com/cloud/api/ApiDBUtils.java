@@ -867,6 +867,15 @@ public class ApiDBUtils {
         return s_resourceLimitMgr.findCorrectResourceLimitForAccount(accountId, limit, type);
     }
 
+    public static long findCorrectResourceLimitForDomain(Long limit, ResourceType resourceType, long domainId) {
+        //-- No limits for Root domain
+        if (domainId == Domain.ROOT_DOMAIN) {
+            return Resource.RESOURCE_UNLIMITED;
+        }
+        //--If limit doesn't have a value then fetch default limit from the configs
+        return (limit == null) ? s_resourceLimitMgr.findDefaultResourceLimitForDomain(resourceType) : limit;
+    }
+
     public static long getResourceCount(ResourceType type, long accountId) {
         AccountVO account = s_accountDao.findById(accountId);
 
@@ -979,6 +988,10 @@ public class ApiDBUtils {
 
     public static DomainVO findDomainById(Long domainId) {
         return s_domainDao.findByIdIncludingRemoved(domainId);
+    }
+
+    public static DomainJoinVO findDomainJoinVOById(Long domainId) {
+        return s_domainJoinDao.findByIdIncludingRemoved(domainId);
     }
 
     public static DomainVO findDomainByIdIncludingRemoved(Long domainId) {

@@ -18,11 +18,16 @@ package com.cloud.api.query;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
+import com.cloud.configuration.Resource;
+import com.cloud.domain.Domain;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
@@ -375,12 +380,162 @@ public class ViewResponseHelper {
         return new ArrayList<StoragePoolResponse>(vrDataList.values());
     }
 
-    public static List<DomainResponse> createDomainResponse(ResponseView view, EnumSet<DomainDetails> details, DomainJoinVO... domains) {
+    public static List<DomainResponse> createDomainResponse(ResponseView view, EnumSet<DomainDetails> details, List<DomainJoinVO> domains) {
         List<DomainResponse> respList = new ArrayList<DomainResponse>();
-        for (DomainJoinVO vt : domains){
-            respList.add(ApiDBUtils.newDomainResponse(view, details, vt));
+        //-- Coping the list to keep original order
+        List<DomainJoinVO> domainsCopy = new ArrayList<>(domains);
+        Collections.sort(domainsCopy, DomainJoinVO.domainIdComparator);
+        for (DomainJoinVO domainJoinVO : domains){
+            //-- Set parent information
+            DomainJoinVO parentDomainJoinVO = searchParentDomainUsingBinary(domainsCopy, domainJoinVO);
+            if(parentDomainJoinVO == null && domainJoinVO.getParent() != null) {
+                //-- fetch the parent from the database
+                parentDomainJoinVO = ApiDBUtils.findDomainJoinVOById(domainJoinVO.getParent());
+                if(parentDomainJoinVO != null) {
+                    //-- Add parent domain to the domain copy for future use
+                    domainsCopy.add(parentDomainJoinVO);
+                    Collections.sort(domainsCopy, DomainJoinVO.domainIdComparator);
+                }
+            }
+            if(parentDomainJoinVO != null) {
+                domainJoinVO.setParentName(parentDomainJoinVO.getName());
+                domainJoinVO.setParentUuid(parentDomainJoinVO.getUuid());
+            }
+            //-- Set correct resource limits
+            if(domainJoinVO.getParent() != null && domainJoinVO.getParent() != Domain.ROOT_DOMAIN) {
+                Map<Resource.ResourceType, Long> resourceLimitMap = new HashMap<>();
+                copyResourceLimitsIntoMap(resourceLimitMap, domainJoinVO);
+                //-- Fetching the parent domain resource limit if absent in current domain
+                setParentResourceLimitIfNeeded(resourceLimitMap, domainJoinVO, domainsCopy);
+                //-- copy the final correct resource limit
+                copyResourceLimitsFromMap(resourceLimitMap, domainJoinVO);
+            }
+            respList.add(ApiDBUtils.newDomainResponse(view, details, domainJoinVO));
         }
         return respList;
+    }
+
+    private static DomainJoinVO searchParentDomainUsingBinary(List<DomainJoinVO> domainsCopy, DomainJoinVO domainJoinVO){
+        Long parentId = domainJoinVO.getParent() == null ? 0 : domainJoinVO.getParent();
+        int totalDomains = domainsCopy.size();
+        int left = 0;
+        int right = totalDomains -1;
+        while(left <= right){
+            int middle = (left + right) /2;
+            DomainJoinVO middleObject = domainsCopy.get(middle);
+            if(middleObject.getId() == parentId){
+                return middleObject;
+            }
+            if(middleObject.getId() > parentId){
+                right = middle - 1 ;
+            }
+            else{
+                left = middle + 1;
+            }
+        }
+        return null;
+    }
+
+    private static void copyResourceLimitsIntoMap(Map<Resource.ResourceType, Long> resourceLimitMap, DomainJoinVO domainJoinVO){
+        resourceLimitMap.put(Resource.ResourceType.user_vm, domainJoinVO.getVmLimit());
+        resourceLimitMap.put(Resource.ResourceType.public_ip, domainJoinVO.getIpLimit());
+        resourceLimitMap.put(Resource.ResourceType.volume, domainJoinVO.getVolumeLimit());
+        resourceLimitMap.put(Resource.ResourceType.snapshot, domainJoinVO.getSnapshotLimit());
+        resourceLimitMap.put(Resource.ResourceType.template, domainJoinVO.getTemplateLimit());
+        resourceLimitMap.put(Resource.ResourceType.network, domainJoinVO.getNetworkLimit());
+        resourceLimitMap.put(Resource.ResourceType.vpc, domainJoinVO.getVpcLimit());
+        resourceLimitMap.put(Resource.ResourceType.cpu, domainJoinVO.getCpuLimit());
+        resourceLimitMap.put(Resource.ResourceType.memory, domainJoinVO.getMemoryLimit());
+        resourceLimitMap.put(Resource.ResourceType.primary_storage, domainJoinVO.getPrimaryStorageLimit());
+        resourceLimitMap.put(Resource.ResourceType.secondary_storage, domainJoinVO.getSecondaryStorageLimit());
+        resourceLimitMap.put(Resource.ResourceType.project, domainJoinVO.getProjectLimit());
+    }
+
+    private static void copyResourceLimitsFromMap(Map<Resource.ResourceType, Long> resourceLimitMap, DomainJoinVO domainJoinVO){
+        domainJoinVO.setVmLimit(resourceLimitMap.get(Resource.ResourceType.user_vm));
+        domainJoinVO.setIpLimit(resourceLimitMap.get(Resource.ResourceType.public_ip));
+        domainJoinVO.setVolumeLimit(resourceLimitMap.get(Resource.ResourceType.volume));
+        domainJoinVO.setSnapshotLimit(resourceLimitMap.get(Resource.ResourceType.snapshot));
+        domainJoinVO.setTemplateLimit(resourceLimitMap.get(Resource.ResourceType.template));
+        domainJoinVO.setNetworkLimit(resourceLimitMap.get(Resource.ResourceType.network));
+        domainJoinVO.setVpcLimit(resourceLimitMap.get(Resource.ResourceType.vpc));
+        domainJoinVO.setCpuLimit(resourceLimitMap.get(Resource.ResourceType.cpu));
+        domainJoinVO.setMemoryLimit(resourceLimitMap.get(Resource.ResourceType.memory));
+        domainJoinVO.setPrimaryStorageLimit(resourceLimitMap.get(Resource.ResourceType.primary_storage));
+        domainJoinVO.setSecondaryStorageLimit(resourceLimitMap.get(Resource.ResourceType.secondary_storage));
+        domainJoinVO.setProjectLimit(resourceLimitMap.get(Resource.ResourceType.project));
+    }
+
+    private static void setParentResourceLimitIfNeeded(Map<Resource.ResourceType, Long> resourceLimitMap, DomainJoinVO domainJoinVO, List<DomainJoinVO> domainsCopy) {
+        DomainJoinVO parentDomainJoinVO = searchParentDomainUsingBinary(domainsCopy, domainJoinVO);
+
+        if(parentDomainJoinVO != null) {
+            Long vmLimit = resourceLimitMap.get(Resource.ResourceType.user_vm);
+            Long ipLimit = resourceLimitMap.get(Resource.ResourceType.public_ip);
+            Long volumeLimit = resourceLimitMap.get(Resource.ResourceType.volume);
+            Long snapshotLimit = resourceLimitMap.get(Resource.ResourceType.snapshot);
+            Long templateLimit = resourceLimitMap.get(Resource.ResourceType.template);
+            Long networkLimit = resourceLimitMap.get(Resource.ResourceType.network);
+            Long vpcLimit = resourceLimitMap.get(Resource.ResourceType.vpc);
+            Long cpuLimit = resourceLimitMap.get(Resource.ResourceType.cpu);
+            Long memoryLimit = resourceLimitMap.get(Resource.ResourceType.memory);
+            Long primaryStorageLimit = resourceLimitMap.get(Resource.ResourceType.primary_storage);
+            Long secondaryStorageLimit = resourceLimitMap.get(Resource.ResourceType.secondary_storage);
+            Long projectLimit = resourceLimitMap.get(Resource.ResourceType.project);
+
+            if (vmLimit == null) {
+                vmLimit = parentDomainJoinVO.getVmLimit();
+                resourceLimitMap.put(Resource.ResourceType.user_vm, vmLimit);
+            }
+            if (ipLimit == null) {
+                ipLimit = parentDomainJoinVO.getIpLimit();
+                resourceLimitMap.put(Resource.ResourceType.public_ip, ipLimit);
+            }
+            if (volumeLimit == null) {
+                volumeLimit = parentDomainJoinVO.getVolumeLimit();
+                resourceLimitMap.put(Resource.ResourceType.volume, volumeLimit);
+            }
+            if (snapshotLimit == null) {
+                snapshotLimit = parentDomainJoinVO.getSnapshotLimit();
+                resourceLimitMap.put(Resource.ResourceType.snapshot, snapshotLimit);
+            }
+            if (templateLimit == null) {
+                templateLimit = parentDomainJoinVO.getTemplateLimit();
+                resourceLimitMap.put(Resource.ResourceType.template, templateLimit);
+            }
+            if (networkLimit == null) {
+                networkLimit = parentDomainJoinVO.getNetworkLimit();
+                resourceLimitMap.put(Resource.ResourceType.network, networkLimit);
+            }
+            if (vpcLimit == null) {
+                vpcLimit = parentDomainJoinVO.getVpcLimit();
+                resourceLimitMap.put(Resource.ResourceType.vpc, vpcLimit);
+            }
+            if (cpuLimit == null) {
+                cpuLimit = parentDomainJoinVO.getCpuLimit();
+                resourceLimitMap.put(Resource.ResourceType.cpu, cpuLimit);
+            }
+            if (memoryLimit == null) {
+                memoryLimit = parentDomainJoinVO.getMemoryLimit();
+                resourceLimitMap.put(Resource.ResourceType.memory, memoryLimit);
+            }
+            if (primaryStorageLimit == null) {
+                primaryStorageLimit = parentDomainJoinVO.getPrimaryStorageLimit();
+                resourceLimitMap.put(Resource.ResourceType.primary_storage, primaryStorageLimit);
+            }
+            if (secondaryStorageLimit == null) {
+                secondaryStorageLimit = parentDomainJoinVO.getSecondaryStorageLimit();
+                resourceLimitMap.put(Resource.ResourceType.secondary_storage, secondaryStorageLimit);
+            }
+            if (projectLimit == null) {
+                projectLimit = parentDomainJoinVO.getProjectLimit();
+                resourceLimitMap.put(Resource.ResourceType.project, projectLimit);
+            }
+            //-- try till parent present
+            if (parentDomainJoinVO.getParent() != null && parentDomainJoinVO.getParent() != Domain.ROOT_DOMAIN) {
+                setParentResourceLimitIfNeeded(resourceLimitMap, parentDomainJoinVO, domainsCopy);
+            }
+        }
     }
 
     public static List<AccountResponse> createAccountResponse(ResponseView view, AccountJoinVO... accounts) {

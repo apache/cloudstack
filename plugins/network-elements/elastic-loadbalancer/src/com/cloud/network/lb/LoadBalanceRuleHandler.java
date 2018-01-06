@@ -446,7 +446,7 @@ public class LoadBalanceRuleHandler {
             public PublicIp doInTransaction(final TransactionStatus status) throws InsufficientAddressCapacityException {
                 final Network frontEndNetwork = _networkModel.getNetwork(guestNetworkId);
 
-                final PublicIp ip = _ipAddrMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true);
+                final PublicIp ip = _ipAddrMgr.assignPublicIpAddress(frontEndNetwork.getDataCenterId(), null, account, VlanType.DirectAttached, frontEndNetwork.getId(), null, true, false);
                 final IPAddressVO ipvo = _ipAddressDao.findById(ip.getId());
                 ipvo.setAssociatedWithNetworkId(frontEndNetwork.getId());
                 _ipAddressDao.update(ipvo.getId(), ipvo);

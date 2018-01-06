@@ -79,7 +79,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
 
         LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId, type, name, (short)accountType)
         _ldapManager.linkDomainToLdap(_,_,_,_) >> response
-        _ldapManager.getUser(username, type, name) >> new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", true)
+        _ldapManager.getUser(username, type, name) >> new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", true, null)
 
         linkDomainToLdapCmd.admin = username
         linkDomainToLdapCmd.type = type
@@ -107,7 +107,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
 
         LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId.toString(), type, name, (short)accountType)
         _ldapManager.linkDomainToLdap(_,_,_,_) >> response
-        _ldapManager.getUser(username, type, name) >> new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", false)
+        _ldapManager.getUser(username, type, name) >> new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", false, null)
 
         _accountService.getActiveAccountByName(username, domainId) >> Mock(Account)
 
@@ -204,7 +204,7 @@ class LinkDomainToLdapCmdSpec extends Specification {
 
         LinkDomainToLdapResponse response = new LinkDomainToLdapResponse(domainId.toString(), type, name, (short)accountType)
         _ldapManager.linkDomainToLdap(_,_,_,_) >> response
-        _ldapManager.getUser(username, type, name) >> new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", false)
+        _ldapManager.getUser(username, type, name) >> new LdapUser(username, "admin@ccp.citrix.com", "Admin", "Admin", name, "ccp", false, null)
 
         _accountService.getActiveAccountByName(username, domainId) >> null
         UserAccount userAccount = Mock(UserAccount)

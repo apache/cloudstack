@@ -451,7 +451,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         `cloud`.`domain` resource_tag_domain ON resource_tag_domain.id = resource_tags.domain_id;
 
 -- Extra Dhcp Options
-CREATE TABLE `cloud`.`nic_extra_dhcp_options` (
+CREATE TABLE  IF NOT EXISTS `cloud`.`nic_extra_dhcp_options` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `nic_id` bigint unsigned NOT NULL COMMENT ' nic id where dhcp options are applied',
@@ -628,3 +628,23 @@ CREATE OR REPLACE VIEW `template_view` AS
          LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_template`.`id`)
              AND ((`resource_tags`.`resource_type` = 'Template')
              OR (`resource_tags`.`resource_type` = 'ISO')))));
+
+-- CLOUDSTACK-10109: Enable dedication of public IPs to SSVM and CPVM
+ALTER TABLE `cloud`.`user_ip_address`
+ADD COLUMN `forsystemvms` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'true if IP is set to system vms, false if not';
+
+-- ldap binding on domain level
+CREATE TABLE IF NOT EXISTS `cloud`.`domain_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `domain_id` bigint unsigned NOT NULL COMMENT 'account id',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(255) NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_domain_details__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE cloud.ldap_configuration ADD COLUMN domain_id BIGINT(20) DEFAULT NULL;
+ALTER TABLE cloud.ldap_trust_map ADD COLUMN account_id BIGINT(20) DEFAULT 0;
+ALTER TABLE cloud.ldap_trust_map DROP FOREIGN KEY fk_ldap_trust_map__domain_id;
+DROP INDEX uk_ldap_trust_map__domain_id ON cloud.ldap_trust_map;
+CREATE UNIQUE INDEX uk_ldap_trust_map__bind_location ON ldap_trust_map (domain_id, account_id);
