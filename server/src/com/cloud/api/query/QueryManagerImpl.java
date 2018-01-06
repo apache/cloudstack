@@ -1890,8 +1890,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             respView = ResponseView.Full;
         }
 
-        List<DomainResponse> domainResponses = ViewResponseHelper.createDomainResponse(respView, cmd.getDetails(), result.first().toArray(
-                new DomainJoinVO[result.first().size()]));
+        List<DomainResponse> domainResponses = ViewResponseHelper.createDomainResponse(respView, cmd.getDetails(), result.first());
         response.setResponses(domainResponses, result.second());
         return response;
     }
@@ -1901,9 +1900,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long domainId = cmd.getId();
         boolean listAll = cmd.listAll();
         boolean isRecursive = false;
+        Domain domain = null;
 
         if (domainId != null) {
-            Domain domain = _domainDao.findById(domainId);
+            domain = _domainDao.findById(domainId);
             if (domain == null) {
                 throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
             }
@@ -1947,7 +1947,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (domainId != null) {
             if (isRecursive) {
-                sc.setParameters("path", _domainDao.findById(domainId).getPath() + "%");
+                if(domain == null){
+                    domain = _domainDao.findById(domainId);
+                }
+                sc.setParameters("path", domain.getPath() + "%");
             } else {
                 sc.setParameters("id", domainId);
             }

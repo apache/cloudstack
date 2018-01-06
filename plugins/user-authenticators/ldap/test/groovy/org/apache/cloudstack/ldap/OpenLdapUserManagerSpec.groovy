@@ -17,14 +17,12 @@
 package groovy.org.apache.cloudstack.ldap
 
 import org.apache.cloudstack.ldap.LdapConfiguration
-import org.apache.cloudstack.ldap.LdapUserManager
 import org.apache.cloudstack.ldap.OpenLdapUserManagerImpl
 import spock.lang.Shared
 
 import javax.naming.NamingException
 import javax.naming.directory.Attribute
 import javax.naming.directory.Attributes
-import javax.naming.directory.InitialDirContext
 import javax.naming.directory.SearchControls
 import javax.naming.directory.SearchResult
 import javax.naming.ldap.InitialLdapContext
@@ -167,12 +165,12 @@ class OpenLdapUserManagerSpec extends spock.lang.Specification {
         ldapConfiguration.getEmailAttribute() >> "mail"
         ldapConfiguration.getFirstnameAttribute() >> "givenname"
         ldapConfiguration.getLastnameAttribute() >> "sn"
-        ldapConfiguration.getBaseDn() >> "dc=cloudstack,dc=org"
+        ldapConfiguration.getBaseDn(_) >> "dc=cloudstack,dc=org"
         ldapConfiguration.getCommonNameAttribute() >> "cn"
         ldapConfiguration.getGroupObject() >> "groupOfUniqueNames"
-        ldapConfiguration.getGroupUniqueMemeberAttribute() >> "uniquemember"
+        ldapConfiguration.getGroupUniqueMemberAttribute(_) >> "uniquemember"
         ldapConfiguration.getLdapPageSize() >> 1
-        ldapConfiguration.getReadTimeout() >> 1000
+        ldapConfiguration.getReadTimeout(_) >> 1000
 
         username = "rmurphy"
         email = "rmurphy@test.com"
@@ -186,7 +184,7 @@ class OpenLdapUserManagerSpec extends spock.lang.Specification {
         def attributes = createUserAttributes(username, email, firstname, lastname)
         def search = createSearchResult(attributes)
         def userManager = new OpenLdapUserManagerImpl(ldapConfiguration)
-        def result = userManager.createUser(search)
+        def result = userManager.createUser(search,)
 
         expect: "The crated user the data supplied from LDAP"
 
@@ -290,7 +288,7 @@ class OpenLdapUserManagerSpec extends spock.lang.Specification {
         def ldapUserManager = new OpenLdapUserManagerImpl(ldapConfiguration)
 
         when: "A request for users is made"
-        def result = ldapUserManager.getUsersInGroup("engineering", createGroupSearchContextOneUser())
+        def result = ldapUserManager.getUsersInGroup("engineering", createGroupSearchContextOneUser(),)
         then: "one user is returned"
         result.size() == 1
     }
@@ -300,7 +298,7 @@ class OpenLdapUserManagerSpec extends spock.lang.Specification {
         def ldapUserManager = new OpenLdapUserManagerImpl(ldapConfiguration)
 
         when: "A request for users is made"
-        def result = ldapUserManager.getUsersInGroup("engineering", createGroupSearchContextNoUser())
+        def result = ldapUserManager.getUsersInGroup("engineering", createGroupSearchContextNoUser(),)
         then: "no user is returned"
         result.size() == 0
     }

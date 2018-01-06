@@ -30,17 +30,17 @@ public interface LdapUserManager {
         MICROSOFTAD, OPENLDAP;
     }
 
-    public LdapUser getUser(final String username, final LdapContext context) throws NamingException, IOException;
+    public LdapUser getUser(final String username, final LdapContext context, Long domainId) throws NamingException, IOException;
 
-    public LdapUser getUser(final String username, final String type, final String name, final LdapContext context) throws NamingException, IOException;
+    public LdapUser getUser(final String username, final String type, final String name, final LdapContext context, Long domainId) throws NamingException, IOException;
 
-    public List<LdapUser> getUsers(final LdapContext context) throws NamingException, IOException;
+    public List<LdapUser> getUsers(final LdapContext context, Long domainId) throws NamingException, IOException;
 
-    public List<LdapUser> getUsers(final String username, final LdapContext context) throws NamingException, IOException;
+    public List<LdapUser> getUsers(final String username, final LdapContext context, Long domainId) throws NamingException, IOException;
 
-    public List<LdapUser> getUsersInGroup(String groupName, LdapContext context) throws NamingException;
+    public List<LdapUser> getUsersInGroup(String groupName, LdapContext context, Long domainId) throws NamingException;
 
-    public List<LdapUser> searchUsers(final LdapContext context) throws NamingException, IOException;
+    public List<LdapUser> searchUsers(final LdapContext context, Long domainId) throws NamingException, IOException;
 
-    public List<LdapUser> searchUsers(final String username, final LdapContext context) throws NamingException, IOException;
+    public List<LdapUser> searchUsers(final String username, final LdapContext context, Long domainId) throws NamingException, IOException;
 }

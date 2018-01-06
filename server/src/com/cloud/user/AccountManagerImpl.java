@@ -1702,17 +1702,32 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @ActionEvent(eventType = EventTypes.EVENT_USER_MOVE, eventDescription = "moving User to a new account")
     public boolean moveUser(MoveUserCmd cmd) {
-        UserVO user = getValidUserVO(cmd.getId());
+        final Long id = cmd.getId();
+        UserVO user = getValidUserVO(id);
         Account oldAccount = _accountDao.findById(user.getAccountId());
         checkAccountAndAccess(user, oldAccount);
         long domainId = oldAccount.getDomainId();
 
-        long newAccountId = getNewAccountId(cmd, domainId);
+        long newAccountId = getNewAccountId(domainId, cmd.getAccountName(), cmd.getAccountId());
 
+        return moveUser(user, newAccountId);
+    }
+
+    public boolean moveUser(long id, Long domainId, long accountId) {
+        UserVO user = getValidUserVO(id);
+        Account oldAccount = _accountDao.findById(user.getAccountId());
+        checkAccountAndAccess(user, oldAccount);
+        Account newAccount = _accountDao.findById(accountId);
+        checkIfNotMovingAcrossDomains(domainId, newAccount);
+        return moveUser(user , accountId);
+    }
+
+    private boolean moveUser(UserVO user, long newAccountId) {
         if(newAccountId == user.getAccountId()) {
             // could do a not silent fail but the objective of the user is reached
             return true; // no need to create a new user object for this user
         }
+
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
@@ -1721,34 +1736,37 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 user.setUuid(UUID.randomUUID().toString());
                 _userDao.update(user.getId(),user);
                 newUser.setAccountId(newAccountId);
-                boolean success = _userDao.remove(cmd.getId());
+                boolean success = _userDao.remove(user.getId());
                 UserVO persisted = _userDao.persist(newUser);
                 return success && persisted.getUuid().equals(user.getExternalEntity());
             }
         });
     }
 
-    private long getNewAccountId(MoveUserCmd cmd, long domainId) {
+    private long getNewAccountId(long domainId, String accountName, Long accountId) {
         Account newAccount = null;
-        if (StringUtils.isNotBlank(cmd.getAccountName())) {
+        if (StringUtils.isNotBlank(accountName)) {
             if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Getting id for account by name '" + cmd.getAccountName() + "' in domain " + domainId);
+                s_logger.debug("Getting id for account by name '" + accountName + "' in domain " + domainId);
             }
-            newAccount = _accountDao.findEnabledAccount(cmd.getAccountName(), domainId);
+            newAccount = _accountDao.findEnabledAccount(accountName, domainId);
         }
-        if (newAccount == null && cmd.getAccountId() != null) {
-            newAccount = _accountDao.findById(cmd.getAccountId());
+        if (newAccount == null && accountId != null) {
+            newAccount = _accountDao.findById(accountId);
         }
         if (newAccount == null) {
             throw new CloudRuntimeException("no account name or account id. this should have been caught before this point");
         }
-        long newAccountId = newAccount.getAccountId();
 
+        checkIfNotMovingAcrossDomains(domainId, newAccount);
+        return newAccount.getAccountId();
+    }
+
+    private void checkIfNotMovingAcrossDomains(long domainId, Account newAccount) {
         if(newAccount.getDomainId() != domainId) {
             // not in scope
             throw new InvalidParameterValueException("moving a user from an account in one domain to an account in annother domain is not supported!");
         }
-        return newAccountId;
     }
 
     private void checkAccountAndAccess(UserVO user, Account account) {

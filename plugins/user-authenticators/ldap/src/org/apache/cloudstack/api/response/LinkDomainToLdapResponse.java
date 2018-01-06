@@ -66,11 +66,6 @@ public class LinkDomainToLdapResponse extends BaseResponse {
         return ldapDomain == null ? name : ldapDomain;
     }
 
-    @Deprecated
-    public String getName() {
-        return ldapDomain == null ? name : ldapDomain;
-    }
-
     public String getType() {
         return type;
     }

@@ -16,11 +16,13 @@
 // under the License.
 package com.cloud.api.query.vo;
 
+import java.util.Comparator;
 import java.util.Date;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -148,6 +150,12 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
 
     @Column(name="secondaryStorageTotal")
     private Long secondaryStorageTotal;
+
+    @Transient
+    private String parentName;
+
+    @Transient
+    private String parentUuid;
 
     public DomainJoinVO() {
     }
@@ -498,4 +506,33 @@ public class DomainJoinVO extends BaseViewVO implements InternalIdentity, Identi
         this.secondaryStorageLimit = secondaryStorageLimit;
     }
 
+    public String getParentName() {
+        return parentName;
+    }
+
+    public void setParentName(String parentName) {
+        this.parentName = parentName;
+    }
+
+    public String getParentUuid() {
+        return parentUuid;
+    }
+
+    public void setParentUuid(String parentUuid) {
+        this.parentUuid = parentUuid;
+    }
+
+    public static Comparator<DomainJoinVO> domainIdComparator
+            = new Comparator<DomainJoinVO>() {
+
+        public int compare(DomainJoinVO domainJoinVO1, DomainJoinVO domainJoinVO2) {
+
+            Long domainId1 = domainJoinVO1.getId();
+            Long domainId2 = domainJoinVO2.getId();
+
+            //-- ascending order
+            return domainId1.compareTo(domainId2);
+        }
+
+    };
 }
