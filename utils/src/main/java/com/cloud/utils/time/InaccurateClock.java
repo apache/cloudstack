@@ -63,7 +63,7 @@ public class InaccurateClock extends StandardMBean implements InaccurateClockMBe
     public synchronized String restart() {
         turnOff();
         s_executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("InaccurateClock"));
-        s_executor.scheduleAtFixedRate(new SetTimeTask(), 0, 60, TimeUnit.SECONDS);
+        s_executor.scheduleAtFixedRate(new SetTimeTask(), 0, 10, TimeUnit.SECONDS);
         return "Restarted";
     }
 

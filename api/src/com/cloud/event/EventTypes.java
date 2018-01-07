@@ -130,6 +130,7 @@ public class EventTypes {
     public static final String EVENT_NETWORK_CREATE = "NETWORK.CREATE";
     public static final String EVENT_NETWORK_DELETE = "NETWORK.DELETE";
     public static final String EVENT_NETWORK_UPDATE = "NETWORK.UPDATE";
+    public static final String EVENT_NETWORK_MIGRATE = "NETWORK.MIGRATE";
     public static final String EVENT_FIREWALL_OPEN = "FIREWALL.OPEN";
     public static final String EVENT_FIREWALL_CLOSE = "FIREWALL.CLOSE";
     public static final String EVENT_FIREWALL_UPDATE = "FIREWALL.UPDATE";
@@ -197,6 +198,7 @@ public class EventTypes {
     public static final String EVENT_USER_CREATE = "USER.CREATE";
     public static final String EVENT_USER_DELETE = "USER.DELETE";
     public static final String EVENT_USER_DISABLE = "USER.DISABLE";
+    public static final String EVENT_USER_MOVE = "USER.MOVE";
     public static final String EVENT_USER_UPDATE = "USER.UPDATE";
     public static final String EVENT_USER_ENABLE = "USER.ENABLE";
     public static final String EVENT_USER_LOCK = "USER.LOCK";
@@ -240,6 +242,8 @@ public class EventTypes {
 
     // Snapshots
     public static final String EVENT_SNAPSHOT_CREATE = "SNAPSHOT.CREATE";
+    public static final String EVENT_SNAPSHOT_ON_PRIMARY = "SNAPSHOT.ON_PRIMARY";
+    public static final String EVENT_SNAPSHOT_OFF_PRIMARY = "SNAPSHOT.OFF_PRIMARY";
     public static final String EVENT_SNAPSHOT_DELETE = "SNAPSHOT.DELETE";
     public static final String EVENT_SNAPSHOT_REVERT = "SNAPSHOT.REVERT";
     public static final String EVENT_SNAPSHOT_POLICY_CREATE = "SNAPSHOTPOLICY.CREATE";
@@ -295,6 +299,9 @@ public class EventTypes {
     public static final String EVENT_VLAN_IP_RANGE_DELETE = "VLAN.IP.RANGE.DELETE";
     public static final String EVENT_VLAN_IP_RANGE_DEDICATE = "VLAN.IP.RANGE.DEDICATE";
     public static final String EVENT_VLAN_IP_RANGE_RELEASE = "VLAN.IP.RANGE.RELEASE";
+
+    public static final String EVENT_MANAGEMENT_IP_RANGE_CREATE = "MANAGEMENT.IP.RANGE.CREATE";
+    public static final String EVENT_MANAGEMENT_IP_RANGE_DELETE = "MANAGEMENT.IP.RANGE.DELETE";
 
     public static final String EVENT_STORAGE_IP_RANGE_CREATE = "STORAGE.IP.RANGE.CREATE";
     public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";
@@ -458,6 +465,8 @@ public class EventTypes {
     // vm snapshot events
     public static final String EVENT_VM_SNAPSHOT_CREATE = "VMSNAPSHOT.CREATE";
     public static final String EVENT_VM_SNAPSHOT_DELETE = "VMSNAPSHOT.DELETE";
+    public static final String EVENT_VM_SNAPSHOT_ON_PRIMARY = "VMSNAPSHOT.ON_PRIMARY";
+    public static final String EVENT_VM_SNAPSHOT_OFF_PRIMARY = "VMSNAPSHOT.OFF_PRIMARY";
     public static final String EVENT_VM_SNAPSHOT_REVERT = "VMSNAPSHOT.REVERTTO";
 
     // external network device events
@@ -707,6 +716,8 @@ public class EventTypes {
         // Snapshots
         entityEventDetails.put(EVENT_SNAPSHOT_CREATE, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_DELETE, Snapshot.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_ON_PRIMARY, Snapshot.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_OFF_PRIMARY, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_POLICY_CREATE, SnapshotPolicy.class);
         entityEventDetails.put(EVENT_SNAPSHOT_POLICY_UPDATE, SnapshotPolicy.class);
         entityEventDetails.put(EVENT_SNAPSHOT_POLICY_DELETE, SnapshotPolicy.class);
@@ -760,6 +771,9 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_DELETE, Vlan.class);
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_DEDICATE, Vlan.class);
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_RELEASE, Vlan.class);
+
+        entityEventDetails.put(EVENT_MANAGEMENT_IP_RANGE_CREATE, Pod.class);
+        entityEventDetails.put(EVENT_MANAGEMENT_IP_RANGE_DELETE, Pod.class);
 
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_CREATE, StorageNetworkIpRange.class);
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_DELETE, StorageNetworkIpRange.class);

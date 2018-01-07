@@ -104,6 +104,7 @@ Requires: bridge-utils
 Requires: ebtables
 Requires: iptables
 Requires: ethtool
+Requires: net-tools
 Requires: iproute
 Requires: ipset
 Requires: perl

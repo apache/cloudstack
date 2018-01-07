@@ -54,7 +54,7 @@
     <dependency>
 	<groupId>com.sun.jersey</groupId>
 	<artifactId>jersey-bundle</artifactId>
-	<version>1.19.3</version>
+	<version>1.19.4</version>
 </dependency>
   </dependencies>
   <build>

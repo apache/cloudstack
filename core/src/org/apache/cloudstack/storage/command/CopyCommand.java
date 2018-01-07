@@ -24,7 +24,7 @@ import java.util.Map;
 
 import com.cloud.agent.api.to.DataTO;
 
-public final class CopyCommand extends StorageSubSystemCommand {
+public class CopyCommand extends StorageSubSystemCommand {
     private DataTO srcTO;
     private DataTO destTO;
     private DataTO cacheTO;

@@ -30,6 +30,8 @@ import com.cloud.agent.api.NetworkUsageCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
+import com.cloud.agent.api.ReplugNicAnswer;
+import com.cloud.agent.api.ReplugNicCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.UnPlugNicAnswer;
 import com.cloud.agent.api.UnPlugNicCommand;
@@ -134,11 +136,22 @@ public class MockNetworkManagerImpl extends ManagerBase implements MockNetworkMa
     public UnPlugNicAnswer unplugNic(UnPlugNicCommand cmd) {
         String vmname = cmd.getVmName();
         if (_mockVmDao.findByVmName(vmname) != null) {
-            s_logger.debug("Plugged NIC (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
+            s_logger.debug("Unplugged NIC (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
             return new UnPlugNicAnswer(cmd, true, "success");
         }
-        s_logger.error("Plug NIC failed for (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
+        s_logger.error("Unplug NIC failed for (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
         return new UnPlugNicAnswer(cmd, false, "failure");
+    }
+
+    @Override
+    public ReplugNicAnswer replugNic(ReplugNicCommand cmd) {
+        String vmname = cmd.getVmName();
+        if (_mockVmDao.findByVmName(vmname) != null) {
+            s_logger.debug("Replugged NIC (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
+            return new ReplugNicAnswer(cmd, true, "success");
+        }
+        s_logger.error("Replug NIC failed for (dev=" + cmd.getNic().getDeviceId() + ", " + cmd.getNic().getIp() + ") into " + cmd.getVmName());
+        return new ReplugNicAnswer(cmd, false, "failure");
     }
 
     @Override

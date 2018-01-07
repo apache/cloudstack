@@ -24,7 +24,7 @@ import javax.servlet.http.HttpSession;
 import com.cloud.exception.CloudAuthenticationException;
 
 public interface ApiServerService {
-    public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId) throws ServerApiException;
+    public boolean verifyRequest(Map<String, Object[]> requestParameters, Long userId, InetAddress remoteAddress) throws ServerApiException;
 
     public Long fetchDomainId(String domainUUID);
 

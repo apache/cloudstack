@@ -834,7 +834,8 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
                     "\ttimeout client     50000\n" +
                     "\ttimeout server     50000\n" +
                     "\n" +
-                    "listen stats_on_guest 10.1.10.2:8081\n" +
+                    "listen stats_on_guest\n" +
+                    "\tbind 10.1.10.2:8081\n" +
                     "\tmode http\n" +
                     "\toption httpclose\n" +
                     "\tstats enable\n" +
@@ -843,7 +844,8 @@ public class VirtualRoutingResourceTest implements VirtualRouterDeployer {
                     "\tstats auth    admin1:AdMiN123\n" +
                     "\n" +
                     "\t \n" +
-                    "listen 64_10_1_10-80 64.10.1.10:80\n" +
+                    "listen 64_10_1_10-80\n" +
+                    "\tbind 64.10.1.10:80\n" +
                     "\tbalance algo\n" +
                     "\tserver 64_10_1_10-80_0 10.1.10.2:80 check\n" +
                     "\tmode http\n" +

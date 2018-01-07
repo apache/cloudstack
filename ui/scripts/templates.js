@@ -55,12 +55,24 @@
                             label: 'label.community'
                         }
                     },
+                    preFilter: function() {
+                        if (isAdmin()||isDomainAdmin()) {
+                            return []
+                        }
+                        return ['account']
+                    },
                     fields: {
                         name: {
                             label: 'label.name'
                         },
                         hypervisor: {
                             label: 'label.hypervisor'
+                        },
+                        ostypename: {
+                            label: 'label.os.type'
+                        },
+                        account: {
+                            label: 'label.account'
                         }
                     },
 
@@ -1526,14 +1538,24 @@
                                         actions: {
                                              remove: {
                                                  label: 'label.action.delete.template',
+                                                 createForm: {
+                                                    title: 'label.action.delete.template',
+                                                    desc: function(args) {
+                                                       if(args.context.templates[0].crossZones == true) {
+                                                          return 'message.action.delete.template.for.all.zones';
+                                                       } else {
+                                                          return 'message.action.delete.template';
+                                                       }
+                                                      },
+                                                    fields: {
+                                                        forced: {
+                                                            label: 'force.delete',
+                                                            isBoolean: true,
+                                                            isChecked: false
+                                                        }
+                                                    }
+                                                 },
                                                  messages: {
-                                                     confirm: function(args) {
-                                                         if(args.context.templates[0].crossZones == true) {
-                                                             return 'message.action.delete.template.for.all.zones';
-                                                         } else {
-                                                             return 'message.action.delete.template';
-                                                         }
-                                                     },
                                                      notification: function(args) {
                                                          return 'label.action.delete.template';
                                                      }
@@ -1544,7 +1566,7 @@
                                                         queryParams += "&zoneid=" + args.context.zones[0].zoneid;
                                                      }
                                                      $.ajax({
-                                                         url: createURL(queryParams),
+                                                         url: createURL(queryParams + "&forced=" + (args.data.forced == "on")),
                                                          dataType: "json",
                                                          async: true,
                                                          success: function(json) {
@@ -2038,9 +2060,21 @@
                             label: 'label.community'
                         }
                     },
+                    preFilter: function() {
+                        if (isAdmin()||isDomainAdmin()) {
+                            return []
+                        }
+                        return ['account']
+                    },
                     fields: {
                         name: {
                             label: 'label.name'
+                        },
+                        ostypename: {
+                            label: 'label.os.type'
+                        },
+                        account: {
+                            label: 'label.account'
                         }
                     },
 
@@ -2347,7 +2381,10 @@
                                             id: item.id,
                                             name: item.name,
                                             description: item.description,
+                                            ostypename: item.ostypename,
                                             ostypeid: item.ostypeid,
+                                            account: item.account,
+                                            domain: item.domain,
                                             zones: item.zonename,
                                             zoneids: [item.zoneid]
                                         };

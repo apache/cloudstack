@@ -102,23 +102,8 @@ class TestlistTemplatesDomainAdmin(cloudstackTestCase):
             domainid=self.domain1.id)
 
         template_register.download(self.apiclient)
-        # self.cleanup.append(self.template_register)
 
-        time.sleep(self.testdata["sleep"])
-        timeout = self.testdata["timeout"]
-        while True:
-            listTemplateResponse = Template.list(
-                self.apiclient,
-                templatefilter="all",
-                id=template_register.id,
-                account=self.account1.name,
-                domainid=self.domain1.id
-            )
-            status = validateList(listTemplateResponse)
-            self.assertEquals(
-                PASS,
-                status[0],
-                "Template creation failed")
+        self.download(self.apiclient, template_register.id)
 
         listtemplate = Template.list(
             self.apiclient,
@@ -126,13 +111,57 @@ class TestlistTemplatesDomainAdmin(cloudstackTestCase):
             hypervisor=self.hypervisor,
             account=self.account2.name,
             domainid=self.account2.domainid,
-            templatefilter="all"
-
-        )
+            templatefilter="executable")
 
         self.assertEqual(
             listtemplate,
             None,
-            "Check templates are not listed"
+            "Check templates are not listed - CLOUDSTACK-10149"
         )
         return
+
+    def download(self, apiclient, template_id, retries=12, interval=5):
+        """Check if template download will finish in 1 minute"""
+        while retries > -1:
+            time.sleep(interval)
+            template_response = Template.list(
+                apiclient,
+                id=template_id,
+                zoneid=self.zone.id,
+                templatefilter='self'
+            )
+
+            if isinstance(template_response, list):
+                template = template_response[0]
+                if not hasattr(template, 'status') or not template or not template.status:
+                    retries = retries - 1
+                    continue
+
+                # If template is ready,
+                # template.status = Download Complete
+                # Downloading - x% Downloaded
+                # if Failed
+                # Error - Any other string
+                if 'Failed' in template.status:
+                    raise Exception(
+                        "Failed to download template: status - %s" %
+                        template.status)
+
+                elif template.status == 'Download Complete' and template.isready:
+                    return
+
+                elif 'Downloaded' in template.status:
+                    retries = retries - 1
+                    continue
+
+                elif 'Installing' not in template.status:
+                    if retries >= 0:
+                        retries = retries - 1
+                        continue
+                    raise Exception(
+                        "Error in downloading template: status - %s" %
+                        template.status)
+
+            else:
+                retries = retries - 1
+        raise Exception("Template download failed exception.")

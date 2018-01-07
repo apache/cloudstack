@@ -324,6 +324,10 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         return userVmResponse;
     }
 
+    /**
+     * The resulting Response attempts to be in line with what is returned from
+     * @see com.cloud.api.ApiResponseHelper#createNicResponse(Nic)
+     */
     @Override
     public UserVmResponse setUserVmResponse(ResponseView view, UserVmResponse userVmData, UserVmJoinVO uvo) {
         Long securityGroupId = uvo.getSecurityGroupId();
@@ -345,28 +349,50 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
         long nic_id = uvo.getNicId();
         if (nic_id > 0) {
             NicResponse nicResponse = new NicResponse();
+            // The numbered comments are to keep track of the data returned from here and ApiResponseHelper.createNicResponse()
+            // the data can't be identical but some tidying up/unifying might be possible
+            /*1: nicUuid*/
             nicResponse.setId(uvo.getNicUuid());
-            nicResponse.setIpaddress(uvo.getIpAddress());
-            nicResponse.setGateway(uvo.getGateway());
-            nicResponse.setNetmask(uvo.getNetmask());
+            /*2: networkUuid*/
             nicResponse.setNetworkid(uvo.getNetworkUuid());
-            nicResponse.setNetworkName(uvo.getNetworkName());
-            nicResponse.setMacAddress(uvo.getMacAddress());
-            nicResponse.setIp6Address(uvo.getIp6Address());
-            nicResponse.setIp6Gateway(uvo.getIp6Gateway());
-            nicResponse.setIp6Cidr(uvo.getIp6Cidr());
-            if (uvo.getBroadcastUri() != null) {
-                nicResponse.setBroadcastUri(uvo.getBroadcastUri().toString());
-            }
-            if (uvo.getIsolationUri() != null) {
-                nicResponse.setIsolationUri(uvo.getIsolationUri().toString());
-            }
+            /*3: vmId makes no sense on a nested nic object so it is ommited here */
+
             if (uvo.getTrafficType() != null) {
+            /*4: trafficType*/
                 nicResponse.setTrafficType(uvo.getTrafficType().toString());
             }
             if (uvo.getGuestType() != null) {
+                /*5: guestType*/
                 nicResponse.setType(uvo.getGuestType().toString());
             }
+            /*6: ipAddress*/
+            nicResponse.setIpaddress(uvo.getIpAddress());
+            /*7: gateway*/
+            nicResponse.setGateway(uvo.getGateway());
+            /*8: netmask*/
+            nicResponse.setNetmask(uvo.getNetmask());
+            /*9: networkName*/
+            nicResponse.setNetworkName(uvo.getNetworkName());
+            /*10: macAddress*/
+            nicResponse.setMacAddress(uvo.getMacAddress());
+            /*11: IPv6Address*/
+            nicResponse.setIp6Address(uvo.getIp6Address());
+            /*12: IPv6Gateway*/
+            nicResponse.setIp6Gateway(uvo.getIp6Gateway());
+            /*13: IPv6Cidr*/
+            nicResponse.setIp6Cidr(uvo.getIp6Cidr());
+            /*14: deviceId*/
+// where do we find           nicResponse.setDeviceId(
+// this is probably not String.valueOf(uvo.getNicId())); as this is a db-id
+            /*15: broadcastURI*/
+            if (uvo.getBroadcastUri() != null) {
+                nicResponse.setBroadcastUri(uvo.getBroadcastUri().toString());
+            }
+            /*16: isolationURI*/
+            if (uvo.getIsolationUri() != null) {
+                nicResponse.setIsolationUri(uvo.getIsolationUri().toString());
+            }
+            /*17: default*/
             nicResponse.setIsDefault(uvo.isDefaultNic());
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(uvo.getNicId());
             if (secondaryIps != null) {
@@ -380,6 +406,7 @@ public class UserVmJoinDaoImpl extends GenericDaoBaseWithTagInformation<UserVmJo
                 nicResponse.setSecondaryIps(ipList);
             }
 
+            /* 18: extra dhcp options */
             nicResponse.setObjectName("nic");
             List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = _nicExtraDhcpOptionDao.listByNicId(nic_id)
                     .stream()

@@ -35,7 +35,7 @@ import com.cloud.utils.Pair;
  * @deprecated as of 4.3 use the new api {@link LdapDeleteConfigurationCmd}
  */
 @Deprecated
-@APICommand(name = "ldapRemove", description = "Remove the LDAP context for this site.", responseObject = LDAPConfigResponse.class, since = "3.0.1",
+@APICommand(name = "ldapRemove", description = "(Deprecated , use deleteLdapConfiguration) Remove the LDAP context for this site.", responseObject = LDAPConfigResponse.class, since = "3.0.1",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LDAPRemoveCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(LDAPRemoveCmd.class.getName());
@@ -60,7 +60,7 @@ public class LDAPRemoveCmd extends BaseCmd {
         LdapListConfigurationCmd listConfigurationCmd = new LdapListConfigurationCmd(_ldapManager);
         Pair<List<? extends LdapConfigurationVO>, Integer> result = _ldapManager.listConfigurations(listConfigurationCmd);
         for (LdapConfigurationVO config : result.first()) {
-            _ldapManager.deleteConfiguration(config.getHostname());
+            _ldapManager.deleteConfiguration(config.getHostname(), 0, null);
         }
         return true;
     }

@@ -198,7 +198,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         }
 
         // for agents that are self-managed, threshold to be considered as disconnected after pingtimeout
-        final long cutSeconds = (System.currentTimeMillis() >> 10) - getTimeout();
+        final long cutSeconds = (System.currentTimeMillis() >> 10) - mgmtServiceConf.getTimeout();
         final List<HostVO> hosts = _hostDao.findAndUpdateDirectAgentToLoad(cutSeconds, LoadSize.value().longValue(), _nodeId);
         final List<HostVO> appliances = _hostDao.findAndUpdateApplianceToLoad(cutSeconds, _nodeId);
 
@@ -519,7 +519,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
                         sslEngine.setUseClientMode(true);
                         sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
                         sslEngine.beginHandshake();
-                        if (!Link.doHandshake(ch1, sslEngine, true)) {
+                        if (!Link.doHandshake(ch1, sslEngine)) {
                             ch1.close();
                             throw new IOException(String.format("SSL: Handshake failed with peer management server '%s' on %s:%d ", peerName, ip, port));
                         }
@@ -747,7 +747,7 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
     public void onManagementNodeLeft(final List<? extends ManagementServerHost> nodeList, final long selfNodeId) {
         for (final ManagementServerHost vo : nodeList) {
             s_logger.info("Marking hosts as disconnected on Management server" + vo.getMsid());
-            final long lastPing = (System.currentTimeMillis() >> 10) - getTimeout();
+            final long lastPing = (System.currentTimeMillis() >> 10) - mgmtServiceConf.getTimeout();
             _hostDao.markHostsAsDisconnected(vo.getMsid(), lastPing);
             outOfBandManagementDao.expireServerOwnership(vo.getMsid());
             haConfigDao.expireServerOwnership(vo.getMsid());

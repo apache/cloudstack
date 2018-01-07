@@ -451,7 +451,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         `cloud`.`domain` resource_tag_domain ON resource_tag_domain.id = resource_tags.domain_id;
 
 -- Extra Dhcp Options
-CREATE TABLE `cloud`.`nic_extra_dhcp_options` (
+CREATE TABLE  IF NOT EXISTS `cloud`.`nic_extra_dhcp_options` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `nic_id` bigint unsigned NOT NULL COMMENT ' nic id where dhcp options are applied',
@@ -489,3 +489,57 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 -- Add XenServer 7.2 hypervisor guest OS mappings (copy 7.1.0 & remove Windows Vista, Windows XP, Windows 2003, CentOS 4.x, RHEL 4.xS, LES 10 (all versions) as per XenServer 7.2 Release Notes)
 
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '7.2.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.1.0' AND guest_os_id not in (1,2,3,4,56,101,56,58,93,94,50,51,87,88,89,90,91,92,26,27,28,29,40,41,42,43,44,45,96,97,107,108,109,110,151,152,153);
+
+-- Add table to track primary storage in use for snapshots
+DROP TABLE IF EXISTS `cloud_usage`.`usage_snapshot_on_primary`;
+CREATE TABLE `cloud_usage`.`usage_snapshot_on_primary` (
+  `id` bigint(20) unsigned NOT NULL,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `domain_id` bigint(20) unsigned NOT NULL,
+  `vm_id` bigint(20) unsigned NOT NULL,
+  `name` varchar(128),
+  `type` int(1) unsigned NOT NULL,
+  `physicalsize` bigint(20),
+  `virtualsize` bigint(20),
+  `created` datetime NOT NULL,
+  `deleted` datetime,
+  INDEX `i_usage_snapshot_on_primary` (`account_id`,`id`,`vm_id`,`created`)
+) ENGINE=InnoDB CHARSET=utf8;
+
+-- Change monitor patch for apache2 in systemvm
+UPDATE `cloud`.`monitoring_services` SET pidfile="/var/run/apache2/apache2.pid" WHERE process_name="apache2" AND service_name="apache2";
+
+-- Use 'Other Linux 64-bit' as guest os for the default systemvmtemplate for VMware
+-- This fixes a memory allocation issue to systemvms on VMware/ESXi
+UPDATE `cloud`.`vm_template` SET guest_os_id=99 WHERE id=8;
+
+-- Network External Ids
+ALTER TABLE `cloud`.`networks` ADD `external_id` varchar(255);
+
+-- Separate Subnet for CPVM and SSVM (system vms)
+ALTER TABLE `cloud`.`op_dc_ip_address_alloc`
+ADD COLUMN `forsystemvms` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'Indicates if IP is dedicated for CPVM or SSVM';
+
+ALTER TABLE `cloud`.`op_dc_ip_address_alloc`
+ADD COLUMN `vlan` INT(10) UNSIGNED NULL COMMENT 'Vlan the management network range is on';
+
+-- CLOUDSTACK-10109: Enable dedication of public IPs to SSVM and CPVM
+ALTER TABLE `cloud`.`user_ip_address`
+ADD COLUMN `forsystemvms` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'true if IP is set to system vms, false if not';
+
+-- ldap binding on domain level
+CREATE TABLE IF NOT EXISTS `cloud`.`domain_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `domain_id` bigint unsigned NOT NULL COMMENT 'account id',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(255) NOT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_domain_details__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE cloud.ldap_configuration ADD COLUMN domain_id BIGINT(20) DEFAULT NULL;
+ALTER TABLE cloud.ldap_trust_map ADD COLUMN account_id BIGINT(20) DEFAULT 0;
+ALTER TABLE cloud.ldap_trust_map DROP FOREIGN KEY fk_ldap_trust_map__domain_id;
+DROP INDEX uk_ldap_trust_map__domain_id ON cloud.ldap_trust_map;
+CREATE UNIQUE INDEX uk_ldap_trust_map__bind_location ON ldap_trust_map (domain_id, account_id);

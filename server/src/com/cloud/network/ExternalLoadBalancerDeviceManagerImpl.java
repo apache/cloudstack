@@ -538,7 +538,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             // acquire a public IP to associate with lb appliance (used as subnet IP to make the appliance part of private network)
                             PublicIp publicIp =
                                 _ipAddrMgr.assignPublicIpAddress(guestConfig.getDataCenterId(), null, _accountMgr.getSystemAccount(), VlanType.VirtualNetwork, null,
-                                    null, false);
+                                    null, false, false);
                             String publicIPNetmask = publicIp.getVlanNetmask();
                             String publicIPgateway = publicIp.getVlanGateway();
                             String publicIP = publicIp.getAddress().toString();
@@ -813,7 +813,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                         try {
                             PublicIp directIp =
                                 _ipAddrMgr.assignPublicIpAddress(network.getDataCenterId(), null, _accountDao.findById(network.getAccountId()), VlanType.DirectAttached,
-                                    network.getId(), null, true);
+                                    network.getId(), null, true, false);
                             loadBalancingIpAddress = directIp.getAddress().addr();
                         } catch (InsufficientCapacityException capException) {
                             String msg = "Ran out of guest IP addresses from the shared network.";

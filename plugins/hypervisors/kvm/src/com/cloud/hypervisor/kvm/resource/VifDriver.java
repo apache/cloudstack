@@ -36,4 +36,12 @@ public interface VifDriver {
 
     public void unplug(LibvirtVMDef.InterfaceDef iface);
 
+    void attach(LibvirtVMDef.InterfaceDef iface);
+
+    void detach(LibvirtVMDef.InterfaceDef iface);
+
+    void createControlNetwork(String privBrName);
+
+    boolean isExistingBridge(String bridgeName);
+
 }

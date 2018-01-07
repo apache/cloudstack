@@ -241,6 +241,16 @@ public class NuageVspResource extends ManagerBase implements ServerResource, Vsp
         return pingNuageVspCommand;
     }
 
+    public boolean getStatus() {
+        try {
+            login();
+            return true;
+        } catch (NuageVspException | ConfigurationException e) {
+            s_logger.error("Failed to ping to Nuage VSD on " + _name + " as user " +_vspHost.getCmsUserLogin(), e);
+            return false;
+        }
+    }
+
     @Override
     public Answer executeRequest(final Command cmd) {
         final NuageVspRequestWrapper wrapper = NuageVspRequestWrapper.getInstance();

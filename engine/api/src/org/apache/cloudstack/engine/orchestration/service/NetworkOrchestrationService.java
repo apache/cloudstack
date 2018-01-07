@@ -130,6 +130,11 @@ public interface NetworkOrchestrationService {
     Map<Integer, String> getExtraDhcpOptions(long nicId);
 
     /**
+     * Returns all extra dhcp options which are set on the provided nic
+     * @param nicId
+     * @return map which maps the dhcp value on it's option code
+     */
+    /**
      * prepares vm nic change for migration
      *
      * This method will be called in migration transaction before the vm migration.
@@ -164,7 +169,7 @@ public interface NetworkOrchestrationService {
 
     Network createGuestNetwork(long networkOfferingId, String name, String displayText, String gateway, String cidr, String vlanId, boolean bypassVlanOverlapCheck, String networkDomain, Account owner,
                                Long domainId, PhysicalNetwork physicalNetwork, long zoneId, ACLType aclType, Boolean subdomainAccess, Long vpcId, String ip6Gateway, String ip6Cidr,
-                               Boolean displayNetworkEnabled, String isolatedPvlan) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
+                               Boolean displayNetworkEnabled, String isolatedPvlan, String externalId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
     UserDataServiceProvider getPasswordResetProvider(Network network);
 
@@ -275,4 +280,6 @@ public interface NetworkOrchestrationService {
     int getResourceCount(Network network);
 
     void finalizeUpdateInSequence(Network network, boolean success);
+
+    List<NetworkGuru> getNetworkGurus();
 }

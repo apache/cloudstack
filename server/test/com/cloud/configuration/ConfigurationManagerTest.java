@@ -247,7 +247,7 @@ public class ConfigurationManagerTest {
         /*
          * TEST 5: given range is already allocated to a different account DedicatePublicIpRange should fail
          */
-        runDedicatePublicIpRangeIPAdressAllocated();
+        runDedicatePublicIpRangeIPAddressAllocated();
     }
 
     @Test
@@ -373,8 +373,8 @@ public class ConfigurationManagerTest {
         }
     }
 
-    void runDedicatePublicIpRangeIPAdressAllocated() throws Exception {
-        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeIPAdressAllocated");
+    void runDedicatePublicIpRangeIPAddressAllocated() throws Exception {
+        TransactionLegacy txn = TransactionLegacy.open("runDedicatePublicIpRangeIPAddressAllocated");
 
         when(configurationMgr._vlanDao.findById(anyLong())).thenReturn(vlan);
 
@@ -397,7 +397,7 @@ public class ConfigurationManagerTest {
         } catch (Exception e) {
             Assert.assertTrue(e.getMessage().contains("Public IP address in range is allocated to another account"));
         } finally {
-            txn.close("runDedicatePublicIpRangeIPAdressAllocated");
+            txn.close("runDedicatePublicIpRangeIPAddressAllocated");
         }
     }
 
@@ -890,5 +890,25 @@ public class ConfigurationManagerTest {
 
         result = configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, null, null, "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
         Assert.assertTrue(result);
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetVlanNumberFromUriInvalidParameter() {
+        configurationMgr.getVlanNumberFromUri("vlan");
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetVlanNumberFromUriInvalidSintax() {
+        configurationMgr.getVlanNumberFromUri("xxx://7");
+    }
+
+    @Test
+    public void testGetVlanNumberFromUriVlan() {
+        Assert.assertEquals("7", configurationMgr.getVlanNumberFromUri("vlan://7"));
+    }
+
+    @Test
+    public void testGetVlanNumberFromUriUntagged() {
+        Assert.assertEquals("untagged", configurationMgr.getVlanNumberFromUri("vlan://untagged"));
     }
 }

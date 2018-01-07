@@ -293,8 +293,6 @@
                         'Disconnected': 'off',
                         'Removed': 'off',
                         'Error': 'off',
-                        'Connecting': 'transition',
-                        'Rebalancing': 'transition',
                         'Alert': 'warning'
                     },
                     compact: true
@@ -448,9 +446,7 @@
                         'Error': 'off',
                         'Destroyed': 'off',
                         'Expunging': 'off',
-                        'Stopping': 'transition',
-                        'Starting': 'transition',
-                        'Migrating': 'transition',
+                        'Stopping': 'warning',
                         'Shutdowned': 'warning'
                     },
                     compact: true
@@ -560,13 +556,12 @@
                         return str;
                     },
                     indicator: {
-                        'Allocated': 'transition',
-                        'Creating': 'transition',
+                        'Allocated': 'on',
                         'Ready': 'on',
                         'Destroy': 'off',
                         'Expunging': 'off',
                         'Migrating': 'warning',
-                        'UploadOp': 'transition',
+                        'UploadOp': 'warning',
                         'Snapshotting': 'warning',
                     },
                     compact: true
@@ -651,7 +646,7 @@
                                 'Down': 'off',
                                 'Removed': 'off',
                                 'ErrorInMaintenance': 'off',
-                                'PrepareForMaintenance': 'transition',
+                                'PrepareForMaintenance': 'warning',
                                 'CancelMaintenance': 'warning',
                                 'Maintenance': 'warning',
                             },

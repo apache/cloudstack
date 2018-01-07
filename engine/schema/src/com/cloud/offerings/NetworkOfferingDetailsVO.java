@@ -25,21 +25,20 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
+import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name = "network_offering_details")
-public class NetworkOfferingDetailsVO implements InternalIdentity {
+public class NetworkOfferingDetailsVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     private long id;
 
     @Column(name = "network_offering_id")
-    private long offeringId;
+    private long resourceId;
 
     @Enumerated(value = EnumType.STRING)
     @Column(name = "name")
@@ -51,8 +50,8 @@ public class NetworkOfferingDetailsVO implements InternalIdentity {
     public NetworkOfferingDetailsVO() {
     }
 
-    public NetworkOfferingDetailsVO(long offeringId, Detail detailName, String value) {
-        this.offeringId = offeringId;
+    public NetworkOfferingDetailsVO(long resourceId, Detail detailName, String value) {
+        this.resourceId = resourceId;
         this.name = detailName;
         this.value = value;
     }
@@ -62,11 +61,20 @@ public class NetworkOfferingDetailsVO implements InternalIdentity {
         return id;
     }
 
-    public long getOfferingId() {
-        return offeringId;
+    @Override
+    public long getResourceId() {
+        return resourceId;
     }
 
-    public NetworkOffering.Detail getName() {
+    public void setResourceId(long resourceId) {
+        this.resourceId = resourceId;
+    }
+
+    public String getName() {
+        return name.name();
+    }
+
+    public NetworkOffering.Detail getDetailName() {
         return name;
     }
 
@@ -74,12 +82,13 @@ public class NetworkOfferingDetailsVO implements InternalIdentity {
         return value;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    @Override
+    public boolean isDisplay() {
+        return false;
     }
 
-    public void setOfferingId(long offeringId) {
-        this.offeringId = offeringId;
+    public void setId(long id) {
+        this.id = id;
     }
 
     public void setName(NetworkOffering.Detail name) {

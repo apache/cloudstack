@@ -1367,7 +1367,8 @@ class TestPortableIpTransferAcrossNetworks(cloudstackTestCase):
                       self.virtual_machine2.password
                       )
         except Exception as e:
-            self.fail("Exception while SSHing : %s" % e)
+            self.fail("Probably hit issue: CLOUDSTACK-10078, "
+                      "Exception while SSHing : %s" % e)
 
         finally:
             self.debug("disassociating portable ip: %s" % portableip.ipaddress.ipaddress)

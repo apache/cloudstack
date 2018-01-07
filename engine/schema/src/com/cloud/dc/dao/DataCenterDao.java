@@ -21,10 +21,35 @@ import java.util.List;
 import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DataCenterVnetVO;
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
 public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
+
+    class PrivateAllocationData {
+
+        private String ipAddress;
+        private Long macAddress;
+        private Integer vlan;
+
+        public PrivateAllocationData(final String ipAddress, final Long macAddress, final Integer vlan) {
+            this.ipAddress = ipAddress;
+            this.macAddress = macAddress;
+            this.vlan = vlan;
+        }
+
+        public String getIpAddress() {
+            return ipAddress;
+        }
+
+        public Long getMacAddress() {
+            return macAddress;
+        }
+
+        public Integer getVlan() {
+            return vlan;
+        }
+    }
+
     DataCenterVO findByName(String name);
 
     /**
@@ -35,7 +60,7 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
 
     String[] getNextAvailableMacAddressPair(long id, long mask);
 
-    Pair<String, Long> allocatePrivateIpAddress(long id, long podId, long instanceId, String reservationId);
+    PrivateAllocationData allocatePrivateIpAddress(long id, long podId, long instanceId, String reservationId, boolean forSystemVms);
 
     DataCenterIpAddressVO allocatePrivateIpAddress(long id, String reservationId);
 
@@ -57,7 +82,7 @@ public interface DataCenterDao extends GenericDao<DataCenterVO, Long> {
 
     boolean deleteLinkLocalIpAddressByPod(long podId);
 
-    void addPrivateIpAddress(long dcId, long podId, String start, String end);
+    void addPrivateIpAddress(long dcId, long podId, String start, String end, boolean forSystemVms, Integer vlan);
 
     void addLinkLocalIpAddress(long dcId, long podId, String start, String end);
 

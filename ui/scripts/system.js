@@ -39,7 +39,7 @@
             router.guestnetworkname = router.vpcname;
         }
 
-        if ("isredundantrouter" in router && router.isredundantrouter) {
+        if (router.isredundantrouter) {
             router.guestnetworkname = router.guestnetworkname + " (" + router.redundantstate + ")";
         }
 
@@ -54,6 +54,12 @@
                 var data = args.data ? args.data: {
                 };
                 var fields = {
+                    systemvms: {
+                        label: 'label.system.vms',
+                        isBoolean: true,
+                        docID: 'helpSetReservationSystemVms',
+                        defaultValue: data.systemvms
+                    },
                     account: {
                         label: 'label.account',
                         defaultValue: data.account
@@ -96,22 +102,40 @@
                         success: function (json) {
                             var domain = json.listdomainsresponse.domain[0];
 
+                            if (data.forSystemVms != null) {
+                                systemvms = '<li>' + _l('label.system.vms') + ': ' + data.forSystemVms + '</li>'
+                            }
                             if (data.account != null)
                                 cloudStack.dialog.notice({
-                                    message: '<ul><li>' + _l('label.account') + ': ' + data.account + '</li>' + '<li>' + _l('label.domain') + ': ' + domain.path + '</li></ul>'
+                                    message: '<ul><li>' + _l('label.account') + ': ' + data.account + '</li>' + '<li>' + _l('label.domain') + ': ' + domain.path + '</li>' + systemvms + '</ul>'
                                 });
                             else
                                 cloudStack.dialog.notice({
-                                    message: '<ul><li>' + _l('label.domain') + ': ' + domain.path + '</li></ul>'
+                                    message: '<ul><li>' + _l('label.domain') + ': ' + domain.path + '</li>' + systemvms + '</ul>'
                                 });
                         }
                     });
                 } else {
                     cloudStack.dialog.createForm({
                         form: {
-                            title: 'label.add.account',
-                            desc: '(optional) Please specify an account to be associated with this IP range.',
-                            fields: fields
+                            title: 'label.set.reservation',
+                            desc: 'label.set.reservation.desc',
+                            fields: fields,
+                            preFilter: function(args) {
+                                var $systemvms = args.$form.find('.form-item[rel=systemvms]');
+                                var $systemvmsCb = $systemvms.find('input[type=checkbox]');
+                                var $account = args.$form.find('.form-item[rel=account]');
+                                var $accountTxt = args.$form.find('input[name=account]');
+                                $systemvmsCb.change(function() {
+                                    if ($systemvmsCb.is(':checked')) {
+                                        $accountTxt.val('');
+                                        $accountTxt.attr('disabled', true);
+                                    }
+                                    else {
+                                        $accountTxt.attr('disabled', false);
+                                    }
+                                });
+                            }
                         },
                         after: function (args) {
                             var data = cloudStack.serializeForm(args.$form);
@@ -438,7 +462,7 @@
                                             'account': {
                                                 label: 'label.account',
                                                 custom: {
-                                                    buttonLabel: 'label.add.account',
+                                                    buttonLabel: 'label.set.reservation',
                                                     action: cloudStack.publicIpRangeAccount.dialog()
                                                 }
                                             },
@@ -466,6 +490,10 @@
                                                 if (args.data.account) {
                                                     if (args.data.account.account)
                                                         array1.push("&account=" + args.data.account.account);
+                                                    if (args.data.account.systemvms) {
+                                                        systvmsval = args.data.account.systemvms == "on" ? "true" : "false"
+                                                        array1.push("&forsystemvms=" + systvmsval);
+                                                    }
                                                     array1.push("&domainid=" + args.data.account.domainid);
                                                 }
 
@@ -627,7 +655,8 @@
                                                                 account: {
                                                                     _buttonLabel: item.account ? '[' + item.domain + '] ' + item.account: item.domain,
                                                                     account: item.account,
-                                                                    domainid: item.domainid
+                                                                    domainid: item.domainid,
+                                                                    forSystemVms: item.forsystemvms
                                                                 }
                                                             });
                                                         })
@@ -936,56 +965,176 @@
                                     });
                                 }
                             },
+
                             ipAddresses: {
-                                //read-only listView (no actions) filled with pod info (not VlanIpRange info)
                                 title: 'label.ip.ranges',
-                                listView: {
-                                    fields: {
-                                        name: {
-                                            label: 'label.pod'
-                                        },
-                                        //pod name
-                                        gateway: {
-                                            label: 'label.gateway'
-                                        },
-                                        //'Reserved system gateway' is too long and causes a visual format bug (2 lines overlay)
-                                        netmask: {
-                                            label: 'label.netmask'
-                                        },
-                                        //'Reserved system netmask' is too long and causes a visual format bug (2 lines overlay)
-                                        startip: {
-                                            label: 'label.start.IP'
-                                        },
-                                        //'Reserved system start IP' is too long and causes a visual format bug (2 lines overlay)
-                                        endip: {
-                                            label: 'label.end.IP'
-                                        }
-                                        //'Reserved system end IP' is too long and causes a visual format bug (2 lines overlay)
-                                    },
-                                    dataProvider: function (args) {
-                                        var array1 =[];
-                                        if (args.filterBy != null) {
-                                            if (args.filterBy.search != null && args.filterBy.search.by != null && args.filterBy.search.value != null) {
-                                                switch (args.filterBy.search.by) {
-                                                    case "name":
-                                                    if (args.filterBy.search.value.length > 0)
-                                                    array1.push("&keyword=" + args.filterBy.search.value);
-                                                    break;
+                                custom: function (args) {
+                                    return $('<div></div>').multiEdit({
+                                        context: args.context,
+                                        noSelect: true,
+                                        fields: {
+                                            'podid': {
+                                                label: 'label.pod',
+                                                select: function (args) {
+                                                    $.ajax({
+                                                        url: createURL("listPods&zoneid=" + selectedZoneObj.id),
+                                                        dataType: "json",
+                                                        success: function (json) {
+                                                            var items =[];
+                                                            var pods = json.listpodsresponse.pod;
+                                                            $(pods).each(function () {
+                                                                items.push({
+                                                                    name: this.id,
+                                                                    description: this.name
+                                                                });
+                                                            });
+                                                            args.response.success({
+                                                                data: items
+                                                            });
+                                                        }
+                                                    });
                                                 }
+                                            },
+                                            'gateway': {
+                                                edit: true,
+                                                label: 'label.gateway'
+                                            },
+                                            'netmask': {
+                                                edit: true,
+                                                label: 'label.netmask'
+                                            },
+                                            'vlan': {
+                                                edit: true,
+                                                label: 'label.vlan',
+                                                validation: {
+                                                    required: false
+                                                }
+                                            },
+                                            'startip': {
+                                                edit: true,
+                                                label: 'label.start.IP'
+                                            },
+                                            'endip': {
+                                                edit: true,
+                                                label: 'label.end.IP',
+                                                validation: {
+                                                    required: false
+                                                }
+                                            },
+                                            'systemvms' : {
+                                                isBoolean: true,
+                                                label: 'label.system.vms'
+                                            },
+                                            'add-rule': {
+                                                label: 'label.add',
+                                                addButton: true
                                             }
-                                        }
-                                        $.ajax({
-                                            url: createURL("listPods&zoneid=" + selectedZoneObj.id + "&page=" + args.page + "&pagesize=" + pageSize + array1.join("")),
-                                            dataType: "json",
-                                            async: true,
-                                            success: function (json) {
-                                                var items = json.listpodsresponse.pod;
-                                                args.response.success({
-                                                    data: items
+                                        },
+                                        add: {
+                                            label: 'label.add',
+                                            action: function (args) {
+                                                var array1 =[];
+
+                                                array1.push("&podid=" + args.data.podid);
+                                                array1.push("&gateway=" + args.data.gateway);
+                                                array1.push("&netmask=" + args.data.netmask);
+                                                array1.push("&startip=" + args.data.startip);
+
+                                                if (args.data.endip != null && args.data.endip.length > 0)
+                                                    array1.push("&endip=" + args.data.endip);
+
+                                                if (args.data.systemvms) {
+                                                    array1.push("&forsystemvms=" + (args.data.systemvms == "on" ? "true" : "false"));
+                                                }
+
+                                                if (args.data.vlan != null && args.data.vlan.length > 0)
+                                                    array1.push("&vlan=" + todb(args.data.vlan));
+
+                                                $.ajax({
+                                                    url: createURL("createManagementNetworkIpRange" + array1.join("")),
+                                                    dataType: "json",
+                                                    success: function (json) {
+                                                        args.response.success({
+                                                            _custom: {
+                                                                jobId: json.createmanagementnetworkiprangeresponse.jobid
+                                                            },
+                                                            notification: {
+                                                                label: 'label.add.management.ip.range',
+                                                                poll: pollAsyncJobResult
+                                                            }
+                                                        });
+                                                    },
+                                                    error: function (XMLHttpResponse) {
+                                                        var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                        args.response.error(errorMsg);
+                                                    }
                                                 });
                                             }
-                                        });
-                                    }
+                                        },
+                                        actions: {
+                                            destroy: {
+                                                label: 'label.delete',
+                                                action: function (args) {
+                                                    var array1 =[];
+                                                    array1.push("&podid=" + args.context.multiRule[0].podid);
+                                                    array1.push("&startip=" + args.context.multiRule[0].startip);
+                                                    array1.push("&endip=" + args.context.multiRule[0].endip);
+                                                    array1.push("&vlan=" + args.context.multiRule[0].vlan);
+
+                                                    $.ajax({
+                                                        url: createURL('deleteManagementNetworkIpRange' + array1.join("")),
+                                                        dataType: 'json',
+                                                        async: true,
+                                                        success: function (json) {
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId: json.deletemanagementnetworkiprangeresponse.jobid
+                                                                },
+                                                                notification: {
+                                                                    label: 'label.remove.management.ip.range',
+                                                                    poll: pollAsyncJobResult
+                                                                }
+                                                            });
+                                                        },
+                                                        error: function (XMLHttpResponse) {
+                                                            var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                            args.response.error(errorMsg);
+                                                        }
+                                                    });
+                                                }
+                                            }
+                                        },
+                                        dataProvider: function (args) {
+                                            $.ajax({
+                                                url: createURL("listPods&zoneid=" + selectedZoneObj.id),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function (json) {
+                                                    var items =[];
+
+                                                    var pods = json.listpodsresponse.pod;
+                                                    $(pods).each(function () {
+                                                        for (var i = 0; i < this.startip.length; i++) {
+                                                            var systemvmsValue = this.forsystemvms[i] == "1" ? true : false;
+                                                            items.push({
+                                                                podid: this.id,
+                                                                gateway: this.gateway,
+                                                                netmask: this.netmask,
+                                                                startip: this.startip[i],
+                                                                endip: this.endip[i],
+                                                                systemvms: systemvmsValue,
+                                                                vlan: this.vlanid[i]
+                                                            });
+                                                        }
+                                                    });
+
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
+                                    });
                                 }
                             }
                         }
@@ -2082,6 +2231,12 @@
                         },
                         isolationmethods: {
                             label: 'label.isolation.method'
+                        },
+                        vlan: {
+                            label: 'label.vlan'
+                        },
+                        broadcastdomainrange: {
+                            label: 'label.broadcast.domain.range'
                         }
                     },
 
@@ -9107,6 +9262,14 @@
                                         data: data,
                                         success: function (json) {
                                             var systemvmObjs = json.listsystemvmsresponse.systemvm;
+                                            $(systemvmObjs).each(function(idx, item) {
+                                                var controlIp = item.linklocalip;
+                                                if (item.hypervisor == "VMware") {
+                                                    var controlIp = item.privateip;
+                                                }
+                                                item.controlip = controlIp;
+                                            });
+
                                             if (systemvmObjs != undefined) {
                                                 $.ajax({
                                                     url: createURL('listHosts'),
@@ -9487,16 +9650,19 @@
                                     label: 'label.name'
                                 },
                                 publicip: {
-                                    label: 'label.public.ip'
+                                    label: 'label.ip'
                                 },
-                                account: {
-                                    label: 'label.account'
+                                routerType: {
+                                    label: 'label.type'
                                 },
                                 guestnetworkname: {
                                     label: 'label.network'
                                 },
-                                routerType: {
-                                    label: 'label.type'
+                                account: {
+                                    label: 'label.account'
+                                },
+                                hostname: {
+                                    label: 'label.host'
                                 },
                                 state: {
                                     converter: function (str) {
@@ -10877,6 +11043,12 @@
                                 return "Secondary Storage VM"; else
                                 return args;
                             }
+                        },
+                        publicip: {
+                            label: 'label.public.ip'
+                        },
+                        hostname: {
+                            label: 'label.host'
                         },
                         zonename: {
                             label: 'label.zone'
@@ -13195,12 +13367,19 @@
                         netmask: {
                             label: 'label.netmask'
                         },
+                        zonename: {
+                            label: 'label.zone'
+                        },
                         allocationstate: {
                             converter: function (str) {
                                 // For localization
                                 return str;
                             },
-                            label: 'label.allocation.state'
+                            label: 'label.allocation.state',
+                            indicator: {
+                                'Enabled': 'on',
+                                'Disabled': 'off'
+                            }
                         }
                     },
 
@@ -13465,11 +13644,10 @@
                                 label: 'label.edit',
                                 action: function (args) {
                                     var array1 =[];
+
                                     array1.push("&name=" + todb(args.data.name));
                                     array1.push("&netmask=" + todb(args.data.netmask));
-                                    array1.push("&startIp=" + todb(args.data.startip));
-                                    if (args.data.endip != null && args.data.endip.length > 0)
-                                    array1.push("&endIp=" + todb(args.data.endip));
+
                                     if (args.data.gateway != null && args.data.gateway.length > 0)
                                     array1.push("&gateway=" + todb(args.data.gateway));
 
@@ -13730,17 +13908,6 @@
                                             required: true
                                         }
                                     },
-                                    startip: {
-                                        label: 'label.start.IP',
-                                        isEditable: true,
-                                        validation: {
-                                            required: true
-                                        }
-                                    },
-                                    endip: {
-                                        label: 'label.end.IP',
-                                        isEditable: true
-                                    },
                                     gateway: {
                                         label: 'label.gateway',
                                         isEditable: true,
@@ -13756,7 +13923,6 @@
                                         label: 'label.allocation.state'
                                     }
                                 }, {
-
                                     isdedicated: {
                                         label: 'label.dedicated'
                                     },
@@ -13766,13 +13932,10 @@
                                 }],
 
                                 dataProvider: function (args) {
-
                                     $.ajax({
                                         url: createURL("listPods&id=" + args.context.pods[0].id),
                                         success: function (json) {
                                             var item = json.listpodsresponse.pod[0];
-
-
                                             $.ajax({
                                                 url: createURL("listDedicatedPods&podid=" + args.context.pods[0].id),
                                                 success: function (json) {
@@ -13852,23 +14015,27 @@
                         name: {
                             label: 'label.name'
                         },
-                        podname: {
-                            label: 'label.pod'
-                        },
                         hypervisortype: {
                             label: 'label.hypervisor'
                         },
-                        //allocationstate: { label: 'label.allocation.state' },
-                        //managedstate: { label: 'Managed State' },
+                        zonename: {
+                            label: 'label.zone'
+                        },
+                        podname: {
+                            label: 'label.pod'
+                        },
+                        managedstate: {
+                            label: 'label.managed.state'
+                        },
                         allocationstate: {
                             converter: function (str) {
                                 // For localization
                                 return str;
                             },
-                            label: 'label.state',
+                            label: 'label.allocation.state',
                             indicator: {
                                 'Enabled': 'on',
-                                'Destroyed': 'off'
+                                'Disabled': 'off'
                             }
                         }
                     },
@@ -15405,14 +15572,25 @@
                         name: {
                             label: 'label.name'
                         },
+                        ipaddress: {
+                            label: 'label.ip.address'
+                        },
+                        hypervisor: {
+                            label: 'label.hypervisor'
+                        },
                         zonename: {
                             label: 'label.zone'
                         },
-                        podname: {
-                            label: 'label.pod'
-                        },
                         clustername: {
                             label: 'label.cluster'
+                        },
+                        resourcestate: {
+                            label: 'label.resource.state',
+                            indicator: {
+                                'Enabled': 'on',
+                                'Disabled': 'off',
+                                'Maintenance': 'warning'
+                            }
                         },
                         state: {
                             label: 'label.state',
@@ -17415,12 +17593,34 @@
                             label: 'label.path',
                             truncate: true
                         },
+                        type: {
+                            label: 'label.type'
+                        },
+                        scope: {
+                            label: 'label.scope'
+                        },
                         clustername: {
                             label: 'label.cluster',
                             truncate: true
                         },
-                        scope: {
-                            label: 'label.scope'
+                        zonename: {
+                            label: 'label.zone'
+                        },
+                        state: {
+                            label: 'label.state',
+                            converter: function (str) {
+                                // For localization
+                                return str;
+                            },
+                            indicator: {
+                                'Up': 'on',
+                                'Down': 'off',
+                                'Removed': 'off',
+                                'ErrorInMaintenance': 'off',
+                                'PrepareForMaintenance': 'warning',
+                                'CancelMaintenance': 'warning',
+                                'Maintenance': 'warning',
+                            }
                         }
                     },
 
@@ -19410,8 +19610,17 @@
                                 name: {
                                     label: 'label.name'
                                 },
+                                url: {
+                                    label: 'label.url'
+                                },
                                 protocol: {
                                     label: 'label.protocol'
+                                },
+                                scope: {
+                                    label: 'label.scope'
+                                },
+                                zonename: {
+                                    label: 'label.zone'
                                 }
                             },
 

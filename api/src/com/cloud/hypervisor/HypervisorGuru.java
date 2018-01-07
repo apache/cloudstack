@@ -33,7 +33,7 @@ import com.cloud.vm.VirtualMachineProfile;
 
 public interface HypervisorGuru extends Adapter {
     static final ConfigKey<Boolean> VmwareFullClone = new ConfigKey<Boolean>("Advanced", Boolean.class, "vmware.create.full.clone", "true",
-                        "If set to true, creates guest VMs as full clones on ESX", false);
+            "If set to true, creates guest VMs as full clones on ESX", false);
     HypervisorType getHypervisorType();
 
     /**
@@ -45,7 +45,7 @@ public interface HypervisorGuru extends Adapter {
     VirtualMachineTO implement(VirtualMachineProfile vm);
 
     /**
-     * Give hypervisor guru opportunity to decide if certain command needs to be delegated to other host, mainly to secondary storage VM host
+     * Gives hypervisor guru opportunity to decide if certain commands need to be delegated to another host, for instance, we may have the opportunity to change from a system VM (is considered a host) to a real host to execute commands.
      *
      * @param hostId original hypervisor host
      * @param cmd command that is going to be sent, hypervisor guru usually needs to register various context objects into the command object

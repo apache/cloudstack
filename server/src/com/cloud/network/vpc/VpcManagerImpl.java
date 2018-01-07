@@ -38,6 +38,9 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.api.command.user.vpc.ListPrivateGatewaysCmd;
 import org.apache.cloudstack.api.command.user.vpc.ListStaticRoutesCmd;
@@ -45,8 +48,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.configuration.Resource.ResourceType;
@@ -791,7 +792,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     protected Vpc createVpc(final Boolean displayVpc, final VpcVO vpc) {
         final String cidr = vpc.getCidr();
         // Validate CIDR
-        if (!NetUtils.isValidCIDR(cidr)) {
+        if (!NetUtils.isValidIp4Cidr(cidr)) {
             throw new InvalidParameterValueException("Invalid CIDR specified " + cidr);
         }
 
@@ -867,6 +868,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // verify permissions
         _accountMgr.checkAccess(ctx.getCallingAccount(), null, false, vpc);
+        _resourceTagDao.removeByIdAndType(vpcId, ResourceObjectType.Vpc);
 
         return destroyVpc(vpc, ctx.getCallingAccount(), ctx.getCallingUserId());
     }
@@ -1642,7 +1644,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                         final Long nextMac = mac + 1;
                         dc.setMacAddress(nextMac);
 
-                        s_logger.info("creating private ip adress for vpc (" + ipAddress + ", " + privateNtwk.getId() + ", " + nextMac + ", " + vpcId + ", " + isSourceNat + ")");
+                        s_logger.info("creating private ip address for vpc (" + ipAddress + ", " + privateNtwk.getId() + ", " + nextMac + ", " + vpcId + ", " + isSourceNat + ")");
                         privateIp = new PrivateIpVO(ipAddress, privateNtwk.getId(), nextMac, vpcId, isSourceNat);
                         _privateIpDao.persist(privateIp);
 
@@ -1748,6 +1750,11 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @ActionEvent(eventType = EventTypes.EVENT_PRIVATE_GATEWAY_DELETE, eventDescription = "deleting private gateway")
     @DB
     public boolean deleteVpcPrivateGateway(final long gatewayId) throws ConcurrentOperationException, ResourceUnavailableException {
+        final VpcGatewayVO gatewayToBeDeleted = _vpcGatewayDao.findById(gatewayId);
+        if (gatewayToBeDeleted == null) {
+            s_logger.debug("VPC gateway is already deleted for id=" + gatewayId);
+            return true;
+        }
 
         final VpcGatewayVO gatewayVO = _vpcGatewayDao.acquireInLockTable(gatewayId);
         if (gatewayVO == null || gatewayVO.getType() != VpcGateway.Type.Private) {
@@ -2023,7 +2030,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
         _accountMgr.checkAccess(caller, null, false, vpc);
 
-        if (!NetUtils.isValidCIDR(cidr)) {
+        if (!NetUtils.isValidIp4Cidr(cidr)) {
             throw new InvalidParameterValueException("Invalid format for cidr " + cidr);
         }
 
@@ -2310,7 +2317,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     @Override
     public Network createVpcGuestNetwork(final long ntwkOffId, final String name, final String displayText, final String gateway, final String cidr, final String vlanId,
             String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk, final long zoneId, final ACLType aclType, final Boolean subdomainAccess,
-            final long vpcId, final Long aclId, final Account caller, final Boolean isDisplayNetworkEnabled) throws ConcurrentOperationException, InsufficientCapacityException,
+            final long vpcId, final Long aclId, final Account caller, final Boolean isDisplayNetworkEnabled, String externalId) throws ConcurrentOperationException, InsufficientCapacityException,
             ResourceAllocationException {
 
         final Vpc vpc = getActiveVpc(vpcId);
@@ -2335,7 +2342,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 2) Create network
         final Network guestNetwork = _ntwkMgr.createGuestNetwork(ntwkOffId, name, displayText, gateway, cidr, vlanId, false, networkDomain, owner, domainId, pNtwk, zoneId, aclType,
-                subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled, null);
+                                                                 subdomainAccess, vpcId, null, null, isDisplayNetworkEnabled, null, externalId);
 
         if (guestNetwork != null) {
             guestNetwork.setNetworkACLId(aclId);

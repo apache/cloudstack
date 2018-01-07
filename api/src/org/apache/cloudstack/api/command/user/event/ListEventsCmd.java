@@ -65,6 +65,9 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, description = "the event type (see event types)")
     private String type;
 
+    @Parameter(name = ApiConstants.START_ID, type = CommandType.UUID, entityType = EventResponse.class, description = "the parent/start ID of the event, when provided this will list all the events with the start/parent ID including the parent event")
+    private Long startId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -95,6 +98,10 @@ public class ListEventsCmd extends BaseListProjectAndAccountResourcesCmd {
 
     public String getType() {
         return type;
+    }
+
+    public Long getStartId() {
+        return startId;
     }
 
     /////////////////////////////////////////////////////

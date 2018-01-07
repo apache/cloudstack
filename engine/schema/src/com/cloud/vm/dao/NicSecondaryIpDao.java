@@ -57,4 +57,6 @@ public interface NicSecondaryIpDao extends GenericDao<NicSecondaryIpVO, Long> {
     Long countByNicId(long nicId);
 
     List<NicSecondaryIpVO> listSecondaryIpUsingKeyword(long nicId, String keyword);
+
+    int moveSecondaryIps(long fromNicId, long toNicId);
 }

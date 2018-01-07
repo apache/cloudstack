@@ -116,6 +116,9 @@ class TestMigrationMaintainedPool(cloudstackTestCase):
             if len(storage_pools_response) < 2 :
                 self.skipTest("Atleast two storage pools are need to test Storage migration")
 
+            if self.hypervisor.lower() in ['kvm']:
+                self.virtual_machine.stop(self.apiclient)
+
             list_volumes_response = list_volumes(
                                     self.apiclient,
                                     virtualmachineid=self.virtual_machine.id,

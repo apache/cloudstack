@@ -19,6 +19,9 @@ package org.apache.cloudstack.storage.snapshot;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.dc.dao.ClusterDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -38,6 +41,8 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
@@ -87,6 +92,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     @Inject private VMInstanceDao vmInstanceDao;
     @Inject private VolumeDao volumeDao;
     @Inject private VolumeService volService;
+    @Inject private VolumeDetailsDao _volumeDetailsDaoImpl;
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshotInfo) {
@@ -147,6 +153,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
      * @return true if snapshot is removed, false otherwise
      */
 
+    @ActionEvent(eventType = EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY, eventDescription = "deleting snapshot", async = true)
     private boolean cleanupSnapshotOnPrimaryStore(long snapshotId) {
 
         SnapshotObject snapshotObj = (SnapshotObject)snapshotDataFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
@@ -165,6 +172,17 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         try {
             snapshotObj.processEvent(Snapshot.Event.DestroyRequested);
+            List<VolumeDetailVO> volumesFromSnapshot;
+            volumesFromSnapshot = _volumeDetailsDaoImpl.findDetails("SNAPSHOT_ID", String.valueOf(snapshotId), null);
+
+            if (volumesFromSnapshot.size() > 0) {
+                try {
+                    snapshotObj.processEvent(Snapshot.Event.OperationFailed);
+                } catch (NoTransitionException e1) {
+                    s_logger.debug("Failed to change snapshot state: " + e1.toString());
+                }
+                throw new InvalidParameterValueException("Unable to perform delete operation, Snapshot with id: " + snapshotId + " is in use  ");
+            }
         }
         catch (NoTransitionException e) {
             s_logger.debug("Failed to set the state to destroying: ", e);
@@ -176,6 +194,8 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             snapshotSvr.deleteSnapshot(snapshotObj);
 
             snapshotObj.processEvent(Snapshot.Event.OperationSucceeded);
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY, snapshotObj.getAccountId(), snapshotObj.getDataCenterId(), snapshotId,
+                    snapshotObj.getName(), null, null, 0L, snapshotObj.getClass().getName(), snapshotObj.getUuid());
         }
         catch (Exception e) {
             s_logger.debug("Failed to delete snapshot: ", e);

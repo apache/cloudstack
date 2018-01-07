@@ -53,9 +53,9 @@ import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.ComputeResourceSummary;
 import com.vmware.vim25.CustomFieldStringValue;
-import com.vmware.vim25.DasVmPriority;
 import com.vmware.vim25.DVPortConfigInfo;
 import com.vmware.vim25.DVPortConfigSpec;
+import com.vmware.vim25.DasVmPriority;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.DistributedVirtualPort;
 import com.vmware.vim25.DistributedVirtualSwitchPortConnection;
@@ -102,6 +102,7 @@ import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
@@ -178,6 +179,8 @@ import com.cloud.agent.api.ReadyCommand;
 import com.cloud.agent.api.RebootAnswer;
 import com.cloud.agent.api.RebootCommand;
 import com.cloud.agent.api.RebootRouterCommand;
+import com.cloud.agent.api.ReplugNicAnswer;
+import com.cloud.agent.api.ReplugNicCommand;
 import com.cloud.agent.api.RevertToVMSnapshotAnswer;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.ScaleVmAnswer;
@@ -491,6 +494,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((CheckNetworkCommand)cmd);
             } else if (clz == PlugNicCommand.class) {
                 answer = execute((PlugNicCommand)cmd);
+            } else if (clz == ReplugNicCommand.class) {
+                answer = execute((ReplugNicCommand)cmd);
             } else if (clz == UnPlugNicCommand.class) {
                 answer = execute((UnPlugNicCommand)cmd);
             } else if (cmd instanceof CreateVMSnapshotCommand) {
@@ -1116,6 +1121,87 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    private ReplugNicAnswer execute(ReplugNicCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info("Executing resource ReplugNicCommand " + _gson.toJson(cmd));
+        }
+
+        getServiceContext().getStockObject(VmwareManager.CONTEXT_STOCK_NAME);
+        VmwareContext context = getServiceContext();
+        try {
+            VmwareHypervisorHost hyperHost = getHyperHost(context);
+
+            String vmName = cmd.getVmName();
+            VirtualMachineMO vmMo = hyperHost.findVmOnHyperHost(vmName);
+
+            if (vmMo == null) {
+                if (hyperHost instanceof HostMO) {
+                    ClusterMO clusterMo = new ClusterMO(hyperHost.getContext(), ((HostMO)hyperHost).getParentMor());
+                    vmMo = clusterMo.findVmOnHyperHost(vmName);
+                }
+            }
+
+            if (vmMo == null) {
+                String msg = "Router " + vmName + " no longer exists to execute ReplugNic command";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            /*
+            if(!isVMWareToolsInstalled(vmMo)){
+                String errMsg = "vmware tools is not installed or not running, cannot add nic to vm " + vmName;
+                s_logger.debug(errMsg);
+                return new PlugNicAnswer(cmd, false, "Unable to execute PlugNicCommand due to " + errMsg);
+            }
+             */
+            // Fallback to E1000 if no specific nicAdapter is passed
+            VirtualEthernetCardType nicDeviceType = VirtualEthernetCardType.E1000;
+            Map<String, String> details = cmd.getDetails();
+            if (details != null) {
+                nicDeviceType = VirtualEthernetCardType.valueOf((String) details.get("nicAdapter"));
+            }
+
+            NicTO nicTo = cmd.getNic();
+
+            VirtualDevice nic = findVirtualNicDevice(vmMo, nicTo.getMac());
+            if (nic == null) {
+                return new ReplugNicAnswer(cmd, false, "Nic to replug not found");
+            }
+
+            Pair<ManagedObjectReference, String> networkInfo = prepareNetworkFromNicInfo(vmMo.getRunningHost(), nicTo, false, cmd.getVMType());
+            String dvSwitchUuid = null;
+            if (VmwareHelper.isDvPortGroup(networkInfo.first())) {
+                ManagedObjectReference dcMor = hyperHost.getHyperHostDatacenter();
+                DatacenterMO dataCenterMo = new DatacenterMO(context, dcMor);
+                ManagedObjectReference dvsMor = dataCenterMo.getDvSwitchMor(networkInfo.first());
+                dvSwitchUuid = dataCenterMo.getDvSwitchUuid(dvsMor);
+                s_logger.info("Preparing NIC device on dvSwitch : " + dvSwitchUuid);
+                VmwareHelper.updateDvNicDevice(nic, networkInfo.first(), dvSwitchUuid);
+            } else {
+                s_logger.info("Preparing NIC device on network " + networkInfo.second());
+
+                VmwareHelper.updateNicDevice(nic, networkInfo.first(), networkInfo.second());
+            }
+
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            //VirtualDeviceConfigSpec[] deviceConfigSpecArray = new VirtualDeviceConfigSpec[1];
+            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+            deviceConfigSpec.setDevice(nic);
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+
+            vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
+            setNuageVspVrIpInExtraConfig(vmConfigSpec.getExtraConfig(), nicTo, dvSwitchUuid);
+            if (!vmMo.configureVm(vmConfigSpec)) {
+                throw new Exception("Failed to configure devices when running ReplugNicCommand");
+            }
+
+            return new ReplugNicAnswer(cmd, true, "success");
+        } catch (Exception e) {
+            s_logger.error("Unexpected exception: ", e);
+            return new ReplugNicAnswer(cmd, false, "Unable to execute ReplugNicCommand due to " + e.toString());
+        }
+    }
+
     private UnPlugNicAnswer execute(UnPlugNicCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource UnPlugNicCommand " + _gson.toJson(cmd));
@@ -1170,7 +1256,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private void plugPublicNic(VirtualMachineMO vmMo, final String vlanId, final String vifMacAddress) throws Exception {
+    private void plugPublicNic(VirtualMachineMO vmMo, final String vlanId, final IpAddressTO ipAddressTO) throws Exception {
         // TODO : probably need to set traffic shaping
         Pair<ManagedObjectReference, String> networkInfo = null;
         VirtualSwitchType vSwitchType = VirtualSwitchType.StandardVirtualSwitch;
@@ -1182,11 +1268,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
          */
         if (VirtualSwitchType.StandardVirtualSwitch == vSwitchType) {
             networkInfo = HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(),
-                    "cloud.public", vmMo.getRunningHost(), vlanId, null, null,
+                    "cloud.public", vmMo.getRunningHost(), vlanId, ipAddressTO.getNetworkRate(), null,
                     _opsTimeout, true, BroadcastDomainType.Vlan, null, null);
         } else {
             networkInfo =
-                    HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public", vmMo.getRunningHost(), vlanId, null, null, null,
+                    HypervisorHostHelper.prepareNetwork(_publicTrafficInfo.getVirtualSwitchName(), "cloud.public", vmMo.getRunningHost(), vlanId, null, ipAddressTO.getNetworkRate(), null,
                             _opsTimeout, vSwitchType, _portsPerDvPortGroup, null, false, BroadcastDomainType.Vlan, _vsmCredentials, null);
         }
 
@@ -1302,7 +1388,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
 
                 if (addVif) {
-                    plugPublicNic(vmMo, vlanId, ip.getVifMacAddress());
+                    plugPublicNic(vmMo, vlanId, ip);
                     publicNicInfo = vmMo.getNicDeviceIndex(publicNeworkName);
                     if (publicNicInfo.first().intValue() >= 0) {
                         networkUsage(controlIp, "addVif", "eth" + publicNicInfo.first());
@@ -2093,9 +2179,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 hyperHost.setRestartPriorityForVM(vmMo, DasVmPriority.HIGH.value());
             }
 
-            //For resizing root disk.
-            if (rootDiskTO != null && !hasSnapshot) {
-                resizeRootDisk(vmMo, rootDiskTO, hyperHost, context);
+            // Resizing root disk only when explicit requested by user
+            final Map<String, String> vmDetails = cmd.getVirtualMachine().getDetails();
+            if (rootDiskTO != null && !hasSnapshot && (vmDetails != null && vmDetails.containsKey(ApiConstants.ROOT_DISK_SIZE))) {
+                resizeRootDiskOnVMStart(vmMo, rootDiskTO, hyperHost, context);
             }
 
             //
@@ -2165,28 +2252,28 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return path + fileType;
     }
 
-    private void resizeRootDisk(VirtualMachineMO vmMo, DiskTO rootDiskTO, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception
-    {
-        Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, appendFileType(rootDiskTO.getPath(), ".vmdk"));
+    private void resizeRootDiskOnVMStart(VirtualMachineMO vmMo, DiskTO rootDiskTO, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
+        final Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, appendFileType(rootDiskTO.getPath(), ".vmdk"));
         assert(vdisk != null);
 
-        Long reqSize=((VolumeObjectTO)rootDiskTO.getData()).getSize()/1024;
-        VirtualDisk disk = vdisk.first();
-        if (reqSize > disk.getCapacityInKB())
-        {
-            VirtualMachineDiskInfo diskInfo = getMatchingExistingDisk(vmMo.getDiskInfoBuilder(), rootDiskTO, hyperHost, context);
+        Long reqSize = 0L;
+        final VolumeObjectTO volumeTO = ((VolumeObjectTO)rootDiskTO.getData());
+        if (volumeTO != null) {
+            reqSize = volumeTO.getSize() / 1024;
+        }
+        final VirtualDisk disk = vdisk.first();
+        if (reqSize > disk.getCapacityInKB()) {
+            final VirtualMachineDiskInfo diskInfo = getMatchingExistingDisk(vmMo.getDiskInfoBuilder(), rootDiskTO, hyperHost, context);
             assert (diskInfo != null);
-            String[] diskChain = diskInfo.getDiskChain();
+            final String[] diskChain = diskInfo.getDiskChain();
 
-            if (diskChain != null && diskChain.length>1)
-            {
-                s_logger.error("Unsupported Disk chain length "+ diskChain.length);
-                throw new Exception("Unsupported Disk chain length "+ diskChain.length);
+            if (diskChain != null && diskChain.length > 1) {
+                s_logger.warn("Disk chain length for the VM is greater than one, this is not supported");
+                throw new CloudRuntimeException("Unsupported VM disk chain length: "+ diskChain.length);
             }
-            if (diskInfo.getDiskDeviceBusName() == null || !diskInfo.getDiskDeviceBusName().toLowerCase().startsWith("scsi"))
-            {
-                s_logger.error("Unsupported root disk device bus "+ diskInfo.getDiskDeviceBusName() );
-                throw new Exception("Unsupported root disk device bus "+ diskInfo.getDiskDeviceBusName());
+            if (diskInfo.getDiskDeviceBusName() == null || !diskInfo.getDiskDeviceBusName().toLowerCase().startsWith("scsi")) {
+                s_logger.warn("Resizing of root disk is only support for scsi device/bus, the provide VM's disk device bus name is " + diskInfo.getDiskDeviceBusName());
+                throw new CloudRuntimeException("Unsupported VM root disk device bus: "+ diskInfo.getDiskDeviceBusName());
             }
 
             disk.setCapacityInKB(reqSize);

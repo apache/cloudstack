@@ -276,4 +276,6 @@ public interface GenericDao<T, ID extends Serializable> {
     Pair<List<T>, Integer> searchAndDistinctCount(final SearchCriteria<T> sc, final Filter filter);
 
     Map<String, Attribute> getAllAttributes();
+
+    Pair<List<T>, Integer> searchAndDistinctCount(final SearchCriteria<T> sc, final Filter filter, final String[] distinctColumns);
 }

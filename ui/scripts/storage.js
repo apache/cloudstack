@@ -36,8 +36,10 @@
                     label: 'label.volumes',
                     preFilter: function(args) {
                         var hiddenFields = [];
-                        if (isAdmin() != true)
+                        if (isAdmin() != true) {
                             hiddenFields.push('hypervisor');
+                            hiddenFields.push('account');
+                        }
                         return hiddenFields;
                     },
                     fields: {
@@ -47,11 +49,33 @@
                         type: {
                             label: 'label.type'
                         },
+                        vmdisplayname: {
+                            label: 'label.vm.display.name'
+                        },
                         hypervisor: {
                             label: 'label.hypervisor'
                         },
-                        vmdisplayname: {
-                            label: 'label.vm.display.name'
+                        account: {
+                            label: 'label.account'
+                        },
+                        zonename: {
+                            label: 'label.zone'
+                        },
+                        state: {
+                            label: 'label.metrics.state',
+                            converter: function (str) {
+                                // For localization
+                                return str;
+                            },
+                            indicator: {
+                                'Allocated': 'on',
+                                'Ready': 'on',
+                                'Destroy': 'off',
+                                'Expunging': 'off',
+                                'Migrating': 'warning',
+                                'UploadOp': 'warning',
+                                'Snapshotting': 'warning',
+                            }
                         }
                     },
 

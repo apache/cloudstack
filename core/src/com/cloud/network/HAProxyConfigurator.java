@@ -48,7 +48,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     private static String[] defaultsSection = {"defaults", "\tlog     global", "\tmode    tcp", "\toption  dontlognull", "\tretries 3", "\toption redispatch",
         "\toption forwardfor", "\toption forceclose", "\ttimeout connect    5000", "\ttimeout client     50000", "\ttimeout server     50000"};
 
-    private static String[] defaultListen = {"listen  vmops 0.0.0.0:9", "\toption transparent"};
+    private static String[] defaultListen = {"listen  vmops", "\tbind 0.0.0.0:9", "\toption transparent"};
 
     @Override
     public String[] generateConfiguration(final List<PortForwardingRuleTO> fwRules) {
@@ -94,20 +94,21 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     private List<String> getRulesForPool(final String poolName, final List<PortForwardingRuleTO> fwRules) {
         final PortForwardingRuleTO firstRule = fwRules.get(0);
         final String publicIP = firstRule.getSrcIp();
-        final String publicPort = Integer.toString(firstRule.getSrcPortRange()[0]);
+        final int publicPort = firstRule.getSrcPortRange()[0];
         // FIXEME: String algorithm = firstRule.getAlgorithm();
 
         final List<String> result = new ArrayList<String>();
         // add line like this: "listen  65_37_141_30-80 65.37.141.30:80"
         StringBuilder sb = new StringBuilder();
-        sb.append("listen ").append(poolName).append(" ").append(publicIP).append(":").append(publicPort);
+        sb.append("listen ").append(poolName);
+        result.add(sb.toString());
+        sb = new StringBuilder();
+        sb.append("\tbind ").append(publicIP).append(":").append(publicPort);
         result.add(sb.toString());
         sb = new StringBuilder();
         // FIXME sb.append("\t").append("balance ").append(algorithm);
         result.add(sb.toString());
-        if (publicPort.equals(NetUtils.HTTP_PORT)
-                // && global option httpclose set (or maybe not in this spot???)
-                ) {
+        if (publicPort == NetUtils.HTTP_PORT) {
             sb = new StringBuilder();
             sb.append("\t").append("mode http");
             result.add(sb.toString());
@@ -470,13 +471,16 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         StringBuilder sb = new StringBuilder();
         final String poolName = sb.append(lbTO.getSrcIp().replace(".", "_")).append('-').append(lbTO.getSrcPort()).toString();
         final String publicIP = lbTO.getSrcIp();
-        final String publicPort = Integer.toString(lbTO.getSrcPort());
+        final int publicPort = lbTO.getSrcPort();
         final String algorithm = lbTO.getAlgorithm();
 
         final List<String> result = new ArrayList<String>();
-        // add line like this: "listen  65_37_141_30-80 65.37.141.30:80"
+        // add line like this: "listen  65_37_141_30-80\n\tbind 65.37.141.30:80"
         sb = new StringBuilder();
-        sb.append("listen ").append(poolName).append(" ").append(publicIP).append(":").append(publicPort);
+        sb.append("listen ").append(poolName);
+        result.add(sb.toString());
+        sb = new StringBuilder();
+        sb.append("\tbind ").append(publicIP).append(":").append(publicPort);
         result.add(sb.toString());
         sb = new StringBuilder();
         sb.append("\t").append("balance ").append(algorithm);
@@ -538,7 +542,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
         if (stickinessSubRule != null && !destsAvailable) {
             s_logger.warn("Haproxy stickiness policy for lb rule: " + lbTO.getSrcIp() + ":" + lbTO.getSrcPort() + ": Not Applied, cause:  backends are unavailable");
         }
-        if (publicPort.equals(NetUtils.HTTP_PORT) && !keepAliveEnabled || httpbasedStickiness) {
+        if (publicPort == NetUtils.HTTP_PORT && !keepAliveEnabled || httpbasedStickiness) {
             sb = new StringBuilder();
             sb.append("\t").append("mode http");
             result.add(sb.toString());
@@ -552,7 +556,7 @@ public class HAProxyConfigurator implements LoadBalancerConfigurator {
     }
 
     private String generateStatsRule(final LoadBalancerConfigCommand lbCmd, final String ruleName, final String statsIp) {
-        final StringBuilder rule = new StringBuilder("\nlisten ").append(ruleName).append(" ").append(statsIp).append(":").append(lbCmd.lbStatsPort);
+        final StringBuilder rule = new StringBuilder("\nlisten ").append(ruleName).append("\n\tbind ").append(statsIp).append(":").append(lbCmd.lbStatsPort);
         // TODO DH: write test for this in both cases
         if (!lbCmd.keepAliveEnabled) {
             s_logger.info("Haproxy mode http enabled");

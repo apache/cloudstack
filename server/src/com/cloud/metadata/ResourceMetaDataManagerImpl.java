@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
 import org.apache.cloudstack.resourcedetail.dao.AutoScaleVmGroupDetailsDao;
@@ -124,6 +125,8 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
     SnapshotPolicyDetailsDao _snapshotPolicyDetailsDao;
     @Inject
     GuestOsDetailsDao _guestOsDetailsDao;
+    @Inject
+    NetworkOfferingDetailsDao _networkOfferingDetailsDao;
 
     private static Map<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>> s_daoMap = new HashMap<ResourceObjectType, ResourceDetailsDao<? extends ResourceDetail>>();
 
@@ -157,6 +160,7 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         s_daoMap.put(ResourceObjectType.LBHealthCheckPolicy, _healthcheckPolicyDetailsDao);
         s_daoMap.put(ResourceObjectType.SnapshotPolicy, _snapshotPolicyDetailsDao);
         s_daoMap.put(ResourceObjectType.GuestOs, _guestOsDetailsDao);
+        s_daoMap.put(ResourceObjectType.NetworkOffering, _networkOfferingDetailsDao);
         return true;
     }
 
@@ -200,7 +204,11 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
         long id = _taggedResourceMgr.getResourceId(resourceId, resourceType);
 
         DetailDaoHelper newDetailDaoHelper = new DetailDaoHelper(resourceType);
-        newDetailDaoHelper.removeDetail(id, key);
+        if (key != null) {
+            newDetailDaoHelper.removeDetail(id, key);
+        } else {
+            newDetailDaoHelper.removeDetails(id);
+        }
 
         return true;
     }
@@ -223,6 +231,10 @@ public class ResourceMetaDataManagerImpl extends ManagerBase implements Resource
 
         private void removeDetail(long resourceId, String key) {
             dao.removeDetail(resourceId, key);
+        }
+
+        private void removeDetails(long resourceId) {
+            dao.removeDetails(resourceId);
         }
 
         private ResourceDetail getDetail(long resourceId, String key) {

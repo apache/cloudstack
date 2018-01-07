@@ -267,6 +267,19 @@ class User:
         cmd.id = self.id
         apiclient.deleteUser(cmd)
 
+    def move(self, api_client, dest_accountid = None, dest_account = None, domain= None):
+
+        if all([dest_account, dest_accountid]) is None:
+            raise Exception("Please add either destination account or destination account ID.")
+
+        cmd = moveUser.moveUserCmd()
+        cmd.id = self.id
+        cmd.accountid = dest_accountid
+        cmd.account = dest_account
+        cmd.domain = domain
+
+        return api_client.moveUser(cmd)
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """Lists users and provides detailed account information for
@@ -986,7 +999,7 @@ class Volume:
         cmd.zoneid = services["zoneid"]
         if "size" in services:
             cmd.size = services["size"]
-        if services["ispublic"]:
+        if "ispublic" in services:
             cmd.ispublic = services["ispublic"]
         else:
             cmd.ispublic = False
@@ -1225,13 +1238,16 @@ class Template:
     @classmethod
     def register(cls, apiclient, services, zoneid=None,
                  account=None, domainid=None, hypervisor=None,
-                 projectid=None, details=None):
+                 projectid=None, details=None, randomize_name=True):
         """Create template from URL"""
 
         # Create template from Virtual machine and Volume ID
         cmd = registerTemplate.registerTemplateCmd()
         cmd.displaytext = services["displaytext"]
-        cmd.name = "-".join([services["name"], random_gen()])
+        if randomize_name:
+            cmd.name = "-".join([services["name"], random_gen()])
+        else:
+            cmd.name = services["name"]
         cmd.format = services["format"]
         if hypervisor:
             cmd.hypervisor = hypervisor
@@ -2240,6 +2256,8 @@ class NetworkOffering:
             cmd.ispersistent = services["ispersistent"]
         if "egress_policy" in services:
             cmd.egressdefaultpolicy = services["egress_policy"]
+        if "tags" in services:
+            cmd.tags = services["tags"]
         cmd.details = [{}]
         if "servicepackageuuid" in services:
             cmd.details[0]["servicepackageuuid"] = services["servicepackageuuid"]
@@ -2905,7 +2923,8 @@ class Network:
     def create(cls, apiclient, services, accountid=None, domainid=None,
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
-               gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None):
+               gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
+               externalid=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -2953,6 +2972,8 @@ class Network:
             cmd.vpcid = vpcid
         if aclid:
             cmd.aclid = aclid
+        if externalid:
+            cmd.externalid = externalid
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -2978,6 +2999,13 @@ class Network:
         if cleanup:
             cmd.cleanup = cleanup
         return(apiclient.restartNetwork(cmd))
+
+    def migrate(self, apiclient, network_offering_id, resume=False):
+        cmd = migrateNetwork.migrateNetworkCmd()
+        cmd.networkid = self.id
+        cmd.networkofferingid = network_offering_id
+        cmd.resume = resume
+        return(apiclient.migrateNetwork(cmd))
 
     @classmethod
     def list(cls, apiclient, **kwargs):
@@ -3355,7 +3383,7 @@ class PublicIpRange:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, account=None, domainid=None):
+    def create(cls, apiclient, services, account=None, domainid=None, forsystemvms=None):
         """Create VlanIpRange"""
 
         cmd = createVlanIpRange.createVlanIpRangeCmd()
@@ -3373,6 +3401,8 @@ class PublicIpRange:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
+        if forsystemvms:
+            cmd.forsystemvms = forsystemvms
 
         return PublicIpRange(apiclient.createVlanIpRange(cmd).__dict__)
 
@@ -4405,6 +4435,15 @@ class VPC:
             cmd.displaytext = displaytext
         return (apiclient.updateVPC(cmd))
 
+    def migrate(self, apiclient, vpc_offering_id, vpc_network_offering_ids, resume=False):
+        cmd = migrateVPC.migrateVPCCmd()
+        cmd.vpcid = self.id
+        cmd.vpcofferingid = vpc_offering_id
+        cmd.tiernetworkofferings = vpc_network_offering_ids
+        cmd.resume = resume
+        return(apiclient.migrateVPC(cmd))
+
+
     def delete(self, apiclient):
         """Delete VPC network"""
 
@@ -5250,3 +5289,34 @@ class RegisteredServicePackage:
         [setattr(cmd, k, v) for k, v in kwargs.items()]
         return(apiclient.listRegisteredServicePackages(cmd))
 
+
+class ResourceDetails:
+
+    @classmethod
+    def create(cls, apiclient, resourceid, resourcetype, details, fordisplay):
+        """Create resource detail"""
+
+        cmd = addResourceDetail.addResourceDetailCmd()
+        cmd.resourceid = resourceid
+        cmd.resourcetype = resourcetype
+        cmd.fordisplay = fordisplay
+        cmd.details = []
+        for key, value in details.items():
+            cmd.details.append({
+                'key': key,
+                'value': value
+            })
+        return Tag(apiclient.createTags(cmd).__dict__)
+
+    @classmethod
+    def list(self, apiclient, **kwargs):
+        cmd = listResourceDetails.listResourceDetailsCmd()
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
+        return (apiclient.listResourceDetails(cmd))
+
+    @classmethod
+    def delete(self, apiclient, resourceid, resourcetype):
+        cmd = removeResourceDetail.removeResourceDetailCmd()
+        cmd.resourceid = resourceid
+        cmd.resourcetype = resourcetype
+        return (apiclient.removeResourceDetail(cmd))

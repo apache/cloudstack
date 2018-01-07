@@ -641,13 +641,13 @@ public class Upgrade218to22 implements DbUpgrade {
                 s_logger.debug("Marking " + allocatedIps.size() + " ip addresses to belong to network " + networkId);
                 s_logger.debug("Updating mac addresses for data center id=" + dcId + ". Found " + allocatedIps.size() + " ip addresses to update");
                 for (Object[] allocatedIp : allocatedIps) {
-                    try (PreparedStatement selectMacAdresses = conn.prepareStatement("SELECT mac_address FROM data_center WHERE id = ?");) {
-                        selectMacAdresses.setLong(1, dcId);
-                        try (ResultSet selectedMacAdresses = selectMacAdresses.executeQuery();) {
-                            if (!selectedMacAdresses.next()) {
+                    try (PreparedStatement selectMacAddresses = conn.prepareStatement("SELECT mac_address FROM data_center WHERE id = ?");) {
+                        selectMacAddresses.setLong(1, dcId);
+                        try (ResultSet selectedMacAddresses = selectMacAddresses.executeQuery();) {
+                            if (!selectedMacAddresses.next()) {
                                 throw new CloudRuntimeException("Unable to get mac address for data center " + dcId);
                             }
-                            long mac = selectedMacAdresses.getLong(1);
+                            long mac = selectedMacAddresses.getLong(1);
                             try (PreparedStatement updateDataCenter = conn.prepareStatement("UPDATE data_center SET mac_address=mac_address+1 WHERE id = ?");) {
                                 updateDataCenter.setLong(1, dcId);
                                 updateDataCenter.executeUpdate();

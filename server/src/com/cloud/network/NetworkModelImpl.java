@@ -29,17 +29,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.Collections;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.codec.binary.Base64;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
@@ -99,7 +102,6 @@ import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.projects.dao.ProjectAccountDao;
-import com.cloud.server.ConfigurationServer;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -145,23 +147,18 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     AccountManager _accountMgr;
     @Inject
     ConfigurationDao _configDao;
-
     @Inject
     ConfigurationManager _configMgr;
-
     @Inject
     NetworkOfferingDao _networkOfferingDao = null;
     @Inject
     NetworkDao _networksDao = null;
     @Inject
     NicDao _nicDao = null;
-
     @Inject
     PodVlanMapDao _podVlanMapDao;
-    @Inject
-    ConfigurationServer _configServer;
 
-    List<NetworkElement> networkElements;
+    private List<NetworkElement> networkElements;
 
     public List<NetworkElement> getNetworkElements() {
         return networkElements;
@@ -583,6 +580,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (network.getTrafficType() != TrafficType.Guest) {
             return false;
         }
+        if (listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
+            return true; // do not check free IPs if there is no service in the network
+        }
         boolean hasFreeIps = true;
         if (network.getGuestType() == GuestType.Shared) {
             if (network.getGateway() != null) {
@@ -994,33 +994,43 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (vmId != null) {
             vm = _vmDao.findById(vmId);
         }
-        Network network = getNetwork(networkId);
-        NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
+        final Network network = getNetwork(networkId);
+        final NetworkOffering ntwkOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
 
-        // For default userVm Default network and domR guest/public network, get rate information from the service
-        // offering; for other situations get information
-        // from the network offering
-        boolean isUserVmsDefaultNetwork = false;
-        boolean isDomRGuestOrPublicNetwork = false;
-        boolean isSystemVmNetwork = false;
+        // For user VM: For default nic use network rate from the service/compute offering,
+        //              or on NULL from vm.network.throttling.rate global setting
+        // For router: Get network rate for guest and public networks from the guest network offering
+        //              or on NULL from network.throttling.rate
+        // For others: Use network rate from their network offering,
+        //              or on NULL from network.throttling.rate setting at zone > global level
+        // http://docs.cloudstack.apache.org/projects/cloudstack-administration/en/latest/service_offerings.html#network-throttling
         if (vm != null) {
-            Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
-            if (vm.getType() == Type.User && nic != null && nic.isDefaultNic()) {
-                isUserVmsDefaultNetwork = true;
-            } else if (vm.getType() == Type.DomainRouter && ntwkOff != null &&
-                (ntwkOff.getTrafficType() == TrafficType.Public || ntwkOff.getTrafficType() == TrafficType.Guest)) {
-                isDomRGuestOrPublicNetwork = true;
-            } else if (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm) {
-                isSystemVmNetwork = true;
+            if (vm.getType() == Type.User) {
+                final Nic nic = _nicDao.findByNtwkIdAndInstanceId(networkId, vmId);
+                if (nic != null && nic.isDefaultNic()) {
+                    return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), network.getDataCenterId());
+                }
+            }
+            if (vm.getType() == Type.DomainRouter && (network.getTrafficType() == TrafficType.Public || network.getTrafficType() == TrafficType.Guest)) {
+                for (final Nic nic: _nicDao.listByVmId(vmId)) {
+                    final NetworkVO nw = _networksDao.findById(nic.getNetworkId());
+                    if (nw.getTrafficType() == TrafficType.Guest) {
+                        return _configMgr.getNetworkOfferingNetworkRate(nw.getNetworkOfferingId(), network.getDataCenterId());
+                    }
+                }
+            }
+            if (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm) {
+                return -1;
             }
         }
-        if (isUserVmsDefaultNetwork || isDomRGuestOrPublicNetwork) {
-            return _configMgr.getServiceOfferingNetworkRate(vm.getServiceOfferingId(), network.getDataCenterId());
-        } else if (isSystemVmNetwork) {
-            return -1;
-        } else {
+        if (ntwkOff != null) {
             return _configMgr.getNetworkOfferingNetworkRate(ntwkOff.getId(), network.getDataCenterId());
         }
+        final Integer networkRate = NetworkOrchestrationService.NetworkThrottlingRate.valueIn(network.getDataCenterId());
+        if (networkRate != null && networkRate > 0) {
+            return networkRate;
+        }
+        return -1;
     }
 
     @Override
@@ -1823,6 +1833,9 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public Set<Long> getAvailableIps(Network network, String requestedIp) {
+        if (network.getCidr() == null) {
+            return Collections.emptySet();
+        }
         String[] cidr = network.getCidr().split("/");
         List<String> ips = getUsedIpsInNetwork(network);
         Set<Long> usedIps = new TreeSet<Long>();
@@ -2135,10 +2148,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException {
-        if (!NetUtils.isValidIpv6(startIPv6)) {
+        if (!NetUtils.isValidIp6(startIPv6)) {
             throw new InvalidParameterValueException("Invalid format for the startIPv6 parameter");
         }
-        if (!NetUtils.isValidIpv6(endIPv6)) {
+        if (!NetUtils.isValidIp6(endIPv6)) {
             throw new InvalidParameterValueException("Invalid format for the endIPv6 parameter");
         }
 
@@ -2146,7 +2159,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new InvalidParameterValueException("ip6Gateway and ip6Cidr should be defined when startIPv6/endIPv6 are passed in");
         }
 
-        if (!NetUtils.isValidIpv6(ip6Gateway)) {
+        if (!NetUtils.isValidIp6(ip6Gateway)) {
             throw new InvalidParameterValueException("Invalid ip6Gateway");
         }
         if (!NetUtils.isValidIp6Cidr(ip6Cidr)) {
@@ -2175,13 +2188,13 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         String ip6 = ips.getIp6Address();
         String mac = ips.getMacAddress();
         if (ip4 != null) {
-            if (!NetUtils.isValidIp(ip4)) {
+            if (!NetUtils.isValidIp4(ip4)) {
                 throw new InvalidParameterValueException("Invalid specified IPv4 address " + ip4);
             }
             //Other checks for ipv4 are done in assignPublicIpAddress()
         }
         if (ip6 != null) {
-            if (!NetUtils.isValidIpv6(ip6)) {
+            if (!NetUtils.isValidIp6(ip6)) {
                 throw new InvalidParameterValueException("Invalid specified IPv6 address " + ip6);
             }
             if (_ipv6Dao.findByNetworkIdAndIp(networkId, ip6) != null) {
