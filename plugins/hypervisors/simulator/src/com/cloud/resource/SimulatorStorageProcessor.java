@@ -86,9 +86,17 @@ public class SimulatorStorageProcessor implements StorageProcessor {
 
     @Override
     public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
+        long size = 100;
+        DataTO dataTO = cmd.getDestTO();
+        if (dataTO instanceof VolumeObjectTO) {
+            VolumeObjectTO destVolume = (VolumeObjectTO)dataTO;
+            if (destVolume.getSize() != null) {
+                size = destVolume.getSize();
+            }
+        }
         VolumeObjectTO volume = new VolumeObjectTO();
         volume.setPath(UUID.randomUUID().toString());
-        volume.setSize(100);
+        volume.setSize(size);
         volume.setFormat(Storage.ImageFormat.RAW);
         return new CopyCmdAnswer(volume);
     }
