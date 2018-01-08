@@ -204,25 +204,24 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         ip = self.get_ip_as_number(ip_to_test)
         return start <= ip and ip <= end
     
-    def wait_for_system_vm_start(self, domain_id, srv_timeout, srv_sleep, systemvmtype):
+    def wait_for_system_vm_start(self, domain_id, systemvmtype):
         """ Wait until system vm is Running
         """
-        timeout = srv_timeout
-        while True:
-            list_systemvm_response = list_ssvms(
+        def checkSystemVMUp():
+            response = list_ssvms(
                 self.apiclient,
                 systemvmtype=systemvmtype,
                 domainid=domain_id
             )
-            if isinstance(list_systemvm_response, list):
-                if list_systemvm_response[0].state == 'Running':
-                    return list_systemvm_response[0].id
-            if timeout == 0:
-                raise Exception("List System VM call failed!")
+            if isinstance(response, list):
+                if response[0].state == 'Running':
+                    return True, response[0].id
+            return False, None
 
-            time.sleep(srv_sleep)
-            timeout = timeout - 1
-        return None
+        res, systemvmId = wait_until(3, 100, checkSystemVMUp)
+        if not res:
+            raise Exception("Failed to wait for systemvm to be running")
+        return systemvmId
 
     def base_system_vm(self, services, systemvmtype):
         """
@@ -264,8 +263,6 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         # Wait for CPVM to start
         systemvm_id = self.wait_for_system_vm_start(
             public_ip_range.vlan.domainid,
-            self.services["timeout"],
-            self.services["sleep"],
             systemvmtype
         )
         self.assertNotEqual(
@@ -312,8 +309,6 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         # Wait for System VM to start and check System VM public IP
         systemvm_id = self.wait_for_system_vm_start(
             domain_id,
-            self.services["timeout"],
-            self.services["sleep"],
             systemvmtype
         )
         list_systemvm_response = list_ssvms(
