@@ -92,9 +92,7 @@ public class NuageTest {
 
         VspNetwork vspNetwork = buildVspNetwork();
         when(_nuageVspEntityBuilder.buildVspNetwork(any(Network.class))).thenReturn(vspNetwork);
-        when(_nuageVspEntityBuilder.buildVspNetwork(any(Network.class), anyBoolean())).thenReturn(vspNetwork);
         when(_nuageVspEntityBuilder.buildVspNetwork(anyLong(), any(Network.class))).thenReturn(vspNetwork);
-        when(_nuageVspEntityBuilder.buildVspNetwork(anyLong(), any(Network.class), anyBoolean())).thenReturn(vspNetwork);
 
         when(_nuageVspEntityBuilder.buildVspVm(any(VirtualMachine.class), any(Network.class))).thenReturn(buildVspVm());
 
