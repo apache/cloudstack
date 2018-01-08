@@ -112,6 +112,7 @@ class TestVMOwnership(cloudstackTestCase):
                                     cls.services["ostype"])
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
 
         def create_domain_account_user(parentDomain=None):
             domain  =  Domain.create(cls.api_client,
@@ -415,17 +416,13 @@ class TestVMOwnership(cloudstackTestCase):
         """
         # Validate the following:
         # 1. deploy VM in sub subdomain1 with snapshot.
-        # 3. assignVirtualMachine to subdomain2
+        # 3. assign VM will fail with Exception as VM with snapshots cannot be assigned to other users.
         if self.hypervisor.lower() in ['hyperv', 'lxc']:
             self.skipTest("Snapshots feature is not supported on %s" % self.hypervisor)
         self.create_vm(self.sdomain_account_user1['account'], self.sdomain_account_user1['domain'], snapshot=True)
-        self.virtual_machine.assign_virtual_machine(self.apiclient, self.sdomain_account_user2['account'].name ,self.sdomain_account_user2['domain'].id)
-        snapshots = list_snapshots(self.apiclient,
-                                   id=self.snapshot.id)
-        self.assertEqual(snapshots,
-                         None,
-                         "Snapshots stil present for a vm in domain")
-
+        with self.assertRaises(Exception):
+            self.virtual_machine.assign_virtual_machine(self.apiclient, self.sdomain_account_user2['account'].name ,self.sdomain_account_user2['domain'].id)
+		
     @attr(tags = ["advanced"])
     @log_test_exceptions
     def test_14_move_across_subdomain_vm_project(self):
