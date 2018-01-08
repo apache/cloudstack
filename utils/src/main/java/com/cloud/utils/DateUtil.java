@@ -38,10 +38,14 @@ public class DateUtil {
         return new Date();
     }
 
-    // yyyy-MM-ddTHH:mm:ssZxxxx
+    // yyyy-MM-ddTHH:mm:ssZZZZ or yyyy-MM-ddTHH:mm:ssZxxxx
     public static Date parseTZDateString(String str) throws ParseException {
-        DateFormat dfParse = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z");
-        return dfParse.parse(str);
+        try {
+            return s_outputFormat.parse(str);
+        } catch (ParseException e) {
+            final DateFormat dfParse = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z");
+            return dfParse.parse(str);
+        }
     }
 
     public static Date parseDateString(TimeZone tz, String dateString) {
