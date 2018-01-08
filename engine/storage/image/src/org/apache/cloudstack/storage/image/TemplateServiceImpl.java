@@ -845,14 +845,18 @@ public class TemplateServiceImpl implements TemplateService {
                     }
                     return controllerSubType;
                 }
-                return "lsilogic";
+                if (!isRootDisk) {
+                    return "scsi";
+                }
             }
-            return "osdefault";
+            if (!isRootDisk) {
+                return "osdefault";
+            }
         }
 
         // Root disk to use global setting vmware.root.disk.controller
         if (!isRootDisk) {
-            return "lsilogic";
+            return "scsi";
         }
         return controller;
     }
