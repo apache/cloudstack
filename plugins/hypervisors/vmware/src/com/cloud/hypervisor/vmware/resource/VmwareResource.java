@@ -2266,7 +2266,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 s_logger.warn("Disk chain length for the VM is greater than one, this is not supported");
                 throw new CloudRuntimeException("Unsupported VM disk chain length: "+ diskChain.length);
             }
-            if (diskInfo.getDiskDeviceBusName() == null || !diskInfo.getDiskDeviceBusName().toLowerCase().startsWith("scsi")) {
+
+            boolean resizingSupported = false;
+            String deviceBusName = diskInfo.getDiskDeviceBusName();
+            if (deviceBusName != null && (deviceBusName.toLowerCase().contains("scsi") || deviceBusName.toLowerCase().contains("lsi"))) {
+                resizingSupported = true;
+            }
+            if (!resizingSupported) {
                 s_logger.warn("Resizing of root disk is only support for scsi device/bus, the provide VM's disk device bus name is " + diskInfo.getDiskDeviceBusName());
                 throw new CloudRuntimeException("Unsupported VM root disk device bus: "+ diskInfo.getDiskDeviceBusName());
             }

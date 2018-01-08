@@ -247,7 +247,7 @@ class TestCreateVolume(cloudstackTestCase):
             elif list_volume_response[0].hypervisor.lower() == "hyperv":
                 ret = checkVolumeSize(ssh_handle=ssh,volume_name="/dev/sdb",size_to_verify=vol_sz)
             elif list_volume_response[0].hypervisor.lower() == "vmware":
-                ret = checkVolumeSize(ssh_handle=ssh,volume_name="/dev/sda",size_to_verify=vol_sz)
+                ret = checkVolumeSize(ssh_handle=ssh,volume_name="/dev/sdb",size_to_verify=vol_sz)
             else:
                 ret = checkVolumeSize(ssh_handle=ssh,size_to_verify=vol_sz)
             self.debug(" Volume Size Expected %s  Actual :%s" %(vol_sz,ret[1]))

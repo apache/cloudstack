@@ -703,7 +703,7 @@ public class TemplateServiceImpl implements TemplateService {
 
         // Check if OVA contains additional data disks. If yes, create Datadisk templates for each of the additional datadisk present in the OVA
         if (template.getFormat().equals(ImageFormat.OVA)) {
-            if (!createDataDiskTemplates(template)) {
+            if (!createOvaDataDiskTemplates(template)) {
                 template.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
                 result.setResult(callbackResult.getResult());
                 if (parentCallback != null) {
@@ -730,7 +730,7 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
 
-    protected boolean createDataDiskTemplates(TemplateInfo parentTemplate) {
+    protected boolean createOvaDataDiskTemplates(TemplateInfo parentTemplate) {
         try {
             // Get Datadisk template (if any) for OVA
             List<DatadiskTO> dataDiskTemplates = new ArrayList<DatadiskTO>();
@@ -745,12 +745,15 @@ public class TemplateServiceImpl implements TemplateService {
                 if (!diskTemplate.isBootable()) {
                     createChildDataDiskTemplate(diskTemplate, templateVO, parentTemplate, imageStore, diskCount++);
                     if (!diskTemplate.isIso() && details.get(VmDetailConstants.DATA_DISK_CONTROLLER) == null){
-                        details.put(VmDetailConstants.DATA_DISK_CONTROLLER, getDiskControllerDetails(diskTemplate));
-                        details.put(VmDetailConstants.DATA_DISK_CONTROLLER + diskTemplate.getDiskId(), getDiskControllerDetails(diskTemplate));
+                        details.put(VmDetailConstants.DATA_DISK_CONTROLLER, getOvaDiskControllerDetails(diskTemplate, false));
+                        details.put(VmDetailConstants.DATA_DISK_CONTROLLER + diskTemplate.getDiskId(), getOvaDiskControllerDetails(diskTemplate, false));
                     }
                 } else {
                     finalizeParentTemplate(diskTemplate, templateVO, parentTemplate, imageStore, diskCount++);
-                    details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, getDiskControllerDetails(diskTemplate));
+                    final String rootDiskController = getOvaDiskControllerDetails(diskTemplate, true);
+                    if (StringUtils.isNotBlank(rootDiskController)) {
+                        details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskController);
+                    }
                 }
             }
             templateVO.setDetails(details);
@@ -819,20 +822,39 @@ public class TemplateServiceImpl implements TemplateService {
         return result.isSuccess();
     }
 
-    private String getDiskControllerDetails(DatadiskTO diskTemplate) {
+    private String getOvaDiskControllerDetails(DatadiskTO diskTemplate, boolean isRootDisk) {
         String controller = diskTemplate.getDiskController() ;
         String controllerSubType = diskTemplate.getDiskControllerSubType();
-        return StringUtils.isNotBlank(controller)
-                ? (controller.contains("IDE") || controller.contains("ide")
-                    ? "ide"
-                    : (controller.contains("SCSI") || controller.contains("scsi")
-                        ? (StringUtils.isNotBlank(controllerSubType)
-                            ? (controllerSubType.equals("lsilogicsas")
-                                ? "lsisas1068"
-                                : controllerSubType)
-                            : "lsilogic")
-                        : "osdefault"))
-                : "lsilogic";
+
+        if (controller != null) {
+            controller = controller.toLowerCase();
+        }
+
+        if (controllerSubType != null) {
+            controllerSubType = controllerSubType.toLowerCase();
+        }
+
+        if (StringUtils.isNotBlank(controller)) {
+            if (controller.contains("ide")) {
+                return "ide";
+            }
+            if (controller.contains("scsi")) {
+                if (StringUtils.isNotBlank(controllerSubType)) {
+                    if (controllerSubType.equals("lsilogicsas")) {
+                        return "lsisas1068";
+                    }
+                    return controllerSubType;
+                }
+                return "lsilogic";
+            }
+            return "osdefault";
+        }
+
+        // Root disk to use global setting vmware.root.disk.controller
+        if (!isRootDisk) {
+            return "lsilogic";
+        }
+        return controller;
     }
 
     private void cleanupDatadiskTemplates(TemplateInfo parentTemplateInfo) {
