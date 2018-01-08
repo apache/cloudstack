@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.template;
 
-import com.cloud.hypervisor.Hypervisor;
 import java.net.URISyntaxException;
 import java.util.List;
 
