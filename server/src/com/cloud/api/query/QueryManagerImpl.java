@@ -1890,8 +1890,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             respView = ResponseView.Full;
         }
 
-        List<DomainResponse> domainResponses = ViewResponseHelper.createDomainResponse(respView, cmd.getDetails(), result.first().toArray(
-                new DomainJoinVO[result.first().size()]));
+        List<DomainResponse> domainResponses = ViewResponseHelper.createDomainResponse(respView, cmd.getDetails(), result.first());
         response.setResponses(domainResponses, result.second());
         return response;
     }
@@ -1901,9 +1900,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         Long domainId = cmd.getId();
         boolean listAll = cmd.listAll();
         boolean isRecursive = false;
+        Domain domain = null;
 
         if (domainId != null) {
-            Domain domain = _domainDao.findById(domainId);
+            domain = _domainDao.findById(domainId);
             if (domain == null) {
                 throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
             }
@@ -1947,7 +1947,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         if (domainId != null) {
             if (isRecursive) {
-                sc.setParameters("path", _domainDao.findById(domainId).getPath() + "%");
+                if(domain == null){
+                    domain = _domainDao.findById(domainId);
+                }
+                sc.setParameters("path", domain.getPath() + "%");
             } else {
                 sc.setParameters("id", domainId);
             }
@@ -1982,47 +1985,58 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String accountName = cmd.getSearchName();
         boolean isRecursive = cmd.isRecursive();
         boolean listAll = cmd.listAll();
-        Boolean listForDomain = false;
+        boolean callerIsAdmin = _accountMgr.isAdmin(caller.getId());
+        Account account;
+        Domain domain = null;
 
-        if (accountId != null) {
-            Account account = _accountDao.findById(accountId);
-            if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-                throw new InvalidParameterValueException("Unable to find account by id " + accountId);
-            }
-
-            _accountMgr.checkAccess(caller, null, true, account);
-        }
-
+        // if "domainid" specified, perform validation
         if (domainId != null) {
-            Domain domain = _domainDao.findById(domainId);
+            // ensure existence...
+            domain = _domainDao.findById(domainId);
             if (domain == null) {
                 throw new InvalidParameterValueException("Domain id=" + domainId + " doesn't exist");
             }
-
+            // ... and check access rights.
             _accountMgr.checkAccess(caller, domain);
-
-            if (accountName != null) {
-                Account account = _accountDao.findActiveAccount(accountName, domainId);
-                if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-                    throw new InvalidParameterValueException("Unable to find account by name " + accountName
-                            + " in domain " + domainId);
-                }
-                _accountMgr.checkAccess(caller, null, true, account);
-            }
         }
 
+        // if no "id" specified...
         if (accountId == null) {
-            if (_accountMgr.isAdmin(caller.getId()) && listAll && domainId == null) {
-                listForDomain = true;
-                isRecursive = true;
+            // listall only has significance if they are an admin
+            if (listAll && callerIsAdmin) {
+                // if no domain id specified, use caller's domain
                 if (domainId == null) {
                     domainId = caller.getDomainId();
                 }
-            } else if (_accountMgr.isAdmin(caller.getId()) && domainId != null) {
-                listForDomain = true;
-            } else {
+                // mark recursive
+                isRecursive = true;
+            } else if (!callerIsAdmin || domainId == null) {
                 accountId = caller.getAccountId();
             }
+        } else if (domainId != null && accountName != null) {
+            // if they're looking for an account by name
+            account = _accountDao.findActiveAccount(accountName, domainId);
+            if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
+                throw new InvalidParameterValueException(
+                        "Unable to find account by name " + accountName + " in domain " + domainId
+                );
+            }
+            _accountMgr.checkAccess(caller, null, true, account);
+        } else {
+            // if they specified an "id"...
+            if (domainId == null) {
+                account = _accountDao.findById(accountId);
+            } else {
+                account = _accountDao.findActiveAccountById(accountId, domainId);
+            }
+            if (account == null || account.getId() == Account.ACCOUNT_ID_SYSTEM) {
+                throw new InvalidParameterValueException(
+                        "Unable to find account by id "
+                                + accountId
+                                + (domainId == null ? "" : " in domain " + domainId)
+                );
+            }
+            _accountMgr.checkAccess(caller, null, true, account);
         }
 
         Filter searchFilter = new Filter(AccountJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
@@ -2042,12 +2056,15 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("typeNEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
         sb.and("idNEQ", sb.entity().getId(), SearchCriteria.Op.NEQ);
 
-        if (listForDomain && isRecursive) {
+        if (domainId != null && isRecursive) {
             sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
         }
 
         SearchCriteria<AccountJoinVO> sc = sb.create();
 
+        // don't return account of type project to the end user
+        sc.setParameters("typeNEQ", Account.ACCOUNT_TYPE_PROJECT);
+        // don't return system account...
         sc.setParameters("idNEQ", Account.ACCOUNT_ID_SYSTEM);
 
         if (keyword != null) {
@@ -2073,16 +2090,16 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.setParameters("accountName", accountName);
         }
 
-        // don't return account of type project to the end user
-        sc.setParameters("typeNEQ", 5);
-
         if (accountId != null) {
             sc.setParameters("id", accountId);
         }
 
-        if (listForDomain) {
+        if (domainId != null) {
             if (isRecursive) {
-                Domain domain = _domainDao.findById(domainId);
+                // will happen if no "domainid" was specified in the request...
+                if (domain == null) {
+                    domain = _domainDao.findById(domainId);
+                }
                 sc.setParameters("path", domain.getPath() + "%");
             } else {
                 sc.setParameters("domainId", domainId);
@@ -3369,7 +3386,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             uniqueTmplPair = _templateJoinDao.searchIncludingRemovedAndCount(sc, searchFilter);
         } else {
             sc.addAnd("templateState", SearchCriteria.Op.IN, new State[]{State.Active, State.UploadAbandoned, State.UploadError, State.NotUploaded, State.UploadInProgress});
-            uniqueTmplPair = _templateJoinDao.searchAndCount(sc, searchFilter);
+            final String[] distinctColumns = {"temp_zone_pair"};
+            uniqueTmplPair = _templateJoinDao.searchAndDistinctCount(sc, searchFilter, distinctColumns);
         }
 
         Integer count = uniqueTmplPair.second();

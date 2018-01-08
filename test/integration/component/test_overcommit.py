@@ -37,13 +37,13 @@ from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
 
 
-def ssh_xen_host(password, ipaddr, instance_name):
+def ssh_xen_host(password, username, ipaddr, instance_name):
     """Ssh into xen host and get vm mem details"""
     mem = []
     sshClient = SshClient(
         ipaddr,
         22,
-        "root",
+        username,
         password
     )
     command = "xe vm-list params=all name-label=%s" % instance_name
@@ -57,13 +57,14 @@ def ssh_xen_host(password, ipaddr, instance_name):
     return mem
 
 
-def ssh_kvm_host(password, ipaddr, instance_name):
+def ssh_kvm_host(password, user, ipaddr, instance_name):
     """Ssh into kvm host and get vm mem details"""
     mem = []
+
     sshClient = SshClient(
         ipaddr,
         22,
-        "root",
+        user,
         password
     )
 
@@ -99,8 +100,8 @@ class Overcommit (cloudstackTestCase):
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient)
         cls.testdata["mode"] = cls.zone.networktype
-        cls.testdata["configurableData"]["password"] = "xenroot"
         cls.hypervisor = testClient.getHypervisorInfo()
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
         cls.template = get_template(
             cls.apiclient,
@@ -253,14 +254,16 @@ class Overcommit (cloudstackTestCase):
         if listHost[0].hypervisor.lower() == 'xenserver':
 
             k = ssh_xen_host(
-                self.testdata["configurableData"]["password"],
+                self.hostConfig["password"],
+                self.hostConfig["username"],
                 listHost[0].ipaddress,
                 self.deployVmResponse.instancename)
 
         elif listHost[0].hypervisor.lower() == 'kvm':
 
             k = ssh_kvm_host(
-                self.testdata["configurableData"]["password"],
+                self.hostConfig["password"],
+                self.hostConfig["username"],
                 listHost[0].ipaddress,
                 self.deployVmResponse.instancename)
 
@@ -278,14 +281,16 @@ class Overcommit (cloudstackTestCase):
 
         if listHost[0].hypervisor.lower() == 'xenserver':
             k1 = ssh_xen_host(
-                self.testdata["configurableData"]["password"],
+                self.hostConfig["password"],
+                self.hostConfig["username"],
                 listHost[0].ipaddress,
                 self.deployVmResponse.instancename)
 
         elif listHost[0].hypervisor.lower() == 'kvm':
             time.sleep(200)
             k1 = ssh_kvm_host(
-                self.testdata["configurableData"]["password"],
+                self.hostConfig["password"],
+                self.hostConfig["username"],
                 listHost[0].ipaddress,
                 self.deployVmResponse.instancename)
         self.assertEqual(k1[0],

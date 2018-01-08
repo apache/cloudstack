@@ -16,54 +16,13 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
-import com.cloud.exception.InvalidParameterValueException
-import org.apache.cloudstack.api.ServerApiException
-import org.apache.cloudstack.api.command.LdapAddConfigurationCmd
-import org.apache.cloudstack.api.response.LdapConfigurationResponse
-
 import org.apache.cloudstack.ldap.LdapUser;
 import org.apache.cloudstack.ldap.LdapManager;
 
-import org.apache.cloudstack.api.command.LdapCreateAccountCmd;
-import org.apache.cloudstack.context.CallContext;
-
-import com.cloud.user.AccountService;
-import com.cloud.user.UserAccount;
-import com.cloud.user.UserAccountVO
-import org.apache.cloudstack.ldap.NoLdapUserMatchingQueryException;
-
-import javax.naming.NamingException
+import org.apache.cloudstack.api.command.LdapCreateAccountCmd
+import com.cloud.user.AccountService
 
 class LdapCreateAccountCmdSpec extends spock.lang.Specification {
-
-    def "Test failure to retrive LDAP user"() {
-        given: "We have an LdapManager, AccountService and LdapCreateAccountCmd and LDAP user that doesn't exist"
-        LdapManager ldapManager = Mock(LdapManager)
-        ldapManager.getUser(_) >> { throw new NoLdapUserMatchingQueryException() }
-        AccountService accountService = Mock(AccountService)
-        def ldapCreateAccountCmd = Spy(LdapCreateAccountCmd, constructorArgs: [ldapManager, accountService])
-        ldapCreateAccountCmd.getCurrentContext() >> Mock(CallContext)
-        CallContext context = ldapCreateAccountCmd.getCurrentContext()
-        when: "An an account is created"
-        ldapCreateAccountCmd.execute()
-        then: "It fails and an exception is thrown"
-        thrown ServerApiException
-    }
-
-    def "Test failed creation due to a null response from cloudstack account creater"() {
-        given: "We have an LdapManager, AccountService and LdapCreateAccountCmd"
-        LdapManager ldapManager = Mock(LdapManager)
-        ldapManager.getUser(_) >> new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false)
-        AccountService accountService = Mock(AccountService)
-        def ldapCreateAccountCmd = Spy(LdapCreateAccountCmd, constructorArgs: [ldapManager, accountService])
-        ldapCreateAccountCmd.getCurrentContext() >> Mock(CallContext)
-        ldapCreateAccountCmd.createCloudstackUserAccount(_, _, _) >> null
-        when: "Cloudstack fail to create the user"
-        ldapCreateAccountCmd.execute()
-        then: "An exception is thrown"
-        thrown ServerApiException
-    }
-
     def "Test command name"() {
         given: "We have an LdapManager, AccountService and LdapCreateAccountCmd"
         LdapManager ldapManager = Mock(LdapManager)
@@ -105,7 +64,7 @@ class LdapCreateAccountCmdSpec extends spock.lang.Specification {
         AccountService accountService = Mock(AccountService)
         def ldapCreateAccountCmd = new LdapCreateAccountCmd(ldapManager, accountService);
         when: "a user with an username, email, firstname and lastname is validated"
-        def result = ldapCreateAccountCmd.validateUser(new LdapUser("username", "email", "firstname", "lastname", "principal", "domain", false))
+        def result = ldapCreateAccountCmd.validateUser(new LdapUser("username", "email", "firstname", "lastname", "principal", "domain", false, null))
         then: "the result is true"
         result == true
     }
@@ -116,7 +75,7 @@ class LdapCreateAccountCmdSpec extends spock.lang.Specification {
         AccountService accountService = Mock(AccountService)
         def ldapCreateAccountCmd = new LdapCreateAccountCmd(ldapManager, accountService)
         when: "A user with no email address attempts to validate"
-        ldapCreateAccountCmd.validateUser(new LdapUser("username", null, "firstname", "lastname", "principal", "domain", false))
+        ldapCreateAccountCmd.validateUser(new LdapUser("username", null, "firstname", "lastname", "principal", "domain", false, null))
         then: "An exception is thrown"
         thrown Exception
     }
@@ -138,7 +97,7 @@ class LdapCreateAccountCmdSpec extends spock.lang.Specification {
         AccountService accountService = Mock(AccountService)
         def ldapCreateAccountCmd = new LdapCreateAccountCmd(ldapManager, accountService)
         when: "A user with no lastname attempts to validate"
-        ldapCreateAccountCmd.validateUser(new LdapUser("username", "email", "firstname", null, "principal", "domain", false))
+        ldapCreateAccountCmd.validateUser(new LdapUser("username", "email", "firstname", null, "principal", "domain", false, null))
         then: "An exception is thown"
         thrown Exception
     }

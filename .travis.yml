@@ -32,6 +32,7 @@ env:
   global:
      - PATH=$HOME/.local/bin:$PATH
   matrix:
+    # Keep the TESTS sorted by name and grouped by type
     - TESTS="smoke/test_accounts
              smoke/test_affinity_groups
              smoke/test_affinity_groups_projects
@@ -108,8 +109,7 @@ env:
              component/test_acl_listsnapshot
              component/test_acl_listvm
              component/test_acl_listvolume
-             component/test_acl_sharednetwork
-             component/test_affinity_groups_projects"
+             component/test_acl_sharednetwork"
 
     - TESTS="component/test_allocation_states
              component/test_acl_sharednetwork_deployVM-impersonation
@@ -118,7 +118,6 @@ env:
              component/test_cpu_limits"
 
     - TESTS="component/test_cpu_max_limits
-             component/test_acl_isolatednetwork
              component/test_cpu_project_limits
              component/test_deploy_vm_userdata_multi_nic
              component/test_egress_fw_rules
@@ -143,7 +142,10 @@ env:
              component/test_snapshots
              component/test_stopped_vm"
 
-    - TESTS="component/test_resource_limits"
+    - TESTS="component/test_project_resources"
+
+    - TESTS="component/test_project_limits
+             component/test_resource_limits"
 
     - TESTS="component/test_tags
              component/test_templates
@@ -156,6 +158,7 @@ env:
              component/test_vpn_users"
 
 # FIXME: fix following tests and include them in Travis
+#    - TESTS="component/test_vpc" Please add when PR: https://github.com/apache/cloudstack/pull/955 CLOUDSTACK-8969 is fixed
 #    - TESTS="component/test_organization_states" Please add when CLOUDSTACK-7735 is fixed
 
 before_install: travis_wait 30 ./tools/travis/before_install.sh

@@ -395,6 +395,10 @@ cloudStack.docs = {
         desc: 'If you want to assign a special domain name to this domain\'s guest VM network, specify the DNS suffix',
         externalLink: ''
     },
+    helpDomainId: {
+        desc: 'A valid domain id. CloudStack will generate one for you if empty.',
+        externalLink: ''
+    },
     // Add F5
     helpF5IPAddress: {
         desc: 'The IP address of the device',
@@ -1336,5 +1340,8 @@ cloudStack.docs = {
     },
     helpLdapLinkDomainAdmin: {
         desc: 'domain admin of the linked domain. Specify a username in GROUP/OU of LDAP'
+    },
+    helpSetReservationSystemVms: {
+        desc: 'If enabled, IP range reservation is set for SSVM & CPVM. Global setting "system.vm.public.ip.reservation.mode.strictness" is used to control whether reservation is strict or not (preferred)'
     }
 };

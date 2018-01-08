@@ -61,6 +61,14 @@ public class PodResponse extends BaseResponse {
     @Param(description = "the ending IP for the Pod")
     private List<String> endIp;
 
+    @SerializedName("forsystemvms")
+    @Param(description = "indicates if range is dedicated for CPVM and SSVM")
+    private List<String> forSystemVms;
+
+    @SerializedName("vlanid")
+    @Param(description = "indicates Vlan ID for the range")
+    private List<String> vlanId;
+
     @SerializedName("allocationstate")
     @Param(description = "the allocation state of the Pod")
     private String allocationState;
@@ -131,6 +139,22 @@ public class PodResponse extends BaseResponse {
 
     public void setEndIp(List<String> endIp) {
         this.endIp = endIp;
+    }
+
+    public void setForSystemVms(List<String> forSystemVms) {
+        this.forSystemVms = forSystemVms;
+    }
+
+    public List<String> getForSystemVms() {
+        return forSystemVms;
+    }
+
+    public List<String> getVlanId() {
+        return vlanId;
+    }
+
+    public void setVlanId(List<String> vlanId) {
+        this.vlanId = vlanId;
     }
 
     public String getAllocationState() {

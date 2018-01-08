@@ -49,7 +49,7 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
                     String ipAddr = Script.runSimpleBashScript(new StringBuilder().append("virt-cat ").append(command.getVmName())
                             .append(" /var/lib/dhclient/" + leaseFile + " | tail -16 | grep 'fixed-address' | awk '{print $2}' | sed -e 's/;//'").toString());
                     // Check if the IP belongs to the network
-                    if((ipAddr != null) && NetUtils.isIpWithtInCidrRange(ipAddr, networkCidr)){
+                    if((ipAddr != null) && NetUtils.isIpWithInCidrRange(ipAddr, networkCidr)){
                         ip = ipAddr;
                         break;
                     }
@@ -65,7 +65,7 @@ public final class LibvirtGetVmIpAddressCommandWrapper extends CommandWrapper<Ge
                 String[] ips = ipList.split("\n");
                 for (String ipAddr : ips){
                     // Check if the IP belongs to the network
-                    if((ipAddr != null) && NetUtils.isIpWithtInCidrRange(ipAddr, networkCidr)){
+                    if((ipAddr != null) && NetUtils.isIpWithInCidrRange(ipAddr, networkCidr)){
                         ip = ipAddr;
                         break;
                     }

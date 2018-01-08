@@ -1618,7 +1618,7 @@ public class HypervisorHostHelper {
         }
 
         String host = uri.getHost();
-        if (NetUtils.isValidIp(host)) {
+        if (NetUtils.isValidIp4(host)) {
             s_logger.info("host name in url is already in IP address, url: " + url);
             return url;
         }

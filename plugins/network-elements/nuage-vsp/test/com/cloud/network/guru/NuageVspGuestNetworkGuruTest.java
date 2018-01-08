@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.internal.util.collections.Sets;
+import org.mockito.invocation.InvocationOnMock;
 
 import com.google.common.collect.ImmutableMap;
 
@@ -45,6 +46,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.Domain;
@@ -110,6 +112,7 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
     @Mock private IPAddressDao _ipAddressDao;
     @Mock private NuageVspManager _nuageVspManager;
     @Mock private ConfigurationManager _configurationManager;
+    @Mock private DataCenterDetailsDao _dcDetailsDao;
     @Mock private NetworkDetailsDao _networkDetailsDao;
     @Mock private PhysicalNetworkVO physnet;
 
@@ -138,13 +141,22 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(_hostDao.findById(NETWORK_ID)).thenReturn(host);
         when(host.getId()).thenReturn(NETWORK_ID);
         when(_agentManager.easySend(eq(NETWORK_ID), any(Command.class))).thenReturn(new Answer(null));
-        when(_agentManager.easySend(eq(NETWORK_ID), any(ImplementNetworkVspCommand.class))).thenReturn(new ImplementNetworkVspAnswer(null, new NetworkRelatedVsdIds.Builder().build()));
+        when(_agentManager.easySend(eq(NETWORK_ID), any(ImplementNetworkVspCommand.class))).thenAnswer(this::mockImplement);
         when(_nuageVspManager.getNuageVspHost(NETWORK_ID)).thenReturn(host);
 
         final NuageVspDeviceVO device = mock(NuageVspDeviceVO.class);
         when(_nuageVspDao.listByPhysicalNetwork(NETWORK_ID)).thenReturn(Arrays.asList(device));
         when(device.getId()).thenReturn(1L);
         when(device.getHostId()).thenReturn(NETWORK_ID);
+    }
+
+    Answer mockImplement(InvocationOnMock invocation) {
+        if (invocation.getArguments()[1] instanceof ImplementNetworkVspCommand) {
+            ImplementNetworkVspCommand command = (ImplementNetworkVspCommand)(invocation.getArguments()[1]);
+            return new ImplementNetworkVspAnswer(command, command.getNetwork(), new NetworkRelatedVsdIds.Builder().build());
+        } else {
+            return new Answer(null);
+        }
     }
 
     @Test

@@ -229,6 +229,7 @@ import org.apache.cloudstack.api.command.admin.user.GetUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.user.LockUserCmd;
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
@@ -1685,6 +1686,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
+        final Long domainId = cmd.getDomainId();
         final Long imageStoreId = cmd.getImageStoreId();
         String scope = null;
         Long id = null;
@@ -1703,6 +1705,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (accountId != null) {
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
+            paramCountCheck++;
+        }
+        if (domainId != null) {
+            scope = ConfigKey.Scope.Domain.toString();
+            id = domainId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {
@@ -2672,6 +2679,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(GetUserCmd.class);
         cmdList.add(ListUsersCmd.class);
         cmdList.add(LockUserCmd.class);
+        cmdList.add(MoveUserCmd.class);
         cmdList.add(RegisterCmd.class);
         cmdList.add(UpdateUserCmd.class);
         cmdList.add(CreateVlanIpRangeCmd.class);

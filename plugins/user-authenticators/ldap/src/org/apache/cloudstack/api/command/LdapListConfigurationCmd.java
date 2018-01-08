@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -44,11 +46,14 @@ public class LdapListConfigurationCmd extends BaseListCmd {
     @Inject
     private LdapManager _ldapManager;
 
-    @Parameter(name = "hostname", type = CommandType.STRING, required = false, description = "Hostname")
+    @Parameter(name = ApiConstants. HOST_NAME, type = CommandType.STRING, required = false, description = "Hostname")
     private String hostname;
 
-    @Parameter(name = "port", type = CommandType.INTEGER, required = false, description = "Port")
+    @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, required = false, description = "Port")
     private int port;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
+    private Long domainId;
 
     public LdapListConfigurationCmd() {
         super();
@@ -97,11 +102,19 @@ public class LdapListConfigurationCmd extends BaseListCmd {
         return port;
     }
 
+    public Long getDomainId() {
+        return domainId;
+    }
+
     public void setHostname(final String hostname) {
         this.hostname = hostname;
     }
 
     public void setPort(final int port) {
         this.port = port;
+    }
+
+    public void setDomainId(final Long domainId) {
+        this.domainId = domainId;
     }
 }

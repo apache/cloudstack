@@ -42,6 +42,8 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStoreImpl;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -53,9 +55,11 @@ import com.cloud.storage.StoragePool;
 import com.cloud.storage.StoragePoolStatus;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
@@ -91,13 +95,14 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
     private SnapshotDetailsDao _snapshotDetailsDao;
     @Inject
     private SyncQueueItemDao _syncQueueItemDao;
+    @Inject
+    VolumeDetailsDao _volumeDetailsDaoImpl;
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshot) {
         SnapshotInfo parentSnapshot = snapshot.getParent();
 
         if (parentSnapshot != null && snapshot.getPath().equalsIgnoreCase(parentSnapshot.getPath())) {
-            s_logger.debug("backup an empty snapshot");
             // don't need to backup this snapshot
             SnapshotDataStoreVO parentSnapshotOnBackupStore = snapshotStoreDao.findBySnapshot(parentSnapshot.getId(), DataStoreRole.Image);
             if (parentSnapshotOnBackupStore != null && parentSnapshotOnBackupStore.getState() == State.Ready) {
@@ -254,7 +259,6 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         }
 
         if (snapshotVO.getState() == Snapshot.State.CreatedOnPrimary) {
-            s_logger.debug("delete snapshot on primary storage:");
             snapshotVO.setState(Snapshot.State.Destroyed);
             snapshotDao.update(snapshotId, snapshotVO);
             return true;
@@ -278,6 +282,17 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
         SnapshotObject obj = (SnapshotObject)snapshotOnImage;
         try {
             obj.processEvent(Snapshot.Event.DestroyRequested);
+            List<VolumeDetailVO> volumesFromSnapshot;
+            volumesFromSnapshot = _volumeDetailsDaoImpl.findDetails("SNAPSHOT_ID", String.valueOf(snapshotId), null);
+
+            if (volumesFromSnapshot.size() > 0) {
+                try {
+                    obj.processEvent(Snapshot.Event.OperationFailed);
+                } catch (NoTransitionException e1) {
+                    s_logger.debug("Failed to change snapshot state: " + e1.toString());
+                }
+                throw new InvalidParameterValueException("Unable to perform delete operation, Snapshot with id: " + snapshotId + " is in use  ");
+            }
         } catch (NoTransitionException e) {
             s_logger.debug("Failed to set the state to destroying: ", e);
             return false;
@@ -428,6 +443,8 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
                                 SnapshotDataStoreVO snapshotDataStoreVO = snapshotStoreDao.findByStoreSnapshot(primaryStore.getRole(), primaryStore.getId(), parentSnapshotId);
                                 if (snapshotDataStoreVO != null) {
                                     parentSnapshotId = snapshotDataStoreVO.getParentSnapshotId();
+                                    UsageEventUtils.publishUsageEvent(EventTypes.EVENT_SNAPSHOT_OFF_PRIMARY, parent.getAccountId(), parent.getDataCenterId(), parent.getId(),
+                                            parent.getName(), null, null, 0L, 0L, parent.getClass().getName(), parent.getUuid());
                                     snapshotStoreDao.remove(snapshotDataStoreVO.getId());
                                 } else {
                                     parentSnapshotId = null;

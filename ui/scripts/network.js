@@ -657,7 +657,9 @@
                                             }
                                         }
                                     },
-
+                                    externalId: {
+                                        label: 'label.guest.externalId'
+                                    },
                                     guestGateway: {
                                         label: 'label.guest.gateway',
                                         docID: 'helpGuestNetworkGateway'
@@ -744,9 +746,14 @@
                                         gateway: args.data.guestGateway
                                     });
                                 }
-                                if (args.data.guestNetmask != null && args.data.guestNetmask.length > 0) {
+                                if (args.data.guestGateway != null && args.data.guestGateway.length > 0) {
                                     $.extend(dataObj, {
-                                        netmask: args.data.guestNetmask
+                                        gateway: args.data.guestGateway
+                                    });
+                                }
+                                if (args.data.externalId != null && args.data.externalId.length > 0) {
+                                    $.extend(dataObj, {
+                                        externalid: args.data.externalId
                                     });
                                 }
                                 if (args.$form.find('.form-item[rel=vpcid]').css("display") != "none") {

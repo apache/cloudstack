@@ -20,11 +20,15 @@
 package com.cloud.agent.api.element;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import org.apache.commons.lang.builder.HashCodeBuilder;
 
 import com.cloud.agent.api.Command;
+import com.cloud.network.manager.NuageVspManager;
+
+import net.nuage.vsp.acs.client.api.model.NetworkRelatedVsdIds;
 
 public class ShutDownVpcVspCommand extends Command {
 
@@ -32,13 +36,19 @@ public class ShutDownVpcVspCommand extends Command {
     private final String _vpcUuid;
     private final String _domainTemplateName;
     private final List<String> _domainRouterUuids;
+    private final NetworkRelatedVsdIds _relatedVsdIds;
 
-    public ShutDownVpcVspCommand(String domainUuid, String vpcUuid, String domainTemplateName, List<String> domainRouterUuids) {
+    public ShutDownVpcVspCommand(String domainUuid, String vpcUuid, String domainTemplateName, List<String> domainRouterUuids, Map<String, String> details) {
         super();
         this._domainUuid = domainUuid;
         this._vpcUuid = vpcUuid;
         this._domainTemplateName = domainTemplateName;
         this._domainRouterUuids = domainRouterUuids;
+        this._relatedVsdIds = new NetworkRelatedVsdIds.Builder()
+                .vsdDomainId(details.get(NuageVspManager.NETWORK_METADATA_VSD_DOMAIN_ID))
+                .vsdZoneId(details.get(NuageVspManager.NETWORK_METADATA_VSD_ZONE_ID))
+                .withVsdManaged(details.get(NuageVspManager.NETWORK_METADATA_VSD_MANAGED) != null && details.get(NuageVspManager.NETWORK_METADATA_VSD_MANAGED).equals("true"))
+                .build();
     }
 
     public String getDomainUuid() {
@@ -55,6 +65,10 @@ public class ShutDownVpcVspCommand extends Command {
 
     public List<String> getDomainRouterUuids() {
         return _domainRouterUuids;
+    }
+
+    public NetworkRelatedVsdIds getRelatedVsdIds() {
+        return _relatedVsdIds;
     }
 
     @Override

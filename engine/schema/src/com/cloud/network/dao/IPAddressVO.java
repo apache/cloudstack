@@ -122,6 +122,9 @@ public class IPAddressVO implements IpAddress {
     @Column(name = "rule_state")
     State ruleState;
 
+    @Column(name = "forsystemvms")
+    private boolean forSystemVms = false;
+
     @Column(name= GenericDao.REMOVED_COLUMN)
     private Date removed;
 
@@ -381,5 +384,9 @@ public class IPAddressVO implements IpAddress {
     @Override
     public void setRuleState(State ruleState) {
         this.ruleState = ruleState;
+    }
+
+    public boolean isForSystemVms() {
+        return forSystemVms;
     }
 }

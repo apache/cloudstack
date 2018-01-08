@@ -1488,6 +1488,8 @@ var dictionary = {
     "label.services": "Diensten",
     "label.session.expired": "Sessie Verlopen",
     "label.set.default.NIC": "Stel standaard NIC in",
+    "label.set.reservation": "Set reservation",
+    "label.set.reservation.desc": "(optional) Please specify an account to be associated with this IP range.<br/><br/>System VMs: Enable dedication of public IP range for SSVM and CPVM, account field disabled. Reservation strictness defined on 'system.vm.public.ip.reservation.mode.strictness'",
     "label.set.up.zone.type": "Stel zone type in",
     "label.settings": "Instellingen",
     "label.setup": "Instellen",

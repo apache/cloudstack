@@ -267,6 +267,19 @@ class User:
         cmd.id = self.id
         apiclient.deleteUser(cmd)
 
+    def move(self, api_client, dest_accountid = None, dest_account = None, domain= None):
+
+        if all([dest_account, dest_accountid]) is None:
+            raise Exception("Please add either destination account or destination account ID.")
+
+        cmd = moveUser.moveUserCmd()
+        cmd.id = self.id
+        cmd.accountid = dest_accountid
+        cmd.account = dest_account
+        cmd.domain = domain
+
+        return api_client.moveUser(cmd)
+
     @classmethod
     def list(cls, apiclient, **kwargs):
         """Lists users and provides detailed account information for
@@ -986,7 +999,7 @@ class Volume:
         cmd.zoneid = services["zoneid"]
         if "size" in services:
             cmd.size = services["size"]
-        if services["ispublic"]:
+        if "ispublic" in services:
             cmd.ispublic = services["ispublic"]
         else:
             cmd.ispublic = False
@@ -2910,7 +2923,8 @@ class Network:
     def create(cls, apiclient, services, accountid=None, domainid=None,
                networkofferingid=None, projectid=None,
                subdomainaccess=None, zoneid=None,
-               gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None):
+               gateway=None, netmask=None, vpcid=None, aclid=None, vlan=None,
+               externalid=None):
         """Create Network for account"""
         cmd = createNetwork.createNetworkCmd()
         cmd.name = services["name"]
@@ -2958,6 +2972,8 @@ class Network:
             cmd.vpcid = vpcid
         if aclid:
             cmd.aclid = aclid
+        if externalid:
+            cmd.externalid = externalid
         return Network(apiclient.createNetwork(cmd).__dict__)
 
     def delete(self, apiclient):
@@ -3367,7 +3383,7 @@ class PublicIpRange:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, account=None, domainid=None):
+    def create(cls, apiclient, services, account=None, domainid=None, forsystemvms=None):
         """Create VlanIpRange"""
 
         cmd = createVlanIpRange.createVlanIpRangeCmd()
@@ -3385,6 +3401,8 @@ class PublicIpRange:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
+        if forsystemvms:
+            cmd.forsystemvms = forsystemvms
 
         return PublicIpRange(apiclient.createVlanIpRange(cmd).__dict__)
 

@@ -20,6 +20,7 @@ import java.util.List;
 
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.utils.Pair;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;
 
 public interface DedicatedResourceDao extends GenericDao<DedicatedResourceVO, Long> {
@@ -32,13 +33,13 @@ public interface DedicatedResourceDao extends GenericDao<DedicatedResourceVO, Lo
 
     DedicatedResourceVO findByHostId(Long hostId);
 
-    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedHosts(Long hostId, Long domainId, Long accountId, Long affinityGroupId);
+    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedHosts(Long hostId, Long domainId, Long accountId, Long affinityGroupId, Filter filter);
 
-    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedClusters(Long clusterId, Long domainId, Long accountId, Long affinityGroupId);
+    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedClusters(Long clusterId, Long domainId, Long accountId, Long affinityGroupId, Filter filter);
 
-    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedPods(Long podId, Long domainId, Long accountId, Long affinityGroupId);
+    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedPods(Long podId, Long domainId, Long accountId, Long affinityGroupId, Filter filter);
 
-    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedZones(Long dataCenterId, Long domainId, Long accountId, Long affinityGroupId);
+    Pair<List<DedicatedResourceVO>, Integer> searchDedicatedZones(Long dataCenterId, Long domainId, Long accountId, Long affinityGroupId, Filter filter);
 
     List<DedicatedResourceVO> listByAccountId(Long accountId);
 

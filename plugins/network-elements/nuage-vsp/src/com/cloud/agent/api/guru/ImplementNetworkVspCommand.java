@@ -33,11 +33,13 @@ public class ImplementNetworkVspCommand extends Command {
 
     private final VspNetwork _network;
     private final VspDhcpDomainOption _dhcpOption;
+    private final boolean _isVsdManaged;
 
-    public ImplementNetworkVspCommand(VspNetwork network, VspDhcpDomainOption dhcpOption) {
+    public ImplementNetworkVspCommand(VspNetwork network, VspDhcpDomainOption dhcpOption, boolean isVsdManaged) {
         super();
         this._network = network;
         this._dhcpOption = dhcpOption;
+        this._isVsdManaged = isVsdManaged;
     }
 
     public VspNetwork getNetwork() {
@@ -84,5 +86,9 @@ public class ImplementNetworkVspCommand extends Command {
                 .append("network", _network)
                 .append("dhcpOption", _dhcpOption)
                 .toString();
+    }
+
+    public boolean isVsdManaged() {
+        return _isVsdManaged;
     }
 }

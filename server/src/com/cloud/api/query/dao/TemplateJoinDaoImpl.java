@@ -186,7 +186,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
         // set details map
         if (template.getDetailName() != null) {
-            Map<String, String> details = new HashMap<String, String>();
+            Map<String, String> details = new HashMap<>();
             details.put(template.getDetailName(), template.getDetailValue());
             templateResponse.setDetails(details);
         }
@@ -216,6 +216,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         response.setOsTypeName(result.getGuestOSName());
         response.setBootable(result.isBootable());
         response.setHypervisor(result.getHypervisorType().toString());
+        response.setDynamicallyScalable(result.isDynamicallyScalable());
 
         // populate owner.
         ApiResponseHelper.populateOwner(response, result);
@@ -226,7 +227,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
 
         // set details map
         if (result.getDetailName() != null) {
-            Map<String, String> details = new HashMap<String, String>();
+            Map<String, String> details = new HashMap<>();
             details.put(result.getDetailName(), result.getDetailValue());
             response.setDetails(details);
         }
@@ -251,7 +252,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         if (template.getDetailName() != null) {
             Map<String, String> details = templateResponse.getDetails();
             if (details == null) {
-                details = new HashMap<String, String>();
+                details = new HashMap<>();
             }
             details.put(template.getDetailName(), template.getDetailValue());
             templateResponse.setDetails(details);

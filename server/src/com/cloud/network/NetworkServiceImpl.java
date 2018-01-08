@@ -103,6 +103,7 @@ import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.LoadBalancerDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkDetailVO;
 import com.cloud.network.dao.NetworkDetailsDao;
@@ -192,7 +193,6 @@ import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.network.dao.LoadBalancerDao;
 
 /**
  * NetworkServiceImpl implements NetworkService.
@@ -1031,6 +1031,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         Boolean displayNetwork = cmd.getDisplayNetwork();
         Long aclId = cmd.getAclId();
         String isolatedPvlan = cmd.getIsolatedPvlan();
+        String externalId = cmd.getExternalId();
 
         // Validate network offering
         NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
@@ -1168,12 +1169,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         if (ipv4) {
             // if end ip is not specified, default it to startIp
             if (startIP != null) {
-                if (!NetUtils.isValidIp(startIP)) {
+                if (!NetUtils.isValidIp4(startIP)) {
                     throw new InvalidParameterValueException("Invalid format for the startIp parameter");
                 }
                 if (endIP == null) {
                     endIP = startIP;
-                } else if (!NetUtils.isValidIp(endIP)) {
+                } else if (!NetUtils.isValidIp4(endIP)) {
                     throw new InvalidParameterValueException("Invalid format for the endIp parameter");
                 }
             }
@@ -1192,10 +1193,10 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     throw new InvalidParameterValueException("Invalid gateway IP provided. Either the IP is broadcast or network IP.");
                 }
 
-                if (!NetUtils.isValidIp(gateway)) {
+                if (!NetUtils.isValidIp4(gateway)) {
                     throw new InvalidParameterValueException("Invalid gateway");
                 }
-                if (!NetUtils.isValidNetmask(netmask)) {
+                if (!NetUtils.isValidIp4Netmask(netmask)) {
                     throw new InvalidParameterValueException("Invalid netmask");
                 }
 
@@ -1292,7 +1293,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zoneId, domainId,
                 isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, isolatedPvlan, ntwkOff, pNtwk, aclType, owner, cidr,
-                createVlan);
+                createVlan, externalId);
 
         // if the network offering has persistent set to true, implement the network
         if (ntwkOff.getIsPersistent()) {
@@ -1325,7 +1326,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                                   final String vlanId, final Boolean bypassVlanOverlapCheck, final String name, final String displayText, final Account caller, final Long physicalNetworkId, final Long zoneId, final Long domainId,
                                   final boolean isDomainSpecific, final Boolean subdomainAccessFinal, final Long vpcId, final String startIPv6, final String endIPv6, final String ip6Gateway,
                                   final String ip6Cidr, final Boolean displayNetwork, final Long aclId, final String isolatedPvlan, final NetworkOfferingVO ntwkOff, final PhysicalNetwork pNtwk,
-                                  final ACLType aclType, final Account ownerFinal, final String cidr, final boolean createVlan) throws InsufficientCapacityException, ResourceAllocationException {
+                                  final ACLType aclType, final Account ownerFinal, final String cidr, final boolean createVlan, final String externalId) throws InsufficientCapacityException, ResourceAllocationException {
         try {
             Network network = Transaction.execute(new TransactionCallbackWithException<Network, Exception>() {
                 @Override
@@ -1370,7 +1371,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                             }
                         }
                         network = _vpcMgr.createVpcGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, networkDomain, owner, sharedDomainId, pNtwk, zoneId,
-                                aclType, subdomainAccess, vpcId, aclId, caller, displayNetwork);
+                                aclType, subdomainAccess, vpcId, aclId, caller, displayNetwork, externalId);
                     } else {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
                             throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
@@ -1380,12 +1381,12 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         }
 
                         network = _networkMgr.createGuestNetwork(networkOfferingId, name, displayText, gateway, cidr, vlanId, bypassVlanOverlapCheck, networkDomain, owner, sharedDomainId, pNtwk, zoneId,
-                                aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan);
+                                aclType, subdomainAccess, vpcId, ip6Gateway, ip6Cidr, displayNetwork, isolatedPvlan, externalId);
                     }
 
                     if (_accountMgr.isRootAdmin(caller.getId()) && createVlan && network != null) {
                         // Create vlan ip range
-                        _configMgr.createVlanAndPublicIpRange(pNtwk.getDataCenterId(), network.getId(), physicalNetworkId, false, null, startIP, endIP, gateway, netmask, vlanId,
+                        _configMgr.createVlanAndPublicIpRange(pNtwk.getDataCenterId(), network.getId(), physicalNetworkId, false, false, null, startIP, endIP, gateway, netmask, vlanId,
                                 bypassVlanOverlapCheck, null, null, startIPv6, endIPv6, ip6Gateway, ip6Cidr);
                     }
                     return network;
@@ -2128,7 +2129,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 throw new InvalidParameterValueException("The network must be in " + Network.State.Implemented + " state. IP Reservation cannot be applied in "
                         + network.getState() + " state");
             }
-            if (!NetUtils.isValidCIDR(guestVmCidr)) {
+            if (!NetUtils.isValidIp4Cidr(guestVmCidr)) {
                 throw new InvalidParameterValueException("Invalid format of Guest VM CIDR.");
             }
             if (!NetUtils.validateGuestCidr(guestVmCidr)) {
@@ -4295,19 +4296,19 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         // VALIDATE IP INFO
         // if end ip is not specified, default it to startIp
-        if (!NetUtils.isValidIp(startIp)) {
+        if (!NetUtils.isValidIp4(startIp)) {
             throw new InvalidParameterValueException("Invalid format for the ip address parameter");
         }
         if (endIp == null) {
             endIp = startIp;
-        } else if (!NetUtils.isValidIp(endIp)) {
+        } else if (!NetUtils.isValidIp4(endIp)) {
             throw new InvalidParameterValueException("Invalid format for the endIp address parameter");
         }
 
-        if (!NetUtils.isValidIp(gateway)) {
+        if (!NetUtils.isValidIp4(gateway)) {
             throw new InvalidParameterValueException("Invalid gateway");
         }
-        if (!NetUtils.isValidNetmask(netmask)) {
+        if (!NetUtils.isValidIp4Netmask(netmask)) {
             throw new InvalidParameterValueException("Invalid netmask");
         }
 
@@ -4335,7 +4336,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     if (privateNetwork == null) {
                         //create Guest network
                         privateNetwork = _networkMgr.createGuestNetwork(ntwkOffFinal.getId(), networkName, displayText, gateway, cidr, uriString, false, null, owner, null, pNtwk,
-                                pNtwk.getDataCenterId(), ACLType.Account, null, vpcId, null, null, true, null);
+                                                                        pNtwk.getDataCenterId(), ACLType.Account, null, vpcId, null, null, true, null, null);
                         if (privateNetwork != null) {
                             s_logger.debug("Successfully created guest network " + privateNetwork);
                         } else {

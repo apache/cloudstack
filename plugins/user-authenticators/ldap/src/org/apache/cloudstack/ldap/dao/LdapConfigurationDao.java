@@ -23,8 +23,19 @@ import org.apache.cloudstack.ldap.LdapConfigurationVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 
+/**
+ * TODO the domain value null now searches for that specifically and there is no way to search for all domains
+ */
 public interface LdapConfigurationDao extends GenericDao<LdapConfigurationVO, Long> {
+    /**
+     * @deprecated there might well be more then one ldap implementation on a host and or a double binding of several domains
+     * @param hostname
+     * @return
+     */
+    @Deprecated
     LdapConfigurationVO findByHostname(String hostname);
 
-    Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(String hostname, int port);
+    LdapConfigurationVO find(String hostname, int port, Long domainId);
+
+    Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(String hostname, int port, Long domainId);
 }

@@ -540,6 +540,7 @@ class TestTemplates(cloudstackTestCase):
         cls.services["template"]["ostypeid"] = template.ostypeid
         cls.services["template_2"]["ostypeid"] = template.ostypeid
         cls.services["ostypeid"] = template.ostypeid
+        cls.services["isdynamicallyscalable"] = template.isdynamicallyscalable
         cls.account = Account.create(
                             cls.apiclient,
                             cls.services["account"],
@@ -712,6 +713,11 @@ class TestTemplates(cloudstackTestCase):
                             template_response.ostypeid,
                             self.services["ostypeid"],
                             "Check OSTypeID of updated template"
+                        )
+        self.assertEqual(
+                            template_response.isdynamicallyscalable,
+                            self.services["isdynamicallyscalable"],
+                            "Check isdynamicallyscalable of updated template"
                         )
         return
 

@@ -19,53 +19,24 @@ package groovy.org.apache.cloudstack.ldap
 import org.apache.cloudstack.framework.config.ConfigKey
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import com.cloud.utils.Pair
-import org.apache.cloudstack.api.ServerApiException
 import org.apache.cloudstack.framework.config.impl.ConfigDepotImpl
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO
 import org.apache.cloudstack.ldap.LdapConfiguration
 import org.apache.cloudstack.ldap.LdapConfigurationVO
-import org.apache.cloudstack.ldap.LdapManager
 import org.apache.cloudstack.ldap.LdapUserManager
 import org.apache.cloudstack.ldap.dao.LdapConfigurationDao
-import org.apache.cxf.common.util.StringUtils
 
 import javax.naming.directory.SearchControls
 
 class LdapConfigurationSpec extends spock.lang.Specification {
     def "Test that getAuthentication returns none"() {
         given: "We have a ConfigDao, LdapManager and LdapConfiguration"
-        def configDao = Mock(ConfigurationDao)
         def ldapConfigurationDao = Mock(LdapConfigurationDao)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
+        def ldapConfiguration = new LdapConfiguration(ldapConfigurationDao)
         when: "Get authentication is called"
         String authentication = ldapConfiguration.getAuthentication()
         then: "none should be returned"
         authentication == "none"
-    }
-
-    def "Test that getAuthentication returns simple"() {
-        given: "We have a configDao, LdapManager and LdapConfiguration with bind principle and password set"
-        def configDao = Mock(ConfigurationDao)
-        def ldapConfigurationDao = Mock(LdapConfigurationDao)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
-        configDao.getValue("ldap.bind.password") >> "password"
-        configDao.getValue("ldap.bind.principal") >> "cn=rmurphy,dc=cloudstack,dc=org"
-        when: "Get authentication is called"
-        String authentication = ldapConfiguration.getAuthentication()
-        then: "authentication should be set to simple"
-        authentication == "simple"
-    }
-
-    def "Test that getBaseDn returns dc=cloudstack,dc=org"() {
-        given: "We have a ConfigDao, LdapManager and ldapConfiguration with a baseDn value set."
-        def configDao = Mock(ConfigurationDao)
-        configDao.getValue("ldap.basedn") >> "dc=cloudstack,dc=org"
-        def ldapConfigurationDao = Mock(LdapConfigurationDao)
-        def ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
-        when: "Get basedn is called"
-        String baseDn = ldapConfiguration.getBaseDn();
-        then: "The set baseDn should be returned"
-        baseDn == "dc=cloudstack,dc=org"
     }
 
     def "Test that getEmailAttribute returns mail"() {
@@ -178,85 +149,10 @@ class LdapConfigurationSpec extends spock.lang.Specification {
         LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
 
         when: "A request is made to get the providerUrl"
-        String providerUrl = ldapConfiguration.getProviderUrl()
+        String providerUrl = ldapConfiguration.getProviderUrl(_)
 
         then: "The providerUrl should be given."
         providerUrl == "ldap://localhost:389"
-    }
-
-    def "Test that get search group principle returns successfully"() {
-        given: "We have a ConfigDao with a value for ldap.search.group.principle and an LdapConfiguration"
-        def configDao = Mock(ConfigurationDao)
-        configDao.getValue("ldap.search.group.principle") >> "cn=cloudstack,cn=users,dc=cloudstack,dc=org"
-        def ldapConfigurationDao = Mock(LdapConfigurationDao)
-        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
-
-        when: "A request is made to get the search group principle"
-        String result = ldapConfiguration.getSearchGroupPrinciple();
-
-        then: "The result holds the same value configDao did"
-        result == "cn=cloudstack,cn=users,dc=cloudstack,dc=org"
-    }
-
-    def "Test that getTrustStorePassword resopnds"() {
-        given: "We have a ConfigDao with a value for truststore password"
-        def configDao = Mock(ConfigurationDao)
-        configDao.getValue("ldap.truststore.password") >> "password"
-        def ldapConfigurationDao = Mock(LdapConfigurationDao)
-        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
-
-        when: "A request is made to get the truststore password"
-        String result = ldapConfiguration.getTrustStorePassword()
-
-        then: "The result is password"
-        result == "password";
-    }
-
-    def "Test that getSSLStatus can be true"() {
-        given: "We have a ConfigDao with values for truststore and truststore password set"
-        def configDao = Mock(ConfigurationDao)
-        configDao.getValue("ldap.truststore") >> "/tmp/ldap.ts"
-        configDao.getValue("ldap.truststore.password") >> "password"
-        def ldapConfigurationDao = Mock(LdapConfigurationDao)
-        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
-
-        when: "A request is made to get the status of SSL"
-        boolean result = ldapConfiguration.getSSLStatus();
-
-        then: "The response should be true"
-        result == true
-    }
-
-    def "Test getgroupobject"() {
-        given: "We have configdao for ldap group object"
-        def configDao = Mock(ConfigurationDao)
-        configDao.getValue("ldap.group.object") >> groupObject
-
-        def ldapConfigurationDao = Mock(LdapConfigurationDao)
-        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
-        def expectedResult = groupObject == null ? "groupOfUniqueNames" : groupObject
-
-        def result = ldapConfiguration.getGroupObject()
-        expect:
-        result == expectedResult
-        where:
-        groupObject << [null, "", "groupOfUniqueNames"]
-    }
-
-    def "Test getGroupUniqueMemeberAttribute"() {
-        given: "We have configdao for ldap group object"
-        def configDao = Mock(ConfigurationDao)
-        configDao.getValue("ldap.group.user.uniquemember") >> groupObject
-
-        def ldapConfigurationDao = Mock(LdapConfigurationDao)
-        LdapConfiguration ldapConfiguration = new LdapConfiguration(configDao, ldapConfigurationDao)
-        def expectedResult = groupObject == null ? "uniquemember" : groupObject
-
-        def result = ldapConfiguration.getGroupUniqueMemeberAttribute()
-        expect:
-        result == expectedResult
-        where:
-        groupObject << [null, "", "uniquemember"]
     }
 
     def "Test getReadTimeout"() {
@@ -275,7 +171,7 @@ class LdapConfigurationSpec extends spock.lang.Specification {
 
         def expected = timeout == null ? 1000 : timeout.toLong() //1000 is the default value
 
-        def result = ldapConfiguration.getReadTimeout()
+        def result = ldapConfiguration.getReadTimeout(null)
         expect:
         result == expected
         where:
@@ -298,7 +194,7 @@ class LdapConfigurationSpec extends spock.lang.Specification {
 
         def expected = provider.equalsIgnoreCase("microsoftad") ? LdapUserManager.Provider.MICROSOFTAD : LdapUserManager.Provider.OPENLDAP //"openldap" is the default value
 
-        def result = ldapConfiguration.getLdapProvider()
+        def result = ldapConfiguration.getLdapProvider(null)
         expect:
         println "asserting for provider configuration: " + provider
         result == expected

@@ -611,7 +611,7 @@ public class SecurityGroupManagerImpl extends ManagerBase implements SecurityGro
 
         if (cidrList != null) {
             for (String cidr : cidrList) {
-                if (!NetUtils.isValidCIDR(cidr)) {
+                if (!NetUtils.isValidIp4Cidr(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
                     throw new InvalidParameterValueException("Invalid cidr " + cidr);
                 }
             }

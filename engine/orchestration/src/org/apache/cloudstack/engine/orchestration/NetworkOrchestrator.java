@@ -38,7 +38,8 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.vm.NicExtraDhcpOptionVO;
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
@@ -53,7 +54,7 @@ import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.PortableIpDao;
-import org.apache.log4j.Logger;
+
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -204,6 +205,7 @@ import com.cloud.vm.DomainRouterVO;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
+import com.cloud.vm.NicExtraDhcpOptionVO;
 import com.cloud.vm.NicIpAlias;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
@@ -700,7 +702,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     public void doInTransactionWithoutResult(final TransactionStatus status) {
                         final NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), relatedFile, name, displayText, predefined
                                 .getNetworkDomain(), offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges(),
-                                vpcId, offering.getRedundantRouter());
+                                vpcId, offering.getRedundantRouter(), predefined.getExternalId());
                         vo.setDisplayNetwork(isDisplayNetworkEnabled == null ? true : isDisplayNetworkEnabled);
                         vo.setStrechedL2Network(offering.getSupportsStrechedL2());
                         final NetworkVO networkPersisted = _networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
@@ -2083,7 +2085,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public Network createGuestNetwork(final long networkOfferingId, final String name, final String displayText, final String gateway, final String cidr, String vlanId,
                                       boolean bypassVlanOverlapCheck, String networkDomain, final Account owner, final Long domainId, final PhysicalNetwork pNtwk,
                                       final long zoneId, final ACLType aclType, Boolean subdomainAccess, final Long vpcId, final String ip6Gateway, final String ip6Cidr,
-                                      final Boolean isDisplayNetworkEnabled, final String isolatedPvlan) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
+                                      final Boolean isDisplayNetworkEnabled, final String isolatedPvlan, String externalId) throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException {
 
         final NetworkOfferingVO ntwkOff = _networkOfferingDao.findById(networkOfferingId);
         // this method supports only guest network creation
@@ -2333,14 +2335,17 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     userNetwork.setIp6Gateway(ip6Gateway);
                 }
 
+                if (externalId != null) {
+                    userNetwork.setExternalId(externalId);
+                }
+
                 if (vlanIdFinal != null) {
                     if (isolatedPvlan == null) {
                         URI uri = null;
                         if (UuidUtils.validateUUID(vlanIdFinal)){
                             //Logical router's UUID provided as VLAN_ID
                             userNetwork.setVlanIdAsUUID(vlanIdFinal); //Set transient field
-                        }
-                        else {
+                        } else {
                             uri = BroadcastDomainType.fromString(vlanIdFinal);
                         }
                         userNetwork.setBroadcastUri(uri);

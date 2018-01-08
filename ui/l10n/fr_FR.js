@@ -1488,6 +1488,8 @@ var dictionary = {
     "label.services": "Services",
     "label.session.expired": "Session expirée",
     "label.set.default.NIC": "Définir NIC par défaut",
+    "label.set.reservation": "Set reservation",
+    "label.set.reservation.desc": "(optional) Please specify an account to be associated with this IP range.<br/><br/>System VMs: Enable dedication of public IP range for SSVM and CPVM, account field disabled. Reservation strictness defined on 'system.vm.public.ip.reservation.mode.strictness'",
     "label.set.up.zone.type": "Configurer le type de zone",
     "label.settings": "Paramètres",
     "label.setup": "Configuration",

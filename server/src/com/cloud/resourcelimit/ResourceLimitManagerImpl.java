@@ -410,6 +410,17 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
         return max;
     }
 
+    public long findDefaultResourceLimitForDomain(ResourceType resourceType) {
+        Long resourceLimit = null;
+        resourceLimit = domainResourceLimitMap.get(resourceType);
+        if (resourceLimit != null && (resourceType == ResourceType.primary_storage || resourceType == ResourceType.secondary_storage)) {
+                resourceLimit = resourceLimit * ResourceType.bytesToGiB;
+        } else {
+            resourceLimit = Long.valueOf(Resource.RESOURCE_UNLIMITED);
+        }
+        return resourceLimit;
+    }
+
     @Override
     @DB
     public void checkResourceLimit(final Account account, final ResourceType type, long... count) throws ResourceAllocationException {
@@ -477,7 +488,7 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     @Override
-    public List<ResourceLimitVO> searchForLimits(Long id, Long accountId, Long domainId, Integer type, Long startIndex, Long pageSizeVal) {
+    public List<ResourceLimitVO> searchForLimits(Long id, Long accountId, Long domainId, ResourceType resourceType, Long startIndex, Long pageSizeVal) {
         Account caller = CallContext.current().getCallingAccount();
         List<ResourceLimitVO> limits = new ArrayList<ResourceLimitVO>();
         boolean isAccount = true;
@@ -507,16 +518,6 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
                     _accountMgr.checkAccess(caller, null, true, account);
                     domainId = null;
                 }
-            }
-        }
-
-        // Map resource type
-        ResourceType resourceType = null;
-        if (type != null) {
-            try {
-                resourceType = ResourceType.values()[type];
-            } catch (ArrayIndexOutOfBoundsException e) {
-                throw new InvalidParameterValueException("Please specify a valid resource type.");
             }
         }
 

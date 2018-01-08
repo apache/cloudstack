@@ -165,6 +165,7 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to register template: %s" % e)
 
+        time.sleep(120)
         templates = Template.list(apiclient,
                                       templatefilter=\
                                       self.services["template_2"]["templatefilter"],
@@ -243,6 +244,7 @@ class TestSecondaryStorageLimits(cloudstackTestCase):
         except Exception as e:
             self.fail("Failed to create template: %s" % e)
 
+        time.sleep(120)
         templates = Template.list(apiclient,
                                   templatefilter=\
                                   self.services["template_2"]["templatefilter"],

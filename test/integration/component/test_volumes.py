@@ -21,7 +21,8 @@ from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (listHypervisorCapabilities,
                                   attachIso,
-                                  deleteVolume)
+                                  deleteVolume
+                                  )
 from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.base import (Account,
                              ServiceOffering,
@@ -37,68 +38,11 @@ from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
                                get_pod,
-                               find_storage_pool_type)
+                               find_storage_pool_type,
+                               update_resource_limit)
 from marvin.codes import PASS
 # Import System modules
 import time
-
-
-class Services:
-
-    """Test Volume Services
-    """
-
-    def __init__(self):
-        self.services = {
-            "account": {
-                "email": "test@test.com",
-                "firstname": "Test",
-                "lastname": "User",
-                "username": "test",
-                # Random characters are appended for unique
-                # username
-                "password": "password",
-            },
-            "service_offering": {
-                "name": "Tiny Instance",
-                "displaytext": "Tiny Instance",
-                "cpunumber": 1,
-                "cpuspeed": 100,    # in MHz
-                                    "memory": 128,       # In MBs
-            },
-            "disk_offering": {
-                "displaytext": "Small",
-                "name": "Small",
-                "disksize": 1
-            },
-            "volume": {
-                "diskname": "TestDiskServ",
-            },
-            "virtual_machine": {
-                "displayname": "testVM",
-                "hypervisor": 'XenServer',
-                "protocol": 'TCP',
-                "ssh_port": 22,
-                "username": "root",
-                "password": "password",
-                "privateport": 22,
-                "publicport": 22,
-            },
-            "iso":  # ISO settings for Attach/Detach ISO tests
-            {
-                "displaytext": "Test ISO",
-                "name": "testISO",
-                "url": "http://people.apache.org/~tsp/dummy.iso",
-                # Source URL where ISO is located
-                "ostype": 'CentOS 5.3 (64-bit)',
-            },
-            "custom_volume": {
-                "customdisksize": 2,
-                "diskname": "Custom disk",
-            },
-            "sleep": 50,
-            "ostype": 'CentOS 5.3 (64-bit)',
-        }
 
 
 class TestAttachVolume(cloudstackTestCase):
@@ -107,13 +51,13 @@ class TestAttachVolume(cloudstackTestCase):
     def setUpClass(cls):
         cls.testClient = super(TestAttachVolume, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
 
-        cls.services = Services().services
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.pod = get_pod(cls.api_client, cls.zone.id)
-        cls.services['mode'] = cls.zone.networktype
+        cls.testdata['mode'] = cls.zone.networktype
         cls._cleanup = []
         cls.unsupportedStorageType = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
@@ -123,17 +67,14 @@ class TestAttachVolume(cloudstackTestCase):
                 return
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
-            cls.services["disk_offering"]
+            cls.testdata["disk_offering"]
         )
         cls._cleanup.append(cls.disk_offering)
-        template = get_template(
+        cls.template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
-        cls.services["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = template.id
         # get max data volumes limit based on the hypervisor type and version
         listHost = Host.list(
             cls.api_client,
@@ -151,27 +92,43 @@ class TestAttachVolume(cloudstackTestCase):
             if res[i].hypervisorversion == ver:
                 break
         cls.max_data_volumes = int(res[i].maxdatavolumeslimit)
+        if 'kvm' in cls.hypervisor:
+            cls.max_data_volumes = 24
         cls.debug('max data volumes:{}'.format(cls.max_data_volumes))
-        cls.services["volume"]["max"] = cls.max_data_volumes
+        cls.testdata["volume"]["max"] = cls.max_data_volumes
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
             cls.api_client,
-            cls.services["account"],
+            cls.testdata["account"],
             domainid=cls.domain.id
         )
+        update_resource_limit(
+                              cls.api_client,
+                              2, # Instance
+                              account=cls.account.name,
+                              domainid=cls.account.domainid,
+                              max=cls.max_data_volumes + 1
+                              )
+
         cls._cleanup.append(cls.account)
+
+        cls.debug('max data volumes:{}'.format(cls.max_data_volumes))
+        #cls.services["volume"]["max"] = cls.max_data_volumes
+        # Create VMs, NAT Rules etc
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
-            cls.services["service_offering"]
+            cls.testdata["service_offering"]
         )
         cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
-            cls.services["virtual_machine"],
+            cls.testdata["virtual_machine"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id,
+            templateid=cls.template.id,
+            zoneid=cls.zone.id
         )
 
     def setUp(self):
@@ -213,11 +170,137 @@ class TestAttachVolume(cloudstackTestCase):
         # 5. Start The VM. Start VM should be successful
 
         # Create 5 volumes and attach to VM
-        try:
+
+        for i in range(self.max_data_volumes):
+            volume = Volume.create(
+                self.apiclient,
+                self.testdata["volume"],
+                zoneid=self.zone.id,
+                account=self.account.name,
+                domainid=self.account.domainid,
+                diskofferingid=self.disk_offering.id
+            )
+            # Check List Volume response for newly created volume
+            list_volume_response = Volume.list(
+                self.apiclient,
+                id=volume.id
+            )
+            self.assertNotEqual(
+                list_volume_response,
+                None,
+                "Check if volume exists in ListVolumes"
+            )
+            # Attach volume to VM
+            self.virtual_machine.attach_volume(
+                self.apiclient,
+                volume
+            )
+        # Check all volumes attached to same VM
+        list_volume_response = Volume.list(
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            type='DATADISK',
+            listall=True
+        )
+        self.assertNotEqual(
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes")
+        self.assertEqual(
+            isinstance(list_volume_response, list),
+            True,
+            "Check list volumes response for valid list")
+        self.assertEqual(
+            len(list_volume_response),
+            self.max_data_volumes,
+            "Volumes attached to the VM %s. Expected %s" %
+            (len(list_volume_response),
+             self.max_data_volumes))
+        self.debug("Rebooting the VM: %s" % self.virtual_machine.id)
+        # Reboot VM
+        self.virtual_machine.reboot(self.apiclient)
+
+        vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=self.virtual_machine.id,
+        )
+        # Verify VM response to check whether VM deployment was successful
+        self.assertNotEqual(
+            len(vm_response),
+            0,
+            "Check VMs available in List VMs response"
+        )
+        self.assertEqual(
+            isinstance(vm_response, list),
+            True,
+            "Check list VM response for valid list"
+        )
+        vm = vm_response[0]
+        self.assertEqual(
+            vm.state,
+            'Running',
+            "Check the state of VM"
+        )
+
+        # Stop VM
+        self.virtual_machine.stop(self.apiclient)
+
+        # Start VM
+        self.virtual_machine.start(self.apiclient)
+        # Sleep to ensure that VM is in ready state
+        time.sleep(self.testdata["sleep"])
+
+        vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=self.virtual_machine.id,
+        )
+        self.assertEqual(
+            isinstance(vm_response, list),
+            True,
+            "Check list VM response for valid list"
+        )
+
+        # Verify VM response to check whether VM deployment was successful
+        self.assertNotEqual(
+            len(vm_response),
+            0,
+            "Check VMs available in List VMs response"
+        )
+
+        vm = vm_response[0]
+        self.assertEqual(
+            vm.state,
+            'Running',
+            "Check the state of VM"
+        )
+        return
+
+    @attr(tags=["advanced", "advancedns"])
+    def test_02_volume_attach_max(self):
+        """Test attach volumes (more than max) to an instance
+        """
+
+        # Validate the following
+        # 1. Attach one more data volume to VM (Already 5 attached)
+        # 2. Attach volume should fail
+
+        # Create a volume and attach to VM
+
+        # Update limit so that account could create one more volume
+        if 'kvm' in self.hypervisor:
+            update_resource_limit(
+            self.api_client,
+            2,  # Instance
+            account=self.account.name,
+            domainid=self.account.domainid,
+            max=32
+        )
+        # Attach volume to VM
+        with self.assertRaises(Exception):
             for i in range(self.max_data_volumes):
                 volume = Volume.create(
                     self.apiclient,
-                    self.services["volume"],
+                    self.testdata["volume"],
                     zoneid=self.zone.id,
                     account=self.account.name,
                     domainid=self.account.domainid,
@@ -238,135 +321,6 @@ class TestAttachVolume(cloudstackTestCase):
                     self.apiclient,
                     volume
                 )
-            # Check all volumes attached to same VM
-            list_volume_response = Volume.list(
-                self.apiclient,
-                virtualmachineid=self.virtual_machine.id,
-                type='DATADISK',
-                listall=True
-            )
-            self.assertNotEqual(
-                list_volume_response,
-                None,
-                "Check if volume exists in ListVolumes")
-            self.assertEqual(
-                isinstance(list_volume_response, list),
-                True,
-                "Check list volumes response for valid list")
-            self.assertEqual(
-                len(list_volume_response),
-                self.max_data_volumes,
-                "Volumes attached to the VM %s. Expected %s" %
-                (len(list_volume_response),
-                 self.max_data_volumes))
-            self.debug("Rebooting the VM: %s" % self.virtual_machine.id)
-            # Reboot VM
-            self.virtual_machine.reboot(self.apiclient)
-
-            vm_response = VirtualMachine.list(
-                self.apiclient,
-                id=self.virtual_machine.id,
-            )
-            # Verify VM response to check whether VM deployment was successful
-            self.assertNotEqual(
-                len(vm_response),
-                0,
-                "Check VMs available in List VMs response"
-            )
-            self.assertEqual(
-                isinstance(vm_response, list),
-                True,
-                "Check list VM response for valid list"
-            )
-            vm = vm_response[0]
-            self.assertEqual(
-                vm.state,
-                'Running',
-                "Check the state of VM"
-            )
-
-            # Stop VM
-            self.virtual_machine.stop(self.apiclient)
-
-            # Start VM
-            self.virtual_machine.start(self.apiclient)
-            # Sleep to ensure that VM is in ready state
-            time.sleep(self.services["sleep"])
-
-            vm_response = VirtualMachine.list(
-                self.apiclient,
-                id=self.virtual_machine.id,
-            )
-            self.assertEqual(
-                isinstance(vm_response, list),
-                True,
-                "Check list VM response for valid list"
-            )
-
-            # Verify VM response to check whether VM deployment was successful
-            self.assertNotEqual(
-                len(vm_response),
-                0,
-                "Check VMs available in List VMs response"
-            )
-
-            vm = vm_response[0]
-            self.assertEqual(
-                vm.state,
-                'Running',
-                "Check the state of VM"
-            )
-        except Exception as e:
-            self.fail("Exception occured: %s" % e)
-        return
-
-    @attr(tags=["advanced", "advancedns"])
-    def test_02_volume_attach_max(self):
-        """Test attach volumes (more than max) to an instance
-        """
-
-        # Validate the following
-        # 1. Attach one more data volume to VM (Already 5 attached)
-        # 2. Attach volume should fail
-
-        # Create a volume and attach to VM
-        volume = Volume.create(
-            self.apiclient,
-            self.services["volume"],
-            zoneid=self.zone.id,
-            account=self.account.name,
-            domainid=self.account.domainid,
-            diskofferingid=self.disk_offering.id
-        )
-        self.debug("Created volume: %s for account: %s" % (
-            volume.id,
-            self.account.name
-        ))
-        # Check List Volume response for newly created volume
-        list_volume_response = Volume.list(
-            self.apiclient,
-            id=volume.id
-        )
-        self.assertNotEqual(
-            list_volume_response,
-            None,
-            "Check if volume exists in ListVolumes"
-        )
-        self.assertEqual(
-            isinstance(list_volume_response, list),
-            True,
-            "Check list volumes response for valid list"
-        )
-        # Attach volume to VM
-        with self.assertRaises(Exception):
-            self.debug("Trying to Attach volume: %s to VM: %s" % (
-                volume.id,
-                self.virtual_machine.id
-            ))
-            self.virtual_machine.attach_volume(
-                self.apiclient,
-                volume
-            )
         return
 
 
@@ -377,12 +331,12 @@ class TestAttachDetachVolume(cloudstackTestCase):
         cls.testClient = super(TestAttachDetachVolume, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.pod = get_pod(cls.api_client, cls.zone.id)
-        cls.services['mode'] = cls.zone.networktype
+        cls.testdata['mode'] = cls.zone.networktype
         cls._cleanup = []
         cls.unsupportedStorageType = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
@@ -392,17 +346,17 @@ class TestAttachDetachVolume(cloudstackTestCase):
                 return
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
-            cls.services["disk_offering"]
+            cls.testdata["disk_offering"]
         )
         cls._cleanup.append(cls.disk_offering)
         template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
-        cls.services["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = template.id
+        cls.testdata["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine"]["template"] = template.id
         # get max data volumes limit based on the hypervisor type and version
         listHost = Host.list(
             cls.api_client,
@@ -420,24 +374,33 @@ class TestAttachDetachVolume(cloudstackTestCase):
             if res[i].hypervisorversion == ver:
                 break
         cls.max_data_volumes = int(res[i].maxdatavolumeslimit)
+        if 'kvm' in cls.hypervisor:
+            cls.max_data_volumes = 24
         cls.debug('max data volumes:{}'.format(cls.max_data_volumes))
-        cls.services["volume"]["max"] = cls.max_data_volumes
+        cls.testdata["volume"]["max"] = cls.max_data_volumes
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
             cls.api_client,
-            cls.services["account"],
+            cls.testdata["account"],
             domainid=cls.domain.id
         )
+        update_resource_limit(
+                              cls.api_client,
+                              2, # Instance
+                              account=cls.account.name,
+                              domainid=cls.account.domainid,
+                              max=cls.max_data_volumes + 1
+                              )
         cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
-            cls.services["service_offering"]
+            cls.testdata["service_offering"]
         )
         cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
-            cls.services["virtual_machine"],
+            cls.testdata["virtual_machine"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id,
@@ -480,130 +443,128 @@ class TestAttachDetachVolume(cloudstackTestCase):
         # 5. Stop the VM. Stop VM should be successful
         # 6. Start The VM. Start VM should be successful
 
-        try:
-            volumes = []
-            # Create 5 volumes and attach to VM
-            for i in range(self.max_data_volumes):
-                volume = Volume.create(
-                    self.apiclient,
-                    self.services["volume"],
-                    zoneid=self.zone.id,
-                    account=self.account.name,
-                    domainid=self.account.domainid,
-                    diskofferingid=self.disk_offering.id
-                )
-                self.cleanup.append(volume)
-                volumes.append(volume)
+        volumes = []
+        # Create 5 volumes and attach to VM
+        for i in range(self.max_data_volumes):
+            volume = Volume.create(
+                self.apiclient,
+                self.testdata["volume"],
+                zoneid=self.zone.id,
+                account=self.account.name,
+                domainid=self.account.domainid,
+                diskofferingid=self.disk_offering.id
+            )
+            self.cleanup.append(volume)
+            volumes.append(volume)
 
-                # Check List Volume response for newly created volume
-                list_volume_response = Volume.list(
-                    self.apiclient,
-                    id=volume.id
-                )
-                self.assertNotEqual(
-                    list_volume_response,
-                    None,
-                    "Check if volume exists in ListVolumes")
-                self.assertEqual(
-                    isinstance(list_volume_response, list),
-                    True,
-                    "Check list volumes response for valid list")
-                # Attach volume to VM
-                self.virtual_machine.attach_volume(
-                    self.apiclient,
-                    volume
-                )
-
-            # Check all volumes attached to same VM
+            # Check List Volume response for newly created volume
             list_volume_response = Volume.list(
                 self.apiclient,
-                virtualmachineid=self.virtual_machine.id,
-                type='DATADISK',
-                listall=True
+                id=volume.id
             )
             self.assertNotEqual(
                 list_volume_response,
                 None,
-                "Check if volume exists in ListVolumes"
-            )
+                "Check if volume exists in ListVolumes")
             self.assertEqual(
                 isinstance(list_volume_response, list),
                 True,
-                "Check list volumes response for valid list"
-            )
-            self.assertEqual(
-                len(list_volume_response),
-                self.max_data_volumes,
-                "Volumes attached to the VM %s. Expected %s" %
-                (len(list_volume_response),
-                 self.max_data_volumes))
-
-            # Detach all volumes from VM
-            for volume in volumes:
-                self.virtual_machine.detach_volume(
-                    self.apiclient,
-                    volume
-                )
-            # Reboot VM
-            self.debug("Rebooting the VM: %s" % self.virtual_machine.id)
-            self.virtual_machine.reboot(self.apiclient)
-            # Sleep to ensure that VM is in ready state
-            time.sleep(self.services["sleep"])
-
-            vm_response = VirtualMachine.list(
+                "Check list volumes response for valid list")
+            # Attach volume to VM
+            self.virtual_machine.attach_volume(
                 self.apiclient,
-                id=self.virtual_machine.id,
-            )
-            # Verify VM response to check whether VM deployment was successful
-            self.assertEqual(
-                isinstance(vm_response, list),
-                True,
-                "Check list VM response for valid list"
+                volume
             )
 
-            self.assertNotEqual(
-                len(vm_response),
-                0,
-                "Check VMs available in List VMs response"
-            )
-            vm = vm_response[0]
-            self.assertEqual(
-                vm.state,
-                'Running',
-                "Check the state of VM"
-            )
+        # Check all volumes attached to same VM
+        list_volume_response = Volume.list(
+            self.apiclient,
+            virtualmachineid=self.virtual_machine.id,
+            type='DATADISK',
+            listall=True
+        )
+        self.assertNotEqual(
+            list_volume_response,
+            None,
+            "Check if volume exists in ListVolumes"
+        )
+        self.assertEqual(
+            isinstance(list_volume_response, list),
+            True,
+            "Check list volumes response for valid list"
+        )
+        self.assertEqual(
+            len(list_volume_response),
+            self.max_data_volumes,
+            "Volumes attached to the VM %s. Expected %s" %
+            (len(list_volume_response),
+             self.max_data_volumes))
 
-            # Stop VM
-            self.virtual_machine.stop(self.apiclient)
-
-            # Start VM
-            self.virtual_machine.start(self.apiclient)
-            # Sleep to ensure that VM is in ready state
-            time.sleep(self.services["sleep"])
-
-            vm_response = VirtualMachine.list(
+        # Detach all volumes from VM
+        for volume in volumes:
+            self.virtual_machine.detach_volume(
                 self.apiclient,
-                id=self.virtual_machine.id,
+                volume
             )
-            # Verify VM response to check whether VM deployment was successful
-            self.assertEqual(
-                isinstance(vm_response, list),
-                True,
-                "Check list VM response for valid list"
-            )
-            self.assertNotEqual(
-                len(vm_response),
-                0,
-                "Check VMs available in List VMs response"
-            )
-            vm = vm_response[0]
-            self.assertEqual(
-                vm.state,
-                'Running',
-                "Check the state of VM"
-            )
-        except Exception as e:
-            self.fail("Exception occurred: %s" % e)
+        # Reboot VM
+        self.debug("Rebooting the VM: %s" % self.virtual_machine.id)
+        self.virtual_machine.reboot(self.apiclient)
+        # Sleep to ensure that VM is in ready state
+        time.sleep(self.testdata["sleep"])
+
+        vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=self.virtual_machine.id,
+        )
+        # Verify VM response to check whether VM deployment was successful
+        self.assertEqual(
+            isinstance(vm_response, list),
+            True,
+            "Check list VM response for valid list"
+        )
+
+        self.assertNotEqual(
+            len(vm_response),
+            0,
+            "Check VMs available in List VMs response"
+        )
+        vm = vm_response[0]
+        self.assertEqual(
+            vm.state,
+            'Running',
+            "Check the state of VM"
+        )
+
+        # Stop VM
+        self.virtual_machine.stop(self.apiclient)
+
+        # Start VM
+        self.virtual_machine.start(self.apiclient)
+        # Sleep to ensure that VM is in ready state
+        time.sleep(self.testdata["sleep"])
+
+        vm_response = VirtualMachine.list(
+            self.apiclient,
+            id=self.virtual_machine.id,
+        )
+        # Verify VM response to check whether VM deployment was successful
+        self.assertEqual(
+            isinstance(vm_response, list),
+            True,
+            "Check list VM response for valid list"
+        )
+        self.assertNotEqual(
+            len(vm_response),
+            0,
+            "Check VMs available in List VMs response"
+        )
+        vm = vm_response[0]
+        self.assertEqual(
+            vm.state,
+            'Running',
+            "Check the state of VM"
+        )
+
         return
     
     @attr(tags=["advanced", "advancedns"], required_hardware="false")
@@ -626,8 +587,7 @@ class TestAttachDetachVolume(cloudstackTestCase):
                 or self.hypervisor.lower() == 'kvm'
                 or self.hypervisor.lower() == 'simulator'
                 or self.hypervisor.lower() == 'xenserver'):
-        
-            try:
+
                 # Check for root volume
                 root_volume_response = Volume.list(
                     self.apiclient,
@@ -635,45 +595,45 @@ class TestAttachDetachVolume(cloudstackTestCase):
                     type='ROOT',
                     listall=True
                 )
-                
+
                 self.assertEqual(
                     validateList(root_volume_response)[0],
                     PASS,
                     "Invalid response returned for root volume list"
                 )
-                
+
                 # Grab the root volume for later use
                 root_volume = root_volume_response[0]
-                
+
                 # Stop VM
                 self.debug("Stopping the VM: %s" % self.virtual_machine.id)
                 self.virtual_machine.stop(self.apiclient)
-                
+
                 vm_response = VirtualMachine.list(
                     self.apiclient,
                     id=self.virtual_machine.id,
                 )
-                
+
                 # Ensure that vm_response is a valid list
                 self.assertEqual(
                     validateList(vm_response)[0],
                     PASS,
                     "Invalid response returned for vm_response list"
                 )
-                
+
                 vm = vm_response[0]
                 self.assertEqual(
                     vm.state,
                     'Stopped',
                     "Check the state of VM"
                 )
-                
+
                 # Detach root volume from VM
                 self.virtual_machine.detach_volume(
                     self.apiclient,
                     root_volume
                 )
-                
+
                 # Verify that root disk is gone
                 no_root_volume_response = Volume.list(
                     self.apiclient,
@@ -681,20 +641,20 @@ class TestAttachDetachVolume(cloudstackTestCase):
                     type='ROOT',
                     listall=True
                 )
-                
+
                 self.assertEqual(
                     no_root_volume_response,
                     None,
                     "Check if root volume exists in ListVolumes"
                 )
-                
+
                 # Attach root volume to VM
                 self.virtual_machine.attach_volume(
                     self.apiclient,
                     root_volume,
                     0
                 )
-                
+
                 # Check for root volume
                 new_root_volume_response = Volume.list(
                     self.apiclient,
@@ -702,38 +662,35 @@ class TestAttachDetachVolume(cloudstackTestCase):
                     type='ROOT',
                     listall=True
                 )
-                
+
                 # Ensure that new_root_volume_response is a valid list
                 self.assertEqual(
                     validateList(new_root_volume_response)[0],
                     PASS,
                     "Invalid response returned for new_root_volume_response list"
                 )
-                
+
                 # Start VM
                 self.virtual_machine.start(self.apiclient)
-    
+
                 vm_response = VirtualMachine.list(
                     self.apiclient,
                     id=self.virtual_machine.id,
                 )
-                
+
                 # Verify VM response to check whether VM deployment was successful
                 self.assertEqual(
                     validateList(vm_response)[0],
                     PASS,
                     "Invalid response returned for vm_response list during VM start up"
                 )
-                
+
                 vm = vm_response[0]
                 self.assertEqual(
                     vm.state,
                     'Running',
                     "Ensure the state of VM is running"
                 )
-                
-            except Exception as e:
-                self.fail("Exception occurred: %s" % e)
                 
         else:
             self.skipTest("Root Volume attach/detach is not supported on %s " % self.hypervisor)
@@ -747,12 +704,12 @@ class TestAttachVolumeISO(cloudstackTestCase):
         cls.testClient = super(TestAttachVolumeISO, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.pod = get_pod(cls.api_client, cls.zone.id)
-        cls.services['mode'] = cls.zone.networktype
+        cls.testdata['mode'] = cls.zone.networktype
         cls._cleanup = []
         cls.unsupportedStorageType = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
@@ -762,18 +719,18 @@ class TestAttachVolumeISO(cloudstackTestCase):
                 return
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
-            cls.services["disk_offering"]
+            cls.testdata["disk_offering"]
         )
         cls._cleanup.append(cls.disk_offering)
         template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
-        cls.services["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["iso"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = template.id
+        cls.testdata["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.testdata["iso"]["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine"]["template"] = template.id
         # get max data volumes limit based on the hypervisor type and version
         listHost = Host.list(
             cls.api_client,
@@ -791,24 +748,37 @@ class TestAttachVolumeISO(cloudstackTestCase):
             if res[i].hypervisorversion == ver:
                 break
         cls.max_data_volumes = int(res[i].maxdatavolumeslimit)
+        if 'kvm' in cls.hypervisor:
+            cls.max_data_volumes = 24
         cls.debug('max data volumes:{}'.format(cls.max_data_volumes))
-        cls.services["volume"]["max"] = cls.max_data_volumes
+        cls.testdata["volume"]["max"] = cls.max_data_volumes
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
             cls.api_client,
-            cls.services["account"],
+            cls.testdata["account"],
             domainid=cls.domain.id
         )
+        update_resource_limit(
+            cls.api_client,
+            2,  # Instance
+            account=cls.account.name,
+            domainid=cls.account.domainid,
+            max=cls.max_data_volumes + 1
+        )
+        cls.debug('max data volumes:{}'.format(cls.max_data_volumes))
+        cls.testdata["volume"]["max"] = cls.max_data_volumes
+        # Create VMs, NAT Rules etc
+
         cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
-            cls.services["service_offering"]
+            cls.testdata["service_offering"]
         )
         cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
-            cls.services["virtual_machine"],
+            cls.testdata["virtual_machine"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id,
@@ -854,7 +824,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
         for i in range(self.max_data_volumes):
             volume = Volume.create(
                 self.apiclient,
-                self.services["volume"],
+                self.testdata["volume"],
                 zoneid=self.zone.id,
                 account=self.account.name,
                 domainid=self.account.domainid,
@@ -911,7 +881,7 @@ class TestAttachVolumeISO(cloudstackTestCase):
         # Create an ISO and attach it to VM
         iso = Iso.create(
             self.apiclient,
-            self.services["iso"],
+            self.testdata["iso"],
             account=self.account.name,
             domainid=self.account.domainid,
         )
@@ -970,11 +940,11 @@ class TestVolumes(cloudstackTestCase):
         cls.testClient = super(TestVolumes, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.services['mode'] = cls.zone.networktype
+        cls.testdata['mode'] = cls.zone.networktype
         cls._cleanup = []
         cls.unsupportedStorageType = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
@@ -984,36 +954,36 @@ class TestVolumes(cloudstackTestCase):
                 return
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
-            cls.services["disk_offering"]
+            cls.testdata["disk_offering"]
         )
         cls._cleanup.append(cls.disk_offering)
         template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
-        cls.services["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = template.id
-        cls.services["virtual_machine"][
+        cls.testdata["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine"]["template"] = template.id
+        cls.testdata["virtual_machine"][
             "diskofferingid"] = cls.disk_offering.id
 
         # Create VMs, VMs etc
         cls.account = Account.create(
             cls.api_client,
-            cls.services["account"],
+            cls.testdata["account"],
             domainid=cls.domain.id
         )
         cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
-            cls.services["service_offering"]
+            cls.testdata["service_offering"]
         )
         cls._cleanup.append(cls.service_offering)
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
-            cls.services["virtual_machine"],
+            cls.testdata["virtual_machine"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.service_offering.id,
@@ -1021,7 +991,7 @@ class TestVolumes(cloudstackTestCase):
 
         cls.volume = Volume.create(
             cls.api_client,
-            cls.services["volume"],
+            cls.testdata["volume"],
             zoneid=cls.zone.id,
             account=cls.account.name,
             domainid=cls.account.domainid,
@@ -1148,7 +1118,7 @@ class TestVolumes(cloudstackTestCase):
         self.virtual_machine.detach_volume(self.apiclient, self.volume)
 
         # Sleep to ensure the current state will reflected in other calls
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
         list_volume_response = Volume.list(
             self.apiclient,
@@ -1192,7 +1162,7 @@ class TestVolumes(cloudstackTestCase):
         self.apiclient.deleteVolume(cmd)
 
         # Sleep to ensure the current state will reflected in other calls
-        time.sleep(self.services["sleep"])
+        time.sleep(self.testdata["sleep"])
 
         list_volume_response = Volume.list(
             self.apiclient,
@@ -1234,7 +1204,7 @@ class TestVolumes(cloudstackTestCase):
 
         domuser = Account.create(
             apiclient=self.apiclient,
-            services=self.services["account"],
+            services=self.testdata["account"],
             admin=False,
             domainid=dom.id
         )
@@ -1257,7 +1227,7 @@ class TestVolumes(cloudstackTestCase):
 
         vol = Volume.create(
             domapiclient,
-            services=self.services["volume"],
+            services=self.testdata["volume"],
             zoneid=self.zone.id,
             account=domuser.name,
             domainid=dom.id,
@@ -1291,11 +1261,11 @@ class TestDeployVmWithCustomDisk(cloudstackTestCase):
             TestDeployVmWithCustomDisk,
             cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.services['mode'] = cls.zone.networktype
+        cls.testdata['mode'] = cls.zone.networktype
         cls._cleanup = []
         cls.unsupportedStorageType = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
@@ -1305,30 +1275,30 @@ class TestDeployVmWithCustomDisk(cloudstackTestCase):
                 return
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
-            cls.services["disk_offering"],
+            cls.testdata["disk_offering"],
             custom=True
         )
         cls._cleanup.append(cls.disk_offering)
         template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
-        cls.services["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = template.id
+        cls.testdata["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine"]["template"] = template.id
 
         # Create VMs, NAT Rules etc
         cls.account = Account.create(
             cls.api_client,
-            cls.services["account"],
+            cls.testdata["account"],
             domainid=cls.domain.id
         )
         cls._cleanup.append(cls.account)
 
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
-            cls.services["service_offering"]
+            cls.testdata["service_offering"]
         )
         cls._cleanup.append(cls.service_offering)
 
@@ -1384,12 +1354,12 @@ class TestDeployVmWithCustomDisk(cloudstackTestCase):
         self.debug("custom.diskoffering.size.max: %s" % max_size)
 
         self.debug("Creating a volume with size less than min cust disk size")
-        self.services["custom_volume"]["customdisksize"] = (min_size - 1)
-        self.services["custom_volume"]["zoneid"] = self.zone.id
+        self.testdata["custom_volume"]["customdisksize"] = (min_size - 1)
+        self.testdata["custom_volume"]["zoneid"] = self.zone.id
         with self.assertRaises(Exception):
             Volume.create_custom_disk(
                 self.apiclient,
-                self.services["custom_volume"],
+                self.testdata["custom_volume"],
                 account=self.account.name,
                 domainid=self.account.domainid,
                 diskofferingid=self.disk_offering.id
@@ -1397,11 +1367,11 @@ class TestDeployVmWithCustomDisk(cloudstackTestCase):
         self.debug("Create volume failed!")
 
         self.debug("Creating a volume with size more than max cust disk size")
-        self.services["custom_volume"]["customdisksize"] = (max_size + 1)
+        self.testdata["custom_volume"]["customdisksize"] = (max_size + 1)
         with self.assertRaises(Exception):
             Volume.create_custom_disk(
                 self.apiclient,
-                self.services["custom_volume"],
+                self.testdata["custom_volume"],
                 account=self.account.name,
                 domainid=self.account.domainid,
                 diskofferingid=self.disk_offering.id
@@ -1411,18 +1381,16 @@ class TestDeployVmWithCustomDisk(cloudstackTestCase):
         self.debug("Creating a volume with size more than min cust disk " +
                    "but less than max cust disk size"
                    )
-        self.services["custom_volume"]["customdisksize"] = (min_size + 1)
-        try:
-            Volume.create_custom_disk(
-                self.apiclient,
-                self.services["custom_volume"],
-                account=self.account.name,
-                domainid=self.account.domainid,
-                diskofferingid=self.disk_offering.id
-            )
-            self.debug("Create volume of cust disk size succeeded")
-        except Exception as e:
-            self.fail("Create volume failed with exception: %s" % e)
+        self.testdata["custom_volume"]["customdisksize"] = (min_size + 1)
+        Volume.create_custom_disk(
+            self.apiclient,
+            self.testdata["custom_volume"],
+            account=self.account.name,
+            domainid=self.account.domainid,
+            diskofferingid=self.disk_offering.id
+        )
+        self.debug("Create volume of cust disk size succeeded")
+
         return
 
 
@@ -1433,11 +1401,11 @@ class TestMigrateVolume(cloudstackTestCase):
         cls.testClient = super(TestMigrateVolume, cls).getClsTestClient()
         cls.api_client = cls.testClient.getApiClient()
 
-        cls.services = Services().services
+        cls.testdata = cls.testClient.getParsedTestDataConfig()
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.services['mode'] = cls.zone.networktype
+        cls.testdata['mode'] = cls.zone.networktype
         cls._cleanup = []
         cls.unsupportedStorageType = False
         cls.hypervisor = cls.testClient.getHypervisorInfo()
@@ -1447,36 +1415,36 @@ class TestMigrateVolume(cloudstackTestCase):
                 return
         cls.disk_offering = DiskOffering.create(
             cls.api_client,
-            cls.services["disk_offering"]
+            cls.testdata["disk_offering"]
         )
         template = get_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.testdata["ostype"]
         )
-        cls.services["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
-        cls.services["virtual_machine"]["template"] = template.id
-        cls.services["virtual_machine"][
+        cls.testdata["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.testdata["virtual_machine"]["template"] = template.id
+        cls.testdata["virtual_machine"][
             "diskofferingid"] = cls.disk_offering.id
 
         # Create VMs, VMs etc
         cls.account = Account.create(
             cls.api_client,
-            cls.services["account"],
+            cls.testdata["account"],
             domainid=cls.domain.id
         )
         cls.small_offering = ServiceOffering.create(
             cls.api_client,
-            cls.services["service_offering"]
+            cls.testdata["service_offering"]
         )
         cls.virtual_machine = VirtualMachine.create(
             cls.api_client,
-            cls.services["virtual_machine"],
+            cls.testdata["virtual_machine"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.small_offering.id,
-            mode=cls.services["mode"]
+            mode=cls.testdata["mode"]
         )
         cls._cleanup = [
             cls.small_offering,
@@ -1519,7 +1487,7 @@ class TestMigrateVolume(cloudstackTestCase):
         """
         vol = Volume.create(
             self.apiclient,
-            self.services["volume"],
+            self.testdata["volume"],
             diskofferingid=self.disk_offering.id,
             zoneid=self.zone.id,
             account=self.account.name,
@@ -1535,13 +1503,11 @@ class TestMigrateVolume(cloudstackTestCase):
             PASS,
             "Invalid response returned for list volumes")
         vol_uuid = vol_res[0].id
-        try:
-            self.virtual_machine.attach_volume(
-                self.apiclient,
-                vol
-            )
-        except Exception as e:
-            self.fail("Attaching data disk to vm failed with error %s" % e)
+        self.virtual_machine.attach_volume(
+            self.apiclient,
+            vol
+        )
+
         pools = StoragePool.listForMigration(
             self.apiclient,
             id=vol.id
@@ -1556,15 +1522,13 @@ class TestMigrateVolume(cloudstackTestCase):
             "invalid pool response from findStoragePoolsForMigration")
         pool = pools[0]
         self.debug("Migrating Volume-ID: %s to Pool: %s" % (vol.id, pool.id))
-        try:
-            Volume.migrate(
-                self.apiclient,
-                volumeid=vol.id,
-                storageid=pool.id,
-                livemigrate='true'
-            )
-        except Exception as e:
-            self.fail("Volume migration failed with error %s" % e)
+        Volume.migrate(
+            self.apiclient,
+            volumeid=vol.id,
+            storageid=pool.id,
+            livemigrate='true'
+        )
+
         migrated_vols = Volume.list(
             self.apiclient,
             virtualmachineid=self.virtual_machine.id,

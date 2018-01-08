@@ -22,13 +22,14 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 #Import Integration Libraries
 #base - contains all resources as entities and defines create, delete, list operations on them
 from marvin.lib.base import Account, VirtualMachine, ServiceOffering,\
-    Configurations,StoragePool,Template
+    Configurations, StoragePool, Template
 #utils - utility classes for common cleanup, external library wrappers etc
-from marvin.lib.utils import cleanup_resources,validateList
+from marvin.lib.utils import cleanup_resources, validateList
 from marvin.lib.common import get_zone, get_domain, get_template,\
-    list_volumes,list_storage_pools,list_configurations
-from marvin.codes import FAILED,INVALID_INPUT
-from marvin.cloudstackAPI import *
+    list_volumes, list_storage_pools, list_configurations,\
+    matchResourceCount
+from marvin.codes import FAILED, INVALID_INPUT, PASS,\
+    RESOURCE_PRIMARY_STORAGE
 from nose.plugins.attrib import attr
 from marvin.sshClient import SshClient
 import time
@@ -203,7 +204,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
         except Exception:
             return False
 
-    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
+    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="false")
     def test_00_deploy_vm_root_resize(self):
         """Test deploy virtual machine with root resize
 
@@ -214,30 +215,34 @@ class TestDeployVmRootSize(cloudstackTestCase):
         """
 
         newrootsize = (self.template.size >> 30) + 2
-        if(self.hypervisor.lower() == 'kvm' or self.hypervisor.lower() ==
-            'xenserver'or self.hypervisor.lower() == 'vmware'  ):
+        if (self.hypervisor.lower() == 'kvm' or self.hypervisor.lower() == 'xenserver'
+                or self.hypervisor.lower() == 'vmware' or self.hypervisor.lower() == 'simulator'):
+
+            accounts = Account.list(self.apiclient, id=self.account.id)
+            self.assertEqual(validateList(accounts)[0], PASS,
+                            "accounts list validation failed")
+            initialResourceCount = int(accounts[0].primarystoragetotal)
 
             if self.hypervisor=="vmware":
                 self.virtual_machine = VirtualMachine.create(
-                        self.apiclient, self.services["virtual_machine"],
-                        zoneid=self.zone.id,
-                        accountid=self.account.name,
-                        domainid=self.domain.id,
-                        serviceofferingid=self.services_offering_vmware.id,
-                        templateid=self.template.id,
-                        rootdisksize=newrootsize
-                    )
-
+                    self.apiclient, self.services["virtual_machine"],
+                    zoneid=self.zone.id,
+                    accountid=self.account.name,
+                    domainid=self.domain.id,
+                    serviceofferingid=self.services_offering_vmware.id,
+                    templateid=self.tempobj.id,
+                    rootdisksize=newrootsize
+                )
             else:
                 self.virtual_machine = VirtualMachine.create(
-                        self.apiclient, self.services["virtual_machine"],
-                        zoneid=self.zone.id,
-                        accountid=self.account.name,
-                        domainid=self.domain.id,
-                        serviceofferingid=self.service_offering.id,
-                        templateid=self.template.id,
-                        rootdisksize=newrootsize
-            )
+                    self.apiclient, self.services["virtual_machine"],
+                    zoneid=self.zone.id,
+                    accountid=self.account.name,
+                    domainid=self.domain.id,
+                    serviceofferingid=self.service_offering.id,
+                    templateid=self.template.id,
+                    rootdisksize=newrootsize
+                )
 
             list_vms = VirtualMachine.list(self.apiclient, id=self.virtual_machine.id)
             self.debug(
@@ -246,8 +251,8 @@ class TestDeployVmRootSize(cloudstackTestCase):
             )
 
             res=validateList(list_vms)
-            self.assertNotEqual(res[2],INVALID_INPUT," Invalid  list VM "
-                                                   "response")
+            self.assertNotEqual(res[2], INVALID_INPUT, "Invalid list VM "
+                                                        "response")
             self.cleanup.append(self.virtual_machine)
 
             vm = list_vms[0]
@@ -275,8 +280,8 @@ class TestDeployVmRootSize(cloudstackTestCase):
                 listall=True
             )
             res=validateList(list_volume_response)
-            self.assertNotEqual(res[2],INVALID_INPUT," Invalid  list VM "
-                                                   "response")
+            self.assertNotEqual(res[2], INVALID_INPUT, "Invalid list VM "
+                                                        "response")
             rootvolume = list_volume_response[0]
             success = False
             if rootvolume is not None and rootvolume.size  == (newrootsize << 30):
@@ -288,6 +293,11 @@ class TestDeployVmRootSize(cloudstackTestCase):
                 "Check if the root volume resized appropriately"
             )
 
+            response = matchResourceCount(
+                self.apiclient, (initialResourceCount + newrootsize),
+                RESOURCE_PRIMARY_STORAGE,
+                accountid=self.account.id)
+            self.assertEqual(response[0], PASS, response[1])
         else:
             self.debug("hypervisor %s unsupported for test 00, verifying it errors properly" % self.hypervisor)
             newrootsize = (self.template.size >> 30) + 2
@@ -307,22 +317,22 @@ class TestDeployVmRootSize(cloudstackTestCase):
                 if re.search("Hypervisor \S+ does not support rootdisksize override", str(ex)):
                     success = True
                 else:
-                    self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
+                    self.debug("Virtual machine create did not fail appropriately. Error was actually : " + str(ex));
 
             self.assertEqual(success, True, "Check if unsupported hypervisor %s fails appropriately" % self.hypervisor)
 
-    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true")
+    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="false")
     def test_01_deploy_vm_root_resize(self):
         """Test proper failure to deploy virtual machine with rootdisksize of 0
         """
         newrootsize=0
         success=False
 
-        if(self.hypervisor.lower() == 'kvm' or self.hypervisor.lower() ==
-                'xenserver'or self.hypervisor.lower() == 'vmware'  ):
+        if (self.hypervisor.lower() == 'kvm' or self.hypervisor.lower() == 'xenserver'
+                or self.hypervisor.lower() == 'vmware' or self.hypervisor.lower() == 'simulator'):
             try:
                 if self.hypervisor=="vmware":
-                     self.virtual_machine = VirtualMachine.create(
+                    self.virtual_machine = VirtualMachine.create(
                         self.apiclient, self.services["virtual_machine"],
                         zoneid=self.zone.id,
                         accountid=self.account.name,
@@ -331,9 +341,49 @@ class TestDeployVmRootSize(cloudstackTestCase):
                          templateid=self.template.id,
                         rootdisksize=newrootsize
                     )
-
                 else:
-                     self.virtual_machine = VirtualMachine.create(
+                    self.virtual_machine = VirtualMachine.create(
+                        self.apiclient, self.services["virtual_machine"],
+                        zoneid=self.zone.id,
+                        accountid=self.account.name,
+                        domainid=self.domain.id,
+                        serviceofferingid=self.service_offering.id,
+                        templateid=self.template.id,
+                        rootdisksize=newrootsize
+                    )
+            except Exception as ex:
+                if "Root disk size should be a positive number" in str(ex):
+                    success = True
+                else:
+                    self.debug("Virtual machine create did not fail appropriately. Error was actually : " + str(ex));
+
+            self.assertEqual(success, True, "Check if passing 0 as rootdisksize fails appropriately")
+        else:
+            self.debug("test 01 does not support hypervisor type " + self.hypervisor)
+
+    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="false", BugId="CLOUDSTACK-6984")
+    def test_02_deploy_vm_root_resize(self):
+        """Test proper failure to deploy virtual machine with rootdisksize less than template size
+        """
+        newrootsize = (self.template.size >> 30) - 1
+        success=False
+        self.assertEqual(newrootsize > 0, True, "Provided template is less than 1G in size, cannot run test")
+
+        if (self.hypervisor.lower() == 'kvm' or self.hypervisor.lower() == 'xenserver'
+                or self.hypervisor.lower() == 'vmware' or self.hypervisor.lower() == 'simulator'):
+            try:
+                if self.hypervisor=="vmware":
+                    self.virtual_machine = VirtualMachine.create(
+                        self.apiclient, self.services["virtual_machine"],
+                        zoneid=self.zone.id,
+                        accountid=self.account.name,
+                        domainid=self.domain.id,
+                        serviceofferingid=self.services_offering_vmware.id,
+                        templateid=self.tempobj.id,
+                        rootdisksize=newrootsize
+                    )
+                else:
+                    self.virtual_machine = VirtualMachine.create(
                         self.apiclient, self.services["virtual_machine"],
                         zoneid=self.zone.id,
                         accountid=self.account.name,
@@ -343,56 +393,14 @@ class TestDeployVmRootSize(cloudstackTestCase):
                         rootdisksize=newrootsize
                 )
             except Exception as ex:
-                if "rootdisk size should be a non zero number" in str(ex):
-                    success = True
-                else:
-                    self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
-            self.assertEqual(success, True, "Check if passing 0 as rootdisksize fails appropriately")
-        else:
-                self.debug("test 01 does not support hypervisor type " + self.hypervisor)
-
-    @attr(tags = ['advanced', 'basic', 'sg'], required_hardware="true", BugId="CLOUDSTACK-6984")
-    def test_02_deploy_vm_root_resize(self):
-        """Test proper failure to deploy virtual machine with rootdisksize less than template size
-        """
-        newrootsize = (self.template.size >> 30) - 1
-        success=False
-        self.assertEqual(newrootsize > 0, True, "Provided template is less than 1G in size, cannot run test")
-
-        if(self.hypervisor.lower() == 'kvm' or self.hypervisor.lower() ==
-                'xenserver'or self.hypervisor.lower() == 'vmware'  ):
-            try:
-                if self.hypervisor=="vmware":
-                    self.virtual_machine = VirtualMachine.create(
-                            self.apiclient, self.services["virtual_machine"],
-                            zoneid=self.zone.id,
-                            accountid=self.account.name,
-                            domainid=self.domain.id,
-                            serviceofferingid=self.services_offering_vmware.id,
-                            templateid=self.template.id,
-                            rootdisksize=newrootsize
-                        )
-
-                else:
-                    self.virtual_machine = VirtualMachine.create(
-                            self.apiclient, self.services["virtual_machine"],
-                            zoneid=self.zone.id,
-                            accountid=self.account.name,
-                            domainid=self.domain.id,
-                            serviceofferingid=self.service_offering.id,
-                            templateid=self.template.id,
-                            rootdisksize=newrootsize
-                )
-            except Exception as ex:
                     if "rootdisksize override is smaller than template size" in str(ex):
                         success = True
                     else:
-                        self.debug("virtual machine create did not fail appropriately. Error was actually : " + str(ex));
+                        self.debug("Virtual machine create did not fail appropriately. Error was actually : " + str(ex));
 
             self.assertEqual(success, True, "Check if passing rootdisksize < templatesize fails appropriately")
         else:
-            self.debug("test 02 does not support hypervisor type " +
-                       self.hypervisor)
+            self.debug("test 02 does not support hypervisor type " + self.hypervisor)
 
     def tearDown(self):
         try:

@@ -63,7 +63,7 @@ public class PrimaryDataStoreDaoImplTest extends TestCase {
 
     private static final String DETAIL_KEY = "storage.overprovisioning.factor";
     private static final String DETAIL_VALUE = "2.0";
-    private static final Map<String, String> STORAGE_POOL_DETAILS = new HashMap<String, String>(){{ put(DETAIL_KEY, DETAIL_VALUE); }};
+    private static final Map<String, String> STORAGE_POOL_DETAILS = new HashMap<>();
 
     private static final String EXPECTED_RESULT_SQL_STORAGE_TAGS = "(storage_pool_tags.tag='" + STORAGE_TAG_1 + "') OR (storage_pool_tags.tag='" + STORAGE_TAG_2 + "')";
     private static final String EXPECTED_RESULT_SQL_DETAILS = "((storage_pool_details.name='" + DETAIL_KEY + "') AND (storage_pool_details.value='" + DETAIL_VALUE +"'))";
@@ -79,9 +79,10 @@ public class PrimaryDataStoreDaoImplTest extends TestCase {
 
     @Before
     public void setup() {
+        STORAGE_POOL_DETAILS.put(DETAIL_KEY, DETAIL_VALUE);
         doReturn(Arrays.asList(storagePoolVO)).when(primaryDataStoreDao).
-            searchStoragePoolsPreparedStatement(Matchers.anyString(), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyLong(),
-                    Matchers.any(ScopeType.class), Matchers.anyInt());
+        searchStoragePoolsPreparedStatement(Matchers.anyString(), Matchers.anyLong(), Matchers.anyLong(), Matchers.anyLong(),
+                Matchers.any(ScopeType.class), Matchers.anyInt());
     }
 
     @Test

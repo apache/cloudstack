@@ -1055,6 +1055,8 @@ class TestRouterStopCreateFW(cloudstackTestCase):
             cls.services["account"],
             domainid=cls.domain.id
         )
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+
         cls.service_offering = ServiceOffering.create(
             cls.api_client,
             cls.services["service_offering"]
@@ -1219,13 +1221,13 @@ class TestRouterStopCreateFW(cloudstackTestCase):
         )
         self.assertEqual(
             fw_rules[0].startport,
-            str(self.services["fwrule"]["startport"]),
+            self.services["fwrule"]["startport"],
             "Check start port of firewall rule"
         )
 
         self.assertEqual(
             fw_rules[0].endport,
-            str(self.services["fwrule"]["endport"]),
+            self.services["fwrule"]["endport"],
             "Check end port of firewall rule"
         )
         # For DNS and DHCP check 'dnsmasq' process status
@@ -1250,15 +1252,14 @@ class TestRouterStopCreateFW(cloudstackTestCase):
                 True,
                 "Check for list hosts response return valid data"
             )
+
             host = hosts[0]
-            host.user = self.services["configurableData"]["host"]["username"]
-            host.passwd = self.services["configurableData"]["host"]["password"]
             try:
                 result = get_process_status(
                     host.ipaddress,
                     22,
-                    host.user,
-                    host.passwd,
+                    self.hostConfig['username'],
+                    self.hostConfig['password'],
                     router.linklocalip,
                     'iptables -t nat -L'
                 )

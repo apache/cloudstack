@@ -161,7 +161,7 @@ public class SnmpTrapAppender extends AppenderSkeleton {
             if (ipAddress.trim().equalsIgnoreCase("localhost")) {
                 continue;
             }
-            if (!NetUtils.isValidIp(ipAddress)) {
+            if (!NetUtils.isValidIp4(ipAddress)) {
                 return false;
             }
         }

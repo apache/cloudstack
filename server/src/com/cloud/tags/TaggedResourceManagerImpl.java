@@ -40,8 +40,8 @@ import com.cloud.network.security.SecurityGroupRuleVO;
 import com.cloud.network.security.SecurityGroupVO;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLVO;
-import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.StaticRouteVO;
+import com.cloud.network.vpc.VpcOfferingVO;
 import com.cloud.network.vpc.VpcVO;
 import com.cloud.projects.ProjectVO;
 import com.cloud.server.ResourceTag;
@@ -147,7 +147,6 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
     @Inject
     AccountDao _accountDao;
 
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         return true;
@@ -202,6 +201,20 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             domainId = account.getDomainId();
         }
 
+        // if the resource type is network acl, get the accountId and domainId from VPC following: NetworkACLItem -> NetworkACL -> VPC
+        if (resourceType == ResourceObjectType.NetworkACL) {
+            NetworkACLItemVO aclItem = (NetworkACLItemVO)entity;
+            Object networkACL = _entityMgr.findById(s_typeMap.get(ResourceObjectType.NetworkACLList), aclItem.getAclId());
+            Long vpcId = ((NetworkACLVO)networkACL).getVpcId();
+
+            if (vpcId != null && vpcId != 0) {
+                Object vpc = _entityMgr.findById(s_typeMap.get(ResourceObjectType.Vpc), vpcId);
+
+                accountId = ((VpcVO)vpc).getAccountId();
+                domainId = ((VpcVO)vpc).getDomainId();
+            }
+        }
+
         if (entity instanceof OwnedBy) {
             accountId = ((OwnedBy)entity).getAccountId();
         }
@@ -214,8 +227,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             accountId = Account.ACCOUNT_ID_SYSTEM;
         }
 
-        if (domainId == null || domainId == -1)
-        {
+        if ((domainId == null) || ((accountId != null) && (domainId.longValue() == -1))) {
             domainId = _accountDao.getDomainIdForGivenAccountId(accountId);
         }
         return new Pair<>(accountId, domainId);
@@ -277,7 +289,7 @@ public class TaggedResourceManagerImpl extends ManagerBase implements TaggedReso
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 for (String key : tags.keySet()) {
                     for (String resourceId : resourceIds) {
-                        if (!resourceType.resourceTagsSupport())  {
+                        if (!resourceType.resourceTagsSupport()) {
                             throw new InvalidParameterValueException("The resource type " + resourceType + " doesn't support resource tags");
                         }
 
