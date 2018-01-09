@@ -24,8 +24,16 @@ import logging
 import os.path
 import re
 import shutil
+
+try:
+    from subprocess import DEVNULL # py3k
+except ImportError:
+    import os
+    DEVNULL = open(os.devnull, 'wb')
+
 from netaddr import *
 from pprint import pprint
+
 
 PUBLIC_INTERFACES = {"router" : "eth2", "vpcrouter" : "eth1"}
 
@@ -180,11 +188,35 @@ def get_hostname():
 
 
 def execute(command):
-    """ Execute command """
+    """Execute a command in a new process and return stdout
+
+    The command is executed in a shell (which allow use of pipes and such),
+    wait for the command to terminate, and return stdout.
+
+    :param command: command with arguments to be executed,
+                    see :py:class:`subprocess.Popen`
+    :type command: str or list or tuple
+    :return: command stdout
+    :rtype: list
+    """
     logging.debug("Executing: %s" % command)
-    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    result = p.communicate()[0]
-    return result.splitlines()
+    p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=DEVNULL, shell=True)
+    return p.communicate()[0].splitlines()
+
+
+def execute_background(command):
+    """Execute a command in a new process
+
+    The command is executed in a shell (which allow use of pipes and such).
+    The function does not wait command completion to return.
+
+    :param command: command with arguments to be executed,
+                    see :py:class:`subprocess.Popen`
+    :type command: str or list or tuple
+    :return: None
+    """
+    logging.debug("Executing: %s" % command)
+    subprocess.Popen(command, stdout=DEVNULL, stderr=DEVNULL, shell=True)
 
 
 def save_iptables(command, iptables_file):
