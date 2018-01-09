@@ -224,17 +224,5 @@ then
     setenforce 0
 fi
 
-which aria2c
-if [ $? -gt 0 ]
-then
-    yum install epel-release -y
-    yum install aria2 -y
-    if [ $? -gt 0 ]
-    then
-        printf "failed to install aria2"
-        exit 1
-    fi
-fi
-
 cloudstack-setup-agent --host=$host --zone=$zone --pod=$pod --cluster=$cluster --guid=$guid $paramters -a > /dev/null
 #cloud_consoleP_setup $host $zone $pod

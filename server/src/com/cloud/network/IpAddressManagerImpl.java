@@ -964,13 +964,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         VpcVO vpc = _vpcDao.findById(vpcId);
                         displayIp = vpc.isDisplay();
                     }
-                    PublicIp ip = fetchNewPublicIp(dcId, null, null, owner, VlanType.VirtualNetwork, guestNtwkId, isSourceNat, false, null, false, vpcId, displayIp, false);
-                    IPAddressVO publicIp = ip.ip();
-
-                    markPublicIpAsAllocated(publicIp);
-                    _ipAddressDao.update(publicIp.getId(), publicIp);
-
-                    return ip;
+                    return fetchNewPublicIp(dcId, null, null, owner, VlanType.VirtualNetwork, guestNtwkId, isSourceNat, true, null, false, vpcId, displayIp, false);
                 }
             });
             if (ip.getState() != State.Allocated) {

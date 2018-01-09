@@ -348,9 +348,13 @@ class TestSSVMs(cloudstackTestCase):
                         self.apiclient,
                         physicalnetworkid=listphyntwk[0].id),
                     list) is True):
-                self.assertEqual(
-                    cpvm.gateway,
-                    iprange.gateway,
+                cpvmValidGateway = False
+                for iprange in ipranges_response:
+                    if iprange.gateway == cpvm.gateway:
+                        cpvmValidGateway = True
+                        break
+                self.assertTrue(
+                    cpvmValidGateway,
                     "Check gateway with that of corresponding ip range"
                 )
 
