@@ -137,6 +137,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.dc.dao.VlanDao;
+import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.deploy.DataCenterDeployment;
@@ -473,7 +474,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private UserStatisticsDao _userStatsDao;
     @Inject
-    private VlanDao _vlanDao;
+    protected VlanDao _vlanDao;
     @Inject
     VolumeService _volService;
     @Inject
@@ -1565,6 +1566,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if (ipaddr == null) {
                     throw new InvalidParameterValueException("Allocating ip to guest nic " + nicVO.getUuid() + " failed, please choose another ip");
                 }
+
+                final IPAddressVO newIp = _ipAddressDao.findByIpAndDcId(dc.getId(), ipaddr);
+                final Vlan vlan = _vlanDao.findById(newIp.getVlanId());
+                nicVO.setIPv4Gateway(vlan.getVlanGateway());
+                nicVO.setIPv4Netmask(vlan.getVlanNetmask());
+
                 final IPAddressVO ip = _ipAddressDao.findByIpAndSourceNetworkId(nicVO.getNetworkId(), nicVO.getIPv4Address());
                 if (ip != null) {
                     Transaction.execute(new TransactionCallbackNoReturn() {
@@ -1584,7 +1591,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             return null;
         }
 
-        // update nic ipaddress
+        s_logger.debug("Updating IPv4 address of NIC " + nicVO + " to " + ipaddr + "/" + nicVO.getIPv4Netmask() + " with gateway " + nicVO.getIPv4Gateway());
         nicVO.setIPv4Address(ipaddr);
         _nicDao.persist(nicVO);
 
