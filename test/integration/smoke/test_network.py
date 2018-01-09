@@ -110,7 +110,6 @@ class TestPublicIP(cloudstackTestCase):
             cls.user.domainid
         )
 
-        tag = "tag1"
         cls.service_offering = ServiceOffering.create(
             cls.apiclient,
             cls.services["service_offerings"]["tiny"],
