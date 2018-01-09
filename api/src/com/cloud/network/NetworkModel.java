@@ -103,34 +103,12 @@ public interface NetworkModel {
 
     List<? extends Network> listNetworksUsedByVm(long vmId, boolean isSystem);
 
-    /**
-     * Returns the nic of a vm in a specified network
-     * @param vmId vm id
-     * @param networkId network which contains a nic of the specified vm
-     * @return nic of vm in specified network
-     */
     Nic getNicInNetwork(long vmId, long networkId);
 
-    /**
-     * Returns all the nics of a specific traffic type for the provided vm
-     * @param vmId vm id
-     * @param type the traffic type
-     * @return list of nics
-     */
     List<? extends Nic> getNicsForTraffic(long vmId, TrafficType type);
 
-    /**
-     * Returns the network containing the default nic of the specified vm.
-     * @param vmId of the vm for which we want the default network.
-     * @return the default network
-     */
     Network getDefaultNetworkForVm(long vmId);
 
-    /**
-     * Returns the default nic for the specified vm id
-     * @param vmId vm id
-     * @return default nic
-     */
     Nic getDefaultNic(long vmId);
 
     UserDataServiceProvider getUserDataUpdateProvider(Network network);
