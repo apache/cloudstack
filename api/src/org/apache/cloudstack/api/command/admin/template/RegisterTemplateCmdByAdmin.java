@@ -40,7 +40,7 @@ public class RegisterTemplateCmdByAdmin extends RegisterTemplateCmd {
 
     @Override
     public void execute() throws ResourceAllocationException{
-        if (isDirectDownload() && !hypervisor.equals(Hypervisor.HypervisorType.KVM.toString())) {
+        if (isDirectDownload() && !getHypervisor().equals(Hypervisor.HypervisorType.KVM.toString())) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Parameter directdownload is only allowed for KVM templates");
         }
         try {

@@ -58,17 +58,13 @@ public class NfsDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
 
     @Override
     public boolean downloadTemplate() {
-        try {
-            String mountSrcUuid = UUID.randomUUID().toString();
-            String mount = String.format(mountCommand, srcHost + ":" + srcPath, "/mnt/" + mountSrcUuid);
-            Script.runSimpleBashScript(mount);
-            String downloadDir = getDestPoolPath() + File.separator + getDirectDownloadTempPath(getTemplateId());
-            setDownloadedFilePath(downloadDir + File.separator + getFileNameFromUrl());
-            Script.runSimpleBashScript("cp /mnt/" + mountSrcUuid + srcPath + " " + getDownloadedFilePath());
-            Script.runSimpleBashScript("umount /mnt/" + mountSrcUuid);
-        } catch (Exception e) {
-            return false;
-        }
+        String mountSrcUuid = UUID.randomUUID().toString();
+        String mount = String.format(mountCommand, srcHost + ":" + srcPath, "/mnt/" + mountSrcUuid);
+        Script.runSimpleBashScript(mount);
+        String downloadDir = getDestPoolPath() + File.separator + getDirectDownloadTempPath(getTemplateId());
+        setDownloadedFilePath(downloadDir + File.separator + getFileNameFromUrl());
+        Script.runSimpleBashScript("cp /mnt/" + mountSrcUuid + srcPath + " " + getDownloadedFilePath());
+        Script.runSimpleBashScript("umount /mnt/" + mountSrcUuid);
         return true;
     }
 }

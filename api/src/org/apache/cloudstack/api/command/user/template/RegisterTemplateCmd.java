@@ -70,7 +70,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     private String format;
 
     @Parameter(name = ApiConstants.HYPERVISOR, type = CommandType.STRING, required = true, description = "the target hypervisor for the template")
-    protected String hypervisor;
+    private String hypervisor;
 
     @Parameter(name = ApiConstants.IS_FEATURED, type = CommandType.BOOLEAN, description = "true if this template is a featured template, false otherwise")
     private Boolean featured;
@@ -269,7 +269,7 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     @Override
     public void execute() throws ResourceAllocationException {
-        if (isDirectDownload() && !hypervisor.equals(Hypervisor.HypervisorType.KVM.toString())) {
+        if (isDirectDownload() && !getHypervisor().equals(Hypervisor.HypervisorType.KVM.toString())) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Parameter directdownload is only allowed for KVM templates");
         }
         try {

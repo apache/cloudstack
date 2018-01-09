@@ -46,8 +46,6 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
 
     /**
      * Return direct download temporary path to download template
-     * @param templateId
-     * @return
      */
     protected static String getDirectDownloadTempPath(Long templateId) {
         String templateIdAsString = String.valueOf(templateId);
@@ -57,7 +55,6 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
 
     /**
      * Create folder on path if it does not exist
-     * @param path
      */
     protected void createFolder(String path) {
         File dir = new File(path);
