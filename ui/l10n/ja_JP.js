@@ -636,6 +636,7 @@ var dictionary = {
     "label.devices": "デバイス",
     "label.dhcp": "DHCP",
     "label.direct.attached.public.ip": "直接アタッチされているパブリック IP アドレス",
+    "label.direct.download":"Direct Download",
     "label.direct.ips": "共有ネットワークの IP アドレス",
     "label.disable.autoscale": "自動サイズ設定の無効化",
     "label.disable.host": "ホストの無効化",

@@ -222,6 +222,9 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "temp_zone_pair")
     private String tempZonePair; // represent a distinct (templateId, data_center_id) pair
 
+    @Column(name = "direct_download")
+    private boolean directDownload;
+
     public TemplateJoinVO() {
     }
 
@@ -477,4 +480,7 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
         this.accountId = accountId;
     }
 
+    public boolean isDirectDownload() {
+        return directDownload;
+    }
 }

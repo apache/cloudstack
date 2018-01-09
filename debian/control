@@ -22,7 +22,7 @@ Description: CloudStack server library
 
 Package: cloudstack-agent
 Architecture: all
-Depends: ${python:Depends}, openjdk-8-jre-headless | java8-runtime-headless | java8-runtime, cloudstack-common (= ${source:Version}), lsb-base (>= 4.0), libcommons-daemon-java, openssh-client, qemu-kvm (>= 1.0), libvirt-bin (>= 1.2.2), uuid-runtime, iproute, ebtables, vlan, jsvc, ipset, python-libvirt, ethtool, iptables, lsb-release, init-system-helpers (>= 1.14~)
+Depends: ${python:Depends}, openjdk-8-jre-headless | java8-runtime-headless | java8-runtime, cloudstack-common (= ${source:Version}), lsb-base (>= 4.0), libcommons-daemon-java, openssh-client, qemu-kvm (>= 1.0), libvirt-bin (>= 1.2.2), uuid-runtime, iproute, ebtables, vlan, jsvc, ipset, python-libvirt, ethtool, iptables, lsb-release, init-system-helpers (>= 1.14~), aria2
 Recommends: init-system-helpers
 Conflicts: cloud-agent, cloud-agent-libs, cloud-agent-deps, cloud-agent-scripts
 Description: CloudStack agent

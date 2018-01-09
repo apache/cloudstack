@@ -40,17 +40,7 @@ public class RegisterTemplateCmdByAdmin extends RegisterTemplateCmd {
     @Override
     public void execute() throws ResourceAllocationException{
         try {
-            if ((zoneId != null) && (zoneIds != null && !zoneIds.isEmpty()))
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                        "Both zoneid and zoneids cannot be specified at the same time");
-
-            if (zoneId == null && (zoneIds == null || zoneIds.isEmpty()))
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                        "Either zoneid or zoneids is required. Both cannot be null.");
-
-            if (zoneIds != null && zoneIds.size() > 1 && zoneIds.contains(-1L))
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                        "Parameter zoneids cannot combine all zones (-1) option with other zones");
+            validateParameters();
 
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null){

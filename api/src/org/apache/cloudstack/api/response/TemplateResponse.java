@@ -185,6 +185,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     private Boolean isDynamicallyScalable;
 
+    @SerializedName(ApiConstants.DIRECT_DOWNLOAD)
+    @Param(description = "KVM Only: true if template is directly downloaded to Primary Storage bypassing Secondary Storage")
+    private Boolean directDownload;
+
     public TemplateResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
     }
@@ -361,5 +365,13 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public void setBits(int bits) {
         this.bits = bits;
+    }
+
+    public void setDirectDownload(Boolean directDownload) {
+        this.directDownload = directDownload;
+    }
+
+    public Boolean getDirectDownload() {
+        return directDownload;
     }
 }

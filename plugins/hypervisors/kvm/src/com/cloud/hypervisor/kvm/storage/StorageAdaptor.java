@@ -71,5 +71,4 @@ public interface StorageAdaptor {
     public boolean deleteStoragePool(KVMStoragePool pool);
 
     public boolean createFolder(String uuid, String path);
-
 }

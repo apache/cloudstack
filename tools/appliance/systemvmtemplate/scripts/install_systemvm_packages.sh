@@ -68,7 +68,7 @@ function install_packages() {
     python-flask \
     haproxy \
     radvd \
-    sharutils genisoimage \
+    sharutils genisoimage aria2 \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons
 

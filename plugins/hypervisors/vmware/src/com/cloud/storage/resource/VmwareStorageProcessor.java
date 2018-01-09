@@ -34,6 +34,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Strings;
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -2424,5 +2425,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
     public void setFullCloneFlag(boolean value){
         this._fullCloneFlag = value;
         s_logger.debug("VmwareProcessor instance - create full clone = " + (value ? "TRUE" : "FALSE"));
+    }
+
+    @Override
+    public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
+        return null;
     }
 }

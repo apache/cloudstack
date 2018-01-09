@@ -1302,6 +1302,10 @@ class Template:
         if details:
             cmd.details = details
 
+        if "directdownload" in services:
+            cmd.directdownload = services["directdownload"]
+
+
         # Register Template
         template = apiclient.registerTemplate(cmd)
 

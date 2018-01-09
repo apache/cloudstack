@@ -636,6 +636,7 @@ var dictionary = {
     "label.devices": "기기",
     "label.dhcp": "DHCP",
     "label.direct.attached.public.ip": "Direct Attached Public IP",
+    "label.direct.download":"Direct Download",
     "label.direct.ips": "직접 IP 주소",
     "label.disable.autoscale": "Disable Autoscale",
     "label.disable.host": "Disable Host",

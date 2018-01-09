@@ -636,6 +636,7 @@ var dictionary = {
     "label.devices": "Enheter",
     "label.dhcp": "DHCP",
     "label.direct.attached.public.ip": "Direkte Tilknyttet Offentlig IP-adresse",
+    "label.direct.download":"Direct Download",
     "label.direct.ips": "Deltnettverk-IPadresser",
     "label.disable.autoscale": "Deaktiver autoskalering",
     "label.disable.host": "Deaktiver host",

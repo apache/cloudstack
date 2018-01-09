@@ -445,6 +445,9 @@ public class TemplateServiceImpl implements TemplateService {
                             } catch (NoTransitionException e) {
                                 s_logger.error("Unexpected state transition exception for template " + tmplt.getName() + ". Details: " + e.getMessage());
                             }
+                        } else if (tmplt.isDirectDownload()) {
+                            s_logger.info("Template " + tmplt.getName() + ":" + tmplt.getId() + " is marked for direct download, discarding it for download on image stores");
+                            toBeDownloaded.remove(tmplt);
                         } else {
                             s_logger.info("Template Sync did not find " + uniqueName + " on image store " + storeId + ", may request download based on available hypervisor types");
                             if (tmpltStore != null) {

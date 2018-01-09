@@ -105,6 +105,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 } else {
                     templateStatus = template.getDownloadPercent() + "% Downloaded";
                 }
+            } else if (template.getDownloadState() == Status.BYPASSED) {
+                templateStatus = "Bypassed Secondary Storage";
             }else if (template.getErrorString()==null){
                 templateStatus = template.getTemplateState().toString();
             }else {
@@ -196,6 +198,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         if (tag_id > 0) {
             addTagInformation(template, templateResponse);
         }
+
+        templateResponse.setDirectDownload(template.isDirectDownload());
 
         templateResponse.setObjectName("template");
         return templateResponse;
@@ -320,6 +324,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                     } else {
                         isoStatus = iso.getDownloadPercent() + "% Downloaded";
                     }
+                } else if (iso.getDownloadState() == Status.BYPASSED) {
+                    isoStatus = "Bypassed Secondary Storage";
                 } else {
                     isoStatus = iso.getErrorString();
                 }
@@ -347,6 +353,8 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
                 isoResponse.addTag(ApiDBUtils.newResourceTagResponse(vtag, false));
             }
         }
+
+        isoResponse.setDirectDownload(iso.isDirectDownload());
 
         isoResponse.setObjectName("iso");
         return isoResponse;

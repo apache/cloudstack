@@ -16,6 +16,10 @@
 // under the License.
 package com.cloud.template;
 
+import com.cloud.agent.api.Answer;
+import com.cloud.host.HostVO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.resource.ResourceManager;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -29,6 +33,8 @@ import com.cloud.configuration.Config;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
+import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
+import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -68,6 +74,9 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.org.Grouping;
 import com.cloud.server.StatsCollector;
+import com.cloud.template.VirtualMachineTemplate.State;
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.TemplateType;
@@ -77,9 +86,6 @@ import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VMTemplateZoneVO;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.download.DownloadMonitor;
-import com.cloud.template.VirtualMachineTemplate.State;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -113,10 +119,31 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     DataCenterDao _dcDao;
     @Inject
     MessageBus _messageBus;
+    @Inject
+    ResourceManager resourceManager;
 
     @Override
     public String getName() {
         return TemplateAdapterType.Hypervisor.getName();
+    }
+
+    /**
+     * Validate on random running KVM host that URL is reachable
+     * @param url url
+     */
+    private Long performDirectDownloadUrlValidation(final String url) {
+        HostVO host = resourceManager.findOneRandomRunningHostByHypervisor(Hypervisor.HypervisorType.KVM);
+        if (host == null) {
+            throw new CloudRuntimeException("Couldn't find a host to validate URL " + url);
+        }
+        CheckUrlCommand cmd = new CheckUrlCommand(url);
+        s_logger.debug("Performing URL " + url + " validation on host " + host.getId());
+        Answer answer = _agentMgr.easySend(host.getId(), cmd);
+        if (answer == null || !answer.getResult()) {
+            throw new CloudRuntimeException("URL: " + url + " validation failed on host id " + host.getId());
+        }
+        CheckUrlAnswer ans = (CheckUrlAnswer) answer;
+        return ans.getTemplateSize();
     }
 
     @Override
@@ -124,6 +151,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
         UriUtils.validateUrl(ImageFormat.ISO.getFileExtension(), url);
+        if (cmd.isDirectDownload()) {
+            Long templateSize = performDirectDownloadUrlValidation(url);
+            profile.setSize(templateSize);
+        }
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
@@ -135,6 +166,10 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
         UriUtils.validateUrl(cmd.getFormat(), url);
+        if (cmd.isDirectDownload()) {
+            Long templateSize = performDirectDownloadUrlValidation(url);
+            profile.setSize(templateSize);
+        }
         profile.setUrl(url);
         // Check that the resource limit for secondary storage won't be exceeded
         _resourceLimitMgr.checkResourceLimit(_accountMgr.getAccount(cmd.getEntityOwnerId()), ResourceType.secondary_storage, UriUtils.getRemoteSize(url));
@@ -150,6 +185,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         return profile;
     }
 
+    /**
+     * Persist template marking it for direct download to Primary Storage, skipping Secondary Storage
+     */
+    private void persistDirectDownloadTemplate(long templateId, Long size) {
+        TemplateDataStoreVO directDownloadEntry = templateDataStoreDao.createTemplateDirectDownloadEntry(templateId, size);
+        templateDataStoreDao.persist(directDownloadEntry);
+    }
+
     @Override
     public VMTemplateVO create(TemplateProfile profile) {
         // persist entry in vm_template, vm_template_details and template_zone_ref tables, not that entry at template_store_ref is not created here, and created in createTemplateAsync.
@@ -159,17 +202,23 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
             throw new CloudRuntimeException("Unable to persist the template " + profile.getTemplate());
         }
 
-        List<Long> zones = profile.getZoneIdList();
+        if (!profile.isDirectDownload()) {
+            List<Long> zones = profile.getZoneIdList();
 
-        //zones is null when this template is to be registered to all zones
-        if (zones == null){
-            createTemplateWithinZone(null, profile, template);
-        }
-        else {
-            for (Long zId : zones) {
-                createTemplateWithinZone(zId, profile, template);
+            //zones is null when this template is to be registered to all zones
+            if (zones == null){
+                createTemplateWithinZone(null, profile, template);
             }
+            else {
+                for (Long zId : zones) {
+                    createTemplateWithinZone(zId, profile, template);
+                }
+            }
+        } else {
+            //KVM direct download templates bypassing Secondary Storage
+            persistDirectDownloadTemplate(template.getId(), profile.getSize());
         }
+
         _resourceLimitMgr.incrementResourceCount(profile.getAccountId(), ResourceType.template);
         return template;
     }

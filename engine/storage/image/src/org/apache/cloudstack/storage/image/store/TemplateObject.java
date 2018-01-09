@@ -344,6 +344,14 @@ public class TemplateObject implements TemplateInfo {
         return obj != null ? obj.getInstallPath() : null;
     }
 
+    @Override
+    public boolean isDirectDownload() {
+        if (this.imageVO == null) {
+            return false;
+        }
+        return this.imageVO.isDirectDownload();
+    }
+
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
     }

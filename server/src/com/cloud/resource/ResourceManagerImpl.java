@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -2795,6 +2796,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
         return null;
+    }
+
+    @Override
+    public HostVO findOneRandomRunningHostByHypervisor(HypervisorType type) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.EQ, type);
+        sc.and(sc.entity().getType(),Op.EQ, Type.Routing);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        sc.and(sc.entity().getRemoved(), Op.NULL);
+        List<HostVO> hosts = sc.list();
+        if (CollectionUtils.isEmpty(hosts)) {
+            return null;
+        } else {
+            Collections.shuffle(hosts, new Random(System.currentTimeMillis()));
+            return hosts.get(0);
+        }
     }
 
     @Override

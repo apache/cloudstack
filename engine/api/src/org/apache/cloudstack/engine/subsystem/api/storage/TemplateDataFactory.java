@@ -36,4 +36,8 @@ public interface TemplateDataFactory {
     TemplateInfo getReadyTemplateOnCache(long templateId);
 
     List<TemplateInfo> listTemplateOnCache(long templateId);
+
+    TemplateInfo getReadyBypassedTemplateOnPrimaryStore(long templateId, Long poolId, Long hostId);
+
+    boolean isTemplateMarkedForDirectDownload(long templateId);
 }
