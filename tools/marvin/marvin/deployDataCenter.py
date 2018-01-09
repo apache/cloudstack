@@ -35,6 +35,7 @@ from marvin.lib.utils import (random_gen)
 from marvin.config.test_data import test_data
 from sys import exit
 import os
+import errno
 import pickle
 from time import sleep, strftime, localtime
 from optparse import OptionParser
@@ -65,18 +66,16 @@ class DeployDataCenters(object):
     def __persistDcConfig(self):
         try:
             if self.__logFolderPath:
-                dc_file_path = self.__logFolderPath + "/dc_entries.obj"
+                dc_file_path = os.path.join(self.__logFolderPath, "dc_entries.obj")
             else:
                 ts = strftime("%b_%d_%Y_%H_%M_%S", localtime())
                 dc_file_path = "dc_entries_" + str(ts) + ".obj"
+
             file_to_write = open(dc_file_path, 'w')
             if file_to_write:
                 pickle.dump(self.__cleanUp, file_to_write)
-                print "\n=== Data Center Settings are dumped to %s===" % \
-                      dc_file_path
-                self.__tcRunLogger.debug(
-                    "\n=== Data Center Settings are dumped to %s===" %
-                    dc_file_path)
+                print "\n=== Data Center Settings are dumped to %s===" % dc_file_path
+                self.__tcRunLogger.debug("\n=== Data Center Settings are dumped to %s===" % dc_file_path)
         except Exception as e:
             print "Exception Occurred  while persisting DC Settings: %s" % \
                   GetDetailExceptionInfo(e)
@@ -1110,38 +1109,46 @@ class DeleteDataCenters:
         finally:
             return ret
 
+def mkdirpath(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 if __name__ == "__main__":
     '''
     @Desc : This module facilitates the following:
             1. Deploying DataCenter by using the input provided
             configuration.
-              EX: python deployDataCenter.py -i <inp-cfg-file>
+              EX: python deployDataCenter.py -i <inp-cfg-file> [-l <directory with logs and output data location>]
             2. Removes a created DataCenter by providing
             the input configuration file and data center settings file
               EX: python deployDataCenter.py -i <inp-cfg-file>
-              -r <dc_exported_entries>
+              -r <dc_exported_entries> [-l <directory with logs and output data location>] 
     '''
     parser = OptionParser()
-    parser.add_option("-i", "--input", action="store",
-                      default=None, dest="input",
-                      help="the path \
-                      where the json config file generated")
+    parser.add_option("-i", "--input", action="store", default=None, dest="input",
+                      help="The path where the json zones config file is located.")
 
-    parser.add_option("-r", "--remove", action="store",
-                      default=None, dest="remove",
-                      help="path to file\
-                      where the created dc entries are kept")
+    parser.add_option("-r", "--remove", action="store", default=None, dest="remove",
+                      help="The path to file where the created dc entries are kept.")
+
+    parser.add_option("-l", "--logdir", action="store", default=None, dest="logdir",
+                      help="The directory where result logs of running the script are stored:"
+                      "[dc_entries.obj, failed_plus_exceptions.txt, runinfo.txt]." +
+                      "Created automatically if doesn't exists.")
+
     (options, args) = parser.parse_args()
 
     '''
     Verify the input validity
     '''
     if options.input is None and options.remove is None:
-        print "\n==== For DeployDataCenter: Please Specify a " \
-              "Valid Input Configuration File===="
-        print "\n==== For DeleteDataCenters: Please Specify a " \
-              "Valid Input Configuration File and DC Settings===="
+        print "\n==== For DeployDataCenter: Please Specify a valid Input Configuration File===="
+        print "\n==== For DeleteDataCenters: Please Specify a valid Input Configuration File and DC Settings===="
         exit(1)
 
     '''
@@ -1161,8 +1168,10 @@ if __name__ == "__main__":
     cfg = configGenerator.getSetupConfig(options.input)
     log = cfg.logger
 
-    ret = log_obj.createLogs("DeployDataCenter",
-                             log)
+    if options.logdir != None:
+        mkdirpath(options.logdir)
+
+    ret = log_obj.createLogs("DeployDataCenter", log, options.logdir, options.logdir == None)
     if ret != FAILED:
         log_folder_path = log_obj.getLogFolderPath()
         tc_run_logger = log_obj.getLogger()

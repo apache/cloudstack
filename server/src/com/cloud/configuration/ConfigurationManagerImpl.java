@@ -3804,6 +3804,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     @DB
     public boolean releasePublicIpRange(final long vlanDbId, final long userId, final Account caller) {
         VlanVO vlan = _vlanDao.findById(vlanDbId);
+        if(vlan == null) {
+            s_logger.warn("VLAN information for Account '" + caller + "', User '" + userId + "' VLAN '" + vlanDbId + "' is null. This is NPE situation.");
+        }
 
         // Verify range is dedicated
         boolean isAccountSpecific = false;
