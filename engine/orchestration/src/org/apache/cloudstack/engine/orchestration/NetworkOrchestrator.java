@@ -1308,7 +1308,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 final DhcpServiceProvider sp = (DhcpServiceProvider)element;
                 final Map<Capability, String> dhcpCapabilities = element.getCapabilities().get(Service.Dhcp);
                 final String supportsMultipleSubnets = dhcpCapabilities.get(Capability.DhcpAccrossMultipleSubnets);
-                if (supportsMultipleSubnets != null && Boolean.valueOf(supportsMultipleSubnets) && profile.getIPv6Address() == null) {
+                if (supportsMultipleSubnets != null && Boolean.valueOf(supportsMultipleSubnets)) {
                     if (!sp.configDhcpSupportForSubnet(network, profile, vmProfile, dest, context)) {
                         return false;
                     }
