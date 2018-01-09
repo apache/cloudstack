@@ -34,7 +34,9 @@ function add_backports() {
   sed -i '/cdrom/d' /etc/apt/sources.list
   sed -i '/deb-src/d' /etc/apt/sources.list
   sed -i '/backports/d' /etc/apt/sources.list
+  sed -i '/security/d' /etc/apt/sources.list
   echo 'deb http://http.debian.net/debian stretch-backports main' >> /etc/apt/sources.list
+  echo 'deb http://security.debian.org/debian-security stretch/updates main' >> /etc/apt/sources.list
 }
 
 function apt_upgrade() {
@@ -51,6 +53,7 @@ function apt_upgrade() {
   rm -fv /root/*.iso
   apt-get -q -y update
   apt-get -q -y upgrade
+  apt-get -q -y dist-upgrade
   apt-get -y autoremove --purge
   apt-get autoclean
   apt-get clean
