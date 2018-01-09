@@ -696,6 +696,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6",
                                                                                       "Specifies the length of a randomly generated password", false);
+    static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length",
+            "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     @Inject
     public AccountManager _accountMgr;
     @Inject
@@ -3051,7 +3053,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength};
+        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -3583,7 +3585,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
         }
 
-        final SSHKeysHelper keys = new SSHKeysHelper();
+        final SSHKeysHelper keys = new SSHKeysHelper(sshKeyLength.value());
 
         final String name = cmd.getName();
         final String publicKey = keys.getPublicKey();
