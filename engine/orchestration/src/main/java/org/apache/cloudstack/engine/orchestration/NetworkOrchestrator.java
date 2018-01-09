@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.StringUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -2116,16 +2117,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         boolean ipv6 = false;
 
-        if (ip6Gateway != null && ip6Cidr != null) {
+        if (StringUtils.isNotBlank(ip6Gateway) && StringUtils.isNotBlank(ip6Cidr)) {
             ipv6 = true;
         }
         // Validate zone
         final DataCenterVO zone = _dcDao.findById(zoneId);
         if (zone.getNetworkType() == NetworkType.Basic) {
-            if (ipv6) {
-                throw new InvalidParameterValueException("IPv6 is not supported in Basic zone");
-            }
-
             // In Basic zone the network should have aclType=Domain, domainId=1, subdomainAccess=true
             if (aclType == null || aclType != ACLType.Domain) {
                 throw new InvalidParameterValueException("Only AclType=Domain can be specified for network creation in Basic zone");
@@ -2186,6 +2183,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             if (ntwkOff.getElasticIp() || ntwkOff.getElasticLb()) {
                 throw new InvalidParameterValueException("Elastic IP and Elastic LB services are supported in zone of type " + NetworkType.Basic);
             }
+        }
+
+        if (ipv6 && !NetUtils.isValidIp6Cidr(ip6Cidr)) {
+            throw new InvalidParameterValueException("Invalid IPv6 cidr specified");
         }
 
         //TODO(VXLAN): Support VNI specified
@@ -2328,7 +2329,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     userNetwork.setGateway(gateway);
                 }
 
-                if (ip6Cidr != null && ip6Gateway != null) {
+                if (StringUtils.isNotBlank(ip6Gateway) && StringUtils.isNotBlank(ip6Cidr)) {
                     userNetwork.setIp6Cidr(ip6Cidr);
                     userNetwork.setIp6Gateway(ip6Gateway);
                 }
