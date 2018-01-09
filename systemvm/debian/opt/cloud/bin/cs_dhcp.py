@@ -25,12 +25,18 @@ def merge(dbag, data):
         if data['ipv4_address'] in dbag:
             del(dbag[data['ipv4_address']])
     else:
-        remove_key = None
+        remove_keys = set()
         for key, entry in dbag.iteritems():
             if key != 'id' and entry['host_name'] == data['host_name']:
-                remove_key = key
+                remove_keys.add(key)
                 break
-        if remove_key is not None:
+
+        for key, entry in dbag.iteritems():
+            if key != 'id' and entry['mac_address'] == data['mac_address']:
+                remove_keys.add(key)
+                break
+
+        for remove_key in remove_keys:
             del(dbag[remove_key])
 
         dbag[data['ipv4_address']] = data
