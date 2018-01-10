@@ -76,6 +76,11 @@ public class StringUtils {
         return org.apache.commons.lang.StringUtils.join(components, delimiter);
     }
 
+    /**
+     * @deprecated
+     * Please use org.apache.commons.lang.StringUtils.isNotBlank() as a replacement
+     */
+    @Deprecated
     public static boolean isNotBlank(final String str) {
         if (str != null && str.trim().length() > 0) {
             return true;
