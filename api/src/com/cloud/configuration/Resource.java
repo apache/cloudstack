@@ -37,6 +37,8 @@ public interface Resource {
         private String name;
         private ResourceOwnerType[] supportedOwners;
         private int ordinal;
+        public static final long bytesToKiB = 1024;
+        public static final long bytesToMiB = 1024 * 1024;
         public static final long bytesToGiB = 1024 * 1024 * 1024;
 
         ResourceType(String name, int ordinal, ResourceOwnerType... supportedOwners) {

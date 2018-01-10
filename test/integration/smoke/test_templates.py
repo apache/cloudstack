@@ -1201,48 +1201,46 @@ class TestCopyDeleteTemplate(cloudstackTestCase):
 class TestCreateTemplateWithDirectDownload(cloudstackTestCase):
 
     @classmethod
-    def setUpClass(self):
-        self.testClient = super(TestCreateTemplateWithDirectDownload, self).getClsTestClient()
-        self.apiclient = self.testClient.getApiClient()
-        self.dbclient = self.testClient.getDbConnection()
-        self._cleanup = []
-        self.templates = []
+    def setUpClass(cls):
+        cls.testClient = super(TestCreateTemplateWithDirectDownload, cls).getClsTestClient()
+        cls.apiclient = cls.testClient.getApiClient()
+        cls.dbclient = cls.testClient.getDbConnection()
+        cls._cleanup = []
+        cls.templates = []
 
-        self.services = self.testClient.getParsedTestDataConfig()
-        self.unsupportedHypervisor = False
-        self.hypervisor = self.testClient.getHypervisorInfo()
-        if self.hypervisor.lower() not in ['kvm']:
+        cls.services = cls.testClient.getParsedTestDataConfig()
+        cls.unsupportedHypervisor = False
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        if cls.hypervisor.lower() not in ['kvm']:
             # Direct Download is only available for KVM hypervisor
-            self.unsupportedHypervisor = True
-            self.skipTest("Skipping test because unsupported hypervisor\
-                            %s" % self.hypervisor)
+            cls.unsupportedHypervisor = True
             return
 
         # Get Zone, Domain and templates
-        self.domain = get_domain(self.apiclient)
-        self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
-        self.services["mode"] = self.zone.networktype
-        self.services["virtual_machine"]["zoneid"] = self.zone.id
-        self.account = Account.create(
-            self.apiclient,
-            self.services["account"],
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
+        cls.services["mode"] = cls.zone.networktype
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
             admin=True,
-            domainid=self.domain.id
+            domainid=cls.domain.id
         )
-        self._cleanup.append(self.account)
-        self.user = Account.create(
-            self.apiclient,
-            self.services["account"],
-            domainid=self.domain.id
+        cls._cleanup.append(cls.account)
+        cls.user = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            domainid=cls.domain.id
         )
-        self._cleanup.append(self.user)
-        self.service_offering = ServiceOffering.create(
-            self.apiclient,
-            self.services["service_offerings"]["tiny"]
+        cls._cleanup.append(cls.user)
+        cls.service_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["tiny"]
         )
-        self._cleanup.append(self.service_offering)
+        cls._cleanup.append(cls.service_offering)
 
-        self.template = {
+        cls.template = {
             "name": "tiny-kvm",
             "displaytext": "tiny kvm",
             "format": "QCOW2",
@@ -1251,8 +1249,8 @@ class TestCreateTemplateWithDirectDownload(cloudstackTestCase):
             "ispublic": "True",
             "isextractable": "True",
             "checksum": "{SHA-1}" + "6952e58f39b470bd166ace11ffd20bf479bed936",
-            "hypervisor": self.hypervisor,
-            "zoneid": self.zone.id,
+            "hypervisor": cls.hypervisor,
+            "zoneid": cls.zone.id,
             "ostype": "Other Linux (64-bit)",
             "directdownload": True
         }
@@ -1273,8 +1271,7 @@ class TestCreateTemplateWithDirectDownload(cloudstackTestCase):
         self.cleanup = []
 
         if self.unsupportedHypervisor:
-            self.skipTest("Skipping test because unsupported hypervisor\
-                        %s" % self.hypervisor)
+            self.skipTest("Skipping test because unsupported hypervisor %s" % self.hypervisor)
         return
 
     def tearDown(self):

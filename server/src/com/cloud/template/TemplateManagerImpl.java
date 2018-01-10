@@ -776,12 +776,34 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     UsageEventUtils.publishUsageEvent(copyEventType, account.getId(), dstZoneId, tmpltId, null, null, null, srcTmpltStore.getPhysicalSize(),
                             srcTmpltStore.getSize(), template.getClass().getName(), template.getUuid());
                 }
-                return true;
+
+                // Copy every Datadisk template that belongs to the template to Destination zone
+                List<VMTemplateVO> dataDiskTemplates = _tmpltDao.listByParentTemplatetId(template.getId());
+                if (dataDiskTemplates != null && !dataDiskTemplates.isEmpty()) {
+                    for (VMTemplateVO dataDiskTemplate : dataDiskTemplates) {
+                        s_logger.debug("Copying " + dataDiskTemplates.size() + " for source template " + template.getId() + ". Copy all Datadisk templates to destination datastore " + dstSecStore.getName());
+                        TemplateInfo srcDataDiskTemplate = _tmplFactory.getTemplate(dataDiskTemplate.getId(), srcSecStore);
+                        AsyncCallFuture<TemplateApiResult> dataDiskCopyFuture = _tmpltSvr.copyTemplate(srcDataDiskTemplate, dstSecStore);
+                        try {
+                            TemplateApiResult dataDiskCopyResult = dataDiskCopyFuture.get();
+                            if (dataDiskCopyResult.isFailed()) {
+                                s_logger.error("Copy of datadisk template: " + srcDataDiskTemplate.getId() + " to image store: " + dstSecStore.getName()
+                                        + " failed with error: " + dataDiskCopyResult.getResult() + " , will try copying the next one");
+                                continue; // Continue to copy next Datadisk template
+                            }
+                            _tmpltDao.addTemplateToZone(dataDiskTemplate, dstZoneId);
+                            _resourceLimitMgr.incrementResourceCount(dataDiskTemplate.getAccountId(), ResourceType.secondary_storage, dataDiskTemplate.getSize());
+                        } catch (Exception ex) {
+                            s_logger.error("Failed to copy datadisk template: " + srcDataDiskTemplate.getId() + " to image store: " + dstSecStore.getName()
+                                    + " , will try copying the next one");
+                        }
+                    }
+                }
             } catch (Exception ex) {
                 s_logger.debug("failed to copy template to image store:" + dstSecStore.getName() + " ,will try next one");
             }
         }
-        return false;
+        return true;
 
     }
 
@@ -798,6 +820,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         VMTemplateVO template = _tmpltDao.findById(templateId);
         if (template == null || template.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find template with id");
+        }
+
+        // Verify template is not Datadisk template
+        if (template.getTemplateType().equals(TemplateType.DATADISK)) {
+            throw new InvalidParameterValueException("Template " + template.getId() + " is of type Datadisk. Cannot copy Datadisk templates.");
         }
 
         if (sourceZoneId != null) {

@@ -444,7 +444,6 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         String errMsg = null;
         try {
             s_logger.debug("copyAsync inspecting src type " + srcData.getType().toString() + " copyAsync inspecting dest type " + destData.getType().toString());
-
             if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.VOLUME) {
                 answer = copyVolumeFromSnapshot(srcData, destData);
             } else if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.TEMPLATE) {

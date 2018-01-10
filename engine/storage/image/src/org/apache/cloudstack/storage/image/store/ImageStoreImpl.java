@@ -20,6 +20,7 @@ package org.apache.cloudstack.storage.image.store;
 
 import java.util.Date;
 import java.util.Set;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
@@ -42,7 +43,9 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.ImageStoreTO;
-
+import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
+import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.DataStoreTO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.storage.DataStoreRole;
@@ -214,5 +217,14 @@ public class ImageStoreImpl implements ImageStoreEntity {
         driver.deleteEntityExtractUrl(this, installPath, url, entityType);
     }
 
+    @Override
+    public List<DatadiskTO> getDataDiskTemplates(DataObject obj) {
+        return driver.getDataDiskTemplates(obj);
+    }
+
+    @Override
+    public Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, String diskId, long fileSize, boolean bootable, AsyncCompletionCallback<CreateCmdResult> callback) {
+        return driver.createDataDiskTemplateAsync(dataDiskTemplate, path, diskId, bootable, fileSize, callback);
+    }
 
 }

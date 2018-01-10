@@ -149,6 +149,9 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name = "direct_download")
     private boolean directDownload;
 
+    @Column(name = "parent_template_id")
+    private Long parentTemplateId;
+
     @Override
     public String getUniqueName() {
         return uniqueName;
@@ -617,4 +620,14 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     public Class<?> getEntityType() {
         return VirtualMachineTemplate.class;
     }
+
+    @Override
+    public Long getParentTemplateId() {
+        return parentTemplateId;
+    }
+
+    public void setParentTemplateId(Long parentTemplateId) {
+        this.parentTemplateId = parentTemplateId;
+    }
+
 }

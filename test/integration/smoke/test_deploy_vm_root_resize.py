@@ -230,7 +230,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
                     accountid=self.account.name,
                     domainid=self.domain.id,
                     serviceofferingid=self.services_offering_vmware.id,
-                    templateid=self.tempobj.id,
+                    templateid=self.template.id,
                     rootdisksize=newrootsize
                 )
             else:
@@ -379,7 +379,7 @@ class TestDeployVmRootSize(cloudstackTestCase):
                         accountid=self.account.name,
                         domainid=self.domain.id,
                         serviceofferingid=self.services_offering_vmware.id,
-                        templateid=self.tempobj.id,
+                        templateid=self.template.id,
                         rootdisksize=newrootsize
                     )
                 else:

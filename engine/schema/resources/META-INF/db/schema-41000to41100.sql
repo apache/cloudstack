@@ -34,109 +34,6 @@ where
       or service in ('NetworkACL')
     )
   );
-  
---Alter view template_view
- 
-DROP VIEW IF EXISTS `cloud`.`template_view`;
-CREATE VIEW `template_view` AS
-     SELECT 
-         `vm_template`.`id` AS `id`,
-         `vm_template`.`uuid` AS `uuid`,
-         `vm_template`.`unique_name` AS `unique_name`,
-         `vm_template`.`name` AS `name`,
-         `vm_template`.`public` AS `public`,
-         `vm_template`.`featured` AS `featured`,
-         `vm_template`.`type` AS `type`,
-         `vm_template`.`hvm` AS `hvm`,
-         `vm_template`.`bits` AS `bits`,
-         `vm_template`.`url` AS `url`,
-         `vm_template`.`format` AS `format`,
-         `vm_template`.`created` AS `created`,
-         `vm_template`.`checksum` AS `checksum`,
-         `vm_template`.`display_text` AS `display_text`,
-         `vm_template`.`enable_password` AS `enable_password`,
-         `vm_template`.`dynamically_scalable` AS `dynamically_scalable`,
-         `vm_template`.`state` AS `template_state`,
-         `vm_template`.`guest_os_id` AS `guest_os_id`,
-         `guest_os`.`uuid` AS `guest_os_uuid`,
-         `guest_os`.`display_name` AS `guest_os_name`,
-         `vm_template`.`bootable` AS `bootable`,
-         `vm_template`.`prepopulate` AS `prepopulate`,
-         `vm_template`.`cross_zones` AS `cross_zones`,
-         `vm_template`.`hypervisor_type` AS `hypervisor_type`,
-         `vm_template`.`extractable` AS `extractable`,
-         `vm_template`.`template_tag` AS `template_tag`,
-         `vm_template`.`sort_key` AS `sort_key`,
-         `vm_template`.`removed` AS `removed`,
-         `vm_template`.`enable_sshkey` AS `enable_sshkey`,
-         `source_template`.`id` AS `source_template_id`,
-         `source_template`.`uuid` AS `source_template_uuid`,
-         `account`.`id` AS `account_id`,
-         `account`.`uuid` AS `account_uuid`,
-         `account`.`account_name` AS `account_name`,
-         `account`.`type` AS `account_type`,
-         `domain`.`id` AS `domain_id`,
-         `domain`.`uuid` AS `domain_uuid`,
-         `domain`.`name` AS `domain_name`,
-         `domain`.`path` AS `domain_path`,
-         `projects`.`id` AS `project_id`,
-         `projects`.`uuid` AS `project_uuid`,
-         `projects`.`name` AS `project_name`,
-         `data_center`.`id` AS `data_center_id`,
-         `data_center`.`uuid` AS `data_center_uuid`,
-         `data_center`.`name` AS `data_center_name`,
-         `launch_permission`.`account_id` AS `lp_account_id`,
-         `template_store_ref`.`store_id` AS `store_id`,
-         `image_store`.`scope` AS `store_scope`,
-         `template_store_ref`.`state` AS `state`,
-         `template_store_ref`.`download_state` AS `download_state`,
-         `template_store_ref`.`download_pct` AS `download_pct`,
-         `template_store_ref`.`error_str` AS `error_str`,
-         `template_store_ref`.`size` AS `size`,
-         `template_store_ref`.physical_size AS `physical_size`,
-         `template_store_ref`.`destroyed` AS `destroyed`,
-         `template_store_ref`.`created` AS `created_on_store`,
-         `vm_template_details`.`name` AS `detail_name`,
-         `vm_template_details`.`value` AS `detail_value`,
-         `resource_tags`.`id` AS `tag_id`,
-         `resource_tags`.`uuid` AS `tag_uuid`,
-         `resource_tags`.`key` AS `tag_key`,
-         `resource_tags`.`value` AS `tag_value`,
-         `resource_tags`.`domain_id` AS `tag_domain_id`,
-         `domain`.`uuid` AS `tag_domain_uuid`,
-         `domain`.`name` AS `tag_domain_name`,
-         `resource_tags`.`account_id` AS `tag_account_id`,
-         `account`.`account_name` AS `tag_account_name`,
-         `resource_tags`.`resource_id` AS `tag_resource_id`,
-         `resource_tags`.`resource_uuid` AS `tag_resource_uuid`,
-         `resource_tags`.`resource_type` AS `tag_resource_type`,
-         `resource_tags`.`customer` AS `tag_customer`,
-         CONCAT(`vm_template`.`id`,
-                 '_',
-                 IFNULL(`data_center`.`id`, 0)) AS `temp_zone_pair`
-     FROM
-         ((((((((((((`vm_template`
-         JOIN `guest_os` ON ((`guest_os`.`id` = `vm_template`.`guest_os_id`)))
-         JOIN `account` ON ((`account`.`id` = `vm_template`.`account_id`)))
-         JOIN `domain` ON ((`domain`.`id` = `account`.`domain_id`)))
-         LEFT JOIN `projects` ON ((`projects`.`project_account_id` = `account`.`id`)))
-         LEFT JOIN `vm_template_details` ON ((`vm_template_details`.`template_id` = `vm_template`.`id`)))
-         LEFT JOIN `vm_template` `source_template` ON ((`source_template`.`id` = `vm_template`.`source_template_id`)))
-         LEFT JOIN `template_store_ref` ON (((`template_store_ref`.`template_id` = `vm_template`.`id`)
-             AND (`template_store_ref`.`store_role` = 'Image')
-             AND (`template_store_ref`.`destroyed` = 0))))
-         LEFT JOIN `image_store` ON ((ISNULL(`image_store`.`removed`)
-             AND (`template_store_ref`.`store_id` IS NOT NULL)
-             AND (`image_store`.`id` = `template_store_ref`.`store_id`))))
-         LEFT JOIN `template_zone_ref` ON (((`template_zone_ref`.`template_id` = `vm_template`.`id`)
-             AND ISNULL(`template_store_ref`.`store_id`)
-             AND ISNULL(`template_zone_ref`.`removed`))))
-         LEFT JOIN `data_center` ON (((`image_store`.`data_center_id` = `data_center`.`id`)
-             OR (`template_zone_ref`.`zone_id` = `data_center`.`id`))))
-         LEFT JOIN `launch_permission` ON ((`launch_permission`.`template_id` = `vm_template`.`id`)))
-         LEFT JOIN `resource_tags` ON (((`resource_tags`.`resource_id` = `vm_template`.`id`)
-             AND ((`resource_tags`.`resource_type` = 'Template')
-             OR (`resource_tags`.`resource_type` = 'ISO')))));
 
 UPDATE `cloud`.`configuration` SET value = '600', default_value = '600' WHERE category = 'Advanced' AND name = 'router.aggregation.command.each.timeout';
 
@@ -302,15 +199,13 @@ CREATE VIEW `cloud`.`host_view` AS
         `cloud`.`user` ON `user`.`uuid` = `last_annotation_view`.`user_uuid`;
 -- End Of Annotations specific changes
 
-
 -- Out-of-band management driver for nested-cloudstack
 ALTER TABLE `cloud`.`oobm` MODIFY COLUMN port VARCHAR(255);
-
 
 -- CLOUDSTACK-9902: Console proxy SSL toggle
 INSERT IGNORE INTO `cloud`.`configuration` (`category`, `instance`, `component`, `name`, `value`, `description`, `default_value`, `is_dynamic`) VALUES ('Console Proxy', 'DEFAULT', 'AgentManager', 'consoleproxy.sslEnabled', 'false', 'Enable SSL for console proxy', 'false', 0);
 
--- CLOUDSTACK-9859: Retirement of midonet plugin (final removal) 
+-- CLOUDSTACK-9859: Retirement of midonet plugin (final removal)
 delete from `cloud`.`configuration` where name in ('midonet.apiserver.address', 'midonet.providerrouter.id');
 
 -- CLOUDSTACK-9972: Enhance listVolumes API
@@ -318,7 +213,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Premium', 'DEFAULT', 'manage
 
 DROP VIEW IF EXISTS `cloud`.`volume_view`;
 CREATE VIEW `cloud`.`volume_view` AS
-    select
+    SELECT
         volumes.id,
         volumes.uuid,
         volumes.name,
@@ -464,21 +359,17 @@ CREATE TABLE  IF NOT EXISTS `cloud`.`nic_extra_dhcp_options` (
 -- Add new OS versions
 
 -- Add XenServer 7.1 and 7.2 hypervisor capabilities
-
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, storage_motion_supported) values (UUID(), 'XenServer', '7.1.0', 500, 13, 1);
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, storage_motion_supported) values (UUID(), 'XenServer', '7.2.0', 500, 13, 1);
 
 -- Add XenServer 7.0 support for windows 10
-
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.0.0', 'Windows 10 (64-bit)', 258, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.0.0', 'Windows 10 (32-bit)', 257, now(), 0);
 
 -- Add XenServer 7.1 hypervisor guest OS mappings (copy 7.0.0)
-
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '7.1.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.0.0';
 
 -- Add XenServer 7.1 hypervisor guest OS (see https://docs.citrix.com/content/dam/docs/en-us/xenserver/7-1/downloads/xenserver-7-1-release-notes.pdf)
-
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.1.0', 'Windows Server 2016 (64-bit)', 259, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.1.0', 'SUSE Linux Enterprise Server 11 SP4', 187, now(),  0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.1.0', 'Red Hat Enterprise Linux 6 (64-bit)', 240, now(),  0);
@@ -487,7 +378,6 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'Xenserver', '7.1.0', 'Oracle Linux 7', 247, now(),  0);
 
 -- Add XenServer 7.2 hypervisor guest OS mappings (copy 7.1.0 & remove Windows Vista, Windows XP, Windows 2003, CentOS 4.x, RHEL 4.xS, LES 10 (all versions) as per XenServer 7.2 Release Notes)
-
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '7.2.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.1.0' AND guest_os_id not in (1,2,3,4,56,101,56,58,93,94,50,51,87,88,89,90,91,92,26,27,28,29,40,41,42,43,44,45,96,97,107,108,109,110,151,152,153);
 
 -- Add table to track primary storage in use for snapshots
@@ -524,11 +414,16 @@ ADD COLUMN `forsystemvms` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'Indicates if 
 ALTER TABLE `cloud`.`op_dc_ip_address_alloc`
 ADD COLUMN `vlan` INT(10) UNSIGNED NULL COMMENT 'Vlan the management network range is on';
 
+-- CLOUDSTACK-4757: Support multidisk OVA
+ALTER TABLE `cloud`.`vm_template` ADD COLUMN `parent_template_id` bigint(20) unsigned DEFAULT NULL COMMENT 'If datadisk template, then id of the root template this template belongs to';
+
 -- CLOUDSTACK-10146: Bypass Secondary Storage for KVM templates
 ALTER TABLE `cloud`.`vm_template`
 ADD COLUMN `direct_download` TINYINT(1) DEFAULT '0' COMMENT 'Indicates if Secondary Storage is bypassed and template is downloaded to Primary Storage';
 
-CREATE OR REPLACE VIEW `template_view` AS
+-- Changes to template_view for both multidisk OVA and bypass secondary storage for KVM templates
+DROP VIEW IF EXISTS `cloud`.`template_view`;
+CREATE VIEW `cloud`.`template_view` AS
      SELECT
          `vm_template`.`id` AS `id`,
          `vm_template`.`uuid` AS `uuid`,
@@ -559,6 +454,8 @@ CREATE OR REPLACE VIEW `template_view` AS
          `vm_template`.`sort_key` AS `sort_key`,
          `vm_template`.`removed` AS `removed`,
          `vm_template`.`enable_sshkey` AS `enable_sshkey`,
+         `parent_template`.`id` AS `parent_template_id`,
+         `parent_template`.`uuid` AS `parent_template_uuid`,
          `source_template`.`id` AS `source_template_id`,
          `source_template`.`uuid` AS `source_template_uuid`,
          `account`.`id` AS `account_id`,
@@ -606,7 +503,7 @@ CREATE OR REPLACE VIEW `template_view` AS
                  IFNULL(`data_center`.`id`, 0)) AS `temp_zone_pair`,
           `vm_template`.`direct_download` AS `direct_download`
      FROM
-         ((((((((((((`vm_template`
+         (((((((((((((`vm_template`
          JOIN `guest_os` ON ((`guest_os`.`id` = `vm_template`.`guest_os_id`)))
          JOIN `account` ON ((`account`.`id` = `vm_template`.`account_id`)))
          JOIN `domain` ON ((`domain`.`id` = `account`.`domain_id`)))
@@ -616,6 +513,7 @@ CREATE OR REPLACE VIEW `template_view` AS
          LEFT JOIN `template_store_ref` ON (((`template_store_ref`.`template_id` = `vm_template`.`id`)
              AND (`template_store_ref`.`store_role` = 'Image')
              AND (`template_store_ref`.`destroyed` = 0))))
+         LEFT JOIN `vm_template` `parent_template` ON ((`parent_template`.`id` = `vm_template`.`parent_template_id`)))
          LEFT JOIN `image_store` ON ((ISNULL(`image_store`.`removed`)
              AND (`template_store_ref`.`store_id` IS NOT NULL)
              AND (`image_store`.`id` = `template_store_ref`.`store_id`))))

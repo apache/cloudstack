@@ -1446,6 +1446,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
+    public DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+        return ApiDBUtils.findDiskOfferingById(diskOfferingId);
+    }
+
+    @Override
     public VpnUsersResponse createVpnUserResponse(VpnUser vpnUser) {
         VpnUsersResponse vpnResponse = new VpnUsersResponse();
         vpnResponse.setId(vpnUser.getUuid());

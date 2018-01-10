@@ -46,6 +46,7 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
@@ -58,6 +59,8 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
+import com.cloud.offering.DiskOffering;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
@@ -191,6 +194,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     @Parameter(name = ApiConstants.DHCP_OPTIONS_NETWORK_LIST, type = CommandType.MAP, description = "DHCP options which are passed to the VM on start up"
             + " Example: dhcpoptionsnetworklist[0].dhcp:114=url&dhcpoptionsetworklist[0].networkid=networkid&dhcpoptionsetworklist[0].dhcp:66=www.test.com")
     private Map dhcpOptionsNetworkList;
+
+    @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST, type = CommandType.MAP, since = "4.11", description = "datadisk template to disk-offering mapping;" +
+            " an optional parameter used to create additional data disks from datadisk templates; can't be specified with diskOfferingId parameter")
+    private Map dataDiskTemplateToDiskOfferingList;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -417,10 +424,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         if (dhcpOptionsNetworkList != null && !dhcpOptionsNetworkList.isEmpty()) {
 
             Collection<Map<String, String>> paramsCollection = this.dhcpOptionsNetworkList.values();
-            for(Map<String, String> dhcpNetworkOptions : paramsCollection) {
+            for (Map<String, String> dhcpNetworkOptions : paramsCollection) {
                 String networkId = dhcpNetworkOptions.get(ApiConstants.NETWORK_ID);
 
-                if(networkId == null) {
+                if (networkId == null) {
                     throw new IllegalArgumentException("No networkid specified when providing extra dhcp options.");
                 }
 
@@ -431,9 +438,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                     if (key.startsWith(ApiConstants.DHCP_PREFIX)) {
                         int dhcpOptionValue = Integer.parseInt(key.replaceFirst(ApiConstants.DHCP_PREFIX, ""));
                         dhcpOptionsForNetwork.put(dhcpOptionValue, dhcpNetworkOptions.get(key));
-                    } else if (!key.equals(ApiConstants.NETWORK_ID)){
-                            Dhcp.DhcpOptionCode dhcpOptionEnum = Dhcp.DhcpOptionCode.valueOfString(key);
-                            dhcpOptionsForNetwork.put(dhcpOptionEnum.getCode(), dhcpNetworkOptions.get(key));
+                    } else if (!key.equals(ApiConstants.NETWORK_ID)) {
+                        Dhcp.DhcpOptionCode dhcpOptionEnum = Dhcp.DhcpOptionCode.valueOfString(key);
+                        dhcpOptionsForNetwork.put(dhcpOptionEnum.getCode(), dhcpNetworkOptions.get(key));
                     }
                 }
 
@@ -441,6 +448,37 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         }
 
         return dhcpOptionsMap;
+    }
+
+    public Map<Long, DiskOffering> getDataDiskTemplateToDiskOfferingMap() {
+        if (diskOfferingId != null && dataDiskTemplateToDiskOfferingList != null) {
+            throw new InvalidParameterValueException("diskofferingid paramter can't be specified along with datadisktemplatetodiskofferinglist parameter");
+        }
+        if (MapUtils.isEmpty(dataDiskTemplateToDiskOfferingList)) {
+            return new HashMap<Long, DiskOffering>();
+        }
+
+        HashMap<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap = new HashMap<Long, DiskOffering>();
+        for (Object objDataDiskTemplates : dataDiskTemplateToDiskOfferingList.values()) {
+            HashMap<String, String> dataDiskTemplates = (HashMap<String, String>) objDataDiskTemplates;
+            Long dataDiskTemplateId;
+            DiskOffering dataDiskOffering = null;
+            VirtualMachineTemplate dataDiskTemplate= _entityMgr.findByUuid(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
+            if (dataDiskTemplate == null) {
+                dataDiskTemplate = _entityMgr.findById(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
+                if (dataDiskTemplate == null)
+                    throw new InvalidParameterValueException("Unable to translate and find entity with datadisktemplateid " + dataDiskTemplates.get("datadisktemplateid"));
+            }
+            dataDiskTemplateId = dataDiskTemplate.getId();
+            dataDiskOffering = _entityMgr.findByUuid(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
+            if (dataDiskOffering == null) {
+                dataDiskOffering = _entityMgr.findById(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
+                if (dataDiskOffering == null)
+                    throw new InvalidParameterValueException("Unable to translate and find entity with diskofferingId " + dataDiskTemplates.get("diskofferingid"));
+            }
+            dataDiskTemplateToDiskOfferingMap.put(dataDiskTemplateId, dataDiskOffering);
+        }
+        return dataDiskTemplateToDiskOfferingMap;
     }
 
     /////////////////////////////////////////////////////

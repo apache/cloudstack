@@ -18,43 +18,19 @@
  */
 package org.apache.cloudstack.storage.image;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.storage.ListTemplateAnswer;
-import com.cloud.agent.api.storage.ListTemplateCommand;
-import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Config;
-import com.cloud.configuration.Resource;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.ImageStoreDetailsUtil;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.storage.template.TemplateConstants;
-import com.cloud.storage.template.TemplateProp;
-import com.cloud.template.TemplateManager;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.utils.UriUtils;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.utils.fsm.StateMachine2;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -90,16 +66,52 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.ListTemplateAnswer;
+import com.cloud.agent.api.storage.ListTemplateCommand;
+import com.cloud.agent.api.to.DatadiskTO;
+import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.Resource;
+import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ImageStoreDetailsUtil;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.storage.template.TemplateConstants;
+import com.cloud.storage.template.TemplateProp;
+import com.cloud.template.TemplateManager;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.utils.UriUtils;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.vm.VmDetailConstants;
+import com.google.common.base.Strings;
 
 @Component
 public class TemplateServiceImpl implements TemplateService {
@@ -131,8 +143,6 @@ public class TemplateServiceImpl implements TemplateService {
     @Inject
     TemplateDataFactory _templateFactory;
     @Inject
-    VMTemplatePoolDao _tmpltPoolDao;
-    @Inject
     EndPointSelector _epSelector;
     @Inject
     TemplateManager _tmpltMgr;
@@ -144,6 +154,8 @@ public class TemplateServiceImpl implements TemplateService {
     MessageBus _messageBus;
     @Inject
     ImageStoreDetailsUtil imageStoreDetailsUtil;
+    @Inject
+    TemplateDataFactory imageFactory;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -321,6 +333,17 @@ public class TemplateServiceImpl implements TemplateService {
                             if (!allTemplates.contains(builtinTmplt)) {
                                 allTemplates.add(builtinTmplt);
                             }
+                        }
+                    }
+
+                    for (Iterator<VMTemplateVO> iter = allTemplates.listIterator(); iter.hasNext();) {
+                        VMTemplateVO child_template = iter.next();
+                        if (child_template.getParentTemplateId() != null) {
+                            String uniqueName = child_template.getUniqueName();
+                            if (templateInfos.containsKey(uniqueName)) {
+                                templateInfos.remove(uniqueName);
+                            }
+                            iter.remove();
                         }
                     }
 
@@ -678,6 +701,18 @@ public class TemplateServiceImpl implements TemplateService {
             return null;
         }
 
+        // Check if OVA contains additional data disks. If yes, create Datadisk templates for each of the additional datadisk present in the OVA
+        if (template.getFormat().equals(ImageFormat.OVA)) {
+            if (!createOvaDataDiskTemplates(template)) {
+                template.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+                result.setResult(callbackResult.getResult());
+                if (parentCallback != null) {
+                    parentCallback.complete(result);
+                }
+                return null;
+            }
+        }
+
         try {
             template.processEvent(ObjectInDataStoreStateMachine.Event.OperationSuccessed);
         } catch (Exception e) {
@@ -692,6 +727,166 @@ public class TemplateServiceImpl implements TemplateService {
             parentCallback.complete(result);
         }
         return null;
+    }
+
+
+    protected boolean createOvaDataDiskTemplates(TemplateInfo parentTemplate) {
+        try {
+            // Get Datadisk template (if any) for OVA
+            List<DatadiskTO> dataDiskTemplates = new ArrayList<DatadiskTO>();
+            ImageStoreEntity tmpltStore = (ImageStoreEntity)parentTemplate.getDataStore();
+            dataDiskTemplates = tmpltStore.getDataDiskTemplates(parentTemplate);
+            int diskCount = 0;
+            VMTemplateVO templateVO = _templateDao.findById(parentTemplate.getId());
+            _templateDao.loadDetails(templateVO);
+            DataStore imageStore = parentTemplate.getDataStore();
+            Map<String, String> details = parentTemplate.getDetails();
+            if (details == null) {
+                details = templateVO.getDetails();
+                if (details == null) {
+                    details = new HashMap<>();
+                }
+            }
+            for (DatadiskTO diskTemplate : dataDiskTemplates) {
+                if (!diskTemplate.isBootable()) {
+                    createChildDataDiskTemplate(diskTemplate, templateVO, parentTemplate, imageStore, diskCount++);
+                    if (!diskTemplate.isIso() && Strings.isNullOrEmpty(details.get(VmDetailConstants.DATA_DISK_CONTROLLER))){
+                        details.put(VmDetailConstants.DATA_DISK_CONTROLLER, getOvaDiskControllerDetails(diskTemplate, false));
+                        details.put(VmDetailConstants.DATA_DISK_CONTROLLER + diskTemplate.getDiskId(), getOvaDiskControllerDetails(diskTemplate, false));
+                    }
+                } else {
+                    finalizeParentTemplate(diskTemplate, templateVO, parentTemplate, imageStore, diskCount++);
+                    if (Strings.isNullOrEmpty(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
+                        final String rootDiskController = getOvaDiskControllerDetails(diskTemplate, true);
+                        if (!Strings.isNullOrEmpty(rootDiskController)) {
+                            details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskController);
+                        }
+                    }
+                }
+            }
+            templateVO.setDetails(details);
+            _templateDao.saveDetails(templateVO);
+            return true;
+        } catch (CloudRuntimeException | InterruptedException | ExecutionException e) {
+            return false;
+        }
+    }
+
+    private boolean createChildDataDiskTemplate(DatadiskTO dataDiskTemplate, VMTemplateVO template, TemplateInfo parentTemplate, DataStore imageStore, int diskCount) throws ExecutionException, InterruptedException {
+        // Make an entry in vm_template table
+        Storage.ImageFormat format = dataDiskTemplate.isIso() ? Storage.ImageFormat.ISO : template.getFormat();
+        String suffix = dataDiskTemplate.isIso() ? "-IsoDiskTemplate-" : "-DataDiskTemplate-";
+        TemplateType ttype = dataDiskTemplate.isIso() ? TemplateType.ISODISK : TemplateType.DATADISK;
+        final long templateId = _templateDao.getNextInSequence(Long.class, "id");
+        long guestOsId = dataDiskTemplate.isIso() ? 1 : 0;
+        String templateName = dataDiskTemplate.isIso() ? dataDiskTemplate.getPath().substring(dataDiskTemplate.getPath().lastIndexOf(File.separator) + 1) : template.getName() + suffix + diskCount;
+        VMTemplateVO templateVO = new VMTemplateVO(templateId, templateName, format, false, false, false, ttype, template.getUrl(),
+                template.requiresHvm(), template.getBits(), template.getAccountId(), null, templateName, false, guestOsId, false, template.getHypervisorType(), null,
+                null, false, false, false);
+        if (dataDiskTemplate.isIso()){
+            templateVO.setUniqueName(templateName);
+        }
+        templateVO.setParentTemplateId(template.getId());
+        templateVO.setSize(dataDiskTemplate.getVirtualSize());
+        templateVO = _templateDao.persist(templateVO);
+        // Make sync call to create Datadisk templates in image store
+        TemplateApiResult result = null;
+        TemplateInfo dataDiskTemplateInfo = imageFactory.getTemplate(templateVO.getId(), imageStore);
+        AsyncCallFuture<TemplateApiResult> future = createDatadiskTemplateAsync(parentTemplate, dataDiskTemplateInfo, dataDiskTemplate.getPath(), dataDiskTemplate.getDiskId(),
+                dataDiskTemplate.getFileSize(), dataDiskTemplate.isBootable());
+        result = future.get();
+        if (result.isSuccess()) {
+            // Make an entry in template_zone_ref table
+            if (imageStore.getScope().getScopeType() == ScopeType.REGION) {
+                associateTemplateToZone(templateId, null);
+            } else if (imageStore.getScope().getScopeType() == ScopeType.ZONE) {
+                Long zoneId = ((ImageStoreEntity)imageStore).getDataCenterId();
+                VMTemplateZoneVO templateZone = new VMTemplateZoneVO(zoneId, templateId, new Date());
+                _vmTemplateZoneDao.persist(templateZone);
+            }
+            _resourceLimitMgr.incrementResourceCount(template.getAccountId(), ResourceType.secondary_storage, templateVO.getSize());
+        } else {
+            // Delete the Datadisk templates that were already created as they are now invalid
+            s_logger.debug("Since creation of Datadisk template: " + templateVO.getId() + " failed, delete other Datadisk templates that were created as part of parent"
+                    + " template download");
+            TemplateInfo parentTemplateInfo = imageFactory.getTemplate(templateVO.getParentTemplateId(), imageStore);
+            cleanupDatadiskTemplates(parentTemplateInfo);
+        }
+        return result.isSuccess();
+    }
+
+    private boolean finalizeParentTemplate(DatadiskTO dataDiskTemplate, VMTemplateVO templateVO, TemplateInfo parentTemplate, DataStore imageStore, int diskCount) throws ExecutionException, InterruptedException, CloudRuntimeException {
+        TemplateInfo templateInfo = imageFactory.getTemplate(templateVO.getId(), imageStore);
+        AsyncCallFuture<TemplateApiResult> templateFuture = createDatadiskTemplateAsync(parentTemplate, templateInfo, dataDiskTemplate.getPath(), dataDiskTemplate.getDiskId(),
+                dataDiskTemplate.getFileSize(), dataDiskTemplate.isBootable());
+        TemplateApiResult result = null;
+        result = templateFuture.get();
+        if (!result.isSuccess()) {
+            s_logger.debug("Since creation of parent template: " + templateInfo.getId() + " failed, delete Datadisk templates that were created as part of parent"
+                    + " template download");
+            cleanupDatadiskTemplates(templateInfo);
+        }
+        return result.isSuccess();
+    }
+
+    private String getOvaDiskControllerDetails(DatadiskTO diskTemplate, boolean isRootDisk) {
+        String controller = diskTemplate.getDiskController() ;
+        String controllerSubType = diskTemplate.getDiskControllerSubType();
+
+        if (controller != null) {
+            controller = controller.toLowerCase();
+        }
+
+        if (controllerSubType != null) {
+            controllerSubType = controllerSubType.toLowerCase();
+        }
+
+        if (StringUtils.isNotBlank(controller)) {
+            if (controller.contains("ide")) {
+                return "ide";
+            }
+            if (controller.contains("scsi")) {
+                if (StringUtils.isNotBlank(controllerSubType)) {
+                    if (controllerSubType.equals("lsilogicsas")) {
+                        return "lsisas1068";
+                    }
+                    return controllerSubType;
+                }
+                if (!isRootDisk) {
+                    return "scsi";
+                }
+            }
+            if (!isRootDisk) {
+                return "osdefault";
+            }
+        }
+
+        // Root disk to use global setting vmware.root.disk.controller
+        if (!isRootDisk) {
+            return "scsi";
+        }
+        return controller;
+    }
+
+    private void cleanupDatadiskTemplates(TemplateInfo parentTemplateInfo) {
+        DataStore imageStore = parentTemplateInfo.getDataStore();
+        List<VMTemplateVO> datadiskTemplatesToDelete = _templateDao.listByParentTemplatetId(parentTemplateInfo.getId());
+        for (VMTemplateVO datadiskTemplateToDelete: datadiskTemplatesToDelete) {
+            s_logger.info("Delete template: " + datadiskTemplateToDelete.getId() + " from image store: " + imageStore.getName());
+            AsyncCallFuture<TemplateApiResult> future = deleteTemplateAsync(imageFactory.getTemplate(datadiskTemplateToDelete.getId(), imageStore));
+            try {
+                TemplateApiResult result = future.get();
+                if (!result.isSuccess()) {
+                    s_logger.warn("Failed to delete datadisk template: " + datadiskTemplateToDelete + " from image store: " + imageStore.getName() + " due to: " + result.getResult());
+                    break;
+                }
+                _vmTemplateZoneDao.deletePrimaryRecordsForTemplate(datadiskTemplateToDelete.getId());
+                _resourceLimitMgr.decrementResourceCount(datadiskTemplateToDelete.getAccountId(), ResourceType.secondary_storage, datadiskTemplateToDelete.getSize());
+            } catch (Exception e) {
+                s_logger.debug("Delete datadisk template failed", e);
+                throw new CloudRuntimeException("Delete template Failed", e);
+            }
+        }
     }
 
     @Override
@@ -1005,5 +1200,70 @@ public class TemplateServiceImpl implements TemplateService {
                 _vmTemplateStoreDao.persist(tmpltStore);
             }
         }
+    }
+
+    private class CreateDataDiskTemplateContext<T> extends AsyncRpcContext<T> {
+        private final DataObject dataDiskTemplate;
+        private final AsyncCallFuture<TemplateApiResult> future;
+
+        public CreateDataDiskTemplateContext(AsyncCompletionCallback<T> callback, DataObject dataDiskTemplate, AsyncCallFuture<TemplateApiResult> future) {
+            super(callback);
+            this.dataDiskTemplate = dataDiskTemplate;
+            this.future = future;
+        }
+
+        public AsyncCallFuture<TemplateApiResult> getFuture() {
+            return this.future;
+        }
+    }
+
+    @Override
+    public AsyncCallFuture<TemplateApiResult> createDatadiskTemplateAsync(TemplateInfo parentTemplate, TemplateInfo dataDiskTemplate, String path, String diskId, long fileSize, boolean bootable) {
+        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<TemplateApiResult>();
+        // Make an entry for disk template in template_store_ref table
+        DataStore store = parentTemplate.getDataStore();
+        TemplateObject dataDiskTemplateOnStore;
+        if (!bootable) {
+            dataDiskTemplateOnStore = (TemplateObject)store.create(dataDiskTemplate);
+            dataDiskTemplateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.CreateOnlyRequested);
+        } else {
+            dataDiskTemplateOnStore = (TemplateObject) imageFactory.getTemplate(parentTemplate, store);
+        }
+        try {
+            CreateDataDiskTemplateContext<TemplateApiResult> context = new CreateDataDiskTemplateContext<TemplateApiResult>(null, dataDiskTemplateOnStore, future);
+            AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
+            caller.setCallback(caller.getTarget().createDatadiskTemplateCallback(null, null)).setContext(context);
+            ImageStoreEntity tmpltStore = (ImageStoreEntity)parentTemplate.getDataStore();
+            tmpltStore.createDataDiskTemplateAsync(dataDiskTemplate, path, diskId, fileSize, bootable, caller);
+        } catch (CloudRuntimeException ex) {
+            dataDiskTemplateOnStore.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+            TemplateApiResult result = new TemplateApiResult(dataDiskTemplate);
+            result.setResult(ex.getMessage());
+            if (future != null) {
+                future.complete(result);
+            }
+        }
+        return future;
+    }
+
+    protected Void createDatadiskTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback,
+            CreateDataDiskTemplateContext<TemplateApiResult> context) {
+        DataObject dataDiskTemplate = context.dataDiskTemplate;
+        AsyncCallFuture<TemplateApiResult> future = context.getFuture();
+        CreateCmdResult result = callback.getResult();
+        TemplateApiResult dataDiskTemplateResult = new TemplateApiResult((TemplateObject)dataDiskTemplate);
+        try {
+            if (result.isSuccess()) {
+                dataDiskTemplate.processEvent(Event.OperationSuccessed, result.getAnswer());
+            } else {
+                dataDiskTemplate.processEvent(Event.OperationFailed);
+                dataDiskTemplateResult.setResult(result.getResult());
+            }
+        } catch (CloudRuntimeException e) {
+            s_logger.debug("Failed to process create template callback", e);
+            dataDiskTemplateResult.setResult(e.toString());
+        }
+        future.complete(dataDiskTemplateResult);
+        return null;
     }
 }

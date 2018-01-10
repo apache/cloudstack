@@ -517,7 +517,11 @@ public class VolumeObject implements VolumeInfo {
                     VolumeObjectTO newVol = (VolumeObjectTO)cpyAnswer.getNewData();
                     vol.setPath(newVol.getPath());
                     if (newVol.getSize() != null) {
-                        vol.setSize(newVol.getSize());
+                        // Root disk resize may be requested where the original
+                        // template size is less than the requested root disk size
+                        if (vol.getSize() == null || vol.getSize() < newVol.getSize()) {
+                            vol.setSize(newVol.getSize());
+                        }
                     }
                     if (newVol.getFormat() != null) {
                         vol.setFormat(newVol.getFormat());
