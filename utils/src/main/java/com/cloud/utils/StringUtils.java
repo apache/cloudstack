@@ -30,8 +30,6 @@ import java.util.Random;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.owasp.esapi.StringUtilities;
-
 public class StringUtils {
     private static final char[] hexChar = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
@@ -254,24 +252,6 @@ public class StringUtils {
         }
 
         return lstTags1.containsAll(lstTags2) && lstTags2.containsAll(lstTags1);
-    }
-
-    public static String stripControlCharacters(final String s) {
-        return StringUtilities.stripControls(s);
-    }
-
-    public static int formatForOutput(final String text, final int start, final int columns, final char separator) {
-        if (start >= text.length()) {
-            return -1;
-        }
-
-        int end = start + columns;
-        if (end > text.length()) {
-            end = text.length();
-        }
-        final String searchable = text.substring(start, end);
-        final int found = searchable.lastIndexOf(separator);
-        return found > 0 ? found : end - start;
     }
 
     public static Map<String, String> stringToMap(final String s) {
