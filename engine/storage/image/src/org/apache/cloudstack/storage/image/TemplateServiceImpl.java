@@ -111,6 +111,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.VmDetailConstants;
+import com.google.common.base.Strings;
 
 @Component
 public class TemplateServiceImpl implements TemplateService {
@@ -738,20 +739,29 @@ public class TemplateServiceImpl implements TemplateService {
             s_logger.error("MDOVA createDataDiskTemplates Found " + dataDiskTemplates.size() + " Datadisk template(s) for template: " + parentTemplate.getId());
             int diskCount = 0;
             VMTemplateVO templateVO = _templateDao.findById(parentTemplate.getId());
+            _templateDao.loadDetails(templateVO);
             DataStore imageStore = parentTemplate.getDataStore();
-            Map<String, String> details = new HashMap<String, String>();
+            Map<String, String> details = parentTemplate.getDetails();
+            if (details == null) {
+                details = templateVO.getDetails();
+                if (details == null) {
+                    details = new HashMap<>();
+                }
+            }
             for (DatadiskTO diskTemplate : dataDiskTemplates) {
                 if (!diskTemplate.isBootable()) {
                     createChildDataDiskTemplate(diskTemplate, templateVO, parentTemplate, imageStore, diskCount++);
-                    if (!diskTemplate.isIso() && details.get(VmDetailConstants.DATA_DISK_CONTROLLER) == null){
+                    if (!diskTemplate.isIso() && Strings.isNullOrEmpty(details.get(VmDetailConstants.DATA_DISK_CONTROLLER))){
                         details.put(VmDetailConstants.DATA_DISK_CONTROLLER, getOvaDiskControllerDetails(diskTemplate, false));
                         details.put(VmDetailConstants.DATA_DISK_CONTROLLER + diskTemplate.getDiskId(), getOvaDiskControllerDetails(diskTemplate, false));
                     }
                 } else {
                     finalizeParentTemplate(diskTemplate, templateVO, parentTemplate, imageStore, diskCount++);
-                    final String rootDiskController = getOvaDiskControllerDetails(diskTemplate, true);
-                    if (StringUtils.isNotBlank(rootDiskController)) {
-                        details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskController);
+                    if (Strings.isNullOrEmpty(VmDetailConstants.ROOT_DISK_CONTROLLER)) {
+                        final String rootDiskController = getOvaDiskControllerDetails(diskTemplate, true);
+                        if (!Strings.isNullOrEmpty(rootDiskController)) {
+                            details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, rootDiskController);
+                        }
                     }
                 }
             }
