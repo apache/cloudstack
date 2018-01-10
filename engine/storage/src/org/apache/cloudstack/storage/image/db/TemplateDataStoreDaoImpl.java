@@ -26,6 +26,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
@@ -67,6 +68,7 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
     private SearchBuilder<TemplateDataStoreVO> storeTemplateDownloadStatusSearch;
     private SearchBuilder<TemplateDataStoreVO> downloadTemplateSearch;
     private SearchBuilder<TemplateDataStoreVO> uploadTemplateStateSearch;
+    private SearchBuilder<TemplateDataStoreVO> directDownloadTemplateSeach;
     private SearchBuilder<VMTemplateVO> templateOnlySearch;
     private static final String EXPIRE_DOWNLOAD_URLS_FOR_ZONE = "update template_store_ref set download_url_created=? where download_url_created is not null and store_id in (select id from image_store where data_center_id=?)";
 
@@ -142,6 +144,13 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         downloadTemplateSearch.and("download_url_created", downloadTemplateSearch.entity().getExtractUrlCreated(), Op.NNULL);
         downloadTemplateSearch.and("destroyed", downloadTemplateSearch.entity().getDestroyed(), SearchCriteria.Op.EQ);
         downloadTemplateSearch.done();
+
+        directDownloadTemplateSeach = createSearchBuilder();
+        directDownloadTemplateSeach.and("template_id", directDownloadTemplateSeach.entity().getTemplateId(), Op.EQ);
+        directDownloadTemplateSeach.and("download_state", directDownloadTemplateSeach.entity().getDownloadState(), Op.EQ);
+        directDownloadTemplateSeach.and("store_id", directDownloadTemplateSeach.entity().getDataStoreId(), Op.NULL);
+        directDownloadTemplateSeach.and("state", directDownloadTemplateSeach.entity().getState(), Op.EQ);
+        directDownloadTemplateSeach.done();
 
         templateOnlySearch = _tmpltDao.createSearchBuilder();
         templateOnlySearch.and("states", templateOnlySearch.entity().getState(), SearchCriteria.Op.IN);
@@ -548,5 +557,35 @@ public class TemplateDataStoreDaoImpl extends GenericDaoBase<TemplateDataStoreVO
         sc.setJoinParameters("templateOnlySearch", "states", (Object[])states);
         sc.setParameters("destroyed", false);
         return listIncludingRemovedBy(sc);
+    }
+
+    @Override
+    public TemplateDataStoreVO createTemplateDirectDownloadEntry(long templateId, Long size) {
+        TemplateDataStoreVO templateDataStoreVO = new TemplateDataStoreVO();
+        templateDataStoreVO.setTemplateId(templateId);
+        templateDataStoreVO.setDataStoreRole(DataStoreRole.Image);
+        templateDataStoreVO.setState(State.Ready);
+        templateDataStoreVO.setDownloadState(Status.BYPASSED);
+        templateDataStoreVO.setSize(size == null ? 0l : size);
+        return templateDataStoreVO;
+    }
+
+    @Override
+    public TemplateDataStoreVO getReadyBypassedTemplate(long templateId) {
+        SearchCriteria<TemplateDataStoreVO> sc = directDownloadTemplateSeach.create();
+        sc.setParameters("template_id", templateId);
+        sc.setParameters("download_state", Status.BYPASSED);
+        sc.setParameters("state", State.Ready);
+        List<TemplateDataStoreVO> list = search(sc, null);
+        if (CollectionUtils.isEmpty(list) || list.size() > 1) {
+            return null;
+        }
+        return list.get(0);
+    }
+
+    @Override
+    public boolean isTemplateMarkedForDirectDownload(long templateId) {
+        TemplateDataStoreVO templateRef = getReadyBypassedTemplate(templateId);
+        return templateRef != null;
     }
 }

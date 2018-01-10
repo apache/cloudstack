@@ -24,17 +24,20 @@ function fix_tune2fs() {
   for partition in $(blkid -o list | grep ext | awk '{print $1}')
   do
     tune2fs -m 1 $partition
-    tune2fs -c 2 $partition
+    tune2fs -c 3 $partition
   done
   fdisk -l
   df -h
+  uname -a
 }
 
 function add_backports() {
   sed -i '/cdrom/d' /etc/apt/sources.list
   sed -i '/deb-src/d' /etc/apt/sources.list
   sed -i '/backports/d' /etc/apt/sources.list
+  sed -i '/security/d' /etc/apt/sources.list
   echo 'deb http://http.debian.net/debian stretch-backports main' >> /etc/apt/sources.list
+  echo 'deb http://security.debian.org/debian-security stretch/updates main' >> /etc/apt/sources.list
 }
 
 function apt_upgrade() {
@@ -51,6 +54,8 @@ function apt_upgrade() {
   rm -fv /root/*.iso
   apt-get -q -y update
   apt-get -q -y upgrade
+  apt-get -q -y dist-upgrade
+  apt-get -y remove --purge linux-image-4.9.0-4-amd64
   apt-get -y autoremove --purge
   apt-get autoclean
   apt-get clean

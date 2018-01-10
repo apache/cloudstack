@@ -19,6 +19,7 @@ package com.cloud.dc.dao;
 import java.util.List;
 
 
+import com.cloud.utils.db.Filter;
 import org.springframework.stereotype.Component;
 
 import com.cloud.dc.DedicatedResourceVO;
@@ -231,7 +232,7 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
     }
 
     @Override
-    public Pair<List<DedicatedResourceVO>, Integer> searchDedicatedZones(Long dataCenterId, Long domainId, Long accountId, Long affinityGroupId) {
+    public Pair<List<DedicatedResourceVO>, Integer> searchDedicatedZones(Long dataCenterId, Long domainId, Long accountId, Long affinityGroupId, Filter filter) {
         SearchCriteria<DedicatedResourceVO> sc = ListAllZonesSearch.create();
         if (dataCenterId != null) {
             sc.setParameters("zoneId", dataCenterId);
@@ -247,11 +248,11 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
                 sc.setParameters("accountId", (Object)null);
             }
         }
-        return searchAndCount(sc, null);
+        return searchAndCount(sc, filter);
     }
 
     @Override
-    public Pair<List<DedicatedResourceVO>, Integer> searchDedicatedPods(Long podId, Long domainId, Long accountId, Long affinityGroupId) {
+    public Pair<List<DedicatedResourceVO>, Integer> searchDedicatedPods(Long podId, Long domainId, Long accountId, Long affinityGroupId, Filter filter) {
         SearchCriteria<DedicatedResourceVO> sc = ListAllPodsSearch.create();
         if (podId != null) {
             sc.setParameters("podId", podId);
@@ -267,11 +268,11 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
                 sc.setParameters("accountId", (Object)null);
             }
         }
-        return searchAndCount(sc, null);
+        return searchAndCount(sc, filter);
     }
 
     @Override
-    public Pair<List<DedicatedResourceVO>, Integer> searchDedicatedClusters(Long clusterId, Long domainId, Long accountId, Long affinityGroupId) {
+    public Pair<List<DedicatedResourceVO>, Integer> searchDedicatedClusters(Long clusterId, Long domainId, Long accountId, Long affinityGroupId, Filter filter) {
         SearchCriteria<DedicatedResourceVO> sc = ListAllClustersSearch.create();
         if (clusterId != null) {
             sc.setParameters("clusterId", clusterId);
@@ -288,11 +289,11 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
                 sc.setParameters("accountId", (Object)null);
             }
         }
-        return searchAndCount(sc, null);
+        return searchAndCount(sc, filter);
     }
 
     @Override
-    public Pair<List<DedicatedResourceVO>, Integer> searchDedicatedHosts(Long hostId, Long domainId, Long accountId, Long affinityGroupId) {
+    public Pair<List<DedicatedResourceVO>, Integer> searchDedicatedHosts(Long hostId, Long domainId, Long accountId, Long affinityGroupId, Filter filter) {
         SearchCriteria<DedicatedResourceVO> sc = ListAllHostsSearch.create();
         if (hostId != null) {
             sc.setParameters("hostId", hostId);
@@ -308,7 +309,7 @@ public class DedicatedResourceDaoImpl extends GenericDaoBase<DedicatedResourceVO
                 sc.setParameters("accountId", (Object)null);
             }
         }
-        return searchAndCount(sc, null);
+        return searchAndCount(sc, filter);
     }
 
     @Override

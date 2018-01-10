@@ -680,4 +680,20 @@ public class SqlGenerator {
 
         return sql.append("SELECT DISTINCT id FROM ").append(buildTableReferences()).append(" WHERE ").append(buildDiscriminatorClause().first()).toString();
     }
+
+    public String buildDistinctSql(String[] distinctColumnNames) {
+        StringBuilder sbColumn = new StringBuilder();
+
+        if (distinctColumnNames != null && distinctColumnNames.length > 0) {
+            for (String columnName : distinctColumnNames) {
+                sbColumn.append(columnName).append(", ");
+            }
+            sbColumn.delete(sbColumn.length() - 2, sbColumn.length());
+        } else {
+            sbColumn.append("*");
+        }
+
+        StringBuilder sql = new StringBuilder();
+        return sql.append("SELECT DISTINCT " + sbColumn.toString() + " FROM ").append(buildTableReferences()).append(" WHERE ").append(buildDiscriminatorClause().first()).toString();
+    }
 }

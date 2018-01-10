@@ -87,11 +87,11 @@ under the License.
     <!-- ================ -->
 
     <category name="com.cloud">
-      <priority value="DEBUG"/>
+      <priority value="INFO"/>
     </category>
 
     <category name="org.apache.cloudstack">
-      <priority value="DEBUG"/>
+      <priority value="INFO"/>
     </category>
 
     <!-- Limit the org.apache category to INFO as its DEBUG is verbose -->

@@ -2574,7 +2574,7 @@ public class NetscalerResource implements ServerResource {
     }
 
     private String getNetScalerProtocol(final LoadBalancerTO loadBalancer) throws ExecutionException {
-        final String port = Integer.toString(loadBalancer.getSrcPort());
+        final int port = loadBalancer.getSrcPort();
         String lbProtocol = loadBalancer.getLbProtocol();
         final StickinessPolicyTO[] stickyPolicies = loadBalancer.getStickinessPolicies();
         String nsProtocol = "TCP";
@@ -2596,7 +2596,7 @@ public class NetscalerResource implements ServerResource {
             return lbProtocol.toUpperCase();
         }
 
-        if (port.equals(NetUtils.HTTP_PORT)) {
+        if (port == NetUtils.HTTP_PORT) {
             nsProtocol = "HTTP";
         } else if (NetUtils.TCP_PROTO.equalsIgnoreCase(lbProtocol)) {
             nsProtocol = "TCP";

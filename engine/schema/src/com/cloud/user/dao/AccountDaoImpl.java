@@ -16,15 +16,6 @@
 // under the License.
 package com.cloud.user.dao;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.util.Date;
-import java.util.List;
-
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.user.Account;
 import com.cloud.user.Account.State;
 import com.cloud.user.AccountVO;
@@ -39,6 +30,13 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.util.Date;
+import java.util.List;
 
 @Component
 public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements AccountDao {
@@ -184,6 +182,13 @@ public class AccountDaoImpl extends GenericDaoBase<AccountVO, Long> implements A
     @Override
     public Account findActiveAccount(String accountName, Long domainId) {
         SearchCriteria<AccountVO> sc = AllFieldsSearch.create("accountName", accountName);
+        sc.setParameters("domainId", domainId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public Account findActiveAccountById(Long accountId, Long domainId) {
+        SearchCriteria<AccountVO> sc = AllFieldsSearch.create("id", accountId);
         sc.setParameters("domainId", domainId);
         return findOneBy(sc);
     }

@@ -19,7 +19,8 @@
 # Import Local Modules
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (random_gen,
-                              cleanup_resources)
+                              cleanup_resources,
+                              validateList)
 from marvin.cloudstackAPI import *
 from marvin.lib.base import (Domain,
                              Account,
@@ -42,10 +43,10 @@ from marvin.lib.common import (get_domain,
                                wait_for_cleanup)
 from nose.plugins.attrib import attr
 from marvin.cloudstackException import CloudstackAPIException
+from marvin.codes import PASS
 import time
 
 from pyVmomi.VmomiSupport import GetVersionFromVersionUri
-
 
 class Services:
 
@@ -1468,6 +1469,91 @@ class TestUserLogin(cloudstackTestCase):
             "Login to the CloudStack should be successful" +
             "response shall have non Null key"
         )
+        return
+
+    @attr(tags=["simulator", "advanced",
+                "advancedns", "basic", "eip", "sg"])
+    def test_ApiListDomain(self):
+        """Test case to check the correctness of List domain API, to make sure that no field is missed in the output.
+        """
+
+        # Steps for test scenario
+        # 1. create a domain
+        # 2. Create a sub-domain with domain created in step 1 as parent.
+        # Validate the following
+        # 1. listDomains returns created domain and sub-domain
+        # 2. The list Domain response has all the expected 44 elements/fields in it.
+
+        listDomainResponseElements = ["id", "name", "level", "parentdomainid", "parentdomainname", "haschild", "path",
+                                      "state",
+                                      "vmlimit", "vmtotal", "vmavailable", "iplimit", "iptotal", "ipavailable",
+                                      "volumelimit",
+                                      "volumetotal", "volumeavailable", "snapshotlimit", "snapshottotal",
+                                      "snapshotavailable",
+                                      "templatelimit", "templatetotal", "templateavailable", "projectlimit",
+                                      "projecttotal", "projectavailable",
+                                      "networklimit", "networktotal", "networkavailable", "vpclimit", "vpctotal",
+                                      "vpcavailable",
+                                      "cpulimit", "cputotal", "cpuavailable", "memorylimit", "memorytotal",
+                                      "memoryavailable", "primarystoragelimit",
+                                      "primarystoragetotal", "primarystorageavailable", "secondarystoragelimit",
+                                      "secondarystoragetotal", "secondarystorageavailable"
+                                      ]
+
+        self.debug("Creating a domain for testing list domain reponse")
+        domain = Domain.create(
+            self.apiclient,
+            self.services["domain"],
+            parentdomainid=self.domain.id
+        )
+
+        self.debug("Domain: %s is created successfully." % domain.name)
+
+        self.debug("Validating the created domain")
+        list_domain = Domain.list(self.api_client, id=domain.id)
+        domain_list_validation_result = validateList(list_domain)
+
+        self.assertEqual(domain_list_validation_result[0], PASS,
+                         "Domain list validation failed due to %s" %
+                         domain_list_validation_result[2])
+
+        subDomain = Domain.create(
+            self.apiclient,
+            self.services["domain"],
+            parentdomainid=domain.id
+        )
+
+        self.debug("Sub-Domain: %s is created successfully." % subDomain.name)
+
+        self.cleanup.append(subDomain)
+        self.cleanup.append(domain)
+
+        self.debug("Validating the created sub-domain")
+        list_sub_domain = Domain.list(self.api_client, id=subDomain.id)
+        subdomain_list_validation_result = validateList(list_sub_domain)
+
+        self.assertEqual(subdomain_list_validation_result[0], PASS,
+                         "Sub-Domain list validation failed due to %s" %
+                         subdomain_list_validation_result[2])
+
+        self.debug("Checking that the listDomain response has all the elements.")
+
+        domainOutputString = list_domain[0].__dict__
+
+        for element in listDomainResponseElements:
+            self.assertTrue((element.lower() in domainOutputString), element + " field is missing in list domain rsponse.")
+
+        self.debug("Verified that the listDomain response has all the elements.")
+
+        self.debug("Checking that the list sub-domain response has all the elements.")
+
+        subdomainOutputString = list_sub_domain[0].__dict__
+
+        for element in listDomainResponseElements:
+            self.assertTrue((element.lower() in subdomainOutputString), element + " field is missing in list domain rsponse.")
+
+        self.debug("Verified that the list sub-Domain response has all the elements.")
+
         return
 
     @attr(tags=["login", "accounts", "simulator", "advanced",

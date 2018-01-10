@@ -348,7 +348,7 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
 
         Ip privateIp = getVmSecondaryIp();
         if (privateIp != null) {
-            if (!NetUtils.isValidIp(privateIp.toString())) {
+            if (!NetUtils.isValidIp4(privateIp.toString())) {
                 throw new InvalidParameterValueException("Invalid vm ip address");
             }
         }

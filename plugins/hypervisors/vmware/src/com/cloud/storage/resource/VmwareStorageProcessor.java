@@ -33,6 +33,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
@@ -313,7 +314,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
 
         String templateUrl = secondaryStorageUrl + "/" + srcData.getPath();
-
         Pair<String, String> templateInfo = VmwareStorageLayoutHelper.decodeTemplateRelativePathAndNameFromUrl(secondaryStorageUrl, templateUrl, template.getName());
 
         VmwareContext context = hostService.getServiceContext(cmd);
@@ -504,6 +504,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
                 ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
+                if (template.getSize() != null){
+                    _fullCloneFlag = volume.getSize() > template.getSize() ? true : _fullCloneFlag;
+                }
                 if (!_fullCloneFlag) {
                     createVMLinkedClone(vmTemplate, dcMo, dsMo, vmdkName, morDatastore, morPool);
                 } else {
@@ -513,8 +516,8 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo = new ClusterMO(context, morCluster).findVmOnHyperHost(vmdkName);
                 assert (vmMo != null);
 
-                vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0); // TO-DO: Support for base template containing multiple disks
-                s_logger.info("Move volume out of volume-wrapper VM ");
+                vmdkFileBaseName = vmMo.getVmdkFileBaseNames().get(0);
+                s_logger.info("Move volume out of volume-wrapper VM " + vmdkFileBaseName);
                 String[] vmwareLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.VMWARE, !_fullCloneFlag);
                 String[] legacyCloudStackLayoutFilePair = VmwareStorageLayoutHelper.getVmdkFilePairDatastorePath(dsMo, vmdkName, vmdkFileBaseName, VmwareStorageLayoutType.CLOUDSTACK_LEGACY, !_fullCloneFlag);
 
@@ -528,7 +531,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
                 vmMo.destroy();
 
                 String srcFile = dsMo.getDatastorePath(vmdkName, true);
+
                 dsMo.deleteFile(srcFile, dcMo.getMor(), true, searchExcludedFolders);
+
+                if (dsMo.folderExists(String.format("[%s]", dsMo.getName()), vmdkName)) {
+                    dsMo.deleteFolder(srcFile, dcMo.getMor());
+                }
             }
             // restoreVM - move the new ROOT disk into corresponding VM folder
             VirtualMachineMO restoreVmMo = dcMo.findVm(volume.getVmName());
@@ -541,7 +549,12 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(vmdkFileBaseName);
-            newVol.setSize(volume.getSize());
+            if (template.getSize() != null){
+                newVol.setSize(template.getSize());
+            }
+            else {
+                newVol.setSize(volume.getSize());
+            }
             return new CopyCmdAnswer(newVol);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
@@ -2424,5 +2437,10 @@ public class VmwareStorageProcessor implements StorageProcessor {
     public void setFullCloneFlag(boolean value){
         this._fullCloneFlag = value;
         s_logger.debug("VmwareProcessor instance - create full clone = " + (value ? "TRUE" : "FALSE"));
+    }
+
+    @Override
+    public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
+        return null;
     }
 }

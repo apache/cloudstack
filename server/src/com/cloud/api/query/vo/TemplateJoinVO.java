@@ -209,6 +209,12 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
     @Column(name = "lp_account_id")
     private Long sharedAccountId;
 
+    @Column(name = "parent_template_id")
+    private Long parentTemplateId;
+
+    @Column(name = "parent_template_uuid")
+    private String parentTemplateUuid;
+
     @Column(name = "detail_name")
     private String detailName;
 
@@ -221,6 +227,9 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     @Column(name = "temp_zone_pair")
     private String tempZonePair; // represent a distinct (templateId, data_center_id) pair
+
+    @Column(name = "direct_download")
+    private boolean directDownload;
 
     public TemplateJoinVO() {
     }
@@ -475,6 +484,18 @@ public class TemplateJoinVO extends BaseViewWithTagInformationVO implements Cont
 
     public void setAccountId(long accountId) {
         this.accountId = accountId;
+    }
+
+    public boolean isDirectDownload() {
+        return directDownload;
+    }
+
+    public Object getParentTemplateId() {
+        return parentTemplateId;
+    }
+
+    public String getParentTemplateUuid() {
+        return parentTemplateUuid;
     }
 
 }

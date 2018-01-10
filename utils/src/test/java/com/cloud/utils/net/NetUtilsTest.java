@@ -32,9 +32,12 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import com.googlecode.ipv6.IPv6Network;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
@@ -198,10 +201,10 @@ public class NetUtilsTest {
 
     @Test
     public void testIsValidIpv6() {
-        assertTrue(NetUtils.isValidIpv6("fc00::1"));
-        assertFalse(NetUtils.isValidIpv6(""));
-        assertFalse(NetUtils.isValidIpv6(null));
-        assertFalse(NetUtils.isValidIpv6("1234:5678::1/64"));
+        assertTrue(NetUtils.isValidIp6("fc00::1"));
+        assertFalse(NetUtils.isValidIp6(""));
+        assertFalse(NetUtils.isValidIp6(null));
+        assertFalse(NetUtils.isValidIp6("1234:5678::1/64"));
     }
 
     @Test
@@ -214,10 +217,10 @@ public class NetUtilsTest {
 
     @Test
     public void testIsIp6InNetwork() {
-        assertFalse(NetUtils.isIp6InNetwork("1234:5678:abcd::1", "1234:5678::/64"));
-        assertTrue(NetUtils.isIp6InNetwork("1234:5678::1", "1234:5678::/64"));
-        assertTrue(NetUtils.isIp6InNetwork("1234:5678::ffff:ffff:ffff:ffff", "1234:5678::/64"));
-        assertTrue(NetUtils.isIp6InNetwork("1234:5678::", "1234:5678::/64"));
+        assertFalse(NetUtils.isIp6InNetwork(IPv6Address.fromString("1234:5678:abcd::1"), IPv6Network.fromString("1234:5678::/64")));
+        assertTrue(NetUtils.isIp6InNetwork(IPv6Address.fromString("1234:5678::1"), IPv6Network.fromString("1234:5678::/64")));
+        assertTrue(NetUtils.isIp6InNetwork(IPv6Address.fromString("1234:5678::ffff:ffff:ffff:ffff"), IPv6Network.fromString("1234:5678::/64")));
+        assertTrue(NetUtils.isIp6InNetwork(IPv6Address.fromString("1234:5678::"), IPv6Network.fromString("1234:5678::/64")));
     }
 
     @Test
@@ -267,13 +270,9 @@ public class NetUtilsTest {
         final String cidrSecond = "10.0.151.0/20";
         final String cidrThird = "10.0.144.0/21";
 
-        assertTrue(NetUtils.isValidCIDR(cidrFirst));
-        assertTrue(NetUtils.isValidCIDR(cidrSecond));
-        assertTrue(NetUtils.isValidCIDR(cidrThird));
-        assertTrue(NetUtils.isValidCIDR("2001:db8::/64"));
-        assertTrue(NetUtils.isValidCIDR("2001:db8::/48"));
-        assertTrue(NetUtils.isValidCIDR("2001:db8:fff::/56"));
-        assertFalse(NetUtils.isValidCIDR("2001:db8:gggg::/56"));
+        assertTrue(NetUtils.isValidIp4Cidr(cidrFirst));
+        assertTrue(NetUtils.isValidIp4Cidr(cidrSecond));
+        assertTrue(NetUtils.isValidIp4Cidr(cidrThird));;
     }
 
     @Test
@@ -285,8 +284,6 @@ public class NetUtilsTest {
         assertTrue(NetUtils.isValidCidrList(cidrFirst));
         assertTrue(NetUtils.isValidCidrList(cidrSecond));
         assertTrue(NetUtils.isValidCidrList(cidrThird));
-        assertTrue(NetUtils.isValidCidrList("2001:db8::/64,2001:db8:ffff::/48"));
-        assertTrue(NetUtils.isValidCidrList("2001:db8::/64,2001:db8:ffff::/48,192.168.0.0/24"));
     }
 
     @Test
@@ -386,7 +383,7 @@ public class NetUtilsTest {
         final String ipAddress = "192.168.0.0";
         final String cidr = "192.168.0.0/31";
 
-        final boolean isInRange = NetUtils.isIpWithtInCidrRange(ipAddress, cidr);
+        final boolean isInRange = NetUtils.isIpWithInCidrRange(ipAddress, cidr);
 
         assertTrue("Check if the subnetUtils.setInclusiveHostCount(true) has been called.", isInRange);
     }
@@ -396,7 +393,7 @@ public class NetUtilsTest {
         final String ipAddress = "192.168.0.1";
         final String cidr = "192.168.0.0/31";
 
-        final boolean isInRange = NetUtils.isIpWithtInCidrRange(ipAddress, cidr);
+        final boolean isInRange = NetUtils.isIpWithInCidrRange(ipAddress, cidr);
 
         assertTrue("Check if the subnetUtils.setInclusiveHostCount(true) has been called.", isInRange);
     }
@@ -406,7 +403,7 @@ public class NetUtilsTest {
         final String ipAddress = "192.168.0.2";
         final String cidr = "192.168.0.0/31";
 
-        final boolean isInRange = NetUtils.isIpWithtInCidrRange(ipAddress, cidr);
+        final boolean isInRange = NetUtils.isIpWithInCidrRange(ipAddress, cidr);
 
         assertFalse("Out of the range. Why did it return true?", isInRange);
     }
@@ -462,21 +459,21 @@ public class NetUtilsTest {
     public void testGetCidrNetMask() {
         final String cidr = "10.10.0.0/16";
         String netmask = NetUtils.getCidrNetmask("10.10.10.10/16");
-        assertTrue(cidr + " does not generate valid netmask " + netmask,NetUtils.isValidNetmask(netmask));
+        assertTrue(cidr + " does not generate valid netmask " + netmask,NetUtils.isValidIp4Netmask(netmask));
     }
 
     @Test
     public void testGetCidrSubNet() {
         final String cidr = "10.10.0.0/16";
         String subnet = NetUtils.getCidrSubNet("10.10.10.10/16");
-        assertTrue(cidr + " does not contain " + subnet,NetUtils.isIpWithtInCidrRange(subnet, cidr));
+        assertTrue(cidr + " does not contain " + subnet,NetUtils.isIpWithInCidrRange(subnet, cidr));
     }
 
     @Test
     public void testGetCidrSubNetWithWidth() {
         final String cidr = "10.10.0.0/16";
         String subnet = NetUtils.getCidrSubNet("10.10.10.10", 16);
-        assertTrue(cidr + " does not contain " + subnet,NetUtils.isIpWithtInCidrRange(subnet, cidr));
+        assertTrue(cidr + " does not contain " + subnet,NetUtils.isIpWithInCidrRange(subnet, cidr));
     }
 
     @Test
@@ -609,5 +606,76 @@ public class NetUtilsTest {
         assertEquals(IPv6Address.fromString("fe80::fc54:ff:fe00:3e05"), NetUtils.ipv6LinkLocal("fe:54:00:00:3e:05"));
         assertEquals(IPv6Address.fromString("fe80::42:e0ff:fee8:d6a3"), NetUtils.ipv6LinkLocal("02:42:e0:e8:d6:a3"));
         assertEquals(IPv6Address.fromString("fe80::47a:88ff:fe00:8b"), NetUtils.ipv6LinkLocal("06:7a:88:00:00:8b"));
+    }
+
+    @Test
+    public void testIsIpInCidrList() throws UnknownHostException {
+        String[] cidrs = "0.0.0.0/0,::/0".split(",");
+        System.out.println(NetUtils.isIpInCidrList(InetAddress.getByName("192.168.1.1"), cidrs));
+        assertTrue(NetUtils.isIpInCidrList(InetAddress.getByName("192.168.1.1"), cidrs));
+        assertTrue(NetUtils.isIpInCidrList(InetAddress.getByName("172.16.8.9"), cidrs));
+        assertTrue(NetUtils.isIpInCidrList(InetAddress.getByName("127.0.0.1"), cidrs));
+        assertTrue(NetUtils.isIpInCidrList(InetAddress.getByName("2001:db8:100::1"), cidrs));
+        assertTrue(NetUtils.isIpInCidrList(InetAddress.getByName("::1"), cidrs));
+        assertTrue(NetUtils.isIpInCidrList(InetAddress.getByName("2a01:4f8:130:2192::2"), cidrs));
+
+        assertTrue(NetUtils.isIpInCidrList(InetAddress.getByName("127.0.0.1"), "127.0.0.1/8".split(",")));
+        assertFalse(NetUtils.isIpInCidrList(InetAddress.getByName("192.168.1.1"), "127.0.0.1/8".split(",")));
+
+        assertTrue(NetUtils.isIpInCidrList(InetAddress.getByName("127.0.0.1"), "127.0.0.1/8,::1/128".split(",")));
+        assertTrue(NetUtils.isIpInCidrList(InetAddress.getByName("::1"), "127.0.0.1/8,::1/128".split(",")));
+
+        assertFalse(NetUtils.isIpInCidrList(InetAddress.getByName("192.168.29.47"), "127.0.0.1/8,::1/128".split(",")));
+        assertFalse(NetUtils.isIpInCidrList(InetAddress.getByName("2001:db8:1938:3ff1::1"), "127.0.0.1/8,::1/128".split(",")));
+
+        assertTrue(NetUtils.isIpInCidrList(InetAddress.getByName("2a01:4f8:130:2192::2"), "::/0,127.0.0.1".split(",")));
+        assertTrue(NetUtils.isIpInCidrList(InetAddress.getByName("2001:db8:200:300::1"), "2001:db8:200::/48,127.0.0.1".split(",")));
+        assertFalse(NetUtils.isIpInCidrList(InetAddress.getByName("2001:db8:200:300::1"), "2001:db8:300::/64,127.0.0.1".split(",")));
+        assertFalse(NetUtils.isIpInCidrList(InetAddress.getByName("2a01:4f8:130:2192::2"), "2001:db8::/64,127.0.0.1".split(",")));
+    }
+
+    @Test
+    public void testIsSiteLocalAddress() {
+        assertTrue(NetUtils.isSiteLocalAddress("192.168.0.1"));
+        assertTrue(NetUtils.isSiteLocalAddress("10.0.0.1"));
+        assertTrue(NetUtils.isSiteLocalAddress("172.16.0.1"));
+        assertTrue(NetUtils.isSiteLocalAddress("192.168.254.56"));
+        assertTrue(NetUtils.isSiteLocalAddress("10.254.254.254"));
+        assertFalse(NetUtils.isSiteLocalAddress("8.8.8.8"));
+        assertFalse(NetUtils.isSiteLocalAddress("8.8.4.4"));
+        assertFalse(NetUtils.isSiteLocalAddress(""));
+        assertFalse(NetUtils.isSiteLocalAddress(null));
+    }
+
+    @Test
+    public void testStaticVariables() {
+        assertEquals(80, NetUtils.HTTP_PORT);
+        assertEquals(443, NetUtils.HTTPS_PORT);
+        assertEquals(500, NetUtils.VPN_PORT);
+        assertEquals(4500, NetUtils.VPN_NATT_PORT);
+        assertEquals(1701, NetUtils.VPN_L2TP_PORT);
+        assertEquals(8081, NetUtils.HAPROXY_STATS_PORT);
+
+        assertEquals("udp", NetUtils.UDP_PROTO);
+        assertEquals("tcp", NetUtils.TCP_PROTO);
+        assertEquals("any", NetUtils.ANY_PROTO);
+        assertEquals("icmp", NetUtils.ICMP_PROTO);
+        assertEquals("http", NetUtils.HTTP_PROTO);
+        assertEquals("ssl", NetUtils.SSL_PROTO);
+
+        assertEquals("0.0.0.0/0", NetUtils.ALL_IP4_CIDRS);
+        assertEquals("::/0", NetUtils.ALL_IP6_CIDRS);
+    }
+
+    @Test
+    public void testIsValidPort() {
+        assertTrue(NetUtils.isValidPort(80));
+        assertTrue(NetUtils.isValidPort("80"));
+        assertTrue(NetUtils.isValidPort(443));
+        assertTrue(NetUtils.isValidPort("443"));
+        assertTrue(NetUtils.isValidPort(0));
+        assertTrue(NetUtils.isValidPort(65535));
+        assertFalse(NetUtils.isValidPort(-1));
+        assertFalse(NetUtils.isValidPort(65536));
     }
 }

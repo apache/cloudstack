@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import com.cloud.hypervisor.Hypervisor;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -155,6 +156,11 @@ public class RegisterTemplateCmd extends BaseCmd {
                     "zone template and will be copied to all zones. ")
     protected List<Long> zoneIds;
 
+    @Parameter(name=ApiConstants.DIRECT_DOWNLOAD,
+                type = CommandType.BOOLEAN,
+                description = "true if template should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
+    private Boolean directDownload;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -263,6 +269,10 @@ public class RegisterTemplateCmd extends BaseCmd {
         return isRoutingType;
     }
 
+    public boolean isDirectDownload() {
+        return directDownload == null ? false : directDownload;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -289,17 +299,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceAllocationException {
         try {
-            if ((zoneId != null) && (zoneIds != null && !zoneIds.isEmpty()))
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                        "Both zoneid and zoneids cannot be specified at the same time");
-
-            if (zoneId == null && (zoneIds == null || zoneIds.isEmpty()))
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                        "Either zoneid or zoneids is required. Both cannot be null.");
-
-            if (zoneIds != null && zoneIds.size() > 1 && zoneIds.contains(-1L))
-                throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
-                        "Parameter zoneids cannot combine all zones (-1) option with other zones");
+            validateParameters();
 
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null) {
@@ -315,6 +315,25 @@ public class RegisterTemplateCmd extends BaseCmd {
         } catch (URISyntaxException ex1) {
             s_logger.info(ex1);
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex1.getMessage());
+        }
+    }
+
+    protected void validateParameters() {
+        if ((zoneId != null) && (zoneIds != null && !zoneIds.isEmpty()))
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Both zoneid and zoneids cannot be specified at the same time");
+
+        if (zoneId == null && (zoneIds == null || zoneIds.isEmpty()))
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Either zoneid or zoneids is required. Both cannot be null.");
+
+        if (zoneIds != null && zoneIds.size() > 1 && zoneIds.contains(-1L))
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Parameter zoneids cannot combine all zones (-1) option with other zones");
+
+        if (isDirectDownload() && !getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.KVM.toString())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Parameter directdownload is only allowed for KVM templates");
         }
     }
 }

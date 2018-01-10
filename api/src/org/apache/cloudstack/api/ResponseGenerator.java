@@ -286,6 +286,8 @@ public interface ResponseGenerator {
 
     Host findHostById(Long hostId);
 
+    DiskOffering findDiskOfferingById(Long diskOfferingId);
+
     VpnUsersResponse createVpnUserResponse(VpnUser user);
 
     RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);

@@ -194,7 +194,7 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
                         }
 
                         if (ip == null) {
-                            ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null, false);
+                            ip = _ipAddrMgr.assignPublicIpAddress(dc.getId(), pod.getId(), vm.getOwner(), VlanType.DirectAttached, network.getId(), null, false, false);
                         }
 
                         nic.setIPv4Address(ip.getAddress().toString());

@@ -816,7 +816,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             if (!created) {
                 s_logger.trace("Decrementing volume resource count for account id=" + volume.getAccountId() + " as volume failed to create on the backend");
                 _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, cmd.getDisplayVolume());
-                _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.primary_storage.getOrdinal());
+                _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, cmd.getDisplayVolume(), new Long(volume.getSize()));
             }
         }
     }
@@ -1262,6 +1262,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 if (instanceId == null || (vmInstance.getType().equals(VirtualMachine.Type.User))) {
                     // Decrement the resource count for volumes and primary storage belonging user VM's only
                     _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplayVolume());
+                    _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplayVolume(), new Long(volume.getSize()));
                 }
             }
             // Mark volume as removed if volume has not been created on primary or secondary
@@ -1277,7 +1278,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 AsyncCallFuture<VolumeApiResult> future = volService.expungeVolumeAsync(volOnPrimary);
                 future.get();
                 //decrement primary storage count
-                _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.primary_storage.getOrdinal());
+                _resourceLimitMgr.decrementResourceCount(volOnPrimary.getAccountId(), ResourceType.volume, volOnPrimary.isDisplayVolume());
+                _resourceLimitMgr.decrementResourceCount(volOnPrimary.getAccountId(), ResourceType.primary_storage, volOnPrimary.isDisplayVolume(), new Long(volOnPrimary.getSize()));
             }
             // expunge volume from secondary if volume is on image store
             VolumeInfo volOnSecondary = volFactory.getVolume(volume.getId(), DataStoreRole.Image);
@@ -1286,7 +1288,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 AsyncCallFuture<VolumeApiResult> future2 = volService.expungeVolumeAsync(volOnSecondary);
                 future2.get();
                 //decrement secondary storage count
-                _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.secondary_storage.getOrdinal());
+                _resourceLimitMgr.decrementResourceCount(volOnSecondary.getAccountId(), ResourceType.secondary_storage, new Long(volOnSecondary.getSize()));
             }
             // delete all cache entries for this volume
             List<VolumeInfo> cacheVols = volFactory.listVolumeOnCache(volume.getId());

@@ -30,6 +30,8 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.Storage;
+import com.cloud.storage.TemplateProfile;
 import com.cloud.projects.ProjectManager;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
@@ -59,9 +61,11 @@ import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -169,6 +173,13 @@ public class TemplateManagerImplTest {
     @Inject
     StorageStrategyFactory storageStrategyFactory;
 
+    @Inject
+    VMInstanceDao _vmInstanceDao;
+
+    @Inject
+    private VMTemplateDao _tmpltDao;
+
+
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
         public CustomThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
@@ -216,6 +227,50 @@ public class TemplateManagerImplTest {
         templateManager.verifyTemplateId(1L);
     }
 
+    @Test
+    public void testForceDeleteTemplate() {
+        //In this Unit test all the conditions related to "force template delete flag" are tested.
+
+        DeleteTemplateCmd cmd = mock(DeleteTemplateCmd.class);
+        VMTemplateVO template = mock(VMTemplateVO.class);
+        TemplateAdapter templateAdapter = mock(TemplateAdapter.class);
+        TemplateProfile templateProfile = mock(TemplateProfile.class);
+
+
+        List<VMInstanceVO> vmInstanceVOList  = new ArrayList<VMInstanceVO>();
+        List<TemplateAdapter> adapters  = new ArrayList<TemplateAdapter>();
+        adapters.add(templateAdapter);
+        when(cmd.getId()).thenReturn(0L);
+        when(_tmpltDao.findById(cmd.getId())).thenReturn(template);
+        when(cmd.getZoneId()).thenReturn(null);
+
+        when(template.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.None);
+        when(template.getFormat()).thenReturn(Storage.ImageFormat.VMDK);
+        templateManager.setTemplateAdapters(adapters);
+        when(templateAdapter.getName()).thenReturn(TemplateAdapter.TemplateAdapterType.Hypervisor.getName().toString());
+        when(templateAdapter.prepareDelete(any(DeleteTemplateCmd.class))).thenReturn(templateProfile);
+        when(templateAdapter.delete(templateProfile)).thenReturn(true);
+
+        //case 1: When Force delete flag is 'true' but VM instance VO list is empty.
+        when(cmd.isForced()).thenReturn(true);
+        templateManager.deleteTemplate(cmd);
+
+        //case 2.1: When Force delete flag is 'false' and VM instance VO list is empty.
+        when(cmd.isForced()).thenReturn(false);
+        templateManager.deleteTemplate(cmd);
+
+        //case 2.2: When Force delete flag is 'false' and VM instance VO list is non empty.
+        when(cmd.isForced()).thenReturn(false);
+        VMInstanceVO vmInstanceVO = mock(VMInstanceVO.class);
+        when(vmInstanceVO.getInstanceName()).thenReturn("mydDummyVM");
+        vmInstanceVOList.add(vmInstanceVO);
+        when(_vmInstanceDao.listNonExpungedByTemplate(anyLong())).thenReturn(vmInstanceVOList);
+        try {
+            templateManager.deleteTemplate(cmd);
+        } catch(Exception e) {
+            assertTrue("Invalid Parameter Value Exception is expected", (e instanceof InvalidParameterValueException));
+        }
+    }
     @Test
     public void testPrepareTemplateIsSeeded() {
         VMTemplateVO mockTemplate = mock(VMTemplateVO.class);

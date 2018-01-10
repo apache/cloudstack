@@ -462,7 +462,7 @@ class VirtualMachine:
                hostid=None, keypair=None, ipaddress=None, mode='default',
                method='GET', hypervisor=None, customcpunumber=None,
                customcpuspeed=None, custommemory=None, rootdisksize=None,
-               rootdiskcontroller=None, macaddress=None):
+               rootdiskcontroller=None, macaddress=None, datadisktemplate_diskoffering_list={}):
         """Create the instance"""
 
         cmd = deployVirtualMachine.deployVirtualMachineCmd()
@@ -574,6 +574,13 @@ class VirtualMachine:
 
         if group:
             cmd.group = group
+
+        cmd.datadisktemplatetodiskofferinglist = []
+        for datadisktemplate, diskoffering in datadisktemplate_diskoffering_list.items():
+            cmd.datadisktemplatetodiskofferinglist.append({
+                                            'datadisktemplateid': datadisktemplate,
+                                            'diskofferingid': diskoffering
+                                           })
 
         # program default access to ssh
         if mode.lower() == 'basic':
@@ -1301,6 +1308,10 @@ class Template:
 
         if details:
             cmd.details = details
+
+        if "directdownload" in services:
+            cmd.directdownload = services["directdownload"]
+
 
         # Register Template
         template = apiclient.registerTemplate(cmd)
@@ -3383,7 +3394,7 @@ class PublicIpRange:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, account=None, domainid=None):
+    def create(cls, apiclient, services, account=None, domainid=None, forsystemvms=None):
         """Create VlanIpRange"""
 
         cmd = createVlanIpRange.createVlanIpRangeCmd()
@@ -3401,6 +3412,8 @@ class PublicIpRange:
             cmd.account = account
         if domainid:
             cmd.domainid = domainid
+        if forsystemvms:
+            cmd.forsystemvms = forsystemvms
 
         return PublicIpRange(apiclient.createVlanIpRange(cmd).__dict__)
 
@@ -4298,7 +4311,8 @@ class Tag:
             })
         return Tag(apiclient.createTags(cmd).__dict__)
 
-    def delete(self, apiclient, resourceIds, resourceType, tags):
+    @classmethod
+    def delete(cls, apiclient, resourceIds, resourceType, tags):
         """Delete tags"""
 
         cmd = deleteTags.deleteTagsCmd()

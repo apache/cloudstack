@@ -56,5 +56,6 @@
     <module>spring/lifecycle</module>
     <module>spring/module</module>
 	<module>security</module>
+    <module>direct-download</module>
   </modules>
 </project>

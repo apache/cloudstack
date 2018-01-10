@@ -388,7 +388,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             List<String> allowedCidrs = new ArrayList<String>();
             String[] cidrs = _allowedInternalSites.split(",");
             for (String cidr : cidrs) {
-                if (NetUtils.isValidCIDR(cidr) || NetUtils.isValidIp(cidr) || !cidr.startsWith("0.0.0.0")) {
+                if (NetUtils.isValidIp4Cidr(cidr) || NetUtils.isValidIp4(cidr) || !cidr.startsWith("0.0.0.0")) {
                     allowedCidrs.add(cidr);
                 }
             }
@@ -1170,7 +1170,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             }
             if (nic.getTrafficType() == TrafficType.Management) {
                 String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
-                if (NetUtils.isValidCIDR(mgmt_cidr)) {
+                if (NetUtils.isValidIp4Cidr(mgmt_cidr)) {
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
                 }
                 buf.append(" localgw=").append(dest.getPod().getGateway());

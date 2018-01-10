@@ -79,10 +79,12 @@ public class ApiConstants {
     public static final String MIN_IOPS = "miniops";
     public static final String MAX_IOPS = "maxiops";
     public static final String HYPERVISOR_SNAPSHOT_RESERVE = "hypervisorsnapshotreserve";
+    public static final String DATADISK_OFFERING_LIST = "datadiskofferinglist";
     public static final String DESCRIPTION = "description";
     public static final String DESTINATION_ZONE_ID = "destzoneid";
     public static final String DETAILS = "details";
     public static final String DEVICE_ID = "deviceid";
+    public static final String DIRECT_DOWNLOAD = "directdownload";
     public static final String DISK_OFFERING_ID = "diskofferingid";
     public static final String DISK_SIZE = "disksize";
     public static final String UTILIZATION = "utilization";
@@ -125,6 +127,7 @@ public class ApiConstants {
     public static final String FORCED_DESTROY_LOCAL_STORAGE = "forcedestroylocalstorage";
     public static final String FORMAT = "format";
     public static final String FOR_VIRTUAL_NETWORK = "forvirtualnetwork";
+    public static final String FOR_SYSTEM_VMS = "forsystemvms";
     public static final String GATEWAY = "gateway";
     public static final String IP6_GATEWAY = "ip6gateway";
     public static final String GROUP = "group";
@@ -207,6 +210,7 @@ public class ApiConstants {
     public static final String PARAMS = "params";
     public static final String PARENT_ID = "parentid";
     public static final String PARENT_DOMAIN_ID = "parentdomainid";
+    public static final String PARENT_TEMPLATE_ID = "parenttemplateid";
     public static final String PASSWORD = "password";
     public static final String SHOULD_UPDATE_PASSWORD = "update_passwd_on_host";
     public static final String NEW_PASSWORD = "new_password";
@@ -707,6 +711,7 @@ public class ApiConstants {
 
     public static final String HAS_ANNOTATION = "hasannotation";
     public static final String LAST_ANNOTATED = "lastannotated";
+    public static final String LDAP_DOMAIN = "ldapdomain";
 
 
     public enum HostDetails {

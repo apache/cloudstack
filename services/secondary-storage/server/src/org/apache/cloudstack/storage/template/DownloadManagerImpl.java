@@ -38,6 +38,23 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.template.Processor;
+import com.cloud.storage.template.S3TemplateDownloader;
+import com.cloud.storage.template.TemplateDownloader;
+import com.cloud.storage.template.TemplateLocation;
+import com.cloud.storage.template.MetalinkTemplateDownloader;
+import com.cloud.storage.template.HttpTemplateDownloader;
+import com.cloud.storage.template.LocalTemplateDownloader;
+import com.cloud.storage.template.ScpTemplateDownloader;
+import com.cloud.storage.template.TemplateProp;
+import com.cloud.storage.template.OVAProcessor;
+import com.cloud.storage.template.IsoProcessor;
+import com.cloud.storage.template.QCOW2Processor;
+import com.cloud.storage.template.VmdkProcessor;
+import com.cloud.storage.template.RawImageProcessor;
+import com.cloud.storage.template.TARProcessor;
+import com.cloud.storage.template.VhdProcessor;
+import com.cloud.storage.template.TemplateConstants;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -56,25 +73,9 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.template.HttpTemplateDownloader;
-import com.cloud.storage.template.IsoProcessor;
-import com.cloud.storage.template.LocalTemplateDownloader;
-import com.cloud.storage.template.OVAProcessor;
-import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
-import com.cloud.storage.template.QCOW2Processor;
-import com.cloud.storage.template.RawImageProcessor;
-import com.cloud.storage.template.S3TemplateDownloader;
-import com.cloud.storage.template.ScpTemplateDownloader;
-import com.cloud.storage.template.TARProcessor;
-import com.cloud.storage.template.TemplateConstants;
-import com.cloud.storage.template.TemplateDownloader;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
-import com.cloud.storage.template.TemplateLocation;
-import com.cloud.storage.template.TemplateProp;
-import com.cloud.storage.template.VhdProcessor;
-import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
@@ -560,7 +561,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     }
                     TemplateDownloader td;
                     if ((uri != null) && (uri.getScheme() != null)) {
-                        if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
+                        if (uri.getPath().endsWith(".metalink")) {
+                            td = new MetalinkTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes);
+                        } else if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
                             td = new HttpTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy, resourceType);
                         } else if (uri.getScheme().equalsIgnoreCase("file")) {
                             td = new LocalTemplateDownloader(_storage, url, tmpDir, maxTemplateSizeInBytes, new Completion(jobId));

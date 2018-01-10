@@ -21,6 +21,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.UUID;
 
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -818,6 +819,11 @@ public class Ovm3StorageProcessor implements StorageProcessor {
         LOGGER.info("'ResignatureAnswer resignature(ResignatureCommand)' not currently used for Ovm3StorageProcessor");
 
         return new ResignatureAnswer("Not implemented");
+    }
+
+    @Override
+    public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
+        return null;
     }
 
     /**

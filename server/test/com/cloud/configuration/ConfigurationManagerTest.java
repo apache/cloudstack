@@ -891,4 +891,24 @@ public class ConfigurationManagerTest {
         result = configurationMgr.hasSameSubnet(false, null, null, null, null, null, null, true, null, null, "2001:db8:0:f101::2", "2001:db8:0:f101::a", ipV6Network);
         Assert.assertTrue(result);
     }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetVlanNumberFromUriInvalidParameter() {
+        configurationMgr.getVlanNumberFromUri("vlan");
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testGetVlanNumberFromUriInvalidSintax() {
+        configurationMgr.getVlanNumberFromUri("xxx://7");
+    }
+
+    @Test
+    public void testGetVlanNumberFromUriVlan() {
+        Assert.assertEquals("7", configurationMgr.getVlanNumberFromUri("vlan://7"));
+    }
+
+    @Test
+    public void testGetVlanNumberFromUriUntagged() {
+        Assert.assertEquals("untagged", configurationMgr.getVlanNumberFromUri("vlan://untagged"));
+    }
 }

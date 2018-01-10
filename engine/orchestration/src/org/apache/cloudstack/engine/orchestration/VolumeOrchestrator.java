@@ -654,7 +654,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner) {
+    public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner, Long deviceId) {
         if (size == null) {
             size = offering.getDiskSize();
         } else {
@@ -679,13 +679,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setInstanceId(vm.getId());
         }
 
-        if (type.equals(Type.ROOT)) {
+        if (deviceId != null) {
+            vol.setDeviceId(deviceId);
+        } else if (type.equals(Type.ROOT)) {
             vol.setDeviceId(0l);
         } else {
             vol.setDeviceId(1l);
         }
         if (template.getFormat() == ImageFormat.ISO) {
             vol.setIsoId(template.getId());
+        } else if (template.getTemplateType().equals(Storage.TemplateType.DATADISK)) {
+            vol.setTemplateId(template.getId());
         }
         // display flag matters only for the User vms
         if (vm.getType() == VirtualMachine.Type.User) {
@@ -1108,7 +1112,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         //if (vm.getType() == VirtualMachine.Type.User && vm.getTemplate().getFormat() == ImageFormat.ISO) {
         if (vm.getType() == VirtualMachine.Type.User) {
-            _tmpltMgr.prepareIsoForVmProfile(vm);
+            _tmpltMgr.prepareIsoForVmProfile(vm, dest);
             //DataTO dataTO = tmplFactory.getTemplate(vm.getTemplate().getId(), DataStoreRole.Image, vm.getVirtualMachine().getDataCenterId()).getTO();
             //DiskTO iso = new DiskTO(dataTO, 3L, null, Volume.Type.ISO);
             //vm.addDisk(iso);
@@ -1252,7 +1256,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             StoragePool pool = dest.getStorageForDisks().get(vol);
             destPool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         }
-
         if (vol.getState() == Volume.State.Allocated || vol.getState() == Volume.State.Creating) {
             newVol = vol;
         } else {
@@ -1287,9 +1290,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 TemplateInfo templ = tmplFactory.getReadyTemplateOnImageStore(templateId, dest.getDataCenter().getId());
 
                 if (templ == null) {
-                    s_logger.debug("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
-
-                    throw new CloudRuntimeException("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
+                    if (tmplFactory.isTemplateMarkedForDirectDownload(templateId)) {
+                        // Template is marked for direct download bypassing Secondary Storage
+                        templ = tmplFactory.getReadyBypassedTemplateOnPrimaryStore(templateId, destPool.getId(), dest.getHost().getId());
+                    } else {
+                        s_logger.debug("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
+                        throw new CloudRuntimeException("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
+                    }
                 }
 
                 PrimaryDataStore primaryDataStore = (PrimaryDataStore)destPool;
@@ -1358,9 +1365,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking if we need to prepare " + vols.size() + " volumes for " + vm);
-        }
 
         List<VolumeTask> tasks = getTasks(vols, dest.getStorageForDisks(), vm);
         Volume vol = null;
@@ -1391,6 +1395,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 pool = (StoragePool)dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
                 vol = result.first();
             }
+
             VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
             DataTO volTO = volumeInfo.getTO();
             DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(),
@@ -1571,8 +1576,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
             _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplay());
-            //FIXME - why recalculate and not decrement
-            _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.primary_storage.getOrdinal());
+            _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplay(), new Long(volume.getSize()));
         } catch (Exception e) {
             s_logger.debug("Failed to destroy volume" + volume.getId(), e);
             throw new CloudRuntimeException("Failed to destroy volume" + volume.getId(), e);

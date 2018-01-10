@@ -172,12 +172,16 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
+
 
 public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
 
     @Inject
     private AccountDao _accountDao;
+    @Inject
+    private AccountManager _accountMgr;
     @Inject
     ConfigurationDao _configDao;
     @Inject
@@ -1698,17 +1702,32 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @ActionEvent(eventType = EventTypes.EVENT_USER_MOVE, eventDescription = "moving User to a new account")
     public boolean moveUser(MoveUserCmd cmd) {
-        UserVO user = getValidUserVO(cmd.getId());
+        final Long id = cmd.getId();
+        UserVO user = getValidUserVO(id);
         Account oldAccount = _accountDao.findById(user.getAccountId());
         checkAccountAndAccess(user, oldAccount);
         long domainId = oldAccount.getDomainId();
 
-        long newAccountId = getNewAccountId(cmd, domainId);
+        long newAccountId = getNewAccountId(domainId, cmd.getAccountName(), cmd.getAccountId());
 
+        return moveUser(user, newAccountId);
+    }
+
+    public boolean moveUser(long id, Long domainId, long accountId) {
+        UserVO user = getValidUserVO(id);
+        Account oldAccount = _accountDao.findById(user.getAccountId());
+        checkAccountAndAccess(user, oldAccount);
+        Account newAccount = _accountDao.findById(accountId);
+        checkIfNotMovingAcrossDomains(domainId, newAccount);
+        return moveUser(user , accountId);
+    }
+
+    private boolean moveUser(UserVO user, long newAccountId) {
         if(newAccountId == user.getAccountId()) {
             // could do a not silent fail but the objective of the user is reached
             return true; // no need to create a new user object for this user
         }
+
         return Transaction.execute(new TransactionCallback<Boolean>() {
             @Override
             public Boolean doInTransaction(TransactionStatus status) {
@@ -1717,34 +1736,37 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 user.setUuid(UUID.randomUUID().toString());
                 _userDao.update(user.getId(),user);
                 newUser.setAccountId(newAccountId);
-                boolean success = _userDao.remove(cmd.getId());
+                boolean success = _userDao.remove(user.getId());
                 UserVO persisted = _userDao.persist(newUser);
                 return success && persisted.getUuid().equals(user.getExternalEntity());
             }
         });
     }
 
-    private long getNewAccountId(MoveUserCmd cmd, long domainId) {
+    private long getNewAccountId(long domainId, String accountName, Long accountId) {
         Account newAccount = null;
-        if (StringUtils.isNotBlank(cmd.getAccountName())) {
+        if (StringUtils.isNotBlank(accountName)) {
             if(s_logger.isDebugEnabled()) {
-                s_logger.debug("Getting id for account by name '" + cmd.getAccountName() + "' in domain " + domainId);
+                s_logger.debug("Getting id for account by name '" + accountName + "' in domain " + domainId);
             }
-            newAccount = _accountDao.findEnabledAccount(cmd.getAccountName(), domainId);
+            newAccount = _accountDao.findEnabledAccount(accountName, domainId);
         }
-        if (newAccount == null && cmd.getAccountId() != null) {
-            newAccount = _accountDao.findById(cmd.getAccountId());
+        if (newAccount == null && accountId != null) {
+            newAccount = _accountDao.findById(accountId);
         }
         if (newAccount == null) {
             throw new CloudRuntimeException("no account name or account id. this should have been caught before this point");
         }
-        long newAccountId = newAccount.getAccountId();
 
+        checkIfNotMovingAcrossDomains(domainId, newAccount);
+        return newAccount.getAccountId();
+    }
+
+    private void checkIfNotMovingAcrossDomains(long domainId, Account newAccount) {
         if(newAccount.getDomainId() != domainId) {
             // not in scope
             throw new InvalidParameterValueException("moving a user from an account in one domain to an account in annother domain is not supported!");
         }
-        return newAccountId;
     }
 
     private void checkAccountAndAccess(UserVO user, Account account) {
@@ -2076,7 +2098,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public UserAccount authenticateUser(String username, String password, Long domainId, InetAddress loginIpAddress, Map<String, Object[]> requestParameters) {
+    public UserAccount authenticateUser(final String username, final String password, final Long domainId, final InetAddress loginIpAddress, final Map<String, Object[]>
+            requestParameters) {
         UserAccount user = null;
         if (password != null && !password.isEmpty()) {
             user = getUserAccount(username, password, domainId, requestParameters);
@@ -2186,6 +2209,27 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 return null;
             }
 
+            // We authenticated successfully by now, let's check if we are allowed to login from the ip address the reqest comes from
+            final Account account = _accountMgr.getAccount(user.getAccountId());
+            final DomainVO domain = (DomainVO) _domainMgr.getDomain(account.getDomainId());
+
+            // Get the CIDRs from where this account is allowed to make calls
+            final String accessAllowedCidrs = ApiServiceConfiguration.ApiAllowedSourceCidrList.valueIn(account.getId()).replaceAll("\\s","");
+            final Boolean ApiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
+
+            if (ApiSourceCidrChecksEnabled) {
+                s_logger.debug("CIDRs from which account '" + account.toString() + "' is allowed to perform API calls: " + accessAllowedCidrs);
+
+                // Block when is not in the list of allowed IPs
+                if (!NetUtils.isIpInCidrList(loginIpAddress, accessAllowedCidrs.split(","))) {
+                    s_logger.warn("Request by account '" + account.toString() + "' was denied since " + loginIpAddress.toString().replaceAll("/","")
+                            + " does not match " + accessAllowedCidrs);
+                    throw new CloudAuthenticationException("Failed to authenticate user '" + username + "' in domain '" + domain.getPath() + "' from ip "
+                            + loginIpAddress.toString().replaceAll("/","") + "; please provide valid credentials");
+                }
+            }
+
+            // Here all is fine!
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }

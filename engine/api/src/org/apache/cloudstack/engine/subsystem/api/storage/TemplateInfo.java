@@ -25,4 +25,6 @@ public interface TemplateInfo extends DataObject, VirtualMachineTemplate {
     String getUniqueName();
 
     String getInstallPath();
+
+    boolean isDirectDownload();
 }

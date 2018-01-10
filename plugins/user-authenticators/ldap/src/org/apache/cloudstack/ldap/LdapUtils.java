@@ -16,9 +16,12 @@
 // under the License.
 package org.apache.cloudstack.ldap;
 
+import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class LdapUtils {
     public static String escapeLDAPSearchFilter(final String filter) {
@@ -54,6 +57,18 @@ public final class LdapUtils {
             return String.valueOf(value);
         }
         return null;
+    }
+
+    public static List<String> getAttributeValues(final Attributes attributes, final String attributeName) throws NamingException {
+        ArrayList<String> memberships = new ArrayList<>();
+        final Attribute attribute = attributes.get(attributeName);
+        if (attribute != null) {
+            NamingEnumeration<?> values = attribute.getAll();
+            while(values.hasMore()) {
+                memberships.add(String.valueOf(values.next()));
+            }
+        }
+        return memberships;
     }
 
     private LdapUtils() {

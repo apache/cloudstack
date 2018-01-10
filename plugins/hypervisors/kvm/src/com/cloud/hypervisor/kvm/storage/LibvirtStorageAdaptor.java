@@ -1341,4 +1341,5 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private void deleteDirVol(LibvirtStoragePool pool, StorageVol vol) throws LibvirtException {
         Script.runSimpleBashScript("rm -r --interactive=never " + vol.getPath());
     }
+
 }

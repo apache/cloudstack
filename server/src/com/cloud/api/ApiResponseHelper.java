@@ -98,6 +98,7 @@ import com.cloud.network.as.AutoScaleVmProfileVO;
 import com.cloud.network.as.Condition;
 import com.cloud.network.as.ConditionVO;
 import com.cloud.network.as.Counter;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkVO;
@@ -163,6 +164,8 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.net.Dhcp;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
@@ -356,6 +359,8 @@ public class ApiResponseHelper implements ResponseGenerator {
     private ResourceTagDao _resourceTagDao;
     @Inject
     private NicExtraDhcpOptionDao _nicExtraDhcpOptionDao;
+    @Inject
+    private IPAddressDao userIpAddressDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -745,11 +750,26 @@ public class ApiResponseHelper implements ResponseGenerator {
                     vlanResponse.setPhysicalNetworkId(pnw.getUuid());
                 }
             }
+            vlanResponse.setForSystemVms(isForSystemVms(vlan.getId()));
             vlanResponse.setObjectName("vlan");
             return vlanResponse;
         } catch (InstantiationException | IllegalAccessException e) {
             throw new CloudRuntimeException("Failed to create Vlan IP Range response", e);
         }
+    }
+
+    /**
+     * Return true if vlan IP range is dedicated for system vms (SSVM and CPVM), false if not
+     * @param vlanId vlan id
+     * @return true if VLAN IP range is dedicated to system vms
+     */
+    private boolean isForSystemVms(long vlanId){
+        SearchBuilder<IPAddressVO> sb = userIpAddressDao.createSearchBuilder();
+        sb.and("vlanId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
+        SearchCriteria<IPAddressVO> sc = sb.create();
+        sc.setParameters("vlanId", vlanId);
+        IPAddressVO userIpAddresVO = userIpAddressDao.findOneBy(sc);
+        return userIpAddresVO.isForSystemVms();
     }
 
     @Override
@@ -947,6 +967,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         String[] ipRange = new String[2];
         List<String> startIp = new ArrayList<String>();
         List<String> endIp = new ArrayList<String>();
+        List<String> forSystemVms = new ArrayList<String>();
+        List<String> vlanIds = new ArrayList<String>();
 
         if (pod.getDescription() != null && pod.getDescription().length() > 0) {
             final String[] existingPodIpRanges = pod.getDescription().split(",");
@@ -956,6 +978,11 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 startIp.add(((existingPodIpRange.length > 0) && (existingPodIpRange[0] != null)) ? existingPodIpRange[0] : "");
                 endIp.add(((existingPodIpRange.length > 1) && (existingPodIpRange[1] != null)) ? existingPodIpRange[1] : "");
+                forSystemVms.add((existingPodIpRange.length > 2) && (existingPodIpRange[2] != null) ? existingPodIpRange[2] : "0");
+                vlanIds.add((existingPodIpRange.length > 3) &&
+                        (existingPodIpRange[3] != null && !existingPodIpRange.equals("untagged")) ?
+                        BroadcastDomainType.Vlan.toUri(existingPodIpRange[3]).toString() :
+                        BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString());
             }
         }
 
@@ -970,6 +997,8 @@ public class ApiResponseHelper implements ResponseGenerator {
         podResponse.setNetmask(NetUtils.getCidrNetmask(pod.getCidrSize()));
         podResponse.setStartIp(startIp);
         podResponse.setEndIp(endIp);
+        podResponse.setForSystemVms(forSystemVms);
+        podResponse.setVlanId(vlanIds);
         podResponse.setGateway(pod.getGateway());
         podResponse.setAllocationState(pod.getAllocationState().toString());
         if (showCapacities != null && showCapacities) {
@@ -1414,6 +1443,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public VirtualMachineTemplate findTemplateById(Long templateId) {
         return ApiDBUtils.findTemplateById(templateId);
+    }
+
+    @Override
+    public DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+        return ApiDBUtils.findDiskOfferingById(diskOfferingId);
     }
 
     @Override

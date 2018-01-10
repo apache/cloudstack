@@ -43,9 +43,9 @@ public class SSHKeysHelper {
         return sb.toString();
     }
 
-    public SSHKeysHelper() {
+    public SSHKeysHelper(Integer keyLength) {
         try {
-            keyPair = KeyPair.genKeyPair(new JSch(), KeyPair.RSA);
+            keyPair = KeyPair.genKeyPair(new JSch(), KeyPair.RSA, keyLength);
         } catch (JSchException e) {
             e.printStackTrace();
         }

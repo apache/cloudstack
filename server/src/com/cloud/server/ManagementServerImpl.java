@@ -65,6 +65,7 @@ import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
+import org.apache.cloudstack.api.command.admin.direct.download.UploadTemplateDirectDownloadCertificate;
 import org.apache.cloudstack.api.command.admin.domain.CreateDomainCmd;
 import org.apache.cloudstack.api.command.admin.domain.DeleteDomainCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
@@ -696,6 +697,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6",
                                                                                       "Specifies the length of a randomly generated password", false);
+    static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length",
+            "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     @Inject
     public AccountManager _accountMgr;
     @Inject
@@ -1686,6 +1689,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
+        final Long domainId = cmd.getDomainId();
         final Long imageStoreId = cmd.getImageStoreId();
         String scope = null;
         Long id = null;
@@ -1704,6 +1708,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (accountId != null) {
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
+            paramCountCheck++;
+        }
+        if (domainId != null) {
+            scope = ConfigKey.Scope.Domain.toString();
+            id = domainId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {
@@ -3022,6 +3031,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ReleasePodIpCmdByAdmin.class);
         cmdList.add(CreateManagementNetworkIpRangeCmd.class);
         cmdList.add(DeleteManagementNetworkIpRangeCmd.class);
+        cmdList.add(UploadTemplateDirectDownloadCertificate.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -3034,7 +3044,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(IssueOutOfBandManagementPowerActionCmd.class);
         cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
         cmdList.add(GetUserKeysCmd.class);
-
         return cmdList;
     }
 
@@ -3045,7 +3054,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength};
+        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -3577,7 +3586,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
         }
 
-        final SSHKeysHelper keys = new SSHKeysHelper();
+        final SSHKeysHelper keys = new SSHKeysHelper(sshKeyLength.value());
 
         final String name = cmd.getName();
         final String publicKey = keys.getPublicKey();

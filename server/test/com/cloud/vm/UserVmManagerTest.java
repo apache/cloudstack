@@ -44,6 +44,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.cloud.dc.VlanVO;
+import com.cloud.dc.dao.VlanDao;
+import com.cloud.network.dao.IPAddressVO;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -197,6 +200,8 @@ public class UserVmManagerTest {
     @Mock
     NicDao _nicDao;
     @Mock
+    VlanDao _vlanDao;
+    @Mock
     NicVO _nicMock;
     @Mock
     NetworkModel _networkModel;
@@ -245,6 +250,7 @@ public class UserVmManagerTest {
         _userVmMgr._vmSnapshotDao = _vmSnapshotDao;
         _userVmMgr._configDao = _configDao;
         _userVmMgr._nicDao = _nicDao;
+        _userVmMgr._vlanDao = _vlanDao;
         _userVmMgr._networkModel = _networkModel;
         _userVmMgr._networkDao = _networkDao;
         _userVmMgr._dcDao = _dcDao;
@@ -845,9 +851,18 @@ public class UserVmManagerTest {
         when(_dcDao.findById(anyLong())).thenReturn(_dcMock);
         when(_dcMock.getNetworkType()).thenReturn(NetworkType.Advanced);
 
+        IPAddressVO newIp = mock(IPAddressVO.class);
+        when(newIp.getVlanId()).thenReturn(1L);
+
+        VlanVO vlan = mock(VlanVO.class);
+        when(vlan.getVlanGateway()).thenReturn("10.10.10.1");
+        when(vlan.getVlanNetmask()).thenReturn("255.255.255.0");
+
         when(_ipAddrMgr.allocatePublicIpForGuestNic(Mockito.eq(_networkMock), anyLong(), Mockito.eq(_accountMock), anyString())).thenReturn("10.10.10.10");
         when(_ipAddressDao.findByIpAndSourceNetworkId(anyLong(), anyString())).thenReturn(null);
         when(_nicDao.persist(any(NicVO.class))).thenReturn(nic);
+        when(_ipAddressDao.findByIpAndDcId(anyLong(), anyString())).thenReturn(newIp);
+        when(_vlanDao.findById(anyLong())).thenReturn(vlan);
 
         Account caller = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);

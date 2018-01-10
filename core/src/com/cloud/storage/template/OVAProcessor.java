@@ -20,6 +20,7 @@
 package com.cloud.storage.template;
 
 import java.io.File;
+import java.util.List;
 import java.util.Map;
 
 import javax.naming.ConfigurationException;
@@ -28,10 +29,14 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.log4j.Logger;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
+import com.cloud.agent.api.storage.OVFHelper;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.script.Script;
 
@@ -64,6 +69,7 @@ public class OVAProcessor extends AdapterBase implements Processor {
 
         Script command = new Script("tar", 0, s_logger);
         command.add("--no-same-owner");
+        command.add("--no-same-permissions");
         command.add("-xf", templateFileFullPath);
         command.setWorkDir(templateFile.getParent());
         String result = command.execute();
@@ -72,12 +78,35 @@ public class OVAProcessor extends AdapterBase implements Processor {
             throw new InternalErrorException("failed to untar OVA package");
         }
 
+        command = new Script("chmod", 0, s_logger);
+        command.add("-R");
+        command.add("666", templatePath);
+        result = command.execute();
+        if (result != null) {
+            s_logger.warn("Unable to set permissions for files in " + templatePath + " due to " + result);
+        }
+        command = new Script("chmod", 0, s_logger);
+        command.add("777", templatePath);
+        result = command.execute();
+        if (result != null) {
+            s_logger.warn("Unable to set permissions for " + templatePath + " due to " + result);
+        }
+
         FormatInfo info = new FormatInfo();
         info.format = ImageFormat.OVA;
         info.filename = templateName + "." + ImageFormat.OVA.getFileExtension();
         info.size = _storage.getSize(templateFilePath);
         info.virtualSize = getTemplateVirtualSize(templatePath, info.filename);
 
+        //vaidate ova
+        String ovfFile = getOVFFilePath(templateFileFullPath);
+        try {
+            OVFHelper ovfHelper = new OVFHelper();
+            List<DatadiskTO> disks = ovfHelper.getOVFVolumeInfo(ovfFile);
+        } catch (Exception e) {
+            s_logger.info("The ovf file " + ovfFile + " is invalid ", e);
+            throw new InternalErrorException("OVA package has bad ovf file " + e.getMessage(), e);
+        }
         // delete original OVA file
         // templateFile.delete();
         return info;
@@ -112,22 +141,44 @@ public class OVAProcessor extends AdapterBase implements Processor {
             Element disk = (Element)ovfDoc.getElementsByTagName("Disk").item(0);
             virtualSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
             String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
-            if ((virtualSize != 0) && (allocationUnits != null)) {
-                long units = 1;
-                if (allocationUnits.equalsIgnoreCase("KB") || allocationUnits.equalsIgnoreCase("KiloBytes") || allocationUnits.equalsIgnoreCase("byte * 2^10")) {
-                    units = 1024;
-                } else if (allocationUnits.equalsIgnoreCase("MB") || allocationUnits.equalsIgnoreCase("MegaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^20")) {
-                    units = 1024 * 1024;
-                } else if (allocationUnits.equalsIgnoreCase("GB") || allocationUnits.equalsIgnoreCase("GigaBytes") || allocationUnits.equalsIgnoreCase("byte * 2^30")) {
-                    units = 1024 * 1024 * 1024;
-                }
-                virtualSize = virtualSize * units;
-            } else {
-                throw new InternalErrorException("Failed to read capacity and capacityAllocationUnits from the OVF file: " + ovfFileName);
-            }
+            virtualSize = OVFHelper.getDiskVirtualSize(virtualSize, allocationUnits, ovfFileName);
             return virtualSize;
         } catch (Exception e) {
-            String msg = "Unable to parse OVF XML document to get the virtual disk size due to" + e;
+            String msg = "getTemplateVirtualSize: Unable to parse OVF XML document " + templatePath + " to get the virtual disk " + templateName + " size due to " + e;
+            s_logger.error(msg);
+            throw new InternalErrorException(msg);
+        }
+    }
+
+    public Pair<Long, Long> getDiskDetails(String ovfFilePath, String diskName) throws InternalErrorException {
+        long virtualSize = 0;
+        long fileSize = 0;
+        String fileId = null;
+        try {
+            Document ovfDoc = null;
+            ovfDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(ovfFilePath));
+            NodeList disks = ovfDoc.getElementsByTagName("Disk");
+            NodeList files = ovfDoc.getElementsByTagName("File");
+            for (int j = 0; j < files.getLength(); j++) {
+                Element file = (Element)files.item(j);
+                if (file.getAttribute("ovf:href").equals(diskName)) {
+                    fileSize = Long.parseLong(file.getAttribute("ovf:size"));
+                    fileId = file.getAttribute("ovf:id");
+                    break;
+                }
+            }
+            for (int i = 0; i < disks.getLength(); i++) {
+                Element disk = (Element)disks.item(i);
+                if (disk.getAttribute("ovf:fileRef").equals(fileId)) {
+                    virtualSize = Long.parseLong(disk.getAttribute("ovf:capacity"));
+                    String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
+                    virtualSize = OVFHelper.getDiskVirtualSize(virtualSize, allocationUnits, ovfFilePath);
+                    break;
+                }
+            }
+            return new Pair<Long, Long>(virtualSize, fileSize);
+        } catch (Exception e) {
+            String msg = "getDiskDetails: Unable to parse OVF XML document " + ovfFilePath + " to get the virtual disk " + diskName + " size due to " + e;
             s_logger.error(msg);
             throw new InternalErrorException(msg);
         }

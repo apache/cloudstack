@@ -69,13 +69,13 @@ class ADLdapUserManagerImplSpec extends spock.lang.Specification {
 
     def "test getUsersInGroup null group"() {
         ldapConfiguration.getScope() >> SearchControls.SUBTREE_SCOPE
-        ldapConfiguration.getReturnAttributes() >> ["username", "firstname", "lastname", "email"]
-        ldapConfiguration.getBaseDn() >>> [null, null, "DC=cloud,DC=citrix,DC=com"]
+        ldapConfiguration.getReturnAttributes(null) >> ["username", "firstname", "lastname", "email"]
+        ldapConfiguration.getBaseDn(null) >>> [null, null, "DC=cloud,DC=citrix,DC=com"]
 
         LdapContext context = Mock(LdapContext);
 
         when:
-            def result = adLdapUserManager.getUsersInGroup(group, context)
+            def result = adLdapUserManager.getUsersInGroup(group, context,null)
         then:
             thrown(IllegalArgumentException)
         where:

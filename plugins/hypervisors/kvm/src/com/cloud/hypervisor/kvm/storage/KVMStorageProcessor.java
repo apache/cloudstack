@@ -36,6 +36,18 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.direct.download.DirectTemplateDownloader;
+import com.cloud.agent.direct.download.DirectTemplateDownloader.DirectTemplateInformation;
+import com.cloud.agent.direct.download.HttpDirectTemplateDownloader;
+import com.cloud.agent.direct.download.MetalinkDirectTemplateDownloader;
+import com.cloud.agent.direct.download.NfsDirectTemplateDownloader;
+import com.cloud.agent.direct.download.HttpsDirectTemplateDownloader;
+import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
+import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -894,13 +906,21 @@ public class KVMStorageProcessor implements StorageProcessor {
         final DiskTO disk = cmd.getDisk();
         final TemplateObjectTO isoTO = (TemplateObjectTO)disk.getData();
         final DataStoreTO store = isoTO.getDataStore();
-        if (!(store instanceof NfsTO)) {
+        String dataStoreUrl = null;
+        if (store instanceof NfsTO) {
+            NfsTO nfsStore = (NfsTO)store;
+            dataStoreUrl = nfsStore.getUrl();
+        } else if (store instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO) store).getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+            //In order to support directly downloaded ISOs
+            String psHost = ((PrimaryDataStoreTO) store).getHost();
+            String psPath = ((PrimaryDataStoreTO) store).getPath();
+            dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+        } else {
             return new AttachAnswer("unsupported protocol");
         }
-        final NfsTO nfsStore = (NfsTO)store;
         try {
             final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            attachOrDetachISO(conn, cmd.getVmName(), nfsStore.getUrl() + File.separator + isoTO.getPath(), true);
+            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), true);
         } catch (final LibvirtException e) {
             return new Answer(cmd, false, e.toString());
         } catch (final URISyntaxException e) {
@@ -1387,4 +1407,37 @@ public class KVMStorageProcessor implements StorageProcessor {
         return new Answer(cmd, false, "not implememented yet");
     }
 
+    @Override
+    public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
+        final PrimaryDataStoreTO pool = cmd.getDestPool();
+        if (!pool.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+            return new DirectDownloadAnswer(false, "Unsupported pool type " + pool.getPoolType().toString());
+        }
+        KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
+        DirectTemplateDownloader downloader;
+
+        if (cmd instanceof HttpDirectDownloadCommand) {
+            downloader = new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), ((HttpDirectDownloadCommand) cmd).getHeaders());
+        } else if (cmd instanceof HttpsDirectDownloadCommand) {
+            downloader = new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum());
+        } else if (cmd instanceof NfsDirectDownloadCommand) {
+            downloader = new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
+        } else if (cmd instanceof MetalinkDirectDownloadCommand) {
+            downloader = new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
+        } else {
+            return new DirectDownloadAnswer(false, "Unsupported protocol, please provide HTTP(S), NFS or a metalink");
+        }
+
+        if (!downloader.downloadTemplate()) {
+            return new DirectDownloadAnswer(false, "Could not download template " + cmd.getTemplateId() + " on " + destPool.getLocalPath());
+        }
+        if (!downloader.validateChecksum()) {
+            return new DirectDownloadAnswer(false, "Checksum validation failed for template " + cmd.getTemplateId());
+        }
+        if (!downloader.extractAndInstallDownloadedTemplate()) {
+            return new DirectDownloadAnswer(false, "Template downloaded but there was an error on installation");
+        }
+        DirectTemplateInformation info = downloader.getTemplateInformation();
+        return new DirectDownloadAnswer(true, info.getSize(), info.getInstallPath());
+    }
 }

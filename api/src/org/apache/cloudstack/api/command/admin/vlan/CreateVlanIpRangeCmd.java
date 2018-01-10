@@ -112,6 +112,9 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
     @Parameter(name = ApiConstants.IP6_CIDR, type = CommandType.STRING, description = "the CIDR of IPv6 network, must be at least /64")
     private String ip6Cidr;
 
+    @Parameter(name = ApiConstants.FOR_SYSTEM_VMS, type = CommandType.BOOLEAN, description = "true if IP range is set to system vms, false if not")
+    private Boolean forSystemVms;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -134,6 +137,10 @@ public class CreateVlanIpRangeCmd extends BaseCmd {
 
     public String getGateway() {
         return gateway;
+    }
+
+    public Boolean isForSystemVms() {
+        return forSystemVms == null ? Boolean.FALSE : forSystemVms;
     }
 
     public String getNetmask() {

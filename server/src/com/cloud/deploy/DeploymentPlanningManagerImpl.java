@@ -30,6 +30,7 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.fsm.StateMachine2;
 
 import org.apache.log4j.Logger;
@@ -639,21 +640,21 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             if (domainGroupMappings == null || domainGroupMappings.isEmpty()) {
                 //The dedicated resource belongs to VM Account ID.
 
-                tempStorage = _dedicatedDao.searchDedicatedPods(null, vmDomainId, vmAccountId, null).first();
+                tempStorage = _dedicatedDao.searchDedicatedPods(null, vmDomainId, vmAccountId, null, new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
 
                 for(DedicatedResourceVO vo : tempStorage) {
                     allPodsFromDedicatedID.add(vo.getPodId());
                 }
 
                 tempStorage.clear();
-                tempStorage = _dedicatedDao.searchDedicatedClusters(null, vmDomainId, vmAccountId, null).first();
+                tempStorage = _dedicatedDao.searchDedicatedClusters(null, vmDomainId, vmAccountId, null, new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
 
                 for(DedicatedResourceVO vo : tempStorage) {
                     allClustersFromDedicatedID.add(vo.getClusterId());
                 }
 
                 tempStorage.clear();
-                tempStorage = _dedicatedDao.searchDedicatedHosts(null, vmDomainId, vmAccountId, null).first();
+                tempStorage = _dedicatedDao.searchDedicatedHosts(null, vmDomainId, vmAccountId, null, new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
 
                 for(DedicatedResourceVO vo : tempStorage) {
                     allHostsFromDedicatedID.add(vo.getHostId());
@@ -667,21 +668,21 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             else {
                 //The dedicated resource belongs to VM Domain ID or No dedication.
 
-                tempStorage = _dedicatedDao.searchDedicatedPods(null, vmDomainId, null, null).first();
+                tempStorage = _dedicatedDao.searchDedicatedPods(null, vmDomainId, null, null, new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
 
                 for(DedicatedResourceVO vo : tempStorage) {
                     allPodsFromDedicatedID.add(vo.getPodId());
                 }
 
                 tempStorage.clear();
-                tempStorage = _dedicatedDao.searchDedicatedClusters(null, vmDomainId, null, null).first();
+                tempStorage = _dedicatedDao.searchDedicatedClusters(null, vmDomainId, null, null, new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
 
                 for(DedicatedResourceVO vo : tempStorage) {
                     allClustersFromDedicatedID.add(vo.getClusterId());
                 }
 
                 tempStorage.clear();
-                tempStorage = _dedicatedDao.searchDedicatedHosts(null, vmDomainId, null, null).first();
+                tempStorage = _dedicatedDao.searchDedicatedHosts(null, vmDomainId, null, null, new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
 
                 for(DedicatedResourceVO vo : tempStorage) {
                     allHostsFromDedicatedID.add(vo.getHostId());

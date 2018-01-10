@@ -50,6 +50,7 @@ import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.IpAddresses;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePool;
 import com.cloud.template.VirtualMachineTemplate;
@@ -197,6 +198,11 @@ public interface UserVmService {
      * @param dhcpOptionMap
      *           - Maps the dhcp option code and the dhcp value to the network uuid
      * @return UserVm object if successful.
+     * @param dataDiskTemplateToDiskOfferingMap
+     *            - Datadisk template to Disk offering Map
+     *             an optional parameter that creates additional data disks for the virtual machine
+     *             For each of the templates in the map, a data disk will be created from the corresponding
+     *             disk offering obtained from the map
      *
      * @throws InsufficientCapacityException
      *             if there is insufficient capacity to deploy the VM.
@@ -210,7 +216,8 @@ public interface UserVmService {
     UserVm createBasicSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> securityGroupIdList,
         Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod,
         String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIp, Boolean displayVm, String keyboard,
-        List<Long> affinityGroupIdList, Map<String, String> customParameter, String customId, Map<String, Map<Integer, String>> dhcpOptionMap) throws InsufficientCapacityException,
+        List<Long> affinityGroupIdList, Map<String, String> customParameter, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
+        Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap) throws InsufficientCapacityException,
         ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -271,6 +278,11 @@ public interface UserVmService {
      * @param customId
      * @param dhcpOptionMap
      *             - Maps the dhcp option code and the dhcp value to the network uuid
+     * @param dataDiskTemplateToDiskOfferingMap
+     *            - Datadisk template to Disk offering Map
+     *             an optional parameter that creates additional data disks for the virtual machine
+     *             For each of the templates in the map, a data disk will be created from the corresponding
+     *             disk offering obtained from the map
      * @return UserVm object if successful.
      *
      * @throws InsufficientCapacityException
@@ -285,7 +297,8 @@ public interface UserVmService {
     UserVm createAdvancedSecurityGroupVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList,
         List<Long> securityGroupIdList, Account owner, String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor,
         HTTPMethod httpmethod, String userData, String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard,
-        List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap) throws InsufficientCapacityException,
+        List<Long> affinityGroupIdList, Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap,
+        Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap) throws InsufficientCapacityException,
         ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 
     /**
@@ -344,6 +357,11 @@ public interface UserVmService {
      * @param customId
      * @param dhcpOptionMap
      *             - Map that maps the DhcpOption code and their value on the Network uuid
+     * @param dataDiskTemplateToDiskOfferingMap
+     *            - Datadisk template to Disk offering Map
+     *             an optional parameter that creates additional data disks for the virtual machine
+     *             For each of the templates in the map, a data disk will be created from the corresponding
+     *             disk offering obtained from the map
      * @return UserVm object if successful.
      *
      * @throws InsufficientCapacityException
@@ -358,7 +376,7 @@ public interface UserVmService {
     UserVm createAdvancedVirtualMachine(DataCenter zone, ServiceOffering serviceOffering, VirtualMachineTemplate template, List<Long> networkIdList, Account owner,
         String hostName, String displayName, Long diskOfferingId, Long diskSize, String group, HypervisorType hypervisor, HTTPMethod httpmethod, String userData,
         String sshKeyPair, Map<Long, IpAddresses> requestedIps, IpAddresses defaultIps, Boolean displayVm, String keyboard, List<Long> affinityGroupIdList,
-        Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap)
+        Map<String, String> customParameters, String customId, Map<String, Map<Integer, String>> dhcpOptionMap, Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap)
 
         throws InsufficientCapacityException, ConcurrentOperationException, ResourceUnavailableException, StorageUnavailableException, ResourceAllocationException;
 

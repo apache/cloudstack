@@ -306,8 +306,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean result = snapshotStrategy.revertSnapshot(snapshotInfo);
         if (result) {
             // update volume size and primary storage count
-            _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage,
-                    new Long(volume.getSize() - snapshot.getSize()));
+            _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize() - snapshot.getSize()));
             volume.setSize(snapshot.getSize());
             _volsDao.update(volume.getId(), volume);
             return snapshotInfo;
@@ -1337,6 +1336,21 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return false;
         }
         return true;
+    }
+
+    @Override
+    public void cleanupSnapshotsByVolume(Long volumeId) {
+        List<SnapshotInfo> infos = snapshotFactory.getSnapshots(volumeId, DataStoreRole.Primary);
+        for(SnapshotInfo info: infos) {
+            try {
+               if(info != null) {
+                   snapshotSrv.deleteSnapshot(info);
+               }
+            } catch(CloudRuntimeException e) {
+                String msg = "Cleanup of Snapshot with uuid " + info.getUuid() + " in primary storage is failed. Ignoring";
+                s_logger.warn(msg);
+            }
+        }
     }
 
     @Override
