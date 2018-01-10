@@ -87,6 +87,85 @@ class MySSHKeyPair:
         apiclient.deleteSSHKeyPair(cmd)
 
 
+class Services:
+    """Test Add Remove Network Services
+    """
+
+    def __init__(self):
+        self.services = {
+            "vpc_offering_configdrive": {
+                "name": 'VPC offering ConfigDrive',
+                "displaytext": 'VPC offering ConfigDrive',
+                "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,Dns',
+                "serviceProviderList": {
+                    "Dhcp": "VpcVirtualRouter",
+                    "StaticNat": "VpcVirtualRouter",
+                    "SourceNat": "VpcVirtualRouter",
+                    "NetworkACL": "VpcVirtualRouter",
+                    "UserData": "ConfigDrive",
+                    "Dns": "VpcVirtualRouter"
+                }
+            },
+            "vpc_network_offering_configdrive": {
+                "name": 'vpc_net_off_marvin_configdrive',
+                "displaytext": 'vpc_net_off_marvin_configdrive',
+                "guestiptype": 'Isolated',
+                "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,Dns',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "useVpc": 'on',
+                "ispersistent": 'True',
+                "serviceProviderList": {
+                    "Dhcp": "VpcVirtualRouter",
+                    "StaticNat": "VpcVirtualRouter",
+                    "SourceNat": "VpcVirtualRouter",
+                    "NetworkACL": "VpcVirtualRouter",
+                    "UserData": "ConfigDrive",
+                    "Dns": "VpcVirtualRouter"
+                }
+            },
+            "isolated_configdrive_network_offering": {
+                "name": 'isolated_configdrive_net_off_marvin',
+                "displaytext": 'isolated_configdrive_net_off_marvin',
+                "guestiptype": 'Isolated',
+                "supportedservices": 'Dhcp,SourceNat,StaticNat,UserData,Firewall,Dns',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "tags": 'native',
+                "serviceProviderList": {
+                    "Dhcp": 'VirtualRouter',
+                    "StaticNat": 'VirtualRouter',
+                    "SourceNat": 'VirtualRouter',
+                    "Firewall": 'VirtualRouter',
+                    "UserData": 'ConfigDrive',
+                    "Dns": 'VirtualRouter'
+                }
+            },
+            "acl": {
+                "network_all_1": {
+                    "name": "SharedNetwork-All-1",
+                    "displaytext": "SharedNetwork-All-1",
+                    "vlan": "3998",
+                    "gateway": "10.200.100.1",
+                    "netmask": "255.255.255.0",
+                    "startip": "10.200.100.21",
+                    "endip": "10.200.100.100",
+                    "acltype": "Domain"
+                },
+                "network_all_2": {
+                    "name": "SharedNetwork2-All-2",
+                    "displaytext": "SharedNetwork2-All-2",
+                    "vlan": "3999",
+                    "gateway": "10.200.200.1",
+                    "netmask": "255.255.255.0",
+                    "startip": "10.200.200.21",
+                    "endip": "10.200.200.100",
+                    "acltype": "Domain"
+                }
+            }
+        }
+
+
 class TestConfigDrive(cloudstackTestCase):
     """Test user data and password reset functionality
     using configDrive
@@ -132,6 +211,7 @@ class TestConfigDrive(cloudstackTestCase):
                                     )
         cls.test_data["virtual_machine"]["zoneid"] = cls.zone.id
         cls.test_data["virtual_machine"]["template"] = cls.template.id
+        cls.test_data.update(Services().services)
 
         # Create service offering
         cls.service_offering = ServiceOffering.create(
@@ -347,7 +427,7 @@ class TestConfigDrive(cloudstackTestCase):
 
     def verifySshKey(self, ssh, iso_path, sshkey):
         self.debug("Expected VM sshkey is %s " % sshkey)
-        publicKey_file = iso_path+"/cloudstack/metadata/public_keys.txt"
+        publicKey_file = iso_path+"/cloudstack/metadata/public-keys.txt"
         cmd = "cat %s" % publicKey_file
         res = ssh.execute(cmd)
         vmsshkey = str(res[0])
@@ -357,35 +437,31 @@ class TestConfigDrive(cloudstackTestCase):
 
         metadata_dir = iso_path+"/cloudstack/metadata/"
         metadata = {}
-        vm_files = ["availability_zone.txt",
-                    "instance_id.txt",
-                    "service_offering.txt",
-                    "vm_id.txt"]
+        vm_files = ["availability-zone.txt",
+                    "instance-id.txt",
+                    "service-offering.txt",
+                    "vm-id.txt"]
         for file in vm_files:
             cmd = "cat %s" % metadata_dir+file
             res = ssh.execute(cmd)
             metadata[file] = res
 
-        metadata_files = ["availability_zone.txt",
-                          "instance_id.txt",
-                          "service_offering.txt",
-                          "vm_id.txt"]
-        for mfile in metadata_files:
+        for mfile in vm_files:
             if mfile not in metadata:
                 self.fail("{} file is not found in vm metadata".format(mfile))
         self.assertEqual(
-                str(metadata["availability_zone.txt"][0]),
+                str(metadata["availability-zone.txt"][0]),
                 self.zone.name,
                 "Zone name inside metadata does not match with the zone"
         )
         self.assertEqual(
-                str(metadata["instance_id.txt"][0]),
+                str(metadata["instance-id.txt"][0]),
                 vm.instancename,
                 "vm name inside metadata does not match with the "
                 "instance name"
         )
         self.assertEqual(
-                str(metadata["service_offering.txt"][0]),
+                str(metadata["service-offering.txt"][0]),
                 vm.serviceofferingname,
                 "Service offering inside metadata does not match "
                 "with the instance offering"

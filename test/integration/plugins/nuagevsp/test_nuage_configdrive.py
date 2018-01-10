@@ -76,6 +76,153 @@ class MySSHKeyPair:
         apiclient.deleteSSHKeyPair(cmd)
 
 
+class Services:
+    """Test Add Remove Network Services
+    """
+
+    def __init__(self):
+        self.services = {
+            "isolated_configdrive_network_offering_withoutdns" : {
+                "name": 'nuage_configdrive_withoutDns_marvin',
+                "displaytext": 'nuage_configdrive_withoutDns_marvin',
+                "guestiptype": 'Isolated',
+                "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "serviceProviderList": {
+                    "Dhcp": 'NuageVsp',
+                    "StaticNat": 'NuageVsp',
+                    "SourceNat": 'NuageVsp',
+                    "Firewall": 'NuageVsp',
+                    "Connectivity": 'NuageVsp',
+                    "UserData": 'ConfigDrive'
+                },
+                "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+                }
+            },
+            "isolated_configdrive_network_offering": {
+                "name": 'nuage_configdrive_marvin',
+                "displaytext": 'nuage_configdrive_marvin',
+                "guestiptype": 'Isolated',
+                "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall,Dns',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "serviceProviderList": {
+                    "Dhcp": 'NuageVsp',
+                    "StaticNat": 'NuageVsp',
+                    "SourceNat": 'NuageVsp',
+                    "Firewall": 'NuageVsp',
+                    "Connectivity": 'NuageVsp',
+                    "UserData": 'ConfigDrive',
+                    "Dns": 'VirtualRouter'
+                },
+                "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+                }
+            },
+            "vpc_network_offering_configdrive_withoutdns" : {
+                "name": 'nuage_vpc_marvin_configdrive_withoutdns',
+                "displaytext": 'nuage_vpc_marvin_configdrive_withoutdns',
+                "guestiptype": 'Isolated',
+                "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "useVpc": 'on',
+                "ispersistent": 'True',
+                "serviceProviderList": {
+                    "Dhcp": "NuageVsp",
+                    "StaticNat": "NuageVsp",
+                    "SourceNat": "NuageVsp",
+                    "NetworkACL": "NuageVsp",
+                    "Connectivity": "NuageVsp",
+                    "UserData": "ConfigDrive"
+                },
+                "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+                }
+            },
+            "vpc_network_offering_configdrive_withdns" : {
+                "name": 'nuage_vpc_marvin_configdrive_withdns',
+                "displaytext": 'nuage_vpc_marvin_configdrive_withdns',
+                "guestiptype": 'Isolated',
+                "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
+                "traffictype": 'GUEST',
+                "availability": 'Optional',
+                "useVpc": 'on',
+                "ispersistent": 'True',
+                "serviceProviderList": {
+                    "Dhcp": "NuageVsp",
+                    "StaticNat": "NuageVsp",
+                    "SourceNat": "NuageVsp",
+                    "NetworkACL": "NuageVsp",
+                    "Connectivity": "NuageVsp",
+                    "UserData": "ConfigDrive",
+                    "Dns": "VpcVirtualRouter"
+                },
+                "serviceCapabilityList": {
+                    "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+                }
+            },
+            "vpc_offering_configdrive_withoutdns" : {
+                "name": 'Nuage VSP VPC offering ConfigDrive',
+                "displaytext": 'Nuage VSP VPC offering ConfigDrive',
+                "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData',
+                "serviceProviderList": {
+                    "Dhcp": "NuageVsp",
+                    "StaticNat": "NuageVsp",
+                    "SourceNat": "NuageVsp",
+                    "NetworkACL": "NuageVsp",
+                    "Connectivity": "NuageVsp",
+                    "UserData": "ConfigDrive"
+                }
+            },
+            "vpc_offering_configdrive_withdns" :{
+                "name": 'Nuage VSP VPC offering ConfigDrive withVR',
+                "displaytext": 'Nuage VSP VPC offering ConfigDrive withVR',
+                "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
+                "serviceProviderList": {
+                    "Dhcp": "NuageVsp",
+                    "StaticNat": "NuageVsp",
+                    "SourceNat": "NuageVsp",
+                    "NetworkACL": "NuageVsp",
+                    "Connectivity": "NuageVsp",
+                    "UserData": "ConfigDrive",
+                    "Dns": "VpcVirtualRouter"
+                }
+            },
+            "shared_nuage_network_config_drive_offering" : {
+                "name": 'nuage_marvin',
+                "displaytext": 'nuage_marvin',
+                "guestiptype": 'shared',
+                "supportedservices": 'Dhcp,Connectivity,UserData',
+                "traffictype": 'GUEST',
+                "specifyVlan": "False",
+                "specifyIpRanges": "True",
+                "availability": 'Optional',
+                "serviceProviderList": {
+                    "Dhcp": "NuageVsp",
+                    "Connectivity": "NuageVsp",
+                    "UserData": 'ConfigDrive'
+                },
+                "serviceCapabilityList": {
+                    "Connectivity": {
+                        "PublicAccess": "true"
+                    }
+                }
+            },
+            "network_all2" : {
+                "name": "SharedNetwork2-All-nuage",
+                "displaytext": "SharedNetwork2-All-nuage",
+                "gateway": "10.200.200.1",
+                "netmask": "255.255.255.0",
+                "startip": "10.200.200.21",
+                "endip": "10.200.200.100",
+                "acltype": "Domain"
+            }
+        }
+
+
 class TestNuageConfigDrive(nuageTestCase):
     """Test user data and password reset functionality
     using configDrive with Nuage VSP SDN plugin
@@ -221,6 +368,7 @@ class TestNuageConfigDrive(nuageTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestNuageConfigDrive, cls).setUpClass()
+        cls.test_data["nuagevsp"].update(Services().services)
         return
 
     def setUp(self):
