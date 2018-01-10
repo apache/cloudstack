@@ -715,7 +715,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     @Override
     public boolean deleteSnapshotDirsForAccount(long accountId) {
 
-        List<VolumeVO> volumes = _volsDao.findByAccount(accountId);
+        List<VolumeVO> volumes = _volsDao.findIncludingRemovedByAccount(accountId);
         // The above call will list only non-destroyed volumes.
         // So call this method before marking the volumes as destroyed.
         // i.e Call them before the VMs for those volumes are destroyed.

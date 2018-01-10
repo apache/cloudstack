@@ -34,6 +34,8 @@ public interface VolumeDao extends GenericDao<VolumeVO, Long>, StateDao<Volume.S
 
     List<VolumeVO> findByAccount(long accountId);
 
+    List<VolumeVO> findIncludingRemovedByAccount(long accountId);
+
     Pair<Long, Long> getCountAndTotalByPool(long poolId);
 
     Pair<Long, Long> getNonDestroyedCountAndTotalByPool(long poolId);
