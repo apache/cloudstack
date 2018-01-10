@@ -109,7 +109,7 @@ public class LdapListUsersCmd extends BaseListCmd {
     }
 
     private boolean isACloudstackUser(final LdapUser ldapUser) {
-        final ListResponse<UserResponse> response = _queryService.searchForUsers(new ListUsersCmd());
+        final ListResponse<UserResponse> response = _queryService.searchForAllUsers(new ListUsersCmd());
         final List<UserResponse> cloudstackUsers = response.getResponses();
         if (cloudstackUsers != null && cloudstackUsers.size() != 0) {
             for (final UserResponse cloudstackUser : response.getResponses()) {

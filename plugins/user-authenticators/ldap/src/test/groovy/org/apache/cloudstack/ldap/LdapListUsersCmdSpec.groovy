@@ -90,7 +90,7 @@ class LdapListUsersCmdSpec extends spock.lang.Specification {
 		ListResponse<UserResponse> queryServiceResponse = new ListResponse<UserResponse>()
 		queryServiceResponse.setResponses(responses)
 
-		queryService.searchForUsers(_) >> queryServiceResponse
+		queryService.searchForAllUsers(_) >> queryServiceResponse
 
 		def ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null)
 		def ldapListUsersCmd = new LdapListUsersCmd(ldapManager,queryService)
@@ -107,7 +107,7 @@ class LdapListUsersCmdSpec extends spock.lang.Specification {
 		def ldapManager = Mock(LdapManager)
 		def queryService = Mock(QueryService)
 
-		queryService.searchForUsers(_) >> new ListResponse<UserResponse>()
+		queryService.searchForAllUsers(_) >> new ListResponse<UserResponse>()
 
 		def ldapUser = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null)
 		def ldapListUsersCmd = new LdapListUsersCmd(ldapManager,queryService)

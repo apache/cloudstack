@@ -88,6 +88,8 @@ public interface QueryService {
 
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 
+    ListResponse<UserResponse> searchForAllUsers(ListUsersCmd cmd);
+
     ListResponse<EventResponse> searchForEvents(ListEventsCmd cmd);
 
     ListResponse<ResourceTagResponse> listTags(ListTagsCmd cmd);

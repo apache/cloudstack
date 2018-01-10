@@ -393,6 +393,24 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         return response;
     }
 
+    @Override
+    public ListResponse<UserResponse> searchForAllUsers(ListUsersCmd cmd) {
+        Pair<List<UserAccountJoinVO>, Integer> result = null;
+        Account caller = CallContext.current().getCallingAccount();
+
+        Filter searchFilter = new Filter(UserAccountJoinVO.class, "id", true, cmd.getStartIndex(), cmd.getPageSizeVal());
+        SearchBuilder<UserAccountJoinVO> sb = _userAccountJoinDao.createSearchBuilder();
+        SearchCriteria<UserAccountJoinVO> sc = sb.create();
+
+        result = _userAccountJoinDao.searchAndCount(sc, searchFilter);
+        ListResponse<UserResponse> response = new ListResponse<UserResponse>();
+        List<UserResponse> userResponses =
+                ViewResponseHelper.createUserResponse(CallContext.current().getCallingAccount().getDomainId(),
+                        result.first().toArray(new UserAccountJoinVO[result.first().size()]));
+        response.setResponses(userResponses, result.second());
+        return response;
+    }
+
     private Pair<List<UserAccountJoinVO>, Integer> searchForUsersInternal(ListUsersCmd cmd) throws PermissionDeniedException {
         Account caller = CallContext.current().getCallingAccount();
 
