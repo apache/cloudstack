@@ -1628,7 +1628,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String dataDiskController = vmSpec.getDetails().get(VmDetailConstants.DATA_DISK_CONTROLLER);
         String rootDiskController = vmSpec.getDetails().get(VmDetailConstants.ROOT_DISK_CONTROLLER);
         DiskTO rootDiskTO = null;
-        s_logger.info("MDOVA controller rootDiskController= " + rootDiskController + " dataDiskController = " + dataDiskController);
         // If root disk controller is scsi, then data disk controller would also be scsi instead of using 'osdefault'
         // This helps avoid mix of different scsi subtype controllers in instance.
         if (DiskControllerType.osdefault == DiskControllerType.getType(dataDiskController) && DiskControllerType.lsilogic == DiskControllerType.getType(rootDiskController)) {
@@ -1638,8 +1637,6 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         // Validate the controller types
         dataDiskController = DiskControllerType.getType(dataDiskController).toString();
         rootDiskController = DiskControllerType.getType(rootDiskController).toString();
-
-        s_logger.info("MDOVA controller fianlly  rootDiskController= " + rootDiskController + " dataDiskController = " + dataDiskController);
 
         if (DiskControllerType.getType(rootDiskController) == DiskControllerType.none) {
             throw new CloudRuntimeException("Invalid root disk controller detected : " + rootDiskController);

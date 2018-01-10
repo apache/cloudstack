@@ -729,8 +729,6 @@ public class VolumeServiceImpl implements VolumeService {
         caller.setCallback(caller.getTarget().createVolumeFromBaseImageCallBack(null, null));
         caller.setContext(context);
 
-        s_logger.debug("MDOVF createVolumeFromBaseImageAsync templateOnPrimaryStore " + templateOnPrimaryStore.getTO().getPath() + " name=" + templateOnPrimaryStore.getTO().toString());
-        s_logger.debug("MDOVF createVolumeFromBaseImageAsync volume " + volume.getPath() + " name=" + volume.getName());
         motionSrv.copyAsync(context.templateOnStore, volumeOnPrimaryStorage, caller);
         return;
     }
@@ -1180,7 +1178,6 @@ public class VolumeServiceImpl implements VolumeService {
     @DB
     @Override
     public AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, TemplateInfo template) {
-        s_logger.debug("MDOVF createVolumeFromTemplateAsync volume " + volume.getPath() + " name =" + volume.getName() + " template=" + template.getDisplayText());
         PrimaryDataStore pd = dataStoreMgr.getPrimaryDataStore(dataStoreId);
         TemplateInfo templateOnPrimaryStore = pd.getTemplate(template.getId());
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();

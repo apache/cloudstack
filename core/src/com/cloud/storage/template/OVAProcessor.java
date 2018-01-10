@@ -78,7 +78,6 @@ public class OVAProcessor extends AdapterBase implements Processor {
             throw new InternalErrorException("failed to untar OVA package");
         }
 
-        s_logger.info("MDOVA setting permission for templatePath files " + templatePath);
         command = new Script("chmod", 0, s_logger);
         command.add("-R");
         command.add("666", templatePath);
@@ -86,7 +85,6 @@ public class OVAProcessor extends AdapterBase implements Processor {
         if (result != null) {
             s_logger.warn("Unable to set permissions for files in " + templatePath + " due to " + result);
         }
-        s_logger.info("MDOVA setting permission for templatePath folder " + templatePath);
         command = new Script("chmod", 0, s_logger);
         command.add("777", templatePath);
         result = command.execute();

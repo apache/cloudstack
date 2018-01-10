@@ -88,9 +88,7 @@ public class OVFHelper {
                 OVFFile of = new OVFFile();
                 of._href = file.getAttribute("ovf:href");
                 if (of._href.endsWith("vmdk") || of._href.endsWith("iso")) {
-                    s_logger.info("MDOVA getOVFVolumeInfo File href = " + of._href);
                     of._id = file.getAttribute("ovf:id");
-                    s_logger.info("MDOVA getOVFVolumeInfo File Id = " + of._id);
                     String size = file.getAttribute("ovf:size");
                     if (StringUtils.isNotBlank(size)) {
                         of._size = Long.parseLong(size);
@@ -114,11 +112,8 @@ public class OVFHelper {
                 od._capacity = NumberUtils.toLong(virtualSize, 0L);
                 String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
                 od._diskId = disk.getAttribute("ovf:diskId");
-                s_logger.info("MDOVA getOVFVolumeInfo Disk ovf:diskId  = " + od._diskId);
                 od._fileRef = disk.getAttribute("ovf:fileRef");
-                s_logger.info("MDOVA getOVFVolumeInfo Disk ovf:fileRef  = " + od._fileRef);
                 od._populatedSize = Long.parseLong(disk.getAttribute("ovf:populatedSize") == null ? "0" : disk.getAttribute("ovf:populatedSize"));
-                s_logger.info("MDOVA getOVFVolumeInfo Disk _populatedSize  = " + od._populatedSize);
 
                 if ((od._capacity != 0) && (allocationUnits != null)) {
 
@@ -131,7 +126,6 @@ public class OVFHelper {
                         units = ResourceType.bytesToGiB;
                     }
                     od._capacity = od._capacity * units;
-                    s_logger.info("MDOVA getOVFVolumeInfo Disk _capacity  = " + od._capacity);
                 }
                 od._controller = getControllerType(items, od._diskId);
                 vd.add(od);
@@ -157,7 +151,6 @@ public class OVFHelper {
             String controller = cdisk == null ? "" : cdisk._controller._name;
             String controllerSubType = cdisk == null ? "" : cdisk._controller._subType;
             String dataDiskPath = ovfFile.getParent() + File.separator + of._href;
-            s_logger.info("MDOVA getOVFVolumeInfo diskName = " + of._href + ", dataDiskPath = " + dataDiskPath);
             File f = new File(dataDiskPath);
             if (!f.exists() || f.isDirectory()) {
                 s_logger.error("One of the attached disk or iso does not exists " + dataDiskPath);
@@ -204,7 +197,6 @@ public class OVFHelper {
             if (cn.item(l) instanceof Element) {
                 Element el = (Element)cn.item(l);
                 if ("rasd:Parent".equals(el.getNodeName())) {
-                    s_logger.info("MDOVA parent id " + el.getTextContent());
                     parent_id = el.getTextContent();
                 }
             }
@@ -217,7 +209,6 @@ public class OVFHelper {
                     if (child.item(l) instanceof Element) {
                         Element el = (Element)child.item(l);
                         if ("rasd:InstanceID".equals(el.getNodeName()) && el.getTextContent().trim().equals(parent_id)) {
-                            s_logger.info("MDOVA matching parent entry " + el.getTextContent());
                             return item;
                         }
                     }
@@ -234,11 +225,9 @@ public class OVFHelper {
             if (child.item(l) instanceof Element) {
                 Element el = (Element)child.item(l);
                 if ("rasd:ElementName".equals(el.getNodeName())) {
-                    s_logger.info("MDOVA controller name " + el.getTextContent());
                     dc._name = el.getTextContent();
                 }
                 if ("rasd:ResourceSubType".equals(el.getNodeName())) {
-                    s_logger.info("MDOVA controller sub type " + el.getTextContent());
                     dc._subType = el.getTextContent();
                 }
             }
@@ -257,12 +246,9 @@ public class OVFHelper {
             for (int j = 0; j < files.getLength(); j++) {
                 Element file = (Element)files.item(j);
                 String href = file.getAttribute("ovf:href");
-                s_logger.info("MDOVA rewriteOVFFile href= " + href);
                 if (diskName.equals(href)) {
                     keepfile = file.getAttribute("ovf:id");
-                    s_logger.info("MDOVA rewriteOVFFile keeping file = " + file.getAttribute("ovf:id"));
                 } else {
-                    s_logger.info("MDOVA rewriteOVFFile removing file = " + file.getAttribute("ovf:id"));
                     toremove.add(file);
                 }
             }
@@ -273,11 +259,8 @@ public class OVFHelper {
                 if (keepfile == null) {
                     s_logger.info("FATAL: OVA format error");
                 } else if (keepfile.equals(fileRef)) {
-                    s_logger.info("MDOVA rewriteOVFFile keeping disk = " + fileRef);
                     keepdisk = disk.getAttribute("ovf:diskId");
                 } else {
-                    s_logger.info("MDOVA rewriteOVFFile removing disk = " + fileRef);
-                    s_logger.info("MDOVA rewriteOVFFile id = " + disk.getAttribute("ovf:diskId"));
                     toremove.add(disk);
                 }
             }
@@ -289,7 +272,6 @@ public class OVFHelper {
                         Element el = (Element)cn.item(l);
                         if ("rasd:HostResource".equals(el.getNodeName())
                                 && !(el.getTextContent().contains("ovf:/file/" + keepdisk) || el.getTextContent().contains("ovf:/disk/" + keepdisk))) {
-                            s_logger.info("MDOVA to remove " + el.getTextContent());
                             toremove.add(item);
                             break;
                         }
@@ -298,7 +280,6 @@ public class OVFHelper {
             }
 
             for (Element rme : toremove) {
-                s_logger.info("MDOVA remove " + rme.getTagName());
                 if (rme.getParentNode() != null) {
                     rme.getParentNode().removeChild(rme);
                 }

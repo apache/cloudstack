@@ -1718,7 +1718,6 @@ public class HypervisorHostHelper {
         importSpecParams.setDeploymentOption("");
         importSpecParams.setDiskProvisioning(diskOption); // diskOption: thin, thick, etc
 
-        s_logger.debug("MDOVF importVmFromOVF ovfFilePath=" + ovfFilePath + ", diskOption: " + ", vmName: " + vmName + diskOption);
         String ovfDescriptor = removeOVFNetwork(HttpNfcLeaseMO.readOvfContent(ovfFilePath));
         VmwareContext context = host.getContext();
         OvfCreateImportSpecResult ovfImportResult =
@@ -1729,7 +1728,6 @@ public class HypervisorHostHelper {
             s_logger.error(msg);
             throw new Exception(msg);
         }
-        s_logger.info("MDOVF importVmFromOVF ovfDescriptor " + ovfDescriptor);
         if(!ovfImportResult.getError().isEmpty()) {
             for (LocalizedMethodFault fault : ovfImportResult.getError()) {
                 s_logger.error("createImportSpec error: " + fault.getLocalizedMessage());
@@ -1743,7 +1741,6 @@ public class HypervisorHostHelper {
             }
         }
 
-        s_logger.info("MDOVF importVmFromOVF ovfImportResult " + ovfImportResult.toString());
         DatacenterMO dcMo = new DatacenterMO(context, host.getHyperHostDatacenter());
         ManagedObjectReference morLease = context.getService().importVApp(morRp, ovfImportResult.getImportSpec(), dcMo.getVmFolder(), morHost);
         if (morLease == null) {
@@ -1767,16 +1764,13 @@ public class HypervisorHostHelper {
                 try {
                     for (HttpNfcLeaseDeviceUrl deviceUrl : deviceUrls) {
                         String deviceKey = deviceUrl.getImportKey();
-                        s_logger.info("MDOVF importVmFromOVF deviceKey " + deviceKey);
                         for (OvfFileItem ovfFileItem : ovfImportResult.getFileItem()) {
-                            s_logger.info("MDOVF importVmFromOVF ovfFileItem path " + ovfFileItem.getPath());
                             if (deviceKey.equals(ovfFileItem.getDeviceId())) {
                                 String absoluteFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
                                 File f = new File(absoluteFile);
                                 if (f.exists()){
                                     String urlToPost = deviceUrl.getUrl();
                                     urlToPost = resolveHostNameInUrl(dcMo, urlToPost);
-                                    s_logger.info("MDOVF importVmFromOVF urlToPost " + urlToPost + " absoluteFile " + absoluteFile + " bytesAlreadyWritten " + bytesAlreadyWritten);
                                     context.uploadVmdkFile(ovfFileItem.isCreate() ? "PUT" : "POST", urlToPost, absoluteFile, bytesAlreadyWritten, new ActionDelegate<Long>() {
                                         @Override
                                         public void action(Long param) {
@@ -1867,10 +1861,8 @@ public class HypervisorHostHelper {
         }
 
         File ovfFile = new File(ovfFilePath);
-        s_logger.info("MDOVA ovfPath ovfFile " + ovfFile);
         for (OvfFileItem ovfFileItem : ovfImportResult.getFileItem()) {
             String absFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
-            s_logger.info("MDOVA ovfPath absFile " + absFile);
             files.add(absFile);
         }
 
@@ -1896,7 +1888,6 @@ public class HypervisorHostHelper {
                 if ((osDiskSeqNumber == 0 && diskCount == 0) || osDiskSeqNumber == deviceCount) {
                     osDisk = true;
                 }
-                s_logger.info("MDOVA ovfPath diskCount " + diskCount);
                 Pair<String, Boolean> ovfVolumeInfo = new Pair<String, Boolean>(files.get(diskCount), osDisk);
                 ovfVolumeInfos.add(ovfVolumeInfo);
                 diskCount++;
@@ -1938,7 +1929,6 @@ public class HypervisorHostHelper {
             OvfCreateDescriptorResult ovfCreateDescriptorResult = context.getService().createDescriptor(morOvf, workerVmMo.getMor(), ovfDescParams);
 
             String ovfPath = templatePath + File.separator + ovfName + ".ovf";
-            s_logger.info("MDOVA createOvfFile ovfPath " + ovfPath);
             try {
                 FileWriter out = new FileWriter(ovfPath);
                 out.write(ovfCreateDescriptorResult.getOvfDescriptor());
@@ -1961,9 +1951,7 @@ public class HypervisorHostHelper {
         int controllerCount = 0;
         String[] virtualNodeInfo = deviceLocation.split(":");
 
-        s_logger.info("MDOVA getOsDiskFromOvfConf deviceLocation " + deviceLocation);
         if (deviceLocation.startsWith("scsi")) {
-
            controllerNumber = Integer.parseInt(virtualNodeInfo[0].substring(4)); // get substring excluding prefix scsi
            deviceNodeNumber = Integer.parseInt(virtualNodeInfo[1]);
 

@@ -333,10 +333,8 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
             dataDiskDetails = getDatadisksAnswer.getDataDiskDetails(); // Details - Disk path, virtual size
         }
         else {
-            s_logger.debug("MDOVA getDataDiskTemplates Data disk command failed ");
             throw new CloudRuntimeException("Get Data disk command failed " + answer.getDetails());
         }
-        s_logger.debug("MDOVA getDataDiskTemplates dataDiskDetails " + dataDiskDetails.toString());
         return dataDiskDetails;
     }
 

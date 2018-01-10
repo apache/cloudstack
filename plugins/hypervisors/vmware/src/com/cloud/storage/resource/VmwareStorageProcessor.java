@@ -314,7 +314,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
 
         String templateUrl = secondaryStorageUrl + "/" + srcData.getPath();
-        s_logger.debug("MDOVA copyTemplateToPrimaryStorage templateUrl"  + templateUrl + " name " + template.getName());
         Pair<String, String> templateInfo = VmwareStorageLayoutHelper.decodeTemplateRelativePathAndNameFromUrl(secondaryStorageUrl, templateUrl, template.getName());
 
         VmwareContext context = hostService.getServiceContext(cmd);
@@ -331,7 +330,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
             DatastoreMO dsMo = null;
             Pair<VirtualMachineMO, Long> vmInfo = null;
 
-            s_logger.debug("MDOVA storageUuid copyTemplateToPrimaryStorage " + storageUuid + " templateUuidName " + templateUuidName + " templateMo "  + templateMo);
             if (templateMo == null) {
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("Template " + templateInfo.second() + " is not setup yet. Set up template from secondary storage with uuid name: " + templateUuidName);
@@ -506,7 +504,6 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 ManagedObjectReference morPool = hyperHost.getHyperHostOwnerResourcePool();
                 ManagedObjectReference morCluster = hyperHost.getHyperHostCluster();
-                s_logger.info("MDOVA the size of template is " + template.getSize() + " and size of volume is " + volume.getSize());
                 if (template.getSize() != null){
                     _fullCloneFlag = volume.getSize() > template.getSize() ? true : _fullCloneFlag;
                 }

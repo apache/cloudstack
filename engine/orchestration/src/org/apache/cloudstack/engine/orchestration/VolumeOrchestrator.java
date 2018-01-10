@@ -1178,7 +1178,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 assignedPool = _storagePoolDao.findById(vol.getPoolId());
             }
             if (assignedPool != null) {
-                s_logger.debug("MDOVA getTasks vol name = " + vol.getName() + " storage pool =" + assignedPool.getName());
                 Volume.State state = vol.getState();
                 if (state == Volume.State.Allocated || state == Volume.State.Creating) {
                     VolumeTask task = new VolumeTask(VolumeTaskType.RECREATE, vol, null);
@@ -1231,7 +1230,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 }
             } else {
                 if (vol.getPoolId() == null) {
-                    throw new StorageUnavailableException("MDOVA Volume has no pool associate and also no storage pool assigned in DeployDestination, Unable to create " + vol,
+                    throw new StorageUnavailableException("Volume has no pool associate and also no storage pool assigned in DeployDestination, Unable to create " + vol,
                             Volume.class, vol.getId());
                 }
                 if (s_logger.isDebugEnabled()) {
@@ -1257,7 +1256,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             StoragePool pool = dest.getStorageForDisks().get(vol);
             destPool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         }
-        s_logger.info("MDOVF recreateVolume destPool.getId() "+ destPool.getId() + " vol.getState() " + vol.getState()  + " vol name" + vol.getName()  + " vol path" + vol.getPath());
         if (vol.getState() == Volume.State.Allocated || vol.getState() == Volume.State.Creating) {
             newVol = vol;
         } else {
@@ -1303,7 +1301,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
                 PrimaryDataStore primaryDataStore = (PrimaryDataStore)destPool;
 
-                s_logger.debug("MDOVA recreateVolume dest=" + primaryDataStore.getName() + " is managed " + primaryDataStore.isManaged() + " dest pool " + destPool.getId() + " templ " + templ.getName());
                 if (primaryDataStore.isManaged()) {
                     DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
                     HypervisorType hyperType = vm.getVirtualMachine().getHypervisorType();
@@ -1368,15 +1365,11 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("MDOVA prepare Checking if we need to prepare " + vols.size() + " volumes for " + vm);
-        }
 
         List<VolumeTask> tasks = getTasks(vols, dest.getStorageForDisks(), vm);
         Volume vol = null;
         StoragePool pool = null;
         for (VolumeTask task : tasks) {
-            s_logger.debug("MDOVA prepare task " + task.volume.getName());
             if (task.type == VolumeTaskType.NOP) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
                 vol = task.volume;
@@ -1403,7 +1396,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 vol = result.first();
             }
 
-            s_logger.debug("MDOVA prepare task " + task.type + " for " + vol.getName() + ", id " + vol.getId());
             VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
             DataTO volTO = volumeInfo.getTO();
             DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(),

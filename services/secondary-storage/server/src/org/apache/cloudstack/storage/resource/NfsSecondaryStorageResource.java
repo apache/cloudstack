@@ -321,7 +321,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             String srcOVAFileName = getTemplateOnSecStorageFilePath(secondaryMountPoint, templateRelativeFolderPath, templateInfo.second(), ImageFormat.OVA.getFileExtension());
 
             String ovfFilePath = getOVFFilePath(srcOVAFileName);
-            s_logger.info("MDOVA execute ovfFilePath " + ovfFilePath);
             if (ovfFilePath == null) {
                 Script command = new Script("tar", 0, s_logger);
                 command.add("--no-same-owner");
@@ -336,7 +335,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     throw new Exception(msg);
                 }
 
-                s_logger.info("MDOVA setting permission for templatePath " + secondaryMountPoint + File.separator + templateRelativeFolderPath);
                 command = new Script("chmod", 0, s_logger);
                 command.add("-R");
                 command.add("666", secondaryMountPoint + File.separator + templateRelativeFolderPath);
@@ -380,23 +378,18 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         try {
             String secondaryMountPoint = getRootDir(secondaryStorageUrl, _nfsVersion);
-            s_logger.info("MDOVA Secondary storage mount point: " + secondaryMountPoint);
 
             long templateId = dataDiskTemplate.getId();
             String templateUniqueName = dataDiskTemplate.getUniqueName();
             String origDisk = cmd.getPath();
-            s_logger.info("MDOVA createdisk : origDisk=" + origDisk + ", templateUniqueName=" + templateUniqueName);
             long virtualSize = dataDiskTemplate.getSize();
             String diskName = origDisk.substring((origDisk.lastIndexOf(File.separator)) + 1);
             long physicalSize = new File(origDisk).length();
             String newTmplDir = getTemplateRelativeDirInSecStorage(dataDiskTemplate.getAccountId(), dataDiskTemplate.getId());
             String newTmplDirAbsolute = secondaryMountPoint + File.separator + newTmplDir;
-            s_logger.info("MDOVA createdisk : newTmplDir=" + newTmplDir + ", newTmplDirAbsolute=" + newTmplDirAbsolute);
 
             String ovfFilePath = getOVFFilePath(origDisk);
-            s_logger.info("MDOVA createdisk : diskName=" + diskName + ", ovfFilePath=" + ovfFilePath);
             if (!cmd.getBootable()) {
-                s_logger.info("MDOVA creating non bootable data disk : diskName=" + diskName + ", ovfFilePath=" + ovfFilePath);
                 // Create folder to hold datadisk template
                 synchronized (newTmplDir.intern()) {
                     Script command = new Script("mkdir", _timeout, s_logger);
@@ -434,7 +427,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
             // Create OVF for the disk
             String newOvfFilePath = newTmplDirAbsolute + File.separator + ovfFilePath.substring(ovfFilePath.lastIndexOf(File.separator) + 1);
-            s_logger.info("MDOVA Creating OVF file for disk " + diskName + " as " + newOvfFilePath);
             OVFHelper ovfHelper = new OVFHelper();
             ovfHelper.rewriteOVFFile(ovfFilePath + ".orig", newOvfFilePath, diskName);
 

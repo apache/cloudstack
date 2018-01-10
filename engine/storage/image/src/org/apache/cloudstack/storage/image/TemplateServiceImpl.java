@@ -736,7 +736,6 @@ public class TemplateServiceImpl implements TemplateService {
             List<DatadiskTO> dataDiskTemplates = new ArrayList<DatadiskTO>();
             ImageStoreEntity tmpltStore = (ImageStoreEntity)parentTemplate.getDataStore();
             dataDiskTemplates = tmpltStore.getDataDiskTemplates(parentTemplate);
-            s_logger.error("MDOVA createDataDiskTemplates Found " + dataDiskTemplates.size() + " Datadisk template(s) for template: " + parentTemplate.getId());
             int diskCount = 0;
             VMTemplateVO templateVO = _templateDao.findById(parentTemplate.getId());
             _templateDao.loadDetails(templateVO);
@@ -807,7 +806,6 @@ public class TemplateServiceImpl implements TemplateService {
             }
             _resourceLimitMgr.incrementResourceCount(template.getAccountId(), ResourceType.secondary_storage, templateVO.getSize());
         } else {
-            s_logger.error("MDOVA createDataDiskTemplates Creation of Datadisk: " + templateVO.getId() + " failed: " + result.getResult());
             // Delete the Datadisk templates that were already created as they are now invalid
             s_logger.debug("Since creation of Datadisk template: " + templateVO.getId() + " failed, delete other Datadisk templates that were created as part of parent"
                     + " template download");
@@ -1250,9 +1248,6 @@ public class TemplateServiceImpl implements TemplateService {
 
     protected Void createDatadiskTemplateCallback(AsyncCallbackDispatcher<TemplateServiceImpl, CreateCmdResult> callback,
             CreateDataDiskTemplateContext<TemplateApiResult> context) {
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("MDOVA createDatadiskTemplateCallback Performing create datadisk template cross callback after completion");
-        }
         DataObject dataDiskTemplate = context.dataDiskTemplate;
         AsyncCallFuture<TemplateApiResult> future = context.getFuture();
         CreateCmdResult result = callback.getResult();
