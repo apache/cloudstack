@@ -198,7 +198,7 @@ class TestDeployVMs(cloudstackTestCase):
         Returns mount path if config drive is attached else False
         """
         mountdir = "/root/iso"
-        cmd = "blkid -t LABEL='config' /dev/hd? /dev/sd? /dev/xvd? -o device"
+        cmd = "blkid -t LABEL='config-2' /dev/sr? /dev/hd? /dev/sd? /dev/xvd? -o device"
         try:
             self.debug("SSH into VM: %s" % vm_ip)
             ssh = self.vm.get_ssh_client(ipaddress=vm_ip, reconnect=True)

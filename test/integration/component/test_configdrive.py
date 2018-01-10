@@ -378,7 +378,7 @@ class TestConfigDrive(cloudstackTestCase):
         Returns mount path if config drive is attached else False
         """
         mountdir = "/root/iso"
-        cmd = "blkid -t LABEL='config' /dev/hd? /dev/sd? /dev/xvd? -o device"
+        cmd = "blkid -t LABEL='config-2' /dev/sr? /dev/hd? /dev/sd? /dev/xvd? -o device"
         tmp_cmd = [
             'bash -c "if [ ! -d /root/iso ] ; then mkdir /root/iso ; fi"',
             "umount /root/iso"]
