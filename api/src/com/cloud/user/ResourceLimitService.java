@@ -28,7 +28,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 public interface ResourceLimitService {
 
     static final ConfigKey<Long> ResourceCountCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "resourcecount.check.interval", "300",
-            "Time (in seconds) to wait before retrying resource count check task. Default is 300, Setting this to 0 will not run the task", false);
+            "Time (in seconds) to wait before running resource recalculation and fixing task. Default is 300 seconds, Setting this to 0 disables execution of the task", false);
 
     /**
      * Updates an existing resource limit with the specified details. If a limit doesn't exist, will create one.
