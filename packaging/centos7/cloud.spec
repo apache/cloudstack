@@ -111,8 +111,6 @@ Requires: perl
 Requires: libvirt-python
 Requires: qemu-img
 Requires: qemu-kvm
-Requires: epel-release
-Requires: aria2
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent

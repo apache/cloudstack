@@ -258,8 +258,9 @@
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').hide();
                                                     $form.find('.form-item[rel=directdownload]').hide();
 
-                                                    if (isAdmin())
+                                                    if (isAdmin()) {
                                                         $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
+                                                    }
                                                 } else if ($(this).val() == "KVM") {
                                                     $form.find('.form-item[rel=rootDiskControllerType]').hide();
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
@@ -267,7 +268,9 @@
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').css('display', 'inline-block');
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
-                                                    $form.find('.form-item[rel=directdownload]').css('display', 'inline-block');
+                                                    if (isAdmin()) {
+                                                      $form.find('.form-item[rel=directdownload]').css('display', 'inline-block');
+                                                    }
                                                 } else {
                                                     $form.find('.form-item[rel=rootDiskControllerType]').hide();
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
