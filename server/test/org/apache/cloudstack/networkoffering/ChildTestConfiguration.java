@@ -63,6 +63,7 @@ import com.cloud.dc.dao.PodVlanDaoImpl;
 import com.cloud.dc.dao.PodVlanMapDaoImpl;
 import com.cloud.dc.dao.VlanDaoImpl;
 import com.cloud.domain.dao.DomainDaoImpl;
+import com.cloud.domain.dao.DomainDetailsDao;
 import com.cloud.event.dao.UsageEventDaoImpl;
 import com.cloud.host.dao.HostDaoImpl;
 import com.cloud.host.dao.HostDetailsDaoImpl;
@@ -314,6 +315,11 @@ public class
     @Bean
     public AccountDetailsDao accountDetailsDao() {
         return Mockito.mock(AccountDetailsDao.class);
+    }
+
+    @Bean
+    public DomainDetailsDao domainDetailsDao() {
+        return Mockito.mock(DomainDetailsDao.class);
     }
 
     @Bean

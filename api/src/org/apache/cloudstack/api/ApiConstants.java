@@ -646,6 +646,8 @@ public class ApiConstants {
     public static final String UTILIZATION = "utilization";
     public static final String HAS_ANNOTATION = "hasannotation";
     public static final String LAST_ANNOTATED = "lastannotated";
+    public static final String ADMIN = "admin";
+    public static final String LDAP_DOMAIN = "ldapdomain";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

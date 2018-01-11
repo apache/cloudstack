@@ -49,7 +49,7 @@ import com.cloud.utils.Pair;
  * @deprecated as of 4.3 use the new api {@link LdapAddConfigurationCmd}
  */
 @Deprecated
-@APICommand(name = "ldapConfig", description = "Configure the LDAP context for this site.", responseObject = LDAPConfigResponse.class, since = "3.0.0",
+@APICommand(name = "ldapConfig", description = "(Deprecated, use addLdapConfiguration) Configure the LDAP context for this site.", responseObject = LDAPConfigResponse.class, since = "3.0.0",
         requestHasSensitiveInfo = true, responseHasSensitiveInfo = false)
 
 public class LDAPConfigCmd extends BaseCmd {
@@ -190,8 +190,8 @@ public class LDAPConfigCmd extends BaseCmd {
 
             if (result.second() > 0) {
                 boolean useSSlConfig = _ldapConfiguration.getSSLStatus();
-                String searchBaseConfig = _ldapConfiguration.getBaseDn();
-                String bindDnConfig = _ldapConfiguration.getBindPrincipal();
+                String searchBaseConfig = _ldapConfiguration.getBaseDn(null);
+                String bindDnConfig = _ldapConfiguration.getBindPrincipal(null);
                 for (LdapConfigurationVO ldapConfigurationVO : result.first()) {
                     responses.add(createLDAPConfigResponse(ldapConfigurationVO.getHostname(), ldapConfigurationVO.getPort(), useSSlConfig, null, searchBaseConfig,
                         bindDnConfig));
@@ -226,7 +226,7 @@ public class LDAPConfigCmd extends BaseCmd {
     }
 
     private boolean updateLDAP() {
-        _ldapManager.addConfiguration(hostname, port);
+        _ldapManager.addConfiguration(hostname, port, null);
 
         /**
          * There is no query filter now. It is derived from ldap.user.object and ldap.search.group.principle

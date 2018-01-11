@@ -1643,13 +1643,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         Filter searchFilter = new Filter(ConfigurationVO.class, "name", true, cmd.getStartIndex(), cmd.getPageSizeVal());
         SearchCriteria<ConfigurationVO> sc = _configDao.createSearchCriteria();
 
-        Object name = cmd.getConfigName();
-        Object category = cmd.getCategory();
-        Object keyword = cmd.getKeyword();
-        Long zoneId = cmd.getZoneId();
-        Long clusterId = cmd.getClusterId();
-        Long storagepoolId = cmd.getStoragepoolId();
-        Long accountId = cmd.getAccountId();
+        final Object name = cmd.getConfigName();
+        final Object category = cmd.getCategory();
+        final Object keyword = cmd.getKeyword();
+        final Long zoneId = cmd.getZoneId();
+        final Long clusterId = cmd.getClusterId();
+        final Long storagepoolId = cmd.getStoragepoolId();
+        final Long accountId = cmd.getAccountId();
+        final Long domainId = cmd.getDomainId();
         String scope = null;
         Long id = null;
         int paramCountCheck = 0;
@@ -1667,6 +1668,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (accountId != null) {
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
+            paramCountCheck++;
+        }
+        if (domainId != null) {
+            scope = ConfigKey.Scope.Domain.toString();
+            id = domainId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {

@@ -205,4 +205,6 @@ public interface AccountManager extends AccountService {
     public static final String MESSAGE_ADD_ACCOUNT_EVENT = "Message.AddAccount.Event";
 
     public static final String MESSAGE_REMOVE_ACCOUNT_EVENT = "Message.RemoveAccount.Event";
+
+    boolean moveUser(long id, Long domainId, long accountId);
 }
