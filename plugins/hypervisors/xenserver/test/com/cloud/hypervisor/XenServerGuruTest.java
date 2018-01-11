@@ -21,7 +21,6 @@ import org.apache.cloudstack.hypervisor.xenserver.XenserverConfigs;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.lang.StringUtils;
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,8 +53,6 @@ public class XenServerGuruTest {
     @Mock
     private PrimaryDataStoreDao storagePoolDao;
 
-    private Long defaultHostId = 1l;
-
     @Mock
     private CopyCommand copyCommandMock;
 
@@ -65,23 +62,31 @@ public class XenServerGuruTest {
     @Mock
     private DataTO destinationDataMock;
 
-    @Mock
-    private HostVO hostMock;
+    private Long defaultHostId = 1l;
 
     @Mock
-    private StoragePoolVO storagePoolMock;
+    private HostVO defaultHost;
+
+    @Mock
+    private HostVO changedHost;
 
     private Long changedHostId = 12l;
 
-    private long snapshotId = 5l;
+    private long zoneId = 100l;
 
     @Before
     public void beforeTest() {
+        Mockito.when(sourceDataMock.getHypervisorType()).thenReturn(HypervisorType.XenServer);
+
         Mockito.when(copyCommandMock.getSrcTO()).thenReturn(sourceDataMock);
         Mockito.when(copyCommandMock.getDestTO()).thenReturn(destinationDataMock);
-        Mockito.when(hostMock.getId()).thenReturn(changedHostId);
-        Mockito.when(sourceDataMock.getId()).thenReturn(snapshotId);
-        Mockito.when(storagePoolDao.findStoragePoolForSnapshot(snapshotId)).thenReturn(storagePoolMock);
+
+        Mockito.when(changedHost.getId()).thenReturn(changedHostId);
+        Mockito.when(defaultHost.getId()).thenReturn(defaultHostId);
+        Mockito.when(defaultHost.getDataCenterId()).thenReturn(zoneId);
+
+        Mockito.when(hostDaoMock.findById(defaultHostId)).thenReturn(defaultHost);
+        Mockito.when(hostDaoMock.findById(changedHostId)).thenReturn(changedHost);
     }
 
     @Test
@@ -162,8 +167,8 @@ public class XenServerGuruTest {
         configureSourceAndDestinationDataMockDataStoreAsNfsToType();
         configureSourceHypervisorAsXenServerAndSourceTypeAsSnapshotAndDestinationTypeAsTemplate();
 
-        Mockito.when(hostMock.getHypervisorVersion()).thenReturn(StringUtils.EMPTY);
-        Mockito.when(hostDaoMock.findHostToOperateOnSnapshotBasedOnStoragePool(storagePoolMock)).thenReturn(hostMock);
+        Mockito.when(changedHost.getHypervisorVersion()).thenReturn(StringUtils.EMPTY);
+        Mockito.when(hostDaoMock.findHostInZoneToExecuteCommand(zoneId, HypervisorType.XenServer)).thenReturn(changedHost);
 
         Pair<Boolean, Long> pairHostToExecuteCommand = xenServerGuru.getCommandHostDelegation(defaultHostId, copyCommandMock);
 
@@ -181,8 +186,8 @@ public class XenServerGuruTest {
         configureSourceAndDestinationDataMockDataStoreAsNfsToType();
         configureSourceHypervisorAsXenServerAndSourceTypeAsSnapshotAndDestinationTypeAsTemplate();
 
-        Mockito.when(hostMock.getHypervisorVersion()).thenReturn("6.1.0");
-        Mockito.when(hostDaoMock.findHostToOperateOnSnapshotBasedOnStoragePool(storagePoolMock)).thenReturn(hostMock);
+        Mockito.when(changedHost.getHypervisorVersion()).thenReturn("6.1.0");
+        Mockito.when(hostDaoMock.findHostInZoneToExecuteCommand(zoneId, HypervisorType.XenServer)).thenReturn(changedHost);
 
         Pair<Boolean, Long> pairHostToExecuteCommand = xenServerGuru.getCommandHostDelegation(defaultHostId, copyCommandMock);
 
@@ -194,8 +199,8 @@ public class XenServerGuruTest {
         configureSourceAndDestinationDataMockDataStoreAsNfsToType();
         configureSourceHypervisorAsXenServerAndSourceTypeAsSnapshotAndDestinationTypeAsTemplate();
 
-        Mockito.when(hostMock.getHypervisorVersion()).thenReturn("6.2.0");
-        Mockito.when(hostDaoMock.findHostToOperateOnSnapshotBasedOnStoragePool(storagePoolMock)).thenReturn(hostMock);
+        Mockito.when(changedHost.getHypervisorVersion()).thenReturn("6.2.0");
+        Mockito.when(hostDaoMock.findHostInZoneToExecuteCommand(zoneId, HypervisorType.XenServer)).thenReturn(changedHost);
 
         Pair<Boolean, Long> pairHostToExecuteCommand = xenServerGuru.getCommandHostDelegation(defaultHostId, copyCommandMock);
 
@@ -207,10 +212,10 @@ public class XenServerGuruTest {
         configureSourceAndDestinationDataMockDataStoreAsNfsToType();
         configureSourceHypervisorAsXenServerAndSourceTypeAsSnapshotAndDestinationTypeAsTemplate();
 
-        Mockito.when(hostMock.getHypervisorVersion()).thenReturn("6.2.0");
-        Mockito.when(hostMock.getDetail(XenserverConfigs.XS620HotFix)).thenReturn(XenserverConfigs.XSHotFix62ESP1004);
+        Mockito.when(changedHost.getHypervisorVersion()).thenReturn("6.2.0");
+        Mockito.when(changedHost.getDetail(XenserverConfigs.XS620HotFix)).thenReturn(XenserverConfigs.XSHotFix62ESP1004);
 
-        Mockito.when(hostDaoMock.findHostToOperateOnSnapshotBasedOnStoragePool(storagePoolMock)).thenReturn(hostMock);
+        Mockito.when(hostDaoMock.findHostInZoneToExecuteCommand(zoneId, HypervisorType.XenServer)).thenReturn(changedHost);
 
         Pair<Boolean, Long> pairHostToExecuteCommand = xenServerGuru.getCommandHostDelegation(defaultHostId, copyCommandMock);
 
@@ -223,9 +228,9 @@ public class XenServerGuruTest {
         configureSourceAndDestinationDataMockDataStoreAsNfsToType();
         configureSourceHypervisorAsXenServerAndSourceTypeAsSnapshotAndDestinationTypeAsTemplate();
 
-        Mockito.when(hostMock.getHypervisorVersion()).thenReturn("6.5.0");
+        Mockito.when(changedHost.getHypervisorVersion()).thenReturn("6.5.0");
 
-        Mockito.when(hostDaoMock.findHostToOperateOnSnapshotBasedOnStoragePool(storagePoolMock)).thenReturn(hostMock);
+        Mockito.when(hostDaoMock.findHostInZoneToExecuteCommand(zoneId, HypervisorType.XenServer)).thenReturn(changedHost);
 
         Pair<Boolean, Long> pairHostToExecuteCommand = xenServerGuru.getCommandHostDelegation(defaultHostId, copyCommandMock);
 

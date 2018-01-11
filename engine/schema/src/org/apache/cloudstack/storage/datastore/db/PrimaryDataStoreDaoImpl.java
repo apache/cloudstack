@@ -554,25 +554,4 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
     public void deletePoolTags(long poolId) {
         _tagsDao.deleteTags(poolId);
     }
-
-    private String sqlIsSnapshotStoragePoolManaged = "select pool.id from snapshots s "
-            + " join volumes v on v.id = s.volume_id "
-            + " join storage_pool pool on pool.id = v.pool_id  "
-            + " where s.id = ?";
-
-    @Override
-    public StoragePoolVO findStoragePoolForSnapshot(long snapshotId) {
-        try (TransactionLegacy tx = TransactionLegacy.currentTxn();
-                PreparedStatement pstmt = tx.prepareAutoCloseStatement(sqlIsSnapshotStoragePoolManaged);) {
-            pstmt.setLong(1, snapshotId);
-            ResultSet rs = pstmt.executeQuery();
-            if (!rs.next()) {
-                throw new CloudRuntimeException(String.format("Could not find a storage pool for snapshot [snapshotId=%d]. ", snapshotId));
-            }
-            long storagePoolId = rs.getLong("id");
-            return findById(storagePoolId);
-        } catch (SQLException e) {
-            throw new CloudRuntimeException(e);
-        }
-    }
 }

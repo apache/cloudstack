@@ -24,14 +24,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TimeZone;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -50,6 +49,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.Status.Event;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.org.Grouping;
 import com.cloud.org.Managed;
@@ -1168,25 +1168,23 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         return listBy(sc);
     }
 
-    String sqlFindHostConnectedToStoragePoolToExecuteCommand = "select h.id from storage_pool pool "
-            + " join cluster c on pool.cluster_id = c.id "
-            + " %s "
-            + " join host h on h.data_center_id = c.data_center_id and h.hypervisor_type = c.hypervisor_type"
-            + " where pool.id = ? and h.status = 'Up' and h.type = 'Routing' and resource_state = '%s' "
-            + " ORDER by rand() limit 1 ";
+    String sqlFindHostInZoneToExecuteCommand = "Select  id from host "
+            + " where type = 'Routing' and hypervisor_type = ? and data_center_id = ? and status = 'Up' "
+            + " and resource_state = '%s' "
+            + " ORDER by rand() limit 1";
 
     @Override
-    public HostVO findHostToOperateOnSnapshotBasedOnStoragePool(StoragePoolVO storagePoolVO) {
+    public HostVO findHostInZoneToExecuteCommand(long zoneId, HypervisorType hypervisorType) {
         try (TransactionLegacy tx = TransactionLegacy.currentTxn()) {
-            String sql = createSqlFindHostConnectedToStoragePoolToExecuteCommand(storagePoolVO, false);
-            ResultSet rs = executeSqlGetResultSetForMethodFindHostToOperateBasedOnStoragePool(storagePoolVO, tx, sql);
+            String sql = createSqlFindHostToExecuteCommand(false);
+            ResultSet rs = executeSqlGetResultsetForMethodFindHostInZoneToExecuteCommand(hypervisorType, zoneId, tx, sql);
             if (rs.next()) {
                 return findById(rs.getLong("id"));
             }
-            sql = createSqlFindHostConnectedToStoragePoolToExecuteCommand(storagePoolVO, true);
-            rs = executeSqlGetResultSetForMethodFindHostToOperateBasedOnStoragePool(storagePoolVO, tx, sql);
+            sql = createSqlFindHostToExecuteCommand(true);
+            rs = executeSqlGetResultsetForMethodFindHostInZoneToExecuteCommand(hypervisorType, zoneId, tx, sql);
             if (!rs.next()) {
-                throw new CloudRuntimeException(String.format("Could not find a host connected to the storage pool [storagepool=%d]. ", storagePoolVO.getId()));
+                throw new CloudRuntimeException(String.format("Could not find a host in zone [zoneId=%d] to operate on. ", zoneId));
             }
             return findById(rs.getLong("id"));
         } catch (SQLException e) {
@@ -1194,21 +1192,18 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         }
     }
 
-    private ResultSet executeSqlGetResultSetForMethodFindHostToOperateBasedOnStoragePool(StoragePoolVO storagePoolVO, TransactionLegacy tx, String sql) throws SQLException {
+    private ResultSet executeSqlGetResultsetForMethodFindHostInZoneToExecuteCommand(HypervisorType hypervisorType, long zoneId, TransactionLegacy tx, String sql) throws SQLException {
         PreparedStatement pstmt = tx.prepareAutoCloseStatement(sql);
-        pstmt.setLong(1, storagePoolVO.getId());
+        pstmt.setString(1, Objects.toString(hypervisorType));
+        pstmt.setLong(2, zoneId);
         return pstmt.executeQuery();
     }
 
-    private String createSqlFindHostConnectedToStoragePoolToExecuteCommand(StoragePoolVO storagePoolVO, boolean useDisabledHosts) {
+    private String createSqlFindHostToExecuteCommand(boolean useDisabledHosts) {
         String hostResourceStatus = "Enabled";
         if (useDisabledHosts) {
             hostResourceStatus = "Disabled";
         }
-        String joinForManagedStorage = StringUtils.EMPTY;
-        if (storagePoolVO.isManaged()) {
-            joinForManagedStorage = " join cluster_details cd on cd.cluster_id = c.id and cd.name = 'supportsResign' and cd.value = 'true' ";
-        }
-        return String.format(sqlFindHostConnectedToStoragePoolToExecuteCommand, joinForManagedStorage, hostResourceStatus);
+        return String.format(sqlFindHostInZoneToExecuteCommand, hostResourceStatus);
     }
 }

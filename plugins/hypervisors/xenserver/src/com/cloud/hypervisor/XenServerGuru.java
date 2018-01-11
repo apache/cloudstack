@@ -202,9 +202,9 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
             logger.debug("We are returning the default host to execute commands because the source and destination objects are not snapshot and template respectively.");
             return defaultHostToExecuteCommands;
         }
-        long snapshotId = srcData.getId();
-        StoragePoolVO storagePoolVO = storagePoolDao.findStoragePoolForSnapshot(snapshotId);
-        HostVO hostCandidateToExecutedCommand = hostDao.findHostToOperateOnSnapshotBasedOnStoragePool(storagePoolVO);
+        HostVO defaultHostToExecuteCommand = hostDao.findById(hostId);
+
+        HostVO hostCandidateToExecutedCommand = hostDao.findHostInZoneToExecuteCommand(defaultHostToExecuteCommand.getDataCenterId(), srcData.getHypervisorType());
         hostDao.loadDetails(hostCandidateToExecutedCommand);
         String hypervisorVersion = hostCandidateToExecutedCommand.getHypervisorVersion();
         if (StringUtils.isBlank(hypervisorVersion)) {
@@ -219,9 +219,7 @@ public class XenServerGuru extends HypervisorGuruBase implements HypervisorGuru,
         String snapshotHotFixVersion = hostCandidateToExecutedCommand.getDetail(XenserverConfigs.XS620HotFix);
         boolean isXenServer620 = StringUtils.equals(hypervisorVersion, "6.2.0");
         if (isXenServer620 && !StringUtils.equalsIgnoreCase(XenserverConfigs.XSHotFix62ESP1004, snapshotHotFixVersion)) {
-            logger.debug(String.format(
-                    "We are returning the default host to execute commands because the hypervisor version is not 6.2.0 with hotfix ESP1004 [hypervisorVersion=%s, hotfixVersion=%s]",
-                    hypervisorVersion, snapshotHotFixVersion));
+            logger.debug(String.format("We are returning the default host to execute commands because the hypervisor version is not 6.2.0 with hotfix ESP1004 [hypervisorVersion=%s, hotfixVersion=%s]", hypervisorVersion, snapshotHotFixVersion));
             return defaultHostToExecuteCommands;
         }
         logger.debug(String.format("We are changing the hostId to executed command from %d to %d.", hostId, hostCandidateToExecutedCommand.getId()));
