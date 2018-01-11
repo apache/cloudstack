@@ -234,26 +234,18 @@ class TestPortForwardingRules(cloudstackTestCase):
             self.services["service_offerings"]["tiny"],
         )
 
-        self.template = get_template(
-            self.userapiclient,
-            self.zone.id,
-            self.services["ostype"]
-        )
-        if self.template == FAILED:
-            assert False, "get_template() failed to return template\
-                        with description %s" % self.services["ostype"]
-
         self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         vm = VirtualMachine.create(
             self.userapiclient,
             self.services["virtual_machine"],
-            templateid=self.template.id,
             accountid=self.account.name,
             domainid=self.account.domainid,
             networkids=network.id,
             serviceofferingid=self.service_offering.id
         )
+
+        VirtualMachine.delete(vm, self.userapiclient, expunge=False)
 
         self.cleanup.append(vm)
 
