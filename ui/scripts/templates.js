@@ -226,15 +226,16 @@
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                     $form.find('.form-item[rel=directdownload]').hide();
                                                     
-                                                    if (isAdmin())
-                                                        $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');    
+                                                    if (isAdmin()) {
+                                                        $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
+                                                    }
                                                 } else {
                                                     $form.find('.form-item[rel=rootDiskControllerType]').hide();
                                                     $form.find('.form-item[rel=nicAdapterType]').hide();
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                     
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
-                                                    if ($(this).val() == "KVM") {
+                                                    if ($(this).val() == "KVM" && isAdmin()) {
                                                         $form.find('.form-item[rel=directdownload]').css('display', 'inline-block');
                                                     } else {
                                                         $form.find('.form-item[rel=directdownload]').hide();
