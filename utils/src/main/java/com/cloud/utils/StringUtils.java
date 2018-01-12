@@ -82,11 +82,7 @@ public class StringUtils {
      */
     @Deprecated
     public static boolean isNotBlank(final String str) {
-        if (str != null && str.trim().length() > 0) {
-            return true;
-        }
-
-        return false;
+        return org.apache.commons.lang.StringUtils.isNotBlank(str);
     }
 
     public static String cleanupTags(String tags) {
