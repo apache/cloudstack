@@ -22,8 +22,10 @@ package com.cloud.network.resource;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
-
 import javax.naming.ConfigurationException;
+
+import org.apache.log4j.Logger;
+import com.google.common.base.Strings;
 
 import net.nuage.vsp.acs.client.api.NuageVspAclClient;
 import net.nuage.vsp.acs.client.api.NuageVspApiClient;
@@ -35,10 +37,6 @@ import net.nuage.vsp.acs.client.api.model.VspHost;
 import net.nuage.vsp.acs.client.common.RequestType;
 import net.nuage.vsp.acs.client.common.model.NuageVspEntity;
 import net.nuage.vsp.acs.client.exception.NuageVspException;
-
-import org.apache.log4j.Logger;
-
-import com.google.common.base.Strings;
 
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;

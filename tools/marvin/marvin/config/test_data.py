@@ -49,6 +49,27 @@ test_data = {
         "forvirtualnetwork": "true",
         "vlan": "300"
     },
+    "publiciprange1": {
+        "gateway": "10.200.100.1",
+        "netmask": "255.255.255.0",
+        "startip": "10.200.100.101",
+        "endip": "10.200.100.105",
+        "forvirtualnetwork": "false"
+    },
+    "publiciprange2": {
+        "gateway": "10.219.1.1",
+        "netmask": "255.255.255.0",
+        "startip": "10.219.1.2",
+        "endip": "10.219.1.5",
+        "forvirtualnetwork": "false"
+    },
+    "publiciprange3": {
+        "gateway": "10.200.100.1",
+        "netmask": "255.255.255.0",
+        "startip": "10.200.100.2",
+        "endip": "10.200.100.20",
+        "forvirtualnetwork": "false"
+    },
     "private_gateway": {
         "ipaddress": "172.16.1.2",
         "gateway": "172.16.1.1",
@@ -471,6 +492,20 @@ test_data = {
             "Dns": "VirtualRouter",
             "UserData": "VirtualRouter",
             "SecurityGroup": "SecurityGroupProvider"
+        }
+    },
+    "shared_network_config_drive_offering": {
+        "name": 'shared_network_config_drive_offering',
+        "displaytext": 'shared_network_config_drive_offering',
+        "guestiptype": 'shared',
+        "supportedservices": 'Dhcp,UserData',
+        "traffictype": 'GUEST',
+        "specifyVlan": "True",
+        "specifyIpRanges": "True",
+        "availability": 'Optional',
+        "serviceProviderList": {
+            "Dhcp": "VirtualRouter",
+            "UserData": 'ConfigDrive'
         }
     },
     "shared_network_sg": {
@@ -1744,8 +1779,8 @@ test_data = {
     },
     "test_34_DeployVM_in_SecondSGNetwork": {
         "zone": "advsg",
-        "config": "D:\ACS-Repo\setup\dev\\advancedsg.cfg",  #Absolute path to cfg file
-        #For sample configuration please refer to <ACS repo>/setup/dev/advancedsg.cfg
+        "config": "D:\ACS-Repo\setup\dev\\advancedsg.cfg",  # Absolute path to cfg file
+        # For sample configuration please refer to <ACS repo>/setup/dev/advancedsg.cfg
         "template": "CentOS 5.3(64-bit) no GUI (Simulator)",
         "dbSvr": {
             "dbSvr": "10.146.0.133",
@@ -2277,10 +2312,10 @@ test_data = {
         "network_all": {
             "name": "SharedNetwork-All-nuage",
             "displaytext": "SharedNetwork-All-nuage",
-            "gateway": "10.223.1.1",
+            "gateway": "10.200.100.1",
             "netmask": "255.255.255.0",
-            "startip": "10.223.1.21",
-            "endip": "10.223.1.100",
+            "startip": "10.200.100.21",
+            "endip": "10.200.100.100",
             "acltype": "Domain"
         },
         "network_domain_with_no_subdomain_access": {
@@ -2313,10 +2348,10 @@ test_data = {
             "acltype": "Account"
         },
         "publiciprange1": {
-            "gateway": "10.223.1.1",
+            "gateway": "10.200.100.1",
             "netmask": "255.255.255.0",
-            "startip": "10.223.1.101",
-            "endip": "10.223.1.105",
+            "startip": "10.200.100.101",
+            "endip": "10.200.100.105",
             "forvirtualnetwork": "false"
         },
         "publiciprange2": {
@@ -2327,10 +2362,10 @@ test_data = {
             "forvirtualnetwork": "false"
         },
         "publiciprange3": {
-            "gateway": "10.223.1.1",
+            "gateway": "10.200.100.1",
             "netmask": "255.255.255.0",
-            "startip": "10.223.1.2",
-            "endip": "10.223.1.20",
+            "startip": "10.200.100.2",
+            "endip": "10.200.100.20",
             "forvirtualnetwork": "false"
         }
     }

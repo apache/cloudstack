@@ -41,7 +41,6 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -69,7 +68,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
-
 import com.google.common.base.Strings;
 
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
@@ -2251,16 +2249,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             DiskDef.DiskBus diskBusTypeData = (diskBusType == DiskDef.DiskBus.SCSI) ? diskBusType : DiskDef.DiskBus.VIRTIO;
 
             final DiskDef disk = new DiskDef();
+            int devId = volume.getDiskSeq().intValue();
             if (volume.getType() == Volume.Type.ISO) {
                 if (volPath == null) {
                     /* Add iso as placeholder */
-                    disk.defISODisk(null);
+                    disk.defISODisk(null, devId);
                 } else {
-                    disk.defISODisk(volPath);
+                    disk.defISODisk(volPath, devId);
                 }
             } else {
-                final int devId = volume.getDiskSeq().intValue();
-
                 if (diskBusType == DiskDef.DiskBus.SCSI ) {
                     disk.setQemuDriver(true);
                     disk.setDiscard(DiscardType.UNMAP);
@@ -2390,9 +2387,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return _storagePoolMgr;
     }
 
-    public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach) throws LibvirtException, URISyntaxException,
+    public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq) throws LibvirtException, URISyntaxException,
     InternalErrorException {
-        String isoXml = null;
+        final DiskDef iso = new DiskDef();
         if (isoPath != null && isAttach) {
             final int index = isoPath.lastIndexOf("/");
             final String path = isoPath.substring(0, index);
@@ -2401,20 +2398,17 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             final KVMPhysicalDisk isoVol = secondaryPool.getPhysicalDisk(name);
             isoPath = isoVol.getPath();
 
-            final DiskDef iso = new DiskDef();
-            iso.defISODisk(isoPath);
-            isoXml = iso.toString();
+            iso.defISODisk(isoPath, diskSeq);
         } else {
-            final DiskDef iso = new DiskDef();
-            iso.defISODisk(null);
-            isoXml = iso.toString();
+            iso.defISODisk(null, diskSeq);
         }
 
-        final List<DiskDef> disks = getDisks(conn, vmName);
-        final String result = attachOrDetachDevice(conn, true, vmName, isoXml);
+        final String result = attachOrDetachDevice(conn, true, vmName, iso.toString());
         if (result == null && !isAttach) {
+            final List<DiskDef> disks = getDisks(conn, vmName);
             for (final DiskDef disk : disks) {
-                if (disk.getDeviceType() == DiskDef.DeviceType.CDROM) {
+                if (disk.getDeviceType() == DiskDef.DeviceType.CDROM
+                        && (diskSeq == null || disk.getDiskLabel() == iso.getDiskLabel())) {
                     cleanupDisk(disk);
                 }
             }

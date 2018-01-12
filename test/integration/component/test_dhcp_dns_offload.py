@@ -198,7 +198,7 @@ class TestDeployVMs(cloudstackTestCase):
         Returns mount path if config drive is attached else False
         """
         mountdir = "/root/iso"
-        cmd = "blkid -t LABEL='config' /dev/hd? /dev/sd? /dev/xvd? -o device"
+        cmd = "blkid -t LABEL='config-2' /dev/sr? /dev/hd? /dev/sd? /dev/xvd? -o device"
         try:
             self.debug("SSH into VM: %s" % vm_ip)
             ssh = self.vm.get_ssh_client(ipaddress=vm_ip, reconnect=True)
@@ -261,7 +261,7 @@ class TestDeployVMs(cloudstackTestCase):
 
     def verifySshKey(self, vm_ip, iso_path):
 
-        publicKey_file = iso_path+"/cloudstack/metadata/public_keys.txt"
+        publicKey_file = iso_path+"/cloudstack/metadata/public-keys.txt"
         try:
             self.debug("SSH into VM: %s" % vm_ip)
             ssh = self.vm.get_ssh_client(ipaddress=vm_ip)
@@ -285,7 +285,7 @@ class TestDeployVMs(cloudstackTestCase):
             response = {}
             self.debug("SSH into VM: %s" % vm_ip)
             ssh = self.vm.get_ssh_client(ipaddress=vm_ip, reconnect=True)
-            vm_files = ["availability_zone.txt", "instance_id.txt", "service_offering.txt", "vm_id.txt"]
+            vm_files = ["availability-zone.txt", "instance-id.txt", "service-offering.txt", "vm-id.txt"]
             for file in vm_files:
                 cmd = "cat %s" % metadata_dir+file
                 res = ssh.execute(cmd)
@@ -296,22 +296,22 @@ class TestDeployVMs(cloudstackTestCase):
 
     def verifyMetaData(self, metadata):
 
-        metadata_files = ["availability_zone.txt", "instance_id.txt", "service_offering.txt", "vm_id.txt"]
+        metadata_files = ["availability-zone.txt", "instance-id.txt", "service-offering.txt", "vm-id.txt"]
         for mfile in metadata_files:
             if mfile not in metadata:
                 self.fail("{} file is not found in vm metadata".format(mfile))
         self.assertEqual(
-            str(metadata["availability_zone.txt"][0]),
+            str(metadata["availability-zone.txt"][0]),
             self.zone.name,
             "Zone name inside metadata does not match with the zone"
         )
         self.assertEqual(
-            str(metadata["instance_id.txt"][0]),
+            str(metadata["instance-id.txt"][0]),
             self.vm.instancename,
             "vm name inside metadata does not match with the instance name"
         )
         self.assertEqual(
-            str(metadata["service_offering.txt"][0]),
+            str(metadata["service-offering.txt"][0]),
             self.vm.serviceofferingname,
             "Service offering inside metadata does not match with the instance offering"
         )
@@ -320,7 +320,7 @@ class TestDeployVMs(cloudstackTestCase):
             self.vm.instancename)
         self.assertEqual(validateList(qresultset)[0], PASS, "sql query returned invalid response")
         self.assertEqual(
-            metadata["vm_id.txt"][0],
+            metadata["vm-id.txt"][0],
             unicode(qresultset[0][0]),
             "vm id in metadata does not match with the vm id from cloud db"
         )

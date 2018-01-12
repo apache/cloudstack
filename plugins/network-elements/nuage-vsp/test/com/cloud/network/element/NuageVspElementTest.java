@@ -60,7 +60,9 @@ import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NuageVspDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
@@ -109,6 +111,7 @@ public class NuageVspElementTest extends NuageTest {
     @Mock private DomainRouterDao _domainRouterDao;
     @Mock private ResourceManager _resourceManager;
     @Mock private ResourceTagDao _resourceTagDao;
+    @Mock private NetworkDao _networkDao;
 
     @Before
     public void setUp() throws Exception {
@@ -172,6 +175,11 @@ public class NuageVspElementTest extends NuageTest {
         when(network.getDomainId()).thenReturn(NETWORK_ID);
         when(network.getDataCenterId()).thenReturn(NETWORK_ID);
         when(_networkModel.isProviderForNetwork(Provider.NuageVsp, NETWORK_ID)).thenReturn(true);
+
+        final NetworkVO networkVO = mock(NetworkVO.class);
+        when(network.getUuid()).thenReturn("aaaaaa");
+
+        when(_networkDao.findById(NETWORK_ID)).thenReturn(networkVO);
 
         final NetworkOffering offering = mock(NetworkOffering.class);
         when(offering.getId()).thenReturn(NETWORK_ID);

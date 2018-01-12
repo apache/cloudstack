@@ -61,6 +61,7 @@ import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterDetailVO;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDetailsDao;
+import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.domain.dao.DomainDao;
@@ -88,6 +89,7 @@ import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.util.NuageVspEntityBuilder;
+import com.cloud.util.NuageVspUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -130,6 +132,8 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru implements Networ
     NetworkOrchestrationService _networkOrchestrationService;
     @Inject
     DataCenterDetailsDao _dcDetailsDao;
+    @Inject
+    VlanDetailsDao _vlanDetailsDao;
 
     public NuageVspGuestNetworkGuru() {
         super();
@@ -299,6 +303,24 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru implements Networ
             }
 
             VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(implemented, true);
+
+            if (vspNetwork.isShared()) {
+                Boolean previousUnderlay= null;
+                for (VlanVO vlan : _vlanDao.listVlansByNetworkId(networkId)) {
+                    boolean underlay = NuageVspUtil.isUnderlayEnabledForVlan(_vlanDetailsDao, vlan);
+                    if (previousUnderlay == null || underlay == previousUnderlay) {
+                        previousUnderlay = underlay;
+                    } else {
+                        throw new CloudRuntimeException("Mixed values for the underlay flag for IP ranges in the same subnet is not supported");
+                    }
+                }
+                if (previousUnderlay != null) {
+                    vspNetwork = new VspNetwork.Builder().fromObject(vspNetwork)
+                            .vlanUnderlay(previousUnderlay)
+                            .build();
+                }
+            }
+
             String tenantId = context.getDomain().getName() + "-" + context.getAccount().getAccountId();
             String broadcastUriStr = implemented.getUuid() + "/" + vspNetwork.getVirtualRouterIp();
             implemented.setBroadcastUri(Networks.BroadcastDomainType.Vsp.toUri(broadcastUriStr));
@@ -495,6 +517,16 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru implements Networ
                 //update the extra DHCP options
 
             }
+            // Update broadcast Uri to enable VR ip update
+            if (!network.getBroadcastUri().getPath().substring(1).equals(vspNetwork.getVirtualRouterIp())) {
+                NetworkVO networkToUpdate = _networkDao.findById(network.getId());
+                String broadcastUriStr = networkToUpdate.getUuid() + "/" + vspNetwork.getVirtualRouterIp();
+                networkToUpdate.setBroadcastUri(Networks.BroadcastDomainType.Vsp.toUri(broadcastUriStr));
+                _networkDao.update(network.getId(), networkToUpdate);
+                if (network instanceof NetworkVO) {
+                    ((NetworkVO) network).setBroadcastUri(networkToUpdate.getBroadcastUri());
+                }
+            }
 
             nic.setBroadcastUri(network.getBroadcastUri());
             nic.setIsolationUri(network.getBroadcastUri());
@@ -586,8 +618,15 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru implements Networ
         }
     }
 
+
+    private boolean isServiceProvidedByVR(Network network, Network.Service service ) {
+        return (_networkModel.areServicesSupportedInNetwork(network.getId(), service) &&
+                ( _networkModel.isProviderSupportServiceInNetwork(network.getId(), service,  Network.Provider.VirtualRouter) ||
+                        _networkModel.isProviderSupportServiceInNetwork(network.getId(), service,  Network.Provider.VPCVirtualRouter)));
+    }
+
     private void checkMultipleSubnetsCombinedWithUseData(Network network) {
-        if (_ntwkOfferingSrvcDao.listServicesForNetworkOffering(network.getNetworkOfferingId()).contains(Network.Service.UserData.getName())) {
+        if (isServiceProvidedByVR(network, Network.Service.UserData)) {
             List<VlanVO> vlanVOs = _vlanDao.listVlansByNetworkId(network.getId());
             if (vlanVOs.stream()
                        .map(VlanVO::getVlanGateway)

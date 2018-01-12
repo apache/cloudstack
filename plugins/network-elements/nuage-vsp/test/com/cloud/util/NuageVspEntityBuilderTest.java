@@ -96,8 +96,8 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     @Mock private NetworkDetailsDao _networkDetailsDao;
     @Mock private NetworkOfferingDao _networkOfferingDao;
     @Mock private NetworkOfferingServiceMapDao _networkOfferingServiceMapDao;
-    @Mock private NicSecondaryIpDao _nicSecondaryIpDao;
     @Mock private NicDao _nicDao;
+    @Mock private NicSecondaryIpDao _nicSecondaryIpDao;
     @Mock private VlanDao _vlanDao;
     @Mock private VlanDetailsDao _vlanDetailsDao;
     @Mock private VpcDao _vpcDao;

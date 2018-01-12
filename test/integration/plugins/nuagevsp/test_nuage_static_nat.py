@@ -23,9 +23,7 @@ from marvin.lib.base import (Account,
                              PublicIpRange,
                              Network,
                              VirtualMachine)
-from marvin.cloudstackAPI import (enableNuageUnderlayVlanIpRange,
-                                  disableNuageUnderlayVlanIpRange,
-                                  listNuageUnderlayVlanIpRanges)
+from marvin.lib.common import list_virtual_machines
 from marvin.lib.common import list_virtual_machines
 
 # Import System Modules
@@ -53,31 +51,6 @@ class TestNuageStaticNat(nuageTestCase):
                                       )
         self.cleanup = [self.account]
         return
-
-    # enable_NuageUnderlayPublicIpRange - Enables/configures underlay
-    # networking for the given public IP range in Nuage VSP
-    def enable_NuageUnderlayPublicIpRange(self, public_ip_range):
-        cmd = enableNuageUnderlayVlanIpRange.\
-            enableNuageUnderlayVlanIpRangeCmd()
-        cmd.id = public_ip_range.vlan.id
-        self.api_client.enableNuageUnderlayVlanIpRange(cmd)
-
-    # disable_NuageUnderlayPublicIpRange - Disables/de-configures underlay
-    # networking for the given public IP range in Nuage VSP
-    def disable_NuageUnderlayPublicIpRange(self, public_ip_range):
-        cmd = disableNuageUnderlayVlanIpRange.\
-            disableNuageUnderlayVlanIpRangeCmd()
-        cmd.id = public_ip_range.vlan.id
-        self.api_client.enableNuageUnderlayVlanIpRange(cmd)
-
-    # list_NuageUnderlayPublicIpRanges - Lists underlay networking
-    # enabled/configured public IP ranges in Nuage VSP
-    def list_NuageUnderlayPublicIpRanges(self, public_ip_range=None):
-        cmd = listNuageUnderlayVlanIpRanges.listNuageUnderlayVlanIpRangesCmd()
-        if public_ip_range:
-            cmd.id = public_ip_range.vlan.id
-        cmd.underlay = True
-        return self.api_client.listNuageUnderlayVlanIpRanges(cmd)
 
     # create_PublicIpRange - Creates public IP range
     def create_PublicIpRange(self):
@@ -115,20 +88,21 @@ class TestNuageStaticNat(nuageTestCase):
     # validate_NuageUnderlayPublicIpRange - Validates Nuage underlay enabled
     # public IP range creation and state
     def validate_NuageUnderlayPublicIpRange(self, public_ip_range):
-        nuage_underlay_public_ip_ranges = \
+        self.nuage_underlay_public_ip_ranges = \
             self.list_NuageUnderlayPublicIpRanges(public_ip_range)
-        self.assertEqual(isinstance(nuage_underlay_public_ip_ranges, list),
+        self.assertEqual(isinstance(self.nuage_underlay_public_ip_ranges,
+                                    list),
                          True,
                          "List Nuage Underlay Public IP Range should return "
                          "a valid list"
                          )
         self.assertEqual(public_ip_range.vlan.startip,
-                         nuage_underlay_public_ip_ranges[0].startip,
+                         self.nuage_underlay_public_ip_ranges[0].startip,
                          "Start IP of the public IP range should match with "
                          "the returned list data"
                          )
         self.assertEqual(public_ip_range.vlan.endip,
-                         nuage_underlay_public_ip_ranges[0].endip,
+                         self.nuage_underlay_public_ip_ranges[0].endip,
                          "End IP of the public IP range should match with the "
                          "returned list data"
                          )
@@ -358,7 +332,7 @@ class TestNuageStaticNat(nuageTestCase):
 
         self.debug("Enabling Nuage underlay capability (underlay networking) "
                    "for the created public IP range...")
-        self.enable_NuageUnderlayPublicIpRange(public_ip_range)
+        self.enable_NuageUnderlayPublicIpRange(public_ip_range.vlan.id)
         self.validate_NuageUnderlayPublicIpRange(public_ip_range)
         self.debug("Nuage underlay capability (underlay networking) for the "
                    "created public IP range is successfully enabled")
@@ -532,6 +506,7 @@ class TestNuageStaticNat(nuageTestCase):
         self.debug("Acquired public IP in the created Isolated network "
                    "successfully released in CloudStack")
         self.delete_VM(vm_1)
+
         # Bug CLOUDSTACK-9398
         """
         self.debug("Creating a persistent Isolated network with Static NAT "

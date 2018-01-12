@@ -116,6 +116,10 @@ import com.cloud.utils.script.Script;
 public class VirtualMachineMO extends BaseMO {
     private static final Logger s_logger = Logger.getLogger(VirtualMachineMO.class);
     private static final ExecutorService MonitorServiceExecutor = Executors.newCachedThreadPool(new NamedThreadFactory("VM-Question-Monitor"));
+
+    public static final String ANSWER_YES = "0";
+    public static final String ANSWER_NO = "1";
+
     private ManagedObjectReference _vmEnvironmentBrowser = null;
 
     public VirtualMachineMO(VmwareContext context, ManagedObjectReference morVm) {
@@ -1402,6 +1406,12 @@ public class VirtualMachineMO extends BaseMO {
 
     // isoDatastorePath: [datastore name] isoFilePath
     public void attachIso(String isoDatastorePath, ManagedObjectReference morDs, boolean connect, boolean connectAtBoot) throws Exception {
+        attachIso(isoDatastorePath, morDs, connect, connectAtBoot, null);
+    }
+
+    // isoDatastorePath: [datastore name] isoFilePath
+    public void attachIso(String isoDatastorePath, ManagedObjectReference morDs,
+    boolean connect, boolean connectAtBoot, Integer key) throws Exception {
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - attachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: " + isoDatastorePath + ", datastore: " +
@@ -1411,7 +1421,12 @@ public class VirtualMachineMO extends BaseMO {
         assert (morDs != null);
 
         boolean newCdRom = false;
-        VirtualCdrom cdRom = (VirtualCdrom)getIsoDevice();
+        VirtualCdrom cdRom;
+        if (key == null) {
+            cdRom = (VirtualCdrom) getIsoDevice();
+        } else {
+            cdRom = (VirtualCdrom) getIsoDevice(key);
+        }
         if (cdRom == null) {
             newCdRom = true;
             cdRom = new VirtualCdrom();
@@ -1461,11 +1476,15 @@ public class VirtualMachineMO extends BaseMO {
             s_logger.trace("vCenter API trace - detachIso() done(successfully)");
     }
 
-    public void detachIso(String isoDatastorePath) throws Exception {
+    public int detachIso(String isoDatastorePath) throws Exception {
+        return detachIso(isoDatastorePath, false);
+    }
+
+    public int detachIso(String isoDatastorePath, final boolean force) throws Exception {
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - detachIso(). target MOR: " + _mor.getValue() + ", isoDatastorePath: " + isoDatastorePath);
 
-        VirtualDevice device = getIsoDevice();
+        VirtualDevice device = getIsoDevice(isoDatastorePath);
         if (device == null) {
             if (s_logger.isTraceEnabled())
                 s_logger.trace("vCenter API trace - detachIso() done(failed)");
@@ -1514,7 +1533,7 @@ public class VirtualMachineMO extends BaseMO {
                                     if ("msg.cdromdisconnect.locked".equalsIgnoreCase(msg.getId())) {
                                         s_logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + msg.getId() +
                                                 ", for safe operation we will automatically decline it");
-                                        vmMo.answerVM(question.getId(), "1");
+                                        vmMo.answerVM(question.getId(), force ? ANSWER_YES : ANSWER_NO);
                                         break;
                                     }
                                 }
@@ -1531,7 +1550,7 @@ public class VirtualMachineMO extends BaseMO {
                                 if ("msg.cdromdisconnect.locked".equalsIgnoreCase(msgId)) {
                                     s_logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + question.getId() +
                                             ". Message id : " + msgId + ". Message text : " + msgText + ", for safe operation we will automatically decline it.");
-                                    vmMo.answerVM(question.getId(), "1");
+                                    vmMo.answerVM(question.getId(), force ? ANSWER_YES : ANSWER_NO);
                                 }
                             }
 
@@ -1570,6 +1589,7 @@ public class VirtualMachineMO extends BaseMO {
             flags[0] = true;
             future.cancel(true);
         }
+        return device.getKey();
     }
 
     public Pair<VmdkFileDescriptor, byte[]> getVmdkFileInfo(String vmdkDatastorePath) throws Exception {
@@ -2826,6 +2846,32 @@ public class VirtualMachineMO extends BaseMO {
         return null;
     }
 
+    public VirtualDevice getIsoDevice(int key) throws Exception {
+        List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
+        if (devices != null && devices.size() > 0) {
+            for (VirtualDevice device : devices) {
+                if (device instanceof VirtualCdrom && device.getKey() == key) {
+                    return device;
+                }
+            }
+        }
+        return null;
+    }
+
+    public VirtualDevice getIsoDevice(String filename) throws Exception {
+        List<VirtualDevice> devices = (List<VirtualDevice>)_context.getVimClient().
+                getDynamicProperty(_mor, "config.hardware.device");
+        if(devices != null && devices.size() > 0) {
+            for(VirtualDevice device : devices) {
+                if(device instanceof VirtualCdrom && device.getBacking() instanceof VirtualCdromIsoBackingInfo &&
+                        ((VirtualCdromIsoBackingInfo)device.getBacking()).getFileName().equals(filename)) {
+                    return device;
+                }
+            }
+        }
+        return null;
+    }
+
     public int getNextDeviceNumber(int controllerKey) throws Exception {
         List<VirtualDevice> devices = _context.getVimClient().getDynamicProperty(_mor, "config.hardware.device");
 
@@ -2982,7 +3028,7 @@ public class VirtualMachineMO extends BaseMO {
                                     if ("msg.cdromdisconnect.locked".equalsIgnoreCase(msg.getId())) {
                                         s_logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + msg.getId() +
                                                 ", for safe operation we will automatically decline it");
-                                        vmMo.answerVM(question.getId(), "1");
+                                        vmMo.answerVM(question.getId(), ANSWER_NO);
                                         break;
                                     }
                                 }
@@ -2999,7 +3045,7 @@ public class VirtualMachineMO extends BaseMO {
                                 if ("msg.cdromdisconnect.locked".equalsIgnoreCase(msgId)) {
                                     s_logger.info("Found that VM has a pending question that we need to answer programmatically, question id: " + question.getId() +
                                             ". Message id : " + msgId + ". Message text : " + msgText + ", for safe operation we will automatically decline it.");
-                                    vmMo.answerVM(question.getId(), "1");
+                                    vmMo.answerVM(question.getId(), ANSWER_NO);
                                 }
                             }
 

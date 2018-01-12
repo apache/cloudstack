@@ -27,7 +27,6 @@ import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
 
 import com.cloud.configuration.Resource.ResourceType;
-import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -43,13 +42,13 @@ import java.util.Random;
 import java.util.Set;
 import java.util.TimeZone;
 import java.util.UUID;
-
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
-import org.apache.commons.lang.StringUtils;
-
+import org.joda.time.Duration;
 import com.google.gson.Gson;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.BoolPolicy;
@@ -85,7 +84,6 @@ import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceBackingInfo;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
-import com.vmware.vim25.VirtualUSBController;
 import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
 import com.vmware.vim25.VirtualEthernetCard;
@@ -102,6 +100,7 @@ import com.vmware.vim25.VirtualMachineRelocateSpec;
 import com.vmware.vim25.VirtualMachineRelocateSpecDiskLocator;
 import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import com.vmware.vim25.VirtualMachineVideoCard;
+import com.vmware.vim25.VirtualUSBController;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -111,10 +110,10 @@ import org.apache.cloudstack.storage.resource.NfsSecondaryStorageResource;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.lang.math.NumberUtils;
-
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import com.cloud.agent.IAgentControl;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.AttachIsoAnswer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.BackupSnapshotAnswer;
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -259,7 +258,6 @@ import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
 import com.cloud.hypervisor.vmware.mo.TaskMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
-import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VirtualSwitchType;
@@ -282,8 +280,8 @@ import com.cloud.storage.resource.StoragePoolResource;
 import com.cloud.storage.resource.StorageSubsystemCommandHandler;
 import com.cloud.storage.resource.VmwareStorageLayoutHelper;
 import com.cloud.storage.resource.VmwareStorageProcessor;
-import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.storage.resource.VmwareStorageProcessor.VmwareStorageProcessorConfigurableFields;
+import com.cloud.storage.resource.VmwareStorageSubsystemCommandHandler;
 import com.cloud.storage.template.TemplateProp;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.ExecutionResult;
@@ -1493,7 +1491,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
             }
         }
-
+        Collections.sort(validatedDisks, (d1, d2) -> d1.getDiskSeq().compareTo(d2.getDiskSeq()));
         return validatedDisks.toArray(new DiskTO[0]);
     }
 
@@ -1880,35 +1878,42 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         s_logger.debug("Prepare ISO volume at existing device " + _gson.toJson(isoInfo.first()));
                     deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
                 }
+                i++;
             } else {
                 // Note: we will always plug a CDROM device
                 if (volIso != null) {
-                    TemplateObjectTO iso = (TemplateObjectTO)volIso.getData();
+                    for (DiskTO vol : disks) {
+                        if (vol.getType() == Volume.Type.ISO) {
 
-                    if (iso.getPath() != null && !iso.getPath().isEmpty()) {
-                        DataStoreTO imageStore = iso.getDataStore();
-                        if (!(imageStore instanceof NfsTO)) {
-                            s_logger.debug("unsupported protocol");
-                            throw new Exception("unsupported protocol");
-                        }
-                        NfsTO nfsImageStore = (NfsTO)imageStore;
-                        String isoPath = nfsImageStore.getUrl() + File.separator + iso.getPath();
-                        Pair<String, ManagedObjectReference> isoDatastoreInfo = getIsoDatastoreInfo(hyperHost, isoPath);
-                        assert (isoDatastoreInfo != null);
-                        assert (isoDatastoreInfo.second() != null);
+                            TemplateObjectTO iso = (TemplateObjectTO) vol.getData();
 
-                        deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
-                        Pair<VirtualDevice, Boolean> isoInfo = VmwareHelper.prepareIsoDevice(vmMo, isoDatastoreInfo.first(), isoDatastoreInfo.second(), true, true, ideUnitNumber++,
-                                i + 1);
-                        deviceConfigSpecArray[i].setDevice(isoInfo.first());
-                        if (isoInfo.second()) {
-                            if (s_logger.isDebugEnabled())
-                                s_logger.debug("Prepare ISO volume at new device " + _gson.toJson(isoInfo.first()));
-                            deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
-                        } else {
-                            if (s_logger.isDebugEnabled())
-                                s_logger.debug("Prepare ISO volume at existing device " + _gson.toJson(isoInfo.first()));
-                            deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+                            if (iso.getPath() != null && !iso.getPath().isEmpty()) {
+                                DataStoreTO imageStore = iso.getDataStore();
+                                if (!(imageStore instanceof NfsTO)) {
+                                    s_logger.debug("unsupported protocol");
+                                    throw new Exception("unsupported protocol");
+                                }
+                                NfsTO nfsImageStore = (NfsTO) imageStore;
+                                String isoPath = nfsImageStore.getUrl() + File.separator + iso.getPath();
+                                Pair<String, ManagedObjectReference> isoDatastoreInfo = getIsoDatastoreInfo(hyperHost, isoPath);
+                                assert (isoDatastoreInfo != null);
+                                assert (isoDatastoreInfo.second() != null);
+
+                                deviceConfigSpecArray[i] = new VirtualDeviceConfigSpec();
+                                Pair<VirtualDevice, Boolean> isoInfo =
+                                        VmwareHelper.prepareIsoDevice(vmMo, isoDatastoreInfo.first(), isoDatastoreInfo.second(), true, true, ideUnitNumber++, i + 1);
+                                deviceConfigSpecArray[i].setDevice(isoInfo.first());
+                                if (isoInfo.second()) {
+                                    if (s_logger.isDebugEnabled())
+                                        s_logger.debug("Prepare ISO volume at new device " + _gson.toJson(isoInfo.first()));
+                                    deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.ADD);
+                                } else {
+                                    if (s_logger.isDebugEnabled())
+                                        s_logger.debug("Prepare ISO volume at existing device " + _gson.toJson(isoInfo.first()));
+                                    deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
+                                }
+                            }
+                            i++;
                         }
                     }
                 } else {
@@ -1926,10 +1931,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
                         deviceConfigSpecArray[i].setOperation(VirtualDeviceConfigSpecOperation.EDIT);
                     }
+                    i++;
                 }
             }
 
-            i++;
+
 
             //
             // Setup ROOT/DATA disk devices
@@ -2910,9 +2916,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
     private static VolumeObjectTO getVolumeInSpec(VirtualMachineTO vmSpec, VolumeObjectTO srcVol) {
         for (DiskTO disk : vmSpec.getDisks()) {
-            VolumeObjectTO vol = (VolumeObjectTO)disk.getData();
-            if (vol.getId() == srcVol.getId())
-                return vol;
+            if (disk.getData() instanceof VolumeObjectTO) {
+                VolumeObjectTO vol = (VolumeObjectTO) disk.getData();
+                if (vol.getId() == srcVol.getId())
+                    return vol;
+            }
         }
 
         return null;
@@ -3237,7 +3245,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String isoFileName = isoUrl.substring(isoFileNameStartPos);
 
         int templateRootPos = isoUrl.indexOf("template/tmpl");
-        if (templateRootPos < 0) {
+        templateRootPos = (templateRootPos < 0 ? isoUrl.indexOf("ConfigDrive") : templateRootPos);
+        if (templateRootPos < 0 ) {
             throw new Exception("Invalid ISO path info");
         }
 
@@ -4195,7 +4204,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         return str.replace('/', '-');
     }
 
-    protected Answer execute(AttachIsoCommand cmd) {
+    protected AttachIsoAnswer execute(AttachIsoCommand cmd) {
         if (s_logger.isInfoEnabled()) {
             s_logger.info("Executing resource AttachIsoCommand: " + _gson.toJson(cmd));
         }
@@ -4221,7 +4230,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     } else {
                         try {
                             if (!vmMo.unmountToolsInstaller()) {
-                                return new Answer(cmd, false,
+                                return new AttachIsoAnswer(cmd, false,
                                         "Failed to unmount vmware-tools installer ISO as the corresponding CDROM device is locked by VM. Please unmount the CDROM device inside the VM and ret-try.");
                             }
                         } catch (Throwable e) {
@@ -4229,7 +4238,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                         }
                     }
 
-                    return new Answer(cmd);
+                    return new AttachIsoAnswer(cmd);
                 }
             }
 
@@ -4244,7 +4253,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             int isoNameStartPos = isoPath.lastIndexOf('/');
             String isoFileName = isoPath.substring(isoNameStartPos + 1);
-            String isoStorePathFromRoot = isoPath.substring(storeUrl.length(), isoNameStartPos);
+            String isoStorePathFromRoot = isoPath.substring(storeUrl.length() + 1, isoNameStartPos + 1);
+
 
             // TODO, check if iso is already attached, or if there is a previous
             // attachment
@@ -4253,12 +4263,13 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             String isoDatastorePath = String.format("[%s] %s%s", storeName, isoStorePathFromRoot, isoFileName);
 
             if (cmd.isAttach()) {
-                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false);
+                vmMo.attachIso(isoDatastorePath, morSecondaryDs, true, false, cmd.getDeviceKey());
+                return new AttachIsoAnswer(cmd);
             } else {
-                vmMo.detachIso(isoDatastorePath);
+                int key = vmMo.detachIso(isoDatastorePath, cmd.isForce());
+                return new AttachIsoAnswer(cmd, key);
             }
 
-            return new Answer(cmd);
         } catch (Throwable e) {
             if (e instanceof RemoteException) {
                 s_logger.warn("Encounter remote exception to vCenter, invalidate VMware session context");
@@ -4268,11 +4279,11 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (cmd.isAttach()) {
                 String msg = "AttachIsoCommand(attach) failed due to " + VmwareHelper.getExceptionMessage(e);
                 s_logger.error(msg, e);
-                return new Answer(cmd, false, msg);
+                return new AttachIsoAnswer(cmd, false, msg);
             } else {
                 String msg = "AttachIsoCommand(detach) failed due to " + VmwareHelper.getExceptionMessage(e);
                 s_logger.warn(msg, e);
-                return new Answer(cmd, false, msg);
+                return new AttachIsoAnswer(cmd, false, msg);
             }
         }
     }

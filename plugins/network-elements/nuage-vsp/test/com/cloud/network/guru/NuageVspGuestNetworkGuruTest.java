@@ -335,6 +335,8 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(reservationContext.getAccount()).thenReturn(networksAccount);
         when(reservationContext.getDomain()).thenReturn(networksDomain);
 
+        when(_networkDao.findById(NETWORK_ID)).thenReturn(network);
+
         _nuageVspGuestNetworkGuru.reserve(nicProfile, network, vmProfile, mock(DeployDestination.class), reservationContext);
     }
 

@@ -7640,6 +7640,120 @@
                                 }
                             }
                         }
+                    },
+
+                    ConfigDrive: {
+                        id: "ConfigDrive",
+                        label: "ConfigDrive",
+                        isMaximized: true,
+                        type: 'detailView',
+                        fields: {
+                            name: {
+                                label: 'label.name'
+                            },
+                            state: {
+                                label: 'label.status',
+                                indicator: {
+                                    'Enabled': 'on'
+                                }
+                            }
+                        },
+                        tabs: {
+                            network: {
+                                title: 'label.network',
+                                fields: [{
+                                    name: {
+                                        label: 'label.name'
+                                    }
+                                }, {
+                                    state: {
+                                        label: 'label.state'
+                                    },
+                                    supportedServices: {
+                                        label: 'label.supported.services'
+                                    },
+                                    id: {
+                                        label: 'label.id'
+                                    },
+                                    physicalnetworkid: {
+                                        label: 'label.physical.network.ID'
+                                    }
+                                }],
+                                dataProvider: function(args) {
+                                    refreshNspData("ConfigDrive");
+                                    args.response.success({
+                                        actionFilter: ovsProviderActionFilter,
+                                        data: $.extend(nspMap["ConfigDrive"], {
+                                            supportedServices: nspMap["ConfigDrive"] == undefined? "": nspMap["ConfigDrive"].servicelist.join(', ')
+                                        })
+                                    });
+                                }
+                            }
+                        },
+                        actions: {
+                            enable: {
+                                label: 'label.enable.provider',
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["ConfigDrive"].id + "&state=Enabled"),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function(json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.confirm.enable.provider';
+                                    },
+                                    notification: function() {
+                                        return 'label.enable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+                            disable: {
+                                label: 'label.disable.provider',
+                                action: function(args) {
+                                    $.ajax({
+                                        url: createURL("updateNetworkServiceProvider&id=" + nspMap["ConfigDrive"].id + "&state=Disabled"),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var jid = json.updatenetworkserviceproviderresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function(json) {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function(args) {
+                                        return 'message.confirm.disable.provider';
+                                    },
+                                    notification: function() {
+                                        return 'label.disable.provider';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -22190,6 +22304,9 @@
                             case "GloboDns":
                                 nspMap["GloboDns"] = items[i];
                                 break;
+                            case "ConfigDrive":
+                                nspMap["ConfigDrive"] = items[i];
+                                break;
                         }
                     }
                 }
@@ -22286,6 +22403,11 @@
                 id: 'GloboDns',
                 name: 'GloboDNS',
                 state: nspMap.GloboDns ? nspMap.GloboDns.state : 'Disabled'
+            });
+            nspHardcodingArray.push({
+                id: "ConfigDrive",
+                name: "ConfigDrive",
+                state: nspMap.ConfigDrive ? nspMap.ConfigDrive.state : 'Disabled'
             });
 
             //CLOUDSTACK-6840: OVS refers to SDN provider. However, we are not supporting SDN in this release.

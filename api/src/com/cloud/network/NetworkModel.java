@@ -17,6 +17,8 @@
 
 package com.cloud.network;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +50,28 @@ import org.apache.cloudstack.framework.config.ConfigKey;
  * participants in the orchestration can use this interface to query the data.
  */
 public interface NetworkModel {
+    String METATDATA_DIR = "metadata";
+    String USERDATA_DIR = "userdata";
+    String USERDATA_FILE = "user_data";
+    String PASSWORD_DIR = "password";
+    String PASSWORD_FILE = "vm_password";
+    String PASSWORD_CHECKSUM_FILE = "vm-password-md5checksum";
+    String SERVICE_OFFERING_FILE = "service-offering";
+    String AVAILABILITY_ZONE_FILE = "availability-zone";
+    String LOCAL_HOSTNAME_FILE = "local-hostname";
+    String INSTANCE_ID_FILE = "instance-id";
+    String VM_ID_FILE = "vm-id";
+    String PUBLIC_KEYS_FILE = "public-keys";
+    String CLOUD_IDENTIFIER_FILE = "cloud-identifier";
+    int CONFIGDATA_DIR = 0;
+    int CONFIGDATA_FILE = 1;
+    int CONFIGDATA_CONTENT = 2;
+    ImmutableMap<String, String> openStackFileMapping = ImmutableMap.of(
+            AVAILABILITY_ZONE_FILE, "availability_zone",
+            LOCAL_HOSTNAME_FILE, "hostname",
+            VM_ID_FILE, "uuid",
+            INSTANCE_ID_FILE, "name"
+    );
 
     static final ConfigKey<Integer> MACIdentifier = new ConfigKey<Integer>("Advanced",Integer.class, "mac.identifier", "0",
             "This value will be used while generating the mac addresses for isolated and shared networks. The hexadecimal equivalent value will be present at the 2nd octet of the mac address. Default value is null which means this feature is disabled.Its scope is global.", true, ConfigKey.Scope.Global);

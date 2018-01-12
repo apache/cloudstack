@@ -61,4 +61,8 @@
         <property name="name" value="VirtualRouter" />
     </bean>
 
+    <bean id="ConfigDrive" class="com.cloud.network.element.ConfigDriveNetworkElement">
+        <property name="name" value="ConfigDrive" />
+    </bean>
+
 </beans>

@@ -609,14 +609,10 @@ public class LibvirtVMDef {
 
         }
 
-        /* skip iso label */
-        private String getDevLabel(int devId, DiskBus bus) {
+        /* skip iso labels */
+        private String getDevLabel(int devId, DiskBus bus, boolean forIso) {
             if (devId < 0) {
                 return "";
-            }
-
-            if (devId == 2) {
-                devId++;
             }
 
             if (bus == DiskBus.SCSI) {
@@ -624,7 +620,13 @@ public class LibvirtVMDef {
             } else if (bus == DiskBus.VIRTIO) {
                 return "vd" + getDevLabelSuffix(devId);
             }
+            if (forIso) {
+                devId --;
+            } else if(devId >= 2) {
+                devId += 2;
+            }
             return "hd" + getDevLabelSuffix(devId);
+
         }
 
         private String getDevLabelSuffix(int deviceIndex) {
@@ -649,7 +651,7 @@ public class LibvirtVMDef {
             _deviceType = DeviceType.DISK;
             _diskCacheMode = DiskCacheMode.NONE;
             _sourcePath = filePath;
-            _diskLabel = getDevLabel(devId, bus);
+            _diskLabel = getDevLabel(devId, bus, false);
             _diskFmtType = diskFmtType;
             _bus = bus;
 
@@ -659,10 +661,24 @@ public class LibvirtVMDef {
             _diskType = DiskType.FILE;
             _deviceType = DeviceType.CDROM;
             _sourcePath = volPath;
-            _diskLabel = "hdc";
+            _diskLabel = getDevLabel(3, DiskBus.IDE, true);
             _diskFmtType = DiskFmtType.RAW;
             _diskCacheMode = DiskCacheMode.NONE;
             _bus = DiskBus.IDE;
+        }
+
+        public void defISODisk(String volPath, Integer devId) {
+            if (devId == null) {
+                defISODisk(volPath);
+            } else {
+                _diskType = DiskType.FILE;
+                _deviceType = DeviceType.CDROM;
+                _sourcePath = volPath;
+                _diskLabel = getDevLabel(devId, DiskBus.IDE, true);
+                _diskFmtType = DiskFmtType.RAW;
+                _diskCacheMode = DiskCacheMode.NONE;
+                _bus = DiskBus.IDE;
+            }
         }
 
         public void defBlockBasedDisk(String diskName, int devId, DiskBus bus) {
@@ -671,7 +687,7 @@ public class LibvirtVMDef {
             _diskFmtType = DiskFmtType.RAW;
             _diskCacheMode = DiskCacheMode.NONE;
             _sourcePath = diskName;
-            _diskLabel = getDevLabel(devId, bus);
+            _diskLabel = getDevLabel(devId, bus, false);
             _bus = bus;
         }
 
@@ -696,7 +712,7 @@ public class LibvirtVMDef {
             _sourcePort = sourcePort;
             _authUserName = authUserName;
             _authSecretUUID = authSecretUUID;
-            _diskLabel = getDevLabel(devId, bus);
+            _diskLabel = getDevLabel(devId, bus, false);
             _bus = bus;
             _diskProtocol = protocol;
         }

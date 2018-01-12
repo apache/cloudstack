@@ -29,7 +29,7 @@ user=root
 mountdir=$(mktemp -d)
 
 # If lable name is other than config, please change the below line as required
-DefaultDisk=/dev/disk/by-label/config
+DefaultDisk=/dev/disk/by-label/config-2
 
 SSHKey_File=$mountdir/cloudstack/metadata/public_keys.txt
 keys_received=0

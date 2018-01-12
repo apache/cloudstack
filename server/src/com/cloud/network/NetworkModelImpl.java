@@ -30,20 +30,19 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.Collections;
-
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
-
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
@@ -2349,14 +2348,14 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         final List<String[]> vmData = new ArrayList<String[]>();
 
         if (userData != null) {
-            vmData.add(new String[]{"userdata", "user-data", new String(Base64.decodeBase64(userData),StringUtils.getPreferredCharset())});
+            vmData.add(new String[]{USERDATA_DIR, USERDATA_FILE, new String(Base64.decodeBase64(userData),StringUtils.getPreferredCharset())});
         }
-        vmData.add(new String[]{"metadata", "service-offering", StringUtils.unicodeEscape(serviceOffering)});
-        vmData.add(new String[]{"metadata", "availability-zone", StringUtils.unicodeEscape(zoneName)});
-        vmData.add(new String[]{"metadata", "local-hostname", StringUtils.unicodeEscape(vmName)});
-        vmData.add(new String[]{"metadata", "instance-id", vmName});
-        vmData.add(new String[]{"metadata", "vm-id", String.valueOf(vmId)});
-        vmData.add(new String[]{"metadata", "public-keys", publicKey});
+        vmData.add(new String[]{METATDATA_DIR, SERVICE_OFFERING_FILE, StringUtils.unicodeEscape(serviceOffering)});
+        vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, StringUtils.unicodeEscape(zoneName)});
+        vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, StringUtils.unicodeEscape(vmName)});
+        vmData.add(new String[]{METATDATA_DIR, INSTANCE_ID_FILE, vmName});
+        vmData.add(new String[]{METATDATA_DIR, VM_ID_FILE, String.valueOf(vmId)});
+        vmData.add(new String[]{METATDATA_DIR, PUBLIC_KEYS_FILE, publicKey});
 
         String cloudIdentifier = _configDao.getValue("cloud.identifier");
         if (cloudIdentifier == null) {
@@ -2364,7 +2363,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         } else {
             cloudIdentifier = "CloudStack-{" + cloudIdentifier + "}";
         }
-        vmData.add(new String[]{"metadata", "cloud-identifier", cloudIdentifier});
+        vmData.add(new String[]{METATDATA_DIR, CLOUD_IDENTIFIER_FILE, cloudIdentifier});
 
         if (password != null && !password.isEmpty() && !password.equals("saved_password")) {
 
@@ -2385,10 +2384,10 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 BigInteger bigInt = new BigInteger(1, digest);
                 String hashtext = bigInt.toString(16);
 
-                vmData.add(new String[]{"password", "vm-password-md5checksum", hashtext});
+                vmData.add(new String[]{PASSWORD_DIR, PASSWORD_CHECKSUM_FILE, hashtext});
             }
 
-            vmData.add(new String[]{"password", "vm-password", password});
+            vmData.add(new String[]{PASSWORD_DIR, PASSWORD_FILE, password});
         }
 
         return vmData;

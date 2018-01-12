@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.vm;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -3996,6 +3998,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     protected String validateUserData(String userData, HTTPMethod httpmethod) {
         byte[] decodedUserData = null;
         if (userData != null) {
+
+            if (userData.contains("%")) {
+                try {
+                    userData = URLDecoder.decode(userData, "UTF-8");
+                } catch (UnsupportedEncodingException e) {
+                    throw new InvalidParameterValueException("Url decoding of userdata failed.");
+                }
+            }
+
             if (!Base64.isBase64(userData)) {
                 throw new InvalidParameterValueException("User data is not base64 encoded");
             }

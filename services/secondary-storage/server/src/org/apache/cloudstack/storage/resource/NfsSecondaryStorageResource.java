@@ -16,6 +16,21 @@
 // under the License.
 package org.apache.cloudstack.storage.resource;
 
+import static com.cloud.network.NetworkModel.CONFIGDATA_CONTENT;
+import static com.cloud.network.NetworkModel.CONFIGDATA_DIR;
+import static com.cloud.network.NetworkModel.CONFIGDATA_FILE;
+import static com.cloud.network.NetworkModel.METATDATA_DIR;
+import static com.cloud.network.NetworkModel.PASSWORD_DIR;
+import static com.cloud.network.NetworkModel.PASSWORD_FILE;
+import static com.cloud.network.NetworkModel.PUBLIC_KEYS_FILE;
+import static com.cloud.network.NetworkModel.USERDATA_DIR;
+import static com.cloud.network.NetworkModel.USERDATA_FILE;
+import static com.cloud.utils.StringUtils.join;
+import static com.cloud.utils.storage.S3.S3Utils.putFile;
+import static java.lang.String.format;
+import static java.util.Arrays.asList;
+import static org.apache.commons.lang.StringUtils.substringAfterLast;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -29,6 +44,8 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -36,7 +53,68 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import javax.naming.ConfigurationException;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.codec.http.HttpContentCompressor;
+import io.netty.handler.codec.http.HttpRequestDecoder;
+import io.netty.handler.codec.http.HttpResponseEncoder;
+import io.netty.handler.logging.LogLevel;
+import io.netty.handler.logging.LoggingHandler;
+
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
+
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.io.Files;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+
+import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer;
+import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
+import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.cloudstack.storage.template.DownloadManager;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl;
+import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
+import org.apache.cloudstack.storage.template.UploadEntity;
+import org.apache.cloudstack.storage.template.UploadManager;
+import org.apache.cloudstack.storage.template.UploadManagerImpl;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.cloudstack.utils.security.DigestHelper;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthAnswer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -45,6 +123,7 @@ import com.cloud.agent.api.ComputeChecksumCommand;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.PingCommand;
 import com.cloud.agent.api.PingStorageCommand;
 import com.cloud.agent.api.ReadyAnswer;
@@ -82,6 +161,7 @@ import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.configuration.Resource;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.network.NetworkModel;
 import com.cloud.resource.ServerResourceBase;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
@@ -109,63 +189,7 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.vm.SecondaryStorageVm;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
-import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.codec.http.HttpContentCompressor;
-import io.netty.handler.codec.http.HttpRequestDecoder;
-import io.netty.handler.codec.http.HttpResponseEncoder;
-import io.netty.handler.logging.LogLevel;
-import io.netty.handler.logging.LoggingHandler;
 
-import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
-import org.apache.cloudstack.storage.command.UploadStatusAnswer;
-import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
-import org.apache.cloudstack.storage.command.UploadStatusCommand;
-import org.apache.cloudstack.storage.template.DownloadManager;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl;
-import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
-import org.apache.cloudstack.storage.template.UploadEntity;
-import org.apache.cloudstack.storage.template.UploadManager;
-import org.apache.cloudstack.storage.template.UploadManagerImpl;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
-import org.apache.cloudstack.utils.security.DigestHelper;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URLEncodedUtils;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.log4j.Logger;
-import org.joda.time.DateTime;
-import org.joda.time.format.ISODateTimeFormat;
-
-import static com.cloud.utils.StringUtils.join;
-import static com.cloud.utils.storage.S3.S3Utils.putFile;
-import static java.lang.String.format;
-import static java.util.Arrays.asList;
-import static org.apache.commons.lang.StringUtils.substringAfterLast;
 
 import java.io.OutputStreamWriter;
 
@@ -176,6 +200,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
     private static final String VOLUME_ROOT_DIR = "volumes";
     private static final String POST_UPLOAD_KEY_LOCATION = "/etc/cloudstack/agent/ms-psk";
+    private static final String cloudStackConfigDriveName = "/cloudstack/";
+    private static final String openStackConfigDriveName = "/openstack/latest/";
+
+    private static final Map<String, String> updatableConfigData = Maps.newHashMap();
+    static {
+
+        updatableConfigData.put(PUBLIC_KEYS_FILE, METATDATA_DIR);
+        updatableConfigData.put(USERDATA_FILE, USERDATA_DIR);
+        updatableConfigData.put(PASSWORD_FILE, PASSWORD_DIR);
+    }
 
     int _timeout;
 
@@ -291,12 +325,314 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             return execute((DeleteCommand)cmd);
         } else if (cmd instanceof UploadStatusCommand) {
             return execute((UploadStatusCommand)cmd);
+        } else if (cmd instanceof HandleConfigDriveIsoCommand) {
+            return execute((HandleConfigDriveIsoCommand)cmd);
         } else if (cmd instanceof GetDatadisksCommand) {
             return execute((GetDatadisksCommand)cmd);
         } else if (cmd instanceof CreateDatadiskTemplateCommand) {
             return execute((CreateDatadiskTemplateCommand)cmd);
         } else {
             return Answer.createUnsupportedCommandAnswer(cmd);
+        }
+    }
+
+    private Answer execute(HandleConfigDriveIsoCommand cmd) {
+
+        if (cmd.isCreate()) {
+            s_logger.debug(String.format("VMdata %s, attach = %s", cmd.getVmData(), cmd.isCreate()));
+            if(cmd.getVmData() == null) return new Answer(cmd, false, "No Vmdata available");
+            String nfsMountPoint = getRootDir(cmd.getDestStore().getUrl(), _nfsVersion);
+            File isoFile = new File(nfsMountPoint, cmd.getIsoFile());
+            if(isoFile.exists()) {
+                if (!cmd.isUpdate()) {
+                    return new Answer(cmd, true, "ISO already available");
+                } else {
+                    // Find out if we have to recover the password/ssh-key from the already available ISO.
+                    try {
+                        List<String[]> recoveredVmData = recoverVmData(isoFile);
+                        for (String[] vmDataEntry : cmd.getVmData()) {
+                            if (updatableConfigData.containsKey(vmDataEntry[CONFIGDATA_FILE])
+                                    && updatableConfigData.get(vmDataEntry[CONFIGDATA_FILE]).equals(vmDataEntry[CONFIGDATA_DIR])) {
+                                   updateVmData(recoveredVmData, vmDataEntry);
+                            }
+                        }
+                        cmd.setVmData(recoveredVmData);
+                    } catch (IOException e) {
+                        return new Answer(cmd, e);
+                    }
+                }
+            }
+            return createConfigDriveIsoForVM(cmd);
+        } else {
+            DataStoreTO dstore = cmd.getDestStore();
+            if (dstore instanceof NfsTO) {
+                NfsTO nfs = (NfsTO) dstore;
+                String relativeTemplatePath = new File(cmd.getIsoFile()).getParent();
+                String nfsMountPoint = getRootDir(nfs.getUrl(), _nfsVersion);
+                File tmpltPath = new File(nfsMountPoint, relativeTemplatePath);
+                try {
+                    FileUtils.deleteDirectory(tmpltPath);
+                } catch (IOException e) {
+                    return new Answer(cmd, e);
+                }
+                return new Answer(cmd);
+            } else {
+                return new Answer(cmd, false, "Not implemented yet");
+            }
+        }
+    }
+
+    private void updateVmData(List<String[]> recoveredVmData, String[] vmDataEntry) {
+        for (String[] recoveredEntry : recoveredVmData) {
+            if (recoveredEntry[CONFIGDATA_DIR].equals(vmDataEntry[CONFIGDATA_DIR])
+                    && recoveredEntry[CONFIGDATA_FILE].equals(vmDataEntry[CONFIGDATA_FILE])) {
+                recoveredEntry[CONFIGDATA_CONTENT] = vmDataEntry[CONFIGDATA_CONTENT];
+                return;
+            }
+        }
+        recoveredVmData.add(vmDataEntry);
+    }
+
+    private List<String[]> recoverVmData(File isoFile) throws IOException {
+        String tempDirName = null;
+        List<String[]> recoveredVmData = Lists.newArrayList();
+        boolean mounted = false;
+        try {
+            Path tempDir = java.nio.file.Files.createTempDirectory("ConfigDrive");
+            tempDirName = tempDir.toString();
+
+            // Unpack the current config drive file
+            Script command = new Script(!_inSystemVM, "mount", _timeout, s_logger);
+            command.add("-o", "loop");
+            command.add(isoFile.getAbsolutePath());
+            command.add(tempDirName);
+            String result = command.execute();
+
+            if (result != null) {
+                String errMsg = "Unable to mount " + isoFile.getAbsolutePath() + " at " + tempDirName + " due to " + result;
+                s_logger.error(errMsg);
+                throw new IOException(errMsg);
+            }
+            mounted = true;
+
+
+            // Scan directory structure
+            for (File configDirectory: (new File(tempDirName, "cloudstack")).listFiles()){
+                for (File configFile: configDirectory.listFiles()) {
+                    recoveredVmData.add(new String[]{configDirectory.getName(),
+                            Files.getNameWithoutExtension(configFile.getName()),
+                            Files.readFirstLine(configFile, Charset.defaultCharset())});
+                }
+            }
+
+        } finally {
+            if (mounted) {
+                Script command = new Script(!_inSystemVM, "umount", _timeout, s_logger);
+                command.add(tempDirName);
+                String result = command.execute();
+                if (result != null) {
+                    s_logger.warn("Unable to umount " + tempDirName + " due to " + result);
+                }
+            }
+            try {
+                FileUtils.deleteDirectory(new File(tempDirName));
+            } catch (IOException ioe) {
+                s_logger.warn("Failed to delete ConfigDrive temporary directory: " + tempDirName, ioe);
+            }
+        }
+        return  recoveredVmData;
+    }
+
+    public Answer createConfigDriveIsoForVM(HandleConfigDriveIsoCommand cmd) {
+        //create folder for the VM
+        if (cmd.getVmData() != null) {
+
+            Path tempDir = null;
+            String tempDirName = null;
+            try {
+                tempDir = java.nio.file.Files.createTempDirectory("ConfigDrive");
+                tempDirName = tempDir.toString();
+
+                //create OpenStack files
+                //create folder with empty files
+                File openStackFolder = new File(tempDirName + openStackConfigDriveName);
+                if (openStackFolder.exists() || openStackFolder.mkdirs()) {
+                    File vendorDataFile = new File(openStackFolder,"vendor_data.json");
+                    try (FileWriter fw = new FileWriter(vendorDataFile); BufferedWriter bw = new BufferedWriter(fw)) {
+                        bw.write("{}");
+                    } catch (IOException ex) {
+                        s_logger.error("Failed to create file ", ex);
+                        return new Answer(cmd, ex);
+                    }
+                    File networkDataFile = new File(openStackFolder, "network_data.json");
+                    try (FileWriter fw = new FileWriter(networkDataFile); BufferedWriter bw = new BufferedWriter(fw)) {
+                        bw.write("{}");
+                    } catch (IOException ex) {
+                        s_logger.error("Failed to create file ", ex);
+                        return new Answer(cmd, ex);
+                    }
+                } else {
+                    s_logger.error("Failed to create folder " + openStackFolder);
+                    return new Answer(cmd, false, "Failed to create folder " + openStackFolder);
+                }
+
+                JsonObject metaData = new JsonObject();
+                for (String[] item : cmd.getVmData()) {
+                    String dataType = item[CONFIGDATA_DIR];
+                    String fileName = item[CONFIGDATA_FILE];
+                    String content = item[CONFIGDATA_CONTENT];
+                    s_logger.debug(String.format("[createConfigDriveIsoForVM] dataType=%s, filename=%s, content=%s",
+                            dataType, fileName, (fileName.equals(PASSWORD_FILE)?"********":content)));
+
+                    // create file with content in folder
+                    if (dataType != null && !dataType.isEmpty()) {
+                        //create folder
+                        File typeFolder = new File(tempDirName + cloudStackConfigDriveName + dataType);
+                        if (typeFolder.exists() || typeFolder.mkdirs()) {
+                            if (StringUtils.isNotEmpty(content)) {
+                                File file = new File(typeFolder, fileName + ".txt");
+                                try (FileWriter fw = new FileWriter(file); BufferedWriter bw = new BufferedWriter(fw)) {
+                                    bw.write(content);
+                                } catch (IOException ex) {
+                                    s_logger.error("Failed to create file ", ex);
+                                    return new Answer(cmd, ex);
+                                }
+                            }
+                        } else {
+                            s_logger.error("Failed to create folder " + typeFolder);
+                            return new Answer(cmd, false, "Failed to create folder " + typeFolder);
+                        }
+
+                        //now write the file to the OpenStack directory
+                        metaData = constructOpenStackMetaData(metaData, dataType, fileName, content);
+                    }
+                }
+
+                File metaDataFile = new File(openStackFolder, "meta_data.json");
+                try (FileWriter fw = new FileWriter(metaDataFile); BufferedWriter bw = new BufferedWriter(fw)) {
+                    bw.write(metaData.toString());
+                } catch (IOException ex) {
+                    s_logger.error("Failed to create file ", ex);
+                    return new Answer(cmd, ex);
+                }
+
+                String linkResult = linkUserData(tempDirName);
+                if (linkResult != null) {
+                    String errMsg = "Unable to create user_data link due to " + linkResult;
+                    s_logger.warn(errMsg);
+                    return new Answer(cmd, false, errMsg);
+                }
+
+                File tmpIsoStore = new File(tempDirName, new File(cmd.getIsoFile()).getName());
+                Script command = new Script(!_inSystemVM, "/usr/bin/genisoimage", _timeout, s_logger);
+                command.add("-o", tmpIsoStore.getAbsolutePath());
+                command.add("-ldots");
+                command.add("-allow-lowercase");
+                command.add("-allow-multidot");
+                command.add("-cache-inodes"); // Enable caching inode and device numbers to find hard links to files.
+                command.add("-l");
+                command.add("-quiet");
+                command.add("-J");
+                command.add("-r");
+                command.add("-V", cmd.getConfigDriveLabel());
+                command.add(tempDirName);
+                s_logger.debug("execute command: " + command.toString());
+                String result = command.execute();
+                if (result != null) {
+                    String errMsg = "Unable to create iso file: " + cmd.getIsoFile() + " due to " + result;
+                    s_logger.warn(errMsg);
+                    return new Answer(cmd, false, errMsg);
+                }
+                copyLocalToNfs(tmpIsoStore, new File(cmd.getIsoFile()), cmd.getDestStore());
+
+            } catch (IOException e) {
+                return new Answer(cmd, e);
+            } catch (ConfigurationException e) {
+                s_logger.warn("SecondStorageException ", e);
+                return new Answer(cmd, e);
+            } finally {
+                try {
+                    FileUtils.deleteDirectory(tempDir.toFile());
+                } catch (IOException ioe) {
+                    s_logger.warn("Failed to delete ConfigDrive temporary directory: " + tempDirName, ioe);
+                }
+            }
+        }
+        return new Answer(cmd);
+    }
+
+    JsonObject constructOpenStackMetaData(JsonObject metaData, String dataType, String fileName, String content) {
+        if (dataType.equals(NetworkModel.METATDATA_DIR) &&  StringUtils.isNotEmpty(content)) {
+            //keys are a special case in OpenStack format
+            if (NetworkModel.PUBLIC_KEYS_FILE.equals(fileName)) {
+                String[] keyArray = content.replace("\\n", "").split(" ");
+                String keyName = "key";
+                if (keyArray.length > 3 && StringUtils.isNotEmpty(keyArray[2])){
+                    keyName = keyArray[2];
+                }
+
+                JsonObject keyLegacy = new JsonObject();
+                keyLegacy.addProperty("type", "ssh");
+                keyLegacy.addProperty("data", content.replace("\\n", ""));
+                keyLegacy.addProperty("name", keyName);
+                metaData.add("keys", arrayOf(keyLegacy));
+
+                JsonObject key = new JsonObject();
+                key.addProperty(keyName, content);
+                metaData.add("public_keys", key);
+            } else if (NetworkModel.openStackFileMapping.get(fileName) != null) {
+                    metaData.addProperty(NetworkModel.openStackFileMapping.get(fileName), content);
+            }
+        }
+        return metaData;
+    }
+
+    private static JsonArray arrayOf(JsonElement... elements) {
+        JsonArray array = new JsonArray();
+        for (JsonElement element : elements) {
+            array.add(element);
+        }
+        return array;
+    }
+
+    private String linkUserData(String tempDirName) {
+        //Hard link the user_data.txt file with the user_data file in the OpenStack directory.
+        String userDataFilePath = tempDirName + cloudStackConfigDriveName + "userdata/user_data.txt";
+        if ((new File(userDataFilePath).exists())) {
+            Script hardLink = new Script(!_inSystemVM, "ln", _timeout, s_logger);
+            hardLink.add(userDataFilePath);
+            hardLink.add(tempDirName + openStackConfigDriveName + "user_data");
+            s_logger.debug("execute command: " + hardLink.toString());
+            return hardLink.execute();
+        }
+        return null;
+    }
+
+    protected void copyLocalToNfs(File localFile, File isoFile, DataStoreTO destData) throws ConfigurationException, IOException {
+        String scriptsDir = "scripts/storage/secondary";
+        String createVolScr = Script.findScript(scriptsDir, "createvolume.sh");
+        if (createVolScr == null) {
+            throw new ConfigurationException("Unable to find createvolume.sh");
+        }
+        s_logger.info("createvolume.sh found in " + createVolScr);
+
+        int installTimeoutPerGig = 180 * 60 * 1000;
+        int imgSizeGigs = (int) Math.ceil(localFile.length() * 1.0d / (1024 * 1024 * 1024));
+        imgSizeGigs++; // add one just in case
+        long timeout = imgSizeGigs * installTimeoutPerGig;
+
+        Script scr = new Script(createVolScr, timeout, s_logger);
+        scr.add("-s", Integer.toString(imgSizeGigs));
+        scr.add("-n", isoFile.getName());
+        scr.add("-t", getRootDir(destData.getUrl(), _nfsVersion) + "/" + isoFile.getParent());
+        scr.add("-f", localFile.getAbsolutePath());
+        scr.add("-d", "configDrive");
+        String result;
+        result = scr.execute();
+
+        if (result != null) {
+            // script execution failure
+            throw new CloudRuntimeException("Failed to run script " + createVolScr);
         }
     }
 
@@ -752,7 +1088,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             FormatInfo info = processor.process(destPath, null, templateUuid);
 
             TemplateLocation loc = new TemplateLocation(_storage, destPath);
-            loc.create(destData.getId(), true, templateUuid);
+            loc.create(1, true, templateUuid);
             loc.addFormat(info);
             loc.save();
             TemplateProp prop = loc.getTemplateInfo();
@@ -836,7 +1172,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
                     FormatInfo info = processor.process(destPath, null, templateName);
                     TemplateLocation loc = new TemplateLocation(_storage, destPath);
-                    loc.create(destData.getId(), true, destData.getName());
+                    loc.create(1, true, destData.getName());
                     loc.addFormat(info);
                     loc.save();
 
@@ -2485,10 +2821,9 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         if (_inSystemVM) {
             _localgw = (String)params.get("localgw");
             if (_localgw != null) { // can only happen inside service vm
-                String mgmtHosts = (String)params.get("host");
-                for (final String mgmtHost : mgmtHosts.split(",")) {
-                    addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
-                }
+                String mgmtHost = (String)params.get("host");
+                addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, mgmtHost);
+
                 String internalDns1 = (String)params.get("internaldns1");
                 if (internalDns1 == null) {
                     s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");

@@ -33,11 +33,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Strings;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
+import com.google.common.base.Strings;
 import com.google.gson.Gson;
 import com.vmware.vim25.HostHostBusAdapter;
 import com.vmware.vim25.HostInternetScsiHba;
@@ -71,6 +71,7 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -93,7 +94,6 @@ import com.cloud.hypervisor.vmware.mo.HostMO;
 import com.cloud.hypervisor.vmware.mo.HostStorageSystemMO;
 import com.cloud.hypervisor.vmware.mo.HypervisorHostHelper;
 import com.cloud.hypervisor.vmware.mo.NetworkDetails;
-import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.mo.VmwareHypervisorHost;
 import com.cloud.hypervisor.vmware.resource.VmwareResource;
@@ -1525,7 +1525,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
             int isoNameStartPos = isoPath.lastIndexOf('/');
             String isoFileName = isoPath.substring(isoNameStartPos + 1);
-            String isoStorePathFromRoot = isoPath.substring(storeUrl.length(), isoNameStartPos);
+            String isoStorePathFromRoot = isoPath.substring(storeUrl.length() + 1, isoNameStartPos);
 
             // TODO, check if iso is already attached, or if there is a previous
             // attachment
