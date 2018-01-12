@@ -199,13 +199,16 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
 
     private HAResource validateAndFindHAResource(final HAConfig haConfig) {
         HAResource resource = null;
+        if (haConfig == null) {
+            return null;
+        }
         if (haConfig.getResourceType() == HAResource.ResourceType.Host) {
             final Host host = hostDao.findById(haConfig.getResourceId());
             if (host != null && host.getRemoved() != null) {
                 return null;
             }
             resource = host;
-            if (resource == null && haConfig.getState() != HAConfig.HAState.Disabled) {
+            if (haConfig.getState() == null || (resource == null && haConfig.getState() != HAConfig.HAState.Disabled)) {
                 disableHA(haConfig.getResourceId(), haConfig.getResourceType());
                 return null;
             }
@@ -224,6 +227,9 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
     }
 
     private HAProvider<HAResource> validateAndFindHAProvider(final HAConfig haConfig, final HAResource resource) {
+        if (haConfig == null) {
+            return null;
+        }
         final HAProvider<HAResource> haProvider = haProviderMap.get(haConfig.getHaProvider());
         if (haProvider != null && !haProvider.isEligible(resource)) {
             if (haConfig.getState() != HAConfig.HAState.Ineligible) {
@@ -639,6 +645,10 @@ public final class HAManagerImpl extends ManagerBase implements HAManager, Clust
                 }
                 final List<HAConfig> haConfigList = new ArrayList<HAConfig>(haConfigDao.listAll());
                 for (final HAConfig haConfig : haConfigList) {
+                    if (haConfig == null) {
+                        continue;
+                    }
+
                     if (!checkHAOwnership(haConfig)) {
                         continue;
                     }
