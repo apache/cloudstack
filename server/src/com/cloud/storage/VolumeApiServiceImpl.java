@@ -856,10 +856,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_RESIZE, eventDescription = "resizing volume", async = true)
     public VolumeVO resizeVolume(ResizeVolumeCmd cmd) throws ResourceAllocationException {
-        Long newSize = null;
-        Long newMinIops = null;
-        Long newMaxIops = null;
-        Integer newHypervisorSnapshotReserve = null;
+        Long newSize;
+        Long newMinIops;
+        Long newMaxIops;
+        Integer newHypervisorSnapshotReserve;
         boolean shrinkOk = cmd.getShrinkOk();
 
         VolumeVO volume = _volsDao.findById(cmd.getEntityId());
@@ -875,13 +875,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         /* Does the caller have authority to act on this volume? */
         _accountMgr.checkAccess(CallContext.current().getCallingAccount(), null, true, volume);
-
-        if(volume.getInstanceId() != null) {
-            // Check that Vm to which this volume is attached does not have VM Snapshots
-            if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
-                throw new InvalidParameterValueException("Volume cannot be resized which is attached to VM with VM Snapshots");
-            }
-        }
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         DiskOfferingVO newDiskOffering = null;
@@ -1007,6 +1000,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // if the caller is looking to change the size of the volume
         if (currentSize != newSize) {
+            if (volume.getInstanceId() != null) {
+                // Check that VM to which this volume is attached does not have VM snapshots
+                if (_vmSnapshotDao.findByVm(volume.getInstanceId()).size() > 0) {
+                    throw new InvalidParameterValueException("A volume that is attached to a VM with any VM snapshots cannot be resized.");
+                }
+            }
+
             if (!validateVolumeSizeRange(newSize)) {
                 throw new InvalidParameterValueException("Requested size out of range");
             }
