@@ -974,6 +974,10 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 // convert from GiB to bytes
                 newSize = newSize << 30;
             } else {
+                if (cmd.getSize() != null) {
+                    throw new InvalidParameterValueException("You cannnot pass in a custom disk size to a non-custom disk offering.");
+                }
+
                 newSize = newDiskOffering.getDiskSize();
             }
 
