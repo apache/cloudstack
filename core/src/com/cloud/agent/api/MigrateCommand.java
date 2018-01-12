@@ -53,10 +53,6 @@ public class MigrateCommand extends Command {
         return migrateStorage != null ? new HashMap<>(migrateStorage) : new HashMap<String, MigrateDiskInfo>();
     }
 
-    public boolean isMigrateStorage() {
-        return migrateStorage != null && !migrateStorage.isEmpty();
-    }
-
     public void setAutoConvergence(boolean autoConvergence) {
         this.autoConvergence = autoConvergence;
     }
@@ -100,11 +96,7 @@ public class MigrateCommand extends Command {
 
             @Override
             public String toString() {
-                switch(this) {
-                    case FILE: return "file";
-                    case BLOCK: return "block";
-                    default: throw new IllegalArgumentException();
-                }
+                return name().toLowerCase();
             }
         }
 
@@ -113,11 +105,7 @@ public class MigrateCommand extends Command {
 
             @Override
             public String toString() {
-                switch(this) {
-                    case QCOW2: return "qcow2";
-                    case RAW: return "raw";
-                    default: throw new IllegalArgumentException();
-                }
+                return name().toLowerCase();
             }
         }
 
@@ -126,11 +114,7 @@ public class MigrateCommand extends Command {
 
             @Override
             public String toString() {
-                switch(this) {
-                    case FILE: return "file";
-                    case DEV: return "dev";
-                    default: throw new IllegalArgumentException();
-                }
+                return name().toLowerCase();
             }
         }
 

@@ -859,7 +859,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 LOGGER.warn(msg, ex);
 
-                throw new CloudRuntimeException(msg + ex.getMessage());
+                throw new CloudRuntimeException(msg + ex.getMessage(), ex);
             } finally {
                 _volumeService.revokeAccess(snapshotInfo, hostVO, srcDataStore);
 
@@ -1336,7 +1336,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             LOGGER.warn(msg, ex);
 
-            throw new CloudRuntimeException(msg + ex.getMessage());
+            throw new CloudRuntimeException(msg + ex.getMessage(), ex);
         }
         finally {
             _volumeService.revokeAccess(destVolumeInfo, hostVO, destVolumeInfo.getDataStore());
@@ -1798,7 +1798,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 LOGGER.warn(msg, ex);
 
-                throw new CloudRuntimeException(msg + ex.getMessage());
+                throw new CloudRuntimeException(msg + ex.getMessage(), ex);
             }
             finally {
                 try {
@@ -2147,7 +2147,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             LOGGER.warn(msg, ex);
 
-            throw new CloudRuntimeException(msg + ex.getMessage());
+            throw new CloudRuntimeException(msg + ex.getMessage(), ex);
         }
     }
 
@@ -2262,7 +2262,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             LOGGER.warn(msg, ex);
 
-            throw new CloudRuntimeException(msg + ex.getMessage());
+            throw new CloudRuntimeException(msg + ex.getMessage(), ex);
         }
         finally {
             if (Snapshot.LocationType.PRIMARY.equals(locationType)) {

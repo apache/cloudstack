@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -567,7 +568,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         // Clean up volumes based on the vm's instance id
         volumeMgr.cleanupVolumes(vm.getId());
 
-        if (hostId != null && targets != null && targets.size() > 0) {
+        if (hostId != null && CollectionUtils.isNotEmpty(targets)) {
             removeDynamicTargets(hostId, targets);
         }
 
@@ -612,23 +613,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         HostVO hostVO = _hostDao.findById(hostId);
 
-        if (hostVO != null && hostVO.getHypervisorType() == HypervisorType.VMware) {
-            List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+        if (hostVO == null || hostVO.getHypervisorType() != HypervisorType.VMware) {
+            return targets;
+        }
 
-            if (volumes != null) {
-                for (VolumeVO volume : volumes) {
-                    StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
+        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
 
-                    if (storagePoolVO != null && storagePoolVO.isManaged()) {
-                        Map<String, String> target = new HashMap<>();
+        if (CollectionUtils.isEmpty(volumes)) {
+            return targets;
+        }
 
-                        target.put(ModifyTargetsCommand.STORAGE_HOST, storagePoolVO.getHostAddress());
-                        target.put(ModifyTargetsCommand.STORAGE_PORT, String.valueOf(storagePoolVO.getPort()));
-                        target.put(ModifyTargetsCommand.IQN, volume.get_iScsiName());
+        for (VolumeVO volume : volumes) {
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
 
-                        targets.add(target);
-                    }
-                }
+            if (storagePoolVO != null && storagePoolVO.isManaged()) {
+                Map<String, String> target = new HashMap<>();
+
+                target.put(ModifyTargetsCommand.STORAGE_HOST, storagePoolVO.getHostAddress());
+                target.put(ModifyTargetsCommand.STORAGE_PORT, String.valueOf(storagePoolVO.getPort()));
+                target.put(ModifyTargetsCommand.IQN, volume.get_iScsiName());
+
+                targets.add(target);
             }
         }
 
@@ -1419,19 +1424,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
 
-        if (volumes != null) {
-            for (VolumeVO volume : volumes) {
-                StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
+        if (CollectionUtils.isEmpty(volumes)) {
+            return volumesToDisconnect;
+        }
 
-                if (storagePool != null && storagePool.isManaged()) {
-                    Map<String, String> info = new HashMap<>(3);
+        for (VolumeVO volume : volumes) {
+            StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
 
-                    info.put(DiskTO.STORAGE_HOST, storagePool.getHostAddress());
-                    info.put(DiskTO.STORAGE_PORT, String.valueOf(storagePool.getPort()));
-                    info.put(DiskTO.IQN, volume.get_iScsiName());
+            if (storagePool != null && storagePool.isManaged()) {
+                Map<String, String> info = new HashMap<>(3);
 
-                    volumesToDisconnect.add(info);
-                }
+                info.put(DiskTO.STORAGE_HOST, storagePool.getHostAddress());
+                info.put(DiskTO.STORAGE_PORT, String.valueOf(storagePool.getPort()));
+                info.put(DiskTO.IQN, volume.get_iScsiName());
+
+                volumesToDisconnect.add(info);
             }
         }
 

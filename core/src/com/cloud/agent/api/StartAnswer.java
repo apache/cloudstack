@@ -29,6 +29,10 @@ public class StartAnswer extends Answer {
 
     VirtualMachineTO vm;
     String hostGuid;
+    // key = an applicable IQN (ex. iqn.1998-01.com.vmware.iscsi:name1)
+    // value = a Map with the following data:
+    //   key = PATH or IMAGE_FORMAT (defined above)
+    //   value = Example if PATH is key: UUID of VDI; Example if IMAGE_FORMAT is key: DiskTO.VHD
     private Map<String, Map<String, String>> _iqnToData;
 
     protected StartAnswer() {

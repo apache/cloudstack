@@ -43,6 +43,7 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
@@ -130,8 +131,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             // delete the metadata of vm snapshots before migration
             vmsnapshots = libvirtComputingResource.cleanVMSnapshotMetadata(dm);
 
-            if (command.isMigrateStorage()) {
-                xmlDesc = replaceStorage(xmlDesc, command.getMigrateStorage());
+            Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage = command.getMigrateStorage();
+
+            if (MapUtils.isNotEmpty(mapMigrateStorage)) {
+                xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage);
             }
 
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system");
@@ -139,7 +142,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             //run migration in thread so we can monitor it
             s_logger.info("Live migration of instance " + vmName + " initiated");
             final ExecutorService executor = Executors.newFixedThreadPool(1);
-            final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc, command.isMigrateStorage(),
+            final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc, MapUtils.isNotEmpty(mapMigrateStorage),
                     command.isAutoConvergence(), vmName, command.getDestinationIp());
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
