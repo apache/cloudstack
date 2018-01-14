@@ -632,8 +632,10 @@ class TestVolumes(cloudstackTestCase):
         elif hosts[0].hypervisor.lower() in ("vmware", "hyperv"):
             self.skipTest("Resize Volume is unsupported on VmWare and Hyper-V")
 
-        # Online resize should be supported
-        self.apiClient.resizeVolume(cmd)
+        # Attempting to resize it should throw an exception, as we're using a non
+        # customisable disk offering, therefore our size parameter should be ignored
+        with self.assertRaises(Exception):
+            self.apiClient.resizeVolume(cmd)
 
         if hosts[0].hypervisor == "XenServer":
             self.virtual_machine.start(self.apiClient)
