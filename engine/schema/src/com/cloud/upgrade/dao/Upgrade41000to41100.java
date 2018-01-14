@@ -167,7 +167,6 @@ public class Upgrade41000to41100 implements DbUpgrade {
 
         final Map<Hypervisor.HypervisorType, String> newTemplateUrl = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                // FIXME: upload templates
                 put(Hypervisor.HypervisorType.KVM, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.0-kvm.qcow2.bz2");
                 put(Hypervisor.HypervisorType.VMware, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.0-vmware.ova");
                 put(Hypervisor.HypervisorType.XenServer, "https://download.cloudstack.org/systemvm/4.11/systemvmtemplate-4.11.0-xen.vhd.bz2");
@@ -179,13 +178,12 @@ public class Upgrade41000to41100 implements DbUpgrade {
 
         final Map<Hypervisor.HypervisorType, String> newTemplateChecksum = new HashMap<Hypervisor.HypervisorType, String>() {
             {
-                // FIXME: update checksums?
-                put(Hypervisor.HypervisorType.KVM, "bc2eac46f16a2ece6c19d4b89db41de3");
-                put(Hypervisor.HypervisorType.XenServer, "908c28a8d4c232f960e0f84af7f86c80");
-                put(Hypervisor.HypervisorType.VMware, "970bfb070a80bd74820881d8149643c1");
-                put(Hypervisor.HypervisorType.Hyperv, "0adb35bd9f92e80d3fc63fcdd9bb55e5");
-                put(Hypervisor.HypervisorType.LXC, "bc2eac46f16a2ece6c19d4b89db41de3");
-                put(Hypervisor.HypervisorType.Ovm3, "94a41f0a5361933813bb34a51df56f56");
+                put(Hypervisor.HypervisorType.KVM, "2d8d1e4eacc976814b97f02849481433");
+                put(Hypervisor.HypervisorType.XenServer, "a5ecf7ed485e2da5ec1993069aa60553");
+                put(Hypervisor.HypervisorType.VMware, "84dab5d1e8267b5dc85eb4eaa21a1efe");
+                put(Hypervisor.HypervisorType.Hyperv, "d592ab6a2271303fe75b6a27f8e6bd53");
+                put(Hypervisor.HypervisorType.LXC, "2d8d1e4eacc976814b97f02849481433");
+                put(Hypervisor.HypervisorType.Ovm3, "60fe2227b89a8980ee09f89dc7b19582");
             }
         };
 
