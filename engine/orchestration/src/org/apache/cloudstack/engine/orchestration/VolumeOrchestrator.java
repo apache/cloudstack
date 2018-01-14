@@ -610,16 +610,23 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Override
     public boolean volumeInactive(Volume volume) {
         Long vmId = volume.getInstanceId();
-        if (vmId != null) {
-            UserVm vm = _entityMgr.findById(UserVm.class, vmId);
-            if (vm == null) {
-                return true;
-            }
-            State state = vm.getState();
-            if (state.equals(State.Stopped) || state.equals(State.Destroyed)) {
-                return true;
-            }
+
+        if (vmId == null) {
+            return true;
         }
+
+        UserVm vm = _entityMgr.findById(UserVm.class, vmId);
+
+        if (vm == null) {
+            return true;
+        }
+
+        State state = vm.getState();
+
+        if (state.equals(State.Stopped) || state.equals(State.Destroyed)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -1274,8 +1281,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         VolumeInfo volume = volFactory.getVolume(newVol.getId(), destPool);
         Long templateId = newVol.getTemplateId();
         for (int i = 0; i < 2; i++) {
-            // retry one more time in case of template reload is required for Vmware case
-            AsyncCallFuture<VolumeApiResult> future = null;
+            // retry one more time in case of template reload is required for VMware case
+            AsyncCallFuture<VolumeApiResult> future;
+
             if (templateId == null) {
                 DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
                 HypervisorType hyperType = vm.getVirtualMachine().getHypervisorType();
@@ -1368,23 +1376,34 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         List<VolumeTask> tasks = getTasks(vols, dest.getStorageForDisks(), vm);
         Volume vol = null;
-        StoragePool pool = null;
+        StoragePool pool;
         for (VolumeTask task : tasks) {
             if (task.type == VolumeTaskType.NOP) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
+
+                if (task.pool != null && task.pool.isManaged()) {
+                    long hostId = vm.getVirtualMachine().getHostId();
+                    Host host = _hostDao.findById(hostId);
+
+                    volService.grantAccess(volFactory.getVolume(task.volume.getId()), host, (DataStore)pool);
+                }
+
                 vol = task.volume;
+
                 // For a zone-wide managed storage, it is possible that the VM can be started in another
-                // cluster. In that case make sure that the volume in in the right access group cluster.
+                // cluster. In that case, make sure that the volume is in the right access group.
                 if (pool.isManaged()) {
                     long oldHostId = vm.getVirtualMachine().getLastHostId();
                     long hostId = vm.getVirtualMachine().getHostId();
+
                     if (oldHostId != hostId) {
                         Host oldHost = _hostDao.findById(oldHostId);
                         Host host = _hostDao.findById(hostId);
                         DataStore storagePool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
 
+                        storageMgr.removeStoragePoolFromCluster(oldHostId, vol.get_iScsiName(), pool);
+
                         volService.revokeAccess(volFactory.getVolume(vol.getId()), oldHost, storagePool);
-                        volService.grantAccess(volFactory.getVolume(vol.getId()), host, storagePool);
                     }
                 }
             } else if (task.type == VolumeTaskType.MIGRATE) {

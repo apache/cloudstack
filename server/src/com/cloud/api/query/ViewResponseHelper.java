@@ -293,7 +293,9 @@ public class ViewResponseHelper {
                     vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
                 }
                 else if (vr.getFormat() == ImageFormat.OVA){
-                    vs = ApiDBUtils.getVolumeStatistics(vrData.getChainInfo());
+                    if (vrData.getChainInfo() != null) {
+                        vs = ApiDBUtils.getVolumeStatistics(vrData.getChainInfo());
+                    }
                 }
                 if (vs != null){
                     long vsz = vs.getVirtualSize();

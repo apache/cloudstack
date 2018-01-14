@@ -205,6 +205,7 @@ public class TemplateLocation {
         }
 
         _props.setProperty("virtualsize", Long.toString(newInfo.virtualSize));
+        _props.setProperty("size", Long.toString(newInfo.size));
         _formats.add(newInfo);
         return true;
     }

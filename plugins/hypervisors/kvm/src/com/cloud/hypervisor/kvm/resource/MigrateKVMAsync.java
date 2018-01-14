@@ -33,24 +33,39 @@ public class MigrateKVMAsync implements Callable<Domain> {
     private String dxml = "";
     private String vmName = "";
     private String destIp = "";
+    private boolean migrateStorage;
+    private boolean autoConvergence;
 
-    public MigrateKVMAsync(final LibvirtComputingResource libvirtComputingResource, final Domain dm, final Connect dconn, final String dxml, final String vmName, final String destIp) {
+    public MigrateKVMAsync(final LibvirtComputingResource libvirtComputingResource, final Domain dm, final Connect dconn, final String dxml,
+                           final boolean migrateStorage, final boolean autoConvergence, final String vmName, final String destIp) {
         this.libvirtComputingResource = libvirtComputingResource;
 
         this.dm = dm;
         this.dconn = dconn;
         this.dxml = dxml;
+        this.migrateStorage = migrateStorage;
+        this.autoConvergence = autoConvergence;
         this.vmName = vmName;
         this.destIp = destIp;
     }
 
     @Override
     public Domain call() throws LibvirtException {
-        // set compression flag for migration if libvirt version supports it
-        if (dconn.getLibVirVersion() < 1003000) {
-            return dm.migrate(dconn, 1 << 0, dxml, vmName, "tcp:" + destIp, libvirtComputingResource.getMigrateSpeed());
-        } else {
-            return dm.migrate(dconn, 1 << 0|1 << 11, dxml, vmName, "tcp:" + destIp, libvirtComputingResource.getMigrateSpeed());
+        long flags = 1 << 0;
+
+        // set compression flag for migration, if libvirt version supports it
+        if (dconn.getLibVirVersion() >= 1000003) {
+            flags |= 1 << 11;
         }
+
+        if (migrateStorage) {
+            flags |= 1 << 6;
+        }
+
+        if (autoConvergence && dconn.getLibVirVersion() >= 1002003) {
+            flags |= 1 << 13;
+        }
+
+        return dm.migrate(dconn, flags, dxml, vmName, "tcp:" + destIp, libvirtComputingResource.getMigrateSpeed());
     }
 }

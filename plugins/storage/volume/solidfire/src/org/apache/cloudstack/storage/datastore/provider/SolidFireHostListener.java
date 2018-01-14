@@ -82,7 +82,7 @@ public class SolidFireHostListener implements HypervisorHostListener {
         SolidFireUtil.hostAddedToOrRemovedFromCluster(hostId, host.getClusterId(), true, SolidFireUtil.PROVIDER_NAME,
                 _clusterDao, _clusterDetailsDao, _storagePoolDao, _storagePoolDetailsDao, _hostDao);
 
-        handleVMware(host, true);
+        handleVMware(host, true, ModifyTargetsCommand.TargetTypeToRemove.NEITHER);
 
         return true;
     }
@@ -122,10 +122,6 @@ public class SolidFireHostListener implements HypervisorHostListener {
 
     @Override
     public boolean hostAboutToBeRemoved(long hostId) {
-        HostVO host = _hostDao.findById(hostId);
-
-        handleVMware(host, false);
-
         return true;
     }
 
@@ -133,6 +129,10 @@ public class SolidFireHostListener implements HypervisorHostListener {
     public boolean hostRemoved(long hostId, long clusterId) {
         SolidFireUtil.hostAddedToOrRemovedFromCluster(hostId, clusterId, false, SolidFireUtil.PROVIDER_NAME,
                 _clusterDao, _clusterDetailsDao, _storagePoolDao, _storagePoolDetailsDao, _hostDao);
+
+        HostVO host = _hostDao.findById(hostId);
+
+        handleVMware(host, false, ModifyTargetsCommand.TargetTypeToRemove.BOTH);
 
         return true;
     }
@@ -151,7 +151,7 @@ public class SolidFireHostListener implements HypervisorHostListener {
         }
     }
 
-    private void handleVMware(HostVO host, boolean add) {
+    private void handleVMware(HostVO host, boolean add, ModifyTargetsCommand.TargetTypeToRemove targetTypeToRemove) {
         if (HypervisorType.VMware.equals(host.getHypervisorType())) {
             List<StoragePoolVO> storagePools = _storagePoolDao.findPoolsByProvider(SolidFireUtil.PROVIDER_NAME);
 
@@ -166,8 +166,9 @@ public class SolidFireHostListener implements HypervisorHostListener {
 
                 ModifyTargetsCommand cmd = new ModifyTargetsCommand();
 
-                cmd.setAdd(add);
                 cmd.setTargets(targets);
+                cmd.setAdd(add);
+                cmd.setTargetTypeToRemove(targetTypeToRemove);
 
                 sendModifyTargetsCommand(cmd, host.getId());
             }

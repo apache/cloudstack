@@ -27,6 +27,7 @@ public class DiskTO {
     public static final String CHAP_INITIATOR_SECRET = "chapInitiatorSecret";
     public static final String CHAP_TARGET_USERNAME = "chapTargetUsername";
     public static final String CHAP_TARGET_SECRET = "chapTargetSecret";
+    public static final String SCSI_NAA_DEVICE_ID = "scsiNaaDeviceId";
     public static final String MANAGED = "managed";
     public static final String IQN = "iqn";
     public static final String STORAGE_HOST = "storageHost";
@@ -36,6 +37,9 @@ public class DiskTO {
     public static final String PROTOCOL_TYPE = "protocoltype";
     public static final String PATH = "path";
     public static final String UUID = "uuid";
+    public static final String VMDK = "vmdk";
+    public static final String EXPAND_DATASTORE = "expandDatastore";
+    public static final String TEMPLATE_RESIGN = "templateResign";
 
     private DataTO data;
     private Long diskSeq;

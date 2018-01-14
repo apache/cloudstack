@@ -761,6 +761,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     }
 
     @Override
+    public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
+        // this is for managed storage that needs to cleanup disks after use
+        return false;
+    }
+
+    @Override
     public boolean disconnectPhysicalDiskByPath(String localPath) {
         // we've only ever cleaned up ISOs that are NFS mounted
         String poolUuid = null;

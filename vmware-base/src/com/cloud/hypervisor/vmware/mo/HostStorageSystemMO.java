@@ -52,4 +52,12 @@ public class HostStorageSystemMO extends BaseMO {
     public void rescanVmfs() throws Exception {
         _context.getService().rescanVmfs(_mor);
     }
+
+    public void mountVmfsVolume(String datastoreUuid) throws Exception {
+        _context.getService().mountVmfsVolume(_mor, datastoreUuid);
+    }
+
+    public void unmountVmfsVolume(String datastoreUuid) throws Exception {
+        _context.getService().unmountVmfsVolume(_mor, datastoreUuid);
+    }
 }

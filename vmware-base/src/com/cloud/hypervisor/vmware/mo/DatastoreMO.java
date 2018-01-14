@@ -57,7 +57,7 @@ public class DatastoreMO extends BaseMO {
     @Override
     public String getName() throws Exception {
         if (_name == null)
-            _name = (String)_context.getVimClient().getDynamicProperty(_mor, "name");
+            _name = _context.getVimClient().getDynamicProperty(_mor, "name");
 
         return _name;
     }
@@ -109,7 +109,7 @@ public class DatastoreMO extends BaseMO {
         PropertyFilterSpec pfSpec = new PropertyFilterSpec();
         pfSpec.getPropSet().add(pSpec);
         pfSpec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<>();
         pfSpecArr.add(pfSpec);
 
         List<ObjectContent> ocs = _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
@@ -118,8 +118,12 @@ public class DatastoreMO extends BaseMO {
         assert (ocs.get(0).getObj() != null);
         assert (ocs.get(0).getPropSet() != null);
         String dcName = ocs.get(0).getPropSet().get(0).getVal().toString();
-        _ownerDc = new Pair<DatacenterMO, String>(new DatacenterMO(_context, ocs.get(0).getObj()), dcName);
+        _ownerDc = new Pair<>(new DatacenterMO(_context, ocs.get(0).getObj()), dcName);
         return _ownerDc;
+    }
+
+    public void renameDatastore(String newDatastoreName) throws Exception {
+        _context.getService().renameDatastore(_mor, newDatastoreName);
     }
 
     public void makeDirectory(String path, ManagedObjectReference morDc) throws Exception {
@@ -133,7 +137,7 @@ public class DatastoreMO extends BaseMO {
         _context.getService().makeDirectory(morFileManager, fullPath, morDc, true);
     }
 
-    public String getDatastoreRootPath() throws Exception {
+    String getDatastoreRootPath() throws Exception {
         return String.format("[%s]", getName());
     }
 
@@ -210,7 +214,7 @@ public class DatastoreMO extends BaseMO {
         return false;
     }
 
-    public boolean copyDatastoreFile(String srcFilePath, ManagedObjectReference morSrcDc, ManagedObjectReference morDestDs, String destFilePath,
+    boolean copyDatastoreFile(String srcFilePath, ManagedObjectReference morSrcDc, ManagedObjectReference morDestDs, String destFilePath,
             ManagedObjectReference morDestDc, boolean forceOverwrite) throws Exception {
 
         String srcDsName = getName();
@@ -269,7 +273,7 @@ public class DatastoreMO extends BaseMO {
     public String[] getVmdkFileChain(String rootVmdkDatastoreFullPath) throws Exception {
         Pair<DatacenterMO, String> dcPair = getOwnerDatacenter();
 
-        List<String> files = new ArrayList<String>();
+        List<String> files = new ArrayList<>();
         files.add(rootVmdkDatastoreFullPath);
 
         String currentVmdkFullPath = rootVmdkDatastoreFullPath;
@@ -399,7 +403,7 @@ public class DatastoreMO extends BaseMO {
             return rootDirectoryFilePath;
         }
 
-        String parentFolderPath = null;
+        String parentFolderPath;
         String absoluteFileName = null;
         s_logger.info("Searching file " + fileName + " in " + datastorePath);
 

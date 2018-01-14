@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -85,6 +86,7 @@ import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
 import com.cloud.agent.api.ClusterVMMetaDataSyncCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PlugNicAnswer;
 import com.cloud.agent.api.PlugNicCommand;
@@ -114,6 +116,7 @@ import com.cloud.agent.manager.Commands;
 import com.cloud.agent.manager.allocator.HostAllocator;
 import com.cloud.alert.AlertManager;
 import com.cloud.capacity.CapacityManager;
+import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.DataCenter;
@@ -536,6 +539,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
 
+        List<Map<String, String>> targets = getTargets(hostId, vm.getId());
+
         if (volumeExpungeCommands != null && volumeExpungeCommands.size() > 0 && hostId != null) {
             final Commands cmds = new Commands(Command.OnError.Stop);
 
@@ -562,6 +567,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         // Clean up volumes based on the vm's instance id
         volumeMgr.cleanupVolumes(vm.getId());
+
+        if (hostId != null && CollectionUtils.isNotEmpty(targets)) {
+            removeDynamicTargets(hostId, targets);
+        }
 
         final VirtualMachineGuru guru = getVmGuru(vm);
         guru.finalizeExpunge(vm);
@@ -597,6 +606,64 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             s_logger.debug("Expunged " + vm);
         }
 
+    }
+
+    private List<Map<String, String>> getTargets(Long hostId, long vmId) {
+        List<Map<String, String>> targets = new ArrayList<>();
+
+        HostVO hostVO = _hostDao.findById(hostId);
+
+        if (hostVO == null || hostVO.getHypervisorType() != HypervisorType.VMware) {
+            return targets;
+        }
+
+        List<VolumeVO> volumes = _volsDao.findByInstance(vmId);
+
+        if (CollectionUtils.isEmpty(volumes)) {
+            return targets;
+        }
+
+        for (VolumeVO volume : volumes) {
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(volume.getPoolId());
+
+            if (storagePoolVO != null && storagePoolVO.isManaged()) {
+                Map<String, String> target = new HashMap<>();
+
+                target.put(ModifyTargetsCommand.STORAGE_HOST, storagePoolVO.getHostAddress());
+                target.put(ModifyTargetsCommand.STORAGE_PORT, String.valueOf(storagePoolVO.getPort()));
+                target.put(ModifyTargetsCommand.IQN, volume.get_iScsiName());
+
+                targets.add(target);
+            }
+        }
+
+        return targets;
+    }
+
+    private void removeDynamicTargets(long hostId, List<Map<String, String>> targets) {
+        ModifyTargetsCommand cmd = new ModifyTargetsCommand();
+
+        cmd.setTargets(targets);
+        cmd.setApplyToAllHostsInCluster(true);
+        cmd.setAdd(false);
+        cmd.setTargetTypeToRemove(ModifyTargetsCommand.TargetTypeToRemove.DYNAMIC);
+
+        sendModifyTargetsCommand(cmd, hostId);
+    }
+
+    private void sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {
+        Answer answer = _agentMgr.easySend(hostId, cmd);
+
+        if (answer == null) {
+            String msg = "Unable to get an answer to the modify targets command";
+
+            s_logger.warn(msg);
+        }
+        else if (!answer.getResult()) {
+            String msg = "Unable to modify target on the following host: " + hostId;
+
+            s_logger.warn(msg);
+        }
     }
 
     @Override
@@ -1073,8 +1140,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     startAnswer = cmds.getAnswer(StartAnswer.class);
                     if (startAnswer != null && startAnswer.getResult()) {
-                        handlePath(vmTO.getDisks(), startAnswer.getIqnToPath());
+                        handlePath(vmTO.getDisks(), startAnswer.getIqnToData());
+
                         final String host_guid = startAnswer.getHost_guid();
+
                         if (host_guid != null) {
                             final HostVO finalHost = _resourceMgr.findHostByGuid(host_guid);
                             if (finalHost == null) {
@@ -1254,8 +1323,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     // for managed storage on XenServer and VMware, need to update the DB with a path if the VDI/VMDK file was newly created
-    private void handlePath(final DiskTO[] disks, final Map<String, String> iqnToPath) {
-        if (disks != null && iqnToPath != null) {
+    private void handlePath(final DiskTO[] disks, final Map<String, Map<String, String>> iqnToData) {
+        if (disks != null && iqnToData != null) {
             for (final DiskTO disk : disks) {
                 final Map<String, String> details = disk.getDetails();
                 final boolean isManaged = details != null && Boolean.parseBoolean(details.get(DiskTO.MANAGED));
@@ -1264,12 +1333,31 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     final Long volumeId = disk.getData().getId();
                     final VolumeVO volume = _volsDao.findById(volumeId);
                     final String iScsiName = volume.get_iScsiName();
-                    final String path = iqnToPath.get(iScsiName);
 
-                    if (path != null) {
-                        volume.setPath(path);
+                    boolean update = false;
 
-                        _volsDao.update(volumeId, volume);
+                    final Map<String, String> data = iqnToData.get(iScsiName);
+
+                    if (data != null) {
+                        final String path = data.get(StartAnswer.PATH);
+
+                        if (path != null) {
+                            volume.setPath(path);
+
+                            update = true;
+                        }
+
+                        final String imageFormat = data.get(StartAnswer.IMAGE_FORMAT);
+
+                        if (imageFormat != null) {
+                            volume.setFormat(ImageFormat.valueOf(imageFormat));
+
+                            update = true;
+                        }
+
+                        if (update) {
+                            _volsDao.update(volumeId, volume);
+                        }
                     }
                 }
             }
@@ -1331,10 +1419,37 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
     }
 
+    private List<Map<String, String>> getVolumesToDisconnect(VirtualMachine vm) {
+        List<Map<String, String>> volumesToDisconnect = new ArrayList<>();
+
+        List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
+
+        if (CollectionUtils.isEmpty(volumes)) {
+            return volumesToDisconnect;
+        }
+
+        for (VolumeVO volume : volumes) {
+            StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
+
+            if (storagePool != null && storagePool.isManaged()) {
+                Map<String, String> info = new HashMap<>(3);
+
+                info.put(DiskTO.STORAGE_HOST, storagePool.getHostAddress());
+                info.put(DiskTO.STORAGE_PORT, String.valueOf(storagePool.getPort()));
+                info.put(DiskTO.IQN, volume.get_iScsiName());
+
+                volumesToDisconnect.add(info);
+            }
+        }
+
+        return volumesToDisconnect;
+    }
+
     protected boolean sendStop(final VirtualMachineGuru guru, final VirtualMachineProfile profile, final boolean force, final boolean checkBeforeCleanup) {
         final VirtualMachine vm = profile.getVirtualMachine();
         StopCommand stpCmd = new StopCommand(vm, getExecuteInSequence(vm.getHypervisorType()), checkBeforeCleanup);
         stpCmd.setControlIp(getControlNicIpForVM(vm));
+        stpCmd.setVolumesToDisconnect(getVolumesToDisconnect(vm));
         final StopCommand stop = stpCmd;
         try {
             Answer answer = null;
@@ -2103,6 +2218,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
             final MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
+
+            String autoConvergence = _configDao.getValue(Config.KvmAutoConvergence.toString());
+            boolean kvmAutoConvergence = Boolean.parseBoolean(autoConvergence);
+
+            mc.setAutoConvergence(kvmAutoConvergence);
+
             mc.setHostGuid(dest.getHost().getGuid());
 
             try {
@@ -2176,32 +2297,48 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final Map<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<>();
 
         for (final VolumeVO volume : allVolumes) {
-            final Long poolId = volumeToPool.get(Long.valueOf(volume.getId()));
+            final Long poolId = volumeToPool.get(volume.getId());
             final StoragePoolVO destPool = _storagePoolDao.findById(poolId);
             final StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
             final DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
 
             if (destPool != null) {
-                // Check if pool is accessible from the destination host and disk offering with which the volume was
-                // created is compliant with the pool type.
-                if (_poolHostDao.findByPoolHost(destPool.getId(), host.getId()) == null || destPool.isLocal() != diskOffering.getUseLocalStorage()) {
-                    // Cannot find a pool for the volume. Throw an exception.
-                    throw new CloudRuntimeException("Cannot migrate volume " + volume + " to storage pool " + destPool + " while migrating vm to host " + host +
-                            ". Either the pool is not accessible from the host or because of the offering with which the volume is created it cannot be placed on " +
-                            "the given pool.");
-                } else if (destPool.getId() == currentPool.getId()) {
-                    // If the pool to migrate to is the same as current pool, the volume doesn't need to be migrated.
-                } else {
-                    volumeToPoolObjectMap.put(volume, destPool);
+                if (currentPool.isManaged()) {
+                    if (destPool.getId() == currentPool.getId()) {
+                        volumeToPoolObjectMap.put(volume, currentPool);
+                    }
+                    else {
+                        throw new CloudRuntimeException("Currently, a volume on managed storage can only be 'migrated' to itself.");
+                    }
+                }
+                else {
+                    // Check if pool is accessible from the destination host and disk offering with which the volume was
+                    // created is compliant with the pool type.
+                    if (_poolHostDao.findByPoolHost(destPool.getId(), host.getId()) == null || destPool.isLocal() != diskOffering.getUseLocalStorage()) {
+                        // Cannot find a pool for the volume. Throw an exception.
+                        throw new CloudRuntimeException("Cannot migrate volume " + volume + " to storage pool " + destPool + " while migrating vm to host " + host +
+                                ". Either the pool is not accessible from the host or because of the offering with which the volume is created it cannot be placed on " +
+                                "the given pool.");
+                    } else if (destPool.getId() == currentPool.getId()) {
+                        // If the pool to migrate to is the same as current pool, the volume doesn't need to be migrated.
+                    } else {
+                        volumeToPoolObjectMap.put(volume, destPool);
+                    }
                 }
             } else {
                 if (currentPool.isManaged()) {
-                    volumeToPoolObjectMap.put(volume, currentPool);
+                    if (currentPool.getScope() == ScopeType.ZONE) {
+                        volumeToPoolObjectMap.put(volume, currentPool);
+                    }
+                    else {
+                        throw new CloudRuntimeException("Currently, you can only 'migrate' a volume on managed storage if its storage pool is zone wide.");
+                    }
                 } else {
                     // Find a suitable pool for the volume. Call the storage pool allocator to find the list of pools.
 
                     final DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
-                    final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(), host.getId(), null, null);
+                    final DataCenterDeployment plan = new DataCenterDeployment(host.getDataCenterId(), host.getPodId(), host.getClusterId(),
+                            host.getId(), null, null);
 
                     final List<StoragePool> poolList = new ArrayList<>();
                     final ExcludeList avoid = new ExcludeList();
@@ -3588,6 +3725,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             final boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
             final MigrateCommand mc = new MigrateCommand(vm.getInstanceName(), dest.getHost().getPrivateIpAddress(), isWindows, to, getExecuteInSequence(vm.getHypervisorType()));
+
+            String autoConvergence = _configDao.getValue(Config.KvmAutoConvergence.toString());
+            boolean kvmAutoConvergence = Boolean.parseBoolean(autoConvergence);
+
+            mc.setAutoConvergence(kvmAutoConvergence);
+
             mc.setHostGuid(dest.getHost().getGuid());
 
             try {

@@ -158,6 +158,18 @@ public class KVMStoragePoolManager {
         return result;
     }
 
+    public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
+        for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
+            StorageAdaptor adaptor = set.getValue();
+
+            if (adaptor.disconnectPhysicalDisk(volumeToDisconnect)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public boolean disconnectPhysicalDiskByPath(String path) {
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();

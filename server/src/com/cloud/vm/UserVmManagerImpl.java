@@ -70,6 +70,7 @@ import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
 import org.apache.cloudstack.api.command.user.vm.UpgradeVMCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.CreateVMGroupCmd;
 import org.apache.cloudstack.api.command.user.vmgroup.DeleteVMGroupCmd;
+import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.cloud.entity.api.VirtualMachineEntity;
 import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
@@ -109,6 +110,7 @@ import com.cloud.agent.api.GetVmStatsAnswer;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVolumeStatsAnswer;
 import com.cloud.agent.api.GetVolumeStatsCommand;
+import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.RestoreVMSnapshotAnswer;
 import com.cloud.agent.api.RestoreVMSnapshotCommand;
@@ -1115,6 +1117,20 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Check that the specified service offering ID is valid
         _itMgr.checkIfCanUpgrade(vmInstance, newServiceOffering);
+
+        DiskOfferingVO newROOTDiskOffering = _diskOfferingDao.findById(newServiceOffering.getId());
+
+        List<VolumeVO> vols = _volsDao.findReadyRootVolumesByInstance(vmInstance.getId());
+
+        for (final VolumeVO rootVolumeOfVm : vols) {
+            rootVolumeOfVm.setDiskOfferingId(newROOTDiskOffering.getId());
+
+            _volsDao.update(rootVolumeOfVm.getId(), rootVolumeOfVm);
+
+            ResizeVolumeCmd resizeVolumeCmd = new ResizeVolumeCmd(rootVolumeOfVm.getId(), newROOTDiskOffering.getMinIops(), newROOTDiskOffering.getMaxIops());
+
+            _volumeService.resizeVolume(resizeVolumeCmd);
+        }
 
         // Check if the new service offering can be applied to vm instance
         ServiceOffering newSvcOffering = _offeringDao.findById(svcOffId);
@@ -4955,7 +4971,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
         if (vols.size() > 1) {
-            throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to dettach data disks at first");
+            throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to detach data disks first");
         }
 
         // Check that Vm does not have VM Snapshots
@@ -4969,7 +4985,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 destPool.getClusterId()).getHypervisorType();
         }
 
-        if (vm.getHypervisorType() != destHypervisorType) {
+        if (vm.getHypervisorType() != destHypervisorType && destHypervisorType != HypervisorType.Any) {
             throw new InvalidParameterValueException("hypervisor is not compatible: dest: " + destHypervisorType.toString() + ", vm: " + vm.getHypervisorType().toString());
         }
         _itMgr.storageMigration(vm.getUuid(), destPool);
@@ -5384,13 +5400,47 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         // Check if the source and destination hosts are of the same type and support storage motion.
-        if (!(srcHost.getHypervisorType().equals(destinationHost.getHypervisorType()))) {
-            throw new CloudRuntimeException("The source and destination hosts are not of the same type. " + "Source hypervisor type and version: "
-                    + srcHost.getHypervisorType().toString() + " " + srcHost.getHypervisorVersion() + ", Destination hypervisor type and version: "
-                    + destinationHost.getHypervisorType().toString() + " " + destinationHost.getHypervisorVersion());
+        if (!srcHost.getHypervisorType().equals(destinationHost.getHypervisorType())) {
+            throw new CloudRuntimeException("The source and destination hosts are not of the same type and version. Source hypervisor type and version: " +
+                    srcHost.getHypervisorType().toString() + " " + srcHost.getHypervisorVersion() + ", Destination hypervisor type and version: " +
+                    destinationHost.getHypervisorType().toString() + " " + destinationHost.getHypervisorVersion());
+        }
+
+        String srcHostVersion = srcHost.getHypervisorVersion();
+        String destinationHostVersion = destinationHost.getHypervisorVersion();
+
+        if (HypervisorType.KVM.equals(srcHost.getHypervisorType())) {
+            if (srcHostVersion == null) {
+                srcHostVersion = "";
+            }
+
+            if (destinationHostVersion == null) {
+                destinationHostVersion = "";
+            }
+        }
+
+        if (!srcHostVersion.equals(destinationHostVersion)) {
+            throw new CloudRuntimeException("The source and destination hosts are not of the same type and version. Source hypervisor type and version: " +
+                    srcHost.getHypervisorType().toString() + " " + srcHost.getHypervisorVersion() + ", Destination hypervisor type and version: " +
+                    destinationHost.getHypervisorType().toString() + " " + destinationHost.getHypervisorVersion());
         }
 
         HypervisorCapabilitiesVO capabilities = _hypervisorCapabilitiesDao.findByHypervisorTypeAndVersion(srcHost.getHypervisorType(), srcHost.getHypervisorVersion());
+
+        if (capabilities == null && HypervisorType.KVM.equals(srcHost.getHypervisorType())) {
+            List<HypervisorCapabilitiesVO> lstHypervisorCapabilities = _hypervisorCapabilitiesDao.listAllByHypervisorType(HypervisorType.KVM);
+
+            if (lstHypervisorCapabilities != null) {
+                for (HypervisorCapabilitiesVO hypervisorCapabilities : lstHypervisorCapabilities) {
+                    if (hypervisorCapabilities.isStorageMotionSupported()) {
+                        capabilities = hypervisorCapabilities;
+
+                        break;
+                    }
+                }
+            }
+        }
+
         if (!capabilities.isStorageMotionSupported()) {
             throw new CloudRuntimeException("Migration with storage isn't supported on hypervisor " + srcHost.getHypervisorType() + " of version " + srcHost.getHypervisorVersion());
         }
@@ -6168,9 +6218,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     }
 
     private void handleManagedStorage(UserVmVO vm, VolumeVO root) {
-        if ( Volume.State.Allocated.equals(root.getState()) ){
+        if (Volume.State.Allocated.equals(root.getState())) {
             return;
         }
+
         StoragePoolVO storagePool = _storagePoolDao.findById(root.getPoolId());
 
         if (storagePool != null && storagePool.isManaged()) {
@@ -6203,7 +6254,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     Map<String, String> details = primaryDataStore.getDetails();
 
                     if (details == null) {
-                        details = new HashMap<String, String>();
+                        details = new HashMap<>();
 
                         primaryDataStore.setDetails(details);
                     }
@@ -6212,35 +6263,84 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
                     cmd = new DeleteCommand(volumeInfo.getTO());
                 }
+                else if (host.getHypervisorType() == HypervisorType.KVM) {
+                    cmd = null;
+                }
                 else {
                     throw new CloudRuntimeException("This hypervisor type is not supported on managed storage for this command.");
                 }
 
-                Commands cmds = new Commands(Command.OnError.Stop);
+                if (cmd != null) {
+                    Commands cmds = new Commands(Command.OnError.Stop);
 
-                cmds.addCommand(cmd);
+                    cmds.addCommand(cmd);
 
-                try {
-                    _agentMgr.send(hostId, cmds);
-                }
-                catch (Exception ex) {
-                    throw new CloudRuntimeException(ex.getMessage());
-                }
+                    try {
+                        _agentMgr.send(hostId, cmds);
+                    } catch (Exception ex) {
+                        throw new CloudRuntimeException(ex.getMessage());
+                    }
 
-                if (!cmds.isSuccessful()) {
-                    for (Answer answer : cmds.getAnswers()) {
-                        if (!answer.getResult()) {
-                            s_logger.warn("Failed to reset vm due to: " + answer.getDetails());
+                    if (!cmds.isSuccessful()) {
+                        for (Answer answer : cmds.getAnswers()) {
+                            if (!answer.getResult()) {
+                                s_logger.warn("Failed to reset vm due to: " + answer.getDetails());
 
-                            throw new CloudRuntimeException("Unable to reset " + vm + " due to " + answer.getDetails());
+                                throw new CloudRuntimeException("Unable to reset " + vm + " due to " + answer.getDetails());
+                            }
                         }
                     }
                 }
 
                 // root.getPoolId() should be null if the VM we are detaching the disk from has never been started before
                 DataStore dataStore = root.getPoolId() != null ? _dataStoreMgr.getDataStore(root.getPoolId(), DataStoreRole.Primary) : null;
+
                 volumeMgr.revokeAccess(volFactory.getVolume(root.getId()), host, dataStore);
+
+                if (dataStore != null) {
+                    handleTargetsForVMware(host.getId(), storagePool.getHostAddress(), storagePool.getPort(), root.get_iScsiName());
+                }
             }
+        }
+    }
+
+    private void handleTargetsForVMware(long hostId, String storageAddress, int storagePort, String iScsiName) {
+        HostVO host = _hostDao.findById(hostId);
+
+        if (host.getHypervisorType() == HypervisorType.VMware) {
+            ModifyTargetsCommand cmd = new ModifyTargetsCommand();
+
+            List<Map<String, String>> targets = new ArrayList<>();
+
+            Map<String, String> target = new HashMap<>();
+
+            target.put(ModifyTargetsCommand.STORAGE_HOST, storageAddress);
+            target.put(ModifyTargetsCommand.STORAGE_PORT, String.valueOf(storagePort));
+            target.put(ModifyTargetsCommand.IQN, iScsiName);
+
+            targets.add(target);
+
+            cmd.setTargets(targets);
+            cmd.setApplyToAllHostsInCluster(true);
+            cmd.setAdd(false);
+            cmd.setTargetTypeToRemove(ModifyTargetsCommand.TargetTypeToRemove.DYNAMIC);
+
+            sendModifyTargetsCommand(cmd, hostId);
+        }
+    }
+
+    private void sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {
+        Answer answer = _agentMgr.easySend(hostId, cmd);
+
+        if (answer == null) {
+            String msg = "Unable to get an answer to the modify targets command";
+
+            s_logger.warn(msg);
+        }
+        else if (!answer.getResult()) {
+            String msg = "Unable to modify target on the following host: " + hostId;
+
+            s_logger.warn(msg);
         }
     }
 

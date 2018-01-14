@@ -19,7 +19,12 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -28,11 +33,31 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.apache.commons.collections.MapUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.LibvirtException;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateAnswer;
@@ -45,6 +70,7 @@ import com.cloud.hypervisor.kvm.resource.VifDriver;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @ResourceWrapper(handles =  MigrateCommand.class)
 public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, LibvirtComputingResource> {
@@ -61,7 +87,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         String result = null;
 
         List<InterfaceDef> ifaces = null;
-        List<DiskDef> disks = null;
+        List<DiskDef> disks;
 
         Domain dm = null;
         Connect dconn = null;
@@ -69,6 +95,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         Connect conn = null;
         String xmlDesc = null;
         List<Ternary<String, Boolean, String>> vmsnapshots = null;
+
         try {
             final LibvirtUtilitiesHelper libvirtUtilitiesHelper = libvirtComputingResource.getLibvirtUtilitiesHelper();
 
@@ -79,7 +106,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             /*
                 We replace the private IP address with the address of the destination host.
                 This is because the VNC listens on the private IP address of the hypervisor,
-                but that address is ofcourse different on the target host.
+                but that address is of course different on the target host.
 
                 MigrateCommand.getDestinationIp() returns the private IP address of the target
                 hypervisor. So it's safe to use.
@@ -104,12 +131,19 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             // delete the metadata of vm snapshots before migration
             vmsnapshots = libvirtComputingResource.cleanVMSnapshotMetadata(dm);
 
+            Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage = command.getMigrateStorage();
+
+            if (MapUtils.isNotEmpty(mapMigrateStorage)) {
+                xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage);
+            }
+
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system");
 
             //run migration in thread so we can monitor it
             s_logger.info("Live migration of instance " + vmName + " initiated");
             final ExecutorService executor = Executors.newFixedThreadPool(1);
-            final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc, vmName, command.getDestinationIp());
+            final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc, MapUtils.isNotEmpty(mapMigrateStorage),
+                    command.isAutoConvergence(), vmName, command.getDestinationIp());
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
             long sleeptime = 0;
@@ -166,6 +200,21 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             result = e.getMessage();
         } catch (final TimeoutException e) {
             s_logger.debug("Timed out while migrating domain: " + e.getMessage());
+            result = e.getMessage();
+        } catch (final IOException e) {
+            s_logger.debug("IOException: " + e.getMessage());
+            result = e.getMessage();
+        } catch (final ParserConfigurationException e) {
+            s_logger.debug("ParserConfigurationException: " + e.getMessage());
+            result = e.getMessage();
+        } catch (final SAXException e) {
+            s_logger.debug("SAXException: " + e.getMessage());
+            result = e.getMessage();
+        } catch (final TransformerConfigurationException e) {
+            s_logger.debug("TransformerConfigurationException: " + e.getMessage());
+            result = e.getMessage();
+        } catch (final TransformerException e) {
+            s_logger.debug("TransformerException: " + e.getMessage());
             result = e.getMessage();
         } finally {
             try {
@@ -229,5 +278,139 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             }
         }
         return xmlDesc;
+    }
+
+    // Pass in a list of the disks to update in the XML (xmlDesc). Each disk passed in needs to have a serial number. If any disk's serial number in the
+    // list does not match a disk in the XML, an exception should be thrown.
+    // In addition to the serial number, each disk in the list needs the following info:
+    //   * The value of the 'type' of the disk (ex. file, block)
+    //   * The value of the 'type' of the driver of the disk (ex. qcow2, raw)
+    //   * The source of the disk needs an attribute that is either 'file' or 'dev' as well as its corresponding value.
+    private String replaceStorage(String xmlDesc, Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage)
+            throws IOException, ParserConfigurationException, SAXException, TransformerException {
+        InputStream in = IOUtils.toInputStream(xmlDesc);
+
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(in);
+
+        // Get the root element
+        Node domainNode = doc.getFirstChild();
+
+        NodeList domainChildNodes = domainNode.getChildNodes();
+
+        for (int i = 0; i < domainChildNodes.getLength(); i++) {
+            Node domainChildNode = domainChildNodes.item(i);
+
+            if ("devices".equals(domainChildNode.getNodeName())) {
+                NodeList devicesChildNodes = domainChildNode.getChildNodes();
+
+                for (int x = 0; x < devicesChildNodes.getLength(); x++) {
+                    Node deviceChildNode = devicesChildNodes.item(x);
+
+                    if ("disk".equals(deviceChildNode.getNodeName())) {
+                        Node diskNode = deviceChildNode;
+
+                        String sourceFileDevText = getSourceFileDevText(diskNode);
+
+                        String path = getPathFromSourceFileDevText(migrateStorage.keySet(), sourceFileDevText);
+
+                        if (path != null) {
+                            MigrateCommand.MigrateDiskInfo migrateDiskInfo = migrateStorage.remove(path);
+
+                            NamedNodeMap diskNodeAttributes = diskNode.getAttributes();
+                            Node diskNodeAttribute = diskNodeAttributes.getNamedItem("type");
+
+                            diskNodeAttribute.setTextContent(migrateDiskInfo.getDiskType().toString());
+
+                            NodeList diskChildNodes = diskNode.getChildNodes();
+
+                            for (int z = 0; z < diskChildNodes.getLength(); z++) {
+                                Node diskChildNode = diskChildNodes.item(z);
+
+                                if ("driver".equals(diskChildNode.getNodeName())) {
+                                    Node driverNode = diskChildNode;
+
+                                    NamedNodeMap driverNodeAttributes = driverNode.getAttributes();
+                                    Node driverNodeAttribute = driverNodeAttributes.getNamedItem("type");
+
+                                    driverNodeAttribute.setTextContent(migrateDiskInfo.getDriverType().toString());
+                                } else if ("source".equals(diskChildNode.getNodeName())) {
+                                    diskNode.removeChild(diskChildNode);
+
+                                    Element newChildSourceNode = doc.createElement("source");
+
+                                    newChildSourceNode.setAttribute(migrateDiskInfo.getSource().toString(), migrateDiskInfo.getSourceText());
+
+                                    diskNode.appendChild(newChildSourceNode);
+                                } else if ("auth".equals(diskChildNode.getNodeName())) {
+                                    diskNode.removeChild(diskChildNode);
+                                } else if ("iotune".equals(diskChildNode.getNodeName())) {
+                                    diskNode.removeChild(diskChildNode);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!migrateStorage.isEmpty()) {
+            throw new CloudRuntimeException("Disk info was passed into LibvirtMigrateCommandWrapper.replaceStorage that was not used.");
+        }
+
+        return getXml(doc);
+    }
+
+    private String getPathFromSourceFileDevText(Set<String> paths, String sourceFileDevText) {
+        if (paths != null && sourceFileDevText != null) {
+            for (String path : paths) {
+                if (sourceFileDevText.contains(path)) {
+                    return path;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String getSourceFileDevText(Node diskNode) {
+        NodeList diskChildNodes = diskNode.getChildNodes();
+
+        for (int i = 0; i < diskChildNodes.getLength(); i++) {
+            Node diskChildNode = diskChildNodes.item(i);
+
+            if ("source".equals(diskChildNode.getNodeName())) {
+                NamedNodeMap diskNodeAttributes = diskChildNode.getAttributes();
+
+                Node diskNodeAttribute = diskNodeAttributes.getNamedItem("file");
+
+                if (diskNodeAttribute != null) {
+                    return diskNodeAttribute.getTextContent();
+                }
+
+                diskNodeAttribute = diskNodeAttributes.getNamedItem("dev");
+
+                if (diskNodeAttribute != null) {
+                    return diskNodeAttribute.getTextContent();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String getXml(Document doc) throws TransformerException {
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+
+        DOMSource source = new DOMSource(doc);
+
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        StreamResult result = new StreamResult(byteArrayOutputStream);
+
+        transformer.transform(source, result);
+
+        return byteArrayOutputStream.toString();
     }
 }

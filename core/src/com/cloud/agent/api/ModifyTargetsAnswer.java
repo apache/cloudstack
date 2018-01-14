@@ -19,5 +19,16 @@
 
 package com.cloud.agent.api;
 
+import java.util.List;
+
 public class ModifyTargetsAnswer extends Answer {
+    private List<String> connectedPaths;
+
+    public void setConnectedPaths(List<String> connectedPaths) {
+        this.connectedPaths = connectedPaths;
+    }
+
+    public List<String> getConnectedPaths() {
+        return connectedPaths;
+    }
 }

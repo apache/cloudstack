@@ -25,7 +25,10 @@ import com.vmware.vim25.CustomFieldStringValue;
 import com.vmware.vim25.DatastoreInfo;
 import com.vmware.vim25.DynamicProperty;
 import com.vmware.vim25.HostNasVolumeSpec;
+import com.vmware.vim25.HostResignatureRescanResult;
 import com.vmware.vim25.HostScsiDisk;
+import com.vmware.vim25.HostUnresolvedVmfsResignatureSpec;
+import com.vmware.vim25.HostUnresolvedVmfsVolume;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.NasDatastoreInfo;
 import com.vmware.vim25.ObjectContent;
@@ -34,6 +37,7 @@ import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertySpec;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.VmfsDatastoreCreateSpec;
+import com.vmware.vim25.VmfsDatastoreExpandSpec;
 import com.vmware.vim25.VmfsDatastoreOption;
 
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -73,6 +77,18 @@ public class HostDatastoreSystemMO extends BaseMO {
             }
         }
         return null;
+    }
+
+    public List<HostUnresolvedVmfsVolume> queryUnresolvedVmfsVolumes() throws Exception {
+        return _context.getService().queryUnresolvedVmfsVolumes(_mor);
+    }
+
+    public List<VmfsDatastoreOption> queryVmfsDatastoreExpandOptions(DatastoreMO datastoreMO) throws Exception {
+        return _context.getService().queryVmfsDatastoreExpandOptions(_mor, datastoreMO.getMor());
+    }
+
+    public void expandVmfsDatastore(DatastoreMO datastoreMO, VmfsDatastoreExpandSpec vmfsDatastoreExpandSpec) throws Exception {
+        _context.getService().expandVmfsDatastore(_mor, datastoreMO.getMor(), vmfsDatastoreExpandSpec);
     }
 
     // storeUrl in nfs://host/exportpath format
@@ -193,6 +209,22 @@ public class HostDatastoreSystemMO extends BaseMO {
         if (info instanceof NasDatastoreInfo)
             return (NasDatastoreInfo)info;
         return null;
+    }
+
+    public HostResignatureRescanResult resignatureUnresolvedVmfsVolume(HostUnresolvedVmfsResignatureSpec resolutionSpec) throws Exception {
+        ManagedObjectReference task = _context.getService().resignatureUnresolvedVmfsVolumeTask(_mor, resolutionSpec);
+
+        boolean result = _context.getVimClient().waitForTask(task);
+
+        if (result) {
+            _context.waitForTaskProgressDone(task);
+
+            TaskMO taskMO = new TaskMO(_context, task);
+
+            return (HostResignatureRescanResult)taskMO.getTaskInfo().getResult();
+        } else {
+            throw new Exception("Unable to register vm due to " + TaskMO.getTaskFailureInfo(_context, task));
+        }
     }
 
     public List<ObjectContent> getDatastorePropertiesOnHostDatastoreSystem(String[] propertyPaths) throws Exception {

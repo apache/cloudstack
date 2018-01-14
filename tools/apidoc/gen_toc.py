@@ -189,7 +189,8 @@ known_categories = {
     'removeAnnotation' : 'Annotations',
     'CA': 'Certificate',
     'listElastistorInterface': 'Misc',
-    'cloudian': 'Cloudian'
+    'cloudian': 'Cloudian',
+    'Sioc' : 'Sioc'
     }
 
 

@@ -47,6 +47,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CreateStoragePoolCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
+import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
@@ -90,7 +91,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
     @Inject private StoragePoolAutomation _storagePoolAutomation;
     @Inject private StoragePoolDetailsDao _storagePoolDetailsDao;
     @Inject private StoragePoolHostDao _storagePoolHostDao;
-    @Inject protected TemplateManager _tmpltMgr;
+    @Inject private TemplateManager _tmpltMgr;
 
     // invoked to add primary storage that is based on the SolidFire plug-in
     @Override
@@ -168,6 +169,10 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         details.put(SolidFireUtil.CLUSTER_ADMIN_USERNAME, clusterAdminUsername);
         details.put(SolidFireUtil.CLUSTER_ADMIN_PASSWORD, clusterAdminPassword);
 
+        if (capacityBytes < SolidFireUtil.MIN_VOLUME_SIZE) {
+            capacityBytes = SolidFireUtil.MIN_VOLUME_SIZE;
+        }
+
         long lMinIops = 100;
         long lMaxIops = 15000;
         long lBurstIops = 15000;
@@ -214,8 +219,16 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             throw new CloudRuntimeException("The parameter '" + CAPACITY_IOPS + "' must be equal to the parameter '" + SolidFireUtil.MIN_IOPS + "'.");
         }
 
-        if (lMinIops > SolidFireUtil.MAX_IOPS_PER_VOLUME || lMaxIops > SolidFireUtil.MAX_IOPS_PER_VOLUME || lBurstIops > SolidFireUtil.MAX_IOPS_PER_VOLUME) {
-            throw new CloudRuntimeException("This volume cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_IOPS_PER_VOLUME) + " IOPS.");
+        if (lMinIops > SolidFireUtil.MAX_MIN_IOPS_PER_VOLUME) {
+            throw new CloudRuntimeException("This volume's Min IOPS cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_MIN_IOPS_PER_VOLUME) + " IOPS.");
+        }
+
+        if (lMaxIops > SolidFireUtil.MAX_IOPS_PER_VOLUME) {
+            throw new CloudRuntimeException("This volume's Max IOPS cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_IOPS_PER_VOLUME) + " IOPS.");
+        }
+
+        if (lBurstIops > SolidFireUtil.MAX_IOPS_PER_VOLUME) {
+            throw new CloudRuntimeException("This volume's Burst IOPS cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_IOPS_PER_VOLUME) + " IOPS.");
         }
 
         details.put(SolidFireUtil.MIN_IOPS, String.valueOf(lMinIops));
@@ -282,7 +295,9 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
 
             SolidFireUtil.updateCsDbWithSolidFireAccountInfo(csAccount.getId(), sfAccount, dataStore.getId(), _accountDetailsDao);
         } catch (Exception ex) {
-            _primaryDataStoreDao.expunge(dataStore.getId());
+            if (dataStore != null) {
+                _primaryDataStoreDao.expunge(dataStore.getId());
+            }
 
             throw new CloudRuntimeException(ex.getMessage());
         }
@@ -320,7 +335,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         private final SolidFireUtil.SolidFireVolume _sfVolume;
         private final SolidFireUtil.SolidFireAccount _sfAccount;
 
-        public SolidFireCreateVolume(SolidFireUtil.SolidFireVolume sfVolume, SolidFireUtil.SolidFireAccount sfAccount) {
+        SolidFireCreateVolume(SolidFireUtil.SolidFireVolume sfVolume, SolidFireUtil.SolidFireAccount sfAccount) {
             _sfVolume = sfVolume;
             _sfAccount = sfAccount;
         }
@@ -394,7 +409,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             throw new CloudRuntimeException("Unable to create storage in cluster " + primaryDataStoreInfo.getClusterId());
         }
 
-        List<HostVO> poolHosts = new ArrayList<HostVO>();
+        List<HostVO> poolHosts = new ArrayList<>();
 
         for (HostVO host : allHosts) {
             try {
@@ -427,7 +442,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         if (HypervisorType.VMware.equals(hypervisorType)) {
             cmd.setCreateDatastore(true);
 
-            Map<String, String> details = new HashMap<String, String>();
+            Map<String, String> details = new HashMap<>();
 
             StoragePoolDetailVO storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePool.getId(), SolidFireUtil.DATASTORE_NAME);
 
@@ -455,7 +470,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         } else {
             _primaryDataStoreDao.expunge(storagePool.getId());
 
-            String msg = "";
+            final String msg;
 
             if (answer != null) {
                 msg = "Cannot create storage pool through host '" + hostId + "' due to the following: " + answer.getDetails();
@@ -514,6 +529,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         }
 
         Long clusterId = null;
+        Long hostId = null;
 
         for (StoragePoolHostVO host : hostPoolRecords) {
             DeleteStoragePoolCommand deleteCmd = new DeleteStoragePoolCommand(storagePool);
@@ -521,7 +537,7 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             if (HypervisorType.VMware.equals(hypervisorType)) {
                 deleteCmd.setRemoveDatastore(true);
 
-                Map<String, String> details = new HashMap<String, String>();
+                Map<String, String> details = new HashMap<>();
 
                 StoragePoolDetailVO storagePoolDetail = _storagePoolDetailsDao.findDetail(storagePool.getId(), SolidFireUtil.DATASTORE_NAME);
 
@@ -551,12 +567,18 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
 
                 if (hostVO != null) {
                     clusterId = hostVO.getClusterId();
+                    hostId = hostVO.getId();
                 }
 
                 break;
             }
             else {
-                s_logger.error("Failed to delete storage pool using Host ID " + host.getHostId() + ": " + answer.getResult());
+                if (answer != null) {
+                    s_logger.error("Failed to delete storage pool using Host ID " + host.getHostId() + ": " + answer.getResult());
+                }
+                else {
+                    s_logger.error("Failed to delete storage pool using Host ID " + host.getHostId());
+                }
             }
         }
 
@@ -582,9 +604,58 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
             }
         }
 
+        if (hostId != null) {
+            handleTargetsForVMware(hostId, storagePool.getId());
+        }
+
         deleteSolidFireVolume(storagePool.getId());
 
         return _primaryDataStoreHelper.deletePrimaryDataStore(dataStore);
+    }
+
+    private void handleTargetsForVMware(long hostId, long storagePoolId) {
+        HostVO host = _hostDao.findById(hostId);
+
+        if (host.getHypervisorType() == HypervisorType.VMware) {
+            String storageAddress = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.STORAGE_VIP).getValue();
+            int storagePort = Integer.parseInt(_storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.STORAGE_PORT).getValue());
+            String iqn = _storagePoolDetailsDao.findDetail(storagePoolId, SolidFireUtil.IQN).getValue();
+
+            ModifyTargetsCommand cmd = new ModifyTargetsCommand();
+
+            List<Map<String, String>> targets = new ArrayList<>();
+
+            Map<String, String> target = new HashMap<>();
+
+            target.put(ModifyTargetsCommand.STORAGE_HOST, storageAddress);
+            target.put(ModifyTargetsCommand.STORAGE_PORT, String.valueOf(storagePort));
+            target.put(ModifyTargetsCommand.IQN, iqn);
+
+            targets.add(target);
+
+            cmd.setTargets(targets);
+            cmd.setApplyToAllHostsInCluster(true);
+            cmd.setAdd(false);
+            cmd.setTargetTypeToRemove(ModifyTargetsCommand.TargetTypeToRemove.DYNAMIC);
+            cmd.setRemoveAsync(true);
+
+            sendModifyTargetsCommand(cmd, hostId);
+        }
+    }
+
+    private void sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {
+        Answer answer = _agentMgr.easySend(hostId, cmd);
+
+        if (answer == null) {
+            String msg = "Unable to get an answer to the modify targets command";
+
+            s_logger.warn(msg);
+        }
+        else if (!answer.getResult()) {
+            String msg = "Unable to modify target on the following host: " + hostId;
+
+            s_logger.warn(msg);
+        }
     }
 
     private void removeVolumeFromVag(long storagePoolId, long clusterId) {
@@ -671,8 +742,8 @@ public class SolidFireSharedPrimaryDataStoreLifeCycle implements PrimaryDataStor
         long burstIops = currentBurstIops;
 
         if (capacityIops != null) {
-            if (capacityIops > SolidFireUtil.MAX_IOPS_PER_VOLUME) {
-                throw new CloudRuntimeException("This volume cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_IOPS_PER_VOLUME) + " IOPS.");
+            if (capacityIops > SolidFireUtil.MAX_MIN_IOPS_PER_VOLUME) {
+                throw new CloudRuntimeException("This volume cannot exceed " + NumberFormat.getInstance().format(SolidFireUtil.MAX_MIN_IOPS_PER_VOLUME) + " IOPS.");
             }
 
             float maxPercentOfMin = currentMaxIops / (float)currentMinIops;

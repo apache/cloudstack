@@ -25,6 +25,7 @@ import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
+
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
 import org.springframework.stereotype.Component;
@@ -46,9 +47,11 @@ public class SolidFireIntegrationTestManagerImpl implements SolidFireIntegration
         long storagePoolId = util.getStoragePoolIdForStoragePoolUuid(storagePoolUuid);
 
         AccountDetailVO accountDetail = accountDetailsDao.findDetail(csAccountId, SolidFireUtil.getAccountKey(storagePoolId));
+
         if (accountDetail == null){
             throw new CloudRuntimeException("Unable to find SF account for storage " + storagePoolUuid + " for CS account " + csAccountUuid);
         }
+
         String sfAccountId = accountDetail.getValue();
 
         return Long.parseLong(sfAccountId);

@@ -42,6 +42,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.vm.VirtualMachine;
 import com.xensource.xenapi.Connection;
@@ -62,8 +63,9 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
         final String vmName = vmSpec.getName();
         VmPowerState state = VmPowerState.HALTED;
         VM vm = null;
-        // if a VDI is created, record its UUID to send back to the CS MS
-        final Map<String, String> iqnToPath = new HashMap<String, String>();
+        // if a VDI is created, record its UUID and its type (ex. VHD) to send back to the CS MS
+        final Map<String, Map<String, String>> iqnToData = new HashMap<>();
+
         try {
             final Set<VM> vms = VM.getByNameLabel(conn, vmName);
             if (vms != null) {
@@ -112,9 +114,14 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
                 final VDI newVdi = citrixResourceBase.prepareManagedDisk(conn, disk, vmSpec.getId(), vmSpec.getName());
 
                 if (newVdi != null) {
+                    final Map<String, String> data = new HashMap<>();
+
                     final String path = newVdi.getUuid(conn);
 
-                    iqnToPath.put(disk.getDetails().get(DiskTO.IQN), path);
+                    data.put(StartAnswer.PATH, path);
+                    data.put(StartAnswer.IMAGE_FORMAT, Storage.ImageFormat.VHD.toString());
+
+                    iqnToData.put(disk.getDetails().get(DiskTO.IQN), data);
                 }
 
                 citrixResourceBase.createVbd(conn, disk, vmName, vm, vmSpec.getBootloader(), newVdi);
@@ -201,7 +208,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
 
             final StartAnswer startAnswer = new StartAnswer(command);
 
-            startAnswer.setIqnToPath(iqnToPath);
+            startAnswer.setIqnToData(iqnToData);
 
             return startAnswer;
         } catch (final Exception e) {
@@ -210,7 +217,7 @@ public final class CitrixStartCommandWrapper extends CommandWrapper<StartCommand
 
             final StartAnswer startAnswer = new StartAnswer(command, msg);
 
-            startAnswer.setIqnToPath(iqnToPath);
+            startAnswer.setIqnToData(iqnToData);
 
             return startAnswer;
         } finally {

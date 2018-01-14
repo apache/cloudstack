@@ -188,6 +188,17 @@
       </modules>
     </profile>
     <profile>
+      <id>vmware-sioc</id>
+      <activation>
+        <property>
+          <name>noredist</name>
+        </property>
+      </activation>
+      <modules>
+        <module>api/vmware-sioc</module>
+      </modules>
+    </profile>
+    <profile>
       <id>mysqlha</id>
       <activation>
         <property>

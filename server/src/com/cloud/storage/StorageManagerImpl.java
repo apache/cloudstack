@@ -40,8 +40,6 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.hypervisor.Hypervisor;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.log4j.Logger;
@@ -104,6 +102,7 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
@@ -143,6 +142,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.offering.DiskOffering;
@@ -847,6 +847,32 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
+    public void removeStoragePoolFromCluster(long hostId, String iScsiName, StoragePool storagePool) {
+        final Map<String, String> details = new HashMap<>();
+
+        details.put(DeleteStoragePoolCommand.DATASTORE_NAME, iScsiName);
+        details.put(DeleteStoragePoolCommand.IQN, iScsiName);
+        details.put(DeleteStoragePoolCommand.STORAGE_HOST, storagePool.getHostAddress());
+        details.put(DeleteStoragePoolCommand.STORAGE_PORT, String.valueOf(storagePool.getPort()));
+
+        final DeleteStoragePoolCommand cmd = new DeleteStoragePoolCommand();
+
+        cmd.setDetails(details);
+        cmd.setRemoveDatastore(true);
+
+        final Answer answer = _agentMgr.easySend(hostId, cmd);
+
+        if (answer == null || !answer.getResult()) {
+            String errMsg = "Error interacting with host (related to DeleteStoragePoolCommand)" +
+                    (StringUtils.isNotBlank(answer.getDetails()) ? ": " + answer.getDetails() : "");
+
+            s_logger.error(errMsg);
+
+            throw new CloudRuntimeException(errMsg);
+        }
+    }
+
+    @Override
     @DB
     public boolean deletePool(DeletePoolCmd cmd) {
         Long id = cmd.getId();
@@ -1237,41 +1263,54 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
+    /**
+     * This method only applies for managed storage.
+     *
+     * For XenServer and vSphere, see if we need to remove an SR or a datastore, then remove the underlying volume
+     * from any applicable access control list (before other code attempts to delete the volume that supports it).
+     *
+     * For KVM, just tell the underlying storage plug-in to remove the volume from any applicable access control list
+     * (before other code attempts to delete the volume that supports it).
+     */
     private void handleManagedStorage(Volume volume) {
         Long instanceId = volume.getInstanceId();
 
-        // The idea of this "if" statement is to see if we need to remove an SR/datastore before
-        // deleting the volume that supports it on a SAN. This only applies for managed storage.
         if (instanceId != null) {
             StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
 
             if (storagePool != null && storagePool.isManaged()) {
-                DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
-                DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
-
-                DettachCommand cmd = new DettachCommand(disk, null);
-
-                cmd.setManaged(true);
-
-                cmd.setStorageHost(storagePool.getHostAddress());
-                cmd.setStoragePort(storagePool.getPort());
-
-                cmd.set_iScsiName(volume.get_iScsiName());
-
                 VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(instanceId);
 
                 Long lastHostId = vmInstanceVO.getLastHostId();
 
                 if (lastHostId != null) {
-                    Answer answer = _agentMgr.easySend(lastHostId, cmd);
+                    HostVO host = _hostDao.findById(lastHostId);
+                    ClusterVO cluster = _clusterDao.findById(host.getClusterId());
+                    VolumeInfo volumeInfo = volFactory.getVolume(volume.getId());
 
-                    if (answer != null && answer.getResult()) {
-                        VolumeInfo volumeInfo = volFactory.getVolume(volume.getId());
-                        HostVO host = _hostDao.findById(lastHostId);
-
+                    if (cluster.getHypervisorType() == HypervisorType.KVM) {
                         volService.revokeAccess(volumeInfo, host, volumeInfo.getDataStore());
-                    } else {
-                        s_logger.warn("Unable to remove host-side clustered file system for the following volume: " + volume.getUuid());
+                    }
+                    else {
+                        DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
+                        DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
+
+                        DettachCommand cmd = new DettachCommand(disk, null);
+
+                        cmd.setManaged(true);
+
+                        cmd.setStorageHost(storagePool.getHostAddress());
+                        cmd.setStoragePort(storagePool.getPort());
+
+                        cmd.set_iScsiName(volume.get_iScsiName());
+
+                        Answer answer = _agentMgr.easySend(lastHostId, cmd);
+
+                        if (answer != null && answer.getResult()) {
+                            volService.revokeAccess(volumeInfo, host, volumeInfo.getDataStore());
+                        } else {
+                            s_logger.warn("Unable to remove host-side clustered file system for the following volume: " + volume.getUuid());
+                        }
                     }
                 }
             }
