@@ -352,6 +352,7 @@ class TestHostHA(cloudstackTestCase):
             Zone > Cluster > Host
         """
         host = self.getHost()
+        self.configureAndDisableHostHa(host.id)
         self.configureAndEnableHostHa()
 
         self.checkSyncToState('Available')

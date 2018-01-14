@@ -218,7 +218,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
                     return True, response[0].id
             return False, None
 
-        res, systemvmId = wait_until(3, 100, checkSystemVMUp)
+        res, systemvmId = wait_until(3, 200, checkSystemVMUp)
         if not res:
             raise Exception("Failed to wait for systemvm to be running")
         return systemvmId
@@ -336,13 +336,13 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         return False
 
     @attr(tags = ["advanced", "publiciprange", "dedicate", "release"], required_hardware="false")
-    def test_dedicate_public_ip_range_for_system_vms_cpvm(self):
-        """Test CPVM Public IP
+    def test_dedicate_public_ip_range_for_system_vms_01_ssvm(self):
+        """Test SSVM Public IP
         """
         self.debug("Precondition: No public IP range dedicated for system vms in the environment")
         if self.exists_public_ip_range_for_system_vms(self.services["zoneid"]):
             self.skipTest("An existing IP range defined for system vms, aborting test")
-        
+
         services = {
             "gateway":"192.168.100.1",
             "netmask":"255.255.255.0",
@@ -355,13 +355,13 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
 
         self.base_system_vm(
             services,
-            'consoleproxy'
+            'secondarystoragevm'
         )
         return
 
     @attr(tags = ["advanced", "publiciprange", "dedicate", "release"], required_hardware="false")
-    def test_dedicate_public_ip_range_for_system_vms_ssvm(self):
-        """Test SSVM Public IP
+    def test_dedicate_public_ip_range_for_system_vms_02_cpvm(self):
+        """Test CPVM Public IP
         """
         self.debug("Precondition: No public IP range dedicated for system vms in the environment")
         if self.exists_public_ip_range_for_system_vms(self.services["zoneid"]):
@@ -379,6 +379,6 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
 
         self.base_system_vm(
             services,
-            'secondarystoragevm'
+            'consoleproxy'
         )
         return

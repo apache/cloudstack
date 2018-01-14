@@ -84,6 +84,9 @@ public final class HostHAResponse extends BaseResponse {
 
     public void setHaState(HAConfig.HAState haState) {
         this.haState = haState;
+        if (haState == null) {
+            this.haState = HAConfig.HAState.Disabled;
+        }
     }
 
     public String getProvider() {

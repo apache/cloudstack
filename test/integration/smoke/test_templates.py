@@ -540,7 +540,6 @@ class TestTemplates(cloudstackTestCase):
         cls.services["template"]["ostypeid"] = template.ostypeid
         cls.services["template_2"]["ostypeid"] = template.ostypeid
         cls.services["ostypeid"] = template.ostypeid
-        cls.services["isdynamicallyscalable"] = template.isdynamicallyscalable
         cls.account = Account.create(
                             cls.apiclient,
                             cls.services["account"],
@@ -590,6 +589,7 @@ class TestTemplates(cloudstackTestCase):
                                          account=cls.account.name,
                                          domainid=cls.account.domainid
                                          )
+        cls.services["isdynamicallyscalable"] = cls.template_1.isdynamicallyscalable
         cls.template_2 = Template.create(
                                          cls.apiclient,
                                          cls.services["template_2"],

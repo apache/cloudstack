@@ -198,7 +198,6 @@ class TestSSVMs(cloudstackTestCase):
                 True,
                 "Check list response returns a valid list"
             )
-            iprange = ipranges_response[0]
 
             # Fetch corresponding Physical Network of SSVM's Zone
             listphyntwk = PhysicalNetwork.list(
@@ -213,9 +212,14 @@ class TestSSVMs(cloudstackTestCase):
                         self.apiclient,
                         physicalnetworkid=listphyntwk[0].id),
                     list) is True):
-                self.assertEqual(
-                    ssvm.gateway,
-                    iprange.gateway,
+                gatewayFound = False
+                for iprange in ipranges_response:
+                    if ssvm.gateway == iprange.gateway:
+                        gatewayFound = True
+                        break
+
+                self.assertTrue(
+                    gatewayFound,
                     "Check gateway with that of corresponding ip range"
                 )
 
@@ -333,7 +337,6 @@ class TestSSVMs(cloudstackTestCase):
                 True,
                 "Check list response returns a valid list"
             )
-            iprange = ipranges_response[0]
 
             # Fetch corresponding Physical Network of SSVM's Zone
             listphyntwk = PhysicalNetwork.list(
@@ -348,13 +351,13 @@ class TestSSVMs(cloudstackTestCase):
                         self.apiclient,
                         physicalnetworkid=listphyntwk[0].id),
                     list) is True):
-                cpvmValidGateway = False
+                gatewayFound = False
                 for iprange in ipranges_response:
                     if iprange.gateway == cpvm.gateway:
-                        cpvmValidGateway = True
+                        gatewayFound = True
                         break
                 self.assertTrue(
-                    cpvmValidGateway,
+                    gatewayFound,
                     "Check gateway with that of corresponding ip range"
                 )
 

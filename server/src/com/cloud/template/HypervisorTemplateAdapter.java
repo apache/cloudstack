@@ -451,6 +451,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
         if (imageStores == null || imageStores.size() == 0) {
             // already destroyed on image stores
+            success = true;
             s_logger.info("Unable to find image store still having template: " + template.getName() + ", so just mark the template removed");
         } else {
             // Make sure the template is downloaded to all found image stores
@@ -536,10 +537,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                                 templateZoneDao.remove(templateZone.getId());
                             }
                         }
-                    } catch (InterruptedException e) {
-                        s_logger.debug("Delete template Failed", e);
-                        throw new CloudRuntimeException("Delete template Failed", e);
-                    } catch (ExecutionException e) {
+                    } catch (InterruptedException|ExecutionException e) {
                         s_logger.debug("Delete template Failed", e);
                         throw new CloudRuntimeException("Delete template Failed", e);
                     }
@@ -551,7 +549,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
 
         }
         if (success) {
-            if ((imageStores.size() > 1) && (profile.getZoneIdList() != null)) {
+            if ((imageStores != null && imageStores.size() > 1) && (profile.getZoneIdList() != null)) {
                 //if template is stored in more than one image stores, and the zone id is not null, then don't delete other templates.
                 return success;
             }
