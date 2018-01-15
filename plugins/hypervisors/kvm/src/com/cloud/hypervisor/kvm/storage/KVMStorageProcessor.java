@@ -902,13 +902,23 @@ public class KVMStorageProcessor implements StorageProcessor {
         DiskTO disk = cmd.getDisk();
         TemplateObjectTO isoTO = (TemplateObjectTO)disk.getData();
         DataStoreTO store = isoTO.getDataStore();
-        if (!(store instanceof NfsTO)) {
+
+        String dataStoreUrl;
+        if (store instanceof NfsTO) {
+            NfsTO nfsStore = (NfsTO)store;
+            dataStoreUrl = nfsStore.getUrl();
+        } else if (store instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO) store).getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+            //In order to support directly downloaded ISOs
+            String psHost = ((PrimaryDataStoreTO) store).getHost();
+            String psPath = ((PrimaryDataStoreTO) store).getPath();
+            dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
+        } else {
             return new AttachAnswer("unsupported protocol");
         }
-        NfsTO nfsStore = (NfsTO)store;
+
         try {
             Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            attachOrDetachISO(conn, cmd.getVmName(), nfsStore.getUrl() + File.separator + isoTO.getPath(), false);
+            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), false);
         } catch (LibvirtException e) {
             return new Answer(cmd, false, e.toString());
         } catch (URISyntaxException e) {
