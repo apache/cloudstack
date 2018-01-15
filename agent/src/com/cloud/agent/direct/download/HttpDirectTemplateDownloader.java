@@ -22,12 +22,9 @@ package com.cloud.agent.direct.download;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.HttpMethodRetryHandler;
 import org.apache.commons.httpclient.MultiThreadedHttpConnectionManager;
-import org.apache.commons.httpclient.NoHttpResponseException;
+import org.apache.commons.httpclient.HttpStatus;
 import org.apache.commons.httpclient.methods.GetMethod;
-import org.apache.commons.httpclient.params.HttpMethodParams;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 
@@ -36,21 +33,22 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
 
-    private HttpClient client;
+    protected HttpClient client;
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
-    private static final int CHUNK_SIZE = 1024 * 1024; //1M
-    protected HttpMethodRetryHandler myretryhandler;
     public static final Logger s_logger = Logger.getLogger(HttpDirectTemplateDownloader.class.getName());
     protected GetMethod request;
+    protected Map<String, String> reqHeaders = new HashMap<>();
 
     public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers) {
         super(url, destPoolPath, templateId, checksum);
+        s_httpClientManager.getParams().setConnectionTimeout(5000);
+        s_httpClientManager.getParams().setSoTimeout(5000);
         client = new HttpClient(s_httpClientManager);
-        myretryhandler = createRetryTwiceHandler();
         request = createRequest(url, headers);
         String downloadDir = getDirectDownloadTempPath(templateId);
         createTemporaryDirectoryAndFile(downloadDir);
@@ -64,50 +62,34 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
 
     protected GetMethod createRequest(String downloadUrl, Map<String, String> headers) {
         GetMethod request = new GetMethod(downloadUrl);
-        request.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, myretryhandler);
         request.setFollowRedirects(true);
         if (MapUtils.isNotEmpty(headers)) {
             for (String key : headers.keySet()) {
                 request.setRequestHeader(key, headers.get(key));
+                reqHeaders.put(key, headers.get(key));
             }
         }
         return request;
     }
 
-    protected HttpMethodRetryHandler createRetryTwiceHandler() {
-        return new HttpMethodRetryHandler() {
-            @Override
-            public boolean retryMethod(final HttpMethod method, final IOException exception, int executionCount) {
-                if (executionCount >= 2) {
-                    // Do not retry if over max retry count
-                    return false;
-                }
-                if (exception instanceof NoHttpResponseException) {
-                    // Retry if the server dropped connection on us
-                    return true;
-                }
-                if (!method.isRequestSent()) {
-                    // Retry if the request has not been sent fully or
-                    // if it's OK to retry methods that have been sent
-                    return true;
-                }
-                // otherwise do not retry
-                return false;
-            }
-        };
-    }
-
     @Override
     public boolean downloadTemplate() {
         try {
-            client.executeMethod(request);
+            int status = client.executeMethod(request);
+            if (status != HttpStatus.SC_OK) {
+                s_logger.warn("Not able to download template, status code: " + status);
+                return false;
+            }
+            return performDownload();
         } catch (IOException e) {
             throw new CloudRuntimeException("Error on HTTP request: " + e.getMessage());
+        } finally {
+            request.releaseConnection();
         }
-        return performDownload();
     }
 
     protected boolean performDownload() {
+        s_logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
         try (
                 InputStream in = request.getResponseBodyAsStream();
                 OutputStream out = new FileOutputStream(getDownloadedFilePath());

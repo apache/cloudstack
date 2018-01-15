@@ -581,6 +581,8 @@ public class EventTypes {
     public static final String EVENT_ANNOTATION_CREATE = "ANNOTATION.CREATE";
     public static final String EVENT_ANNOTATION_REMOVE = "ANNOTATION.REMOVE";
 
+    public static final String EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE = "TEMPLATE.DIRECT.DOWNLOAD.FAILURE";
+    public static final String EVENT_ISO_DIRECT_DOWNLOAD_FAILURE = "ISO.DIRECT.DOWNLOAD.FAILURE";
 
     static {
 
@@ -972,6 +974,9 @@ public class EventTypes {
 
         entityEventDetails.put(EVENT_ANNOTATION_CREATE, Annotation.class);
         entityEventDetails.put(EVENT_ANNOTATION_REMOVE, Annotation.class);
+
+        entityEventDetails.put(EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE, VirtualMachineTemplate.class);
+        entityEventDetails.put(EVENT_ISO_DIRECT_DOWNLOAD_FAILURE, "Iso");
     }
 
     public static String getEntityForEvent(String eventName) {

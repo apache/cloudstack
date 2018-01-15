@@ -24,6 +24,8 @@ import com.cloud.utils.script.Script;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.commons.collections.MapUtils;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -44,14 +46,15 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.Map;
 
 public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader {
 
     private CloseableHttpClient httpsClient;
     private HttpUriRequest req;
 
-    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum) {
-        super(url, templateId, destPoolPath, checksum, null);
+    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers) {
+        super(url, templateId, destPoolPath, checksum, headers);
         SSLContext sslcontext = null;
         try {
             sslcontext = getSSLContext();
@@ -59,12 +62,21 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
             throw new CloudRuntimeException("Failure getting SSL context for HTTPS downloader: " + e.getMessage());
         }
         SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-        httpsClient = HttpClients.custom().setSSLSocketFactory(factory).build();
-        req = createUriRequest(url);
+        RequestConfig config = RequestConfig.custom()
+                .setConnectTimeout(5000)
+                .setConnectionRequestTimeout(5000)
+                .setSocketTimeout(5000).build();
+        httpsClient = HttpClients.custom().setSSLSocketFactory(factory).setDefaultRequestConfig(config).build();
+        createUriRequest(url, headers);
     }
 
-    protected HttpUriRequest createUriRequest(String downloadUrl) {
-        return new HttpGet(downloadUrl);
+    protected void createUriRequest(String downloadUrl, Map<String, String> headers) {
+        req = new HttpGet(downloadUrl);
+        if (MapUtils.isNotEmpty(headers)) {
+            for (String headerKey: headers.keySet()) {
+                req.setHeader(headerKey, headers.get(headerKey));
+            }
+        }
     }
 
     private SSLContext getSSLContext() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, KeyManagementException {
@@ -98,6 +110,7 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
      * Consume response and persist it on getDownloadedFilePath() file
      */
     protected boolean consumeResponse(CloseableHttpResponse response) {
+        s_logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
         if (response.getStatusLine().getStatusCode() != 200) {
             throw new CloudRuntimeException("Error on HTTPS response");
         }

@@ -18,13 +18,18 @@
 //
 package org.apache.cloudstack.direct.download;
 
+import static com.cloud.storage.Storage.ImageFormat;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -40,6 +45,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 
@@ -51,6 +58,7 @@ import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificate;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -58,6 +66,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
@@ -137,6 +146,46 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         return headers;
     }
 
+    /**
+     * Get running host IDs within the same hypervisor, cluster and datacenter than hostId. ID hostId is not included on the returned list
+     */
+    protected List<Long> getRunningHostIdsInTheSameCluster(Long clusterId, long dataCenterId, HypervisorType hypervisorType, long hostId) {
+        List<Long> list = hostDao.listByDataCenterIdAndHypervisorType(dataCenterId, hypervisorType)
+                .stream()
+                .filter(x -> x.getHypervisorType().equals(hypervisorType) && x.getStatus().equals(Status.Up) &&
+                        x.getType().equals(Host.Type.Routing) && x.getClusterId().equals(clusterId) &&
+                        x.getId() != hostId)
+                .map(x -> x.getId())
+                .collect(Collectors.toList());
+        Collections.shuffle(list);
+        return list;
+    }
+
+    /**
+     * Create host IDs array having hostId as the first element
+     */
+    protected Long[] createHostIdsList(List<Long> hostIds, long hostId) {
+        if (CollectionUtils.isEmpty(hostIds)) {
+            return Arrays.asList(hostId).toArray(new Long[1]);
+        }
+        Long[] ids = new Long[hostIds.size() + 1];
+        ids[0] = hostId;
+        int i = 1;
+        for (Long id : hostIds) {
+            ids[i] = id;
+            i++;
+        }
+        return ids;
+    }
+
+    /**
+     * Get hosts to retry download having hostId as the first element
+     */
+    protected Long[] getHostsToRetryOn(Long clusterId, long dataCenterId, HypervisorType hypervisorType, long hostId) {
+        List<Long> hostIds = getRunningHostIdsInTheSameCluster(clusterId, dataCenterId, hypervisorType, hostId);
+        return createHostIdsList(hostIds, hostId);
+    }
+
     @Override
     public void downloadTemplate(long templateId, long poolId, long hostId) {
         VMTemplateVO template = vmTemplateDao.findById(templateId);
@@ -167,11 +216,8 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
 
         DownloadProtocol protocol = getProtocolFromUrl(url);
         DirectDownloadCommand cmd = getDirectDownloadCommandFromProtocol(protocol, url, templateId, to, checksum, headers);
-        Answer answer = agentManager.easySend(hostId, cmd);
-        if (answer == null || !answer.getResult()) {
-            throw new CloudRuntimeException("Host " + hostId + " could not download template " +
-                    templateId + " on pool " + poolId);
-        }
+
+        Answer answer = sendDirectDownloadCommand(cmd, template, poolId, host);
 
         VMTemplateStoragePoolVO sPoolRef = vmTemplatePoolDao.findByPoolTemplate(poolId, templateId);
         if (sPoolRef == null) {
@@ -191,12 +237,55 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
     }
 
     /**
+     * Send direct download command for downloading template with ID templateId on storage pool with ID poolId.<br/>
+     * At first, cmd is sent to host, in case of failure it will retry on other hosts before failing
+     * @param cmd direct download command
+     * @param template template
+     * @param poolId pool id
+     * @param host first host to which send the command
+     * @return download answer from any host which could handle cmd
+     */
+    private Answer sendDirectDownloadCommand(DirectDownloadCommand cmd, VMTemplateVO template, long poolId, HostVO host) {
+        boolean downloaded = false;
+        int retry = 3;
+        Long[] hostsToRetry = getHostsToRetryOn(host.getClusterId(), host.getDataCenterId(), host.getHypervisorType(), host.getId());
+        int hostIndex = 0;
+        Answer answer = null;
+        Long hostToSendDownloadCmd = hostsToRetry[hostIndex];
+        boolean continueRetrying = true;
+        while (!downloaded && retry > 0 && continueRetrying) {
+            s_logger.debug("Sending Direct download command to host " + hostToSendDownloadCmd);
+            answer = agentManager.easySend(hostToSendDownloadCmd, cmd);
+            if (answer != null) {
+                DirectDownloadAnswer ans = (DirectDownloadAnswer)answer;
+                downloaded = answer.getResult();
+                continueRetrying = ans.isRetryOnOtherHosts();
+            }
+            hostToSendDownloadCmd = hostsToRetry[(hostIndex + 1) % hostsToRetry.length];
+            retry --;
+        }
+        if (!downloaded) {
+            logUsageEvent(template, poolId);
+            throw new CloudRuntimeException("Template " + template.getId() + " could not be downloaded on pool " + poolId + ", failing after trying on several hosts");
+        }
+        return answer;
+    }
+
+    /**
+     * Log and persist event for direct download failure
+     */
+    private void logUsageEvent(VMTemplateVO template, long poolId) {
+        String event = EventTypes.EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE;
+        if (template.getFormat() == ImageFormat.ISO) {
+            event = EventTypes.EVENT_ISO_DIRECT_DOWNLOAD_FAILURE;
+        }
+        String description = "Direct Download for template Id: " + template.getId() + " on pool Id: " + poolId + " failed";
+        s_logger.error(description);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), template.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
+    }
+
+    /**
      * Return DirectDownloadCommand according to the protocol
-     * @param protocol
-     * @param url
-     * @param templateId
-     * @param destPool
-     * @return
      */
     private DirectDownloadCommand getDirectDownloadCommandFromProtocol(DownloadProtocol protocol, String url, Long templateId, PrimaryDataStoreTO destPool,
                                                                        String checksum, Map<String, String> httpHeaders) {
@@ -205,24 +294,34 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         } else if (protocol.equals(DownloadProtocol.HTTPS)) {
             return new HttpsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
         } else if (protocol.equals(DownloadProtocol.NFS)) {
-            return new NfsDirectDownloadCommand(url, templateId, destPool, checksum);
+            return new NfsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
         } else if (protocol.equals(DownloadProtocol.METALINK)) {
-            return new MetalinkDirectDownloadCommand(url, templateId, destPool, checksum);
+            return new MetalinkDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
         } else {
             return null;
         }
     }
 
-    @Override
-    public boolean uploadCertificateToHosts(String certificateCer, String certificateName) {
-        List<HostVO> hosts = hostDao.listAllHostsByType(Host.Type.Routing)
+    /**
+     * Return the list of running hosts to which upload certificates for Direct Download
+     */
+    private List<HostVO> getRunningHostsToUploadCertificate(HypervisorType hypervisorType) {
+        return hostDao.listAllHostsByType(Host.Type.Routing)
                 .stream()
                 .filter(x -> x.getStatus().equals(Status.Up) &&
-                            x.getHypervisorType().equals(Hypervisor.HypervisorType.KVM))
+                        x.getHypervisorType().equals(hypervisorType))
                 .collect(Collectors.toList());
-        for (HostVO host : hosts) {
-            if (!uploadCertificate(certificateCer, certificateName, host.getId())) {
-                throw new CloudRuntimeException("Uploading certificate " + certificateName + " failed on host: " + host.getId());
+    }
+
+    @Override
+    public boolean uploadCertificateToHosts(String certificateCer, String certificateName, String hypervisor) {
+        HypervisorType hypervisorType = HypervisorType.getType(hypervisor);
+        List<HostVO> hosts = getRunningHostsToUploadCertificate(hypervisorType);
+        if (CollectionUtils.isNotEmpty(hosts)) {
+            for (HostVO host : hosts) {
+                if (!uploadCertificate(certificateCer, certificateName, host.getId())) {
+                    throw new CloudRuntimeException("Uploading certificate " + certificateName + " failed on host: " + host.getId());
+                }
             }
         }
         return true;
