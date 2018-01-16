@@ -160,7 +160,7 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
             try {
                 return DigestHelper.check(checksum, new FileInputStream(downloadedFilePath));
             } catch (IOException e) {
-                throw new CloudRuntimeException("could not check sum for file: " + downloadedFilePath);
+                throw new CloudRuntimeException("could not check sum for file: " + downloadedFilePath,e);
             } catch (NoSuchAlgorithmException e) {
                 throw new CloudRuntimeException("Unknown checksum algorithm: " + checksum, e);
             }
