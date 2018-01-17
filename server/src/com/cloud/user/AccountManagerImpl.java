@@ -2203,14 +2203,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             s_logger.debug("Attempting to log in user: " + username + " in domain " + domainId);
         }
         UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
-        if (userAccount == null) {
-            s_logger.warn("Unable to find an user with username " + username + " in domain " + domainId);
-            return null;
-        }
 
         boolean authenticated = false;
         HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<ActionOnFailedAuthentication>();
-        User.Source userSource = userAccount.getSource();
+        User.Source userSource = userAccount != null ? userAccount.getSource() : User.Source.UNKNOWN;
         for (UserAuthenticator authenticator : _userAuthenticators) {
             if(s_logger.isTraceEnabled()) {
                 s_logger.trace("authenticating '" + username + "' (source: '" + userSource + "') with authenticator " + authenticator.getName());
@@ -2238,6 +2234,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (domain != null) {
                 domainName = domain.getName();
             }
+            userAccount = _userAccountDao.getUserAccount(username, domainId);
 
             if (!userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString()) ||
                 !userAccount.getAccountState().equalsIgnoreCase(Account.State.enabled.toString())) {
