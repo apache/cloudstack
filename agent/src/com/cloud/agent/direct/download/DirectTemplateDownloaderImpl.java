@@ -18,10 +18,8 @@
 //
 package com.cloud.agent.direct.download;
 
-import com.cloud.exception.CloudException;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import org.apache.cloudstack.utils.security.ChecksumValue;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.lang.StringUtils;
 
