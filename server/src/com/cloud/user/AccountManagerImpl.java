@@ -2212,6 +2212,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<ActionOnFailedAuthentication>();
         User.Source userSource = userAccount.getSource();
         for (UserAuthenticator authenticator : _userAuthenticators) {
+            if(s_logger.isTraceEnabled()) {
+                s_logger.trace("authenticating '" + username + "' (source: '" + userSource + "') with authenticator " + authenticator.getName());
+            }
             if(userSource != User.Source.UNKNOWN) {
                 if(!authenticator.getName().equalsIgnoreCase(userSource.name())){
                     continue;

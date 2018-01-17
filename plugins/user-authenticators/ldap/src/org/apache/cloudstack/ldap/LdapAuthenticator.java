@@ -97,6 +97,9 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
      * @return false if the ldap user object does not exist, is not mapped to an account, is mapped to multiple accounts or if authenitication fails
      */
     private Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, UserAccount userAccount, List<LdapTrustMapVO> ldapTrustMapVOs) {
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("trying to log on '" + username + "' to ldap in linked account");
+        }
         Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         try {
             LdapUser ldapUser = _ldapManager.getUser(username, domainId);
@@ -177,6 +180,9 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
      * @return false if the ldap user object does not exist or authenitication fails
      */
     private Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, UserAccount user, LdapTrustMapVO ldapTrustMapVO) {
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("trying to log on '" + username + "' to ldap in linked domain");
+        }
         Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
         try {
             LdapUser ldapUser = _ldapManager.getUser(username, ldapTrustMapVO.getType().toString(), ldapTrustMapVO.getName(), domainId);
@@ -216,6 +222,9 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
      * @return false if either user object does not exist or authenitication fails
      */
     private Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, UserAccount user) {
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("trying to log on '" + username + "' as linked ldap user");
+        }
         boolean result = false;
 
         if(user != null ) {
