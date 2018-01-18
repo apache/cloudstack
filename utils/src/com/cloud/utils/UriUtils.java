@@ -395,23 +395,20 @@ public class UriUtils {
     }
 
     /**
-     * Get list of urls on metalink ordered by ascending priority (for those which priority tag is not defined, highest priority value is assumed)
+     * Get list of urls on metalink ordered by ascending priority (for those which priority tag is not defined,
+     * highest priority value is assumed)
+     *
+     * @param metalinkUrl the url of the metalink file
+     * @return a list of Strings containg the URLs of the target locations
      */
     public static List<String> getMetalinkUrls(String metalinkUrl) {
         HttpClient httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());
         GetMethod getMethod = new GetMethod(metalinkUrl);
         List<String> urls = new ArrayList<>();
-        int status;
-        try {
-            status = httpClient.executeMethod(getMethod);
-        } catch (IOException e) {
-            s_logger.error("Error retrieving urls form metalink: " + metalinkUrl);
-            return null;
-        }
         try (
                 InputStream is = getMethod.getResponseBodyAsStream()
         ) {
-            if (status == HttpStatus.SC_OK) {
+            if (httpClient.executeMethod(getMethod) == HttpStatus.SC_OK) {
                 Map<String, List<String>> metalinkUrlsMap = getMultipleValuesFromXML(is, new String[] {"url"});
                 if (metalinkUrlsMap.containsKey("url")) {
                     List<String> metalinkUrls = metalinkUrlsMap.get("url");
