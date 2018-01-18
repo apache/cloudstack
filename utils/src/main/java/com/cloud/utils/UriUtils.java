@@ -444,7 +444,8 @@ public class UriUtils {
                 && (!uripath.toLowerCase().endsWith("ova")
                         && !uripath.toLowerCase().endsWith("ova.zip")
                         && !uripath.toLowerCase().endsWith("ova.bz2")
-                        && !uripath.toLowerCase().endsWith("ova.gz")))
+                        && !uripath.toLowerCase().endsWith("ova.gz")
+                        && !uripath.toLowerCase().endsWith("metalink")))
                 || (format.equalsIgnoreCase("tar")
                 && (!uripath.toLowerCase().endsWith("tar")
                         && !uripath.toLowerCase().endsWith("tar.zip")
@@ -468,7 +469,8 @@ public class UriUtils {
                 && (!uripath.toLowerCase().endsWith("iso")
                         && !uripath.toLowerCase().endsWith("iso.zip")
                         && !uripath.toLowerCase().endsWith("iso.bz2")
-                        && !uripath.toLowerCase().endsWith("iso.gz")))) {
+                        && !uripath.toLowerCase().endsWith("iso.gz"))
+                        && !uripath.toLowerCase().endsWith("metalink"))) {
             throw new IllegalArgumentException("Please specify a valid URL. URL:" + uripath + " is an invalid for the format " + format.toLowerCase());
         }
 
