@@ -258,7 +258,6 @@ class TestNuagePasswordReset(nuageTestCase):
             self.create_and_verify_fw(self.vm_1, public_ip_1, self.network)
             ssh = self.ssh_into_VM(self.vm_1, public_ip_1)
             user_data_cmd = self.get_userdata_url(self.vm_1)
-
             if self.isSimulator:
                 self.debug("Simulator Environment: ending test early "
                            "because we don't have real vms")

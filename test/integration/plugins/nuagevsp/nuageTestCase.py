@@ -48,6 +48,10 @@ from marvin.cloudstackAPI import (restartVPC,
                                   enableNuageUnderlayVlanIpRange,
                                   disableNuageUnderlayVlanIpRange,
                                   listNuageUnderlayVlanIpRanges)
+
+from nuage_test_data import nuage_test_data
+from nuage_vsp_statistics import VsdDataCollector
+
 # Import System Modules
 from retry import retry
 import importlib
@@ -56,7 +60,6 @@ import logging
 import socket
 import time
 import sys
-from nuage_vsp_statistics import VsdDataCollector
 
 
 class needscleanup(object):
@@ -127,6 +130,7 @@ class nuageTestCase(cloudstackTestCase):
         cls.api_client = cls.test_client.getApiClient()
         cls.db_client = cls.test_client.getDbConnection()
         cls.test_data = cls.test_client.getParsedTestDataConfig()
+        cls.test_data.update(nuage_test_data)
 
         # Get Zones and Domains
         cls.zones = Zone.list(cls.api_client)

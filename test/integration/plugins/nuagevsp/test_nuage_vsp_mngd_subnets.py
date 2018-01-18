@@ -98,7 +98,7 @@ class TestNuageManagedSubnets(nuageTestCase):
         self.cleanup = [self.account]
         return
 
-    def verify_ping_to_vm(self, src_vm, dst_vm, public_ip):
+    def verify_ping_to_vm(self, src_vm, dst_vm, public_ip, dst_hostname=None):
         if self.isSimulator:
             self.debug("Simulator Environment: not verifying pinging")
             return
@@ -116,6 +116,8 @@ class TestNuageManagedSubnets(nuageTestCase):
             self.fail("SSH into VM failed with exception %s" % e)
 
         self.verify_pingtovmipaddress(ssh, dst_vm.ipaddress)
+        if dst_hostname:
+            self.verify_pingtovmipaddress(ssh, dst_hostname)
 
     def verify_pingtovmipaddress(self, ssh, pingtovmipaddress):
         """verify ping to ipaddress of the vm and retry 3 times"""
@@ -126,30 +128,6 @@ class TestNuageManagedSubnets(nuageTestCase):
 
         while not successfull_ping and nbr_retries < max_retries:
             self.debug("ping vm by ipaddress with command: " + cmd)
-            outputlist = ssh.execute(cmd)
-            self.debug("command is executed properly " + cmd)
-            completeoutput = str(outputlist).strip('[]')
-            self.debug("complete output is " + completeoutput)
-            if '2 received' in completeoutput:
-                self.debug("PASS as vm is pingeable: " + completeoutput)
-                successfull_ping = True
-            else:
-                self.debug("FAIL as vm is not pingeable: " + completeoutput)
-                time.sleep(3)
-                nbr_retries = nbr_retries + 1
-
-        if not successfull_ping:
-            self.fail("FAILED TEST as excepted value not found in vm")
-
-    def verify_pingtovmhostname(self, ssh, pingtovmhostname):
-        """verify ping to hostname of the vm and retry 3 times"""
-        successfull_ping = False
-        nbr_retries = 0
-        max_retries = 5
-        cmd = 'ping -c 2 ' + pingtovmhostname
-
-        while not successfull_ping and nbr_retries < max_retries:
-            self.debug("ping vm by hostname with command: " + cmd)
             outputlist = ssh.execute(cmd)
             self.debug("command is executed properly " + cmd)
             completeoutput = str(outputlist).strip('[]')
@@ -291,8 +269,7 @@ class TestNuageManagedSubnets(nuageTestCase):
                     public_ip, isolated_network, static_nat=True, vm=vm_1)
             self.create_FirewallRule(public_ip,
                                      self.test_data["ingress_rule"])
-            self.verify_ping_to_vm(vm_1, vm_2, public_ip)
-                self.verify_pingtovmhostname(ssh, "vm2")
+            self.verify_ping_to_vm(vm_1, vm_2, public_ip, "vm2")
 
             vm_3 = self.create_VM(isolated_network2)
             self.test_data["virtual_machine"]["displayname"] = "vm4"
@@ -314,7 +291,7 @@ class TestNuageManagedSubnets(nuageTestCase):
             self.create_FirewallRule(public_ip2,
                                      self.test_data["ingress_rule"])
 
-        self.verify_ping_to_vm(vm_3, vm_4, public_ip)
+            self.verify_ping_to_vm(vm_3, vm_4, public_ip2)
 
     @attr(tags=["advanced", "nuagevsp", "vpc"], required_hardware="false")
     def test_02_nuage_mngd_subnets_vpc(self):
@@ -510,10 +487,10 @@ class TestNuageManagedSubnets(nuageTestCase):
             self.validate_PublicIPAddress(public_ip_1, vpc_tier)
             self.create_StaticNatRule_For_VM(vpc_vm_1, public_ip_1, vpc_tier)
             self.validate_PublicIPAddress(
-            public_ip_1, vpc_tier, static_nat=True, vm=vpc_vm_1)
+                    public_ip_1, vpc_tier, static_nat=True, vm=vpc_vm_1)
 
-        self.verify_ping_to_vm(vpc_vm_1, vpc_vm_2, public_ip_1)
-        self.verify_ping_to_vm(vpc_vm_1, vpc_vm_12, public_ip_1)
+            self.verify_ping_to_vm(vpc_vm_1, vpc_vm_2, public_ip_1)
+            self.verify_ping_to_vm(vpc_vm_1, vpc_vm_12, public_ip_1)
 
             vpc_vm_1.delete(self.api_client, expunge=True)
             vpc_vm_2.delete(self.api_client, expunge=True)
@@ -656,8 +633,6 @@ class TestNuageManagedSubnets(nuageTestCase):
         enterprise = self.vsdk.NUEnterprise()
         enterprise.name = "EnterpriseToBeConsumedByACS"
         enterprise.description = "EnterpriseToBeConsumedByACS"
-        # enterprise.external_id = "ToBeConsumedByACS@" \
-        #                          + str(self.cms_id)
         (enterprise, connection) = self._session.user.create_child(enterprise)
         return enterprise
 
@@ -690,8 +665,6 @@ class TestNuageManagedSubnets(nuageTestCase):
         domain_template = self.vsdk.NUDomainTemplate()
         domain_template.name = "L3DomainTemplateToBeConsumedByACS"
         domain_template.description = "L3DomainTemplateToBeConsumedByACS"
-        # domain_template.external_id = "L3DomainTemplateToBeConsumedByACS@" \
-        #                               + str(self.cms_id)
         (domain_template, connection) = \
             enterprise.create_child(domain_template)
         return domain_template
