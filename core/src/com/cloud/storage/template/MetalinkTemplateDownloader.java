@@ -35,22 +35,41 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
         super(storageLayer, downloadUrl, toDir, maxTemplateSize, callback);
         String[] parts = _downloadUrl.split("/");
         String filename = parts[parts.length - 1];
+        _callback = callback;
         _toFile = toDir + File.separator + filename;
     }
 
     @Override
     public long download(boolean resume, DownloadCompleteCallback callback) {
-        if (!status.equals(Status.NOT_STARTED)) {
-            // Only start downloading if we haven't started yet.
-            LOGGER.debug("Template download is already started, not starting again. Template: " + _downloadUrl);
+        if (_status == Status.ABORTED || _status == Status.UNRECOVERABLE_ERROR || _status == Status.DOWNLOAD_FINISHED) {
             return 0;
         }
+
+        LOGGER.info("Starting metalink download from: " + _downloadUrl);
+        _start = System.currentTimeMillis();
+
         status = Status.IN_PROGRESS;
         Script.runSimpleBashScript("aria2c " + _downloadUrl + " -d " + _toDir);
+        String metalinkFile = _toFile;
+        Script.runSimpleBashScript("rm -f " + metalinkFile);
+        String templateFileName = Script.runSimpleBashScript("ls " + _toDir);
+        String downloadedFile = _toDir + File.separator + templateFileName;
+        _toFile = _toDir + File.separator + "tmpdownld_";
+        Script.runSimpleBashScript("mv " + downloadedFile + " " + _toFile);
+
+        File file = new File(_toFile);
+        if (!file.exists()) {
+            _status = Status.UNRECOVERABLE_ERROR;
+            LOGGER.error("Error downloading template from: " + _downloadUrl);
+            return 0;
+        }
+        _totalBytes = file.length();
         status = Status.DOWNLOAD_FINISHED;
-        String sizeResult = Script.runSimpleBashScript("ls -als " + _toFile + " | awk '{print $1}'");
-        long size = Long.parseLong(sizeResult);
-        return size;
+        _downloadTime = System.currentTimeMillis() - _start;
+        if (_callback != null) {
+            _callback.downloadComplete(status);
+        }
+        return _totalBytes;
     }
 
     @Override
@@ -64,4 +83,13 @@ public class MetalinkTemplateDownloader extends TemplateDownloaderBase implement
         }
     }
 
+    @Override
+    public Status getStatus() {
+        return status;
+    }
+
+    @Override
+    public void setStatus(Status status) {
+        this.status = status;
+    }
 }
