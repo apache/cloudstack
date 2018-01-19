@@ -98,12 +98,27 @@ class TestNuageManagedSubnets(nuageTestCase):
         self.cleanup = [self.account]
         return
 
+    def verify_ping_to_vm(self, src_vm, dst_vm, public_ip):
+        if self.isSimulator:
+            self.debug("Simulator Environment: not verifying pinging")
+            return
+        try:
+            src_vm.ssh_ip = public_ip.ipaddress.ipaddress
+            src_vm.ssh_port = self.test_data["virtual_machine"]["ssh_port"]
+            src_vm.username = self.test_data["virtual_machine"]["username"]
+            src_vm.password = self.test_data["virtual_machine"]["password"]
+            self.debug("SSHing into VM: %s with %s" %
+                       (src_vm.ssh_ip, src_vm.password))
+
+            ssh = self.ssh_into_VM(src_vm, public_ip)
+
+        except Exception as e:
+            self.fail("SSH into VM failed with exception %s" % e)
+
+        self.verify_pingtovmipaddress(ssh, dst_vm.ipaddress)
+
     def verify_pingtovmipaddress(self, ssh, pingtovmipaddress):
         """verify ping to ipaddress of the vm and retry 3 times"""
-
-        if self.isSimulator:
-            return
-
         successfull_ping = False
         nbr_retries = 0
         max_retries = 5
@@ -276,25 +291,7 @@ class TestNuageManagedSubnets(nuageTestCase):
                     public_ip, isolated_network, static_nat=True, vm=vm_1)
             self.create_FirewallRule(public_ip,
                                      self.test_data["ingress_rule"])
-            if not self.isSimulator:
-                vm_public_ip = public_ip.ipaddress.ipaddress
-                try:
-                    vm_1.ssh_ip = vm_public_ip
-                    vm_1.ssh_port = \
-                        self.test_data["virtual_machine"]["ssh_port"]
-                    vm_1.username = \
-                        self.test_data["virtual_machine"]["username"]
-                    vm_1.password = \
-                        self.test_data["virtual_machine"]["password"]
-                    self.debug("SSHing into VM: %s with %s" %
-                               (vm_1.ssh_ip, vm_1.password))
-
-                    ssh = vm_1.get_ssh_client(ipaddress=vm_public_ip)
-
-                except Exception as e:
-                    self.fail("SSH into VM failed with exception %s" % e)
-
-                self.verify_pingtovmipaddress(ssh, vm_2.ipaddress)
+            self.verify_ping_to_vm(vm_1, vm_2, public_ip)
                 self.verify_pingtovmhostname(ssh, "vm2")
 
             vm_3 = self.create_VM(isolated_network2)
@@ -313,38 +310,11 @@ class TestNuageManagedSubnets(nuageTestCase):
             self.create_StaticNatRule_For_VM(vm_3, public_ip2,
                                              isolated_network2)
             self.validate_PublicIPAddress(
-                    public_ip2, isolated_network2, static_nat=True, vm=vm_3)
+                public_ip2, isolated_network2, static_nat=True, vm=vm_3)
             self.create_FirewallRule(public_ip2,
                                      self.test_data["ingress_rule"])
 
-            if not self.isSimulator:
-                vm_public_ip2 = public_ip2.ipaddress.ipaddress
-                try:
-                    vm_3.ssh_ip = vm_public_ip2
-                    vm_3.ssh_port = \
-                        self.test_data["virtual_machine"]["ssh_port"]
-                    vm_3.username = \
-                        self.test_data["virtual_machine"]["username"]
-                    vm_3.password = \
-                        self.test_data["virtual_machine"]["password"]
-                    self.debug("SSHing into VM: %s with %s" %
-                               (vm_3.ssh_ip, vm_3.password))
-
-                    ssh2 = vm_3.get_ssh_client(ipaddress=vm_public_ip2)
-
-                except Exception as e:
-                    self.fail("SSH into VM failed with exception %s" % e)
-
-                self.verify_pingtovmipaddress(ssh2, vm_4.ipaddress)
-                self.verify_pingtovmhostname(ssh2, "vm4")
-
-            vm_1.delete(self.api_client, expunge=True)
-            vm_2.delete(self.api_client, expunge=True)
-            isolated_network.delete(self.api_client)
-            vm_3.delete(self.api_client, expunge=True)
-            vm_4.delete(self.api_client, expunge=True)
-            isolated_network2.delete(self.api_client)
-            self.debug("Number of loops %s" % i)
+        self.verify_ping_to_vm(vm_3, vm_4, public_ip)
 
     @attr(tags=["advanced", "nuagevsp", "vpc"], required_hardware="false")
     def test_02_nuage_mngd_subnets_vpc(self):
@@ -393,11 +363,11 @@ class TestNuageManagedSubnets(nuageTestCase):
         vpc = self.create_Vpc(self.nuage_vpc_offering, cidr='10.1.0.0/16')
         self.validate_Vpc(vpc, state="Enabled")
         acl_list = self.create_NetworkAclList(
-                name="acl", description="acl", vpc=vpc)
+            name="acl", description="acl", vpc=vpc)
         self.create_NetworkAclRule(
-                self.test_data["ingress_rule"], acl_list=acl_list)
+            self.test_data["ingress_rule"], acl_list=acl_list)
         self.create_NetworkAclRule(
-                self.test_data["icmprule"], acl_list=acl_list)
+            self.test_data["icmprule"], acl_list=acl_list)
 
         self.debug("Creating another VPC with Static NAT service provider "
                    "as VpcVirtualRouter")
@@ -540,28 +510,10 @@ class TestNuageManagedSubnets(nuageTestCase):
             self.validate_PublicIPAddress(public_ip_1, vpc_tier)
             self.create_StaticNatRule_For_VM(vpc_vm_1, public_ip_1, vpc_tier)
             self.validate_PublicIPAddress(
-                    public_ip_1, vpc_tier, static_nat=True, vm=vpc_vm_1)
+            public_ip_1, vpc_tier, static_nat=True, vm=vpc_vm_1)
 
-            if not self.isSimulator:
-                vm_public_ip_1 = public_ip_1.ipaddress.ipaddress
-                try:
-                    vpc_vm_1.ssh_ip = vm_public_ip_1
-                    vpc_vm_1.ssh_port = \
-                        self.test_data["virtual_machine"]["ssh_port"]
-                    vpc_vm_1.username = \
-                        self.test_data["virtual_machine"]["username"]
-                    vpc_vm_1.password = \
-                        self.test_data["virtual_machine"]["password"]
-                    self.debug("SSHing into VM: %s with %s" %
-                               (vpc_vm_1.ssh_ip, vpc_vm_1.password))
-
-                    ssh = vpc_vm_1.get_ssh_client(ipaddress=vm_public_ip_1)
-
-                except Exception as e:
-                    self.fail("SSH into VM failed with exception %s" % e)
-
-                self.verify_pingtovmipaddress(ssh, vpc_vm_2.ipaddress)
-                self.verify_pingtovmipaddress(ssh, vpc_vm_12.ipaddress)
+        self.verify_ping_to_vm(vpc_vm_1, vpc_vm_2, public_ip_1)
+        self.verify_ping_to_vm(vpc_vm_1, vpc_vm_12, public_ip_1)
 
             vpc_vm_1.delete(self.api_client, expunge=True)
             vpc_vm_2.delete(self.api_client, expunge=True)

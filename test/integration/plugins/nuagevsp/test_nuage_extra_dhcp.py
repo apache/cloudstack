@@ -435,6 +435,10 @@ class TestNuageExtraDhcp(nuageTestCase):
 
     def verify_dhcp_on_vm(
             self, dhcpleasefile, dhcp_option_map, ssh_client, cleanlease=True):
+        if self.isSimulator:
+            self.debug("Simulator Environment: Skipping VM DHCP option verification")
+            return
+
         cmd = 'cat /var/lib/dhclient/'+dhcpleasefile
         self.debug("get content of dhcp lease file " + cmd)
         outputlist = ssh_client.execute(cmd)

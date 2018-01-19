@@ -33,6 +33,7 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.ModifyStoragePoolCommand;
 import com.cloud.agent.api.SecStorageSetupCommand;
@@ -107,4 +108,5 @@ public interface MockStorageManager extends Manager {
 
     public UploadStatusAnswer getUploadStatus(UploadStatusCommand cmd);
 
+    Answer handleConfigDriveIso(HandleConfigDriveIsoCommand cmd);
 }

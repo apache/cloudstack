@@ -669,6 +669,10 @@ class nuageTestCase(cloudstackTestCase):
 
     # ssh_into_VM - Gets into the shell of the given VM using its public IP
     def ssh_into_VM(self, vm, public_ip, reconnect=True, negative_test=False):
+        if self.isSimulator:
+            self.debug("Simulator Environment: Skipping ssh into VM")
+            return
+
         self.debug("SSH into VM with ID - %s on public IP address - %s" %
                    (vm.id, public_ip.ipaddress.ipaddress))
         tries = 1 if negative_test else 3
@@ -1280,6 +1284,7 @@ class nuageTestCase(cloudstackTestCase):
             public_ipaddress.vlanid)
         vsd_fip_subnet = self.vsd.get_shared_network_resource(
             filter=ext_fip_subnet_filter)
+
         if self.isNuageInfraUnderlay:
             self.assertEqual(vsd_fip_subnet.underlay, True,
                              "Floating IP subnet in VSD should be underlay "
@@ -1290,6 +1295,7 @@ class nuageTestCase(cloudstackTestCase):
                              "Floating IP subnet in VSD should be underlay "
                              "disabled"
                              )
+
         ext_network_filter = self.get_externalID_filter(vpc.id) if vpc \
             else self.get_externalID_filter(network.id)
         vsd_domain = self.vsd.get_domain(filter=ext_network_filter)

@@ -308,6 +308,7 @@ class TestNuageConfigDrive(nuageTestCase):
         def run(self):
             self.expected_user_data = "hello world vm %s" % self.vm.name
             user_data = base64.b64encode(self.expected_user_data)
+            self.end = None
             self.start = datetime.now()
             self.vm.update(self.nuagetestcase.api_client, userdata=user_data)
             self.end = datetime.now()
@@ -321,6 +322,8 @@ class TestNuageConfigDrive(nuageTestCase):
             return self.vm
 
         def get_timestamps(self):
+            if not self.end:
+                self.end = datetime.now()
             return [self.start, self.end]
 
         def get_userdata(self):
@@ -356,6 +359,8 @@ class TestNuageConfigDrive(nuageTestCase):
             return self.vm
 
         def get_timestamps(self):
+            if not self.end:
+                self.end = datetime.now()
             return [self.start, self.end]
 
         def get_password(self):
@@ -480,7 +485,7 @@ class TestNuageConfigDrive(nuageTestCase):
                          'Userdata found: %s is not equal to expected: %s'
                          % (vmuserdata, userdata))
 
-    def verifyPassword(self, vm, ssh, iso_path, password):
+    def verifyPassword(self, ssh, iso_path, password):
         self.debug("Expected VM password is %s " % password.password)
         password_file = iso_path+"/cloudstack/password/vm_password.txt"
         cmd = "cat %s" % password_file
@@ -520,11 +525,7 @@ class TestNuageConfigDrive(nuageTestCase):
             res = ssh.execute(cmd)
             metadata[file] = res
 
-        metadata_files = ["availability-zone.txt",
-                          "instance-id.txt",
-                          "service-offering.txt",
-                          "vm-id.txt"]
-        for mfile in metadata_files:
+        for mfile in vm_files:
             if mfile not in metadata:
                 self.fail("{} file is not found in vm metadata".format(mfile))
         self.assertEqual(
@@ -546,7 +547,7 @@ class TestNuageConfigDrive(nuageTestCase):
         )
         return
 
-    def verifyOpenStackData(self, vm, ssh, iso_path):
+    def verifyOpenStackData(self, ssh, iso_path):
 
         openstackdata_dir = iso_path+"/openstack/latest/"
         openstackdata = {}
@@ -658,6 +659,10 @@ class TestNuageConfigDrive(nuageTestCase):
                                     metadata=False,
                                     sshkey=None,
                                     ssh_client=None):
+        if self.isSimulator:
+            self.debug("Simulator Environment: Skipping Config Drive content verification")
+            return
+
         self.debug("SSHing into the VM %s" % vm.name)
         if ssh_client is None:
             ssh = self.ssh_into_VM(vm, public_ip)
@@ -672,7 +677,7 @@ class TestNuageConfigDrive(nuageTestCase):
             self.debug("Verifying metadata for vm: %s" % vm.name)
             self.verifyMetaData(vm, ssh, config_drive_path)
             self.debug("Verifying openstackdata for vm: %s" % vm.name)
-            self.verifyOpenStackData(vm, ssh, config_drive_path)
+            self.verifyOpenStackData(ssh, config_drive_path)
 
         if userdata is not None:
             self.debug("Verifying userdata for vm: %s" % vm.name)
@@ -680,7 +685,7 @@ class TestNuageConfigDrive(nuageTestCase):
             self.verifyOpenStackUserData(ssh, config_drive_path, userdata)
         if password_test.test_presence:
             self.debug("Verifying password for vm: %s" % vm.name)
-            test_result = self.verifyPassword(vm, ssh, config_drive_path,
+            test_result = self.verifyPassword(ssh, config_drive_path,
                                               password_test)
             self.assertEqual(test_result[0], password_test.presence,
                              "Expected is that password is present: %s "
@@ -769,7 +774,7 @@ class TestNuageConfigDrive(nuageTestCase):
         cmd.keypair = keypair
         cmd.account = account
         cmd.domainid = domainid
-        return(self.api_client.resetSSHKeyForVirtualMachine(cmd))
+        return self.api_client.resetSSHKeyForVirtualMachine(cmd)
 
     def update_sshkeypair(self, vm):
         vm.stop(self.api_client)

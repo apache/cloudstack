@@ -64,6 +64,7 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateCommand;
@@ -431,8 +432,14 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
                 } else if (cmd instanceof FenceCommand) {
                     answer = _mockVmMgr.fence((FenceCommand)cmd);
-                } else if (cmd instanceof GetRouterAlertsCommand || cmd instanceof VpnUsersCfgCommand || cmd instanceof RemoteAccessVpnCfgCommand || cmd instanceof SetMonitorServiceCommand || cmd instanceof AggregationControlCommand ||
-                        cmd instanceof SecStorageFirewallCfgCommand) {
+                } else if (cmd instanceof HandleConfigDriveIsoCommand) {
+                    answer = _mockStorageMgr.handleConfigDriveIso((HandleConfigDriveIsoCommand)cmd);
+                } else if (cmd instanceof GetRouterAlertsCommand
+                        || cmd instanceof VpnUsersCfgCommand
+                        || cmd instanceof RemoteAccessVpnCfgCommand
+                        || cmd instanceof SetMonitorServiceCommand
+                        || cmd instanceof AggregationControlCommand
+                        || cmd instanceof SecStorageFirewallCfgCommand) {
                     answer = new Answer(cmd);
                 } else {
                     s_logger.error("Simulator does not implement command of type " + cmd.toString());

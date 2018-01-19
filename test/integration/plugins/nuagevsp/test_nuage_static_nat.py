@@ -112,6 +112,10 @@ class TestNuageStaticNat(nuageTestCase):
     # server running on the corresponding VM in the given network
     def verify_StaticNAT_traffic(self, network, public_ip, vpc=None,
                                  non_default_nic=False):
+        if self.isSimulator:
+            self.debug("Simulator Environment: skipping static nat"
+                       "traffic tests.")
+            return
         # Adding Ingress Firewall/Network ACL rule
         self.debug("Adding Ingress Firewall/Network ACL rule to make the "
                    "created Static NAT rule (wget) accessible...")
@@ -186,6 +190,11 @@ class TestNuageStaticNat(nuageTestCase):
     def verify_StaticNAT_Internet_traffic(self, vm, network, public_ip,
                                           vpc=None, non_default_nic=False,
                                           negative_test=False):
+        if self.isSimulator and not negative_test:
+            self.debug("Simulator Environment: not verifying internet traffic")
+            return
+        elif self.isSimulator:
+            raise Exception("Simulator simulating exception")
         # Adding Ingress Firewall/Network ACL rule
         self.debug("Adding Ingress Firewall/Network ACL rule to make the "
                    "created Static NAT rule (SSH) accessible...")
@@ -1677,15 +1686,17 @@ class TestNuageStaticNat(nuageTestCase):
         self.verify_vsd_floating_ip(network_2, vm, public_ip_2.ipaddress)
 
         # Verifying Static NAT traffic
-        with self.assertRaises(AssertionError):
-            self.verify_StaticNAT_traffic(network_1, public_ip_1)
+        if not self.isSimulator:
+            with self.assertRaises(AssertionError):
+                self.verify_StaticNAT_traffic(network_1, public_ip_1)
         self.debug("Static NAT rule not enabled in this VM NIC")
         self.verify_StaticNAT_traffic(network_2, public_ip_2)
 
         # Verifying Static NAT traffic (wget www.google.com) to the Internet
         # from the deployed VM
-        with self.assertRaises(Exception):
-            self.verify_StaticNAT_Internet_traffic(vm, network_1, public_ip_1)
+        if not self.isSimulator:
+            with self.assertRaises(Exception):
+                self.verify_StaticNAT_Internet_traffic(vm, network_1, public_ip_1)
         self.debug("Static NAT rule not enabled in this VM NIC")
         self.verify_StaticNAT_Internet_traffic(vm, network_2, public_ip_2)
 

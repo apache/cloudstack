@@ -52,6 +52,7 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.ModifyStoragePoolAnswer;
@@ -1227,5 +1228,50 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
     @Override
     public UploadStatusAnswer getUploadStatus(UploadStatusCommand cmd) {
         return new UploadStatusAnswer(cmd, UploadStatus.COMPLETED);
+    }
+
+    @Override public Answer handleConfigDriveIso(HandleConfigDriveIsoCommand cmd) {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        MockSecStorageVO sec;
+        try {
+            txn.start();
+            sec = _mockSecStorageDao.findByUrl(cmd.getDestStore().getUrl());
+            if (sec == null) {
+                return new Answer(cmd, false, "can't find secondary storage");
+            }
+
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("Error when creating config drive.");
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+        }
+
+        MockVolumeVO template = new MockVolumeVO();
+        String uuid = UUID.randomUUID().toString();
+        template.setName(uuid);
+        template.setPath(sec.getMountPoint() + cmd.getIsoFile());
+        template.setPoolId(sec.getId());
+        template.setSize((long)(Math.random() * 200L) + 200L);
+        template.setStatus(Status.DOWNLOADED);
+        template.setType(MockVolumeType.ISO);
+        txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+        try {
+            txn.start();
+            template = _mockVolumeDao.persist(template);
+            txn.commit();
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("Encountered " + ex.getMessage() + " when persisting config drive " + template.getName(), ex);
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+        }
+
+        return new Answer(cmd);
     }
 }

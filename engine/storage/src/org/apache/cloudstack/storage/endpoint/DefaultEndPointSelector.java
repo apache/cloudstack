@@ -128,14 +128,14 @@ public class DefaultEndPointSelector implements EndPointSelector {
         String sql = sbuilder.toString();
         HostVO host = null;
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
+        try (PreparedStatement pstmt = txn.prepareStatement(sql)) {
             pstmt.setLong(1, poolId);
             try(ResultSet rs = pstmt.executeQuery();) {
                 while (rs.next()) {
                     long id = rs.getLong(1);
                     host = hostDao.findById(id);
                 }
-            }catch (SQLException e) {
+            } catch (SQLException e) {
                 s_logger.warn("can't find endpoint", e);
             }
         } catch (SQLException e) {
