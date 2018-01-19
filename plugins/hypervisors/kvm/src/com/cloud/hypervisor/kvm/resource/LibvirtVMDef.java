@@ -1544,7 +1544,7 @@ public class LibvirtVMDef {
         public String toString() {
             StringBuilder fsBuilder = new StringBuilder();
             for (Map.Entry<String, String> address : addresses.entrySet()) {
-                fsBuilder.append("<nuage-extension>\n")
+                fsBuilder.append("<nuage-extension xmlns='nuagenetworks.net/nuage/cna'>\n")
                         .append("  <interface mac='")
                         .append(address.getKey())
                         .append("' vsp-vr-ip='")
