@@ -34,8 +34,8 @@
 							<goal>generate</goal>
 						</goals>
 						<configuration>
-							<generateDirectory>${project.basedir}/target/generated-sources/xjc1</generateDirectory>
-							<schemaDirectory>${project.basedir}/resources</schemaDirectory>
+							<generateDirectory>${project.build.directory}/generated-sources/xjc1</generateDirectory>
+							<schemaDirectory>${project.build.resources[0].directory}</schemaDirectory>
 							<schemaIncludes>
 								<include>BrocadeInterfaceSchema.xsd</include>
 							</schemaIncludes>
@@ -48,8 +48,8 @@
 							<goal>generate</goal>
 						</goals>
 						<configuration>
-							<generateDirectory>${project.basedir}/target/generated-sources/xjc2</generateDirectory>
-							<schemaDirectory>${project.basedir}/resources</schemaDirectory>
+							<generateDirectory>${project.build.directory}/generated-sources/xjc2</generateDirectory>
+							<schemaDirectory>${project.build.resources[0].directory}</schemaDirectory>
 							<schemaIncludes>
 								<include>BrocadePortProfileSchema.xsd</include>
 							</schemaIncludes>
@@ -62,8 +62,8 @@
 							<goal>generate</goal>
 						</goals>
 						<configuration>
-							<generateDirectory>${project.basedir}/target/generated-sources/xjc3</generateDirectory>
-							<schemaDirectory>${project.basedir}/resources</schemaDirectory>
+							<generateDirectory>${project.build.directory}/generated-sources/xjc3</generateDirectory>
+							<schemaDirectory>${project.build.resources[0].directory}</schemaDirectory>
 							<schemaIncludes>
 								<include>BrocadeShowVcsSchema.xsd</include>
 							</schemaIncludes>

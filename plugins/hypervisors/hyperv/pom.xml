@@ -50,17 +50,6 @@
     </dependency>
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
-    <resources>
-      <resource>
-        <directory>resources</directory>
-      </resource>
-      <resource>
-        <directory>conf</directory>
-      </resource>
-    </resources>
     <plugins>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>

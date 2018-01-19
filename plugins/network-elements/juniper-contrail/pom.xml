@@ -130,14 +130,6 @@
     </dependency>
   </dependencies>
   <build>
-    <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>
-    <testSourceDirectory>test</testSourceDirectory>
-    <testResources>
-      <testResource>
-        <directory>test/resources</directory>
-      </testResource>
-    </testResources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -145,10 +137,10 @@
         <configuration>
           <forkMode>always</forkMode>
           <argLine>-Xmx1024m</argLine>
-	  <excludes>
-	    <exclude>**/NetworkProviderTest.java</exclude>
-	    <exclude>**/PublicNetworkTest.java</exclude>
-	    </excludes>
+          <excludes>
+            <exclude>**/NetworkProviderTest.java</exclude>
+            <exclude>**/PublicNetworkTest.java</exclude>
+          </excludes>
         </configuration>
       </plugin>
     </plugins>

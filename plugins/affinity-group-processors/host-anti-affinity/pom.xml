@@ -28,6 +28,5 @@
   </parent>
   <build>
     <defaultGoal>install</defaultGoal>
-    <sourceDirectory>src</sourceDirectory>    
   </build>  
 </project>
