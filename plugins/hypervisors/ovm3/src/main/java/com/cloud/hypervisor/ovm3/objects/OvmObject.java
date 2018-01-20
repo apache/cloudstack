@@ -172,7 +172,7 @@ public class OvmObject {
                     if (nodeListFor2.getLength() > 1) {
                         /* Do we need to figure out all the sub elements here and put them in a map? */
                     } else {
-                        String element = nodeListFor.item(index).getTextContent();
+                        String element = nodeListFor.item(index).getNodeValue();
                         myMap.put(rnode, (E) element);
                     }
                 }
@@ -193,8 +193,8 @@ public class OvmObject {
             NodeList nodeList = (NodeList) xPathExpression.evaluate(xmlDocument,
                     XPathConstants.NODESET);
             for (int ind = 0; ind < nodeList.getLength(); ind++) {
-                if (!nodeList.item(ind).getTextContent().isEmpty()) {
-                    list.add("" + nodeList.item(ind).getTextContent());
+                if (!nodeList.item(ind).getNodeValue().isEmpty()) {
+                    list.add("" + nodeList.item(ind).getNodeValue());
                 } else {
                     list.add("" + nodeList.item(ind).getNodeValue());
                 }
@@ -213,7 +213,7 @@ public class OvmObject {
             XPathExpression xPathExpression = xPath.compile(path);
             NodeList nodeList = (NodeList) xPathExpression.evaluate(xmlDocument,
                     XPathConstants.NODESET);
-            return nodeList.item(0).getTextContent();
+            return nodeList.item(0).getNodeValue();
         } catch (NullPointerException e) {
             LOGGER.info("Got no items back from parsing, returning null: " + e);
             return null;
