@@ -263,7 +263,6 @@ public class VolumeTest extends CloudStackTestNGBase {
 
     public DataStore createPrimaryDataStore() {
         try {
-            String uuid = UUID.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString();
             List<StoragePoolVO> pools = primaryDataStoreDao.findPoolByName(this.primaryName);
             if (pools.size() > 0) {
                 return this.dataStoreMgr.getPrimaryDataStore(pools.get(0).getId());
