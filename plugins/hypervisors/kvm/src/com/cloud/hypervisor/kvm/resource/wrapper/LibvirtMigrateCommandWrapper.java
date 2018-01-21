@@ -132,8 +132,11 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             vmsnapshots = libvirtComputingResource.cleanVMSnapshotMetadata(dm);
 
             Map<String, MigrateCommand.MigrateDiskInfo> mapMigrateStorage = command.getMigrateStorage();
+            // migrateStorage is declared as final because the replaceStorage method may mutate mapMigrateStorage, but
+            // migrateStorage's value should always only be associated with the initial state of mapMigrateStorage.
+            final boolean migrateStorage = MapUtils.isNotEmpty(mapMigrateStorage);
 
-            if (MapUtils.isNotEmpty(mapMigrateStorage)) {
+            if (migrateStorage) {
                 xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage);
             }
 
@@ -142,7 +145,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             //run migration in thread so we can monitor it
             s_logger.info("Live migration of instance " + vmName + " initiated");
             final ExecutorService executor = Executors.newFixedThreadPool(1);
-            final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc, MapUtils.isNotEmpty(mapMigrateStorage),
+            final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc, migrateStorage,
                     command.isAutoConvergence(), vmName, command.getDestinationIp());
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
