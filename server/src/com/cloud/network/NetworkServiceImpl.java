@@ -1861,15 +1861,6 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                     + Network.State.Setup);
         }
 
-        if (network.getBroadcastDomainType() == BroadcastDomainType.Lswitch) {
-            /**
-             * Unable to restart these networks now.
-             * TODO Restarting a SDN based network requires updating the nics and the configuration
-             * in the controller. This requires a non-trivial rewrite of the restart procedure.
-             */
-            throw new InvalidParameterException("Unable to restart a running SDN network.");
-        }
-
         _accountMgr.checkAccess(callerAccount, null, true, network);
 
         boolean success = _networkMgr.restartNetwork(networkId, callerAccount, callerUser, cleanup);
