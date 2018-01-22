@@ -556,14 +556,6 @@ class CsIP:
             if self.config.is_vpc() or self.config.is_router():
                 CsDevice(self.dev, self.config).configure_rp()
 
-                # If redundant then this is dealt with
-                # by the master backup functions
-                if not cmdline.is_redundant():
-                    if method == "add":
-                        CsPasswdSvc(self.address['public_ip']).start()
-                    elif method == "delete":
-                        CsPasswdSvc(self.address['public_ip']).stop()
-
                 logging.error(
                     "Not able to setup source-nat for a regular router yet")
 
@@ -574,6 +566,14 @@ class CsIP:
             if self.config.has_metadata():
                 app = CsApache(self)
                 app.setup()
+
+                # If redundant then this is dealt with
+                # by the master backup functions
+                if not cmdline.is_redundant():
+                    if method == "add":
+                        CsPasswdSvc(self.address['public_ip']).start()
+                    elif method == "delete":
+                        CsPasswdSvc(self.address['public_ip']).stop()
 
         if self.get_type() == "public" and self.config.is_vpc() and method == "add":
             if self.address["source_nat"]:
