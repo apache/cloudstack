@@ -21,6 +21,9 @@ package com.cloud.agent.direct.download;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
@@ -33,6 +36,9 @@ import javax.net.ssl.SSLContext;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.FileOutputStream;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -79,11 +85,32 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
 
     @Override
     public boolean downloadTemplate() {
+        CloseableHttpResponse response;
         try {
-            httpsClient.execute(req);
+            response = httpsClient.execute(req);
         } catch (IOException e) {
             throw new CloudRuntimeException("Error on HTTPS request: " + e.getMessage());
         }
-        return performDownload();
+        return consumeResponse(response);
     }
+
+    /**
+     * Consume response and persist it on getDownloadedFilePath() file
+     */
+    protected boolean consumeResponse(CloseableHttpResponse response) {
+        if (response.getStatusLine().getStatusCode() != 200) {
+            throw new CloudRuntimeException("Error on HTTPS response");
+        }
+        try {
+            HttpEntity entity = response.getEntity();
+            InputStream in = entity.getContent();
+            OutputStream out = new FileOutputStream(getDownloadedFilePath());
+            IOUtils.copy(in, out);
+        } catch (Exception e) {
+            s_logger.error("Error parsing response for template " + getTemplateId() + " due to: " + e.getMessage());
+            return false;
+        }
+        return true;
+    }
+
 }
