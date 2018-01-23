@@ -55,6 +55,14 @@ def migrateApiRolePermissions(apis, conn):
             if (octetKey[role] & int(apis[api])) > 0:
                 runSql(conn, "INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), %d, '%s', 'ALLOW', %d);" % (role, api, sortOrder))
                 sortOrder += 1
+    print("Static role permissions from commands.properties have been migrated into the db")
+
+
+def enableDynamicApiChecker(conn):
+    runSql(conn, "UPDATE `cloud`.`configuration` SET value='true' where name='dynamic.apichecker.enabled'")
+    conn.commit()
+    conn.close()
+    print("Dynamic role based API checker has been enabled!")
 
 
 def main():
@@ -71,6 +79,8 @@ def main():
                         help="Host or IP of the MySQL server")
     parser.add_option("-f", "--properties-file", action="store", type="string", dest="commandsfile", default="/etc/cloudstack/management/commands.properties",
                         help="The commands.properties file")
+    parser.add_option("-D", "--default", action="store_true", dest="defaultRules", default=False,
+                        help="")
     parser.add_option("-d", "--dryrun", action="store_true", dest="dryrun", default=False,
                         help="Dry run and debug operations this tool will perform")
     (options, args) = parser.parse_args()
@@ -89,8 +99,14 @@ def main():
             port=int(options.port),
             db=options.db)
 
+    if options.defaultRules:
+        print("Applying the default role permissions, ignoring any provided properties files(s).")
+        enableDynamicApiChecker(conn)
+        sys.exit(0)
+
     if not os.path.isfile(options.commandsfile):
-        print("Provided commands.properties cannot be accessed or does not exist, please check check permissions")
+        print("Provided commands.properties cannot be accessed or does not exist.")
+        print("Please check passed options, or run only with --default option to use the default role permissions.")
         sys.exit(1)
 
     while True:
@@ -122,15 +138,8 @@ def main():
 
     # Migrate rules from commands.properties to cloud.role_permissions
     migrateApiRolePermissions(apiMap, conn)
-    print("Static role permissions from commands.properties have been migrated into the db")
 
-    # Enable dynamic role based API checker
-    runSql(conn, "UPDATE `cloud`.`configuration` SET value='true' where name='dynamic.apichecker.enabled'")
-    conn.commit()
-    conn.close()
-
-    print("Dynamic role based API checker has been enabled!")
-
+    enableDynamicApiChecker(conn)
 
 if __name__ == '__main__':
     main()
