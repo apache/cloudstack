@@ -951,16 +951,15 @@ def parse_network_rules(rules):
   if rules is None or len(rules) == 0:
     return ret
 
-  lines = rules.split(';')[:-1]
+  lines = rules.split('NEXT;')[:-1]
   for line in lines:
-    tokens = line.split(':', 4)
-    if len(tokens) != 5:
+    tokens = line.split(';', 3)
+    if len(tokens) != 4:
       continue
 
-    ruletype = tokens[0]
-    protocol = tokens[1]
-    start = int(tokens[2])
-    end = int(tokens[3])
+    ruletype, protocol = tokens[0].split(':')
+    start = int(tokens[1])
+    end = int(tokens[2])
     cidrs = tokens.pop();
 
     ipv4 = []
