@@ -22,14 +22,12 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import junit.framework.Assert;
-
+import org.apache.cloudstack.storage.test.CloudStackTestNGBase;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import org.apache.cloudstack.storage.test.CloudStackTestNGBase;
 
 import com.cloud.vm.snapshot.VMSnapshotDetailsVO;
 
@@ -41,7 +39,7 @@ public class VmSnapshotDaoTest extends CloudStackTestNGBase {
 
     @Test
     public void testVmSnapshotDetails() {
-        VMSnapshotDetailsVO detailsVO = new VMSnapshotDetailsVO(1L, "test", "foo", display);
+        VMSnapshotDetailsVO detailsVO = new VMSnapshotDetailsVO(1L, "test", "foo", true);
         vmsnapshotDetailsDao.persist(detailsVO);
         Map<String, String> details = vmsnapshotDetailsDao.listDetailsKeyPairs(1L);
         Assert.assertTrue(details.containsKey("test"));

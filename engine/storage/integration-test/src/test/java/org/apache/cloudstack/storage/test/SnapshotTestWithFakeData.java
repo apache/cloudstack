@@ -36,16 +36,6 @@ import java.util.concurrent.Future;
 
 import javax.inject.Inject;
 
-import junit.framework.Assert;
-
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Matchers;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
@@ -65,6 +55,13 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.volume.VolumeObject;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Matchers;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenter;
@@ -81,6 +78,7 @@ import com.cloud.storage.CreateSnapshotPayload;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.Snapshot.LocationType;
 import com.cloud.storage.SnapshotPolicyVO;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.Storage;
@@ -96,6 +94,8 @@ import com.cloud.user.User;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.Merovingian2;
+
+import junit.framework.Assert;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:/fakeDriverTestContext.xml"})
@@ -148,8 +148,8 @@ public class SnapshotTestWithFakeData {
         // create data center
 
         DataCenterVO dc =
-            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, DataCenter.NetworkType.Basic, null,
-                null, true, true, null, null);
+                new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, DataCenter.NetworkType.Basic, null,
+                        null, true, true, null, null);
         dc = dcDao.persist(dc);
         dcId = dc.getId();
         // create pod
@@ -206,21 +206,21 @@ public class SnapshotTestWithFakeData {
     private SnapshotVO createSnapshotInDb() {
         Snapshot.Type snapshotType = Snapshot.Type.RECURRING;
         SnapshotVO snapshotVO =
-            new SnapshotVO(dcId, 2, 1, 1L, 1L, UUID.randomUUID().toString(), (short)snapshotType.ordinal(), snapshotType.name(), 100, Hypervisor.HypervisorType.XenServer);
+                new SnapshotVO(dcId, 2, 1, 1L, 1L, UUID.randomUUID().toString(), (short)snapshotType.ordinal(), snapshotType.name(), 100, 1L, 100L, Hypervisor.HypervisorType.XenServer,
+                        LocationType.PRIMARY);
         return snapshotDao.persist(snapshotVO);
     }
 
     private SnapshotVO createSnapshotInDb(Long volumeId) {
         Snapshot.Type snapshotType = Snapshot.Type.DAILY;
         SnapshotVO snapshotVO =
-            new SnapshotVO(dcId, 2, 1, volumeId, 1L, UUID.randomUUID().toString(), (short)snapshotType.ordinal(), snapshotType.name(), 100,
-                Hypervisor.HypervisorType.XenServer);
+                new SnapshotVO(dcId, 2, 1, 1L, 1L, UUID.randomUUID().toString(), (short)snapshotType.ordinal(), snapshotType.name(), 100, 1L, 100L, Hypervisor.HypervisorType.XenServer,
+                        LocationType.PRIMARY);
         return snapshotDao.persist(snapshotVO);
     }
 
     private VolumeInfo createVolume(Long templateId, DataStore store) {
-        VolumeVO volume = new VolumeVO(Volume.Type.DATADISK, UUID.randomUUID().toString(), dcId, 1L, 1L, 1L, 1000, 0L, 0L, "");
-        ;
+        VolumeVO volume = new VolumeVO(Volume.Type.DATADISK, UUID.randomUUID().toString(), dcId, 1L, 1L, 1L, Storage.ProvisioningType.THIN, 1000, 0L, 0L, "");
         volume.setPoolId(store.getId());
 
         volume = volumeDao.persist(volume);
@@ -261,7 +261,7 @@ public class SnapshotTestWithFakeData {
             SnapshotDataStoreVO storeRef = snapshotDataStoreDao.findByStoreSnapshot(store.getRole(), store.getId(), snapshotVO.getId());
             Assert.assertTrue(storeRef != null);
             Assert.assertTrue(storeRef.getState() == ObjectInDataStoreStateMachine.State.Ready);
-            snapshotInfo = result.getSnashot();
+            snapshotInfo = result.getSnapshot();
             boolean deletResult = snapshotService.deleteSnapshot(snapshotInfo);
             Assert.assertTrue(deletResult);
             snapshotDataStoreDao.expunge(storeRef.getId());
@@ -305,55 +305,55 @@ public class SnapshotTestWithFakeData {
     }
 
     protected SnapshotPolicyVO createSnapshotPolicy(Long volId) {
-        SnapshotPolicyVO policyVO = new SnapshotPolicyVO(volId, "jfkd", "fdfd", DateUtil.IntervalType.DAILY, 8);
-        policyVO = snapshotPolicyDao.persist(policyVO);
-        return policyVO;
-    }
-
-    @Test
-    public void testConcurrentSnapshot() throws URISyntaxException, InterruptedException, ExecutionException {
-        DataStore store = createDataStore();
-        final FakePrimaryDataStoreDriver dataStoreDriver = (FakePrimaryDataStoreDriver)store.getDriver();
-        dataStoreDriver.makeTakeSnapshotSucceed(true);
-        final VolumeInfo volumeInfo = createVolume(1L, store);
-        Assert.assertTrue(volumeInfo.getState() == Volume.State.Ready);
-        vol = volumeInfo;
-        // final SnapshotPolicyVO policyVO = createSnapshotPolicy(vol.getId());
-
-        ExecutorService pool = Executors.newFixedThreadPool(2);
-        boolean result = false;
-        List<Future<Boolean>> future = new ArrayList<Future<Boolean>>();
-        for (int i = 0; i < 12; i++) {
-            final int cnt = i;
-            Future<Boolean> task = pool.submit(new Callable<Boolean>() {
-                @Override
-                public Boolean call() throws Exception {
-                    boolean r = true;
-                    try {
-                        SnapshotVO snapshotVO = createSnapshotInDb(vol.getId());
-                        VolumeObject volumeObject = (VolumeObject)vol;
-                        Account account = mock(Account.class);
-                        when(account.getId()).thenReturn(1L);
-                        CreateSnapshotPayload createSnapshotPayload = mock(CreateSnapshotPayload.class);
-                        when(createSnapshotPayload.getAccount()).thenReturn(account);
-                        when(createSnapshotPayload.getSnapshotId()).thenReturn(snapshotVO.getId());
-                        when(createSnapshotPayload.getSnapshotPolicyId()).thenReturn(0L);
-                        volumeObject.addPayload(createSnapshotPayload);
-                        if (cnt > 8) {
-                            mockStorageMotionStrategy.makeBackupSnapshotSucceed(false);
-                        }
-                        SnapshotInfo newSnapshot = volumeService.takeSnapshot(vol);
-                        if (newSnapshot == null) {
-                            r = false;
-                        }
-                    } catch (Exception e) {
-                        r = false;
-                    }
-                    return r;
-                }
-            });
-            Assert.assertTrue(task.get());
+        SnapshotPolicyVO policyVO = new SnapshotPolicyVO(volId, "jfkd", "fdfd", DateUtil.IntervalType.DAILY, 8, true);
+            policyVO = snapshotPolicyDao.persist(policyVO);
+            return policyVO;
         }
 
+        @Test
+        public void testConcurrentSnapshot() throws URISyntaxException, InterruptedException, ExecutionException {
+            DataStore store = createDataStore();
+            final FakePrimaryDataStoreDriver dataStoreDriver = (FakePrimaryDataStoreDriver)store.getDriver();
+            dataStoreDriver.makeTakeSnapshotSucceed(true);
+            final VolumeInfo volumeInfo = createVolume(1L, store);
+            Assert.assertTrue(volumeInfo.getState() == Volume.State.Ready);
+            vol = volumeInfo;
+            // final SnapshotPolicyVO policyVO = createSnapshotPolicy(vol.getId());
+
+            ExecutorService pool = Executors.newFixedThreadPool(2);
+            boolean result = false;
+            List<Future<Boolean>> future = new ArrayList<Future<Boolean>>();
+            for (int i = 0; i < 12; i++) {
+                final int cnt = i;
+                Future<Boolean> task = pool.submit(new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        boolean r = true;
+                        try {
+                            SnapshotVO snapshotVO = createSnapshotInDb(vol.getId());
+                            VolumeObject volumeObject = (VolumeObject)vol;
+                            Account account = mock(Account.class);
+                            when(account.getId()).thenReturn(1L);
+                            CreateSnapshotPayload createSnapshotPayload = mock(CreateSnapshotPayload.class);
+                            when(createSnapshotPayload.getAccount()).thenReturn(account);
+                            when(createSnapshotPayload.getSnapshotId()).thenReturn(snapshotVO.getId());
+                            when(createSnapshotPayload.getSnapshotPolicyId()).thenReturn(0L);
+                            volumeObject.addPayload(createSnapshotPayload);
+                            if (cnt > 8) {
+                                mockStorageMotionStrategy.makeBackupSnapshotSucceed(false);
+                            }
+                            SnapshotInfo newSnapshot = volumeService.takeSnapshot(vol);
+                            if (newSnapshot == null) {
+                                r = false;
+                            }
+                        } catch (Exception e) {
+                            r = false;
+                        }
+                        return r;
+                    }
+                });
+                Assert.assertTrue(task.get());
+            }
+
+        }
     }
-}

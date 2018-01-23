@@ -26,14 +26,6 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
-import junit.framework.Assert;
-
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.springframework.test.context.ContextConfiguration;
-import org.testng.AssertJUnit;
-import org.testng.annotations.Test;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -58,6 +50,11 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.springframework.test.context.ContextConfiguration;
+import org.testng.AssertJUnit;
+import org.testng.annotations.Test;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
@@ -82,6 +79,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.ProvisioningType;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.Storage.TemplateType;
 import com.cloud.storage.StoragePoolStatus;
@@ -91,6 +89,8 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.ComponentContext;
+
+import junit.framework.Assert;
 
 @ContextConfiguration(locations = {"classpath:/storageContext.xml"})
 public class VolumeTest extends CloudStackTestNGBase {
@@ -158,8 +158,8 @@ public class VolumeTest extends CloudStackTestNGBase {
         } else {
             // create data center
             DataCenterVO dc =
-                new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
-                    true, null, null);
+                    new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
+                            true, null, null);
             dc = dcDao.persist(dc);
             dcId = dc.getId();
             // create pod
@@ -263,7 +263,6 @@ public class VolumeTest extends CloudStackTestNGBase {
 
     public DataStore createPrimaryDataStore() {
         try {
-            String uuid = UUID.nameUUIDFromBytes(this.getPrimaryStorageUrl().getBytes()).toString();
             List<StoragePoolVO> pools = primaryDataStoreDao.findPoolByName(this.primaryName);
             if (pools.size() > 0) {
                 return this.dataStoreMgr.getPrimaryDataStore(pools.get(0).getId());
@@ -314,8 +313,7 @@ public class VolumeTest extends CloudStackTestNGBase {
     }
 
     private VolumeVO createVolume(Long templateId, long dataStoreId) {
-        VolumeVO volume = new VolumeVO(Volume.Type.DATADISK, UUID.randomUUID().toString(), this.dcId, 1L, 1L, 1L, 1000, 0L, 0L, "");
-        ;
+        VolumeVO volume = new VolumeVO(Volume.Type.DATADISK, UUID.randomUUID().toString(), this.dcId, 1L, 1L, 1L, ProvisioningType.THIN, 1000, 0L, 0L, "");
         volume.setPoolId(dataStoreId);
         volume = volumeDao.persist(volume);
         return volume;
@@ -329,7 +327,7 @@ public class VolumeTest extends CloudStackTestNGBase {
         VolumeVO volume = createVolume(image.getId(), primaryStore.getId());
         VolumeInfo volInfo = this.volFactory.getVolume(volume.getId());
         AsyncCallFuture<VolumeApiResult> future =
-            this.volumeService.createVolumeFromTemplateAsync(volInfo, this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId(), DataStoreRole.Image));
+                this.volumeService.createVolumeFromTemplateAsync(volInfo, this.primaryStoreId, this.templateFactory.getTemplate(this.image.getId(), DataStoreRole.Image));
         try {
             VolumeApiResult result = future.get();
 

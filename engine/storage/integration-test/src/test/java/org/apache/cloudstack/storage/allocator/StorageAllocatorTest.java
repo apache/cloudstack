@@ -22,16 +22,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import junit.framework.Assert;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Matchers;
-import org.mockito.Mockito;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
@@ -41,6 +31,13 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
@@ -58,6 +55,7 @@ import com.cloud.org.Cluster.ClusterType;
 import com.cloud.org.Managed.ManagedState;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
@@ -71,6 +69,8 @@ import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.DB;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachineProfile;
+
+import junit.framework.Assert;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = "classpath:/storageContext.xml")
@@ -119,8 +119,8 @@ public class StorageAllocatorTest {
 
     protected void createDb() {
         DataCenterVO dc =
-            new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
-                true, null, null);
+                new DataCenterVO(UUID.randomUUID().toString(), "test", "8.8.8.8", null, "10.0.0.1", null, "10.0.0.1/24", null, null, NetworkType.Basic, null, null, true,
+                        true, null, null);
         dc = dcDao.persist(dc);
         dcId = dc.getId();
 
@@ -164,8 +164,8 @@ public class StorageAllocatorTest {
         diskOfferingId = diskOffering.getId();
 
         volume =
-            new VolumeVO(Volume.Type.ROOT, "volume", dcId, 1, 1, diskOffering.getId(), diskOffering.getDiskSize(), diskOffering.getMinIops(), diskOffering.getMaxIops(),
-                "");
+                new VolumeVO(Volume.Type.ROOT, "volume", dcId, 1, 1, diskOffering.getId(), Storage.ProvisioningType.THIN, diskOffering.getDiskSize(), diskOffering.getMinIops(),
+                        diskOffering.getMaxIops(), "");
         volume = volumeDao.persist(volume);
         volumeId = volume.getId();
     }
