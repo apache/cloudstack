@@ -31,6 +31,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade41000to41100 implements DbUpgrade {
@@ -65,8 +66,25 @@ public class Upgrade41000to41100 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
+        checkAndEnableDynamicRoles(conn);
         validateUserDataInBase64(conn);
         updateSystemVmTemplates(conn);
+    }
+
+    private void checkAndEnableDynamicRoles(final Connection conn) {
+        final Map<String, String> apiMap = PropertiesUtil.processConfigFile(new String[] { "commands.properties" });
+        if (apiMap == null || apiMap.isEmpty()) {
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("No commands.properties file was found, enabling dynamic roles by setting dynamic.apichecker.enabled to true if not already enabled.");
+            }
+            try (final PreparedStatement updateStatement = conn.prepareStatement("INSERT INTO cloud.configuration (category, instance, name, default_value, value) VALUES ('Advanced', 'DEFAULT', 'dynamic.apichecker.enabled', 'false', 'true') ON DUPLICATE KEY UPDATE value='true'")) {
+                updateStatement.executeUpdate();
+            } catch (SQLException e) {
+                LOG.error("Failed to set dynamic.apichecker.enabled to true, please run migrate-dynamicroles.py script to manually migrate to dynamic roles.", e);
+            }
+        } else {
+            LOG.warn("Old commands.properties static checker is deprecated, please use migrate-dynamicroles.py to migrate to dynamic roles. Refer http://docs.cloudstack.apache.org/projects/cloudstack-administration/en/latest/accounts.html#using-dynamic-roles");
+        }
     }
 
     private void validateUserDataInBase64(Connection conn) {
