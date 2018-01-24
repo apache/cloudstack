@@ -49,14 +49,20 @@ class CsDhcp(CsDataBag):
             self.add(self.dbag[item])
         self.write_hosts()
 
-        if self.cloud.is_changed():
-            self.delete_leases()
-
         self.configure_server()
 
-        restart_dnsmasq = self.conf.commit()
-        self.cloud.commit()
+        restart_dnsmasq = False
+
+        if self.conf.commit():
+            restart_dnsmasq = True
+
+        if self.cloud.commit():
+            restart_dnsmasq = True
+
         self.dhcp_opts.commit()
+
+        if restart_dnsmasq:
+            self.delete_leases()
 
         if not self.cl.is_redundant() or self.cl.is_master():
             if restart_dnsmasq:
