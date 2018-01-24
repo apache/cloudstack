@@ -82,6 +82,8 @@ public class Upgrade41000to41100 implements DbUpgrade {
             } catch (SQLException e) {
                 LOG.error("Failed to set dynamic.apichecker.enabled to true, please run migrate-dynamicroles.py script to manually migrate to dynamic roles.", e);
             }
+        } else {
+            LOG.warn("Old commands.properties static checker is deprecated, please use migrate-dynamicroles.py to migrate to dynamic roles. Refer http://docs.cloudstack.apache.org/projects/cloudstack-administration/en/latest/accounts.html#using-dynamic-roles");
         }
     }
 
