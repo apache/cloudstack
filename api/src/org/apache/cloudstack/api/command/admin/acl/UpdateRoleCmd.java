@@ -22,21 +22,20 @@ import com.google.common.base.Strings;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.response.RoleResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.context.CallContext;
 
-@APICommand(name = UpdateRoleCmd.APINAME, description = "Updates a role", responseObject = SuccessResponse.class,
+@APICommand(name = UpdateRoleCmd.APINAME, description = "Updates a role", responseObject = RoleResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.9.0",
         authorized = {RoleType.Admin})
-public class UpdateRoleCmd extends BaseCmd {
+public class UpdateRoleCmd extends RoleCmd {
     public static final String APINAME = "updateRole";
 
     /////////////////////////////////////////////////////
@@ -100,9 +99,7 @@ public class UpdateRoleCmd extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Invalid role id provided");
         }
         CallContext.current().setEventDetails("Role: " + getRoleName() + ", type:" + getRoleType() + ", description: " + getRoleDescription());
-        boolean result = roleService.updateRole(role, getRoleName(), getRoleType(), getRoleDescription());
-        SuccessResponse response = new SuccessResponse(getCommandName());
-        response.setSuccess(result);
-        setResponseObject(response);
+        role = roleService.updateRole(role, getRoleName(), getRoleType(), getRoleDescription());
+        setupResponse(role);
     }
 }
