@@ -25,6 +25,7 @@ import javax.naming.NamingException;
 import javax.naming.ldap.InitialLdapContext;
 import javax.naming.ldap.LdapContext;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 public class LdapContextFactory {
@@ -40,12 +41,10 @@ public class LdapContextFactory {
         _ldapConfiguration = ldapConfiguration;
     }
 
-    // TODO add optional domain (optional only for backwards compatibility)
     public LdapContext createBindContext(Long domainId) throws NamingException, IOException {
         return createBindContext(null, domainId);
     }
 
-    // TODO add optional domain (optional only for backwards compatibility)
     public LdapContext createBindContext(final String providerUrl, Long domainId) throws NamingException, IOException {
         final String bindPrincipal = _ldapConfiguration.getBindPrincipal(domainId);
         final String bindPassword = _ldapConfiguration.getBindPassword(domainId);
@@ -80,9 +79,13 @@ public class LdapContextFactory {
 
     private Hashtable<String, String> getEnvironment(final String principal, final String password, final String providerUrl, final boolean isSystemContext, Long domainId) {
         final String factory = _ldapConfiguration.getFactory();
-        final String url = providerUrl == null ? _ldapConfiguration.getProviderUrl(domainId) : providerUrl;
+        String url = providerUrl == null ? _ldapConfiguration.getProviderUrl(domainId) : providerUrl;
+        if (StringUtils.isEmpty(url) && domainId != null) {
+            //try a default ldap implementation
+            url = _ldapConfiguration.getProviderUrl(null);
+        }
 
-        final Hashtable<String, String> environment = new Hashtable<String, String>();
+        final Hashtable<String, String> environment = new Hashtable<>();
 
         environment.put(Context.INITIAL_CONTEXT_FACTORY, factory);
         environment.put(Context.PROVIDER_URL, url);
