@@ -52,7 +52,6 @@ public interface LdapManager extends PluggableService {
     @Deprecated
     LdapConfigurationResponse deleteConfiguration(String hostname, int port, Long domainId) throws InvalidParameterValueException;
 
-    // TODO username is only unique withing domain scope (add domain id to call)
     LdapUser getUser(final String username, Long domainId) throws NoLdapUserMatchingQueryException;
 
     LdapUser getUser(String username, String type, String name, Long domainId) throws NoLdapUserMatchingQueryException;

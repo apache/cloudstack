@@ -54,11 +54,11 @@ public class LinkDomainToLdapCmd extends BaseCmd {
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "type of the ldap name. GROUP or OU")
     private String type;
 
-    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = true, description = "name of the group or OU in LDAP")
+    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = false, description = "name of the group or OU in LDAP")
     private String ldapDomain;
 
     @Deprecated
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the group or OU in LDAP")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "name of the group or OU in LDAP")
     private String name;
 
     @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "domain admin username in LDAP ")
