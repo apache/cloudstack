@@ -17,7 +17,7 @@
 # under the License.
 
 import cloud_utils
-from cloud_utils import Command
+from subprocess import check_output, CalledProcessError
 from cloudutils.configFileOps import configFileOps
 import logging
 import sys
@@ -34,9 +34,6 @@ from netaddr.core import AddrFormatError
 
 logpath = "/var/run/cloud/"        # FIXME: Logs should reside in /var/log/cloud
 lock_file = "/var/lock/cloudstack_security_group.lock"
-iptables = Command("iptables")
-bash = Command("/bin/bash")
-ebtables = Command("ebtables")
 driver = "qemu:///system"
 cfo = configFileOps("/etc/cloudstack/agent/agent.properties")
 hyper = cfo.getEntry("hypervisor.type")
@@ -61,7 +58,10 @@ def obtain_file_lock(path):
 
 def execute(cmd):
     logging.debug(cmd)
-    return bash("-c", cmd).stdout
+    try:
+        return check_output(cmd, shell=True)
+    except CalledProcessError as e:
+        logging.exception('Failed to execute: %s', e.cmd)
 
 
 def can_bridge_firewall(privnic):
