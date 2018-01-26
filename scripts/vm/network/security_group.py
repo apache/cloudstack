@@ -475,7 +475,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
     ips = sec_ips.split(';')
     ips.pop()
     if ips[0] == "0":
-        secIpSet = "0";
+        secIpSet = "0"
 
     if secIpSet == "1":
         logging.debug("Adding ipset for secondary ips")
@@ -658,7 +658,7 @@ def rewrite_rule_log_for_vm(vm_name, new_domid):
 
 
 def get_rule_log_for_vm(vmName):
-    vm_name = vmName;
+    vm_name = vmName
     logfilename = logpath + vm_name + ".log"
     if not os.path.exists(logfilename):
         return ''
@@ -678,7 +678,7 @@ def check_domid_changed(vmName):
     if (curr_domid is None) or (not curr_domid.isdigit()):
         curr_domid = '-1'
 
-    vm_name = vmName;
+    vm_name = vmName
     logfilename = logpath + vm_name + ".log"
     if not os.path.exists(logfilename):
         return ['-1', curr_domid]
@@ -864,7 +864,7 @@ def cleanup_rules():
 
 
 def check_rule_log_for_vm(vmName, vmId, vmIP, domID, signature, seqno):
-    vm_name = vmName;
+    vm_name = vmName
     logfilename = logpath + vm_name + ".log"
     if not os.path.exists(logfilename):
         return [True, True, True, True, True, True]
@@ -963,7 +963,7 @@ def parse_network_rules(rules):
     ruletype, protocol = tokens[0].split(':')
     start = int(tokens[1])
     end = int(tokens[2])
-    cidrs = tokens.pop();
+    cidrs = tokens.pop()
 
     ipv4 = []
     ipv6 = []
