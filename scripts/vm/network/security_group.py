@@ -65,13 +65,13 @@ def can_bridge_firewall(privnic):
     try:
         execute("which iptables")
     except:
-        print "no iptables on your host machine"
+        print("no iptables on your host machine")
         sys.exit(1)
 
     try:
         execute("which ebtables")
     except:
-        print "no ebtables on your host machine"
+        print("no ebtables on your host machine")
         sys.exit(2)
 
 
@@ -123,7 +123,7 @@ def virshlist(states):
 
     conn = libvirt.openReadOnly(driver)
     if not conn:
-       print 'Failed to open connection to the hypervisor'
+       print('Failed to open connection to the hypervisor')
        sys.exit(3)
 
     alldomains = map(conn.lookupByID, conn.listDomainsID())
@@ -151,7 +151,7 @@ def virshdomstate(domain):
 
     conn = libvirt.openReadOnly(driver)
     if not conn:
-       print 'Failed to open connection to the hypervisor'
+       print('Failed to open connection to the hypervisor')
        sys.exit(3)
 
     try:
@@ -168,7 +168,7 @@ def virshdumpxml(domain):
 
     conn = libvirt.openReadOnly(driver)
     if not conn:
-       print 'Failed to open connection to the hypervisor'
+       print('Failed to open connection to the hypervisor')
        sys.exit(3)
 
     try:
@@ -778,7 +778,7 @@ def get_rule_logs_for_vms():
     except:
         logging.exception("Failed to get rule logs, better luck next time!")
 
-    print ";".join(result)
+    print(";".join(result))
 
 def cleanup_rules_for_dead_vms():
     return True
@@ -1125,7 +1125,7 @@ def getvmId(vmName):
 
     conn = libvirt.openReadOnly(driver)
     if not conn:
-       print 'Failed to open connection to the hypervisor'
+       print('Failed to open connection to the hypervisor')
        sys.exit(3)
 
     try:
