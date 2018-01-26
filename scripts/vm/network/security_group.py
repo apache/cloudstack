@@ -122,7 +122,7 @@ def virshlist(states):
     searchstates = list(libvirt_states[state] for state in states)
 
     conn = libvirt.openReadOnly(driver)
-    if conn == None:
+    if not conn:
        print 'Failed to open connection to the hypervisor'
        sys.exit(3)
 
@@ -150,7 +150,7 @@ def virshdomstate(domain):
     }
 
     conn = libvirt.openReadOnly(driver)
-    if conn == None:
+    if not conn:
        print 'Failed to open connection to the hypervisor'
        sys.exit(3)
 
@@ -167,7 +167,7 @@ def virshdomstate(domain):
 def virshdumpxml(domain):
 
     conn = libvirt.openReadOnly(driver)
-    if conn == None:
+    if not conn:
        print 'Failed to open connection to the hypervisor'
        sys.exit(3)
 
@@ -223,7 +223,7 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
     except:
         logging.debug("Ignoring failure to delete ipset " + vmchain)
 
-    if vif is not None:
+    if vif:
         try:
             dnats = execute("""iptables -t nat -S | awk '/%s/ { sub(/-A/, "-D", $1) ; print }'""" % vif ).split("\n")
             for dnat in filter(None, dnats):
@@ -300,7 +300,7 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
         execute("ebtables -t nat -A " + vmchain_in + " -s ! " + vm_mac + " -j DROP")
         execute("ebtables -t nat -A " + vmchain_in + " -p ARP -s ! " + vm_mac + " -j DROP")
         execute("ebtables -t nat -A " + vmchain_in + " -p ARP --arp-mac-src ! " + vm_mac + " -j DROP")
-        if vm_ip is not None:
+        if vm_ip:
             execute("ebtables -t nat -A " + vmchain_in + " -p ARP -j " + vmchain_in_ips)
             execute("ebtables -t nat -I " + vmchain_in_ips + " -p ARP --arp-ip-src " + vm_ip + " -j RETURN")
         execute("ebtables -t nat -A " + vmchain_in + " -p ARP --arp-op Request -j ACCEPT")
@@ -312,7 +312,7 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
 
     try:
         execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply --arp-mac-dst ! " + vm_mac + " -j DROP")
-        if vm_ip is not None:
+        if vm_ip:
             execute("ebtables -t nat -A " + vmchain_out + " -p ARP -j " + vmchain_out_ips )
             execute("ebtables -t nat -I " + vmchain_out_ips + " -p ARP --arp-ip-dst " + vm_ip + " -j RETURN")
         execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Request -j ACCEPT")
@@ -352,7 +352,7 @@ def default_network_rules_systemvm(vm_name, localbrname):
 
     execute("iptables -A " + vmchain + " -j ACCEPT")
 
-    if write_rule_log_for_vm(vm_name, '-1', '_ignore_', domid, '_initial_', '-1') == False:
+    if not write_rule_log_for_vm(vm_name, '-1', '_ignore_', domid, '_initial_', '-1'):
         logging.debug("Failed to log default network rules for systemvm, ignoring")
     return True
 
@@ -474,12 +474,12 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
     action = "-A"
     vmipsetName = ipset_chain_name(vm_name)
     #create ipset and add vm ips to that ip set
-    if create_ipset_forvm(vmipsetName) == False:
+    if not create_ipset_forvm(vmipsetName):
        logging.debug(" failed to create ipset for rule " + str(tokens))
        return False
 
     #add primary nic ip to ipset
-    if add_to_ipset(vmipsetName, [vm_ip], action ) == False:
+    if not add_to_ipset(vmipsetName, [vm_ip], action ):
        logging.debug(" failed to add vm " + vm_ip + " ip to set ")
        return False
 
@@ -493,7 +493,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
     if secIpSet == "1":
         logging.debug("Adding ipset for secondary ips")
         add_to_ipset(vmipsetName, ips, action)
-        if write_secip_log_for_vm(vm_name, sec_ips, vm_id) == False:
+        if not write_secip_log_for_vm(vm_name, sec_ips, vm_id):
             logging.debug("Failed to log default network rules, ignoring")
 
     try:
@@ -505,7 +505,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
         execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-out " + vif + " -p udp --dport 68 --sport 67  -j ACCEPT")
 
         #don't let vm spoof its ip address
-        if vm_ip is not None:
+        if vm_ip:
             execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set ! --set " + vmipsetName + " src -j DROP")
             execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --set " + vmipsetName + " src -p udp --dport 53  -j RETURN ")
             execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --set " + vmipsetName + " src -p tcp --dport 53  -j RETURN ")
@@ -520,8 +520,8 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
     #default ebtables rules for vm secondary ips
     ebtables_rules_vmip(vm_name, ips, "-I")
 
-    if vm_ip is not None:
-        if write_rule_log_for_vm(vmName, vm_id, vm_ip, domID, '_initial_', '-1') == False:
+    if vm_ip:
+        if not write_rule_log_for_vm(vmName, vm_id, vm_ip, domID, '_initial_', '-1'):
             logging.debug("Failed to log default network rules, ignoring")
 
     vm_ip6_set_name = vm_name + '-6'
@@ -626,7 +626,7 @@ def post_default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname, dhcpS
         execute("ebtables -t nat -I " + vmchain_out + " 2 -p ARP --arp-ip-dst ! " + vm_ip + " -j DROP")
     except:
         pass
-    if write_rule_log_for_vm(vm_name, vm_id, vm_ip, domID, '_initial_', '-1') == False:
+    if not write_rule_log_for_vm(vm_name, vm_id, vm_ip, domID, '_initial_', '-1'):
             logging.debug("Failed to log default network rules, ignoring")
 
 def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
@@ -1072,7 +1072,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
     execute('iptables -A ' + vmchain + ' -j DROP')
     execute('ip6tables -A ' + vmchain + ' -j DROP')
 
-    if write_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno) == False:
+    if not write_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno):
         return False
 
     return True
@@ -1082,7 +1082,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
 def getVifs(vmName):
     vifs = []
     xmlfile = virshdumpxml(vmName)
-    if xmlfile == None:
+    if not xmlfile:
         return vifs
 
     dom = xml.dom.minidom.parseString(xmlfile)
@@ -1095,7 +1095,7 @@ def getVifs(vmName):
 def getVifsForBridge(vmName, brname):
     vifs = []
     xmlfile = virshdumpxml(vmName)
-    if xmlfile == None:
+    if not xmlfile:
         return vifs
 
     dom = xml.dom.minidom.parseString(xmlfile)
@@ -1111,7 +1111,7 @@ def getVifsForBridge(vmName, brname):
 def getBridges(vmName):
     bridges = []
     xmlfile = virshdumpxml(vmName)
-    if xmlfile == None:
+    if not xmlfile:
         return bridges
 
     dom = xml.dom.minidom.parseString(xmlfile)
@@ -1124,7 +1124,7 @@ def getBridges(vmName):
 def getvmId(vmName):
 
     conn = libvirt.openReadOnly(driver)
-    if conn == None:
+    if not conn:
        print 'Failed to open connection to the hypervisor'
        sys.exit(3)
 
