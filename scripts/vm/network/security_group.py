@@ -45,6 +45,7 @@ if hyper == "lxc":
 
 lock_handle = None
 
+
 def obtain_file_lock(path):
     global lock_handle
 
@@ -57,9 +58,11 @@ def obtain_file_lock(path):
 
     return False
 
+
 def execute(cmd):
     logging.debug(cmd)
     return bash("-c", cmd).stdout
+
 
 def can_bridge_firewall(privnic):
     try:
@@ -85,7 +88,6 @@ def can_bridge_firewall(privnic):
 
 
 def virshlist(states):
-
     libvirt_states={ 'running'  : libvirt.VIR_DOMAIN_RUNNING,
                      'shutoff'  : libvirt.VIR_DOMAIN_SHUTOFF,
                      'shutdown' : libvirt.VIR_DOMAIN_SHUTDOWN,
@@ -114,8 +116,8 @@ def virshlist(states):
 
     return domains
 
-def virshdomstate(domain):
 
+def virshdomstate(domain):
     libvirt_states={ libvirt.VIR_DOMAIN_RUNNING  : 'running',
                      libvirt.VIR_DOMAIN_SHUTOFF  : 'shut off',
                      libvirt.VIR_DOMAIN_SHUTDOWN : 'shut down',
@@ -140,8 +142,8 @@ def virshdomstate(domain):
 
     return state
 
-def virshdumpxml(domain):
 
+def virshdumpxml(domain):
     conn = libvirt.openReadOnly(driver)
     if not conn:
        print('Failed to open connection to the hypervisor')
@@ -217,6 +219,7 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
 
     return True
 
+
 def destroy_ebtables_rules(vm_name, vif):
     eb_vm_chain=ebtables_chain_name(vm_name)
     delcmd = "ebtables -t nat -L PREROUTING | grep " + eb_vm_chain
@@ -248,6 +251,7 @@ def destroy_ebtables_rules(vm_name, vif):
             execute("ebtables -t nat -X " + chain)
         except:
             logging.debug("Ignoring failure to delete ebtables chain for vm " + vm_name)
+
 
 def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
     eb_vm_chain=ebtables_chain_name(vm_name)
@@ -332,6 +336,7 @@ def default_network_rules_systemvm(vm_name, localbrname):
         logging.debug("Failed to log default network rules for systemvm, ignoring")
     return True
 
+
 def remove_secip_log_for_vm(vmName):
     vm_name = vmName
     logfilename = logpath + vm_name + ".ip"
@@ -344,6 +349,7 @@ def remove_secip_log_for_vm(vmName):
         result = False
 
     return result
+
 
 def write_secip_log_for_vm (vmName, secIps, vmId):
     vm_name = vmName
@@ -364,6 +370,7 @@ def write_secip_log_for_vm (vmName, secIps, vmId):
 
     return result
 
+
 def create_ipset_forvm(ipsetname, type='iphash', family='inet'):
     result = True
     try:
@@ -377,6 +384,7 @@ def create_ipset_forvm(ipsetname, type='iphash', family='inet'):
 
     return result
 
+
 def add_to_ipset(ipsetname, ips, action):
     result = True
     for ip in ips:
@@ -388,6 +396,7 @@ def add_to_ipset(ipsetname, ips, action):
             continue
 
     return result
+
 
 def network_rules_vmSecondaryIp(vm_name, ip_secondary, action):
     logging.debug("vmName = "+ vm_name)
@@ -402,6 +411,7 @@ def network_rules_vmSecondaryIp(vm_name, ip_secondary, action):
     ebtables_rules_vmip(vm_name, [ip_secondary], action)
 
     return True
+
 
 def ebtables_rules_vmip (vmname, ips, action):
     eb_vm_chain=ebtables_chain_name(vmname)
@@ -420,6 +430,7 @@ def ebtables_rules_vmip (vmname, ips, action):
             execute("ebtables -t nat " + action + " " + vmchain_outips + " -p ARP --arp-ip-dst " + ip + " -j RETURN")
         except:
             logging.debug("Failed to program ebtables rules for secondary ip %s for vm %s with action %s" % (ip, vmname, action))
+
 
 def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec_ips):
     if not addFWFramework(brname):
@@ -574,6 +585,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
     logging.debug("Programmed default rules for vm " + vm_name)
     return True
 
+
 def post_default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname, dhcpSvr, hostIp, hostMacAddr):
     vmchain_default = '-'.join(vm_name.split('-')[:-1]) + "-def"
     iptables_vmchain=iptables_chain_name(vm_name)
@@ -605,6 +617,7 @@ def post_default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname, dhcpS
     if not write_rule_log_for_vm(vm_name, vm_id, vm_ip, domID, '_initial_', '-1'):
             logging.debug("Failed to log default network rules, ignoring")
 
+
 def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
     vm_name = vmName
     if vm_name.startswith('i-'):
@@ -629,6 +642,7 @@ def delete_rules_for_vm_in_bridge_firewall_chain(vmName):
         except:
               logging.exception("Ignoring failure to delete rules for vm " + vmName)
 
+
 def rewrite_rule_log_for_vm(vm_name, new_domid):
     logfilename = logpath + vm_name + ".log"
     if not os.path.exists(logfilename):
@@ -641,6 +655,7 @@ def rewrite_rule_log_for_vm(vm_name, new_domid):
         break
 
     write_rule_log_for_vm(_vmName, _vmID, '0.0.0.0', new_domid, _signature, '-1')
+
 
 def get_rule_log_for_vm(vmName):
     vm_name = vmName;
@@ -656,6 +671,7 @@ def get_rule_log_for_vm(vmName):
         break
 
     return ','.join([_vmName, _vmID, _vmIP, _domID, _signature, _seqno])
+
 
 def check_domid_changed(vmName):
     curr_domid = getvmId(vmName)
@@ -675,6 +691,7 @@ def check_domid_changed(vmName):
         break
 
     return [curr_domid, old_domid]
+
 
 def network_rules_for_rebooted_vm(vmName):
     vm_name = vmName
@@ -737,6 +754,7 @@ def network_rules_for_rebooted_vm(vmName):
     rewrite_rule_log_for_vm(vm_name, curr_domid)
     return True
 
+
 def get_rule_logs_for_vms():
     state=['running']
     vms = virshlist(state)
@@ -756,8 +774,10 @@ def get_rule_logs_for_vms():
 
     print(";".join(result))
 
+
 def cleanup_rules_for_dead_vms():
     return True
+
 
 def cleanup_bridge(bridge):
     bridge_name = getBrfw(bridge)
@@ -785,6 +805,7 @@ def cleanup_bridge(bridge):
             execute("iptables -X " + chain)
         except: pass
     return True
+
 
 def cleanup_rules():
     try:
@@ -841,6 +862,7 @@ def cleanup_rules():
     except:
         logging.debug("Failed to cleanup rules !")
 
+
 def check_rule_log_for_vm(vmName, vmId, vmIP, domID, signature, seqno):
     vm_name = vmName;
     logfilename = logpath + vm_name + ".log"
@@ -865,6 +887,7 @@ def check_rule_log_for_vm(vmName, vmId, vmIP, domID, signature, seqno):
 
     return [(vm_name != _vmName), (vmId != _vmID), (vmIP != _vmIP), (domID != _domID), (signature != _signature),(seqno != _seqno)]
 
+
 def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
     vm_name = vmName
     logfilename = logpath + vm_name + ".log"
@@ -883,6 +906,7 @@ def write_rule_log_for_vm(vmName, vmID, vmIP, domID, signature, seqno):
 
     return result
 
+
 def remove_rule_log_for_vm(vmName):
     vm_name = vmName
     logfilename = logpath + vm_name + ".log"
@@ -896,12 +920,14 @@ def remove_rule_log_for_vm(vmName):
 
     return result
 
+
 #ebtables chain max len 31 char
 def ebtables_chain_name(vm_name):
     # 23 because there are appends to the chains
     if len(vm_name) > 22:
         vm_name = vm_name[0:22]
     return vm_name
+
 
 #ipset chain max len 31 char
 def ipset_chain_name(vm_name):
@@ -915,6 +941,7 @@ def iptables_chain_name(vm_name):
     if len(vm_name) > 25:
         vm_name = vm_name[0:24]
     return vm_name
+
 
 def egress_chain_name(vm_name):
     chain_name = iptables_chain_name(vm_name)
@@ -954,6 +981,7 @@ def parse_network_rules(rules):
                 'start': start, 'end': end, 'protocol': protocol})
 
   return ret
+
 
 def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, rules, vif, brname, sec_ips):
   try:
@@ -1055,6 +1083,7 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
   except:
     logging.exception("Failed to network rule !")
 
+
 def getVifs(vmName):
     vifs = []
     xmlfile = virshdumpxml(vmName)
@@ -1067,6 +1096,7 @@ def getVifs(vmName):
         nicdev = target.getAttribute("dev").strip()
         vifs.append(nicdev)
     return vifs
+
 
 def getVifsForBridge(vmName, brname):
     vifs = []
@@ -1084,6 +1114,7 @@ def getVifsForBridge(vmName, brname):
             vifs.append(nicdev)
     return list(set(vifs))
 
+
 def getBridges(vmName):
     bridges = []
     xmlfile = virshdumpxml(vmName)
@@ -1096,6 +1127,7 @@ def getBridges(vmName):
             bridge = source.getAttribute("bridge").strip()
             bridges.append(bridge)
     return list(set(bridges))
+
 
 def getvmId(vmName):
 
@@ -1116,12 +1148,14 @@ def getvmId(vmName):
         res = str(res)
     return res
 
+
 def getBrfw(brname):
     cmd = "iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' | grep -w " + brname  + "|awk '{print $9}' | head -1"
     brfwname = bash("-c", cmd).stdout.strip()
     if brfwname == "":
         brfwname = "BF-" + brname
     return brfwname
+
 
 def addFWFramework(brname):
     try:
@@ -1201,6 +1235,7 @@ def addFWFramework(brname):
         except:
             return False
         return False
+
 
 if __name__ == '__main__':
     logging.basicConfig(filename="/var/log/cloudstack/agent/security_group.log", format="%(asctime)s - %(message)s", level=logging.DEBUG)
