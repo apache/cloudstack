@@ -82,32 +82,8 @@ def can_bridge_firewall(privnic):
     cleanup_rules()
 
     return True
-'''
-def ipset(ipsetname, proto, start, end, ips):
-    try:
-        check_call(['ipset', '-N', ipsetname, 'iptreemap'])
-    except:
-        logging.debug("ipset chain already exists" + ipsetname)
 
-    result = True
-    ipsettmp = ''.join(''.join(ipsetname.split('-')).split('_')) + str(int(time.time()) % 1000)
 
-    try:
-        check_call(['ipset', '-N', ipsettmp, 'iptreemap'])
-        for ip in ips:
-            try:
-                check_call(['ipset', '-A', ipsettmp, ip])
-            except CommandException, cex:
-                if cex.reason.rfind('already in set') == -1:
-                   raise
-        check_call(['ipset', '-W', ipsettmp, ipsetname])
-        check_call(['ipset', '-X', ipsettmp])
-    except:
-        logging.debug("Failed to program ipset " + ipsetname)
-        result = False
-
-    return result
-'''
 def virshlist(states):
 
     libvirt_states={ 'running'  : libvirt.VIR_DOMAIN_RUNNING,
