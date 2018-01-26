@@ -1230,7 +1230,7 @@ if __name__ == '__main__':
 
     for i in range(0, 30):
         if obtain_file_lock(lock_file) is False:
-            logging.warn("Lock on %s is being held by other process. Waiting for release." % lock_file)
+            logging.warning("Lock on %s is being held by other process. Waiting for release." % lock_file)
             time.sleep(0.5)
         else:
             break
