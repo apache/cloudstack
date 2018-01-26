@@ -62,10 +62,10 @@ public class LdapCreateAccountCmdTest implements LdapConfigurationChanger {
     }
 
     @Test(expected = ServerApiException.class)
-    public void failedCreationDueToANullResponseFromCloudstackAccountCreater() throws Exception {
+    public void failedCreationDueToANullResponseFromCloudstackAccountCreator() throws Exception {
         // We have an LdapManager, AccountService and LdapCreateAccountCmd
         LdapUser mrMurphy = new LdapUser("rmurphy", "rmurphy@cloudstack.org", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false, null);
-        when(ldapManager.getUser(anyString(), isNull(Long.class))).thenReturn(mrMurphy);
+        when(ldapManager.getUser(anyString(), isNull(Long.class))).thenReturn(mrMurphy).thenReturn(mrMurphy);
         ldapCreateAccountCmd.execute();
         fail("An exception should have been thrown: " + ServerApiException.class);
     }

@@ -313,7 +313,7 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
 
     @Override
     public LinkDomainToLdapResponse linkDomainToLdap(LinkDomainToLdapCmd cmd) {
-        Validate.isTrue(_ldapConfiguration.getBaseDn(cmd.getDomainId()) == null, "can not configure an ldap server and an ldap group/ou to a domain");
+        Validate.isTrue(_ldapConfiguration.getBaseDn(cmd.getDomainId()) == null, "can not link a domain unless a basedn is configured for it.");
         Validate.notEmpty(cmd.getLdapDomain(), "ldapDomain cannot be empty, please supply a GROUP or OU name");
         return linkDomainToLdap(cmd.getDomainId(),cmd.getType(),cmd.getLdapDomain(),cmd.getAccountType());
     }
@@ -356,8 +356,9 @@ public class LdapManagerImpl implements LdapManager, LdapValidator {
         return _ldapTrustMapDao.findGroupInDomain(domainId, group);
     }
 
-    @Override public LinkAccountToLdapResponse linkAccountToLdap(LinkAccountToLdapCmd cmd) {
-        Validate.notNull(_ldapConfiguration.getBaseDn(cmd.getDomainId()), "can not configure an ldap server and an ldap group/ou to a domain");
+    @Override
+    public LinkAccountToLdapResponse linkAccountToLdap(LinkAccountToLdapCmd cmd) {
+        Validate.notNull(_ldapConfiguration.getBaseDn(cmd.getDomainId()), "can not link an account to ldap in a domain for which no basdn is configured");
         Validate.notNull(cmd.getDomainId(), "domainId cannot be null.");
         Validate.notEmpty(cmd.getAccountName(), "accountName cannot be empty.");
         Validate.notEmpty(cmd.getLdapDomain(), "ldapDomain cannot be empty, please supply a GROUP or OU name");
