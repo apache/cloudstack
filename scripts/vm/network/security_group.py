@@ -237,9 +237,9 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
     remove_secip_log_for_vm(vm_name)
 
     if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-'] ]:
-        return 'true'
+        return True
 
-    return 'true'
+    return True
 
 def destroy_ebtables_rules(vm_name, vif):
     eb_vm_chain=ebtables_chain_name(vm_name)
@@ -294,7 +294,7 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
         execute("ebtables -t nat -A " + vmchain_out_ips + " -j DROP")
     except:
         logging.debug("Failed to program default rules")
-        return 'false'
+        return False
 
     try:
         execute("ebtables -t nat -A " + vmchain_in + " -s ! " + vm_mac + " -j DROP")
@@ -308,7 +308,7 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
         execute("ebtables -t nat -A " + vmchain_in + " -p ARP -j DROP")
     except:
         logging.exception("Failed to program default ebtables IN rules")
-        return 'false'
+        return False
 
     try:
         execute("ebtables -t nat -A " + vmchain_out + " -p ARP --arp-op Reply --arp-mac-dst ! " + vm_mac + " -j DROP")
@@ -320,7 +320,7 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
         execute("ebtables -t nat -A " + vmchain_out + " -p ARP -j DROP")
     except:
         logging.debug("Failed to program default ebtables OUT rules")
-        return 'false'
+        return False
 
 
 def default_network_rules_systemvm(vm_name, localbrname):
@@ -348,13 +348,13 @@ def default_network_rules_systemvm(vm_name, localbrname):
                     execute("iptables -A " + vmchain + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -j RETURN")
                 except:
                     logging.debug("Failed to program default rules")
-                    return 'false'
+                    return False
 
     execute("iptables -A " + vmchain + " -j ACCEPT")
 
     if write_rule_log_for_vm(vm_name, '-1', '_ignore_', domid, '_initial_', '-1') == False:
         logging.debug("Failed to log default network rules for systemvm, ignoring")
-    return 'true'
+    return True
 
 def remove_secip_log_for_vm(vmName):
     vm_name = vmName
@@ -425,7 +425,7 @@ def network_rules_vmSecondaryIp(vm_name, ip_secondary, action):
     #add ebtables rules for the secondary ip
     ebtables_rules_vmip(vm_name, [ip_secondary], action)
 
-    return 'true'
+    return True
 
 def ebtables_rules_vmip (vmname, ips, action):
     eb_vm_chain=ebtables_chain_name(vmname)
@@ -476,12 +476,12 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
     #create ipset and add vm ips to that ip set
     if create_ipset_forvm(vmipsetName) == False:
        logging.debug(" failed to create ipset for rule " + str(tokens))
-       return 'false'
+       return False
 
     #add primary nic ip to ipset
     if add_to_ipset(vmipsetName, [vm_ip], action ) == False:
        logging.debug(" failed to add vm " + vm_ip + " ip to set ")
-       return 'false'
+       return False
 
     #add secodnary nic ips to ipset
     secIpSet = "1"
@@ -514,7 +514,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
         execute("iptables -A " + vmchain + " -j DROP")
     except:
         logging.debug("Failed to program default rules for vm " + vm_name)
-        return 'false'
+        return False
 
     default_ebtables_rules(vm_name, vm_ip, vm_mac, vif)
     #default ebtables rules for vm secondary ips
@@ -528,7 +528,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
 
     if not create_ipset_forvm(vm_ip6_set_name, family='inet6', type='hash:net'):
        logging.debug(" failed to create ivp6 ipset for rule " + str(tokens))
-       return 'false'
+       return False
 
     vm_ip6_addr = [ipv6_link_local]
     try:
@@ -593,10 +593,10 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
         execute('ip6tables -A ' + vmchain + ' -j DROP')
     except:
         logging.debug('Failed to program default rules for vm ' + vm_name)
-        return 'false'
+        return False
 
     logging.debug("Programmed default rules for vm " + vm_name)
-    return 'true'
+    return True
 
 def post_default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname, dhcpSvr, hostIp, hostMacAddr):
     vmchain_default = '-'.join(vm_name.split('-')[:-1]) + "-def"
@@ -984,12 +984,11 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
     vmName = vm_name
     domId = getvmId(vmName)
 
-    changes = []
     changes = check_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno)
 
     if not 1 in changes:
         logging.debug("Rules already programmed for vm " + vm_name)
-        return 'true'
+        return True
 
     if changes[0] or changes[1] or changes[2] or changes[3]:
         default_network_rules(vmName, vm_id, vm_ip, vm_ip6, vmMac, vif, brname, sec_ips)
@@ -1074,9 +1073,9 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
     execute('ip6tables -A ' + vmchain + ' -j DROP')
 
     if write_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno) == False:
-        return 'false'
+        return False
 
-    return 'true'
+    return True
   except:
     logging.exception("Failed to network rule !")
 
