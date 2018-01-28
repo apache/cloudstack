@@ -330,7 +330,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         services.add(Service.SourceNat);
                         networkSNAT.add(ip.getAssociatedWithNetworkId());
                     } else {
-                        CloudRuntimeException ex = new CloudRuntimeException("Multiple generic soure NAT IPs provided for network");
+                        CloudRuntimeException ex = new CloudRuntimeException("Multiple generic source NAT IPs provided for network");
                         // see the IPAddressVO.java class.
                         IPAddressVO ipAddr = ApiDBUtils.findIpAddressById(ip.getAssociatedWithNetworkId());
                         String ipAddrUuid = ip.getAssociatedWithNetworkId().toString();
