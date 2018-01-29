@@ -24,6 +24,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -37,6 +38,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.StringUtils;
+import org.apache.cloudstack.agent.mslb.AgentMSLB;
 import org.apache.cloudstack.ca.CAManager;
 import com.cloud.configuration.ManagementServiceConfiguration;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -67,6 +70,7 @@ import com.cloud.agent.api.SetHostParamsCommand;
 import com.cloud.agent.api.ShutdownCommand;
 import com.cloud.agent.api.StartupAnswer;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupMgmtHostsCommand;
 import com.cloud.agent.api.StartupProxyCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupSecondaryStorageCommand;
@@ -183,6 +187,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Inject
     ManagementServiceConfiguration mgmtServiceConf;
+
+    @Inject
+    AgentMSLB agentMSLB;
 
     protected final ConfigKey<Integer> Workers = new ConfigKey<Integer>("Advanced", Integer.class, "workers", "5",
                     "Number of worker threads handling remote agent connections.", false);
@@ -1081,9 +1088,20 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         AgentAttache attache = null;
         ReadyCommand ready = null;
         try {
+            String mgmtHostsFromAgent = getMgmtHostsFromAgent(request.getCommands());
+            List<String> mgmtHostsList = null;
+            if (StringUtils.isNotBlank(mgmtHostsFromAgent)) {
+                mgmtHostsList = Arrays.asList(mgmtHostsFromAgent.split(","));
+            }
             final HostVO host = _resourceMgr.createHostVOForConnectedAgent(startup);
             if (host != null) {
                 ready = new ReadyCommand(host.getDataCenterId(), host.getId());
+
+                if (mgmtHostsList != null && !agentMSLB.isManagementServerListUpToDate(host.getId(), host.getDataCenterId(), mgmtHostsList)) {
+                    //Send the latest mgmt hosts list if it is not up to date on agent side
+                    ready.setMgmtHosts(agentMSLB.getManagementServerList(host.getId(), host.getDataCenterId()));
+                }
+
                 attache = createAttacheForConnect(host, link);
                 attache = notifyMonitorsOfConnection(attache, startup, false);
             }
@@ -1197,6 +1215,18 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             s_logger.debug("Failed to send startupanswer: " + e.toString());
         }
         _connectExecutor.execute(new HandleAgentConnectTask(link, cmds, request));
+    }
+
+    /**
+     * Get mgmt hosts from agent (if any StartupMgmtHostsCommand on cmds), null if no host received
+     */
+    private String getMgmtHostsFromAgent(Command[] cmds) {
+        for (Command cmd : cmds) {
+            if (cmd instanceof StartupMgmtHostsCommand) {
+                return ((StartupMgmtHostsCommand) cmd).getHosts();
+            }
+        }
+        return null;
     }
 
     public class AgentHandler extends Task {

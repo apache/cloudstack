@@ -34,4 +34,12 @@ public interface AgentMSLBAlgorithm {
      * @return returns the name of the Agent MSLB algorithm
      */
     String getName();
+
+    /**
+     * Compares and return if received mgmt server list is equal to the actual mgmt server lists
+     * @param msList current mgmt server list
+     * @param receivedMsList received mgmt server list
+     * @return true if the lists are equal, false if not
+     */
+    boolean isMSListEqual(final List<String> msList, final List<String> receivedMsList);
 }

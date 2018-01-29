@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import org.apache.cloudstack.agent.mslb.AgentMSLBAlgorithm;
+import org.apache.commons.collections.SetUtils;
 
 public class AgentMSLBShuffleAlgorithm implements AgentMSLBAlgorithm {
 
@@ -34,5 +35,10 @@ public class AgentMSLBShuffleAlgorithm implements AgentMSLBAlgorithm {
     @Override
     public String getName() {
         return "shuffle";
+    }
+
+    @Override
+    public boolean isMSListEqual(List<String> msList, List<String> receivedMsList) {
+        return SetUtils.isEqualSet(msList, receivedMsList);
     }
 }

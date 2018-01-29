@@ -27,7 +27,6 @@ import java.net.UnknownHostException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
@@ -49,6 +48,7 @@ import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 import org.apache.cloudstack.ca.SetupKeystoreAnswer;
 import org.apache.cloudstack.managed.context.ManagedContextTimerTask;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 import org.slf4j.MDC;
@@ -651,20 +651,38 @@ public class Agent implements HandlerFactory, IAgentControl {
         return new Answer(cmd, true, "Certificate " + certificateName + " imported");
     }
 
-    private Answer setupManagementServersList(SetupManagementServersListCommand cmd) {
-        final List<String> msList = cmd.getMsList();
-        if (msList != null && msList.size() > 0) {
-            final List<String> hosts = Arrays.asList(_shell.getHosts());
-            s_logger.info("Received management servers list: " + msList + ", current list: " + hosts);
-            if (isReceivedListUpdated(hosts, msList)) {
-                try {
-                    persistNewManagementServersList(msList);
-                    _shell.resetHostCounter();
-                } catch (Exception e) {
-                    throw new CloudRuntimeException("Couldnt persist received management servers list", e);
-                }
+    /**
+     * Persist newly received management servers list
+     * @param msList management servers list
+     */
+    private void persistNewManagementServersList(List<String> msList) {
+        final String newHosts = StringUtils.toCSVList(msList);
+        _shell.setHosts(newHosts);
+        _shell.setPersistentProperty(null, "host", newHosts);
+        s_logger.info("Saved new management servers list: " + msList);
+    }
+
+    /**
+     * Persist mgmt hosts list if it is not empty
+     * @param msList management hosts list
+     */
+    private void setupMgmtHostsList(List<String> msList) {
+        if (CollectionUtils.isNotEmpty(msList)) {
+            try {
+                persistNewManagementServersList(msList);
+                _shell.resetHostCounter();
+            } catch (Exception e) {
+                throw new CloudRuntimeException("Couldnt persist received management servers list", e);
             }
         }
+    }
+
+    /**
+     * Process SetupManagementServersListCommand
+     */
+    private Answer setupManagementServersList(SetupManagementServersListCommand cmd) {
+        final List<String> msList = cmd.getMsList();
+        setupMgmtHostsList(msList);
         return new SetupManagementServersListAnswer(true);
     }
 
@@ -767,35 +785,6 @@ public class Agent implements HandlerFactory, IAgentControl {
         }
     }
 
-    /**
-     * Checks if received list is different to actual management server list (in order and size)
-     * @param actual actual list
-     * @param received received list
-     * @return true if list is updated, false if not
-     */
-    private boolean isReceivedListUpdated(List<String> actual, List<String> received) {
-        if (actual.size() != received.size()) {
-            return true;
-        }
-        for (int i = 0; i < received.size(); i++) {
-            if (!received.get(i).equals(actual.get(i))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Persist newly received management servers list
-     * @param msList management servers list
-     */
-    private void persistNewManagementServersList(List<String> msList) {
-        final String newHosts = StringUtils.toCSVList(msList);
-        _shell.setHosts(newHosts);
-        _shell.setPersistentProperty(null, "host", newHosts);
-        s_logger.info("Saved new management servers list: " + msList);
-    }
-
     public void processReadyCommand(final Command cmd) {
         final ReadyCommand ready = (ReadyCommand)cmd;
 
@@ -803,6 +792,7 @@ public class Agent implements HandlerFactory, IAgentControl {
         if (ready.getHostId() != null) {
             setId(ready.getHostId());
         }
+        setupMgmtHostsList(ready.getMgmtHosts());
 
         s_logger.info("Ready command is processed for agent id = " + getId());
     }

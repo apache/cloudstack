@@ -19,6 +19,8 @@
 
 package com.cloud.agent.api;
 
+import java.util.List;
+
 public class ReadyCommand extends Command {
     private String _details;
 
@@ -28,6 +30,7 @@ public class ReadyCommand extends Command {
 
     private Long dcId;
     private Long hostId;
+    private List<String> mgmtHosts;
 
     public ReadyCommand(Long dcId) {
         super();
@@ -59,4 +62,13 @@ public class ReadyCommand extends Command {
     public Long getHostId() {
         return hostId;
     }
+
+    public List<String> getMgmtHosts() {
+        return mgmtHosts;
+    }
+
+    public void setMgmtHosts(List<String> mgmtHosts) {
+        this.mgmtHosts = mgmtHosts;
+    }
+
 }

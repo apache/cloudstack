@@ -127,6 +127,13 @@ public class AgentMSLBServiceImpl extends ComponentLifecycleBase implements Agen
         return algorithm.getMSList(msList, orderedHostIds, hostId);
     }
 
+    @Override
+    public boolean isManagementServerListUpToDate(Long hostId, Long dcId, List<String> receivedMgmtHosts) {
+        List<String> managementServerList = getManagementServerList(hostId, dcId);
+        AgentMSLBAlgorithm algorithm = getAgentMSLBAlgorithm();
+        return algorithm.isMSListEqual(managementServerList, receivedMgmtHosts);
+    }
+
     protected List<Long> getOrderedRunningHostIds(Long dcId) {
         List<HostVO> hosts = resourceManager.listAllHostsInOneZoneByType(Host.Type.Routing, dcId);
         if (hosts != null) {

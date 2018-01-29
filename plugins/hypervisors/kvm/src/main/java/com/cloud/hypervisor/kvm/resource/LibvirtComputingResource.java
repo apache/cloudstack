@@ -85,6 +85,7 @@ import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PingRoutingWithNwGroupsCommand;
 import com.cloud.agent.api.SetupGuestNetworkCommand;
 import com.cloud.agent.api.StartupCommand;
+import com.cloud.agent.api.StartupMgmtHostsCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.StartupStorageCommand;
 import com.cloud.agent.api.VmDiskStatsEntry;
@@ -2593,11 +2594,47 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.debug("Unable to initialize local storage pool: " + e);
         }
 
-        if (sscmd != null) {
-            return new StartupCommand[] {cmd, sscmd};
+        StartupMgmtHostsCommand mgmtHostsCommand = null;
+        try {
+            mgmtHostsCommand = getMgmtHostCommand();
+        } catch (ConfigurationException e) {
+            s_logger.error("Error with agent.properties file: " + e);
+        } catch (IOException e) {
+            s_logger.error("Error retrieving properties from agent.properties due to: " + e);
+        }
+
+        if (sscmd != null && mgmtHostsCommand != null) {
+            return new StartupCommand[]{cmd, sscmd, mgmtHostsCommand};
+        } else if (sscmd != null && mgmtHostsCommand == null) {
+            return new StartupCommand[]{cmd, sscmd};
+        } else if (sscmd == null && mgmtHostsCommand != null) {
+            return new StartupCommand[]{cmd, mgmtHostsCommand};
         } else {
             return new StartupCommand[] {cmd};
         }
+    }
+
+    /**
+     * Create a StartupMgmtHostsCommand using 'host' property on agent.properties file to be sent to the connected mgmt host
+     * @return StartUpMgmtHostsCommand
+     * @throws ConfigurationException if agent.properties file cannot be found or no hosts specified on agent.properties file
+     * @throws IOException if properties cannot be retrieved from agent.properties file
+     */
+    private StartupMgmtHostsCommand getMgmtHostCommand() throws ConfigurationException, IOException {
+        final File file = PropertiesUtil.findConfigFile("/etc/cloudstack/agent/agent.properties");
+        if (file == null) {
+            throw new ConfigurationException("Unable to find agent.properties.");
+        }
+
+        s_logger.debug("agent.properties found at " + file.getAbsolutePath());
+
+        final Properties properties = PropertiesUtil.loadFromFile(file);
+
+        final String mgmtHosts = (String)properties.get("host");
+        if (mgmtHosts == null) {
+            throw new ConfigurationException("No mgmt hosts specified on agent.properties file");
+        }
+        return new StartupMgmtHostsCommand(mgmtHosts);
     }
 
     public String diskUuidToSerial(String uuid) {

@@ -32,4 +32,15 @@ public class AgentMSLBStaticAlgorithm implements AgentMSLBAlgorithm {
     public String getName() {
         return "static";
     }
+
+    @Override
+    public boolean isMSListEqual(List<String> msList, List<String> receivedMsList) {
+        if (msList.size() != receivedMsList.size()) return false;
+        for (int i = 0; i < msList.size(); i++) {
+            if (!msList.get(i).equals(receivedMsList.get(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
