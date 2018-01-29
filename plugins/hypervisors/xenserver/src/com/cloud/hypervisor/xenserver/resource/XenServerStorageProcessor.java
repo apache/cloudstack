@@ -18,23 +18,24 @@
  */
 package com.cloud.hypervisor.xenserver.resource;
 
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.to.DataObjectType;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.NfsTO;
-import com.cloud.agent.api.to.S3TO;
-import com.cloud.agent.api.to.SwiftTO;
-import com.cloud.exception.InternalErrorException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.SRType;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.resource.StorageProcessor;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.storage.S3.ClientOptions;
+import static com.cloud.utils.ReflectUtil.flattenProperties;
+import static com.google.common.collect.Lists.newArrayList;
+
+import java.io.File;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import com.google.common.annotations.VisibleForTesting;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Types;
@@ -44,6 +45,7 @@ import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VBD;
 import com.xensource.xenapi.VDI;
 import com.xensource.xenapi.VM;
+
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
@@ -65,20 +67,24 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
 
-import java.io.File;
-import java.net.URI;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import static com.cloud.utils.ReflectUtil.flattenProperties;
-import static com.google.common.collect.Lists.newArrayList;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.S3TO;
+import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.exception.InternalErrorException;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.SRType;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.resource.StorageProcessor;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.storage.S3.ClientOptions;
 
 public class XenServerStorageProcessor implements StorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -914,18 +920,53 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
     private boolean swiftUpload(final Connection conn, final SwiftTO swift, final String container, final String ldir, final String lfilename, final Boolean isISCSI,
             final int wait) {
-        String result = null;
+
+        List<String> params = getSwiftParams(swift, container, ldir, lfilename, isISCSI);
+
         try {
-            result =
-                    hypervisorResource.callHostPluginAsync(conn, "swiftxenserver", "swift", wait, "op", "upload", "url", swift.getUrl(), "account", swift.getAccount(), "username",
-                            swift.getUserName(), "key", swift.getKey(), "container", container, "ldir", ldir, "lfilename", lfilename, "isISCSI", isISCSI.toString());
-            if (result != null && result.equals("true")) {
-                return true;
-            }
+            String result = hypervisorResource.callHostPluginAsync(conn, "swiftxenserver", "swift", wait, params.toArray(new String[params.size()]));
+            return BooleanUtils.toBoolean(result);
         } catch (final Exception e) {
             s_logger.warn("swift upload failed due to " + e.toString(), e);
         }
         return false;
+    }
+
+    @VisibleForTesting
+    List<String> getSwiftParams(SwiftTO swift, String container, String ldir, String lfilename, Boolean isISCSI) {
+        // ORDER IS IMPORTANT
+        List<String> params = new ArrayList<>();
+
+        //operation
+        params.add("op");
+        params.add("upload");
+
+        //auth
+        params.add("url");
+        params.add(swift.getUrl());
+        params.add("account");
+        params.add(swift.getAccount());
+        params.add("username");
+        params.add(swift.getUserName());
+        params.add("key");
+        params.add(swift.getKey());
+
+        // object info
+        params.add("container");
+        params.add(container);
+        params.add("ldir");
+        params.add(ldir);
+        params.add("lfilename");
+        params.add(lfilename);
+        params.add("isISCSI");
+        params.add(isISCSI.toString());
+
+        if (swift.getStoragePolicy() != null) {
+            params.add("storagepolicy");
+            params.add(swift.getStoragePolicy());
+        }
+
+        return params;
     }
 
     protected String deleteSnapshotBackup(final Connection conn, final String localMountPoint, final String path, final String secondaryStorageMountPath, final String backupUUID) {
