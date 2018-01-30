@@ -214,7 +214,7 @@ public class AccountJoinDaoImpl extends GenericDaoBase<AccountJoinVO, Long> impl
         //get resource limits for secondary storage space and convert it from Bytes to GiB
         long secondaryStorageLimit = ApiDBUtils.findCorrectResourceLimit(account.getSecondaryStorageLimit(), account.getId(), ResourceType.secondary_storage);
         String secondaryStorageLimitDisplay = (fullView || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf(secondaryStorageLimit / ResourceType.bytesToGiB);
-        long secondaryStorageTotal = (account.getSecondaryStorageTotal() == null) ? 0 : (account.getSecondaryStorageTotal() / ResourceType.bytesToGiB);
+        float secondaryStorageTotal = (account.getSecondaryStorageTotal() == null) ? 0 : (account.getSecondaryStorageTotal() / (ResourceType.bytesToGiB * 1f));
         String secondaryStorageAvail = (fullView || secondaryStorageLimit == -1) ? "Unlimited" : String.valueOf((secondaryStorageLimit / ResourceType.bytesToGiB)
                 - secondaryStorageTotal);
 
