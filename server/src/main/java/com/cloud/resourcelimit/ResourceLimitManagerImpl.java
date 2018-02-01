@@ -947,51 +947,11 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
     }
 
     public long countCpusForAccount(long accountId) {
-        GenericSearchBuilder<ServiceOfferingVO, SumCount> cpuSearch = _serviceOfferingDao.createSearchBuilder(SumCount.class);
-        cpuSearch.select("sum", Func.SUM, cpuSearch.entity().getCpu());
-        SearchBuilder<UserVmVO> join1 = _userVmDao.createSearchBuilder();
-        join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
-        join1.and("type", join1.entity().getType(), Op.EQ);
-        join1.and("state", join1.entity().getState(), SearchCriteria.Op.NIN);
-        join1.and("displayVm", join1.entity().isDisplayVm(), Op.EQ);
-        cpuSearch.join("offerings", join1, cpuSearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
-        cpuSearch.done();
-
-        SearchCriteria<SumCount> sc = cpuSearch.create();
-        sc.setJoinParameters("offerings", "accountId", accountId);
-        sc.setJoinParameters("offerings", "type", VirtualMachine.Type.User);
-        sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging});
-        sc.setJoinParameters("offerings", "displayVm", 1);
-        List<SumCount> cpus = _serviceOfferingDao.customSearch(sc, null);
-        if (cpus != null) {
-            return cpus.get(0).sum;
-        } else {
-            return 0;
-        }
+        return _resourceCountDao.countCpuNumberAllocatedToAccount(accountId);
     }
 
     public long calculateMemoryForAccount(long accountId) {
-        GenericSearchBuilder<ServiceOfferingVO, SumCount> memorySearch = _serviceOfferingDao.createSearchBuilder(SumCount.class);
-        memorySearch.select("sum", Func.SUM, memorySearch.entity().getRamSize());
-        SearchBuilder<UserVmVO> join1 = _userVmDao.createSearchBuilder();
-        join1.and("accountId", join1.entity().getAccountId(), Op.EQ);
-        join1.and("type", join1.entity().getType(), Op.EQ);
-        join1.and("state", join1.entity().getState(), SearchCriteria.Op.NIN);
-        join1.and("displayVm", join1.entity().isDisplayVm(), Op.EQ);
-        memorySearch.join("offerings", join1, memorySearch.entity().getId(), join1.entity().getServiceOfferingId(), JoinBuilder.JoinType.INNER);
-        memorySearch.done();
-
-        SearchCriteria<SumCount> sc = memorySearch.create();
-        sc.setJoinParameters("offerings", "accountId", accountId);
-        sc.setJoinParameters("offerings", "type", VirtualMachine.Type.User);
-        sc.setJoinParameters("offerings", "state", new Object[] {State.Destroyed, State.Error, State.Expunging});
-        sc.setJoinParameters("offerings", "displayVm", 1);
-        List<SumCount> memory = _serviceOfferingDao.customSearch(sc, null);
-        if (memory != null) {
-            return memory.get(0).sum;
-        } else {
-            return 0;
-        }
+        return _resourceCountDao.countMemoryAllocatedToAccount(accountId);
     }
 
     public long calculateSecondaryStorageForAccount(long accountId) {
