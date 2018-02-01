@@ -1543,16 +1543,15 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder fsBuilder = new StringBuilder();
+            fsBuilder.append("<nuage-extension xmlns='nuagenetworks.net/nuage/cna'>\n");
             for (Map.Entry<String, String> address : addresses.entrySet()) {
-                fsBuilder.append("<nuage-extension xmlns='nuagenetworks.net/nuage/cna'>\n")
-                        .append("  <interface mac='")
-                        .append(address.getKey())
-                        .append("' vsp-vr-ip='")
-                        .append(address.getValue())
-                        .append("'></interface>\n")
-                        .append("</nuage-extension>\n");
+                fsBuilder.append("  <interface mac='")
+                         .append(address.getKey())
+                         .append("' vsp-vr-ip='")
+                         .append(address.getValue())
+                         .append("'></interface>\n");
             }
-            return fsBuilder.toString();
+            return fsBuilder.append("</nuage-extension>\n").toString();
         }
     }
 
