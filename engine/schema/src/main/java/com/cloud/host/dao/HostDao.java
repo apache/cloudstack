@@ -109,4 +109,8 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
      * Side note: this method is currently only used in XenServerGuru; therefore, it was designed to meet XenServer deployment scenarios requirements.
      */
     HostVO findHostToOperateOnSnapshotBasedOnStoragePool(StoragePoolVO storagePoolVO);
+
+    int getCpuSocketsCount(Type type);
+
+    List<HostDaoImpl.SummedMetrics> getCpuSocketsMetricsCount(Type type);
 }

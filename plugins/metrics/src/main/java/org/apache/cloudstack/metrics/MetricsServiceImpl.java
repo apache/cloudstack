@@ -31,6 +31,9 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.deploy.DeploymentClusterPlanner;
 import com.cloud.host.Host;
+import com.cloud.host.dao.HostDaoImpl;
+import org.apache.cloudstack.api.ListCpuSocketsMetricsCmd;
+import org.apache.cloudstack.response.CpuSocketsMetricsResponse;
 import com.cloud.host.HostStats;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
@@ -131,14 +134,27 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         response.setImageStores(imageStoreDao.listImageStores().size());
         response.setSystemvms(vmInstanceDao.listByTypes(VirtualMachine.Type.ConsoleProxy, VirtualMachine.Type.SecondaryStorageVm).size());
         response.setRouters(domainRouterDao.listAll().size());
-        int cpuSockets = 0;
-        for (final Host host : hostDao.listByType(Host.Type.Routing)) {
-            if (host.getCpuSockets() != null) {
-                cpuSockets += host.getCpuSockets();
-            }
-        }
-        response.setCpuSockets(cpuSockets);
+        response.setCpuSockets(hostDao.getCpuSocketsCount(Host.Type.Routing));
         return response;
+    }
+
+    @Override
+    public List<CpuSocketsMetricsResponse> listCpuSocketsMetrics()
+    {
+        final List<CpuSocketsMetricsResponse> metricsResponses = new ArrayList<>();
+        List<HostDaoImpl.SummedMetrics> cpuSocketsMetricsCount = hostDao.getCpuSocketsMetricsCount(Host.Type.Routing);
+
+        for(HostDaoImpl.SummedMetrics metrics : cpuSocketsMetricsCount)
+        {
+            CpuSocketsMetricsResponse metricsResponse = new CpuSocketsMetricsResponse();
+            metricsResponse.setHypervisorversion(metrics.getHypervisorversion());
+            metricsResponse.setCpusocketscount(metrics.getCpusocketscount());
+            metricsResponse.setHostscount(metrics.getHostscount());
+            metricsResponse.setHypervisorname(metrics.getHypervisorname());
+
+            metricsResponses.add(metricsResponse);
+        }
+        return metricsResponses;
     }
 
     @Override
@@ -453,6 +469,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
         cmdList.add(ListHostsMetricsCmd.class);
         cmdList.add(ListClustersMetricsCmd.class);
         cmdList.add(ListZonesMetricsCmd.class);
+        cmdList.add(ListCpuSocketsMetricsCmd.class);
         return cmdList;
     }
 
