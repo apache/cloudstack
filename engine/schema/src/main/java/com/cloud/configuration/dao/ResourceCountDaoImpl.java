@@ -27,9 +27,6 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.domain.DomainVO;
-import com.cloud.user.AccountVO;
-import com.cloud.utils.db.JoinBuilder;
 import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Resource;
@@ -37,11 +34,14 @@ import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
+import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
 import com.cloud.exception.UnsupportedServiceException;
+import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
@@ -55,9 +55,9 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     private final SearchBuilder<ResourceCountVO> DomainSearch;
 
     @Inject
-    protected DomainDao _domainDao;
+    private DomainDao _domainDao;
     @Inject
-    protected AccountDao _accountDao;
+    private AccountDao _accountDao;
 
     public ResourceCountDaoImpl() {
         TypeSearch = createSearchBuilder();
@@ -252,16 +252,15 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         return 0;
     }
 
-    private String baseSqlCountComputingResourceAllocatedToAccount = "Select "  
-            + " SUM((CASE "  
+    private String baseSqlCountComputingResourceAllocatedToAccount = "Select "
+            + " SUM((CASE "
             + "        WHEN so.%s is not null THEN so.%s "
-            + "        ELSE CONVERT(vmd.value, UNSIGNED INTEGER) " 
+            + "        ELSE CONVERT(vmd.value, UNSIGNED INTEGER) "
             + "    END)) as total "
-            + " from vm_instance vm " 
+            + " from vm_instance vm "
             + " join service_offering_view so on so.id = vm.service_offering_id "
             + " left join user_vm_details vmd on vmd.vm_id = vm.id and vmd.name = '%s' "
             + " where vm.type = 'User' and state not in ('Destroyed', 'Error', 'Expunging') and display_vm = true and account_id = ? ";
-    
     @Override
     public long countCpuNumberAllocatedToAccount(long accountId) {
         String sqlCountCpuNumberAllocatedToAccount = String.format(baseSqlCountComputingResourceAllocatedToAccount, ResourceType.cpu, ResourceType.cpu, "cpuNumber");
@@ -279,10 +278,10 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         try (TransactionLegacy tx = TransactionLegacy.currentTxn()) {
             PreparedStatement pstmt = tx.prepareAutoCloseStatement(sqlCountComputingResourcesAllocatedToAccount);
             pstmt.setLong(1, accountId);
-            
+
             ResultSet rs = pstmt.executeQuery();
             if (!rs.next()) {
-              throw new CloudRuntimeException(String.format("An unexpected case happened while counting allocated computing resources for account: " + accountId));
+                throw new CloudRuntimeException(String.format("An unexpected case happened while counting allocated computing resources for account: " + accountId));
             }
             return rs.getLong("total");
         } catch (SQLException e) {
