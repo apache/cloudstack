@@ -18,7 +18,6 @@ package org.apache.cloudstack.acl;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -172,7 +171,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
                     }
                     if (roleDao.remove(role.getId())) {
                         RoleVO roleVO = roleDao.findByIdIncludingRemoved(role.getId());
-                        roleVO.setName(role.getName() + "-deleted-" + new Date());
+                        roleVO.setName(null);
                         return roleDao.update(role.getId(), roleVO);
                     }
                     return false;
