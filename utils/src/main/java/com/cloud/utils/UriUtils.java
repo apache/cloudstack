@@ -36,6 +36,7 @@ import java.util.ListIterator;
 import java.util.StringTokenizer;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Comparator;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -63,6 +64,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.NamedNodeMap;
 
 public class UriUtils {
 
@@ -297,6 +299,37 @@ public class UriUtils {
         }
     }
 
+    /**
+     * Get node priority value (if provided), MAX_VALUE if not
+     */
+    protected static Integer getNodePriority(Node node) {
+        if (node.hasAttributes()) {
+            NamedNodeMap attributes = node.getAttributes();
+            for (int k=0; k<attributes.getLength(); k++) {
+                Node attr = attributes.item(k);
+                if (attr.getNodeName().equals("priority")) {
+                    String prio = attr.getNodeValue().replace("\"", "");
+                    return Integer.valueOf(prio);
+                }
+            }
+        }
+        return Integer.MAX_VALUE;
+    }
+
+    /**
+     * Return the list of first elements on the list of pairs
+     */
+    protected static List<String> getListOfFirstElements(List<Pair<String, Integer>> priorityList) {
+        List<String> values = new ArrayList<>();
+        for (Pair<String, Integer> pair : priorityList) {
+            values.add(pair.first());
+        }
+        return values;
+    }
+
+    /**
+     * Retrieve values from XML documents ordered by ascending priority for each tag name
+     */
     protected static Map<String, List<String>> getMultipleValuesFromXML(InputStream is, String[] tagNames) {
         Map<String, List<String>> returnValues = new HashMap<String, List<String>>();
         try {
@@ -307,14 +340,16 @@ public class UriUtils {
             for (int i = 0; i < tagNames.length; i++) {
                 NodeList targetNodes = rootElement.getElementsByTagName(tagNames[i]);
                 if (targetNodes.getLength() <= 0) {
-                    s_logger.error("no " + tagNames[i] + " tag in XML response...returning null");
+                    s_logger.error("no " + tagNames[i] + " tag in XML response...");
                 } else {
-                    List<String> valueList = new ArrayList<String>();
+                    List<Pair<String, Integer>> priorityList = new ArrayList<>();
                     for (int j = 0; j < targetNodes.getLength(); j++) {
                         Node node = targetNodes.item(j);
-                        valueList.add(node.getTextContent());
+                        Integer priority = getNodePriority(node);
+                        priorityList.add(new Pair<>(node.getTextContent(), priority));
                     }
-                    returnValues.put(tagNames[i], valueList);
+                    priorityList.sort(Comparator.comparing(x -> x.second()));
+                    returnValues.put(tagNames[i], getListOfFirstElements(priorityList));
                 }
             }
         } catch (Exception ex) {
@@ -361,18 +396,23 @@ public class UriUtils {
     }
 
     /**
-     * Get list of urls on metalink
-     * @param metalinkUrl
-     * @return
+     * Get list of urls on metalink ordered by ascending priority (for those which priority tag is not defined, highest priority value is assumed)
      */
     public static List<String> getMetalinkUrls(String metalinkUrl) {
         HttpClient httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());
         GetMethod getMethod = new GetMethod(metalinkUrl);
         List<String> urls = new ArrayList<>();
+        int status;
+        try {
+            status = httpClient.executeMethod(getMethod);
+        } catch (IOException e) {
+            s_logger.error("Error retrieving urls form metalink: " + metalinkUrl);
+            return null;
+        }
         try (
                 InputStream is = getMethod.getResponseBodyAsStream()
         ) {
-            if (httpClient.executeMethod(getMethod) == HttpStatus.SC_OK) {
+            if (status == HttpStatus.SC_OK) {
                 Map<String, List<String>> metalinkUrlsMap = getMultipleValuesFromXML(is, new String[] {"url"});
                 if (metalinkUrlsMap.containsKey("url")) {
                     List<String> metalinkUrls = metalinkUrlsMap.get("url");

@@ -18,32 +18,50 @@
 //
 package com.cloud.agent.direct.download;
 
-import com.cloud.utils.script.Script;
+import com.cloud.utils.UriUtils;
+import org.apache.commons.collections.CollectionUtils;
 
 import java.io.File;
+import java.util.List;
+import java.util.Map;
 
-public class MetalinkDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
+public class MetalinkDirectTemplateDownloader extends HttpDirectTemplateDownloader {
 
-    private String downloadDir;
-
-    public MetalinkDirectTemplateDownloader(String url, String destPoolPath, Long templateId, String checksum) {
-        super(url, destPoolPath, templateId, checksum);
-        String relativeDir = getDirectDownloadTempPath(templateId);
-        downloadDir = getDestPoolPath() + File.separator + relativeDir;
-        createFolder(downloadDir);
+    public MetalinkDirectTemplateDownloader(String url, String destPoolPath, Long templateId, String checksum, Map<String, String> headers) {
+        super(url, templateId, destPoolPath, checksum, headers);
     }
 
     @Override
     public boolean downloadTemplate() {
-        String downloadCommand = "aria2c " + getUrl() + " -d " + downloadDir + " --check-integrity=true";
-        Script.runSimpleBashScript(downloadCommand);
-        //Remove .metalink file
-        Script.runSimpleBashScript("rm -f " + downloadDir + File.separator + getFileNameFromUrl());
-        String fileName = Script.runSimpleBashScript("ls " + downloadDir);
-        if (fileName == null) {
-            return false;
+        s_logger.debug("Retrieving metalink file from: " + getUrl() + " to file: " + getDownloadedFilePath());
+        List<String> metalinkUrls = UriUtils.getMetalinkUrls(getUrl());
+        if (CollectionUtils.isNotEmpty(metalinkUrls)) {
+            String downloadDir = getDirectDownloadTempPath(getTemplateId());
+            boolean downloaded = false;
+            int i = 0;
+            while (!downloaded && i < metalinkUrls.size()) {
+                try {
+                    setUrl(metalinkUrls.get(i));
+                    s_logger.debug("Trying to download template from metalink url: " + getUrl());
+                    File f = new File(getDestPoolPath() + File.separator + downloadDir + File.separator + getFileNameFromUrl());
+                    if (f.exists()) {
+                        f.delete();
+                        f.createNewFile();
+                    }
+                    setDownloadedFilePath(f.getAbsolutePath());
+                    request = createRequest(getUrl(), reqHeaders);
+                    downloaded = super.downloadTemplate();
+                    if (downloaded) {
+                        s_logger.debug("Successfully downloaded template from metalink url: " + getUrl());
+                        break;
+                    }
+                } catch (Exception e) {
+                    s_logger.error("Error downloading template: " + getTemplateId() + " from " + getUrl() + ": " + e.getMessage());
+                }
+                i++;
+            }
+            return downloaded;
         }
-        setDownloadedFilePath(downloadDir + File.separator + fileName);
         return true;
     }
 }

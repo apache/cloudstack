@@ -22,6 +22,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
 import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,6 +38,7 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     private String downloadedFilePath;
     private String installPath;
     private String checksum;
+    public static final Logger s_logger = Logger.getLogger(DirectTemplateDownloaderImpl.class.getName());
 
     protected DirectTemplateDownloaderImpl(final String url, final String destPoolPath, final Long templateId, final String checksum) {
         this.url = url;
@@ -68,6 +70,10 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
 
     public String getUrl() {
         return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     public String getDestPoolPath() {
@@ -155,14 +161,65 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     @Override
     public boolean validateChecksum() {
         if (StringUtils.isNotBlank(checksum)) {
+            int retry = 3;
+            boolean valid = false;
             try {
-                return DigestHelper.check(checksum, new FileInputStream(downloadedFilePath));
+                while (!valid && retry > 0) {
+                    s_logger.debug("Performing checksum validation for downloaded template " + templateId + ", retries left: " + retry);
+                    valid = DigestHelper.check(checksum, new FileInputStream(downloadedFilePath));
+                    retry--;
+                    if (!valid && retry > 0) {
+                        s_logger.debug("Checksum validation failded, re-downloading template");
+                        resetDownloadFile();
+                        downloadTemplate();
+                    }
+                }
+                return valid;
             } catch (IOException e) {
-                throw new CloudRuntimeException("could not check sum for file: " + downloadedFilePath,e);
+                throw new CloudRuntimeException("could not check sum for file: " + downloadedFilePath, e);
             } catch (NoSuchAlgorithmException e) {
                 throw new CloudRuntimeException("Unknown checksum algorithm: " + checksum, e);
             }
         }
         return true;
     }
+
+    /**
+     * Return checksum command from algorithm
+     */
+    private String getChecksumCommandFromAlgorithm(String algorithm) {
+        if (algorithm.equalsIgnoreCase("MD5")) {
+            return "md5sum";
+        } else if (algorithm.equalsIgnoreCase("SHA-1")) {
+            return "sha1sum";
+        } else if (algorithm.equalsIgnoreCase("SHA-224")) {
+            return "sha224sum";
+        } else if (algorithm.equalsIgnoreCase("SHA-256")) {
+            return "sha256sum";
+        } else if (algorithm.equalsIgnoreCase("SHA-384")) {
+            return "sha384sum";
+        } else if (algorithm.equalsIgnoreCase("SHA-512")) {
+            return "sha512sum";
+        } else {
+            throw new CloudRuntimeException("Unknown checksum algorithm: " + algorithm);
+        }
+    }
+
+    /**
+     * Delete and create download file
+     */
+    private void resetDownloadFile() {
+        File f = new File(getDownloadedFilePath());
+        s_logger.debug("Resetting download file: " + getDownloadedFilePath() + ", in order to re-download and persist template " + templateId + " on it");
+        try {
+            if (f.exists()) {
+                f.delete();
+            }
+            f.createNewFile();
+        } catch (IOException e) {
+            s_logger.error("Error creating file to download on: " + getDownloadedFilePath() + " due to: " + e.getMessage());
+            throw new CloudRuntimeException("Failed to create download file for direct download");
+        }
+    }
+
 }
