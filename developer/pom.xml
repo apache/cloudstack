@@ -18,7 +18,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.11.0.0</version>
+    <version>4.11.0.1-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
