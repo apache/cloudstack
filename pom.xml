@@ -644,7 +644,7 @@
               <sourceDirectory>${project.basedir}</sourceDirectory>
             </sourceDirectories>
             <includes>**\/*.java</includes>
-            <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/apidoc\/,**\/generated-sources\/**\/*</excludes>
+            <excludes>**\/deps\/,**\/test\/,**\/target\/,**\/bin\/,**\/*.xml,**\/*.ini,**\/*.sh,**\/*.bat,**\/XmlToHtmlConverter*,**\/generated-sources\/**\/*</excludes>
           </configuration>
         </plugin>
         <plugin>
