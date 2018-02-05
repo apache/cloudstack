@@ -122,9 +122,8 @@ public interface NuageVspManager extends PluggableService {
     /**
      * Associates a Nuage Vsp domain template with a
      * @param cmd Associate cmd which contains all the data
-     * @return true on success otherwise exception is thrown
      */
-    boolean associateNuageVspDomainTemplate(AssociateNuageVspDomainTemplateCmd cmd);
+    void associateNuageVspDomainTemplate(AssociateNuageVspDomainTemplateCmd cmd);
 
     /**
      * Queries the VSD to check if the entity provided in the entityCmd exists on the VSD

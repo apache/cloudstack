@@ -920,7 +920,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     }
 
     @Override
-    public boolean associateNuageVspDomainTemplate(AssociateNuageVspDomainTemplateCmd cmd){
+    public void associateNuageVspDomainTemplate(AssociateNuageVspDomainTemplateCmd cmd){
         VpcVO vpc = _vpcDao.findById(cmd.getVpcId());
         Long physicalNetworkId;
         if (cmd.getPhysicalNetworkId() != null) {
@@ -941,7 +941,6 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
             throw new InvalidParameterValueException("Could not find a Domain Template with name: " + cmd.getDomainTemplate());
         }
         setPreConfiguredDomainTemplateName(cmd.getVpcId(), cmd.getDomainTemplate());
-        return true;
     }
 
     @Override

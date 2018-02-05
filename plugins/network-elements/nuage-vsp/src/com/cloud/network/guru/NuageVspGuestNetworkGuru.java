@@ -468,11 +468,10 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru implements Networ
             HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
             VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(vm.getVirtualMachine().getDomainId(), network);
 
-            boolean isUpgradeNetworkOffering = vm.getType() == VirtualMachine.Type.DomainRouter && vspNetwork.getVirtualRouterIp()
+            boolean vrAddedToNuage = vm.getType() == VirtualMachine.Type.DomainRouter && vspNetwork.getVirtualRouterIp()
                                                                                           .equals("null");
-            if (isUpgradeNetworkOffering) {
-                //In case of upgrade network offering
-                NetworkOffering offering = _ntwkOfferingDao.findById(network.getNetworkOfferingId());
+            if (vrAddedToNuage) {
+                //In case a VR is added due to upgrade network offering - recalculate the broadcast uri before using it.
                 _nuageVspManager.updateBroadcastUri(network);
                 network = _networkDao.findById(network.getId());
                 vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(vm.getVirtualMachine().getDomainId(), network, null);
