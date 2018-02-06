@@ -1719,6 +1719,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     private boolean checkUsagedSpace(StoragePool pool) {
+        // Managed storage does not currently deal with accounting for physically used space (only provisioned space). Just return true if "pool" is managed.
+        if (pool.isManaged()) {
+            return true;
+        }
+
         StatsCollector sc = StatsCollector.getInstance();
         double storageUsedThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(pool.getDataCenterId());
         if (sc != null) {
@@ -1797,6 +1802,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Destination pool id: " + pool.getId());
         }
+
         StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
         long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
         long totalAskingSize = 0;
@@ -1824,64 +1830,112 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, tmpl);
                 }
             }
-            // A ready state volume is already allocated in a pool. so the asking size is zero for it.
-            // In case the volume is moving across pools or is not ready yet, the asking size has to be computed
+
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("pool id for the volume with id: " + volumeVO.getId() + " is " + volumeVO.getPoolId());
+                s_logger.debug("Pool ID for the volume with ID " + volumeVO.getId() + " is " + volumeVO.getPoolId());
             }
+
+            // A ready-state volume is already allocated in a pool, so the asking size is zero for it.
+            // In case the volume is moving across pools or is not ready yet, the asking size has to be computed.
             if ((volumeVO.getState() != Volume.State.Ready) || (volumeVO.getPoolId() != pool.getId())) {
-                if (ScopeType.ZONE.equals(poolVO.getScope()) && volumeVO.getTemplateId() != null) {
-                    VMTemplateVO tmpl = _templateDao.findByIdIncludingRemoved(volumeVO.getTemplateId());
+                totalAskingSize += getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeVO, poolVO);
 
-                    if (tmpl != null && !ImageFormat.ISO.equals(tmpl.getFormat())) {
-                        // Storage plug-ins for zone-wide primary storage can be designed in such a way as to store a template on the
-                        // primary storage once and make use of it in different clusters (via cloning).
-                        // This next call leads to CloudStack asking how many more bytes it will need for the template (if the template is
-                        // already stored on the primary storage, then the answer is 0).
-
-                        if (clusterId != null && _clusterDao.getSupportsResigning(clusterId)) {
-                            totalAskingSize += getBytesRequiredForTemplate(tmpl, pool);
-                        }
-                    }
-                }
+                totalAskingSize += getAskingSizeForTemplateBasedOnClusterAndStoragePool(volumeVO.getTemplateId(), clusterId, poolVO);
             }
         }
 
         long totalOverProvCapacity;
+
         if (pool.getPoolType().supportsOverProvisioning()) {
             BigDecimal overProvFactor = getStorageOverProvisioningFactor(pool.getId());
+
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
-            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with overprovisioning factor " + overProvFactor.toString());
-            s_logger.debug("Total over provisioned capacity calculated is " + overProvFactor + " * " + pool.getCapacityBytes());
+
+            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with over-provisioning factor " +
+                    overProvFactor.toString());
+            s_logger.debug("Total over-provisioned capacity calculated is " + overProvFactor + " * " + pool.getCapacityBytes());
         } else {
             totalOverProvCapacity = pool.getCapacityBytes();
+
             s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString());
         }
 
-        s_logger.debug("Total capacity of the pool " + poolVO.getName() + " id: " + pool.getId() + " is " + totalOverProvCapacity);
+        s_logger.debug("Total capacity of the pool " + poolVO.getName() + " with ID " + pool.getId() + " is " + totalOverProvCapacity);
+
         double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
+
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking pool: " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : "
-                    + allocatedSizeWithTemplate + ", askingSize : " + totalAskingSize + ", allocated disable threshold: " + storageAllocatedThreshold);
+            s_logger.debug("Checking pool with ID " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize: " +
+                    totalOverProvCapacity + ", totalAllocatedSize: " + allocatedSizeWithTemplate + ", askingSize: " + totalAskingSize +
+                    ", allocated disable threshold: " + storageAllocatedThreshold);
         }
 
         double usedPercentage = (allocatedSizeWithTemplate + totalAskingSize) / (double)(totalOverProvCapacity);
+
         if (usedPercentage > storageAllocatedThreshold) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for volume allocation: " + volumes.toString() + " since its allocated percentage: " + usedPercentage
-                        + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + storageAllocatedThreshold + ", skipping this pool");
+                s_logger.debug("Insufficient un-allocated capacity on the pool with ID " + pool.getId() + " for volume allocation: " + volumes.toString() +
+                        " since its allocated percentage " + usedPercentage + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold " +
+                        storageAllocatedThreshold + ", skipping this pool");
             }
+
             return false;
         }
 
         if (totalOverProvCapacity < (allocatedSizeWithTemplate + totalAskingSize)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for volume allocation: " + volumes.toString() + ", not enough storage, maxSize : " + totalOverProvCapacity
-                        + ", totalAllocatedSize : " + allocatedSizeWithTemplate + ", askingSize : " + totalAskingSize);
+                s_logger.debug("Insufficient un-allocated capacity on the pool with ID " + pool.getId() + " for volume allocation: " + volumes.toString() +
+                        "; not enough storage, maxSize: " + totalOverProvCapacity + ", totalAllocatedSize: " + allocatedSizeWithTemplate + ", askingSize: " +
+                        totalAskingSize);
             }
+
             return false;
         }
+
         return true;
+    }
+
+    /**
+     * Storage plug-ins for managed storage can be designed in such a way as to store a template on the primary storage once and
+     * make use of it via storage-side cloning.
+     *
+     * This method determines how many more bytes it will need for the template (if the template is already stored on the primary storage,
+     * then the answer is 0).
+     */
+    private long getAskingSizeForTemplateBasedOnClusterAndStoragePool(Long templateId, Long clusterId, StoragePoolVO storagePoolVO) {
+        if (templateId == null || clusterId == null || storagePoolVO == null || !storagePoolVO.isManaged()) {
+            return 0;
+        }
+
+        VMTemplateVO tmpl = _templateDao.findByIdIncludingRemoved(templateId);
+
+        if (tmpl == null || ImageFormat.ISO.equals(tmpl.getFormat())) {
+            return 0;
+        }
+
+        HypervisorType hypervisorType = tmpl.getHypervisorType();
+
+        // The getSupportsResigning method is applicable for XenServer as a UUID-resigning patch may or may not be installed on those hypervisor hosts.
+        if (_clusterDao.getSupportsResigning(clusterId) || HypervisorType.VMware.equals(hypervisorType) || HypervisorType.KVM.equals(hypervisorType)) {
+            return getBytesRequiredForTemplate(tmpl, storagePoolVO);
+        }
+
+        return 0;
+    }
+
+    private long getDataObjectSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+
+        if (storeDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
+
+            VolumeInfo volumeInfo = volFactory.getVolume(volume.getId());
+
+            return primaryStoreDriver.getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeInfo, pool);
+        }
+
+        return volume.getSize();
     }
 
     private DiskOfferingVO getDiskOfferingVO(Volume volume) {
