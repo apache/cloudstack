@@ -18,6 +18,7 @@
 """ Custom base class for Nuage VSP SDN plugin specific Marvin tests
 """
 # Import Local Modules
+from bambou.nurest_object import NURESTObject
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.lib.base import (Domain,
                              EgressFireWallRule,
@@ -313,6 +314,8 @@ class nuageTestCase(cloudstackTestCase):
             try:
                 if isinstance(obj, VirtualMachine):
                     obj.delete(self.api_client, expunge=True)
+                elif isinstance(obj, NURESTObject):
+                    obj.delete()
                 else:
                     obj.delete(self.api_client)
             except Exception as e:

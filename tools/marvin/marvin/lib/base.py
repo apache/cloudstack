@@ -39,7 +39,7 @@ class Domain:
 
     @classmethod
     def create(cls, apiclient, services, name=None, networkdomain=None,
-               parentdomainid=None):
+               parentdomainid=None, domainid=None):
         """Creates an domain"""
 
         cmd = createDomain.createDomainCmd()
@@ -61,6 +61,9 @@ class Domain:
             cmd.parentdomainid = parentdomainid
         elif "parentdomainid" in services:
             cmd.parentdomainid = services["parentdomainid"]
+
+        if domainid:
+            cmd.domainid = domainid
         try:
             domain = apiclient.createDomain(cmd)
             if domain is not None:
