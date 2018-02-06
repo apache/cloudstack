@@ -28,6 +28,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
+import org.apache.log4j.Logger;
 
 public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDownloader {
 
@@ -37,6 +38,7 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     private String downloadedFilePath;
     private String installPath;
     private String checksum;
+    public static final Logger s_logger = Logger.getLogger(DirectTemplateDownloaderImpl.class.getName());
 
     protected DirectTemplateDownloaderImpl(final String url, final String destPoolPath, final Long templateId, final String checksum) {
         this.url = url;
@@ -68,6 +70,10 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
 
     public String getUrl() {
         return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
     }
 
     public String getDestPoolPath() {
@@ -152,11 +158,40 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
         return new DirectTemplateInformation(installPath, size, checksum);
     }
 
+    /**
+     * Delete and create download file
+     */
+    private void resetDownloadFile() {
+        File f = new File(getDownloadedFilePath());
+        s_logger.debug("Resetting download file: " + getDownloadedFilePath() + ", in order to re-download and persist template " + templateId + " on it");
+        try {
+            if (f.exists()) {
+                f.delete();
+            }
+            f.createNewFile();
+        } catch (IOException e) {
+            s_logger.error("Error creating file to download on: " + getDownloadedFilePath() + " due to: " + e.getMessage());
+            throw new CloudRuntimeException("Failed to create download file for direct download");
+        }
+    }
+
     @Override
     public boolean validateChecksum() {
         if (StringUtils.isNotBlank(checksum)) {
+            int retry = 3;
+            boolean valid = false;
             try {
-                return DigestHelper.check(checksum, new FileInputStream(downloadedFilePath));
+                while (!valid && retry > 0) {
+                    s_logger.debug("Performing checksum validation for downloaded template " + templateId + ", retries left: " + retry);
+                    valid = DigestHelper.check(checksum, new FileInputStream(downloadedFilePath));
+                    retry--;
+                    if (!valid && retry > 0) {
+                        s_logger.debug("Checksum validation failded, re-downloading template");
+                        resetDownloadFile();
+                        downloadTemplate();
+                    }
+                }
+                return valid;
             } catch (IOException e) {
                 throw new CloudRuntimeException("could not check sum for file: " + downloadedFilePath);
             } catch (NoSuchAlgorithmException e) {

@@ -24,7 +24,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.VMTemplateStoragePoolVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
@@ -40,6 +40,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
+import java.util.Collections;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
@@ -57,6 +59,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
@@ -136,6 +139,50 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         return headers;
     }
 
+    /**
+     * Get running host IDs within the same hypervisor, cluster and datacenter than hostId. ID hostId is not included on the returned list
+     */
+    protected List<Long> getRunningHostIdsInTheSameCluster(Long clusterId, long dataCenterId, HypervisorType hypervisorType, long hostId) {
+        List<HostVO> hosts = hostDao.listByDataCenterIdAndHypervisorType(dataCenterId, hypervisorType);
+        List<Long> list = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(list)) {
+            for (HostVO host : hosts) {
+                if (host.getHypervisorType().equals(hypervisorType) && host.getStatus().equals(Status.Up) &&
+                    host.getType().equals(Host.Type.Routing) && host.getClusterId().equals(clusterId) &&
+                    host.getId() != hostId) {
+                    list.add(host.getId());
+                }
+            }
+        }
+        Collections.shuffle(list);
+        return list;
+    }
+
+    /**
+    * Create host IDs array having hostId as the first element
+    */
+    protected Long[] createHostIdsList(List<Long> hostIds, long hostId) {
+        if (CollectionUtils.isEmpty(hostIds)) {
+            return Arrays.asList(hostId).toArray(new Long[1]);
+        }
+        Long[] ids = new Long[hostIds.size() + 1];
+        ids[0] = hostId;
+        int i = 1;
+        for (Long id : hostIds) {
+            ids[i] = id;
+            i++;
+        }
+        return ids;
+    }
+
+    /**
+    * Get hosts to retry download having hostId as the first element
+    */
+    protected Long[] getHostsToRetryOn(Long clusterId, long dataCenterId, HypervisorType hypervisorType, long hostId) {
+        List<Long> hostIds = getRunningHostIdsInTheSameCluster(clusterId, dataCenterId, hypervisorType, hostId);
+        return createHostIdsList(hostIds, hostId);
+    }
+
     @Override
     public void downloadTemplate(long templateId, long poolId, long hostId) {
         VMTemplateVO template = vmTemplateDao.findById(templateId);
@@ -166,10 +213,22 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
 
         DownloadProtocol protocol = getProtocolFromUrl(url);
         DirectDownloadCommand cmd = getDirectDownloadCommandFromProtocol(protocol, url, templateId, to, checksum, headers);
-        Answer answer = agentManager.easySend(hostId, cmd);
-        if (answer == null || !answer.getResult()) {
-            throw new CloudRuntimeException("Host " + hostId + " could not download template " +
-                    templateId + " on pool " + poolId);
+
+        boolean downloaded = false;
+        int retry = 3;
+        Long[] hostsToRetry = getHostsToRetryOn(host.getClusterId(), host.getDataCenterId(), host.getHypervisorType(), hostId);
+        int hostIndex = 0;
+        Answer answer = null;
+        Long hostToSendDownloadCmd = hostsToRetry[hostIndex];
+        while (!downloaded && retry > 0) {
+            s_logger.debug("Sending Direct download command to host " + hostToSendDownloadCmd);
+            answer = agentManager.easySend(hostToSendDownloadCmd, cmd);
+            downloaded = answer != null && answer.getResult();
+            hostToSendDownloadCmd = hostsToRetry[(hostIndex + 1) % hostsToRetry.length];
+            retry --;
+        }
+        if (!downloaded) {
+            throw new CloudRuntimeException("Template " + templateId + " could not be downloaded on pool " + poolId + ", failing after trying on several hosts");
         }
 
         VMTemplateStoragePoolVO sPoolRef = vmTemplatePoolDao.findByPoolTemplate(poolId, templateId);
@@ -204,9 +263,9 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         } else if (protocol.equals(DownloadProtocol.HTTPS)) {
             return new HttpsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
         } else if (protocol.equals(DownloadProtocol.NFS)) {
-            return new NfsDirectDownloadCommand(url, templateId, destPool, checksum);
+            return new NfsDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
         } else if (protocol.equals(DownloadProtocol.METALINK)) {
-            return new MetalinkDirectDownloadCommand(url, templateId, destPool, checksum);
+            return new MetalinkDirectDownloadCommand(url, templateId, destPool, checksum, httpHeaders);
         } else {
             return null;
         }
@@ -218,7 +277,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         List<HostVO> hosts = new ArrayList<>();
         for (HostVO host: hostsQuery) {
             if (host.getStatus().equals(Status.Up) &&
-                    host.getHypervisorType().equals(Hypervisor.HypervisorType.KVM)) {
+                    host.getHypervisorType().equals(HypervisorType.KVM)) {
                 hosts.add(host);
             }
         }

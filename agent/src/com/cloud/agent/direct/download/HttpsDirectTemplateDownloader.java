@@ -21,6 +21,7 @@ package com.cloud.agent.direct.download;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
@@ -44,14 +45,15 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
+import java.util.Map;
 
 public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader {
 
     private CloseableHttpClient httpsClient;
     private HttpUriRequest req;
 
-    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum) {
-        super(url, templateId, destPoolPath, checksum, null);
+    public HttpsDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers) {
+        super(url, templateId, destPoolPath, checksum, headers);
         SSLContext sslcontext = null;
         try {
             sslcontext = getSSLContext();
@@ -60,11 +62,16 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
         }
         SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
         httpsClient = HttpClients.custom().setSSLSocketFactory(factory).build();
-        req = createUriRequest(url);
+        createUriRequest(url, headers);
     }
 
-    protected HttpUriRequest createUriRequest(String downloadUrl) {
-        return new HttpGet(downloadUrl);
+    protected void createUriRequest(String downloadUrl, Map<String, String> headers) {
+        req = new HttpGet(downloadUrl);
+        if (MapUtils.isNotEmpty(headers)) {
+            for (String headerKey: headers.keySet()) {
+                req.setHeader(headerKey, headers.get(headerKey));
+            }
+        }
     }
 
     private SSLContext getSSLContext() throws KeyStoreException, NoSuchAlgorithmException, CertificateException, IOException, KeyManagementException {
