@@ -1071,7 +1071,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
         return false;
     }
 
-    private boolean destroySnapshotOnPrimaryStorage(final Connection conn, final String lastSnapshotUuid) {
+    protected boolean destroySnapshotOnPrimaryStorage(final Connection conn, final String lastSnapshotUuid) {
         try {
             final VDI snapshot = getVDIbyUuid(conn, lastSnapshotUuid);
             if (snapshot == null) {
