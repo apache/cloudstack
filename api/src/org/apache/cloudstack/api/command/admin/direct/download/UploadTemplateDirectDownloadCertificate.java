@@ -67,9 +67,12 @@ public class UploadTemplateDirectDownloadCertificate extends BaseCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Currently supporting KVM hosts only");
         }
 
+        SuccessResponse response = new SuccessResponse(getCommandName());
         try {
-            directDownloadManager.uploadCertificateToHosts(certificate, name);;
-            setResponseObject(new SuccessResponse(getCommandName()));
+            LOG.debug("Uploading certificate " + name + " to agents for Direct Download");
+            boolean result = directDownloadManager.uploadCertificateToHosts(certificate, name, hypervisor);
+            response.setSuccess(result);
+            setResponseObject(response);
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -85,4 +88,3 @@ public class UploadTemplateDirectDownloadCertificate extends BaseCmd {
         return CallContext.current().getCallingAccount().getId();
     }
 }
-
