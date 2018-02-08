@@ -211,22 +211,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         DownloadProtocol protocol = getProtocolFromUrl(url);
         DirectDownloadCommand cmd = getDirectDownloadCommandFromProtocol(protocol, url, templateId, to, checksum, headers);
 
-        boolean downloaded = false;
-        int retry = 3;
-        Long[] hostsToRetry = getHostsToRetryOn(host.getClusterId(), host.getDataCenterId(), host.getHypervisorType(), hostId);
-        int hostIndex = 0;
-        Answer answer = null;
-        Long hostToSendDownloadCmd = hostsToRetry[hostIndex];
-        while (!downloaded && retry > 0) {
-            s_logger.debug("Sending Direct download command to host " + hostToSendDownloadCmd);
-            answer = agentManager.easySend(hostToSendDownloadCmd, cmd);
-            downloaded = answer != null && answer.getResult();
-            hostToSendDownloadCmd = hostsToRetry[(hostIndex + 1) % hostsToRetry.length];
-            retry --;
-        }
-        if (!downloaded) {
-            throw new CloudRuntimeException("Template " + templateId + " could not be downloaded on pool " + poolId + ", failing after trying on several hosts");
-        }
+        Answer answer = sendDirectDownloadCommand(cmd, templateId, poolId, host);
 
         VMTemplateStoragePoolVO sPoolRef = vmTemplatePoolDao.findByPoolTemplate(poolId, templateId);
         if (sPoolRef == null) {
@@ -243,6 +228,35 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             sPoolRef.setInstallPath(ans.getInstallPath());
             vmTemplatePoolDao.persist(sPoolRef);
         }
+    }
+
+    /**
+     * Send direct download command for downloading template with ID templateId on storage pool with ID poolId.<br/>
+     * At first, cmd is sent to host, in case of failure it will retry on other hosts before failing
+     * @param cmd direct download command
+     * @param templateId template id
+     * @param poolId pool id
+     * @param host first host to which send the command
+     * @return download answer from any host which could handle cmd
+     */
+    private Answer sendDirectDownloadCommand(DirectDownloadCommand cmd, long templateId, long poolId, HostVO host) {
+        boolean downloaded = false;
+        int retry = 3;
+        Long[] hostsToRetry = getHostsToRetryOn(host.getClusterId(), host.getDataCenterId(), host.getHypervisorType(), host.getId());
+        int hostIndex = 0;
+        Answer answer = null;
+        Long hostToSendDownloadCmd = hostsToRetry[hostIndex];
+        while (!downloaded && retry > 0) {
+            s_logger.debug("Sending Direct download command to host " + hostToSendDownloadCmd);
+            answer = agentManager.easySend(hostToSendDownloadCmd, cmd);
+            downloaded = answer != null && answer.getResult();
+            hostToSendDownloadCmd = hostsToRetry[(hostIndex + 1) % hostsToRetry.length];
+            retry --;
+        }
+        if (!downloaded) {
+            throw new CloudRuntimeException("Template " + templateId + " could not be downloaded on pool " + poolId + ", failing after trying on several hosts");
+        }
+        return answer;
     }
 
     /**
@@ -268,16 +282,26 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         }
     }
 
-    @Override
-    public boolean uploadCertificateToHosts(String certificateCer, String certificateName) {
-        List<HostVO> hosts = hostDao.listAllHostsByType(Host.Type.Routing)
+    /**
+     * Return the list of running hosts to which upload certificates for Direct Download
+     */
+    private List<HostVO> getRunningHostsToUploadCertificate(HypervisorType hypervisorType) {
+        return hostDao.listAllHostsByType(Host.Type.Routing)
                 .stream()
                 .filter(x -> x.getStatus().equals(Status.Up) &&
-                            x.getHypervisorType().equals(HypervisorType.KVM))
+                        x.getHypervisorType().equals(hypervisorType))
                 .collect(Collectors.toList());
-        for (HostVO host : hosts) {
-            if (!uploadCertificate(certificateCer, certificateName, host.getId())) {
-                throw new CloudRuntimeException("Uploading certificate " + certificateName + " failed on host: " + host.getId());
+    }
+
+    @Override
+    public boolean uploadCertificateToHosts(String certificateCer, String certificateName, String hypervisor) {
+        HypervisorType hypervisorType = HypervisorType.getType(hypervisor);
+        List<HostVO> hosts = getRunningHostsToUploadCertificate(hypervisorType);
+        if (CollectionUtils.isNotEmpty(hosts)) {
+            for (HostVO host : hosts) {
+                if (!uploadCertificate(certificateCer, certificateName, host.getId())) {
+                    throw new CloudRuntimeException("Uploading certificate " + certificateName + " failed on host: " + host.getId());
+                }
             }
         }
         return true;
