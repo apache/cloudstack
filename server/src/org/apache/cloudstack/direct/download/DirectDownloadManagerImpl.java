@@ -18,8 +18,13 @@
 //
 package org.apache.cloudstack.direct.download;
 
+import static com.cloud.storage.Storage.ImageFormat;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.event.ActionEventUtils;
+import com.cloud.event.EventTypes;
+import com.cloud.event.EventVO;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
@@ -53,6 +58,7 @@ import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificate;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -211,7 +217,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         DownloadProtocol protocol = getProtocolFromUrl(url);
         DirectDownloadCommand cmd = getDirectDownloadCommandFromProtocol(protocol, url, templateId, to, checksum, headers);
 
-        Answer answer = sendDirectDownloadCommand(cmd, templateId, poolId, host);
+        Answer answer = sendDirectDownloadCommand(cmd, template, poolId, host);
 
         VMTemplateStoragePoolVO sPoolRef = vmTemplatePoolDao.findByPoolTemplate(poolId, templateId);
         if (sPoolRef == null) {
@@ -234,12 +240,12 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
      * Send direct download command for downloading template with ID templateId on storage pool with ID poolId.<br/>
      * At first, cmd is sent to host, in case of failure it will retry on other hosts before failing
      * @param cmd direct download command
-     * @param templateId template id
+     * @param template template
      * @param poolId pool id
      * @param host first host to which send the command
      * @return download answer from any host which could handle cmd
      */
-    private Answer sendDirectDownloadCommand(DirectDownloadCommand cmd, long templateId, long poolId, HostVO host) {
+    private Answer sendDirectDownloadCommand(DirectDownloadCommand cmd, VMTemplateVO template, long poolId, HostVO host) {
         boolean downloaded = false;
         int retry = 3;
         Long[] hostsToRetry = getHostsToRetryOn(host.getClusterId(), host.getDataCenterId(), host.getHypervisorType(), host.getId());
@@ -254,18 +260,27 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
             retry --;
         }
         if (!downloaded) {
-            throw new CloudRuntimeException("Template " + templateId + " could not be downloaded on pool " + poolId + ", failing after trying on several hosts");
+            logUsageEvent(template, poolId);
+            throw new CloudRuntimeException("Template " + template.getId() + " could not be downloaded on pool " + poolId + ", failing after trying on several hosts");
         }
         return answer;
     }
 
     /**
+     * Log and persist event for direct download failure
+     */
+    private void logUsageEvent(VMTemplateVO template, long poolId) {
+        String event = EventTypes.EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE;
+        if (template.getFormat() == ImageFormat.ISO) {
+            event = EventTypes.EVENT_ISO_DIRECT_DOWNLOAD_FAILURE;
+        }
+        String description = "Direct Download for template Id: " + template.getId() + "on pool Id: " + poolId + " failed";
+        s_logger.error(description);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), template.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
+    }
+
+    /**
      * Return DirectDownloadCommand according to the protocol
-     * @param protocol
-     * @param url
-     * @param templateId
-     * @param destPool
-     * @return
      */
     private DirectDownloadCommand getDirectDownloadCommandFromProtocol(DownloadProtocol protocol, String url, Long templateId, PrimaryDataStoreTO destPool,
                                                                        String checksum, Map<String, String> httpHeaders) {

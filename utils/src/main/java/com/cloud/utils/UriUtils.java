@@ -300,20 +300,26 @@ public class UriUtils {
     }
 
     /**
-     * Get node priority value (if provided), MAX_VALUE if not
+     * Add element to priority list examining node attributes: priority (for urls) and type (for checksums)
      */
-    protected static Integer getNodePriority(Node node) {
+    protected static void addPriorityListElementExaminingNode(String tagName, Node node, List<Pair<String, Integer>> priorityList) {
+        Integer priority = Integer.MAX_VALUE;
+        String first = node.getTextContent();
         if (node.hasAttributes()) {
             NamedNodeMap attributes = node.getAttributes();
             for (int k=0; k<attributes.getLength(); k++) {
                 Node attr = attributes.item(k);
-                if (attr.getNodeName().equals("priority")) {
+                if (tagName.equals("url") && attr.getNodeName().equals("priority")) {
                     String prio = attr.getNodeValue().replace("\"", "");
-                    return Integer.valueOf(prio);
+                    priority = Integer.parseInt(prio);
+                    break;
+                } else if (tagName.equals("hash") && attr.getNodeName().equals("type")) {
+                    first = "{" + attr.getNodeValue() + "}" + first;
+                    break;
                 }
             }
         }
-        return Integer.MAX_VALUE;
+        priorityList.add(new Pair<>(first, priority));
     }
 
     /**
@@ -327,6 +333,31 @@ public class UriUtils {
         return values;
     }
 
+    /**
+     * Return HttpClient with connection timeout
+     */
+    private static HttpClient getHttpClient() {
+        MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
+        s_httpClientManager.getParams().setConnectionTimeout(5000);
+        return new HttpClient(s_httpClientManager);
+    }
+
+    public static List<String> getMetalinkChecksums(String url) {
+        HttpClient httpClient = getHttpClient();
+        GetMethod getMethod = new GetMethod(url);
+        try {
+            if (httpClient.executeMethod(getMethod) == HttpStatus.SC_OK) {
+                InputStream is = getMethod.getResponseBodyAsStream();
+                Map<String, List<String>> checksums = getMultipleValuesFromXML(is, new String[] {"hash"});
+                if (checksums.containsKey("hash")) {
+                    return checksums.get("hash");
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
     /**
      * Retrieve values from XML documents ordered by ascending priority for each tag name
      */
@@ -345,8 +376,7 @@ public class UriUtils {
                     List<Pair<String, Integer>> priorityList = new ArrayList<>();
                     for (int j = 0; j < targetNodes.getLength(); j++) {
                         Node node = targetNodes.item(j);
-                        Integer priority = getNodePriority(node);
-                        priorityList.add(new Pair<>(node.getTextContent(), priority));
+                        addPriorityListElementExaminingNode(tagNames[i], node, priorityList);
                     }
                     priorityList.sort(Comparator.comparing(x -> x.second()));
                     returnValues.put(tagNames[i], getListOfFirstElements(priorityList));
@@ -364,7 +394,7 @@ public class UriUtils {
      * @return true if at least one existent URL defined on metalink, false if not
      */
     protected static boolean checkUrlExistenceMetalink(String url) {
-        HttpClient httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());
+        HttpClient httpClient = getHttpClient();
         GetMethod getMethod = new GetMethod(url);
         try {
             if (httpClient.executeMethod(getMethod) == HttpStatus.SC_OK) {
@@ -399,7 +429,7 @@ public class UriUtils {
      * Get list of urls on metalink ordered by ascending priority (for those which priority tag is not defined, highest priority value is assumed)
      */
     public static List<String> getMetalinkUrls(String metalinkUrl) {
-        HttpClient httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());
+        HttpClient httpClient = getHttpClient();
         GetMethod getMethod = new GetMethod(metalinkUrl);
         List<String> urls = new ArrayList<>();
         int status;
@@ -428,7 +458,7 @@ public class UriUtils {
     // use http HEAD method to validate url
     public static void checkUrlExistence(String url) {
         if (url.toLowerCase().startsWith("http") || url.toLowerCase().startsWith("https")) {
-            HttpClient httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());
+            HttpClient httpClient = getHttpClient();
             HeadMethod httphead = new HeadMethod(url);
             try {
                 if (httpClient.executeMethod(httphead) != HttpStatus.SC_OK) {
@@ -438,9 +468,9 @@ public class UriUtils {
                     throw new IllegalArgumentException("Invalid URLs defined on metalink: " + url);
                 }
             } catch (HttpException hte) {
-                throw new IllegalArgumentException("Cannot reach URL: " + url);
+                throw new IllegalArgumentException("Cannot reach URL: " + url + " due to: " + hte.getMessage());
             } catch (IOException ioe) {
-                throw new IllegalArgumentException("Cannot reach URL: " + url);
+                throw new IllegalArgumentException("Cannot reach URL: " + url + " due to: " + ioe.getMessage());
             }
         }
     }

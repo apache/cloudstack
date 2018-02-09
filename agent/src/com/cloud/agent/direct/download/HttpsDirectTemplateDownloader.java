@@ -24,6 +24,7 @@ import com.cloud.utils.script.Script;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpEntity;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -61,7 +62,11 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
             throw new CloudRuntimeException("Failure getting SSL context for HTTPS downloader: " + e.getMessage());
         }
         SSLConnectionSocketFactory factory = new SSLConnectionSocketFactory(sslcontext, SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-        httpsClient = HttpClients.custom().setSSLSocketFactory(factory).build();
+        RequestConfig config = RequestConfig.custom()
+                .setConnectTimeout(5000)
+                .setConnectionRequestTimeout(5000)
+                .setSocketTimeout(5000).build();
+        httpsClient = HttpClients.custom().setSSLSocketFactory(factory).setDefaultRequestConfig(config).build();
         createUriRequest(url, headers);
     }
 

@@ -50,6 +50,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
 
     public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers) {
         super(url, destPoolPath, templateId, checksum);
+        s_httpClientManager.getParams().setConnectionTimeout(5000);
         client = new HttpClient(s_httpClientManager);
         myretryhandler = createRetryTwiceHandler();
         request = createRequest(url, headers);
