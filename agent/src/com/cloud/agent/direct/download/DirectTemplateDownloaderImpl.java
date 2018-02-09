@@ -38,6 +38,7 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
     private String downloadedFilePath;
     private String installPath;
     private String checksum;
+    private boolean redownload = false;
     public static final Logger s_logger = Logger.getLogger(DirectTemplateDownloaderImpl.class.getName());
 
     protected DirectTemplateDownloaderImpl(final String url, final String destPoolPath, final Long templateId, final String checksum) {
@@ -90,6 +91,18 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
 
     public void setDownloadedFilePath(String filePath) {
         this.downloadedFilePath = filePath;
+    }
+
+    public String getChecksum() {
+        return checksum;
+    }
+
+    public void setChecksum(String checksum) {
+        this.checksum = checksum;
+    }
+
+    public boolean isRedownload() {
+        return redownload;
     }
 
     /**
@@ -163,7 +176,7 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
      */
     private void resetDownloadFile() {
         File f = new File(getDownloadedFilePath());
-        s_logger.debug("Resetting download file: " + getDownloadedFilePath() + ", in order to re-download and persist template " + templateId + " on it");
+        s_logger.info("Resetting download file: " + getDownloadedFilePath() + ", in order to re-download and persist template " + templateId + " on it");
         try {
             if (f.exists()) {
                 f.delete();
@@ -182,15 +195,17 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
             boolean valid = false;
             try {
                 while (!valid && retry > 0) {
-                    s_logger.debug("Performing checksum validation for downloaded template " + templateId + ", retries left: " + retry);
+                    s_logger.info("Performing checksum validation for downloaded template " + templateId + ", retries left: " + retry);
                     valid = DigestHelper.check(checksum, new FileInputStream(downloadedFilePath));
                     retry--;
                     if (!valid && retry > 0) {
-                        s_logger.debug("Checksum validation failded, re-downloading template");
+                        s_logger.info("Checksum validation failded, re-downloading template");
+                        redownload = true;
                         resetDownloadFile();
                         downloadTemplate();
                     }
                 }
+                s_logger.info("Checksum validation for template " + templateId + ": " + (valid ? "succeeded" : "failed"));
                 return valid;
             } catch (IOException e) {
                 throw new CloudRuntimeException("could not check sum for file: " + downloadedFilePath);
@@ -198,6 +213,8 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
                 throw new CloudRuntimeException("Unknown checksum algorithm: " + checksum, e);
             }
         }
+        s_logger.info("No checksum provided, skipping checksum validation");
         return true;
     }
+
 }

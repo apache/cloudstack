@@ -549,6 +549,8 @@ public class EventTypes {
     public static final String EVENT_NIC_SECONDARY_IP_UNASSIGN = "NIC.SECONDARY.IP.UNASSIGN";
     public static final String EVENT_NIC_SECONDARY_IP_CONFIGURE = "NIC.SECONDARY.IP.CONFIGURE";
 
+    public static final String EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE = "TEMPLATE.DIRECT.DOWNLOAD.FAILURE";
+    public static final String EVENT_ISO_DIRECT_DOWNLOAD_FAILURE = "ISO.DIRECT.DOWNLOAD.FAILURE";
 
     static {
 
@@ -923,6 +925,8 @@ public class EventTypes {
         entityEventDetails.put(EVENT_NIC_SECONDARY_IP_UNASSIGN, NicSecondaryIp.class);
         entityEventDetails.put(EVENT_NIC_SECONDARY_IP_CONFIGURE, NicSecondaryIp.class);
 
+        entityEventDetails.put(EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE, VirtualMachineTemplate.class);
+        entityEventDetails.put(EVENT_ISO_DIRECT_DOWNLOAD_FAILURE, "Iso");
     }
 
     public static String getEntityForEvent(String eventName) {
