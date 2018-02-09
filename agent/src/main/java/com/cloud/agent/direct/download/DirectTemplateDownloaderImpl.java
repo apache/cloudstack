@@ -20,10 +20,13 @@ package com.cloud.agent.direct.download;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.Script;
-import org.apache.cloudstack.utils.security.ChecksumValue;
+import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.commons.lang.StringUtils;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 
 public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDownloader {
@@ -149,36 +152,16 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
         return new DirectTemplateInformation(installPath, size, checksum);
     }
 
-    /**
-     * Return checksum command from algorithm
-     */
-    private String getChecksumCommandFromAlgorithm(String algorithm) {
-        if (algorithm.equalsIgnoreCase("MD5")) {
-            return "md5sum";
-        } else if (algorithm.equalsIgnoreCase("SHA-1")) {
-            return "sha1sum";
-        } else if (algorithm.equalsIgnoreCase("SHA-224")) {
-            return "sha224sum";
-        } else if (algorithm.equalsIgnoreCase("SHA-256")) {
-            return "sha256sum";
-        } else if (algorithm.equalsIgnoreCase("SHA-384")) {
-            return "sha384sum";
-        } else if (algorithm.equalsIgnoreCase("SHA-512")) {
-            return "sha512sum";
-        } else {
-            throw new CloudRuntimeException("Unknown checksum algorithm: " + algorithm);
-        }
-    }
-
     @Override
     public boolean validateChecksum() {
         if (StringUtils.isNotBlank(checksum)) {
-            ChecksumValue providedChecksum = new ChecksumValue(checksum);
-            String algorithm = providedChecksum.getAlgorithm();
-            String checksumCommand = "echo '%s %s' | %s -c --quiet";
-            String cmd = String.format(checksumCommand, providedChecksum.getChecksum(), downloadedFilePath, getChecksumCommandFromAlgorithm(algorithm));
-            int result = Script.runSimpleBashScriptForExitValue(cmd);
-            return result == 0;
+            try {
+                return DigestHelper.check(checksum, new FileInputStream(downloadedFilePath));
+            } catch (IOException e) {
+                throw new CloudRuntimeException("could not check sum for file: " + downloadedFilePath,e);
+            } catch (NoSuchAlgorithmException e) {
+                throw new CloudRuntimeException("Unknown checksum algorithm: " + checksum, e);
+            }
         }
         return true;
     }
