@@ -947,3 +947,63 @@ class TestNuageInternalDns(nuageTestCase):
                 self.debug("excepted value found in vm: " + item)
             else:
                 self.fail("excepted value not found in vm: " + item)
+
+    @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
+    def test_09_update_network_offering_isolated_network(self):
+        """Test Update network offering for isolated Networks
+           with Nuage VSP SDN plugin
+        """
+        #    Create an Isolated Network with Nuage VSP Isolated Network
+        #    offering specifying Services which don't need a VR.
+        #    Update the network offering of this network to one that
+        #    needs a VR, check that a VR is spawn
+        #    After that update network to previous offering
+        #    Check that VR is destroyed and removed.
+
+        self.debug("+++Create an Isolated network with a network "
+                   "offering which has only services without VR")
+        cmd = updateZone.updateZoneCmd()
+        cmd.id = self.zone.id
+        cmd.domain = "isolated.com"
+        self.apiclient.updateZone(cmd)
+        self.debug("Creating and enabling Nuage Vsp Isolated Network "
+                   "offering which has only service without VR...")
+        network_offering = self.create_NetworkOffering(
+                self.test_data["nuagevsp"]
+                ["isolated_network_offering_without_vr"])
+        self.validate_NetworkOffering(network_offering, state="Enabled")
+
+        network_1 = self.create_Network(network_offering)
+        self.validate_Network(network_1, state="Allocated")
+
+        self.debug("+++Deploy VM in the created Isolated network "
+                   "with only services without VR")
+        vm_1 = self.create_VM(network_1)
+
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_1)
+        self.verify_vsd_vm(vm_1)
+
+        with self.assertRaises(Exception):
+            self.get_Router(network_1)
+        self.debug("+++Verified no VR is spawned for this network ")
+
+        self.debug("+++ Upgrade offering of created Isolated network with "
+                   "a dns offering which spins a VR")
+        self.upgrade_Network(self.test_data["nuagevsp"][
+                            "isolated_network_offering"],
+                            network_1)
+        vr = self.get_Router(network_1)
+        self.check_Router_state(vr, state="Running")
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_1)
+        self.verify_vsd_router(vr)
+
+        self.debug("+++ Upgrade offering of created Isolated network with "
+                   "an offering which removes the VR...")
+        self.upgrade_Network(self.test_data["nuagevsp"][
+                    "isolated_network_offering_without_vr"],
+                    network_1)
+        with self.assertRaises(Exception):
+            self.get_Router(network_1)
+        self.debug("+++Verified no VR is spawned for this network ")

@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
+import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,9 +62,7 @@ import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NuageVspDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
@@ -89,6 +89,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.withSettings;
 
 public class NuageVspElementTest extends NuageTest {
 
@@ -119,6 +120,7 @@ public class NuageVspElementTest extends NuageTest {
         _nuageVspElement._nuageVspEntityBuilder = _nuageVspEntityBuilder;
         _nuageVspElement._vpcDetailsDao = _vpcDetailsDao;
         _nuageVspElement._routerDao = _domainRouterDao;
+        _nuageVspElement._networkDao = _networkDao;
 
         when(_networkServiceMapDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.Connectivity, Provider.NuageVsp)).thenReturn(true);
         when(_networkServiceMapDao.canProviderSupportServiceInNetwork(NETWORK_ID, Service.SourceNat, Provider.NuageVsp)).thenReturn(true);
@@ -166,7 +168,7 @@ public class NuageVspElementTest extends NuageTest {
 
     @Test
     public void testImplement() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException, URISyntaxException {
-        final Network network = mock(Network.class);
+        final Network network = mock(NetworkVO.class, withSettings().extraInterfaces(Network.class));
         when(network.getBroadcastDomainType()).thenReturn(BroadcastDomainType.Vsp);
         when(network.getId()).thenReturn(NETWORK_ID);
         when(network.getVpcId()).thenReturn(null);
@@ -209,6 +211,7 @@ public class NuageVspElementTest extends NuageTest {
         when(_firewallRulesDao.listByNetworkPurposeTrafficType(NETWORK_ID, FirewallRule.Purpose.Firewall, FirewallRule.TrafficType.Egress)).thenReturn(new ArrayList<FirewallRuleVO>());
         when(_ipAddressDao.listStaticNatPublicIps(NETWORK_ID)).thenReturn(new ArrayList<IPAddressVO>());
         when(_nuageVspManager.getDnsDetails(network.getDataCenterId())).thenReturn(new ArrayList<String>());
+        when(_networkDao.findById(network.getId())).thenReturn((NetworkVO)network);
 
         assertTrue(_nuageVspElement.implement(network, offering, deployDest, context));
     }
