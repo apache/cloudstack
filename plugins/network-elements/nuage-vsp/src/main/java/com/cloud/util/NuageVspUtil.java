@@ -24,6 +24,8 @@ import com.cloud.dc.VlanDetailsVO;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.network.manager.NuageVspManager;
 import com.cloud.utils.StringUtils;
+
+import net.nuage.vsp.acs.client.common.model.Pair;
 import org.apache.commons.codec.binary.Base64;
 
 public class NuageVspUtil {
@@ -43,5 +45,14 @@ public class NuageVspUtil {
     public static boolean isUnderlayEnabledForVlan(VlanDetailsDao vlanDetailsDao, Vlan vlan) {
         VlanDetailsVO nuageUnderlayDetail = vlanDetailsDao.findDetail(vlan.getId(), NuageVspManager.nuageUnderlayVlanIpRangeDetailKey);
         return nuageUnderlayDetail != null && nuageUnderlayDetail.getValue().equalsIgnoreCase(String.valueOf(true));
+    }
+
+    public static Pair<String, String> getIpAddressRange(Vlan vlan) {
+        boolean isIpv4 = StringUtils.isNotBlank(vlan.getIpRange());
+        String[] range = isIpv4 ? vlan.getIpRange().split("-") : vlan.getIp6Range().split("-");
+        if (range.length == 2) {
+            return Pair.of(range[0], range[1]);
+        }
+        return null;
     }
 }

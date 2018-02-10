@@ -35,6 +35,7 @@ import net.nuage.vsp.acs.client.api.model.VspDomainTemplate;
 import net.nuage.vsp.acs.client.api.model.VspHost;
 import net.nuage.vsp.acs.client.common.NuageVspApiVersion;
 import net.nuage.vsp.acs.client.common.NuageVspConstants;
+import net.nuage.vsp.acs.client.common.model.Pair;
 import net.nuage.vsp.acs.client.exception.NuageVspException;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.context.CallContext;
@@ -53,15 +54,19 @@ import org.apache.log4j.Logger;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -105,6 +110,7 @@ import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.DetailVO;
 import com.cloud.host.Host;
@@ -113,6 +119,7 @@ import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.Network;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.PhysicalNetwork;
@@ -154,6 +161,11 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 import static com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand.SyncType;
 
@@ -213,6 +225,12 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     ResponseGenerator _responseGenerator;
     @Inject
     MessageBus _messageBus;
+    @Inject
+    VMInstanceDao _vmInstanceDao;
+    @Inject
+    NicDao _nicDao;
+    @Inject
+    NetworkModel _networkModel;
 
     static {
         Set<Network.Provider> nuageVspProviders = ImmutableSet.of(Network.Provider.NuageVsp);
@@ -902,7 +920,7 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     }
 
     @Override
-    public boolean associateNuageVspDomainTemplate(AssociateNuageVspDomainTemplateCmd cmd){
+    public void associateNuageVspDomainTemplate(AssociateNuageVspDomainTemplateCmd cmd){
         VpcVO vpc = _vpcDao.findById(cmd.getVpcId());
         Long physicalNetworkId;
         if (cmd.getPhysicalNetworkId() != null) {
@@ -923,7 +941,6 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
             throw new InvalidParameterValueException("Could not find a Domain Template with name: " + cmd.getDomainTemplate());
         }
         setPreConfiguredDomainTemplateName(cmd.getVpcId(), cmd.getDomainTemplate());
-        return true;
     }
 
     @Override
@@ -937,6 +954,131 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
             }
         }
         return false;
+    }
+
+    @Override
+    public void updateBroadcastUri(Network network) throws InsufficientVirtualNetworkCapacityException {
+        NetworkVO updatedNetwork = _networkDao.createForUpdate(network.getId());
+        URI broadcastUri = calculateBroadcastUri(network);
+        if (!broadcastUri.equals(network.getBroadcastUri())) {
+            updatedNetwork.setBroadcastUri(broadcastUri);
+            _networkDao.update(network.getId(), updatedNetwork);
+        }
+    }
+
+    @Override
+    public URI calculateBroadcastUri(Network network) throws InsufficientVirtualNetworkCapacityException {
+        String vrIp = calculateVirtualRouterIp(network);
+        return Networks.BroadcastDomainType.Vsp.toUri(network.getUuid() + "/" + vrIp);
+    }
+
+    private boolean usesVirtualRouter(long networkOfferingId) {
+        return _networkOfferingServiceMapDao.isProviderForNetworkOffering(networkOfferingId, Network.Provider.VirtualRouter) ||
+                _networkOfferingServiceMapDao.isProviderForNetworkOffering(networkOfferingId, Network.Provider.VPCVirtualRouter);
+    }
+
+    private String calculateVirtualRouterIp(Network network)
+            throws InsufficientVirtualNetworkCapacityException {
+        if (!usesVirtualRouter(network.getNetworkOfferingId())) {
+            return null;
+        }
+
+        List<Pair<String, String>> ipAddressRanges =
+                network.getGuestType() == Network.GuestType.Shared ? getSharedIpAddressRanges(network.getId()) : getIpAddressRanges(network);
+
+        //check if a vr might be present already or not? CLOUD-1216 - before we always picked .2
+        List<VMInstanceVO> vrs =_vmInstanceDao.listNonRemovedVmsByTypeAndNetwork(network.getId(), VirtualMachine.Type.DomainRouter);
+
+        for (VMInstanceVO vr : vrs) {
+            return _nicDao.listByVmIdAndNicIdAndNtwkId(vr.getId(), null, network.getId()).get(0).getIPv4Address();
+        }
+
+        ensureIpCapacity(network, ipAddressRanges);
+
+        if(network.getGuestType() == Network.GuestType.Shared) {
+            return ipAddressRanges.stream()
+                                  .sorted(Comparator.comparingLong(p -> NetUtils.ip2Long(p.getLeft())))
+                                  .findFirst()
+                                  .map(Pair::getLeft)
+                                  .orElseThrow(() -> new IllegalArgumentException("Shared network without ip ranges? How can this happen?"));
+        }
+
+        Network networkToCheck;
+        if (isMigratingNetwork(network)) {
+            networkToCheck = _networkDao.findById(network.getRelated());
+        } else {
+            networkToCheck = network;
+        }
+
+        Long freeIp = _networkModel.getAvailableIps(networkToCheck, null)
+                                   .stream()
+                                   .findFirst()
+                                   .orElseThrow(() -> new InsufficientVirtualNetworkCapacityException("There is no free ip available for the VirtualRouter.",
+                                                                                                      Network.class,
+                                                                                                      network.getId()));
+
+        return NetUtils.long2Ip(freeIp);
+    }
+
+    private List<Pair<String, String>> getSharedIpAddressRanges(long networkId) {
+        List<VlanVO> vlans = _vlanDao.listVlansByNetworkId(networkId);
+        List<Pair<String, String>> ipAddressRanges = Lists.newArrayList();
+        for (VlanVO vlan : vlans) {
+            Pair<String, String> ipAddressRange = NuageVspUtil.getIpAddressRange(vlan);
+            if (ipAddressRange != null) {
+                ipAddressRanges.add(ipAddressRange);
+            }
+        }
+        return ipAddressRanges;
+    }
+
+    private List<Pair<String, String>> getIpAddressRanges(Network network) {
+        List<Pair<String, String>> ipAddressRanges = Lists.newArrayList();
+        String subnet = NetUtils.getCidrSubNet(network.getCidr());
+        String netmask = NetUtils.getCidrNetmask(network.getCidr());
+        long cidrSize = NetUtils.getCidrSize(netmask);
+        Set<Long> allIPsInCidr = NetUtils.getAllIpsFromCidr(subnet, cidrSize, new HashSet<Long>());
+        if (allIPsInCidr == null || !(allIPsInCidr instanceof TreeSet)) {
+            throw new IllegalStateException("The IPs in CIDR for subnet " + subnet + " where null or returned in a non-ordered set.");
+        }
+
+        Iterator<Long> ipIterator = allIPsInCidr.iterator();
+        long ip =  ipIterator.next();
+        long gatewayIp = NetUtils.ip2Long(network.getGateway());
+        String lastIp = NetUtils.getIpRangeEndIpFromCidr(subnet, cidrSize);
+        if (gatewayIp == ip) {
+            ip = ipIterator.next();
+            ipAddressRanges.add(Pair.of(NetUtils.long2Ip(ip), lastIp));
+        } else if (!network.getGateway().equals(lastIp)) {
+            ipAddressRanges.add(Pair.of(NetUtils.long2Ip(ip), NetUtils.long2Ip(gatewayIp - 1)));
+            ipAddressRanges.add(Pair.of(NetUtils.long2Ip(gatewayIp + 1), lastIp));
+        } else {
+            ipAddressRanges.add(Pair.of(NetUtils.long2Ip(ip), NetUtils.long2Ip(gatewayIp - 1)));
+        }
+
+        return ipAddressRanges;
+    }
+
+    private void ensureIpCapacity(Network network, List<Pair<String, String>> ipAddressRanges) throws InsufficientVirtualNetworkCapacityException {
+        long ipCount = ipAddressRanges.stream()
+                                      .mapToLong(this::getIpCount)
+                                      .sum();
+
+        if (ipCount == 0) {
+            throw new InsufficientVirtualNetworkCapacityException("VSP allocates an IP for VirtualRouter." + " But no ip address ranges are specified", Network.class,
+                                                                  network.getId());
+        } else if (ipCount < 3) {
+            throw new InsufficientVirtualNetworkCapacityException("VSP allocates an IP for VirtualRouter." + " So, subnet should have atleast minimum 3 hosts", Network.class,
+                                                                  network.getId());
+        }
+    }
+
+    private boolean isMigratingNetwork(Network network) {
+        return network.getRelated() != network.getId();
+    }
+
+    private long getIpCount(Pair<String, String> ipAddressRange) {
+        return NetUtils.ip2Long(ipAddressRange.getRight()) - NetUtils.ip2Long(ipAddressRange.getLeft()) + 1;
     }
 
     @Override

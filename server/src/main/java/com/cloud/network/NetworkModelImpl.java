@@ -930,7 +930,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     @Override
     public String getIpOfNetworkElementInVirtualNetwork(long accountId, long dataCenterId) {
 
-        List<NetworkVO> virtualNetworks = _networksDao.listByZoneAndGuestType(accountId, dataCenterId, Network.GuestType.Isolated, false);
+        List<NetworkVO> virtualNetworks = _networksDao.listByZoneAndGuestType(accountId, dataCenterId, GuestType.Isolated, false);
 
         if (virtualNetworks.isEmpty()) {
             s_logger.trace("Unable to find default Virtual network account id=" + accountId);
@@ -950,13 +950,13 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, Network.GuestType type) {
+    public List<NetworkVO> listNetworksForAccount(long accountId, long zoneId, GuestType type) {
         List<NetworkVO> accountNetworks = new ArrayList<NetworkVO>();
         List<NetworkVO> zoneNetworks = _networksDao.listByZone(zoneId);
 
         for (NetworkVO network : zoneNetworks) {
             if (!isNetworkSystem(network)) {
-                if (network.getGuestType() == Network.GuestType.Shared || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
+                if (network.getGuestType() == GuestType.Shared || !_networksDao.listBy(accountId, network.getId()).isEmpty()) {
                     if (type == null || type == network.getGuestType()) {
                         accountNetworks.add(network);
                     }
@@ -967,7 +967,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public List<NetworkVO> listAllNetworksInAllZonesByType(Network.GuestType type) {
+    public List<NetworkVO> listAllNetworksInAllZonesByType(GuestType type) {
         List<NetworkVO> networks = new ArrayList<NetworkVO>();
         for (NetworkVO network : _networksDao.listAll()) {
             if (!isNetworkSystem(network)) {
@@ -1637,7 +1637,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             throw new CloudRuntimeException("cannot check permissions on (Network) <null>");
         }
         // Perform account permission check
-        if (network.getGuestType() != Network.GuestType.Shared || (network.getGuestType() == Network.GuestType.Shared && network.getAclType() == ACLType.Account)) {
+        if ((network.getGuestType() != GuestType.Shared && network.getGuestType() != GuestType.L2) ||
+                (network.getGuestType() == GuestType.Shared && network.getAclType() == ACLType.Account)) {
             AccountVO networkOwner = _accountDao.findById(network.getAccountId());
             if (networkOwner == null)
                 throw new PermissionDeniedException("Unable to use network with id= " + ((NetworkVO)network).getUuid() +
@@ -1802,14 +1803,14 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     public boolean isNetworkAvailableInDomain(long networkId, long domainId) {
         Long networkDomainId = null;
         Network network = getNetwork(networkId);
-        if (network.getGuestType() != Network.GuestType.Shared) {
-            s_logger.trace("Network id=" + networkId + " is not shared");
+        if (network.getGuestType() != GuestType.Shared && network.getGuestType() != GuestType.L2) {
+            s_logger.trace("Network id=" + networkId + " is not shared or L2");
             return false;
         }
 
         NetworkDomainVO networkDomainMap = _networkDomainDao.getDomainNetworkMapByNetworkId(networkId);
         if (networkDomainMap == null) {
-            s_logger.trace("Network id=" + networkId + " is shared, but not domain specific");
+            s_logger.trace("Network id=" + networkId + " is shared or L2, but not domain specific");
             return true;
         } else {
             networkDomainId = networkDomainMap.getDomainId();

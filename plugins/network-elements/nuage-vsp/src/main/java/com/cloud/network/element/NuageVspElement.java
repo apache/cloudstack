@@ -90,7 +90,6 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.manager.NuageVspManager;
@@ -276,14 +275,8 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             return false;
         }
 
-        if (!_nuageVspEntityBuilder.usesVirtualRouter(offering.getId())) {
-            // Update broadcast uri if VR is no longer used
-            NetworkVO networkToUpdate = _networkDao.findById(network.getId());
-            String broadcastUriStr = networkToUpdate.getUuid() + "/null";
-            networkToUpdate.setBroadcastUri(Networks.BroadcastDomainType.Vsp.toUri(broadcastUriStr));
-            _networkDao.update(network.getId(), networkToUpdate);
-        }
-
+        _nuageVspManager.updateBroadcastUri(network);
+        network = _networkDao.findById(network.getId());
         VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
         List<VspAclRule> ingressFirewallRules = getFirewallRulesToApply(network, FirewallRule.TrafficType.Ingress);
         List<VspAclRule> egressFirewallRules = getFirewallRulesToApply(network, FirewallRule.TrafficType.Egress);

@@ -89,10 +89,10 @@ public class AssociateNuageVspDomainTemplateCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         try {
-            boolean result =_nuageVspManager.associateNuageVspDomainTemplate(this);
+            _nuageVspManager.associateNuageVspDomainTemplate(this);
             SuccessResponse response = new SuccessResponse(getCommandName());
             response.setResponseName(getCommandName());
-            response.setSuccess(result);
+            response.setSuccess(true);
             this.setResponseObject(response);
         } catch (InvalidParameterValueException invalidParamExcp) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, invalidParamExcp.getMessage());

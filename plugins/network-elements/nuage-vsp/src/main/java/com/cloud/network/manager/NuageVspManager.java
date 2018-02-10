@@ -19,6 +19,7 @@
 
 package com.cloud.network.manager;
 
+import java.net.URI;
 import java.util.List;
 
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -35,6 +36,7 @@ import com.cloud.api.response.NuageVlanIpRangeResponse;
 import com.cloud.api.response.NuageVspDeviceResponse;
 import com.cloud.dc.Vlan;
 import com.cloud.api.response.NuageVspDomainTemplateResponse;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.host.HostVO;
 import com.cloud.network.Network;
 import com.cloud.network.NuageVspDeviceVO;
@@ -119,10 +121,9 @@ public interface NuageVspManager extends PluggableService {
 
     /**
      * Associates a Nuage Vsp domain template with a
-     * @param cmd
-     * @return
+     * @param cmd Associate cmd which contains all the data
      */
-    boolean associateNuageVspDomainTemplate(AssociateNuageVspDomainTemplateCmd cmd);
+    void associateNuageVspDomainTemplate(AssociateNuageVspDomainTemplateCmd cmd);
 
     /**
      * Queries the VSD to check if the entity provided in the entityCmd exists on the VSD
@@ -134,26 +135,41 @@ public interface NuageVspManager extends PluggableService {
 
     /**
      * Sets the preconfigured domain template for a given network
-     * @param network
-     * @param domainTemplateName
+     * @param network the network for which we want to set the domain template
+     * @param domainTemplateName the domain template name we want to use
      */
     void setPreConfiguredDomainTemplateName(Network network, String domainTemplateName);
 
     /**
      * Returns the current pre configured domain template for a given network
-     * @param network
-     * @return
+     * @param network the network for which we want the domain template name
+     * @return the domain template name
      */
     String getPreConfiguredDomainTemplateName(Network network);
 
     /**
      * Checks if a given domain template exists or not on the VSD.
-     * @param domainId
+     * @param domainId Id of the domain to search in.
      * @param domainTemplate The name of the domain template for which we need to query the VSD.
      * @param zoneId zoneId OR PhysicalNetworkId needs to be provided.
      * @param physicalNetworkId zoneId OR PhysicalNetworkId needs to be provided.
      * @return true if the domain template exists on the VSD else false if it does not exist on the VSD
      */
-    public boolean checkIfDomainTemplateExist(Long domainId, String domainTemplate, Long zoneId, Long physicalNetworkId);
+    boolean checkIfDomainTemplateExist(Long domainId, String domainTemplate, Long zoneId, Long physicalNetworkId);
+
+    /**
+     * calculates the new broadcast uri of a network and persists it in the database
+     * @param network the network for which you want to calculate the broadcast uri
+     * @throws InsufficientVirtualNetworkCapacityException in case there is no free ip that can be used as the VR ip.
+     */
+    void updateBroadcastUri(Network network) throws InsufficientVirtualNetworkCapacityException;
+
+    /**
+     * Calculates the broadcast uri based on the network and the offering of the given network
+     * @param network the network for which you want to calculate the broadcast uri
+     * @return the calculated broadcast uri
+     * @throws InsufficientVirtualNetworkCapacityException in case there is no free ip that can be used as the VR ip.
+     */
+    URI calculateBroadcastUri(Network network) throws InsufficientVirtualNetworkCapacityException;
 
 }
