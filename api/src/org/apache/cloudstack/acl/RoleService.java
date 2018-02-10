@@ -31,7 +31,7 @@ public interface RoleService {
     boolean isEnabled();
     Role findRole(final Long id);
     Role createRole(final String name, final RoleType roleType, final String description);
-    boolean updateRole(final Role role, final String name, final RoleType roleType, final String description);
+    Role updateRole(final Role role, final String name, final RoleType roleType, final String description);
     boolean deleteRole(final Role role);
 
     RolePermission findRolePermission(final Long id);
