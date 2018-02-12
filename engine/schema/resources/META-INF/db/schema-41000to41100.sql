@@ -546,3 +546,24 @@ ALTER TABLE cloud.ldap_trust_map ADD COLUMN account_id BIGINT(20) DEFAULT 0;
 ALTER TABLE cloud.ldap_trust_map DROP FOREIGN KEY fk_ldap_trust_map__domain_id;
 DROP INDEX uk_ldap_trust_map__domain_id ON cloud.ldap_trust_map;
 CREATE UNIQUE INDEX uk_ldap_trust_map__bind_location ON ldap_trust_map (domain_id, account_id);
+
+CREATE TABLE IF NOT EXISTS `cloud`.`netscaler_servicepackages` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `name` varchar(255) UNIQUE COMMENT 'name of the service package',
+  `description` varchar(255) COMMENT 'description of the service package',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`external_netscaler_controlcenter` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(255) UNIQUE,
+  `username` varchar(255) COMMENT 'username of the NCC',
+  `password` varchar(255) COMMENT 'password of NCC',
+  `ncc_ip` varchar(255) COMMENT 'IP of NCC Manager',
+  `num_retries` bigint unsigned NOT NULL default 2 COMMENT 'Number of retries in ncc for command failure',
+  PRIMARY KEY  (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `cloud`.`sslcerts` ADD COLUMN `name` varchar(255) NULL default NULL COMMENT 'Name of the Certificate';
+ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `service_package_id` varchar(255) NULL default NULL COMMENT 'Netscaler ControlCenter Service Package';

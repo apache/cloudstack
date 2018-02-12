@@ -255,26 +255,3 @@ CREATE TABLE `cloud`.`firewall_rules_dcidrs`(
   KEY `fk_firewall_dcidrs_firewall_rules` (`firewall_rule_id`),
   CONSTRAINT `fk_firewall_dcidrs_firewall_rules` FOREIGN KEY (`firewall_rule_id`) REFERENCES `firewall_rules` (`id`) ON DELETE CASCADE
 )ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-DROP TABLE IF EXISTS `cloud`.`netscaler_servicepackages`;
-CREATE TABLE `cloud`.`netscaler_servicepackages` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `uuid` varchar(255) UNIQUE,
-  `name` varchar(255) UNIQUE COMMENT 'name of the service package',
-  `description` varchar(255) COMMENT 'description of the service package',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-DROP TABLE IF EXISTS `cloud`.`external_netscaler_controlcenter`;
-CREATE TABLE `cloud`.`external_netscaler_controlcenter` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
-  `uuid` varchar(255) UNIQUE,
-  `username` varchar(255) COMMENT 'username of the NCC',
-  `password` varchar(255) COMMENT 'password of NCC',
-  `ncc_ip` varchar(255) COMMENT 'IP of NCC Manager',
-  `num_retries` bigint unsigned NOT NULL default 2 COMMENT 'Number of retries in ncc for command failure',
-  PRIMARY KEY  (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-ALTER TABLE `cloud`.`sslcerts` ADD COLUMN `name` varchar(255) NULL default NULL COMMENT 'Name of the Certificate';
-ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `service_package_id` varchar(255) NULL default NULL COMMENT 'Netscaler ControlCenter Service Package';
