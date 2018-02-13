@@ -34,12 +34,12 @@ public class TARProcessor extends AdapterBase implements Processor {
     private StorageLayer _storage;
 
     @Override
-    public FormatInfo process(String templatePath, ImageFormat format, String templateName, long processTimeout) {
-       return process(templatePath, format, templateName);
+    public FormatInfo process(String templatePath, ImageFormat format, String templateName) {
+       return process(templatePath, format, templateName, 0);
     }
 
     @Override
-    public FormatInfo process(String templatePath, ImageFormat format, String templateName) {
+    public FormatInfo process(String templatePath, ImageFormat format, String templateName, long processTimeout) {
         if (format != null) {
             s_logger.debug("We currently don't handle conversion from " + format + " to TAR.");
             return null;

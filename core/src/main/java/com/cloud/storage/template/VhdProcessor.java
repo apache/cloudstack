@@ -57,12 +57,12 @@ public class VhdProcessor extends AdapterBase implements Processor {
     private String vhdIdentifierCookie = "conectix";
 
     @Override
-    public FormatInfo process(String templatePath, ImageFormat format, String templateName, long processTimeout) throws InternalErrorException {
-     return process(templatePath, format, templateName);
+    public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
+     return process(templatePath, format, templateName, 0);
     }
 
     @Override
-    public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
+    public FormatInfo process(String templatePath, ImageFormat format, String templateName, long processTimeout) throws InternalErrorException {
         if (format != null) {
             s_logger.debug("We currently don't handle conversion from " + format + " to VHD.");
             return null;
