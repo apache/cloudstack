@@ -22,28 +22,47 @@
 --;
 -- Stored procedure to do idempotent column add;
 --;
-
 DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
 
 CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
-		IN in_table_name VARCHAR(100)
-    , IN in_column_name VARCHAR(100)
-    , IN in_column_definition VARCHAR(100)
+		IN in_table_name VARCHAR(200)
+    , IN in_column_name VARCHAR(200)
+    , IN in_column_definition VARCHAR(1000)
 )
 BEGIN
 
-    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END;
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
-	SET @ddl = CONCAT('ALTER TABLE ', in_table_name);
-	SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ;
-	SET @ddl = CONCAT(@ddl, ' ', in_column_name);
-	SET @ddl = CONCAT(@ddl, ' ', in_column_definition);
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`;
 
-	PREPARE stmt FROM @ddl;
-	EXECUTE stmt;
-	DEALLOCATE PREPARE stmt;
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY` (
+		IN in_table_name VARCHAR(200)
+    , IN in_foreign_key_name VARCHAR(200)
+)
+BEGIN
 
-END;
+    DECLARE CONTINUE HANDLER FOR 1091 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' DROP FOREIGN KEY '); SET @ddl = CONCAT(@ddl, ' ', in_foreign_key_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_DROP_INDEX`;
+
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_DROP_INDEX` (
+		IN in_index_name VARCHAR(200)
+    , IN in_table_name VARCHAR(200)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1091 BEGIN END; SET @ddl = CONCAT('DROP INDEX ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', ' ON ') ; SET @ddl = CONCAT(@ddl, ' ', in_table_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_CREATE_UNIQUE_INDEX`;
+
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_CREATE_UNIQUE_INDEX` (
+		IN in_index_name VARCHAR(200)
+    , IN in_table_name VARCHAR(200)
+    , IN in_index_definition VARCHAR(1000)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('CREATE UNIQUE INDEX ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', ' ON ') ; SET @ddl = CONCAT(@ddl, ' ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', in_index_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
 
 -- Add For VPC flag
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','for_vpc', 'INT(1) NOT NULL DEFAULT 0');
@@ -115,7 +134,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`annotations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP VIEW IF EXISTS `cloud`.`last_annotation_view`;
-CREATE VIEW `last_annotation_view` AS
+CREATE VIEW `cloud`.`last_annotation_view` AS
     SELECT
         `annotations`.`uuid` AS `uuid`,
         `annotations`.`annotation` AS `annotation`,
@@ -432,7 +451,7 @@ UPDATE `cloud`.`monitoring_services` SET pidfile="/var/run/apache2/apache2.pid" 
 UPDATE `cloud`.`vm_template` SET guest_os_id=99 WHERE id=8;
 
 -- Network External Ids
-ALTER TABLE `cloud`.`networks` ADD `external_id` varchar(255);
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks','external_id', 'varchar(255)');
 
 -- Separate Subnet for CPVM and SSVM (system vms)
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.op_dc_ip_address_alloc','forsystemvms', 'TINYINT(1) NOT NULL DEFAULT 0 COMMENT ''Indicates if IP is dedicated for CPVM or SSVM'' ');
