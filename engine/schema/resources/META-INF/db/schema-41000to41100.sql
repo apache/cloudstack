@@ -585,9 +585,9 @@ CREATE TABLE IF NOT EXISTS `cloud`.`domain_details` (
 
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.ldap_configuration','domain_id', 'BIGINT(20) DEFAULT NULL');
 CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.ldap_trust_map','account_id', 'BIGINT(20) DEFAULT 0');
-ALTER TABLE cloud.ldap_trust_map DROP FOREIGN KEY fk_ldap_trust_map__domain_id;
-DROP INDEX uk_ldap_trust_map__domain_id ON cloud.ldap_trust_map;
-CREATE UNIQUE INDEX uk_ldap_trust_map__bind_location ON ldap_trust_map (domain_id, account_id);
+CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.ldap_trust_map','fk_ldap_trust_map__domain_id');
+CALL `cloud`.`IDEMPOTENT_DROP_INDEX`('uk_ldap_trust_map__domain_id','cloud.ldap_trust_map');
+CALL `cloud`.`IDEMPOTENT_CREATE_UNIQUE_INDEX`('uk_ldap_trust_map__bind_location','cloud.ldap_trust_map', '(domain_id, account_id)');
 
 CREATE TABLE IF NOT EXISTS `cloud`.`netscaler_servicepackages` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -607,5 +607,5 @@ CREATE TABLE IF NOT EXISTS `cloud`.`external_netscaler_controlcenter` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`sslcerts` ADD COLUMN `name` varchar(255) NULL default NULL COMMENT 'Name of the Certificate';
-ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `service_package_id` varchar(255) NULL default NULL COMMENT 'Netscaler ControlCenter Service Package';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.sslcerts','name', 'varchar(255) NULL default NULL COMMENT ''Name of the Certificate'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','service_package_id', 'varchar(255) NULL default NULL COMMENT ''Netscaler ControlCenter Service Package'' ');
