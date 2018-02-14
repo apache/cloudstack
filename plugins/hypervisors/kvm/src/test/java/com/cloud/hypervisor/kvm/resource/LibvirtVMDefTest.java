@@ -209,4 +209,21 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(str, expected);
     }
 
+    public void testMetadataDef() {
+        LibvirtVMDef.MetadataDef metadataDef = new LibvirtVMDef.MetadataDef();
+
+        metadataDef.getMetadataNode(LibvirtVMDef.NuageExtensionDef.class).addNuageExtension("mac1", "ip1");
+        metadataDef.getMetadataNode(LibvirtVMDef.NuageExtensionDef.class).addNuageExtension("mac2", "ip2");
+
+        String xmlDef = metadataDef.toString();
+        String expectedXml = "<metadata>\n" +
+                "<nuage-extension xmlns='nuagenetworks.net/nuage/cna'>\n" +
+                "  <interface mac='mac2' vsp-vr-ip='ip2'></interface>\n" +
+                "  <interface mac='mac1' vsp-vr-ip='ip1'></interface>\n" +
+                "</nuage-extension>\n" +
+                "</metadata>\n";
+
+        assertEquals(xmlDef, expectedXml);
+    }
+
 }
