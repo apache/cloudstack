@@ -36,19 +36,21 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
 
-    private HttpClient client;
+    protected HttpClient client;
     private static final MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
-    private static final int CHUNK_SIZE = 1024 * 1024; //1M
     protected HttpMethodRetryHandler myretryhandler;
     public static final Logger s_logger = Logger.getLogger(HttpDirectTemplateDownloader.class.getName());
     protected GetMethod request;
+    protected Map<String, String> reqHeaders = new HashMap<>();
 
     public HttpDirectTemplateDownloader(String url, Long templateId, String destPoolPath, String checksum, Map<String, String> headers) {
         super(url, destPoolPath, templateId, checksum);
+        s_httpClientManager.getParams().setConnectionTimeout(5000);
         client = new HttpClient(s_httpClientManager);
         myretryhandler = createRetryTwiceHandler();
         request = createRequest(url, headers);
@@ -69,6 +71,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
         if (MapUtils.isNotEmpty(headers)) {
             for (String key : headers.keySet()) {
                 request.setRequestHeader(key, headers.get(key));
+                reqHeaders.put(key, headers.get(key));
             }
         }
         return request;

@@ -1592,13 +1592,13 @@ public class KVMStorageProcessor implements StorageProcessor {
         DirectTemplateDownloader downloader;
 
         if (cmd instanceof HttpDirectDownloadCommand) {
-            downloader = new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), ((HttpDirectDownloadCommand) cmd).getHeaders());
+            downloader = new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
         } else if (cmd instanceof HttpsDirectDownloadCommand) {
-            downloader = new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum());
+            downloader = new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
         } else if (cmd instanceof NfsDirectDownloadCommand) {
             downloader = new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
         } else if (cmd instanceof MetalinkDirectDownloadCommand) {
-            downloader = new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
+            downloader = new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders());
         } else {
             return new DirectDownloadAnswer(false, "Unsupported protocol, please provide HTTP(S), NFS or a metalink");
         }
