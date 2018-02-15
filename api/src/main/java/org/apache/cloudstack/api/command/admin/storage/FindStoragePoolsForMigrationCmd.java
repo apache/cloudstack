@@ -21,8 +21,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,12 +29,14 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.storage.StoragePool;
 import com.cloud.utils.Pair;
 
 @APICommand(name = "findStoragePoolsForMigration", description = "Lists storage pools available for migration of a volume.", responseObject = StoragePoolResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
     public static final Logger s_logger = Logger.getLogger(FindStoragePoolsForMigrationCmd.class.getName());
 
@@ -83,7 +83,7 @@ public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
             StoragePoolResponse poolResponse = _responseGenerator.createStoragePoolForMigrationResponse(pool);
             Boolean suitableForMigration = false;
             for (StoragePool suitablePool : suitablePoolList) {
-                if (suitablePool.getId() == pool.getId()) {
+                if (StringUtils.equals(suitablePool.getUuid(), pool.getUuid())) {
                     suitableForMigration = true;
                     break;
                 }

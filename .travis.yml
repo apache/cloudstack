@@ -70,9 +70,10 @@ env:
              smoke/test_password_server
              smoke/test_portable_publicip
              smoke/test_portforwardingrules"
-
-    - TESTS="smoke/test_primary_storage
-             smoke/test_privategw_acl
+    
+    - TESTS="smoke/test_primary_storage"
+    
+    - TESTS="smoke/test_privategw_acl
              smoke/test_projects
              smoke/test_public_ip_range
              smoke/test_pvlan

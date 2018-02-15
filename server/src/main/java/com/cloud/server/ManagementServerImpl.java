@@ -140,15 +140,15 @@ import org.apache.cloudstack.api.command.admin.offering.DeleteDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.DeleteServiceOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateDiskOfferingCmd;
 import org.apache.cloudstack.api.command.admin.offering.UpdateServiceOfferingCmd;
+import org.apache.cloudstack.api.command.admin.outofbandmanagement.ChangeOutOfBandManagementPasswordCmd;
+import org.apache.cloudstack.api.command.admin.outofbandmanagement.ConfigureOutOfBandManagementCmd;
 import org.apache.cloudstack.api.command.admin.outofbandmanagement.DisableOutOfBandManagementForClusterCmd;
 import org.apache.cloudstack.api.command.admin.outofbandmanagement.DisableOutOfBandManagementForHostCmd;
 import org.apache.cloudstack.api.command.admin.outofbandmanagement.DisableOutOfBandManagementForZoneCmd;
 import org.apache.cloudstack.api.command.admin.outofbandmanagement.EnableOutOfBandManagementForClusterCmd;
 import org.apache.cloudstack.api.command.admin.outofbandmanagement.EnableOutOfBandManagementForHostCmd;
 import org.apache.cloudstack.api.command.admin.outofbandmanagement.EnableOutOfBandManagementForZoneCmd;
-import org.apache.cloudstack.api.command.admin.outofbandmanagement.ConfigureOutOfBandManagementCmd;
 import org.apache.cloudstack.api.command.admin.outofbandmanagement.IssueOutOfBandManagementPowerActionCmd;
-import org.apache.cloudstack.api.command.admin.outofbandmanagement.ChangeOutOfBandManagementPasswordCmd;
 import org.apache.cloudstack.api.command.admin.pod.CreatePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.DeletePodCmd;
 import org.apache.cloudstack.api.command.admin.pod.ListPodsByCmd;
@@ -519,7 +519,6 @@ import org.apache.cloudstack.api.command.user.zone.ListZonesCmd;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -549,8 +548,6 @@ import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.QueryManagerImpl;
-import com.cloud.api.query.dao.ServiceOfferingJoinDao;
-import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -633,7 +630,6 @@ import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
-import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -701,7 +697,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
     static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6",
-                                                                                      "Specifies the length of a randomly generated password", false);
+            "Specifies the length of a randomly generated password", false);
     static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length",
             "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     @Inject
@@ -799,8 +795,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     @Inject
     private HighAvailabilityManager _haMgr;
     @Inject
-    private DataStoreManager dataStoreMgr;
-    @Inject
     private HostTagsDao _hostTagsDao;
     @Inject
     private ConfigDepot _configDepot;
@@ -816,8 +810,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private GuestOsDetailsDao _guestOsDetailsDao;
     @Inject
     private KeystoreManager _ksMgr;
-    @Inject
-    private ServiceOfferingJoinDao serviceOfferingJoinDao;
 
     private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
@@ -1134,9 +1126,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>>
-                            listHostsForMigrationOfVM(final Long vmId,
-                                                      final Long startIndex,
-                                                      final Long pageSize, final String keyword) {
+    listHostsForMigrationOfVM(final Long vmId,
+            final Long startIndex,
+            final Long pageSize, final String keyword) {
         final Account caller = getCaller();
         if (!_accountMgr.isRootAdmin(caller.getId())) {
             if (s_logger.isDebugEnabled()) {
@@ -1362,11 +1354,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
         }
 
-        if (!_volumeMgr.volumeOnSharedStoragePool(volume)) {
-            s_logger.info("Volume " + volume + " is on local storage. It cannot be migrated to another pool.");
-            return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
-        }
-
         final Long instanceId = volume.getInstanceId();
         VMInstanceVO vm = null;
         if (instanceId != null) {
@@ -1407,13 +1394,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
         allPools = getAllStoragePoolCompatileWithVolumeSourceStoragePool(srcVolumePool);
         allPools.remove(srcVolumePool);
-
         suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
-        
+
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
-    
-    
+
+
     /**
      * This method looks for all storage pools that are compatible with the given volume.
      * <ul>
@@ -1433,7 +1419,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
         return storagePools;
     }
-    
+
     /**
      *  Looks for all suitable storage pools to allocate the given volume.
      *  We take into account the service offering of the VM and volume to find suitable storage pools. It is also excluded from the search the current storage pool used by the volume.
@@ -1919,10 +1905,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         vlanSearch.and("vlanType", vlanSearch.entity().getVlanType(), SearchCriteria.Op.EQ);
         sb.join("vlanSearch", vlanSearch, sb.entity().getVlanId(), vlanSearch.entity().getId(), JoinBuilder.JoinType.INNER);
 
-        boolean allocatedOnly = false;
         if (isAllocated != null && isAllocated == true) {
             sb.and("allocated", sb.entity().getAllocatedTime(), SearchCriteria.Op.NNULL);
-            allocatedOnly = true;
         }
 
         VlanType vlanType = null;
@@ -2180,7 +2164,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if(cmd.getDetails() != null && !cmd.getDetails().isEmpty()){
             Map<String, String> detailsMap = cmd.getDetails();
             for(Object key: detailsMap.keySet()){
-                _guestOsDetailsDao.addDetail(guestOsPersisted.getId(),(String) key,detailsMap.get((String) key), false);
+                _guestOsDetailsDao.addDetail(guestOsPersisted.getId(),(String) key,detailsMap.get(key), false);
             }
         }
 
@@ -2213,7 +2197,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if(cmd.getDetails() != null && !cmd.getDetails().isEmpty()){
             Map<String, String> detailsMap = cmd.getDetails();
             for(Object key: detailsMap.keySet()){
-                _guestOsDetailsDao.addDetail(id,(String) key,detailsMap.get((String) key), false);
+                _guestOsDetailsDao.addDetail(id,(String) key,detailsMap.get(key), false);
             }
         }
 
