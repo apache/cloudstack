@@ -535,6 +535,8 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
@@ -547,6 +549,8 @@ import com.cloud.alert.AlertVO;
 import com.cloud.alert.dao.AlertDao;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.QueryManagerImpl;
+import com.cloud.api.query.dao.ServiceOfferingJoinDao;
+import com.cloud.api.query.vo.ServiceOfferingJoinVO;
 import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
@@ -629,6 +633,7 @@ import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.GuestOsCategory;
+import com.cloud.storage.ScopeType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
@@ -809,12 +814,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     private DeploymentPlanningManager _dpMgr;
     @Inject
     private GuestOsDetailsDao _guestOsDetailsDao;
+    @Inject
+    private KeystoreManager _ksMgr;
+    @Inject
+    private ServiceOfferingJoinDao serviceOfferingJoinDao;
 
     private LockMasterListener _lockMasterListener;
     private final ScheduledExecutorService _eventExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("EventChecker"));
     private final ScheduledExecutorService _alertExecutor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AlertChecker"));
-    @Inject
-    private KeystoreManager _ksMgr;
 
     private Map<String, String> _configs;
 
@@ -1224,14 +1231,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             allHosts.remove(srcHost);
 
             for (final VolumeVO volume : volumes) {
-                final StoragePool storagePool = _poolDao.findById(volume.getPoolId());
-                final Long volClusterId = storagePool.getClusterId();
+                StoragePool storagePool = _poolDao.findById(volume.getPoolId());
+                Long volClusterId = storagePool.getClusterId();
 
-                for (final Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
+                for (Iterator<HostVO> iterator = allHosts.iterator(); iterator.hasNext();) {
                     final Host host = iterator.next();
 
                     if (volClusterId != null) {
-                        if (!host.getClusterId().equals(volClusterId) || usesLocal) {
+                        if (storagePool.isLocal() || !host.getClusterId().equals(volClusterId) || usesLocal) {
                             if (storagePool.isManaged()) {
                                 // At the time being, we do not support storage migration of a volume from managed storage unless the managed storage
                                 // is at the zone level and the source and target storage pool is the same.
@@ -1346,8 +1353,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         }
 
         // Volume must be attached to an instance for live migration.
-        final List<StoragePool> allPools = new ArrayList<StoragePool>();
-        final List<StoragePool> suitablePools = new ArrayList<StoragePool>();
+        List<? extends StoragePool> allPools = new ArrayList<StoragePool>();
+        List<? extends StoragePool> suitablePools = new ArrayList<StoragePool>();
 
         // Volume must be in Ready state to be migrated.
         if (!Volume.State.Ready.equals(volume.getState())) {
@@ -1397,54 +1404,78 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             }
         }
 
-        // Source pool of the volume.
-        final StoragePoolVO srcVolumePool = _poolDao.findById(volume.getPoolId());
-        // Get all the pools available. Only shared pools are considered because only a volume on a shared pools
-        // can be live migrated while the virtual machine stays on the same host.
+        StoragePool srcVolumePool = _poolDao.findById(volume.getPoolId());
+        allPools = getAllStoragePoolCompatileWithVolumeSourceStoragePool(srcVolumePool);
+        allPools.remove(srcVolumePool);
 
-        List<StoragePoolVO> storagePools;
-
-        if (srcVolumePool.getClusterId() != null) {
-            storagePools = _poolDao.findPoolsByTags(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
-        }
-        else {
-            storagePools = new ArrayList<>();
-        }
-
-        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByTags(volume.getDataCenterId(), null);
-
-        storagePools.addAll(zoneWideStoragePools);
-
-        storagePools.remove(srcVolumePool);
-        for (final StoragePoolVO pool : storagePools) {
-            if (pool.isShared()) {
-                allPools.add((StoragePool)dataStoreMgr.getPrimaryDataStore(pool.getId()));
-            }
-        }
-
-        // Get all the suitable pools.
-        // Exclude the current pool from the list of pools to which the volume can be migrated.
-        final ExcludeList avoid = new ExcludeList();
-        avoid.addPool(srcVolumePool.getId());
-
-        // Volume stays in the same cluster after migration.
-        final DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null, null, null);
-        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-
-        final DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
-        final DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
-
-        // Call the storage pool allocator to find the list of storage pools.
-        for (final StoragePoolAllocator allocator : _storagePoolAllocators) {
-            final List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
-            if (pools != null && !pools.isEmpty()) {
-                suitablePools.addAll(pools);
-                break;
-            }
-        }
-
+        suitablePools = findAllSuitableStoragePoolsForVm(volume, vm, srcVolumePool);
+        
         return new Pair<List<? extends StoragePool>, List<? extends StoragePool>>(allPools, suitablePools);
     }
+    
+    
+    /**
+     * This method looks for all storage pools that are compatible with the given volume.
+     * <ul>
+     *  <li>We will look for storage systems that are zone wide.</li>
+     *  <li>We also all storage available filtering by data center, pod and cluster as the current storage pool used by the given volume.</li>
+     * </ul>
+     */
+    private List<? extends StoragePool> getAllStoragePoolCompatileWithVolumeSourceStoragePool(StoragePool srcVolumePool) {
+        List<StoragePoolVO> storagePools = new ArrayList<>();
+        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByTags(srcVolumePool.getDataCenterId(), null);
+        if(CollectionUtils.isNotEmpty(zoneWideStoragePools)) {
+            storagePools.addAll(zoneWideStoragePools);
+        }
+        List<StoragePoolVO> clusterAndLocalStoragePools = _poolDao.listBy(srcVolumePool.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
+        if(CollectionUtils.isNotEmpty(clusterAndLocalStoragePools)) {
+            storagePools.addAll(clusterAndLocalStoragePools);
+        }
+        return storagePools;
+    }
+    
+    /**
+     *  Looks for all suitable storage pools to allocate the given volume.
+     *  We take into account the service offering of the VM and volume to find suitable storage pools. It is also excluded from the search the current storage pool used by the volume.
+     *  We use {@link StoragePoolAllocator} to look for possible storage pools to allocate the given volume. We will look for possible local storage poosl even if the volume is using a shared storage disk offering.
+     *
+     *  Side note: the idea behind this method is to provide power for administrators of manually overriding deployments defined by CloudStack.
+     */
+    private List<StoragePool> findAllSuitableStoragePoolsForVm(final VolumeVO volume, VMInstanceVO vm, StoragePool srcVolumePool) {
+        List<StoragePool> suitablePools = new ArrayList<>();
+
+        HostVO host = _hostDao.findById(vm.getHostId());
+        if (host == null) {
+            host = _hostDao.findById(vm.getLastHostId());
+        }
+
+        ExcludeList avoid = new ExcludeList();
+        avoid.addPool(srcVolumePool.getId());
+
+        DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null, null, null);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
+        //This is an override mechanism so we can list the possible local storage pools that a volume in a shared pool might be able to be migrated to
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
+        diskProfile.setUseLocalStorage(true);
+
+        for (StoragePoolAllocator allocator : _storagePoolAllocators) {
+            List<StoragePool> pools = allocator.allocateToPool(diskProfile, profile, plan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
+            if (CollectionUtils.isEmpty(pools)) {
+                continue;
+            }
+            for (StoragePool pool : pools) {
+                boolean isLocalPoolSameHostAsSourcePool = pool.isLocal() && StringUtils.equals(host.getPrivateIpAddress(), pool.getHostAddress());
+                if (isLocalPoolSameHostAsSourcePool || pool.isShared()) {
+                    suitablePools.add(pool);
+                }
+
+            }
+        }
+        return suitablePools;
+    }
+
 
     private Pair<List<HostVO>, Integer> searchForServers(final Long startIndex, final Long pageSize, final Object name, final Object type, final Object state, final Object zone, final Object pod, final Object cluster,
             final Object id, final Object keyword, final Object resourceState, final Object haHosts, final Object hypervisorType, final Object hypervisorVersion) {

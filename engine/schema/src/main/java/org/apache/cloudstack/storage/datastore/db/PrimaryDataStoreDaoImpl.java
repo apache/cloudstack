@@ -231,23 +231,21 @@ public class PrimaryDataStoreDaoImpl extends GenericDaoBase<StoragePoolVO, Long>
 
     @Override
     public List<StoragePoolVO> listBy(long datacenterId, Long podId, Long clusterId, ScopeType scope) {
+        SearchCriteria<StoragePoolVO> sc = null;
         if (clusterId != null) {
-            SearchCriteria<StoragePoolVO> sc = DcPodSearch.create();
-            sc.setParameters("datacenterId", datacenterId);
-            sc.setParameters("podId", podId);
-            sc.setParameters("status", Status.Up);
-            sc.setParameters("scope", scope);
-
+            sc = DcPodSearch.create();
             sc.setParameters("cluster", clusterId);
-            return listBy(sc);
         } else {
-            SearchCriteria<StoragePoolVO> sc = DcPodAnyClusterSearch.create();
-            sc.setParameters("datacenterId", datacenterId);
-            sc.setParameters("podId", podId);
-            sc.setParameters("status", Status.Up);
-            sc.setParameters("scope", scope);
-            return listBy(sc);
+            sc = DcPodAnyClusterSearch.create();
+
         }
+        sc.setParameters("datacenterId", datacenterId);
+        sc.setParameters("podId", podId);
+        sc.setParameters("status", Status.Up);
+        if (scope != null) {
+            sc.setParameters("scope", scope);
+        }
+        return listBy(sc);
     }
 
     @Override

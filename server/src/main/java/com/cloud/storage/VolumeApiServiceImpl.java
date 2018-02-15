@@ -2032,38 +2032,28 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     " as the storage pool is in maintenance mode.");
         }
 
-        if (_volumeMgr.volumeOnSharedStoragePool(vol)) {
-            if (destPool.isLocal()) {
-                throw new InvalidParameterValueException("Migration of volume from shared to local storage pool is not supported");
-            } else {
-                // If the volume is attached to a running vm and the volume is on a shared storage pool, check
-                // to make sure that the destination storage pool is in the same cluster as the vm.
-                if (liveMigrateVolume && destPool.getClusterId() != null && srcClusterId != null) {
-                    if (!srcClusterId.equals(destPool.getClusterId())) {
-                        throw new InvalidParameterValueException("Cannot migrate a volume of a virtual machine to a storage pool in a different cluster");
-                    }
-                }
-                // In case of VMware, if ROOT volume is being cold-migrated, then ensure destination storage pool is in the same Datacenter as the VM.
-                if (vm != null && vm.getHypervisorType().equals(HypervisorType.VMware)) {
-                    if (!liveMigrateVolume && vol.volumeType.equals(Volume.Type.ROOT)) {
-                        Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
-                        HostVO host = _hostDao.findById(hostId);
-                        if (host != null)
-                            srcClusterId = host.getClusterId();
-                        if (srcClusterId != null && destPool.getClusterId() != null && !srcClusterId.equals(destPool.getClusterId())) {
-                            String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
-                            String destDcName = _clusterDetailsDao.getVmwareDcName(destPool.getClusterId());
-                            if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {
-                                throw new InvalidParameterValueException("Cannot migrate ROOT volume of a stopped VM to a storage pool in a different VMware datacenter");
-                            }
-                        }
-                        updateMissingRootDiskController(vm, vol.getChainInfo());
-                    }
+            if (liveMigrateVolume && destPool.getClusterId() != null && srcClusterId != null) {
+                if (!srcClusterId.equals(destPool.getClusterId())) {
+                    throw new InvalidParameterValueException("Cannot migrate a volume of a virtual machine to a storage pool in a different cluster");
                 }
             }
-        } else {
-            throw new InvalidParameterValueException("Migration of volume from local storage pool is not supported");
-        }
+            // In case of VMware, if ROOT volume is being cold-migrated, then ensure destination storage pool is in the same Datacenter as the VM.
+            if (vm != null && vm.getHypervisorType().equals(HypervisorType.VMware)) {
+                if (!liveMigrateVolume && vol.volumeType.equals(Volume.Type.ROOT)) {
+                    Long hostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+                    HostVO host = _hostDao.findById(hostId);
+                    if (host != null)
+                        srcClusterId = host.getClusterId();
+                    if (srcClusterId != null && destPool.getClusterId() != null && !srcClusterId.equals(destPool.getClusterId())) {
+                        String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
+                        String destDcName = _clusterDetailsDao.getVmwareDcName(destPool.getClusterId());
+                        if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {
+                            throw new InvalidParameterValueException("Cannot migrate ROOT volume of a stopped VM to a storage pool in a different VMware datacenter");
+                        }
+                    }
+                    updateMissingRootDiskController(vm, vol.getChainInfo());
+                }
+            }
 
         if (vm != null) {
             // serialize VM operation

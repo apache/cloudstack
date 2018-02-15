@@ -17,6 +17,8 @@
 package org.apache.cloudstack.api.command.admin.storage;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -90,9 +92,27 @@ public class FindStoragePoolsForMigrationCmd extends BaseListCmd {
             poolResponse.setObjectName("storagepool");
             poolResponses.add(poolResponse);
         }
-
+        sortPoolsBySuitabilityAndName(poolResponses);
         response.setResponses(poolResponses);
         response.setResponseName(getCommandName());
         this.setResponseObject(response);
+    }
+
+    protected void sortPoolsBySuitabilityAndName(List<StoragePoolResponse> poolResponses) {
+        Collections.sort(poolResponses, new Comparator<StoragePoolResponse>() {
+            @Override
+            public int compare(StoragePoolResponse o1, StoragePoolResponse o2) {
+                if (o1.getSuitableForMigration() && o2.getSuitableForMigration()) {
+                    return o1.getName().compareTo(o2.getName());
+                }
+                if (o1.getSuitableForMigration()) {
+                    return -1;
+                }
+                if (o2.getSuitableForMigration()) {
+                    return 1;
+                }
+                return 0;
+            }
+        });
     }
 }

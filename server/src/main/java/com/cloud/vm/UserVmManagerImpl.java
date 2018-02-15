@@ -4995,21 +4995,22 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private boolean isVMUsingLocalStorage(VMInstanceVO vm) {
         boolean usesLocalStorage = false;
-        ServiceOfferingVO svcOffering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
-        if (svcOffering.getUseLocalStorage()) {
-            usesLocalStorage = true;
-        } else {
-            List<VolumeVO> volumes = _volsDao.findByInstanceAndType(vm.getId(), Volume.Type.DATADISK);
-            for (VolumeVO vol : volumes) {
-                DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
-                if (diskOffering.getUseLocalStorage()) {
-                    usesLocalStorage = true;
-                    break;
-                }
+
+        List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
+        for (VolumeVO vol : volumes) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+            if (diskOffering.getUseLocalStorage()) {
+                usesLocalStorage = true;
+                break;
+            }
+            StoragePoolVO storagePool = _storagePoolDao.findById(vol.getPoolId());
+            if (storagePool.isLocal()) {
+                usesLocalStorage = true;
+                break;
             }
         }
         return usesLocalStorage;
-    }
+}
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_MIGRATE, eventDescription = "migrating VM", async = true)
