@@ -4126,7 +4126,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 final String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
                 boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
-                List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, zoneName, vm.getInstanceName(), vm.getId(),
+                List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, zoneName, vm.getInstanceName(), vm.getHostName(), vm.getId(),
                         (String) profile.getParameter(VirtualMachineProfile.Param.VmSshPubKey), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
                 String vmName = vm.getInstanceName();
                 String configDriveIsoRootFolder = "/tmp";

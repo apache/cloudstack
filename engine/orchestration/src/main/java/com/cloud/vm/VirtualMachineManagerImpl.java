@@ -2526,7 +2526,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     final String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
                     boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
-                    vmData = _networkModel.generateVmData(userVm.getUserData(), serviceOffering, zoneName, vm.getInstanceName(), vm.getId(),
+                    vmData = _networkModel.generateVmData(userVm.getUserData(), serviceOffering, zoneName, vm.getInstanceName(), vm.getHostName(), vm.getId(),
                             (String) profile.getParameter(VirtualMachineProfile.Param.VmSshPubKey), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
                     String vmName = vm.getInstanceName();
                     String configDriveIsoRootFolder = "/tmp";

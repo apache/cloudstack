@@ -97,6 +97,7 @@ public class ConfigDriveNetworkElementTest {
     private final long DATACENTERID = NETWORK_ID;
     private final String ZONENAME = "zone1";
     private final String VMINSTANCENAME = "vm_name";
+    private final String VMHOSTNAME = "vm_host_name";
     private final String VMOFFERING = "custom_instance";
     private final long VMID = 30L;
     private final String VMUSERDATA = "userdata";
@@ -160,6 +161,7 @@ public class ConfigDriveNetworkElementTest {
         when(virtualMachine.getId()).thenReturn(VMID);
         when(virtualMachine.getServiceOfferingId()).thenReturn(SOID);
         when(virtualMachine.getDataCenterId()).thenReturn(DATACENTERID);
+        when(virtualMachine.getHostName()).thenReturn(VMHOSTNAME);
         when(virtualMachine.getInstanceName()).thenReturn(VMINSTANCENAME);
         when(virtualMachine.getUserData()).thenReturn(Base64.encode(VMUSERDATA.getBytes()));
         when(deployDestination.getHost()).thenReturn(hostVO);
@@ -260,7 +262,7 @@ public class ConfigDriveNetworkElementTest {
                 new String[]{"userdata", "user_data", VMUSERDATA},
                 new String[]{"metadata", "service-offering", VMOFFERING},
                 new String[]{"metadata", "availability-zone", ZONENAME},
-                new String[]{"metadata", "local-hostname", VMINSTANCENAME},
+                new String[]{"metadata", "local-hostname", VMHOSTNAME},
                 new String[]{"metadata", "vm-id", String.valueOf(VMID)},
                 new String[]{"metadata", "instance-id", String.valueOf(VMINSTANCENAME)},
                 new String[]{"metadata", "public-keys", PUBLIC_KEY},

@@ -2345,7 +2345,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public List<String[]> generateVmData(String userData, String serviceOffering, String zoneName,
-                                         String vmName, long vmId, String publicKey, String password, Boolean isWindows) {
+                                         String vmName, String hostName, long vmId, String publicKey, String password, Boolean isWindows) {
         final List<String[]> vmData = new ArrayList<String[]>();
 
         if (userData != null) {
@@ -2353,7 +2353,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
         vmData.add(new String[]{METATDATA_DIR, SERVICE_OFFERING_FILE, StringUtils.unicodeEscape(serviceOffering)});
         vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, StringUtils.unicodeEscape(zoneName)});
-        vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, StringUtils.unicodeEscape(vmName)});
+        vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, StringUtils.unicodeEscape(hostName)});
         vmData.add(new String[]{METATDATA_DIR, INSTANCE_ID_FILE, vmName});
         vmData.add(new String[]{METATDATA_DIR, VM_ID_FILE, String.valueOf(vmId)});
         vmData.add(new String[]{METATDATA_DIR, PUBLIC_KEYS_FILE, publicKey});
