@@ -21,7 +21,6 @@ package com.cloud.storage.template;
 
 import com.cloud.storage.StorageLayer;
 import com.cloud.utils.UriUtils;
-import com.cloud.utils.script.Script;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpMethod;
 import org.apache.commons.httpclient.HttpMethodRetryHandler;
