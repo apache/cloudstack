@@ -78,7 +78,7 @@ fi
 ipv6="/etc/iptables/rules.v6"
 if [ -e $ipv6 ]
 then
-   iptables-restore < $ipv6
+   ip6tables-restore < $ipv6
 fi
 
 date > /var/cache/cloud/boot_up_done
