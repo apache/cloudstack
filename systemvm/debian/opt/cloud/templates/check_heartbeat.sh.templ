@@ -24,7 +24,7 @@ if [ -e $ROUTER_BIN_PATH/keepalived.ts2 ]
 then
     thistime=$(cat $ROUTER_BIN_PATH/keepalived.ts)
     lasttime=$(cat $ROUTER_BIN_PATH/keepalived.ts2)
-    diff=$(($lasttime - $thistime))
+    diff=$(($thistime - $lasttime))
     s=0
     if [ $diff -ge 10 ]
     then
@@ -32,7 +32,7 @@ then
         then
             s=`cat $STRIKE_FILE 2>/dev/null`
         fi
-        s=$(($s+1))
+        s=$(($s + 1))
         echo $s > $STRIKE_FILE
     else
         if [ -e $STRIKE_FILE ]
