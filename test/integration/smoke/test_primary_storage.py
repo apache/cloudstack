@@ -469,17 +469,18 @@ class TestStorageTags(cloudstackTestCase):
         try:
             # First expunge vm, so PS can be cleaned up
             cls.virtual_machine_1.delete(cls.apiclient)
+            time.sleep(60)
 
             # Force delete primary storage
             cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
             cmd.id = cls.storage_pool_1.id
             cls.apiclient.enableStorageMaintenance(cmd)
-            time.sleep(60)
+            time.sleep(45)
             cmd = deleteStoragePool.deleteStoragePoolCmd()
             cmd.id = cls.storage_pool_1.id
             cmd.forced = True
             cls.apiclient.deleteStoragePool(cmd)
-
+            time.sleep(30)
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Cleanup failed with %s" % e)

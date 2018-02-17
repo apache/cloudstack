@@ -30,7 +30,6 @@ import org.springframework.stereotype.Component;
 
 import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.StoragePool;
@@ -48,10 +47,6 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
     @Override
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         s_logger.debug("ClusterScopeStoragePoolAllocator looking for storage pool");
-
-        if (dskCh.useLocalStorage() && vmProfile.getHypervisorType() != HypervisorType.XenServer) {
-            return null;
-        }
 
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 

@@ -18,7 +18,7 @@ package com.cloud.hypervisor.dao;
 
 import java.util.List;
 
-
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -66,6 +66,9 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
 
     @Override
     public HypervisorCapabilitiesVO findByHypervisorTypeAndVersion(HypervisorType hypervisorType, String hypervisorVersion) {
+        if (StringUtils.isBlank(hypervisorVersion)) {
+            hypervisorVersion = DEFAULT_VERSION;
+        }
         SearchCriteria<HypervisorCapabilitiesVO> sc = HypervisorTypeAndVersionSearch.create();
         sc.setParameters("hypervisorType", hypervisorType);
         sc.setParameters("hypervisorVersion", hypervisorVersion);
@@ -76,11 +79,13 @@ public class HypervisorCapabilitiesDaoImpl extends GenericDaoBase<HypervisorCapa
     public Long getMaxGuestsLimit(HypervisorType hypervisorType, String hypervisorVersion) {
         Long defaultLimit = new Long(50);
         HypervisorCapabilitiesVO result = getCapabilities(hypervisorType, hypervisorVersion);
-        if (result == null)
+        if (result == null) {
             return defaultLimit;
+        }
         Long limit = result.getMaxGuestsLimit();
-        if (limit == null)
+        if (limit == null) {
             return defaultLimit;
+        }
         return limit;
     }
 
