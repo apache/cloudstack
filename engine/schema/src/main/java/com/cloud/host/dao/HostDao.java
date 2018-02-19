@@ -19,13 +19,12 @@ package com.cloud.host.dao;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.GenericDao;
@@ -99,14 +98,13 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     HostVO findByIp(String ip);
 
     /**
-     * This method will look for a host that is of the same hypervisor and same zone as the storage pool where the volume of the Snapshot is stored.
+     * This method will look for a host that is of the same hypervisor and zone as indicated in its parameters.
      * <ul>
-     * <li>(this is applicable only for XenServer) If the storage pool is managed, then we will look for a host that has the property 'supportsResign' in cloud.cluster_details
      * <li>We give priority to 'Enabled' hosts, but if no 'Enabled' hosts are found, we use 'Disabled' hosts
      * <li>If no host is found, we throw a runtime exception
      * </ul>
      *
      * Side note: this method is currently only used in XenServerGuru; therefore, it was designed to meet XenServer deployment scenarios requirements.
      */
-    HostVO findHostToOperateOnSnapshotBasedOnStoragePool(StoragePoolVO storagePoolVO);
+    HostVO findHostInZoneToExecuteCommand(long zoneId, HypervisorType hypervisorType);
 }
