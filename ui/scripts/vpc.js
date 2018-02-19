@@ -404,14 +404,14 @@
             'icmptype': {
                 edit: true,
                 label: 'ICMP.type',
-                desc: 'Please specify -1 if you want to allow all ICMP types',
+                desc: 'ICMP.type.desc',
                 defaultValue: '-1',
                 isEditable: true
             },
             'icmpcode': {
                 edit: true,
                 label: 'ICMP.code',
-                desc: 'Please specify -1 if you want to allow all ICMP codes',
+                desc: 'ICMP.code.desc',
                 defaultValue: '-1',
                 isEditable: true
             },
@@ -1348,7 +1348,7 @@
                                                         	cloudStack.dialog.createForm({
                                                         		 form: {
                                                                      title: 'label.add.rule',
-                                                                     desc: 'Create a new ACL rule',
+                                                                     desc: 'label.add.rule.desc',
                                                                      fields: aclRuleFields
                                                                  },
                                                                  after: function(argsLocal) {
@@ -4406,7 +4406,6 @@
                                 });
                             })
                         });
-
                         if (error) {
                             cloudStack.dialog.notice({
                                 message: 'Error loading dashboard data.'

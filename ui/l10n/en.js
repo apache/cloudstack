@@ -14,8 +14,11 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-var dictionary = {"ICMP.code":"ICMP Code",
+var dictionary = {
+"ICMP.code":"ICMP Code",
+"ICMP.code.desc": "Please specify -1 if you want to allow all ICMP codes",
 "ICMP.type":"ICMP Type",
+"ICMP.type.desc": "Please specify -1 if you want to allow all ICMP types.",
 "changed.item.properties":"Changed item properties",
 "confirm.enable.s3":"Please fill in the following information to enable support for S3-backed Secondary Storage",
 "confirm.enable.swift":"Please fill in the following information to enable support for Swift",
@@ -370,6 +373,7 @@ var dictionary = {"ICMP.code":"ICMP Code",
 "label.add.role":"Add Role",
 "label.add.route":"Add route",
 "label.add.rule":"Add rule",
+"label.add.rule.desc": "Create a new ACL rule",
 "label.add.secondary.storage":"Add Secondary Storage",
 "label.add.security.group":"Add Security Group",
 "label.add.service.offering":"Add Service Offering",

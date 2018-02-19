@@ -16,7 +16,9 @@
 // under the License.
 var dictionary = {
     "ICMP.code": "ICMP 代码",
+    "ICMP.code.desc": "Please specify -1 if you want to allow all ICMP codes",
     "ICMP.type": "ICMP 类型",
+    "ICMP.type.desc": "Please specify -1 if you want to allow all ICMP types.",
     "changed.item.properties": "更改项目属性",
     "confirm.enable.s3": "请填写以下信息以启用对 S3 支持的二级存储的支持",
     "confirm.enable.swift": "请填写以下信息以启用对 SWIFT 的支持",
@@ -367,6 +369,7 @@ var dictionary = {
     "label.add.role": "Add Role",
     "label.add.route": "添加路由",
     "label.add.rule": "添加规则",
+    "label.add.rule.desc": "Create a new ACL rule",
     "label.add.secondary.storage": "添加二级存储",
     "label.add.security.group": "添加安全组",
     "label.add.service.offering": "添加服务方案",

@@ -16,7 +16,9 @@
 // under the License.
 var dictionary = {
     "ICMP.code": "ICMP-Code",
+    "ICMP.code.desc": "Please specify -1 if you want to allow all ICMP codes",
     "ICMP.type": "ICMP-Typ",
+    "ICMP.type.desc": "Please specify -1 if you want to allow all ICMP types.",
     "changed.item.properties": "Geänderte Eintragseigenschaften",
     "confirm.enable.s3": "Bitte fügen Sie die folgenden Informationen hinzu, um die Unterstützung für \"S3-backed Secondary Storage\" hinzuzufügen",
     "confirm.enable.swift": "Bitte fügen Sie die folgenden Informationen hinzu, um die Unterstützung für Swift zu ermöglichen.",
@@ -367,6 +369,7 @@ var dictionary = {
     "label.add.role": "Rolle hinzufügen",
     "label.add.route": "Route hinzufügen",
     "label.add.rule": "Regel hinzufügen",
+    "label.add.rule.desc": "Create a new ACL rule",
     "label.add.secondary.storage": "Sekundärspeicher hinzufügen",
     "label.add.security.group": "Sicherheitsgruppe hinzufügen",
     "label.add.service.offering": "Dienstangebot hinzufügen",

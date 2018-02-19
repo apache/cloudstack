@@ -16,7 +16,9 @@
 // under the License.
 var dictionary = {
     "ICMP.code": "ICMP kód",
+    "ICMP.code.desc": "Please specify -1 if you want to allow all ICMP codes",
     "ICMP.type": "ICMP típus",
+    "ICMP.type.desc": "Please specify -1 if you want to allow all ICMP types.",
     "changed.item.properties": "Az elem tulajdonságai megváltoztak",
     "confirm.enable.s3": "Töltsd ki a következő információkat az S3 másodlagos tár bekapcsolásához!",
     "confirm.enable.swift": "Töltsd ki a következő információkat a Swift támogatás bekapcsolásához!",
@@ -367,6 +369,7 @@ var dictionary = {
     "label.add.role": "Add Role",
     "label.add.route": "Útvonal felvétele",
     "label.add.rule": "Szabály felvétele",
+    "label.add.rule.desc": "Create a new ACL rule",
     "label.add.secondary.storage": "Másodlagos tár felvétele",
     "label.add.security.group": "Biztonsági csoport felvétele",
     "label.add.service.offering": "Szolgáltatás ajánlat felvétele",
