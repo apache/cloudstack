@@ -123,11 +123,4 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
     List<StoragePoolVO> listLocalStoragePoolByPath(long datacenterId, String path);
 
     void deletePoolTags(long poolId);
-
-    /**
-     *  Looks for a storage pool where the original volume of the snapshot was taken.
-     *  Even if the volume has already been deleted, we will return the last storage pool where it was stored.
-     */
-    StoragePoolVO findStoragePoolForSnapshot(long snapshotId);
-
 }

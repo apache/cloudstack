@@ -22,3 +22,4 @@ cloudmonkey
 
 # Install the SolidFire SDK for Python
 solidfire-sdk-python
+
