@@ -46,6 +46,12 @@ public class UpdateNetworkACLListCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the list to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
+    
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the network ACL list")
+    private String name;
+    
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description of the network ACL list")
+    private String description;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -85,7 +91,7 @@ public class UpdateNetworkACLListCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        NetworkACL acl = _networkACLService.updateNetworkACL(id, this.getCustomId(), getDisplay());
+        NetworkACL acl = _networkACLService.updateNetworkACL(this);
         NetworkACLResponse aclResponse = _responseGenerator.createNetworkACLResponse(acl);
         setResponseObject(aclResponse);
         aclResponse.setResponseName(getCommandName());
@@ -96,5 +102,13 @@ public class UpdateNetworkACLListCmd extends BaseAsyncCustomIdCmd {
         if (this.getCustomId() != null) {
             _uuidMgr.checkUuid(this.getCustomId(), NetworkACL.class);
         }
+    }
+    
+    public String getDescription() {
+        return description;
+    }
+    
+    public String getName() {
+        return name;
     }
 }
