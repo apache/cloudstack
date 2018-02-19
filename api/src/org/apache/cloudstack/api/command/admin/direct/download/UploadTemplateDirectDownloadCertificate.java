@@ -80,7 +80,7 @@ public class UploadTemplateDirectDownloadCertificate extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return UploadTemplateDirectDownloadCertificate.APINAME;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override
