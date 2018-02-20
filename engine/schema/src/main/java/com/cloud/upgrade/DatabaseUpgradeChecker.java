@@ -522,21 +522,6 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
 
         final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
 
-        boolean supportsRollingUpgrade = true;
-        for (DbUpgrade upgrade : upgrades) {
-            if (!upgrade.supportsRollingUpgrade()) {
-                supportsRollingUpgrade = false;
-                break;
-            }
-        }
-
-        if (!supportsRollingUpgrade && false) { // FIXME: Needs to detect if there are management servers running
-            // ClusterManagerImpl.arePeersRunning(null)) {
-            String errorMessage = "Unable to run upgrade because the upgrade sequence does not support rolling update and there are other management server nodes running";
-            s_logger.error(errorMessage);
-            throw new CloudRuntimeException(errorMessage);
-        }
-
         for (DbUpgrade upgrade : upgrades) {
             VersionVO version;
             s_logger.debug("Running upgrade " + upgrade.getClass().getSimpleName() + " to upgrade from " + upgrade.getUpgradableVersionRange()[0] + "-" + upgrade
