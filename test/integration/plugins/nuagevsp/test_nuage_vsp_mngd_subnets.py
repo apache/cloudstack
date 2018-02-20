@@ -207,8 +207,6 @@ class TestNuageManagedSubnets(nuageTestCase):
         zone1 = self.create_vsd_zone(domain1, "ZoneToBeConsumedByACS")
         subnet1 = self.create_vsd_subnet(zone1, "SubnetToBeConsumedByACS",
                                          "10.0.0.1/24")
-        # self.create_vsd_dhcp_option(subnet1, 6,
-        #                            ["10.0.0.2","128.251.10.25","4.4.4.4"])
         self.create_vsd_dhcp_option(subnet1, 15, ["nuagenetworks1.net"])
 
         domain2 = self.create_vsd_domain(domain_template, enterprise,
@@ -217,8 +215,6 @@ class TestNuageManagedSubnets(nuageTestCase):
         subnet2 = self.create_vsd_subnet(zone2, "2ndSubnetToBeConsumedByACS",
                                          "10.1.0.1/24")
 
-        # self.create_vsd_dhcp_option(subnet2, 6,
-        #                             ["10.1.0.2","128.251.10.25","4.4.4.4"])
         self.create_vsd_dhcp_option(subnet2, 15, ["nuagenetworks2.net"])
 
         domain3 = self.create_vsd_domain(domain_template, enterprise,
@@ -756,8 +752,6 @@ class TestNuageManagedSubnets(nuageTestCase):
         ingress_vsd_acl_entry1 = self.vsdk.NUIngressACLEntryTemplate()
         ingress_vsd_acl_entry1.name = "Default Intra-Subnet Allow"
         ingress_vsd_acl_entry1.description = "Default Intra-Subnet Allow"
-        # ingress_vsd_acl_entry1.external_id = "ToBeConsumedByACS@" \
-        #                                      + str(self.cms_id)
         ingress_vsd_acl_entry1.priority = '1'
         ingress_vsd_acl_entry1.protocol = 'ANY'
         ingress_vsd_acl_template1.create_child(ingress_vsd_acl_entry1)
@@ -765,8 +759,6 @@ class TestNuageManagedSubnets(nuageTestCase):
         ingress_vsd_acl_entry2 = self.vsdk.NUIngressACLEntryTemplate()
         ingress_vsd_acl_entry2.name = "Default Allow TCP"
         ingress_vsd_acl_entry2.description = "Default Allow TCP"
-        # ingress_vsd_acl_entry2.external_id = "ToBeConsumedByACS@" \
-        #                                      + str(self.cms_id)
         ingress_vsd_acl_entry2.priority = '1'
         ingress_vsd_acl_entry2.protocol = '6'
         ingress_vsd_acl_entry2.source_port = '*'
@@ -776,8 +768,6 @@ class TestNuageManagedSubnets(nuageTestCase):
         ingress_vsd_acl_entry3 = self.vsdk.NUIngressACLEntryTemplate()
         ingress_vsd_acl_entry3.name = "Default Allow UDP"
         ingress_vsd_acl_entry3.description = "Default Allow UDP"
-        # ingress_vsd_acl_entry3.external_id = "ToBeConsumedByACS@" \
-        #                                      + str(self.cms_id)
         ingress_vsd_acl_entry3.priority = '2'
         ingress_vsd_acl_entry3.protocol = '17'
         ingress_vsd_acl_entry3.source_port = '*'
@@ -786,8 +776,6 @@ class TestNuageManagedSubnets(nuageTestCase):
         ingress_vsd_acl_entry4 = self.vsdk.NUIngressACLEntryTemplate()
         ingress_vsd_acl_entry4.name = "Default Allow ICMP"
         ingress_vsd_acl_entry4.description = "Default Allow ICMP"
-        # ingress_vsd_acl_entry4.external_id = "ToBeConsumedByACS@" \
-        #                                      + str(self.cms_id)
         ingress_vsd_acl_entry4.priority = '3'
         ingress_vsd_acl_entry4.protocol = '1'
         ingress_vsd_acl_template2.create_child(ingress_vsd_acl_entry4)
@@ -801,16 +789,12 @@ class TestNuageManagedSubnets(nuageTestCase):
         egress_vsd_acl_entry1 = self.vsdk.NUEgressACLEntryTemplate()
         egress_vsd_acl_entry1.name = "Default Intra-Subnet Allow"
         egress_vsd_acl_entry1.description = "Default Intra-Subnet Allow"
-        # egress_vsd_acl_entry1.external_id = "ToBeConsumedByACS@" \
-        #                                    + str(self.cms_id)
         egress_vsd_acl_entry1.priority = '1'
         egress_vsd_acl_entry1.protocol = 'ANY'
         egress_vsd_acl_template1.create_child(egress_vsd_acl_entry1)
         egress_vsd_acl_entry2 = self.vsdk.NUEgressACLEntryTemplate()
         egress_vsd_acl_entry2.name = "Default Allow ICMP"
         egress_vsd_acl_entry2.description = "Default Allow ICMP"
-        # egress_vsd_acl_entry2.external_id = "ToBeConsumedByACS@" \
-        #                                    + str(self.cms_id)
         egress_vsd_acl_entry2.priority = '3'
         egress_vsd_acl_entry2.protocol = '1'
         egress_vsd_acl_template2.create_child(egress_vsd_acl_entry2)
@@ -819,7 +803,6 @@ class TestNuageManagedSubnets(nuageTestCase):
         domain = self.vsdk.NUDomain()
         domain.name = name
         domain.description = name
-        # domain.external_id = name + "@" + str(self.cms_id)
         (domain, connection) = \
             enterprise.instantiate_child(domain, domain_template)
         return domain
@@ -828,7 +811,6 @@ class TestNuageManagedSubnets(nuageTestCase):
         zone = self.vsdk.NUZone()
         zone.name = name
         zone.description = name
-        # zone.external_id = name + "@" + str(self.cms_id)
         (zone, connection) = domain.create_child(zone)
         return zone
 
@@ -836,7 +818,6 @@ class TestNuageManagedSubnets(nuageTestCase):
         subnet = self.vsdk.NUSubnet()
         subnet.name = name
         subnet.description = name
-        # subnet.external_id = name + "@" + str(self.cms_id)
         (subnet.gateway, subnet.netmask, subnet.address) = \
             self._cidr_to_netmask(cidr)
         (subnet, connection) = zone.create_child(subnet)
