@@ -412,8 +412,6 @@
                         $.ajax({
                             url: createURL('listRemoteAccessVpns'),
                             data: {
-                                account: g_account,
-                                domainid: g_domainid,
                                 listAll: true
                             },
                             async: false,
@@ -3524,7 +3522,7 @@
 
                                                 var stickyData = $.extend(true, {}, args.data.sticky);
                                                 var certificateData = $.extend(true, {}, args.data.sslcertificate);
-                                                  
+
                                                 //***** create new LB rule > Add VMs *****
                                                 $.ajax({
                                                     url: createURL('createLoadBalancerRule'),
@@ -3537,28 +3535,28 @@
                                                         var lbID = data.createloadbalancerruleresponse.id;
 
                                                         var inputData = {
-                                                        	id: data.createloadbalancerruleresponse.id	
-                                                        };    
-                                                        
+                                                        	id: data.createloadbalancerruleresponse.id
+                                                        };
+
                                                         var selectedVMs = args.itemData;
                                                         if (selectedVMs != null) {
                                                         	var vmidipmapIndex = 0;
-                                                    		for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {      
+                                                    		for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {
                                                     			var selectedIPs = selectedVMs[vmIndex]._subselect;
                                                     			for (var ipIndex = 0; ipIndex < selectedIPs.length; ipIndex++) {
                                                     				inputData['vmidipmap[' + vmidipmapIndex + '].vmid'] = selectedVMs[vmIndex].id;
-                                                        			
+
                                                     				if (args.context.ipAddresses[0].isportable) {
-                                                        			    inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];  
+                                                        			    inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];
                                                         			} else {
                                                         				inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
                                                         			}
-                                                    				
+
                                                     				vmidipmapIndex++;
-                                                    			}                                                			
+                                                    			}
                                                     		}
-                                                    	}   
-                                                        
+                                                    	}
+
                                                         /*$.ajax({
                                                             url: createURL('assignCertToLoadBalancer'),
                                                             data: {certid: certificateData.certificate, lbruleid: lbID},
@@ -3568,7 +3566,7 @@
 
                                                                 args.response.success({
                                                                     _custom: {
-                                                                        jobId: jobID 
+                                                                        jobId: jobID
                                                                     },
                                                                     notification: {
                                                                         label: 'label.add.certificate',
