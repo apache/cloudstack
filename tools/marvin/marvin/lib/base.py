@@ -593,6 +593,10 @@ class VirtualMachine:
 
         virtual_machine = apiclient.deployVirtualMachine(cmd, method=method)
 
+        if 'password' in virtual_machine.__dict__.keys():
+            if virtual_machine.password:
+                services['password'] = virtual_machine.password
+
         virtual_machine.ssh_ip = virtual_machine.nic[0].ipaddress
         if startvm is False:
             virtual_machine.public_ip = virtual_machine.nic[0].ipaddress
