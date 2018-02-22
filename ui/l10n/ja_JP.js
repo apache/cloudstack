@@ -16,7 +16,9 @@
 // under the License.
 var dictionary = {
     "ICMP.code": "ICMP コード",
+    "ICMP.code.desc": "Please specify -1 if you want to allow all ICMP codes",
     "ICMP.type": "ICMP の種類",
+    "ICMP.type.desc": "Please specify -1 if you want to allow all ICMP types.",
     "changed.item.properties": "項目のプロパティの変更",
     "confirm.enable.s3": "S3 ベースのセカンダリ ストレージのサポートを有効にするには、次の情報を入力してください。",
     "confirm.enable.swift": "Swift のサポートを有効にするには、次の情報を入力してください。",
@@ -367,6 +369,7 @@ var dictionary = {
     "label.add.role": "Add Role",
     "label.add.route": "ルートの追加",
     "label.add.rule": "規則の追加",
+    "label.add.rule.desc": "Create a new ACL rule",
     "label.add.secondary.storage": "セカンダリ ストレージの追加",
     "label.add.security.group": "セキュリティ グループの追加",
     "label.add.service.offering": "サービス オファリングの追加",
@@ -1278,6 +1281,7 @@ var dictionary = {
     "label.projects": "プロジェクト",
     "label.protocol": "プロトコル",
     "label.protocol.number": "プロトコル番号",
+    "label.protocol.number.short" : "#Protocol",
     "label.provider": "プロバイダー",
     "label.providers": "プロバイダー",
     "label.public": "パブリック",
@@ -1427,6 +1431,7 @@ var dictionary = {
     "label.routing": "ルーティング",
     "label.routing.host": "ルーティング ホスト",
     "label.rule": "Rule",
+    "label.rule.number.short": "#Rule",
     "label.rule.number": "規則番号",
     "label.rules": "規則",
     "label.running.vms": "実行中の VM",

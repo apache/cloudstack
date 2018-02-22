@@ -16,7 +16,9 @@
 // under the License.
 var dictionary = {
     "ICMP.code": "Code ICMP",
+    "ICMP.code.desc": "Please specify -1 if you want to allow all ICMP codes",
     "ICMP.type": "Type ICMP",
+    "ICMP.type.desc": "Please specify -1 if you want to allow all ICMP types.",
     "changed.item.properties": "Propriétés de l'élément modifiées",
     "confirm.enable.s3": "Remplir les informations suivantes pour activer le support de stockage secondaire S3",
     "confirm.enable.swift": "Remplir les informations suivantes pour activer Swift",
@@ -367,6 +369,7 @@ var dictionary = {
     "label.add.role": "Ajouter Rôle",
     "label.add.route": "Ajouter route",
     "label.add.rule": "Ajouter règle",
+    "label.add.rule.desc": "Create a new ACL rule",
     "label.add.secondary.storage": "Ajouter un stockage secondaire",
     "label.add.security.group": "Ajouter un groupe de sécurité",
     "label.add.service.offering": "Ajouter Offre Service",
@@ -1278,6 +1281,7 @@ var dictionary = {
     "label.projects": "Projets",
     "label.protocol": "Protocole",
     "label.protocol.number": "Numéro Protocole",
+    "label.protocol.number.short" : "#Protocole",
     "label.provider": "Fournisseur",
     "label.providers": "Fournisseurs",
     "label.public": "Publique",
@@ -1427,6 +1431,7 @@ var dictionary = {
     "label.routing": "Routage",
     "label.routing.host": "Hôte de routage",
     "label.rule": "Règle",
+    "label.rule.number.short": "#Règle",
     "label.rule.number": "Numéro règle",
     "label.rules": "Règles",
     "label.running.vms": "VMs actives",

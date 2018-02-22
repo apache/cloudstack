@@ -16,7 +16,9 @@
 // under the License.
 var dictionary = {
     "ICMP.code": "ICMP-kode",
+    "ICMP.code.desc": "Please specify -1 if you want to allow all ICMP codes",
     "ICMP.type": "ICMP-type",
+    "ICMP.type.desc": "Please specify -1 if you want to allow all ICMP types.",
     "changed.item.properties": "Endrede egenskaper",
     "confirm.enable.s3": "Vennligst fyll inn følgende informasjon for å aktivere støtte for S3-støttet sekundærlagring",
     "confirm.enable.swift": "Vennligst fyll inn følgende informasjon for å aktivere støtte for Swift",
@@ -367,6 +369,7 @@ var dictionary = {
     "label.add.role": "Add Role",
     "label.add.route": "Legg til rute",
     "label.add.rule": "Legg til regel",
+    "label.add.rule.desc": "Create a new ACL rule",
     "label.add.secondary.storage": "Legg til sekundærlagring",
     "label.add.security.group": "Legg til sikkerhetsgruppe",
     "label.add.service.offering": "Legg til tjenestetilbud",
@@ -1278,6 +1281,7 @@ var dictionary = {
     "label.projects": "Prosjekter",
     "label.protocol": "Protokoll",
     "label.protocol.number": "Protokollnummer",
+    "label.protocol.number.short" : "#Protocol",
     "label.provider": "Tilbyder",
     "label.providers": "Tilbydere",
     "label.public": "Offentlig",
@@ -1427,6 +1431,7 @@ var dictionary = {
     "label.routing": "Ruting",
     "label.routing.host": "Ruter Vert",
     "label.rule": "Rule",
+    "label.rule.number.short": "#Regel",
     "label.rule.number": "Regelnummer",
     "label.rules": "Regler",
     "label.running.vms": "Kjørende VMer",

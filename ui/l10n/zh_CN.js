@@ -16,7 +16,9 @@
 // under the License.
 var dictionary = {
     "ICMP.code": "ICMP 代码",
+    "ICMP.code.desc": "Please specify -1 if you want to allow all ICMP codes",
     "ICMP.type": "ICMP 类型",
+    "ICMP.type.desc": "Please specify -1 if you want to allow all ICMP types.",
     "changed.item.properties": "更改项目属性",
     "confirm.enable.s3": "请填写以下信息以启用对 S3 支持的二级存储的支持",
     "confirm.enable.swift": "请填写以下信息以启用对 SWIFT 的支持",
@@ -367,6 +369,7 @@ var dictionary = {
     "label.add.role": "Add Role",
     "label.add.route": "添加路由",
     "label.add.rule": "添加规则",
+    "label.add.rule.desc": "Create a new ACL rule",
     "label.add.secondary.storage": "添加二级存储",
     "label.add.security.group": "添加安全组",
     "label.add.service.offering": "添加服务方案",
@@ -1278,6 +1281,7 @@ var dictionary = {
     "label.projects": "项目",
     "label.protocol": "协议",
     "label.protocol.number": "协议编号",
+    "label.protocol.number.short" : "#Protocol",
     "label.provider": "提供程序",
     "label.providers": "提供程序",
     "label.public": "公用",
@@ -1427,6 +1431,7 @@ var dictionary = {
     "label.routing": "正在路由",
     "label.routing.host": "正在路由主机",
     "label.rule": "规则",
+    "label.rule.number.short": "#Rule",
     "label.rule.number": "规则编号",
     "label.rules": "规则",
     "label.running.vms": "正在运行的 VM",

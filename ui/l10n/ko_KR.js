@@ -16,7 +16,9 @@
 // under the License.
 var dictionary = {
     "ICMP.code": "ICMP 코드",
+    "ICMP.code.desc": "Please specify -1 if you want to allow all ICMP codes",
     "ICMP.type": "ICMP 종류",
+    "ICMP.type.desc": "Please specify -1 if you want to allow all ICMP types.",
     "changed.item.properties": "항목 속성 변경",
     "confirm.enable.s3": "S3 기반 2차 저장소 지원을 하려면 아래 정보를 입력해 주십시오.",
     "confirm.enable.swift": "Swift 기술 지원를 사용 하려면 다음 정보를 입력해 주십시오.",
@@ -367,6 +369,7 @@ var dictionary = {
     "label.add.role": "Add Role",
     "label.add.route": "라우트 추가",
     "label.add.rule": "규칙 추가",
+    "label.add.rule.desc": "Create a new ACL rule",
     "label.add.secondary.storage": "2차 스토리지 추가",
     "label.add.security.group": "보안 그룹 추가",
     "label.add.service.offering": "서비스제공 추가",
@@ -1278,6 +1281,7 @@ var dictionary = {
     "label.projects": "프로젝트",
     "label.protocol": "프로토콜",
     "label.protocol.number": "Protocol Number",
+    "label.protocol.number.short" : "#Protocol",
     "label.provider": "Provider",
     "label.providers": "제공자",
     "label.public": "공개",
@@ -1427,6 +1431,7 @@ var dictionary = {
     "label.routing": "라우팅",
     "label.routing.host": "Routing Host",
     "label.rule": "Rule",
+    "label.rule.number.short": "#Rule",
     "label.rule.number": "Rule Number",
     "label.rules": "규칙",
     "label.running.vms": "실행중 VM",

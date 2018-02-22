@@ -16,7 +16,9 @@
 // under the License.
 var dictionary = {
     "ICMP.code": "ICMP Code",
+    "ICMP.code.desc": "Please specify -1 if you want to allow all ICMP codes",
     "ICMP.type": "ICMP Type",
+    "ICMP.type.desc": "Please specify -1 if you want to allow all ICMP types.",
     "changed.item.properties": "تغير خصائص العنصر",
     "confirm.enable.s3": "فضلا قم بتعبئة البيانات القادمة لتمكين التخزين S3 للذاكرة الثانوية.",
     "confirm.enable.swift": "Please fill in the following information to enable support for Swift",
@@ -367,6 +369,7 @@ var dictionary = {
     "label.add.role": "Add Role",
     "label.add.route": "إضافة مسار",
     "label.add.rule": "إضافة قاعدة",
+    "label.add.rule.desc": "Create a new ACL rule",
     "label.add.secondary.storage": "Add Secondary Storage",
     "label.add.security.group": "Add Security Group",
     "label.add.service.offering": "Add Service Offering",
@@ -1278,6 +1281,7 @@ var dictionary = {
     "label.projects": "المشاريع",
     "label.protocol": "Protocol",
     "label.protocol.number": "Protocol Number",
+    "label.protocol.number.short" : "#Protocol",
     "label.provider": "Provider",
     "label.providers": "Providers",
     "label.public": "Public",
@@ -1427,6 +1431,7 @@ var dictionary = {
     "label.routing": "Routing",
     "label.routing.host": "Routing Host",
     "label.rule": "Rule",
+    "label.rule.number.short": "#Rule",
     "label.rule.number": "Rule Number",
     "label.rules": "Rules",
     "label.running.vms": "Running VMs",
