@@ -172,13 +172,21 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
                 // pause vm if we meet the vm.migrate.pauseafter threshold and not already paused
                 final int migratePauseAfter = libvirtComputingResource.getMigratePauseAfter();
-                if (migratePauseAfter > 0 && sleeptime > migratePauseAfter && dm.getInfo().state == DomainState.VIR_DOMAIN_RUNNING ) {
-                    s_logger.info("Pausing VM " + vmName + " due to property vm.migrate.pauseafter setting to " + migratePauseAfter+ "ms to complete migration");
+                if (migratePauseAfter > 0 && sleeptime > migratePauseAfter) {
+                    DomainState state = null;
                     try {
-                        dm.suspend();
+                        state = dm.getInfo().state;
                     } catch (final LibvirtException e) {
-                        // pause could be racy if it attempts to pause right when vm is finished, simply warn
-                        s_logger.info("Failed to pause vm " + vmName + " : " + e.getMessage());
+                        s_logger.info("Couldn't get VM domain state after " + sleeptime + "ms: " + e.getMessage());
+                    }
+                    if (state != null && state == DomainState.VIR_DOMAIN_RUNNING) {
+                        try {
+                            s_logger.info("Pausing VM " + vmName + " due to property vm.migrate.pauseafter setting to " + migratePauseAfter + "ms to complete migration");
+                            dm.suspend();
+                        } catch (final LibvirtException e) {
+                            // pause could be racy if it attempts to pause right when vm is finished, simply warn
+                            s_logger.info("Failed to pause vm " + vmName + " : " + e.getMessage());
+                        }
                     }
                 }
             }
