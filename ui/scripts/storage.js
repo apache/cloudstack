@@ -2859,7 +2859,10 @@
         if (jsonObj.state == "Ready") {
             allowedActions.push("remove");
             allowedActions.push("revertToVMSnapshot");
-            allowedActions.push("takeSnapshot");
+
+            if (args && args.context && args.context.instances && args.context.instances[0].hypervisor && args.context.instances[0].hypervisor === "KVM") {
+                allowedActions.push("takeSnapshot");
+            }
         }
 
         return allowedActions;
