@@ -22,33 +22,45 @@ import java.util.Properties;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 
 public interface IAgentShell {
-    public Map<String, Object> getCmdLineProperties();
+    Map<String, Object> getCmdLineProperties();
 
-    public Properties getProperties();
+    Properties getProperties();
 
-    public String getPersistentProperty(String prefix, String name);
+    String getPersistentProperty(String prefix, String name);
 
-    public void setPersistentProperty(String prefix, String name, String value);
+    void setPersistentProperty(String prefix, String name, String value);
 
-    public String getHost();
+    String getNextHost();
 
-    public String getPrivateIp();
+    String getPrivateIp();
 
-    public int getPort();
+    int getPort();
 
-    public int getWorkers();
+    int getWorkers();
 
-    public int getProxyPort();
+    int getProxyPort();
 
-    public String getGuid();
+    String getGuid();
 
-    public String getZone();
+    String getZone();
 
-    public String getPod();
+    String getPod();
 
-    public BackoffAlgorithm getBackoffAlgorithm();
+    BackoffAlgorithm getBackoffAlgorithm();
 
-    public int getPingRetries();
+    int getPingRetries();
 
-    public String getVersion();
+    String getVersion();
+
+    void setHosts(String hosts);
+
+    void resetHostCounter();
+
+    String[] getHosts();
+
+    long getHostLBTimerInterval();
+
+    void updateConnectedHost();
+
+    String getConnectedHost();
 }

@@ -253,6 +253,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     private ClusterVSMMapDao _clusterVSMMapDao;
 
+
     private final long _nodeId = ManagementServerNode.getManagementServerId();
 
     private final HashMap<String, ResourceStateAdapter> _resourceStateAdapters = new HashMap<String, ResourceStateAdapter>();

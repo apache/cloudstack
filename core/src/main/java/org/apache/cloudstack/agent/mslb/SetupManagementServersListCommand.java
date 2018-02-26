@@ -17,58 +17,26 @@
 // under the License.
 //
 
-package com.cloud.agent.api;
+package org.apache.cloudstack.agent.mslb;
 
+import com.cloud.agent.api.Command;
 import java.util.List;
 
-public class ReadyCommand extends Command {
-    private String _details;
+public class SetupManagementServersListCommand extends Command {
 
-    public ReadyCommand() {
+    private List<String> msList;
+
+    public SetupManagementServersListCommand(final List<String> msList) {
         super();
+        this.msList = msList;
     }
 
-    private Long dcId;
-    private Long hostId;
-    private List<String> mgmtHosts;
-
-    public ReadyCommand(Long dcId) {
-        super();
-        this.dcId = dcId;
-    }
-
-    public ReadyCommand(final Long dcId, final Long hostId) {
-        this(dcId);
-        this.hostId = hostId;
-    }
-
-    public void setDetails(String details) {
-        _details = details;
-    }
-
-    public String getDetails() {
-        return _details;
-    }
-
-    public Long getDataCenterId() {
-        return dcId;
+    public List<String> getMsList() {
+        return msList;
     }
 
     @Override
     public boolean executeInSequence() {
-        return true;
+        return false;
     }
-
-    public Long getHostId() {
-        return hostId;
-    }
-
-    public List<String> getMgmtHosts() {
-        return mgmtHosts;
-    }
-
-    public void setMgmtHosts(List<String> mgmtHosts) {
-        this.mgmtHosts = mgmtHosts;
-    }
-
 }

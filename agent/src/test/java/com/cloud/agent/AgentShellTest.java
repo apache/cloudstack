@@ -35,7 +35,7 @@ public class AgentShellTest {
         shell.parseCommand(new String[] {"port=55555", "threads=4", "host=localhost", "pod=pod1", "guid=" + anyUuid, "zone=zone1"});
         Assert.assertEquals(55555, shell.getPort());
         Assert.assertEquals(4, shell.getWorkers());
-        Assert.assertEquals("localhost", shell.getHost());
+        Assert.assertEquals("localhost", shell.getNextHost());
         Assert.assertEquals(anyUuid.toString(), shell.getGuid());
         Assert.assertEquals("pod1", shell.getPod());
         Assert.assertEquals("zone1", shell.getZone());
@@ -53,10 +53,10 @@ public class AgentShellTest {
     public void testGetHost() {
         AgentShell shell = new AgentShell();
         List<String> hosts = Arrays.asList("10.1.1.1", "20.2.2.2", "30.3.3.3", "2001:db8::1");
-        shell.setHost(StringUtils.listToCsvTags(hosts));
+        shell.setHosts(StringUtils.listToCsvTags(hosts));
         for (String host : hosts) {
-            Assert.assertEquals(host, shell.getHost());
+            Assert.assertEquals(host, shell.getNextHost());
         }
-        Assert.assertEquals(shell.getHost(), hosts.get(0));
+        Assert.assertEquals(shell.getNextHost(), hosts.get(0));
     }
 }

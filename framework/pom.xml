@@ -43,6 +43,7 @@
     </plugins>
   </build>
   <modules>
+    <module>agent-mslb</module>
     <module>ipc</module>
     <module>ca</module>
     <module>rest</module>
