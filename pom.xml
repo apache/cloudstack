@@ -87,7 +87,7 @@
     <cs.jstl.version>1.2</cs.jstl.version>
     <cs.jstl-api.version>1.2.1</cs.jstl-api.version>
     <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
-    <cs.vmware.api.version>6.0</cs.vmware.api.version>
+    <cs.vmware.api.version>6.5</cs.vmware.api.version>
     <org.springframework.version>5.0.2.RELEASE</org.springframework.version>
     <cs.mockito.version>1.10.19</cs.mockito.version>
     <cs.powermock.version>1.6.4</cs.powermock.version>
