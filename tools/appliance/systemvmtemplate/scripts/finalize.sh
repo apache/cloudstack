@@ -24,6 +24,12 @@ function configure_misc() {
   echo "cloud:`openssl rand -base64 32`" | chpasswd
 }
 
+function configure_rundisk_size() {
+  # Debian's default is 10% of total RAM. This is too low when total is 256M.
+  # See https://manpages.debian.org/stretch/initscripts/tmpfs.5.en.html
+  echo "tmpfs /run tmpfs nodev,nosuid,size=20%,mode=755 0 0" >> /etc/fstab
+}
+
 function configure_sudoers() {
   cat >/etc/sudoers <<END
 Defaults	env_reset
@@ -63,6 +69,7 @@ function zero_disk() {
 
 function finalize() {
   configure_misc
+  configure_rundisk_size
   configure_sudoers
   cleanup_final
   sync
