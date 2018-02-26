@@ -86,12 +86,6 @@
             });
 
         } else { //non-portable IP which has only one NIC
-            /*
-             var nic = $.grep(instance.nic, function(nic) {
-             return nic.networkid == network.id;
-             })[0];
-             */
-
             // Get NIC IPs
             $.ajax({
                 url: createURL('listNics'),
@@ -170,12 +164,6 @@
             });
 
         } else { //non-portable IP which has only one NIC
-            /*
-             var nic = $.grep(instance.nic, function(nic) {
-             return nic.networkid == network.id;
-             })[0];
-             */
-
             // Get NIC IPs
             $.ajax({
                 url: createURL('listNics'),
@@ -1993,8 +1981,6 @@
                                 $.ajax({
                                     url: createURL('listZones'),
                                     data: dataObj,
-                                    //      id: args.context.networks[0].zoneid
-                                    //    },
                                     async: false,
                                     success: function(json) {
                                         zoneObj = json.listzonesresponse.zone[0];
@@ -3556,49 +3542,6 @@
                                                     			}
                                                     		}
                                                     	}
-
-                                                        /*$.ajax({
-                                                            url: createURL('assignCertToLoadBalancer'),
-                                                            data: {certid: certificateData.certificate, lbruleid: lbID},
-                                                            success: function(data) {
-                                                                var jobID = data.assigncerttoloadbalancerresponse.jobid;
-                                                                var lbProtocolCreated = false;
-
-                                                                args.response.success({
-                                                                    _custom: {
-                                                                        jobId: jobID
-                                                                    },
-                                                                    notification: {
-                                                                        label: 'label.add.certificate',
-                                                                        poll: function(args) {
-                                                                            var complete = args.complete;
-                                                                            var error = args.error;
-
-                                                                            pollAsyncJobResult({
-                                                                                _custom: {
-                                                                                    jobId: jobID
-                                                                                },
-                                                                                complete: function(args) {
-                                                                                    if (lbProtocolCreated) return;
-
-                                                                                    lbProtocolCreated = true;
-
-                                                                                    if (certificateData && certificateData.certificate) {
-                                                                                        cloudStack.lbCertificatePolicy.actions.add(lbID, certificateData, complete, error);
-                                                                                    } else {
-                                                                                        complete();
-                                                                                    }
-                                                                                },
-                                                                                error: error
-                                                                            });
-                                                                        }
-                                                                    }
-                                                                });
-                                                            },
-                                                            error: function(data) {
-                                                                args.response.error(parseXMLHttpResponse(data));
-                                                            }
-                                                        });*/
 
                                                         $.ajax({
                                                             url: createURL('assignToLoadBalancerRule'),
@@ -5972,11 +5915,6 @@
                                         docID: 'helpVPNGatewayIKEDH',
                                         select: function(args) {
                                             var items = [];
-                                            //  StrongSwan now requires a DH group to be specified...
-                                            //items.push({
-                                            //    id: '',
-                                            //    description: _l('label.none')
-                                            //});
                                             items.push({
                                                 id: 'modp1536',
                                                 description: 'Group 5(modp1536)'
