@@ -87,6 +87,8 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
 
     private static final String HEADER_HOST = "X-Forwarded-Host";
 
+    private static long processTimeout;
+
     public HttpUploadServerHandler(NfsSecondaryStorageResource storageResource) {
         this.storageResource = storageResource;
     }
@@ -152,7 +154,6 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 Map<String, List<String>> uriAttributes = decoderQuery.parameters();
                 uuid = uriAttributes.get("uuid").get(0);
                 logger.info("URI: uuid=" + uuid);
-
                 UploadEntity uploadEntity = null;
                 try {
                     // Validate the request here
@@ -175,6 +176,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                 }
                 //set the base directory to download the file
                 DiskFileUpload.baseDirectory = uploadEntity.getInstallPathPrefix();
+                this.processTimeout = uploadEntity.getProcessTimeout();
                 logger.info("base directory: " + DiskFileUpload.baseDirectory);
                 try {
                     //initialize the decoder
@@ -243,7 +245,7 @@ public class HttpUploadServerHandler extends SimpleChannelInboundHandler<HttpObj
                                 storageResource.updateStateMapWithError(uuid, errorString);
                                 return HttpResponseStatus.BAD_REQUEST;
                             }
-                            String status = storageResource.postUpload(uuid, fileUpload.getFile().getName());
+                            String status = storageResource.postUpload(uuid, fileUpload.getFile().getName(), processTimeout);
                             if (status != null) {
                                 responseContent.append(status);
                                 storageResource.updateStateMapWithError(uuid, status);
