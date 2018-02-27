@@ -19,20 +19,35 @@
 ROUTER_BIN_PATH=/ramdisk/rrouter
 ROUTER_LOG=${ROUTER_BIN_PATH}/keepalived.log
 STRIKE_FILE="$ROUTER_BIN_PATH/keepalived.strikes"
+CHECKTIME_FILE="$ROUTER_BIN_PATH/keepalived.checktime"
 
 if [ -e $ROUTER_BIN_PATH/keepalived.ts2 ]
 then
     thistime=$(cat $ROUTER_BIN_PATH/keepalived.ts)
     lasttime=$(cat $ROUTER_BIN_PATH/keepalived.ts2)
     diff=$(($thistime - $lasttime))
+    lastcheck=0
+    if [ -e $CHECKTIME_FILE ]
+    then
+        lastcheck=`cat $CHECKTIME_FILE 2>/dev/null`
+    fi
+    thischeck=$(date +%s)
+    checkdiff=$(($thischeck - $lastcheck))
+    echo "thischeck: $thischeck, lastcheck: $lastcheck. this heartbeat: $thistime, last heartbeat: $lasttime, time diff: $diff" >> $ROUTER_LOG
+    if [ $checkdiff -ge 0 ] && [ $checkdiff -lt 30 ]
+    then
+        echo time duration after last check is less than 30 seconds, ignored >> $ROUTER_LOG
+        exit
+    fi
+    echo $thischeck > $CHECKTIME_FILE
     s=0
-    if [ $diff -ge 10 ]
+    if [ $diff -ge 30 ]
     then
         if [ -e $STRIKE_FILE ]
         then
             s=`cat $STRIKE_FILE 2>/dev/null`
         fi
-        s=$(($s + 1))
+        s=$(($s+1))
         echo $s > $STRIKE_FILE
     else
         if [ -e $STRIKE_FILE ]
