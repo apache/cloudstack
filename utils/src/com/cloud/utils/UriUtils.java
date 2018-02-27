@@ -344,7 +344,11 @@ public class UriUtils {
                 InputStream is = getMethod.getResponseBodyAsStream();
                 Map<String, List<String>> checksums = getMultipleValuesFromXML(is, new String[] {"hash"});
                 if (checksums.containsKey("hash")) {
-                    return checksums.get("hash");
+                    List<String> listChksum = new ArrayList<>();
+                    for (String chk : checksums.get("hash")) {
+                        listChksum.add(chk.replaceAll("\n", "").replaceAll(" ", "").trim());
+                    }
+                    return listChksum;
                 }
             }
         } catch (IOException e) {
