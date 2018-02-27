@@ -16,16 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.Date;
-
+import com.cloud.offering.DiskOffering;
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.offering.DiskOffering;
-import com.cloud.serializer.Param;
+import java.util.Date;
 
 @EntityReference(value = DiskOffering.class)
 public class DiskOfferingResponse extends BaseResponse {
@@ -111,6 +109,21 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName("displayoffering")
     @Param(description = "whether to display the offering to the end user or not.")
     private Boolean displayOffering;
+
+    @SerializedName(ApiConstants.MIN_IOPS_PER_GB)
+    @Param(description = "IOPS/GB rate for min IOPS. miniops = size * miniopspergb")
+    private Long minIopsPerGb;
+    @SerializedName(ApiConstants.MAX_IOPS_PER_GB)
+    @Param(description = "IOPS/GB rate for max IOPS. miniops = size * miniopspergb")
+    private Long maxIopsPerGb;
+
+    @SerializedName(ApiConstants.HIGHEST_MIN_IOPS)
+    @Param(description = "Highest Min IOPS value that is allowed for this offering")
+    private Long highestMinIops;
+
+    @SerializedName(ApiConstants.HIGHEST_MAX_IOPS)
+    @Param(description = "Highest Max IOPS value that is allowed for this offering")
+    private Long highestMaxIops;
 
     public Boolean getDisplayOffering() {
         return displayOffering;
@@ -221,6 +234,38 @@ public class DiskOfferingResponse extends BaseResponse {
         return hypervisorSnapshotReserve;
     }
 
+    public Long getMinIopsPerGb() {
+        return minIopsPerGb;
+    }
+
+    public void setMinIopsPerGb(Long minIopsPerGb) {
+        this.minIopsPerGb = minIopsPerGb;
+    }
+
+    public Long getMaxIopsPerGb() {
+        return maxIopsPerGb;
+    }
+
+    public void setMaxIopsPerGb(Long maxIopsPerGb) {
+        this.maxIopsPerGb = maxIopsPerGb;
+    }
+
+    public Long getHighestMinIops() {
+        return highestMinIops;
+    }
+
+    public void setHighestMinIops(Long highestMinIops) {
+        this.highestMinIops = highestMinIops;
+    }
+
+    public Long getHighestMaxIops() {
+        return highestMaxIops;
+    }
+
+    public void setHighestMaxIops(Long highestMaxIops) {
+        this.highestMaxIops = highestMaxIops;
+    }
+
     public void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve) {
         this.hypervisorSnapshotReserve = hypervisorSnapshotReserve;
     }
@@ -264,4 +309,5 @@ public class DiskOfferingResponse extends BaseResponse {
     public void setIopsWriteRate(Long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
     }
+
 }

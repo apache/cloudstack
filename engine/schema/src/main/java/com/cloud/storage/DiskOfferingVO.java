@@ -16,9 +16,8 @@
 // under the License.
 package com.cloud.storage;
 
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import com.cloud.offering.DiskOffering;
+import com.cloud.utils.db.GenericDao;
 
 import javax.persistence.Column;
 import javax.persistence.DiscriminatorColumn;
@@ -35,9 +34,9 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-
-import com.cloud.offering.DiskOffering;
-import com.cloud.utils.db.GenericDao;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
 
 @Entity
 @Table(name = "disk_offering")
@@ -116,6 +115,18 @@ public class DiskOfferingVO implements DiskOffering {
 
     @Column(name = "iops_write_rate")
     Long iopsWriteRate;
+
+    @Column(name = "min_iops_per_gb")
+    Long minIopsPerGb;
+
+    @Column(name = "max_iops_per_gb")
+    Long maxIopsPerGb;
+
+    @Column(name = "highest_min_iops")
+    Long highestMinIops;
+
+    @Column(name = "highest_max_iops")
+    Long highestMaxIops;
 
     @Column(name = "cache_mode", updatable = true, nullable = false)
     @Enumerated(value = EnumType.STRING)
@@ -465,7 +476,7 @@ public class DiskOfferingVO implements DiskOffering {
         this.displayOffering = displayOffering;
     }
 
-    @Override
+   @Override
     public void setBytesReadRate(Long bytesReadRate) {
         this.bytesReadRate = bytesReadRate;
     }
@@ -503,6 +514,46 @@ public class DiskOfferingVO implements DiskOffering {
     @Override
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    @Override
+    public Long getMinIopsPerGb() {
+        return this.minIopsPerGb;
+    }
+
+    @Override
+    public void setMinIopsPerGb(Long minIopsPerGb) {
+        this.minIopsPerGb = minIopsPerGb;
+    }
+
+    @Override
+    public Long getMaxIopsPerGb() {
+        return maxIopsPerGb;
+    }
+
+    @Override
+    public void setMaxIopsPerGb(Long maxIopsPerGb) {
+        this.maxIopsPerGb = maxIopsPerGb;
+    }
+
+    @Override
+    public Long getHighestMinIops() {
+        return this.highestMinIops;
+    }
+
+    @Override
+    public void setHighestMinIops(Long highestMinIops) {
+        this.highestMinIops = highestMinIops;
+    }
+
+    @Override
+    public Long getHighestMaxIops() {
+        return this.highestMaxIops;
+    }
+
+    @Override
+    public void setHighestMaxIops(Long highestMaxIops) {
+        this.highestMaxIops = highestMaxIops;
     }
 
     @Override

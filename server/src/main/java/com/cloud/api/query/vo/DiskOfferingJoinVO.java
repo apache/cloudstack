@@ -16,19 +16,17 @@
 // under the License.
 package com.cloud.api.query.vo;
 
-import java.util.Date;
+import com.cloud.offering.DiskOffering.Type;
+import com.cloud.storage.Storage;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import com.cloud.storage.Storage;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
-import com.cloud.offering.DiskOffering.Type;
-import com.cloud.utils.db.GenericDao;
+import java.util.Date;
 
 @Entity
 @Table(name = "disk_offering_view")
@@ -118,6 +116,18 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     @Column(name = "display_offering")
     boolean displayOffering;
+
+    @Column(name = "min_iops_per_gb")
+    Long minIopsPerGb;
+
+    @Column(name = "max_iops_per_gb")
+    Long maxIopsPerGb;
+
+    @Column(name = "highest_min_iops")
+    Long highestMinIops;
+
+    @Column(name = "highest_max_iops")
+    Long highestMaxIops;
 
     public DiskOfferingJoinVO() {
     }
@@ -238,5 +248,21 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public Long getMinIopsPerGb() {
+        return minIopsPerGb;
+    }
+
+    public Long getMaxIopsPerGb() {
+        return maxIopsPerGb;
+    }
+
+    public Long getHighestMinIops() {
+        return highestMinIops;
+    }
+
+    public Long getHighestMaxIops() {
+        return highestMaxIops;
     }
 }
