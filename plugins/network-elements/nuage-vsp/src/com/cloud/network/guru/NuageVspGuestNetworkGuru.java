@@ -763,17 +763,17 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru implements Networ
                 s_logger.debug("Handling trash() call back to delete the network " + network.getName() + " with uuid " + network.getUuid() + " from VSP");
             }
 
+            VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
+
             boolean networkMigrationCopy = network.getRelated() != network.getId();
 
-            cleanUpNetworkCaching(network.getId());
             if (networkMigrationCopy) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Network " + network.getName() + " is a copy of a migrated network. Cleaning up network details of related network.");
                 }
                 cleanUpNetworkCaching(network.getRelated());
             }
-
-            VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
+            cleanUpNetworkCaching(network.getId());
 
             //Clean up VSD managed subnet caching
             if (vspNetwork.getNetworkRelatedVsdIds().isVsdManaged()) {
@@ -803,6 +803,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru implements Networ
         _networkDetailsDao.removeDetail(id, NuageVspManager.NETWORK_METADATA_VSD_DOMAIN_ID);
         _networkDetailsDao.removeDetail(id, NuageVspManager.NETWORK_METADATA_VSD_ZONE_ID);
         _networkDetailsDao.removeDetail(id, NuageVspManager.NETWORK_METADATA_VSD_SUBNET_ID);
+        _networkDetailsDao.removeDetail(id, NuageVspManager.NETWORK_METADATA_VSD_MANAGED);
     }
 
     private boolean networkHasDns(Network network) {
