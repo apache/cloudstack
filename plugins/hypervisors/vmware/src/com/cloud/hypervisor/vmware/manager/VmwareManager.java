@@ -42,6 +42,9 @@ public interface VmwareManager {
     static final ConfigKey<String> s_vmwareSearchExcludeFolder = new ConfigKey<String>("Advanced", String.class, "vmware.search.exclude.folders", null,
             "Comma seperated list of Datastore Folders to exclude from VMWare search", true, ConfigKey.Scope.Global);
 
+    static final ConfigKey<Integer> s_vmwareOVAPackageTimeout = new ConfigKey<Integer>(Integer.class, "vmware.package.ova.timeout", "Advanced", "3600",
+            "Vmware script timeout for ova packaging process", true, ConfigKey.Scope.Global, 1000);
+
     String composeWorkerName();
 
     String getSystemVMIsoFileNameOnDatastore();

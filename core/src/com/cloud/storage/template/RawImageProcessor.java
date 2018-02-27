@@ -45,8 +45,13 @@ public class RawImageProcessor extends AdapterBase implements Processor {
         return true;
     }
 
+   @Override
+   public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
+      return process(templatePath, format, templateName, 0);
+   }
+
     @Override
-    public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
+    public FormatInfo process(String templatePath, ImageFormat format, String templateName, long processTimeout) throws InternalErrorException {
         if (format != null) {
             s_logger.debug("We currently don't handle conversion from " + format + " to raw image.");
             return null;

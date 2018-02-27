@@ -367,6 +367,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                                                           dataObject.getDataStore().getRole().toString());
                 command.setLocalPath(volumeStore.getLocalDownloadPath());
                 //using the existing max upload size configuration
+                command.setProcessTimeout(NumbersUtil.parseLong(_configDao.getValue("vmware.package.ova.timeout"), 3600));
                 command.setMaxUploadSize(_configDao.getValue(Config.MaxUploadVolumeSize.key()));
                 command.setDefaultMaxAccountSecondaryStorage(_configDao.getValue(Config.DefaultMaxAccountSecondaryStorage.key()));
                 command.setAccountId(vol.getAccountId());
