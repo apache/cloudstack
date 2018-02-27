@@ -1302,6 +1302,22 @@ public class KVMStorageProcessor implements StorageProcessor {
         return new Answer(cmd, false, "not implememented yet");
     }
 
+    /**
+     * Get direct template downloader from direct download command and destination pool
+     */
+    private DirectTemplateDownloader getDirectTemplateDownloaderFromCommand(DirectDownloadCommand cmd, KVMStoragePool destPool) {
+        if (cmd instanceof HttpDirectDownloadCommand) {
+            return new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
+        } else if (cmd instanceof HttpsDirectDownloadCommand) {
+            return new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
+        } else if (cmd instanceof NfsDirectDownloadCommand) {
+            return new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
+        } else if (cmd instanceof MetalinkDirectDownloadCommand) {
+            return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders());
+        } else {
+            throw new IllegalArgumentException("Unsupported protocol, please provide HTTP(S), NFS or a metalink");
+        }
+    }
     @Override
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
         final PrimaryDataStoreTO pool = cmd.getDestPool();
@@ -1312,30 +1328,39 @@ public class KVMStorageProcessor implements StorageProcessor {
         DirectTemplateDownloader downloader;
 
         try {
-            if (cmd instanceof HttpDirectDownloadCommand) {
-                downloader = new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
-            } else if (cmd instanceof HttpsDirectDownloadCommand) {
-                downloader = new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
-            } else if (cmd instanceof NfsDirectDownloadCommand) {
-                downloader = new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
-            } else if (cmd instanceof MetalinkDirectDownloadCommand) {
-                downloader = new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders());
-            } else {
-                return new DirectDownloadAnswer(false, "Unsupported protocol, please provide HTTP(S), NFS or a metalink");
-            }
-        } catch (CloudRuntimeException e) {
+            downloader = getDirectTemplateDownloaderFromCommand(cmd, destPool);
+        } catch (IllegalArgumentException e) {
             return new DirectDownloadAnswer(false, "Unable to create direct downloader: " + e.getMessage());
         }
 
-        if (!downloader.downloadTemplate()) {
-            return new DirectDownloadAnswer(false, "Could not download template " + cmd.getTemplateId() + " on " + destPool.getLocalPath());
+        int retries = 3;
+        boolean ok = false;
+        do {
+            try {
+                retries--;
+                s_logger.info("Trying to download template, retries left: " + retries);
+                if (!downloader.downloadTemplate()) {
+                    s_logger.warn("Couldn't download template");
+                    continue;
+                }
+                if (!downloader.validateChecksum()) {
+                    s_logger.warn("Couldn't validate template checksum");
+                    continue;
+                }
+                if (!downloader.extractAndInstallDownloadedTemplate()) {
+                    s_logger.warn("Couldn't extract and install template");
+                    continue;
+                }
+                ok = true;
+            } catch (CloudRuntimeException e) {
+                s_logger.warn("Error downloading template " + cmd.getTemplateId() + " due to: " + e.getMessage() + " retries left: " + retries);
+            }
+        } while (!ok && retries > 0);
+
+        if (!ok) {
+            return new DirectDownloadAnswer(false, "Unable to download template " + cmd.getTemplateId());
         }
-        if (!downloader.validateChecksum()) {
-            return new DirectDownloadAnswer(false, "Checksum validation failed for template " + cmd.getTemplateId());
-        }
-        if (!downloader.extractAndInstallDownloadedTemplate()) {
-            return new DirectDownloadAnswer(false, "Template downloaded but there was an error on installation");
-        }
+
         DirectTemplateInformation info = downloader.getTemplateInformation();
         return new DirectDownloadAnswer(true, info.getSize(), info.getInstallPath());
     }

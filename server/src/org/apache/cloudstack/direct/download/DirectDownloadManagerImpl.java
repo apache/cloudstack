@@ -277,7 +277,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         if (template.getFormat() == ImageFormat.ISO) {
             event = EventTypes.EVENT_ISO_DIRECT_DOWNLOAD_FAILURE;
         }
-        String description = "Direct Download for template Id: " + template.getId() + "on pool Id: " + poolId + " failed";
+        String description = "Direct Download for template Id: " + template.getId() + " on pool Id: " + poolId + " failed";
         s_logger.error(description);
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), template.getAccountId(), EventVO.LEVEL_INFO, event, description, 0);
     }
