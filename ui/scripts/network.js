@@ -86,12 +86,6 @@
             });
 
         } else { //non-portable IP which has only one NIC
-            /*
-             var nic = $.grep(instance.nic, function(nic) {
-             return nic.networkid == network.id;
-             })[0];
-             */
-
             // Get NIC IPs
             $.ajax({
                 url: createURL('listNics'),
@@ -170,12 +164,6 @@
             });
 
         } else { //non-portable IP which has only one NIC
-            /*
-             var nic = $.grep(instance.nic, function(nic) {
-             return nic.networkid == network.id;
-             })[0];
-             */
-
             // Get NIC IPs
             $.ajax({
                 url: createURL('listNics'),
@@ -412,8 +400,6 @@
                         $.ajax({
                             url: createURL('listRemoteAccessVpns'),
                             data: {
-                                account: g_account,
-                                domainid: g_domainid,
                                 listAll: true
                             },
                             async: false,
@@ -1995,8 +1981,6 @@
                                 $.ajax({
                                     url: createURL('listZones'),
                                     data: dataObj,
-                                    //      id: args.context.networks[0].zoneid
-                                    //    },
                                     async: false,
                                     success: function(json) {
                                         zoneObj = json.listzonesresponse.zone[0];
@@ -3524,7 +3508,7 @@
 
                                                 var stickyData = $.extend(true, {}, args.data.sticky);
                                                 var certificateData = $.extend(true, {}, args.data.sslcertificate);
-                                                  
+
                                                 //***** create new LB rule > Add VMs *****
                                                 $.ajax({
                                                     url: createURL('createLoadBalancerRule'),
@@ -3537,70 +3521,27 @@
                                                         var lbID = data.createloadbalancerruleresponse.id;
 
                                                         var inputData = {
-                                                        	id: data.createloadbalancerruleresponse.id	
-                                                        };    
-                                                        
+                                                        	id: data.createloadbalancerruleresponse.id
+                                                        };
+
                                                         var selectedVMs = args.itemData;
                                                         if (selectedVMs != null) {
                                                         	var vmidipmapIndex = 0;
-                                                    		for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {      
+                                                    		for (var vmIndex = 0; vmIndex < selectedVMs.length; vmIndex++) {
                                                     			var selectedIPs = selectedVMs[vmIndex]._subselect;
                                                     			for (var ipIndex = 0; ipIndex < selectedIPs.length; ipIndex++) {
                                                     				inputData['vmidipmap[' + vmidipmapIndex + '].vmid'] = selectedVMs[vmIndex].id;
-                                                        			
+
                                                     				if (args.context.ipAddresses[0].isportable) {
-                                                        			    inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];  
+                                                        			    inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex].split(',')[1];
                                                         			} else {
                                                         				inputData['vmidipmap[' + vmidipmapIndex + '].vmip'] = selectedIPs[ipIndex];
                                                         			}
-                                                    				
+
                                                     				vmidipmapIndex++;
-                                                    			}                                                			
+                                                    			}
                                                     		}
-                                                    	}   
-                                                        
-                                                        /*$.ajax({
-                                                            url: createURL('assignCertToLoadBalancer'),
-                                                            data: {certid: certificateData.certificate, lbruleid: lbID},
-                                                            success: function(data) {
-                                                                var jobID = data.assigncerttoloadbalancerresponse.jobid;
-                                                                var lbProtocolCreated = false;
-
-                                                                args.response.success({
-                                                                    _custom: {
-                                                                        jobId: jobID 
-                                                                    },
-                                                                    notification: {
-                                                                        label: 'label.add.certificate',
-                                                                        poll: function(args) {
-                                                                            var complete = args.complete;
-                                                                            var error = args.error;
-
-                                                                            pollAsyncJobResult({
-                                                                                _custom: {
-                                                                                    jobId: jobID
-                                                                                },
-                                                                                complete: function(args) {
-                                                                                    if (lbProtocolCreated) return;
-
-                                                                                    lbProtocolCreated = true;
-
-                                                                                    if (certificateData && certificateData.certificate) {
-                                                                                        cloudStack.lbCertificatePolicy.actions.add(lbID, certificateData, complete, error);
-                                                                                    } else {
-                                                                                        complete();
-                                                                                    }
-                                                                                },
-                                                                                error: error
-                                                                            });
-                                                                        }
-                                                                    }
-                                                                });
-                                                            },
-                                                            error: function(data) {
-                                                                args.response.error(parseXMLHttpResponse(data));
-                                                            }
-                                                        });*/
+                                                    	}
 
                                                         $.ajax({
                                                             url: createURL('assignToLoadBalancerRule'),
@@ -5974,11 +5915,6 @@
                                         docID: 'helpVPNGatewayIKEDH',
                                         select: function(args) {
                                             var items = [];
-                                            //  StrongSwan now requires a DH group to be specified...
-                                            //items.push({
-                                            //    id: '',
-                                            //    description: _l('label.none')
-                                            //});
                                             items.push({
                                                 id: 'modp1536',
                                                 description: 'Group 5(modp1536)'
