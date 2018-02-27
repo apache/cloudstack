@@ -111,6 +111,7 @@ public class HttpDirectTemplateDownloader extends DirectTemplateDownloaderImpl {
     }
 
     protected boolean performDownload() {
+        s_logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
         try (
                 InputStream in = request.getResponseBodyAsStream();
                 OutputStream out = new FileOutputStream(getDownloadedFilePath());

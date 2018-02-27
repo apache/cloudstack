@@ -1311,16 +1311,20 @@ public class KVMStorageProcessor implements StorageProcessor {
         KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
         DirectTemplateDownloader downloader;
 
-        if (cmd instanceof HttpDirectDownloadCommand) {
-            downloader = new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
-        } else if (cmd instanceof HttpsDirectDownloadCommand) {
-            downloader = new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
-        } else if (cmd instanceof NfsDirectDownloadCommand) {
-            downloader = new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
-        } else if (cmd instanceof MetalinkDirectDownloadCommand) {
-            downloader = new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders());
-        } else {
-            return new DirectDownloadAnswer(false, "Unsupported protocol, please provide HTTP(S), NFS or a metalink");
+        try {
+            if (cmd instanceof HttpDirectDownloadCommand) {
+                downloader = new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
+            } else if (cmd instanceof HttpsDirectDownloadCommand) {
+                downloader = new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
+            } else if (cmd instanceof NfsDirectDownloadCommand) {
+                downloader = new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
+            } else if (cmd instanceof MetalinkDirectDownloadCommand) {
+                downloader = new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders());
+            } else {
+                return new DirectDownloadAnswer(false, "Unsupported protocol, please provide HTTP(S), NFS or a metalink");
+            }
+        } catch (CloudRuntimeException e) {
+            return new DirectDownloadAnswer(false, "Unable to create direct downloader: " + e.getMessage());
         }
 
         if (!downloader.downloadTemplate()) {

@@ -110,6 +110,7 @@ public class HttpsDirectTemplateDownloader extends HttpDirectTemplateDownloader 
      * Consume response and persist it on getDownloadedFilePath() file
      */
     protected boolean consumeResponse(CloseableHttpResponse response) {
+        s_logger.info("Downloading template " + getTemplateId() + " from " + getUrl() + " to: " + getDownloadedFilePath());
         if (response.getStatusLine().getStatusCode() != 200) {
             throw new CloudRuntimeException("Error on HTTPS response");
         }
