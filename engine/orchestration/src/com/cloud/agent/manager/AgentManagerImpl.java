@@ -793,6 +793,17 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
             s_logger.warn("Can't find host with " + hostId);
             nextStatus = Status.Removed;
         } else {
+            final ResourceState resourceState = host.getResourceState();
+            if (host.getType() == Host.Type.Routing && event == Event.ShutdownRequested && resourceState != ResourceState.Maintenance && removeAgent) {
+                // The host agent is shutting itself down gracefully, the host isn't in maintenance and we are removing the host's monitoring task.
+                final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
+                final HostPodVO podVO = _podDao.findById(host.getPodId());
+                final String hostDesc = "[name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName() + "]";
+                final String hostShortDesc = "Host " + host.getName() + " (id:" + host.getId() + ")";
+                s_logger.warn(hostShortDesc + " has disconnected with event " + event + ",  but was in resource state " + resourceState + ", not in Maintenance.  Agent Monitor is also being removed.");
+                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), hostShortDesc + " agent is shutting down",
+                                "The agent for host " + hostDesc + " has disconnected with event " + event + ",  but was in resource state " + resourceState + ", not in Maintenance.  Host should be put into Maintenance before shutting down the host agent.");
+            }
             final Status currentStatus = host.getStatus();
             if (currentStatus == Status.Down || currentStatus == Status.Alert || currentStatus == Status.Removed) {
                 if (s_logger.isDebugEnabled()) {
@@ -809,16 +820,18 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 }
 
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("The next status of agent " + hostId + "is " + nextStatus + ", current status is " + currentStatus);
+                    s_logger.debug("The next status of agent " + hostId + " is " + nextStatus + ", current status is " + currentStatus);
                 }
             }
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Deregistering link for " + hostId + " with state " + nextStatus);
+        if (removeAgent) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Deregistering link for " + hostId + " with state " + nextStatus);
+            }
+            removeAgent(attache, nextStatus);
         }
 
-        removeAgent(attache, nextStatus);
         // update the DB
         if (host != null && transitState) {
             disconnectAgent(host, event, _nodeId);
@@ -830,6 +843,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
     protected boolean handleDisconnectWithInvestigation(final AgentAttache attache, Status.Event event) {
         final long hostId = attache.getId();
         HostVO host = _hostDao.findById(hostId);
+        boolean removeAgent = false;
 
         if (host != null) {
             Status nextStatus = null;
@@ -843,72 +857,103 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 s_logger.debug("Caught exception while getting agent's next status", ne);
             }
 
+            // For log and alert purposes later
+            final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
+            final HostPodVO podVO = _podDao.findById(host.getPodId());
+            final String hostDesc = "[name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName() + "]";
+            final String hostShortDesc = "Host " + host.getName() + " (id:" + host.getId() + ")";
+
+            final ResourceState resourceState = host.getResourceState();
+            if (resourceState == ResourceState.Disabled || resourceState == ResourceState.Maintenance || resourceState == ResourceState.ErrorInMaintenance) {
+                // If we are in this resourceState, no need to investigate or do anything.  AgentMonitor will handle when in these resourceStates
+                s_logger.info(hostShortDesc + " has disconnected with event " + event + ",  but is in Resource State of " + resourceState + ", so doing nothing");
+                return true;
+            }
+
             if (nextStatus == Status.Alert) {
-                /* OK, we are going to the bad status, let's see what happened */
-                s_logger.info("Investigating why host " + hostId + " has disconnected with event " + event);
+                /* Our next Agent transition state is Alert
+                 * Let's see if the host down or why we had this event
+                 */
+                s_logger.info("Investigating why host " + hostShortDesc + " has disconnected with event " + event);
 
                 Status determinedState = investigate(attache);
                 // if state cannot be determined do nothing and bail out
                 if (determinedState == null) {
                     if ((System.currentTimeMillis() >> 10) - host.getLastPinged() > AlertWait.value()) {
-                        s_logger.warn("Agent " + hostId + " state cannot be determined for more than " + AlertWait + "(" + AlertWait.value() + ") seconds, will go to Alert state");
+                        s_logger.warn("State for " + hostShortDesc + " could not be determined for more than " + AlertWait + "(" + AlertWait.value() + ") seconds, will go to Alert state");
                         determinedState = Status.Alert;
                     } else {
-                        s_logger.warn("Agent " + hostId + " state cannot be determined, do nothing");
+                        s_logger.warn("State for " + hostShortDesc + " could not be determined, doing nothing");
                         return false;
                     }
                 }
 
                 final Status currentStatus = host.getStatus();
-                s_logger.info("The agent from host " + hostId + " state determined is " + determinedState);
+                s_logger.info("Status for " + hostShortDesc + " was " + currentStatus + ".  Investigation determined the current state is " + determinedState);
 
-                if (determinedState == Status.Down) {
-                    final String message = "Host is down: " + host.getId() + "-" + host.getName() + ". Starting HA on the VMs";
-                    s_logger.error(message);
-                    if (host.getType() != Host.Type.SecondaryStorage && host.getType() != Host.Type.ConsoleProxy) {
-                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host down, " + host.getId(), message);
-                    }
-                    event = Status.Event.HostDown;
-                } else if (determinedState == Status.Up) {
-                    /* Got ping response from host, bring it back */
-                    s_logger.info("Agent is determined to be up and running");
+                if (determinedState == Status.Up) {
+                    // Got ping response from host, bring it back
+                    s_logger.info(hostShortDesc + " is up again");
                     agentStatusTransitTo(host, Status.Event.Ping, _nodeId);
-                    return false;
                 } else if (determinedState == Status.Disconnected) {
-                    s_logger.warn("Agent is disconnected but the host is still up: " + host.getId() + "-" + host.getName());
+                    // Investigation says host isn't down, just disconnected
                     if (currentStatus == Status.Disconnected) {
+                        // Last status was disconnected, only switch status if AlertWait has passed
                         if ((System.currentTimeMillis() >> 10) - host.getLastPinged() > AlertWait.value()) {
-                            s_logger.warn("Host " + host.getId() + " has been disconnected past the wait time it should be disconnected.");
-                            event = Status.Event.WaitedTooLong;
+                                s_logger.error("The agent on " + hostShortDesc + " has been disconnected longer than " + AlertWait + " (" + AlertWait.value() + " seconds). Setting event to WaitedTooLong");
+                                if (host.getType() != Host.Type.SecondaryStorage && host.getType() != Host.Type.ConsoleProxy) {
+                                _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), hostShortDesc + " is in Alert status",
+                                                "The agent for host " + hostDesc + " has been disconnected longer than " + AlertWait + " (" + AlertWait.value() + " seconds), host will be put into Alert status.");
+                                }
+                                event = Status.Event.WaitedTooLong;  // Will put into Alert status at transition
                         } else {
-                            s_logger.debug("Host " + host.getId() + " has been determined to be disconnected but it hasn't passed the wait time yet.");
+                            // Host hasn't been disconnected long enough to change status to Alert
+                            s_logger.warn(hostShortDesc + " has been disconnected for " + ((System.currentTimeMillis() >> 10) - host.getLastPinged()) + " seconds, but for less than " + AlertWait + " (" + AlertWait.value() + " seconds).  No action taken.");
                             return false;
                         }
                     } else if (currentStatus == Status.Up) {
-                        final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
-                        final HostPodVO podVO = _podDao.findById(host.getPodId());
-                        final String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
-                        if (host.getType() != Host.Type.SecondaryStorage && host.getType() != Host.Type.ConsoleProxy) {
-                            _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host disconnected, " + hostDesc,
-                                            "If the agent for host [" + hostDesc + "] is not restarted within " + AlertWait + " seconds, host will go to Alert state");
-                        }
-                        event = Status.Event.AgentDisconnected;
+                        // Host was up, but now agent is disconnected
+                        // If host stays disconnected, it will be handled again next time it is investigated
+                        s_logger.warn(hostShortDesc + " was up but is now disconnected.  Setting event to AgentUnreachable.");
+                        event = Status.Event.AgentUnreachable;  // Will put into Disconnected status at transition
+                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), hostShortDesc + " is " + determinedState,
+                                        "The host " + hostDesc + " was " + currentStatus + ", but has now the host agent is in " + Status.Disconnected + ".  If the host is disconnected longer than " + AlertWait + " (" + AlertWait.value() + " seconds), it will be put into Alert status.");
+                    } else if (currentStatus == Status.Alert) {
+                        s_logger.error(hostShortDesc + " was in and is still in " + Status.Alert + ".  No action taken.");
+                        return false;
                     }
+                    else {
+                        // If we are here, host was in another status, but next status is alert so let's alert
+                        s_logger.error(hostShortDesc + " was in " + currentStatus + ", and investigation determined it is " + Status.Disconnected);
+                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), hostShortDesc + " is " + determinedState, "The host " + hostDesc + " was in " + currentStatus + ", and investigation determined it is " + Status.Disconnected);
+                    }
+                } else if (determinedState == Status.Down) {
+                    // Host was determined down - not just disconnected
+                    s_logger.error(hostShortDesc + " is down.  Setting event to HostDown and will start HA on the VMs");
+                    if (host.getType() != Host.Type.SecondaryStorage && host.getType() != Host.Type.ConsoleProxy) {
+                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), hostShortDesc + " is down", "Host " + hostDesc + " is down. Will start HA on the VMs");
+                    }
+                    else {
+                        _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), hostShortDesc + " is down", "Host " + hostDesc + " is down.");
+                    }
+                    event = Status.Event.HostDown;
+                    removeAgent = true;
+                } else if (determinedState == Status.Alert){
+                    // This is likely a Console Proxy or Secondary Storage VM
+                    s_logger.error("Investigation found " + hostShortDesc + " in state: " + determinedState);
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Investigation found " + hostShortDesc + " in " + determinedState, "Investigation found " + hostShortDesc + " in " + determinedState + " state.  Event is " + event);
                 } else {
-                    // if we end up here we are in alert state, send an alert
-                    final DataCenterVO dcVO = _dcDao.findById(host.getDataCenterId());
-                    final HostPodVO podVO = _podDao.findById(host.getPodId());
-                    final String podName = podVO != null ? podVO.getName() : "NO POD";
-                    final String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podName;
-                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Host in ALERT state, " + hostDesc,
-                                    "In availability zone " + host.getDataCenterId() + ", host is in alert state: " + host.getId() + "-" + host.getName());
+                    // Determined state was not Up, Disconnected, Down, or Alert.  To catch anything else create alert
+                    s_logger.error("Investigation found " + hostShortDesc + " in unhandled state: " + determinedState);
+                    _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Investigation found " + hostShortDesc + " in " + determinedState, "Investigation found " + hostShortDesc + " in unhandled state: " + determinedState);
                 }
             } else {
-                s_logger.debug("The next status of agent " + host.getId() + " is not Alert, no need to investigate what happened");
+                s_logger.info("The next status of host " + hostShortDesc + " is " + nextStatus + ", no need to investigate what happened");
             }
         }
-        handleDisconnectWithoutInvestigation(attache, event, true, true);
-        host = _hostDao.findById(hostId); // Maybe the host magically reappeared?
+
+        handleDisconnectWithoutInvestigation(attache, event, true, removeAgent);
+        host = _hostDao.findById(hostId); // We may have transitioned the status - refresh
         if (host != null && host.getStatus() == Status.Down) {
             _haMgr.scheduleRestartForVmsOnHost(host, true);
         }
@@ -932,7 +977,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                 if (_investigate == true) {
                     handleDisconnectWithInvestigation(_attache, _event);
                 } else {
-                    handleDisconnectWithoutInvestigation(_attache, _event, true, false);
+                    handleDisconnectWithoutInvestigation(_attache, _event, true, true);
                 }
             } catch (final Exception e) {
                 s_logger.error("Exception caught while handling disconnect: ", e);
@@ -1609,6 +1654,7 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
                         final String hostDesc = "name: " + host.getName() + " (id:" + host.getId() + "), availability zone: " + dcVO.getName() + ", pod: " + podVO.getName();
                         _alertMgr.sendAlert(AlertManager.AlertType.ALERT_TYPE_HOST, host.getDataCenterId(), host.getPodId(), "Migration Complete for host " + hostDesc, "Host ["
                                         + hostDesc + "] is ready for maintenance");
+                        disconnectWithoutInvestigation(host.getId(), Event.ShutdownRequested);  // Host now in maintenance, disconnect and remove Monitor
                     }
                 }
             } catch (final Throwable th) {
