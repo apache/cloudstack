@@ -33,12 +33,11 @@ then
     fi
     thischeck=$(date +%s)
     checkdiff=$(($thischeck - $lastcheck))
-    echo "thischeck: $thischeck, lastcheck: $lastcheck. this heartbeat: $thistime, last heartbeat: $lasttime, time diff: $diff" >> $ROUTER_LOG
     if [ $checkdiff -ge 0 ] && [ $checkdiff -lt 30 ]
     then
-        echo time duration after last check is less than 30 seconds, ignored >> $ROUTER_LOG
         exit
     fi
+    echo "thischeck: $thischeck, lastcheck: $lastcheck. this heartbeat: $thistime, last heartbeat: $lasttime, time diff: $diff" > $ROUTER_LOG
     echo $thischeck > $CHECKTIME_FILE
     s=0
     if [ $diff -ge 30 ]
