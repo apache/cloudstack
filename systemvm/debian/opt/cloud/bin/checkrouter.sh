@@ -17,6 +17,13 @@
 # under the License.
 
 STATUS=UNKNOWN
+
+if [ "$(systemctl is-active keepalived)" != "active" ]
+then
+    echo "Status: FAULT"
+    exit
+fi
+
 ROUTER_TYPE=$(cat /etc/cloudstack/cmdline.json | grep type | awk '{print $2;}' | sed -e 's/[,\"]//g')
 if [ "$ROUTER_TYPE" = "router" ]
 then
