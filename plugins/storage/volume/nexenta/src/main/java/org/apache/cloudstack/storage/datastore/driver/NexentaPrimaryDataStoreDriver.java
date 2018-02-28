@@ -206,4 +206,7 @@ public class NexentaPrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
     @Override
     public void resize(DataObject data, AsyncCompletionCallback<CreateCmdResult> callback) {}
+
+    @Override
+    public void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo, QualityOfServiceState qualityOfServiceState) {}
 }

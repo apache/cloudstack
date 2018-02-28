@@ -857,6 +857,15 @@ public class SolidFireUtil {
         getSolidFireElement(sfConnection).modifyVolume(request);
     }
 
+    public static void modifyVolumeQoS(SolidFireConnection sfConnection, long volumeId, long minIops, long maxIops, long burstIops) {
+        ModifyVolumeRequest request = ModifyVolumeRequest.builder()
+                .volumeID(volumeId)
+                .optionalQos(new QoS(Optional.of(minIops), Optional.of(maxIops), Optional.of(burstIops), Optional.EMPTY_LONG))
+                .build();
+
+        getSolidFireElement(sfConnection).modifyVolume(request);
+    }
+
     public static SolidFireVolume getVolume(SolidFireConnection sfConnection, long volumeId) {
         ListVolumesRequest request = ListVolumesRequest.builder()
                 .optionalStartVolumeID(volumeId)
