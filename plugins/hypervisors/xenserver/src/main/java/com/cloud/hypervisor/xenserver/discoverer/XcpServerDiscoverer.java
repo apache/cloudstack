@@ -121,6 +121,9 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
     @Inject
     private HostPodDao _podDao;
 
+    private static String XENSERVER_ISO_NAME = "xs-tools.iso";
+    private static String XENSERVER_ISO_DISPLAY_TEXT = "XenServer Tools Installer ISO (xen-pv-drv-iso)";
+    
     protected XcpServerDiscoverer() {
     }
 
@@ -486,7 +489,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
 
         _agentMgr.registerForHostEvents(this, true, false, true);
 
-        createXsToolsISO();
+        createXenServerToolsIsoEntryInDatabase();
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
@@ -528,20 +531,24 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
         return false;
     }
 
-    private void createXsToolsISO() {
-        String isoName = "xs-tools.iso";
-        VMTemplateVO tmplt = _tmpltDao.findByTemplateName(isoName);
-        Long id;
+    /**
+     * Create the XenServer tools ISO entry in the database.
+     * If there is already an entry with 'isoName' equals to {@value #XENSERVER_ISO_NAME} , we update its 'displayText' to {@value #XENSERVER_ISO_DISPLAY_TEXT}.
+     * Otherwise, we create a new entry.
+     */
+    protected void createXenServerToolsIsoEntryInDatabase() {
+        VMTemplateVO tmplt = _tmpltDao.findByTemplateName(XENSERVER_ISO_NAME);
         if (tmplt == null) {
-            id = _tmpltDao.getNextInSequence(Long.class, "id");
+            long id = _tmpltDao.getNextInSequence(Long.class, "id");
             VMTemplateVO template =
-                    VMTemplateVO.createPreHostIso(id, isoName, isoName, ImageFormat.ISO, true, true, TemplateType.PERHOST, null, null, true, 64, Account.ACCOUNT_ID_SYSTEM,
-                            null, "XenServer Tools Installer ISO (xen-pv-drv-iso)", false, 1, false, HypervisorType.XenServer);
+                    VMTemplateVO.createPreHostIso(id, XENSERVER_ISO_NAME, XENSERVER_ISO_NAME, ImageFormat.ISO, true, true, TemplateType.PERHOST, null, null, true, 64, Account.ACCOUNT_ID_SYSTEM,
+                            null, XENSERVER_ISO_DISPLAY_TEXT, false, 1, false, HypervisorType.XenServer);
             _tmpltDao.persist(template);
         } else {
-            id = tmplt.getId();
+            long id = tmplt.getId();
             tmplt.setTemplateType(TemplateType.PERHOST);
             tmplt.setUrl(null);
+            tmplt.setDisplayText(XENSERVER_ISO_DISPLAY_TEXT);
             _tmpltDao.update(id, tmplt);
         }
     }

@@ -204,6 +204,9 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     static final Random Rand = new Random(System.currentTimeMillis());
     private static final Logger s_logger = Logger.getLogger(CitrixResourceBase.class);
     protected static final HashMap<VmPowerState, PowerState> s_powerStatesTable;
+    
+    private static final String XENSERVER_70PLUS_GUEST_TOOLS_NAME = "guest-tools.iso";
+    private static final String XENSERVER_BEFORE_70_GUEST_TOOLS_NAME = "xs-tools.iso";
 
     static {
         s_powerStatesTable = new HashMap<VmPowerState, PowerState>();
@@ -2593,7 +2596,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         String mountpoint = null;
         if (isoURL.startsWith("xs-tools")) {
             try {
-                final String actualIsoURL = actualIsoTemplate(conn);
+                final String actualIsoURL = getActualIsoTemplate(conn);
                 final Set<VDI> vdis = VDI.getByNameLabel(conn, actualIsoURL);
                 if (vdis.isEmpty()) {
                     throw new CloudRuntimeException("Could not find ISO with URL: " + actualIsoURL);
@@ -2632,20 +2635,27 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         }
     }
 
-    private String actualIsoTemplate(final Connection conn) throws BadServerResponse, XenAPIException, XmlRpcException {
-        final Host host = Host.getByUuid(conn, _host.getUuid());
-        final Host.Record record = host.getRecord(conn);
-        final String xenBrand = record.softwareVersion.get("product_brand");
-        final String xenVersion = record.softwareVersion.get("product_version");
-        final String[] items = xenVersion.split("\\.");
+    /**
+     * Retrieve the actual ISO 'name-label' to be used.
+     * We based our decision on XenServer version.
+     * <ul>
+     *  <li> for XenServer 7.0+, we use {@value #XENSERVER_70PLUS_GUEST_TOOLS_NAME};
+     *  <li> for versions before 7.0, we use {@value #XENSERVER_BEFORE_70_GUEST_TOOLS_NAME}.
+     * </ul>
+     * 
+     * For XCP we always use {@value #XENSERVER_BEFORE_70_GUEST_TOOLS_NAME}.
+     */
+    protected String getActualIsoTemplate(Connection conn) throws XenAPIException, XmlRpcException {
+        Host host = Host.getByUuid(conn, _host.getUuid());
+        Host.Record record = host.getRecord(conn);
+        String xenBrand = record.softwareVersion.get("product_brand");
+        String xenVersion = record.softwareVersion.get("product_version");
+        String[] items = xenVersion.split("\\.");
 
-        // guest-tools.iso for XenServer version 7.0+
         if (xenBrand.equals("XenServer") && Integer.parseInt(items[0]) >= 7) {
-            return "guest-tools.iso";
+            return XENSERVER_70PLUS_GUEST_TOOLS_NAME;
         }
-
-        // xs-tools.iso for older XenServer versions
-        return "xs-tools.iso";
+        return XENSERVER_BEFORE_70_GUEST_TOOLS_NAME;
     }
 
     public String getLabel() {
@@ -3900,7 +3910,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             final String templateName = iso.getName();
             if (templateName.startsWith("xs-tools")) {
                 try {
-                    final String actualTemplateName = actualIsoTemplate(conn);
+                    final String actualTemplateName = getActualIsoTemplate(conn);
                     final Set<VDI> vdis = VDI.getByNameLabel(conn, actualTemplateName);
                     if (vdis.isEmpty()) {
                         throw new CloudRuntimeException("Could not find ISO with URL: " + actualTemplateName);
