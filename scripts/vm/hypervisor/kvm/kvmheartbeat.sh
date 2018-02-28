@@ -155,10 +155,10 @@ then
   exit 0
 elif [ "$cflag" == "1" ]
 then
-  /usr/bin/logger -t heartbeat "kvmheartbeat.sh rebooted system because it was unable to write the heartbeat to the storage."
+  /usr/bin/logger -t heartbeat "kvmheartbeat.sh stopped cloudstack-agent because it was unable to write the heartbeat to the storage."
   sync &
   sleep 5
-  echo b > /proc/sysrq-trigger
+  service cloudstack-agent stop
   exit $?
 else
   write_hbLog 
