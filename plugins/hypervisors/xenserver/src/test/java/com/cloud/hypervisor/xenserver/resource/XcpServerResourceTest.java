@@ -15,22 +15,21 @@
  */
 package com.cloud.hypervisor.xenserver.resource;
 
+import org.apache.xmlrpc.XmlRpcException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
+import com.xensource.xenapi.Types.XenAPIException;
 
-@RunWith(PowerMockRunner.class)
-public class XcpServerResourceTest extends CitrixResourceBaseTest{
+public class XcpServerResourceTest extends CitrixResourceBaseTest {
 
     @Before
-    public void beforeTest() {
+    @Override
+    public void beforeTest() throws XenAPIException, XmlRpcException {
         super.citrixResourceBase = new XcpServerResource();
+        super.beforeTest();
     }
 
     @Test
@@ -42,13 +41,11 @@ public class XcpServerResourceTest extends CitrixResourceBaseTest{
     }
 
     @Test(expected = CloudRuntimeException.class)
-    @PrepareForTest(Script.class )
     public void testGetFilesExeption(){
         testGetPathFilesExeption();
     }
 
     @Test
-    @PrepareForTest(Script.class )
     public void testGetFilesListReturned(){
         testGetPathFilesListReturned();
     }

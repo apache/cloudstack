@@ -26,27 +26,27 @@ import org.mockito.Mockito;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.dao.VMTemplateDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class XcpServerDiscovererTest {
-    
+
     @Spy
     @InjectMocks
     private XcpServerDiscoverer xcpServerDiscoverer;
-    
+
     @Mock
     private VMTemplateDao vmTemplateDao;
-    
+
     @Test
     public void createXenServerToolsIsoEntryInDatabaseTestNoEntryFound() {
         Mockito.when(vmTemplateDao.findByTemplateName("xs-tools.iso")).thenReturn(null);
         Mockito.when(vmTemplateDao.getNextInSequence(Long.class, "id")).thenReturn(1L);
-        
+
         xcpServerDiscoverer.createXenServerToolsIsoEntryInDatabase();
-        
+
         InOrder inOrder = Mockito.inOrder(vmTemplateDao);
         inOrder.verify(vmTemplateDao).findByTemplateName("xs-tools.iso");
         inOrder.verify(vmTemplateDao).getNextInSequence(Long.class, "id");
@@ -58,9 +58,9 @@ public class XcpServerDiscovererTest {
         VMTemplateVO vmTemplateVOMock = Mockito.mock(VMTemplateVO.class);
         Mockito.when(vmTemplateDao.findByTemplateName("xs-tools.iso")).thenReturn(vmTemplateVOMock);
         Mockito.when(vmTemplateVOMock.getId()).thenReturn(1L);
-        
+
         xcpServerDiscoverer.createXenServerToolsIsoEntryInDatabase();
-        
+
         InOrder inOrder = Mockito.inOrder(vmTemplateDao, vmTemplateVOMock);
         inOrder.verify(vmTemplateDao).findByTemplateName("xs-tools.iso");
         inOrder.verify(vmTemplateDao, Mockito.times(0)).getNextInSequence(Long.class, "id");
