@@ -25,11 +25,13 @@ public class DirectDownloadAnswer extends Answer {
 
     private Long templateSize;
     private String installPath;
+    private boolean retryOnOtherHosts;
 
-    public DirectDownloadAnswer(final boolean result, final String msg) {
+    public DirectDownloadAnswer(final boolean result, final String msg, final boolean retry) {
         super(null);
         this.result = result;
         this.details = msg;
+        this.retryOnOtherHosts = retry;
     }
 
     public DirectDownloadAnswer(final boolean result, final Long size, final String installPath) {
@@ -45,5 +47,9 @@ public class DirectDownloadAnswer extends Answer {
 
     public String getInstallPath() {
         return installPath;
+    }
+
+    public boolean isRetryOnOtherHosts() {
+        return retryOnOtherHosts;
     }
 }

@@ -1322,7 +1322,7 @@ public class KVMStorageProcessor implements StorageProcessor {
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
         final PrimaryDataStoreTO pool = cmd.getDestPool();
         if (!pool.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
-            return new DirectDownloadAnswer(false, "Unsupported pool type " + pool.getPoolType().toString());
+            return new DirectDownloadAnswer(false, "Unsupported pool type " + pool.getPoolType().toString(), true);
         }
         KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
         DirectTemplateDownloader downloader;
@@ -1330,35 +1330,26 @@ public class KVMStorageProcessor implements StorageProcessor {
         try {
             downloader = getDirectTemplateDownloaderFromCommand(cmd, destPool);
         } catch (IllegalArgumentException e) {
-            return new DirectDownloadAnswer(false, "Unable to create direct downloader: " + e.getMessage());
+            return new DirectDownloadAnswer(false, "Unable to create direct downloader: " + e.getMessage(), true);
         }
 
-        int retries = 3;
-        boolean ok = false;
-        do {
-            try {
-                retries--;
-                s_logger.info("Trying to download template, retries left: " + retries);
-                if (!downloader.downloadTemplate()) {
-                    s_logger.warn("Couldn't download template");
-                    continue;
-                }
-                if (!downloader.validateChecksum()) {
-                    s_logger.warn("Couldn't validate template checksum");
-                    continue;
-                }
-                if (!downloader.extractAndInstallDownloadedTemplate()) {
-                    s_logger.warn("Couldn't extract and install template");
-                    continue;
-                }
-                ok = true;
-            } catch (CloudRuntimeException e) {
-                s_logger.warn("Error downloading template " + cmd.getTemplateId() + " due to: " + e.getMessage() + " retries left: " + retries);
+        try {
+            s_logger.info("Trying to download template");
+            if (!downloader.downloadTemplate()) {
+                s_logger.warn("Couldn't download template");
+                return new DirectDownloadAnswer(false, "Unable to download template", true);
             }
-        } while (!ok && retries > 0);
-
-        if (!ok) {
-            return new DirectDownloadAnswer(false, "Unable to download template " + cmd.getTemplateId());
+            if (!downloader.validateChecksum()) {
+                s_logger.warn("Couldn't validate template checksum");
+                return new DirectDownloadAnswer(false, "Checksum validation failed", false);
+            }
+            if (!downloader.extractAndInstallDownloadedTemplate()) {
+                s_logger.warn("Couldn't extract and install template");
+                return new DirectDownloadAnswer(false, "Extraction and installation failed", false);
+            }
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Error downloading template " + cmd.getTemplateId() + " due to: " + e.getMessage());
+            return new DirectDownloadAnswer(false, "Unable to download template: " + e.getMessage(), true);
         }
 
         DirectTemplateInformation info = downloader.getTemplateInformation();

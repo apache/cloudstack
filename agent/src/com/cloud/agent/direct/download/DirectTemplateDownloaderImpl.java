@@ -195,9 +195,9 @@ public abstract class DirectTemplateDownloaderImpl implements DirectTemplateDown
             boolean valid = false;
             try {
                 while (!valid && retry > 0) {
+                    retry--;
                     s_logger.info("Performing checksum validation for downloaded template " + templateId + ", retries left: " + retry);
                     valid = DigestHelper.check(checksum, new FileInputStream(downloadedFilePath));
-                    retry--;
                     if (!valid && retry > 0) {
                         s_logger.info("Checksum validation failded, re-downloading template");
                         redownload = true;

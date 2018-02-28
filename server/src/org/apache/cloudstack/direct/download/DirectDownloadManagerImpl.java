@@ -255,10 +255,15 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
         int hostIndex = 0;
         Answer answer = null;
         Long hostToSendDownloadCmd = hostsToRetry[hostIndex];
-        while (!downloaded && retry > 0) {
+        boolean continueRetrying = true;
+        while (!downloaded && retry > 0 && continueRetrying) {
             s_logger.debug("Sending Direct download command to host " + hostToSendDownloadCmd);
             answer = agentManager.easySend(hostToSendDownloadCmd, cmd);
-            downloaded = answer != null && answer.getResult();
+            if (answer != null) {
+                DirectDownloadAnswer ans = (DirectDownloadAnswer)answer;
+                downloaded = answer.getResult();
+                continueRetrying = ans.isRetryOnOtherHosts();
+            }
             hostToSendDownloadCmd = hostsToRetry[(hostIndex + 1) % hostsToRetry.length];
             retry --;
         }
