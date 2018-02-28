@@ -440,8 +440,8 @@ public class UriUtils {
         GetMethod getMethod = new GetMethod(metalinkUrl);
         List<String> urls = new ArrayList<>();
         try {
-            InputStream is = getMethod.getResponseBodyAsStream();
             if (httpClient.executeMethod(getMethod) == HttpStatus.SC_OK) {
+                InputStream is = getMethod.getResponseBodyAsStream();
                 Map<String, List<String>> metalinkUrlsMap = getMultipleValuesFromXML(is, new String[] {"url"});
                 if (metalinkUrlsMap.containsKey("url")) {
                     List<String> metalinkUrls = metalinkUrlsMap.get("url");
