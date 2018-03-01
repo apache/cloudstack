@@ -191,7 +191,8 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             if (Strings.isNullOrEmpty(csr)) {
                 return false;
             }
-            final Certificate certificate = issueCertificate(csr, Collections.singletonList(host.getName()), Arrays.asList(host.getPrivateIpAddress(), host.getPublicIpAddress(), host.getStorageIpAddress()), CAManager.CertValidityPeriod.value(), caProvider);
+            final Certificate certificate = issueCertificate(csr, Collections.singletonList(host.getName()),
+                    Arrays.asList(host.getPrivateIpAddress(), host.getPublicIpAddress(), host.getStorageIpAddress()), CAManager.CertValidityPeriod.value(), caProvider);
             return deployCertificate(host, certificate, reconnect, null);
         } catch (final AgentUnavailableException | OperationTimedoutException e) {
             LOG.error("Host/agent is not available or operation timed out, failed to setup keystore and generate CSR for host/agent id=" + host.getId() + ", due to: ", e);
@@ -206,18 +207,19 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             cmd.setAccessDetail(sshAccessDetails);
         }
         CallContext.current().setEventDetails("generating keystore and CSR for host id: " + host.getId());
-        final SetupKeystoreAnswer answer = (SetupKeystoreAnswer) agentManager.send(host.getId(), cmd);
+        final SetupKeystoreAnswer answer = (SetupKeystoreAnswer)agentManager.send(host.getId(), cmd);
         return answer.getCsr();
     }
 
     @Override
-    public boolean deployCertificate(final Host host, final Certificate certificate, final Boolean reconnect, final Map<String, String> sshAccessDetails) throws AgentUnavailableException, OperationTimedoutException {
+    public boolean deployCertificate(final Host host, final Certificate certificate, final Boolean reconnect, final Map<String, String> sshAccessDetails)
+            throws AgentUnavailableException, OperationTimedoutException {
         final SetupCertificateCommand cmd = new SetupCertificateCommand(certificate);
         if (sshAccessDetails != null && !sshAccessDetails.isEmpty()) {
             cmd.setAccessDetail(sshAccessDetails);
         }
         CallContext.current().setEventDetails("deploying certificate for host id: " + host.getId());
-        final SetupCertificateAnswer answer = (SetupCertificateAnswer) agentManager.send(host.getId(), cmd);
+        final SetupCertificateAnswer answer = (SetupCertificateAnswer)agentManager.send(host.getId(), cmd);
         if (answer.getResult()) {
             CallContext.current().setEventDetails("successfully deployed certificate for host id: " + host.getId());
         } else {
@@ -227,9 +229,12 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         if (answer.getResult()) {
             getActiveCertificatesMap().put(host.getPrivateIpAddress(), certificate.getClientCertificate());
             if (sshAccessDetails == null && reconnect != null && reconnect) {
-                LOG.info(String.format("Successfully setup certificate on host, reconnecting with agent with id=%d, name=%s, address=%s",
-                        host.getId(), host.getName(), host.getPublicIpAddress()));
-                return agentManager.reconnect(host.getId());
+                LOG.info(String.format("Successfully setup certificate on host, reconnecting with agent with id=%d, name=%s, address=%s", host.getId(), host.getName(), host.getPublicIpAddress()));
+                try {
+                    agentManager.reconnect(host.getId());
+                } catch (AgentUnavailableException | CloudRuntimeException e) {
+                    LOG.debug("Error when reconnecting to host: " + host.getUuid(), e);
+                }
             }
             return true;
         }
@@ -257,8 +262,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
         if (host == null) {
             return;
         }
-        alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_CA_CERT,
-                host.getDataCenterId(), host.getPodId(), subject, message);
+        alertManager.sendAlert(AlertManager.AlertType.ALERT_TYPE_CA_CERT, host.getDataCenterId(), host.getPodId(), subject, message);
     }
 
     @Override
@@ -303,7 +307,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
                 }
                 final DateTime now = DateTime.now(DateTimeZone.UTC);
                 final Map<String, X509Certificate> certsMap = caManager.getActiveCertificatesMap();
-                for (final Iterator<Map.Entry<String, X509Certificate>> it = certsMap.entrySet().iterator(); it.hasNext(); ) {
+                for (final Iterator<Map.Entry<String, X509Certificate>> it = certsMap.entrySet().iterator(); it.hasNext();) {
                     final Map.Entry<String, X509Certificate> entry = it.next();
                     if (entry == null) {
                         continue;
@@ -315,19 +319,14 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
                         continue;
                     }
                     final Host host = hostDao.findByIp(hostIp);
-                    if (host == null || host.getManagementServerId() == null ||
-                            host.getManagementServerId() != ManagementServerNode.getManagementServerId() ||
-                            host.getStatus() != Status.Up) {
-                        if (host == null ||
-                                (host.getManagementServerId() != null &&
-                                        host.getManagementServerId() != ManagementServerNode.getManagementServerId())) {
+                    if (host == null || host.getManagementServerId() == null || host.getManagementServerId() != ManagementServerNode.getManagementServerId() || host.getStatus() != Status.Up) {
+                        if (host == null || (host.getManagementServerId() != null && host.getManagementServerId() != ManagementServerNode.getManagementServerId())) {
                             it.remove();
                         }
                         continue;
                     }
 
-                    final String hostDescription = String.format("host id=%d, uuid=%s, name=%s, ip=%s, zone id=%d",
-                            host.getId(), host.getUuid(), host.getName(), hostIp, host.getDataCenterId());
+                    final String hostDescription = String.format("host id=%d, uuid=%s, name=%s, ip=%s, zone id=%d", host.getId(), host.getUuid(), host.getName(), hostIp, host.getDataCenterId());
 
                     try {
                         certificate.checkValidity(now.plusDays(CertExpiryAlertPeriod.valueIn(host.getClusterId())).toDate());
@@ -345,7 +344,8 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
                             } catch (final Throwable ex) {
                                 LOG.warn("Failed to auto-renew certificate for " + hostDescription + ", with error=", ex);
                                 caManager.sendAlert(host, "Certificate auto-renewal failed for " + hostDescription,
-                                        String.format("Certificate is going to expire for %s. Auto-renewal failed to renew the certificate, please renew it manually. It is not valid after %s.", hostDescription, certificate.getNotAfter()));
+                                        String.format("Certificate is going to expire for %s. Auto-renewal failed to renew the certificate, please renew it manually. It is not valid after %s.",
+                                                hostDescription, certificate.getNotAfter()));
                             }
                         } else {
                             if (alertMap.containsKey(hostIp)) {
@@ -355,8 +355,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
                                 }
                             }
                             caManager.sendAlert(host, "Certificate expiring soon for " + hostDescription,
-                                    String.format("Certificate is going to expire for %s. Please renew it, it is not valid after %s.",
-                                            hostDescription, certificate.getNotAfter()));
+                                    String.format("Certificate is going to expire for %s. Please renew it, it is not valid after %s.", hostDescription, certificate.getNotAfter()));
                             alertMap.put(hostIp, new Date());
                         }
                     }
@@ -427,14 +426,6 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{
-                CAProviderPlugin,
-                CertKeySize,
-                CertSignatureAlgorithm,
-                CertValidityPeriod,
-                AutomaticCertRenewal,
-                CABackgroundJobDelay,
-                CertExpiryAlertPeriod
-        };
+        return new ConfigKey<?>[] {CAProviderPlugin, CertKeySize, CertSignatureAlgorithm, CertValidityPeriod, AutomaticCertRenewal, CABackgroundJobDelay, CertExpiryAlertPeriod};
     }
 }

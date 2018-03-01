@@ -80,7 +80,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
     private static final String LIST_CLUSTERID_FOR_HOST_TAG = "select distinct cluster_id from host join host_tags on host.id = host_tags.host_id and host_tags.tag = ?";
 
-
     protected SearchBuilder<HostVO> TypePodDcStatusSearch;
 
     protected SearchBuilder<HostVO> IdStatusSearch;

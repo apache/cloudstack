@@ -113,7 +113,7 @@ public class CAManagerImplTest {
         final X509Certificate certificate = CertUtils.generateV3Certificate(null, keyPair, keyPair.getPublic(), "CN=ca", "SHA256withRSA", 365, null, null);
         Mockito.when(caProvider.issueCertificate(Mockito.anyString(), Mockito.anyList(), Mockito.anyList(), Mockito.anyInt())).thenReturn(new Certificate(certificate, null, Collections.singletonList(certificate)));
         Mockito.when(agentManager.send(Mockito.anyLong(), Mockito.any(SetupKeyStoreCommand.class))).thenReturn(new SetupKeystoreAnswer("someCsr"));
-        Mockito.when(agentManager.reconnect(Mockito.anyLong())).thenReturn(true);
+        Mockito.doNothing().when(agentManager).reconnect(Mockito.anyLong());
         Assert.assertTrue(caManager.provisionCertificate(host, true, null));
         Mockito.verify(agentManager, Mockito.times(2)).send(Mockito.anyLong(), Mockito.any(Answer.class));
         Mockito.verify(agentManager, Mockito.times(1)).reconnect(Mockito.anyLong());

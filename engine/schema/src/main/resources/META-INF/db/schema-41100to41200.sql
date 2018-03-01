@@ -21,3 +21,6 @@
 
 -- [CLOUDSTACK-10314] Add reason column to ACL rule table
 ALTER TABLE `cloud`.`network_acl_item` ADD COLUMN `reason` VARCHAR(2500) AFTER `display`;
+
+--[CLOUDSTACK-9846] Make provision to store content and subject for Alerts in separate columns.
+ALTER TABLE `cloud`.`alert` ADD COLUMN `content` VARCHAR(5000);
