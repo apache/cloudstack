@@ -353,6 +353,8 @@ public class UriUtils {
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            getMethod.releaseConnection();
         }
         return null;
     }
@@ -424,6 +426,8 @@ public class UriUtils {
             }
         } catch (IOException e) {
             s_logger.warn(e.getMessage());
+        } finally {
+            getMethod.releaseConnection();
         }
         return false;
     }
@@ -444,6 +448,7 @@ public class UriUtils {
             status = httpClient.executeMethod(getMethod);
         } catch (IOException e) {
             s_logger.error("Error retrieving urls form metalink: " + metalinkUrl);
+            getMethod.releaseConnection();
             return null;
         }
         try {
@@ -457,6 +462,8 @@ public class UriUtils {
             }
         } catch (IOException e) {
             s_logger.warn(e.getMessage());
+        } finally {
+            getMethod.releaseConnection();
         }
         return urls;
     }
@@ -477,6 +484,8 @@ public class UriUtils {
                 throw new IllegalArgumentException("Cannot reach URL: " + url + " due to: " + hte.getMessage());
             } catch (IOException ioe) {
                 throw new IllegalArgumentException("Cannot reach URL: " + url + " due to: " + ioe.getMessage());
+            } finally {
+                httphead.releaseConnection();
             }
         }
     }
