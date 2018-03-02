@@ -2622,3 +2622,186 @@ $.validator.addMethod("allzonesonly", function(value, element){
 
 },
 "All Zones cannot be combined with any other zone");
+
+cloudStack.createTemplateMethod = function (isSnapshot){
+	return {
+        label: 'label.create.template',
+        messages: {
+            confirm: function(args) {
+                return 'message.create.template';
+            },
+            notification: function(args) {
+                return 'label.create.template';
+            }
+        },
+        createForm: {
+            title: 'label.create.template',
+            preFilter: cloudStack.preFilter.createTemplate,
+            desc: '',
+            preFilter: function(args) {
+                if (args.context.volumes[0].hypervisor == "XenServer") {
+                    if (isAdmin()) {
+                        args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
+                    }
+                }
+            },
+            fields: {
+                name: {
+                    label: 'label.name',
+                    validation: {
+                        required: true
+                    }
+                },
+                displayText: {
+                    label: 'label.description',
+                    validation: {
+                        required: true
+                    }
+                },
+                xenserverToolsVersion61plus: {
+                    label: 'label.xenserver.tools.version.61.plus',
+                    isBoolean: true,
+                    isChecked: function (args) {
+                        var b = false;
+                        var vmObj;
+                        $.ajax({
+                            url: createURL("listVirtualMachines"),
+                            data: {
+                                id: args.context.volumes[0].virtualmachineid
+                            },
+                            async: false,
+                            success: function(json) {
+                                vmObj = json.listvirtualmachinesresponse.virtualmachine[0];
+                            }
+                        });
+                        if (vmObj == undefined) { //e.g. VM has failed over
+                            if (isAdmin()) {
+                                $.ajax({
+                                    url: createURL('listConfigurations'),
+                                    data: {
+                                        name: 'xenserver.pvdriver.version'
+                                    },
+                                    async: false,
+                                    success: function (json) {
+                                        if (json.listconfigurationsresponse.configuration != null && json.listconfigurationsresponse.configuration[0].value == 'xenserver61') {
+                                            b = true;
+                                        }
+                                    }
+                                });
+                            }
+                        } else {
+                             if ('details' in vmObj && 'hypervisortoolsversion' in vmObj.details) {
+                                 if (vmObj.details.hypervisortoolsversion == 'xenserver61')
+                                     b = true;
+                                 else
+                                     b = false;
+                             }
+                        }
+                        return b;
+                    },
+                    isHidden: true
+                },
+                osTypeId: {
+                    label: 'label.os.type',
+                    select: function(args) {
+                        $.ajax({
+                            url: createURL("listOsTypes"),
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                                var ostypes = json.listostypesresponse.ostype;
+                                var items = [];
+                                $(ostypes).each(function() {
+                                    items.push({
+                                        id: this.id,
+                                        description: this.description
+                                    });
+                                });
+                                args.response.success({
+                                    data: items
+                                });
+                            }
+                        });
+                    }
+                },
+                isPublic: {
+                    label: 'label.public',
+                    isBoolean: true
+                },
+                isPasswordEnabled: {
+                    label: 'label.password.enabled',
+                    isBoolean: true
+                },
+                isFeatured: {
+                    label: 'label.featured',
+                    isBoolean: true
+                },
+                isdynamicallyscalable: {
+                    label: 'label.dynamically.scalable',
+                    isBoolean: true
+                },
+                requireshvm: {
+                    label: 'label.hvm',
+                    docID: 'helpRegisterTemplateHvm',
+                    isBoolean: true,
+                    isHidden: false,
+                    isChecked: false
+                }
+            }
+        },
+        action: function(args) {
+            var data = {
+                name: args.data.name,
+                displayText: args.data.displayText,
+                osTypeId: args.data.osTypeId,
+                isPublic: (args.data.isPublic == "on"),
+                passwordEnabled: (args.data.isPasswordEnabled == "on"),
+                isdynamicallyscalable: (args.data.isdynamicallyscalable == "on"),
+                requireshvm: (args.data.requireshvm == "on")
+            };
+            
+            if(isSnapshot){
+            	data.snapshotid = args.context.snapshots[0].id;
+            } else{
+            	data.volumeId = args.context.volumes[0].id;
+            }
+            if (args.$form.find('.form-item[rel=isFeatured]').css("display") != "none") {
+                $.extend(data, {
+                    isfeatured: (args.data.isFeatured == "on")
+                });
+            }
+
+            //XenServer only (starts here)
+            if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').length > 0) {
+                if (args.$form.find('.form-item[rel=xenserverToolsVersion61plus]').css("display") != "none") {
+                    $.extend(data, {
+                        'details[0].hypervisortoolsversion': (args.data.xenserverToolsVersion61plus == "on") ? "xenserver61" : "xenserver56"
+                    });
+                }
+            }
+            //XenServer only (ends here)
+
+            $.ajax({
+                url: createURL('createTemplate'),
+                data: data,
+                success: function(json) {
+                    var jid = json.createtemplateresponse.jobid;
+                    args.response.success({
+                        _custom: {
+                            jobId: jid,
+                            getUpdatedItem: function(json) {
+                                return {}; //no properties in this volume needs to be updated
+                            },
+                            getActionFilter: function() {
+                                return volumeActionfilter;
+                            }
+                        }
+                    });
+                }
+            });
+        },
+        notification: {
+            poll: pollAsyncJobResult
+        }
+    };
+};
