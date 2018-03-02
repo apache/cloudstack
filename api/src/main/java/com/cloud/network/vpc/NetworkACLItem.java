@@ -78,4 +78,5 @@ public interface NetworkACLItem extends InternalIdentity, Identity, Displayable 
     @Override
     boolean isDisplay();
 
+    String getReason();
 }

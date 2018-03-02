@@ -21,10 +21,8 @@ import java.util.List;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseAsyncCustomIdCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
@@ -84,6 +82,9 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
+
+    @Parameter(name = ApiConstants.ACL_REASON, type = CommandType.STRING, description = "A description indicating why the ACL rule is required.")
+    private String reason;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
@@ -173,15 +174,14 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
         return icmpType;
     }
 
+    public String getReason() {
+        return reason;
+    }
+
     @Override
     public void execute() throws ResourceUnavailableException {
         CallContext.current().setEventDetails("Rule Id: " + getId());
-        NetworkACLItem aclItem =
-            _networkACLService.updateNetworkACLItem(getId(), getProtocol(), getSourceCidrList(), getTrafficType(), getAction(), getNumber(), getSourcePortStart(),
-                getSourcePortEnd(), getIcmpCode(), getIcmpType(), this.getCustomId(), this.isDisplay());
-        if (aclItem == null) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update network ACL item");
-        }
+        NetworkACLItem aclItem = _networkACLService.updateNetworkACLItem(this);
         NetworkACLItemResponse aclResponse = _responseGenerator.createNetworkACLItemResponse(aclItem);
         setResponseObject(aclResponse);
         aclResponse.setResponseName(getCommandName());

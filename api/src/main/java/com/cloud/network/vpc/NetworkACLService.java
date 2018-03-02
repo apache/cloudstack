@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
@@ -119,8 +120,7 @@ public interface NetworkACLService {
      * @return
      * @throws ResourceUnavailableException
      */
-    NetworkACLItem updateNetworkACLItem(Long id, String protocol, List<String> sourceCidrList, NetworkACLItem.TrafficType trafficType, String action, Integer number,
-            Integer sourcePortStart, Integer sourcePortEnd, Integer icmpCode, Integer icmpType, String newUUID, Boolean forDisplay) throws ResourceUnavailableException;
+    NetworkACLItem updateNetworkACLItem(UpdateNetworkACLItemCmd updateNetworkACLItemCmd) throws ResourceUnavailableException;
 
     /**
      * Associates ACL with specified Network

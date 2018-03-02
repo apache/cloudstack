@@ -226,13 +226,6 @@ public class NetworkACLManagerTest extends TestCase {
     }
 
     @Test
-    public void testUpdateACLItem() throws Exception {
-        Mockito.when(_networkACLItemDao.findById(Matchers.anyLong())).thenReturn(aclItem);
-        Mockito.when(_networkACLItemDao.update(Matchers.anyLong(), Matchers.any(NetworkACLItemVO.class))).thenReturn(true);
-        assertNotNull(_aclMgr.updateNetworkACLItem(1L, "UDP", null, NetworkACLItem.TrafficType.Ingress, "Deny", 10, 22, 32, null, null, null, true));
-    }
-
-    @Test
     public void deleteNonEmptyACL() throws Exception {
         final List<NetworkACLItemVO> aclItems = new ArrayList<NetworkACLItemVO>();
         aclItems.add(aclItem);

@@ -48,7 +48,6 @@ import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLManager;
@@ -164,26 +163,6 @@ public class NetworkACLServiceTest extends TestCase {
         Mockito.when(_networkACLDao.findById(Matchers.anyLong())).thenReturn(acl);
         Mockito.when(_networkAclMgr.deleteNetworkACL(acl)).thenReturn(true);
         _aclService.deleteNetworkACL(1L);
-    }
-
-    @Test
-    public void testCreateACLItem() throws Exception {
-        Mockito.when(_entityMgr.findById(Matchers.eq(Vpc.class), Matchers.anyLong())).thenReturn(new VpcVO());
-        Mockito.when(_networkAclMgr.getNetworkACL(Matchers.anyLong())).thenReturn(acl);
-        Mockito.when(
-            _networkAclMgr.createNetworkACLItem(Matchers.anyInt(), Matchers.anyInt(), Matchers.anyString(), Matchers.anyList(), Matchers.anyInt(), Matchers.anyInt(),
-                        Matchers.any(NetworkACLItem.TrafficType.class), Matchers.anyLong(), Matchers.anyString(), Matchers.anyInt(), Matchers.anyBoolean())).thenReturn(
-                new NetworkACLItemVO());
-        Mockito.when(_networkACLItemDao.findByAclAndNumber(Matchers.anyLong(), Matchers.anyInt())).thenReturn(null);
-        assertNotNull(_aclService.createNetworkACLItem(createACLItemCmd));
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCreateACLItemDuplicateNumber() throws Exception {
-        Mockito.when(_entityMgr.findById(Matchers.eq(Vpc.class), Matchers.anyLong())).thenReturn(new VpcVO());
-        Mockito.when(_networkAclMgr.getNetworkACL(Matchers.anyLong())).thenReturn(acl);
-        Mockito.when(_networkACLItemDao.findByAclAndNumber(Matchers.anyLong(), Matchers.anyInt())).thenReturn(new NetworkACLItemVO());
-        _aclService.createNetworkACLItem(createACLItemCmd);
     }
 
     @Test

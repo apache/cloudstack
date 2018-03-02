@@ -104,6 +104,8 @@ var dictionary = {
     "label.acl.list.rules": "ACL列表策略",
     "label.acl.name": "ACL 名称",
     "label.acl.replaced": "ACL 已替换",
+    "label.acl.reason": "Reason",
+    "label.acl.reason.description": "Enter the reason behind an ACL rule.",
     "label.acquire.new.ip": "获取新 IP",
     "label.acquire.new.secondary.ip": "获取新二级 IP",
     "label.action": "操作",

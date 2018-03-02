@@ -85,6 +85,10 @@ public class NetworkACLItemResponse extends BaseResponse {
     @Param(description = "is rule for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
+    @SerializedName(ApiConstants.ACL_REASON)
+    @Param(description = "an explanation on why this ACL rule is being applied", since = "4.12")
+    private String reason;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -139,5 +143,13 @@ public class NetworkACLItemResponse extends BaseResponse {
 
     public void setForDisplay(Boolean forDisplay) {
         this.forDisplay = forDisplay;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    public String getReason() {
+        return reason;
     }
 }

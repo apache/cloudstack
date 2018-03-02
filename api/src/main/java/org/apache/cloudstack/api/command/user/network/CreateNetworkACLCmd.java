@@ -100,13 +100,12 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
     private Boolean display;
 
+    @Parameter(name = ApiConstants.ACL_REASON, type = CommandType.STRING, description = "A description indicating why the ACL rule is required.")
+    private String reason;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-    @Deprecated
-    public Boolean getDisplay() {
-        return display;
-    }
 
     @Override
     public boolean isDisplay() {
@@ -225,6 +224,10 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
 
     public Long getACLId() {
         return aclId;
+    }
+
+    public String getReason() {
+        return reason;
     }
 
     @Override

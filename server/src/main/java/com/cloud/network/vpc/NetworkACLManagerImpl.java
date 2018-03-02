@@ -224,40 +224,21 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         return false;
     }
 
-    @Override
     @DB
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_ITEM_CREATE, eventDescription = "creating network ACL Item", create = true)
-    public NetworkACLItem createNetworkACLItem(final Integer portStart, final Integer portEnd, final String protocol, final List<String> sourceCidrList, final Integer icmpCode,
-            final Integer icmpType, final NetworkACLItem.TrafficType trafficType, final Long aclId, final String action, Integer number, final Boolean forDisplay) {
-        // If number is null, set it to currentMax + 1 (for backward compatibility)
-        if (number == null) {
-            number = _networkACLItemDao.getMaxNumberByACL(aclId) + 1;
-        }
-
-        final Integer numberFinal = number;
-        final NetworkACLItemVO newRule = Transaction.execute(new TransactionCallback<NetworkACLItemVO>() {
+    public NetworkACLItem createNetworkACLItem(NetworkACLItemVO networkACLItemVO) {
+        NetworkACLItemVO newRule = Transaction.execute(new TransactionCallback<NetworkACLItemVO>() {
             @Override
             public NetworkACLItemVO doInTransaction(final TransactionStatus status) {
-                NetworkACLItem.Action ruleAction = NetworkACLItem.Action.Allow;
-                if ("deny".equalsIgnoreCase(action)) {
-                    ruleAction = NetworkACLItem.Action.Deny;
+                NetworkACLItemVO networkACLItemVOFromDatabase = _networkACLItemDao.persist(networkACLItemVO);
+
+                if (!_networkACLItemDao.setStateToAdd(networkACLItemVOFromDatabase)) {
+                    throw new CloudRuntimeException("Unable to update the state to add for " + networkACLItemVOFromDatabase);
                 }
+                CallContext.current().setEventDetails("ACL Item Id: " + networkACLItemVOFromDatabase.getId());
 
-                NetworkACLItemVO newRule =
-                        new NetworkACLItemVO(portStart, portEnd, protocol.toLowerCase(), aclId, sourceCidrList, icmpCode, icmpType, trafficType, ruleAction, numberFinal);
-
-                if (forDisplay != null) {
-                    newRule.setDisplay(forDisplay);
-                }
-
-                newRule = _networkACLItemDao.persist(newRule);
-
-                if (!_networkACLItemDao.setStateToAdd(newRule)) {
-                    throw new CloudRuntimeException("Unable to update the state to add for " + newRule);
-                }
-                CallContext.current().setEventDetails("ACL Item Id: " + newRule.getId());
-
-                return newRule;
+                return networkACLItemVOFromDatabase;
             }
         });
 
@@ -265,7 +246,7 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     @Override
-    public NetworkACLItem getNetworkACLItem(final long ruleId) {
+    public NetworkACLItem getNetworkACLItem(long ruleId) {
         return _networkACLItemDao.findById(ruleId);
     }
 
@@ -412,68 +393,24 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
         return applyACLItemsToNetwork(networkId, rules);
     }
 
+    /**
+     * Updates and applies the network ACL rule ({@link NetworkACLItemVO}).
+     * We will first try to update the ACL rule in the database using {@link NetworkACLItemDao#update(Long, NetworkACLItemVO)}. If it does not work, a {@link CloudRuntimeException} is thrown.
+     * If we manage to update the ACL rule in the database, we proceed to apply it using {@link #applyNetworkACL(long)}. If this does not work we throw a {@link CloudRuntimeException}.
+     * If all is working we return the {@link NetworkACLItemVO} given as parameter. We wil set the state of the rule to {@link com.cloud.network.vpc.NetworkACLItem.State#Add}.
+     */
     @Override
-    public NetworkACLItem updateNetworkACLItem(final Long id, final String protocol, final List<String> sourceCidrList, final NetworkACLItem.TrafficType trafficType, final String action,
-            final Integer number, final Integer sourcePortStart, final Integer sourcePortEnd, final Integer icmpCode, final Integer icmpType, final String customId, final Boolean forDisplay) throws ResourceUnavailableException {
-        final NetworkACLItemVO aclItem = _networkACLItemDao.findById(id);
-        aclItem.setState(State.Add);
+    public NetworkACLItem updateNetworkACLItem(NetworkACLItemVO networkACLItemVO) throws ResourceUnavailableException {
+        networkACLItemVO.setState(State.Add);
 
-        if (protocol != null) {
-            aclItem.setProtocol(protocol);
-        }
-
-        if (sourceCidrList != null) {
-            aclItem.setSourceCidrList(sourceCidrList);
-        }
-
-        if (trafficType != null) {
-            aclItem.setTrafficType(trafficType);
-        }
-
-        if (action != null) {
-            NetworkACLItem.Action ruleAction = NetworkACLItem.Action.Allow;
-            if ("deny".equalsIgnoreCase(action)) {
-                ruleAction = NetworkACLItem.Action.Deny;
-            }
-            aclItem.setAction(ruleAction);
-        }
-
-        if (number != null) {
-            aclItem.setNumber(number);
-        }
-
-        if (sourcePortStart != null) {
-            aclItem.setSourcePortStart(sourcePortStart);
-        }
-
-        if (sourcePortEnd != null) {
-            aclItem.setSourcePortEnd(sourcePortEnd);
-        }
-
-        if (icmpCode != null) {
-            aclItem.setIcmpCode(icmpCode);
-        }
-
-        if (icmpType != null) {
-            aclItem.setIcmpType(icmpType);
-        }
-
-        if (customId != null) {
-            aclItem.setUuid(customId);
-        }
-
-        if (forDisplay != null) {
-            aclItem.setDisplay(forDisplay);
-        }
-
-        if (_networkACLItemDao.update(id, aclItem)) {
-            if (applyNetworkACL(aclItem.getAclId())) {
-                return aclItem;
+        if (_networkACLItemDao.update(networkACLItemVO.getId(), networkACLItemVO)) {
+            if (applyNetworkACL(networkACLItemVO.getAclId())) {
+                return networkACLItemVO;
             } else {
-                throw new CloudRuntimeException("Failed to apply Network ACL Item: " + aclItem.getUuid());
+                throw new CloudRuntimeException("Failed to apply Network ACL rule: " + networkACLItemVO.getUuid());
             }
         }
-        return null;
+        throw new CloudRuntimeException(String.format("Network ACL rule [id=%s] acl rule list [id=%s] could not be updated.", networkACLItemVO.getUuid(), networkACLItemVO.getAclId()));
     }
 
     public boolean applyACLItemsToNetwork(final long networkId, final List<NetworkACLItemVO> rules) throws ResourceUnavailableException {

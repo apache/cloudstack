@@ -8453,11 +8453,32 @@ div#details-tab-aclRules div.multi-edit table tr td.protocolnumber {
     max-width: 60px !important;
 }
 
+div#details-tab-aclRules div.multi-edit table tr th.traffictype,
+div#details-tab-aclRules div.multi-edit table tr td.traffictype {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+}
+
+div#details-tab-aclRules div.multi-edit table tr th.reason,
+div#details-tab-aclRules div.multi-edit table tr td.reason {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+}
+
+div#details-tab-aclRules div.multi-edit table tr th.icmptype, div#details-tab-aclRules div.multi-edit table tr td.icmptype,
+div#details-tab-aclRules div.multi-edit table tr th.icmpcode, div#details-tab-aclRules div.multi-edit table tr td.icmpcode {
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
+}
+
 div#details-tab-aclRules div.multi-edit table tr th.startport, div#details-tab-aclRules div.multi-edit table tr td.startport,
 div#details-tab-aclRules div.multi-edit table tr th.endport, div#details-tab-aclRules div.multi-edit table tr td.endport {
-    width: 70px !important;
-    min-width: 70px !important;
-    max-width: 70px !important;
+    width: 60px !important;
+    min-width: 60px !important;
+    max-width: 60px !important;
 }
 
 div#details-tab-aclRules td.cidrlist span {
