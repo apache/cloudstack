@@ -74,7 +74,7 @@ public class EventUtils {
         try {
             s_messageBus.publish(EventTypes.getEntityForEvent(eventType), eventType, null, event);
         } catch (Exception e) {
-            s_logger.warn("Failed to publish action event on the the event bus.");
+            s_logger.debug("Failed to publish action event on the the event bus.");
         }
 
     }

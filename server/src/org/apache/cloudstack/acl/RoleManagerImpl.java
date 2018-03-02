@@ -50,7 +50,6 @@ import javax.inject.Inject;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 
 @Local(value = {RoleService.class})
@@ -175,7 +174,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
                     }
                     if (roleDao.remove(role.getId())) {
                         RoleVO roleVO = roleDao.findByIdIncludingRemoved(role.getId());
-                        roleVO.setName(role.getName() + "-deleted-" + new Date());
+                        roleVO.setName(null);
                         return roleDao.update(role.getId(), roleVO);
                     }
                     return false;
