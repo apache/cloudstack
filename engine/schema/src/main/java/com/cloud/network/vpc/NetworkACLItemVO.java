@@ -40,9 +40,6 @@ import com.cloud.utils.net.NetUtils;
 @Table(name = "network_acl_item")
 public class NetworkACLItemVO implements NetworkACLItem, Cloneable {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 2790623532888742060L;
 
     @Id
@@ -105,8 +102,8 @@ public class NetworkACLItemVO implements NetworkACLItem, Cloneable {
         uuid = UUID.randomUUID().toString();
     }
 
-    public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol, long aclId, List<String> sourceCidrs, Integer icmpCode, Integer icmpType,
-            TrafficType trafficType, Action action, int number, String reason) {
+    public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol, long aclId, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, TrafficType trafficType, Action action,
+            int number, String reason) {
         sourcePortStart = portStart;
         sourcePortEnd = portEnd;
         this.protocol = protocol;
@@ -230,8 +227,8 @@ public class NetworkACLItemVO implements NetworkACLItem, Cloneable {
 
     public void setSourceCidrs(String sourceCidrs) {
         List<String> srcCidrs = new LinkedList<String>();
-        StringTokenizer st = new StringTokenizer(sourceCidrs,",;");
-        while(st.hasMoreTokens()) {
+        StringTokenizer st = new StringTokenizer(sourceCidrs, ",;");
+        while (st.hasMoreTokens()) {
             srcCidrs.add(st.nextToken());
         }
         this.sourceCidrs = srcCidrs;
@@ -268,11 +265,11 @@ public class NetworkACLItemVO implements NetworkACLItem, Cloneable {
     }
 
     @Override
-    protected NetworkACLItemVO clone(){
+    protected NetworkACLItemVO clone() {
         try {
             return (NetworkACLItemVO)super.clone();
         } catch (CloneNotSupportedException e) {
-           throw new CloudRuntimeException(e);
+            throw new CloudRuntimeException(e);
         }
     }
 }

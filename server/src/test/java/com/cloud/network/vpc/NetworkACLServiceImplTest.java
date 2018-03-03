@@ -78,7 +78,7 @@ public class NetworkACLServiceImplTest {
     private NetworkACL networkAclMock;
     @Mock
     private NetworkACLItemVO networkAclItemVoMock;
-    
+
     private Long networkAclMockId = 1L;
     private Long networkOfferingMockId = 2L;
     private Long networkMockVpcMockId = 3L;
@@ -87,7 +87,7 @@ public class NetworkACLServiceImplTest {
     public void befoteTest() {
         Mockito.when(createNetworkAclCmdMock.getNetworkId()).thenReturn(1L);
         Mockito.when(createNetworkAclCmdMock.getProtocol()).thenReturn("tcp");
-        
+
         Mockito.when(networkMock.getNetworkOfferingId()).thenReturn(networkOfferingMockId);
         Mockito.when(networkMock.getVpcId()).thenReturn(networkMockVpcMockId);
     }
@@ -216,7 +216,7 @@ public class NetworkACLServiceImplTest {
     public void createAclListForNetworkAndReturnAclListIdTestServicesSupportedByNetworkOfferingButVpcNotFound() {
         Mockito.doReturn(true).when(networkModelMock).areServicesSupportedByNetworkOffering(networkOfferingMockId, Network.Service.NetworkACL);
         Mockito.doReturn(null).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
-        
+
         networkAclServiceImpl.createAclListForNetworkAndReturnAclListId(createNetworkAclCmdMock, networkMock);
     }
 
@@ -225,83 +225,82 @@ public class NetworkACLServiceImplTest {
         Mockito.doReturn(true).when(networkModelMock).areServicesSupportedByNetworkOffering(networkOfferingMockId, Network.Service.NetworkACL);
         Mockito.doReturn(Mockito.mock(Vpc.class)).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
         Mockito.doReturn(null).when(networkAclManager).createNetworkACL(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean());
-        
+
         networkAclServiceImpl.createAclListForNetworkAndReturnAclListId(createNetworkAclCmdMock, networkMock);
     }
-    
-    @Test(expected=CloudRuntimeException.class)
+
+    @Test(expected = CloudRuntimeException.class)
     public void createAclListForNetworkAndReturnAclListIdTestAclNetworkIsCreatedButNotApplied() throws ResourceUnavailableException {
         Mockito.doReturn(true).when(networkModelMock).areServicesSupportedByNetworkOffering(networkOfferingMockId, Network.Service.NetworkACL);
         Mockito.doReturn(Mockito.mock(Vpc.class)).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
         Mockito.doReturn(Mockito.mock(NetworkACL.class)).when(networkAclManager).createNetworkACL(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean());
         Mockito.doReturn(false).when(networkAclManager).replaceNetworkACL(Mockito.any(NetworkACL.class), Mockito.any(NetworkVO.class));
-        
+
         NetworkVO networkVoMock = new NetworkVO();
         networkVoMock.setNetworkOfferingId(networkOfferingMockId);
         networkVoMock.setVpcId(networkMockVpcMockId);
-        
+
         networkAclServiceImpl.createAclListForNetworkAndReturnAclListId(createNetworkAclCmdMock, networkVoMock);
     }
-    
-    @Test(expected=CloudRuntimeException.class)
+
+    @Test(expected = CloudRuntimeException.class)
     public void createAclListForNetworkAndReturnAclListIdTestAclNetworkIsCreatedButNotAppliedWithException() throws ResourceUnavailableException {
         Mockito.doReturn(true).when(networkModelMock).areServicesSupportedByNetworkOffering(networkOfferingMockId, Network.Service.NetworkACL);
         Mockito.doReturn(Mockito.mock(Vpc.class)).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
         Mockito.doReturn(Mockito.mock(NetworkACL.class)).when(networkAclManager).createNetworkACL(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean());
-        
+
         Mockito.doThrow(ResourceUnavailableException.class).when(networkAclManager).replaceNetworkACL(Mockito.any(NetworkACL.class), Mockito.any(NetworkVO.class));
-        
+
         NetworkVO networkVoMock = new NetworkVO();
         networkVoMock.setNetworkOfferingId(networkOfferingMockId);
         networkVoMock.setVpcId(networkMockVpcMockId);
-        
+
         networkAclServiceImpl.createAclListForNetworkAndReturnAclListId(createNetworkAclCmdMock, networkVoMock);
     }
-    
+
     @Test
     public void createAclListForNetworkAndReturnAclListIdTestAclIsCreatedAndAppliedWithSuccess() throws ResourceUnavailableException {
         Mockito.doReturn(true).when(networkModelMock).areServicesSupportedByNetworkOffering(networkOfferingMockId, Network.Service.NetworkACL);
         Mockito.doReturn(Mockito.mock(Vpc.class)).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
-        
+
         NetworkACL networkAclMock = Mockito.mock(NetworkACL.class);
         Long expectedNetworkAclId = 5L;
         Mockito.when(networkAclMock.getId()).thenReturn(expectedNetworkAclId);
         Mockito.doReturn(networkAclMock).when(networkAclManager).createNetworkACL(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean());
-        
+
         Mockito.doReturn(true).when(networkAclManager).replaceNetworkACL(Mockito.any(NetworkACL.class), Mockito.any(NetworkVO.class));
-        
+
         NetworkVO networkVoMock = new NetworkVO();
         networkVoMock.setNetworkOfferingId(networkOfferingMockId);
         networkVoMock.setVpcId(networkMockVpcMockId);
-        
+
         Long networkAclIdReceived = networkAclServiceImpl.createAclListForNetworkAndReturnAclListId(createNetworkAclCmdMock, networkVoMock);
-        
+
         Assert.assertEquals(expectedNetworkAclId, networkAclIdReceived);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateAclRuleNumberTestNumberLessThanOne() {
         Mockito.when(createNetworkAclCmdMock.getNumber()).thenReturn(0);
         networkAclServiceImpl.validateAclRuleNumber(createNetworkAclCmdMock, networkAclMock);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateAclRuleNumberTestNumberNegative() {
         Mockito.when(createNetworkAclCmdMock.getNumber()).thenReturn(-1);
         networkAclServiceImpl.validateAclRuleNumber(createNetworkAclCmdMock, networkAclMock);
     }
-    
-    
+
     @Test(expected = InvalidParameterValueException.class)
     public void validateAclRuleNumberTestNumberInOtherAcl() {
         Mockito.when(createNetworkAclCmdMock.getNumber()).thenReturn(1);
         Mockito.doReturn(Mockito.mock(NetworkACLItemVO.class)).when(networkAclItemDaoMock).findByAclAndNumber(Mockito.anyLong(), Mockito.anyInt());
 
         networkAclServiceImpl.validateAclRuleNumber(createNetworkAclCmdMock, networkAclMock);
-        
+
         Mockito.verify(networkAclItemDaoMock).findByAclAndNumber(Mockito.anyLong(), Mockito.anyInt());
     }
-    
+
     @Test
     public void validateAclRuleNumberTestHappyDay() {
         Mockito.when(createNetworkAclCmdMock.getNumber()).thenReturn(1);
@@ -310,7 +309,7 @@ public class NetworkACLServiceImplTest {
         networkAclServiceImpl.validateAclRuleNumber(createNetworkAclCmdMock, networkAclMock);
         Mockito.verify(networkAclItemDaoMock).findByAclAndNumber(Mockito.anyLong(), Mockito.anyInt());
     }
-    
+
     @Test
     public void validateAclRuleNumberTestNumberNull() {
         Mockito.when(createNetworkAclCmdMock.getNumber()).thenReturn(null);
@@ -319,338 +318,336 @@ public class NetworkACLServiceImplTest {
         networkAclServiceImpl.validateAclRuleNumber(createNetworkAclCmdMock, networkAclMock);
         Mockito.verify(networkAclItemDaoMock, Mockito.times(0)).findByAclAndNumber(Mockito.anyLong(), Mockito.anyInt());
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateNetworkAclTestAclNull() {
         networkAclServiceImpl.validateNetworkAcl(null);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateNetworkAclTestAclDefaulAllow() {
         Mockito.when(networkAclMock.getId()).thenReturn(2L);
         networkAclServiceImpl.validateNetworkAcl(networkAclMock);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateNetworkAclTestAclDefaulDeny() {
         Mockito.when(networkAclMock.getId()).thenReturn(1L);
         networkAclServiceImpl.validateNetworkAcl(networkAclMock);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateNetworkAclTestAclNotDefaulWithoutVpc() {
         Mockito.when(networkAclMock.getId()).thenReturn(3L);
-        Mockito.doReturn(null).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);;
-        
+        Mockito.doReturn(null).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
+        ;
+
         networkAclServiceImpl.validateNetworkAcl(networkAclMock);
     }
-    
+
     @Test
     @PrepareForTest(CallContext.class)
     public void validateNetworkAclTestAclNotDefaulWithVpc() {
         CallContext callContextMock = Mockito.mock(CallContext.class);
         Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
-        
+
         PowerMockito.mockStatic(CallContext.class);
         PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
-        
+
         Mockito.when(networkAclMock.getId()).thenReturn(3L);
         Mockito.when(networkAclMock.getVpcId()).thenReturn(networkMockVpcMockId);
-        
+
         Mockito.doReturn(Mockito.mock(Vpc.class)).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
         Mockito.doNothing().when(AccountManager).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
-        
+
         networkAclServiceImpl.validateNetworkAcl(networkAclMock);
-        
+
         Mockito.verify(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
         Mockito.verify(AccountManager).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
-        
+
         PowerMockito.verifyStatic();
         CallContext.current();
-        
+
     }
-    
+
     @Test
     public void validateAndCreateNetworkAclRuleActionTestActionNull() {
         NetworkACLItem.Action receivedAction = networkAclServiceImpl.validateAndCreateNetworkAclRuleAction(null);
-        
+
         Assert.assertEquals(NetworkACLItem.Action.Allow, receivedAction);
-        
+
         Mockito.verify(networkAclServiceImpl).validateNetworkAclRuleAction(null);
     }
-    
+
     @Test
     public void validateAndCreateNetworkAclRuleActionTestActionAllow() {
         NetworkACLItem.Action receivedAction = networkAclServiceImpl.validateAndCreateNetworkAclRuleAction("allow");
-        
+
         Assert.assertEquals(NetworkACLItem.Action.Allow, receivedAction);
         Mockito.verify(networkAclServiceImpl).validateNetworkAclRuleAction("allow");
     }
-    
+
     @Test
     public void validateAndCreateNetworkAclRuleActionTestActionDeny() {
         NetworkACLItem.Action receivedAction = networkAclServiceImpl.validateAndCreateNetworkAclRuleAction("deny");
-        
+
         Assert.assertEquals(NetworkACLItem.Action.Deny, receivedAction);
         Mockito.verify(networkAclServiceImpl).validateNetworkAclRuleAction("deny");
     }
-    
+
     @Test
     public void validateNetworkAclRuleActionTestActionNull() {
         networkAclServiceImpl.validateNetworkAclRuleAction(null);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateNetworkAclRuleActionTestInvalidAction() {
         networkAclServiceImpl.validateNetworkAclRuleAction("Invalid");
     }
-    
+
     @Test
     public void validateNetworkAclRuleActionTestValidActions() {
         networkAclServiceImpl.validateNetworkAclRuleAction("deny");
         networkAclServiceImpl.validateNetworkAclRuleAction("allow");
     }
-    
+
     @Test
     public void validateNetworkACLItemTest() {
         Mockito.doNothing().when(networkAclServiceImpl).validateSourceStartAndEndPorts(networkAclItemVoMock);
         Mockito.doNothing().when(networkAclServiceImpl).validateSourceCidrList(networkAclItemVoMock);
         Mockito.doNothing().when(networkAclServiceImpl).validateProtocol(networkAclItemVoMock);
-        
+
         networkAclServiceImpl.validateNetworkACLItem(networkAclItemVoMock);
-        
+
         InOrder inOrder = Mockito.inOrder(networkAclServiceImpl);
         inOrder.verify(networkAclServiceImpl).validateSourceStartAndEndPorts(networkAclItemVoMock);
         inOrder.verify(networkAclServiceImpl).validateSourceCidrList(networkAclItemVoMock);
         inOrder.verify(networkAclServiceImpl).validateProtocol(networkAclItemVoMock);
     }
-    
+
     @Test
     public void validateSourceStartAndEndPortsTestBothPortsNull() {
         networkAclServiceImpl.validateSourceStartAndEndPorts(networkAclItemVoMock);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateSourceStartAndEndPortsTestStartPorInvalid() {
         Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(65536);
-        
+
         networkAclServiceImpl.validateSourceStartAndEndPorts(networkAclItemVoMock);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateSourceStartAndEndPortsTestStartPorValidButEndPortInvalid() {
         Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(65535);
         Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(65536);
-        
+
         networkAclServiceImpl.validateSourceStartAndEndPorts(networkAclItemVoMock);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateSourceStartAndEndPortsTestStartPortBiggerThanEndPort() {
         Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(65535);
         Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(2);
-        
+
         networkAclServiceImpl.validateSourceStartAndEndPorts(networkAclItemVoMock);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateSourceStartAndEndPortsTestPortsWithAllProtocol() {
         Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(1);
         Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(2);
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("all");
-        
+
         networkAclServiceImpl.validateSourceStartAndEndPorts(networkAclItemVoMock);
     }
-    
+
     @Test
     public void validateSourceStartAndEndPortsTestPortsWithTcpProtocol() {
         Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(1);
         Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(2);
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("tcp");
-        
+
         networkAclServiceImpl.validateSourceStartAndEndPorts(networkAclItemVoMock);
     }
-    
+
     @Test
     public void validateSourceCidrListTestEmptySourceCirdList() {
         Mockito.when(networkAclItemVoMock.getSourceCidrList()).thenReturn(new ArrayList<>());
         networkAclServiceImpl.validateSourceCidrList(networkAclItemVoMock);
     }
-    
-    @Test(expected=ServerApiException.class)
+
+    @Test(expected = ServerApiException.class)
     public void validateSourceCidrListTestInvalidCidrs() {
         ArrayList<String> cidrsInvalid = new ArrayList<>();
         cidrsInvalid.add("256.0.0.0./32");
-        
+
         Mockito.when(networkAclItemVoMock.getSourceCidrList()).thenReturn(cidrsInvalid);
         networkAclServiceImpl.validateSourceCidrList(networkAclItemVoMock);
     }
-    
+
     @Test
     public void validateSourceCidrListTestValidCidrs() {
         ArrayList<String> cidrsInvalid = new ArrayList<>();
         cidrsInvalid.add("192.168.12.0/24");
-        
+
         Mockito.when(networkAclItemVoMock.getSourceCidrList()).thenReturn(cidrsInvalid);
         networkAclServiceImpl.validateSourceCidrList(networkAclItemVoMock);
     }
-    
+
     @Test
     public void validateProtocolTestProtocolIsNullOrBlank() {
         Mockito.doNothing().when(networkAclServiceImpl).validateIcmpTypeAndCode(networkAclItemVoMock);
-        
+
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn(null);
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
-        
+
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("");
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
-        
+
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("    ");
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
-        
+
         Mockito.verify(networkAclServiceImpl, Mockito.times(0)).validateIcmpTypeAndCode(networkAclItemVoMock);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateProtocolTestProtocolIsNumericValueLessThanZero() {
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("-1");
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateProtocolTestProtocolIsNumericValueMoreThan255() {
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("256");
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
     }
-    
+
     @Test
     public void validateProtocolTestProtocolIsNumericValidValue() {
         Mockito.doNothing().when(networkAclServiceImpl).validateIcmpTypeAndCode(networkAclItemVoMock);
-        
+
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("255");
         Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(null);
         Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(null);
-        
+
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
-        
+
         Mockito.verify(networkAclServiceImpl).validateIcmpTypeAndCode(networkAclItemVoMock);
     }
-    
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateProtocolTestProtocolIsStringInvalid() {
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("invalid");
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
     }
-    
+
     @Test
     public void validateProtocolTestProtocolIsStringValid() {
         Mockito.doNothing().when(networkAclServiceImpl).validateIcmpTypeAndCode(networkAclItemVoMock);
-        
+
         Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(null);
         Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(null);
-        
+
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("tcp");
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
-        
+
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("all");
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
-        
+
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("udp");
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
-        
+
         Mockito.verify(networkAclServiceImpl, Mockito.times(3)).validateIcmpTypeAndCode(networkAclItemVoMock);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateProtocolTestProtocolNotIcmpWithIcmpConfigurations() {
         Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(1);
         Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(1);
-        
+
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("tcp");
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
     }
-    
+
     @Test
     public void validateProtocolTestProtocolNotIcmpWithSourcePorts() {
         Mockito.doNothing().when(networkAclServiceImpl).validateIcmpTypeAndCode(networkAclItemVoMock);
-        
+
         Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(null);
         Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(null);
-        
+
         Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(1);
         Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(1);
-        
+
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("tcp");
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
-        
+
         Mockito.verify(networkAclServiceImpl).validateIcmpTypeAndCode(networkAclItemVoMock);
     }
-    
-    
+
     @Test
     public void validateProtocolTestProtocolIcmpWithIcmpConfigurations() {
         Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(1);
         Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(1);
-        
+
         Mockito.when(networkAclItemVoMock.getSourcePortStart()).thenReturn(null);
         Mockito.when(networkAclItemVoMock.getSourcePortEnd()).thenReturn(null);
-        
+
         Mockito.doNothing().when(networkAclServiceImpl).validateIcmpTypeAndCode(networkAclItemVoMock);
-        
+
         Mockito.when(networkAclItemVoMock.getProtocol()).thenReturn("icmp");
         networkAclServiceImpl.validateProtocol(networkAclItemVoMock);
-        
+
         Mockito.verify(networkAclServiceImpl).validateIcmpTypeAndCode(networkAclItemVoMock);
     }
-    
+
     @Test
     public void validateIcmpTypeAndCodeTestIcmpTypeNull() {
         Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(null);
-        
+
         networkAclServiceImpl.validateIcmpTypeAndCode(networkAclItemVoMock);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateIcmpTypeAndCodeTestIcmpTypeInvalid() {
         Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(256);
-        
+
         networkAclServiceImpl.validateIcmpTypeAndCode(networkAclItemVoMock);
     }
-    
+
     @Test
     public void validateIcmpTypeAndCodeTestIcmpTypeNegativeOne() {
         Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(-1);
         Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(null);
-        
+
         networkAclServiceImpl.validateIcmpTypeAndCode(networkAclItemVoMock);
     }
-    
+
     @Test
     public void validateIcmpTypeAndCodeTestIcmpTypeNegativeOneAndIcmpCodeNegativeOne() {
         Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(-1);
         Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(-1);
-        
+
         networkAclServiceImpl.validateIcmpTypeAndCode(networkAclItemVoMock);
     }
-    
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateIcmpTypeAndCodeTestIcmpTypeValidAndIcmpCodeInvalid() {
         Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(255);
         Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(16);
-        
+
         networkAclServiceImpl.validateIcmpTypeAndCode(networkAclItemVoMock);
     }
-    
+
     @Test
     public void validateIcmpTypeAndCodeTestIcmpTypeValidAndIcmpCodeValid() {
         Mockito.when(networkAclItemVoMock.getIcmpType()).thenReturn(255);
         Mockito.when(networkAclItemVoMock.getIcmpCode()).thenReturn(1);
-        
+
         networkAclServiceImpl.validateIcmpTypeAndCode(networkAclItemVoMock);
     }
-    
+
     @Test
     public void updateNetworkACLItemTest() throws ResourceUnavailableException {
         Mockito.when(networkAclItemVoMock.getAclId()).thenReturn(networkAclMockId);
@@ -660,9 +657,9 @@ public class NetworkACLServiceImplTest {
         Mockito.doNothing().when(networkAclServiceImpl).transferDataToNetworkAclRulePojo(Mockito.eq(updateNetworkACLItemCmdMock), Mockito.eq(networkAclItemVoMock), Mockito.eq(networkAclMock));
         Mockito.doNothing().when(networkAclServiceImpl).validateNetworkACLItem(networkAclItemVoMock);
         Mockito.doReturn(networkAclItemVoMock).when(networkAclManager).updateNetworkACLItem(networkAclItemVoMock);
-        
+
         networkAclServiceImpl.updateNetworkACLItem(updateNetworkACLItemCmdMock);
-        
+
         InOrder inOrder = Mockito.inOrder(networkAclServiceImpl, networkAclManager);
         inOrder.verify(networkAclServiceImpl).validateNetworkAclRuleIdAndRetrieveIt(updateNetworkACLItemCmdMock);
         inOrder.verify(networkAclManager).getNetworkACL(networkAclMockId);
@@ -671,25 +668,25 @@ public class NetworkACLServiceImplTest {
         inOrder.verify(networkAclServiceImpl).validateNetworkACLItem(networkAclItemVoMock);
         inOrder.verify(networkAclManager).updateNetworkACLItem(networkAclItemVoMock);
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void validateNetworkAclRuleIdAndRetrieveItTestNetworkAclNotFound() {
         Mockito.doReturn(null).when(networkAclItemDaoMock).findById(Mockito.anyLong());
-        
+
         networkAclServiceImpl.validateNetworkAclRuleIdAndRetrieveIt(updateNetworkACLItemCmdMock);
     }
-    
+
     @Test
     public void validateNetworkAclRuleIdAndRetrieveItTestNetworkAclFound() {
         Mockito.doReturn(networkAclItemVoMock).when(networkAclItemDaoMock).findById(Mockito.anyLong());
-        
+
         NetworkACLItemVO returnedNetworkAclItemVo = networkAclServiceImpl.validateNetworkAclRuleIdAndRetrieveIt(updateNetworkACLItemCmdMock);
-        
+
         Assert.assertNotEquals(networkAclItemVoMock, returnedNetworkAclItemVo);
         Mockito.verify(networkAclItemVoMock).clone();
     }
-    
-    @Test(expected=InvalidParameterValueException.class)
+
+    @Test(expected = InvalidParameterValueException.class)
     public void transferDataToNetworkAclRulePojoTestNumberOfAcltoBeUpdatedAlreadyInUse() {
         int aclNumberToUpdate = 1;
         Mockito.when(updateNetworkACLItemCmdMock.getNumber()).thenReturn(aclNumberToUpdate);
@@ -698,10 +695,10 @@ public class NetworkACLServiceImplTest {
         NetworkACLItemVO otherNetworkAclItemVoMock = Mockito.mock(NetworkACLItemVO.class);
         Mockito.when(otherNetworkAclItemVoMock.getId()).thenReturn(101L);
         Mockito.doReturn(otherNetworkAclItemVoMock).when(networkAclItemDaoMock).findByAclAndNumber(networkAclMockId, aclNumberToUpdate);
-        
+
         networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, networkAclItemVoMock, networkAclMock);
     }
-    
+
     @Test
     public void transferDataToNetworkAclRulePojoTestAllValuesNull() {
         Mockito.when(updateNetworkACLItemCmdMock.getNumber()).thenReturn(null);
@@ -715,12 +712,12 @@ public class NetworkACLServiceImplTest {
         Mockito.when(updateNetworkACLItemCmdMock.getTrafficType()).thenReturn(null);
         Mockito.when(updateNetworkACLItemCmdMock.getCustomId()).thenReturn(null);
         Mockito.when(updateNetworkACLItemCmdMock.getReason()).thenReturn(null);
-        
+
         Mockito.when(updateNetworkACLItemCmdMock.isDisplay()).thenReturn(false);
         Mockito.when(networkAclItemVoMock.isDisplay()).thenReturn(false);
-        
+
         networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, networkAclItemVoMock, networkAclMock);
-        
+
         Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setNumber(Mockito.anyInt());
         Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setSourcePortStart(Mockito.anyInt());
         Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setSourcePortEnd(Mockito.anyInt());
@@ -735,13 +732,13 @@ public class NetworkACLServiceImplTest {
         Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setDisplay(Mockito.anyBoolean());
         Mockito.verify(networkAclServiceImpl, Mockito.times(0)).validateAndCreateNetworkAclRuleAction(Mockito.anyString());
     }
-    
+
     @Test
     public void transferDataToNetworkAclRulePojoTestAllValuesWithUpdateData() {
         Mockito.when(updateNetworkACLItemCmdMock.getNumber()).thenReturn(1);
         Mockito.when(updateNetworkACLItemCmdMock.getSourcePortStart()).thenReturn(23);
         Mockito.when(updateNetworkACLItemCmdMock.getSourcePortEnd()).thenReturn(24);
-        
+
         ArrayList<String> cidrsList = new ArrayList<>();
         cidrsList.add("192.168.6.0/24");
         Mockito.when(updateNetworkACLItemCmdMock.getSourceCidrList()).thenReturn(cidrsList);
@@ -753,12 +750,12 @@ public class NetworkACLServiceImplTest {
         Mockito.when(updateNetworkACLItemCmdMock.getTrafficType()).thenReturn(TrafficType.Egress);
         Mockito.when(updateNetworkACLItemCmdMock.getCustomId()).thenReturn("customUuid");
         Mockito.when(updateNetworkACLItemCmdMock.getReason()).thenReturn("reason");
-        
+
         Mockito.when(updateNetworkACLItemCmdMock.isDisplay()).thenReturn(true);
         Mockito.when(networkAclItemVoMock.isDisplay()).thenReturn(false);
-        
+
         networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, networkAclItemVoMock, networkAclMock);
-        
+
         Mockito.verify(networkAclItemVoMock).setNumber(1);
         Mockito.verify(networkAclItemVoMock).setSourcePortStart(23);
         Mockito.verify(networkAclItemVoMock).setSourcePortEnd(24);
@@ -773,5 +770,5 @@ public class NetworkACLServiceImplTest {
         Mockito.verify(networkAclItemVoMock).setDisplay(true);
         Mockito.verify(networkAclServiceImpl).validateAndCreateNetworkAclRuleAction("deny");
     }
-    
+
 }

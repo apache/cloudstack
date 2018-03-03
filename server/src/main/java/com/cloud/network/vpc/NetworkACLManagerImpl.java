@@ -21,7 +21,11 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import com.cloud.configuration.ConfigurationManager;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.log4j.Logger;
+
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
@@ -37,8 +41,6 @@ import com.cloud.network.vpc.NetworkACLItem.State;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.tags.dao.ResourceTagDao;
-import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
@@ -47,43 +49,31 @@ import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.log4j.Logger;
-
 public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLManager {
     private static final Logger s_logger = Logger.getLogger(NetworkACLManagerImpl.class);
 
     @Inject
-    AccountManager _accountMgr;
+    private NetworkModel _networkMgr;
     @Inject
-    NetworkModel _networkMgr;
+    private NetworkACLDao _networkACLDao;
     @Inject
-    VpcManager _vpcMgr;
+    private NetworkACLItemDao _networkACLItemDao;
     @Inject
-    ResourceTagDao _resourceTagDao;
+    private NetworkModel _networkModel;
     @Inject
-    NetworkACLDao _networkACLDao;
+    private NetworkDao _networkDao;
     @Inject
-    NetworkACLItemDao _networkACLItemDao;
-    List<NetworkACLServiceProvider> _networkAclElements;
+    private VpcGatewayDao _vpcGatewayDao;
     @Inject
-    NetworkModel _networkModel;
+    private NetworkModel _ntwkModel;
     @Inject
-    NetworkDao _networkDao;
+    private EntityManager _entityMgr;
     @Inject
-    VpcGatewayDao _vpcGatewayDao;
+    private VpcService _vpcSvc;
     @Inject
-    NetworkModel _ntwkModel;
-    @Inject
-    ConfigurationManager _configMgr;
-    @Inject
-    EntityManager _entityMgr;
-    @Inject
-    VpcService _vpcSvc;
-    @Inject
-    MessageBus _messageBus;
+    private MessageBus _messageBus;
+
+    private List<NetworkACLServiceProvider> _networkAclElements;
 
     @Override
     public NetworkACL createNetworkACL(final String name, final String description, final long vpcId, final Boolean forDisplay) {
@@ -353,7 +343,6 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     private void removeRule(final NetworkACLItem rule) {
-        //remove the rule
         _networkACLItemDao.remove(rule.getId());
     }
 
@@ -365,19 +354,14 @@ public class NetworkACLManagerImpl extends ManagerBase implements NetworkACLMana
     }
 
     private boolean applyACLToPrivateGw(final PrivateGateway gateway, final List<? extends NetworkACLItem> rules) throws ResourceUnavailableException {
-        List<VpcProvider> vpcElements = null;
-        vpcElements = new ArrayList<VpcProvider>();
+        List<VpcProvider> vpcElements = new ArrayList<VpcProvider>();
         vpcElements.add((VpcProvider)_ntwkModel.getElementImplementingProvider(Network.Provider.VPCVirtualRouter.getName()));
 
-        if (vpcElements == null) {
-            throw new CloudRuntimeException("Failed to initialize vpc elements");
-        }
-
-        try{
+        try {
             for (final VpcProvider provider : vpcElements) {
                 return provider.applyACLItemsToPrivateGw(gateway, rules);
             }
-        } catch(final Exception ex) {
+        } catch (final Exception ex) {
             s_logger.debug("Failed to apply acl to private gateway " + gateway);
         }
         return false;
