@@ -73,7 +73,7 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
             return null;
         }
 
-        if (offering.getGuestType() == GuestType.L2) {
+        if (offering.getGuestType() == GuestType.L2 && network.getBroadcastUri() != null) {
             String vxlan = BroadcastDomainType.getValue(network.getBroadcastUri());
             network.setBroadcastUri(BroadcastDomainType.Vxlan.toUri(vxlan));
         }
