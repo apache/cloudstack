@@ -40,6 +40,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
@@ -155,7 +156,7 @@ public class CertUtils {
      * @param signatureAlgorithm
      * @param validityDays
      * @param dnsNames
-     * @param publicIPAddresses
+     * @param ipAddresses
      * @return returns a X509Certificate
      * @throws IOException
      * @throws NoSuchAlgorithmException
@@ -172,7 +173,7 @@ public class CertUtils {
                                                       final String signatureAlgorithm,
                                                       final int validityDays,
                                                       final List<String> dnsNames,
-                                                      final List<String> publicIPAddresses) throws IOException, NoSuchAlgorithmException, CertificateException, NoSuchProviderException, InvalidKeyException, SignatureException {
+                                                      final List<String> ipAddresses) throws IOException, NoSuchAlgorithmException, CertificateException, NoSuchProviderException, InvalidKeyException, SignatureException {
         final DateTime now = DateTime.now(DateTimeZone.UTC);
         final BigInteger serial = generateRandomBigInt();
         final X500Principal subject = new X500Principal(subjectDN);
@@ -199,8 +200,8 @@ public class CertUtils {
                 new SubjectKeyIdentifierStructure(clientPublicKey));
 
         final List<ASN1Encodable> subjectAlternativeNames = new ArrayList<ASN1Encodable>();
-        if (publicIPAddresses != null) {
-            for (final String publicIPAddress: publicIPAddresses) {
+        if (ipAddresses != null) {
+            for (final String publicIPAddress: new HashSet<>(ipAddresses)) {
                 if (Strings.isNullOrEmpty(publicIPAddress)) {
                     continue;
                 }
@@ -208,7 +209,7 @@ public class CertUtils {
             }
         }
         if (dnsNames != null) {
-            for (final String dnsName : dnsNames) {
+            for (final String dnsName : new HashSet<>(dnsNames)) {
                 if (Strings.isNullOrEmpty(dnsName)) {
                     continue;
                 }

@@ -18,6 +18,7 @@ package com.cloud.hypervisor.kvm.discoverer;
 
 import java.net.InetAddress;
 import java.net.URI;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
 import org.apache.cloudstack.framework.ca.Certificate;
@@ -64,7 +66,6 @@ import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 import com.trilead.ssh2.Connection;
-import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 
 public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(LibvirtServerDiscoverer.class);
@@ -130,11 +131,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     }
 
     private void setupAgentSecurity(final Connection sshConnection, final String agentIp, final String agentHostname) {
-        if (!caManager.canProvisionCertificates()) {
-            s_logger.warn("Cannot secure agent communication because configure CA plugin cannot provision client certificate");
-            return;
-        }
-
         if (sshConnection == null) {
             throw new CloudRuntimeException("Cannot secure agent communication because ssh connection is invalid for host ip=" + agentIp);
         }
@@ -150,17 +146,17 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                                 "/etc/cloudstack/agent/%s " +
                                 "%s %d " +
                                 "/etc/cloudstack/agent/%s",
-                        KeyStoreUtils.keyStoreSetupScript,
-                        KeyStoreUtils.defaultKeystoreFile,
+                        KeyStoreUtils.KS_SETUP_SCRIPT,
+                        KeyStoreUtils.KS_FILENAME,
                         PasswordGenerator.generateRandomPassword(16),
                         validityPeriod,
-                        KeyStoreUtils.defaultCsrFile));
+                        KeyStoreUtils.CSR_FILENAME));
 
         if (!keystoreSetupResult.isSuccess()) {
             throw new CloudRuntimeException("Failed to setup keystore on the KVM host: " + agentIp);
         }
 
-        final Certificate certificate = caManager.issueCertificate(keystoreSetupResult.getStdOut(), Collections.singletonList(agentHostname), Collections.singletonList(agentIp), null, null);
+        final Certificate certificate = caManager.issueCertificate(keystoreSetupResult.getStdOut(), Arrays.asList(agentHostname, agentIp), Collections.singletonList(agentIp), null, null);
         if (certificate == null || certificate.getClientCertificate() == null) {
             throw new CloudRuntimeException("Failed to issue certificates for KVM host agent: " + agentIp);
         }
@@ -173,14 +169,14 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                                     "/etc/cloudstack/agent/%s \"%s\" " +
                                     "/etc/cloudstack/agent/%s \"%s\" " +
                                     "/etc/cloudstack/agent/%s \"%s\"",
-                            KeyStoreUtils.keyStoreImportScript,
-                            KeyStoreUtils.defaultKeystoreFile,
-                            KeyStoreUtils.sshMode,
-                            KeyStoreUtils.defaultCertFile,
+                            KeyStoreUtils.KS_IMPORT_SCRIPT,
+                            KeyStoreUtils.KS_FILENAME,
+                            KeyStoreUtils.SSH_MODE,
+                            KeyStoreUtils.CERT_FILENAME,
                             certificateCommand.getEncodedCertificate(),
-                            KeyStoreUtils.defaultCaCertFile,
+                            KeyStoreUtils.CACERT_FILENAME,
                             certificateCommand.getEncodedCaCertificates(),
-                            KeyStoreUtils.defaultPrivateKeyFile,
+                            KeyStoreUtils.PKEY_FILENAME,
                             certificateCommand.getEncodedPrivateKey()));
 
         if (setupCertResult != null && !setupCertResult.isSuccess()) {
@@ -277,9 +273,13 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 kvmGuestNic = (kvmPublicNic != null) ? kvmPublicNic : kvmPrivateNic;
             }
 
+            if (!caManager.canProvisionCertificates()) {
+                throw new CloudRuntimeException("Configured CA plugin cannot provision X509 certificate(s), failing to add host due to security insufficiency.");
+            }
+
             setupAgentSecurity(sshConnection, agentIp, hostname);
 
-            String parameters = " -m " + StringUtils.toCSVList(indirectAgentLB.getManagementServerList(null, dcId, null)) + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
+            String parameters = " -m " + StringUtils.toCSVList(indirectAgentLB.getManagementServerList(null, dcId, null)) + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a -s";
 
             parameters += " --pubNic=" + kvmPublicNic;
             parameters += " --prvNic=" + kvmPrivateNic;

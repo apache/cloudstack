@@ -557,6 +557,14 @@ if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     mv %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/cloud.rpmsave/agent/agent.properties.rpmsave
 fi
 
+# Enable libvirt TLS if host is secured
+if [ -f "/etc/cloudstack/agent/cloud.jks" ]; then
+    /usr/bin/cloudstack-setup-agent -s
+    /sbin/service libvirtd restart
+    /sbin/iptables -t filter -A INPUT -p tcp -m tcp --dport 16514 -j ACCEPT
+    /sbin/service iptables save
+fi
+
 %preun usage
 /sbin/service cloudstack-usage stop || true
 if [ "$1" == "0" ] ; then

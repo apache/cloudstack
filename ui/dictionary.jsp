@@ -306,6 +306,7 @@ dictionary = {
 'label.action.stop.router.processing': '<fmt:message key="label.action.stop.router.processing" />',
 'label.action.stop.systemvm': '<fmt:message key="label.action.stop.systemvm" />',
 'label.action.stop.systemvm.processing': '<fmt:message key="label.action.stop.systemvm.processing" />',
+'label.action.secure.host': '<fmt:message key="label.action.secure.host" />',
 'label.action.take.snapshot': '<fmt:message key="label.action.take.snapshot" />',
 'label.action.take.snapshot.processing': '<fmt:message key="label.action.take.snapshot.processing" />',
 'label.action.revert.snapshot': '<fmt:message key="label.action.revert.snapshot" />',

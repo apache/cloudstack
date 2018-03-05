@@ -335,7 +335,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     }
 
     private char[] getCaKeyStorePassphrase() {
-        return KeyStoreUtils.defaultKeystorePassphrase;
+        return KeyStoreUtils.DEFAULT_KS_PASSPHRASE;
     }
 
     private KeyStore getCaKeyStore() throws CertificateException, NoSuchAlgorithmException, IOException, KeyStoreException {
@@ -373,7 +373,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
     //////////////////////////////////////////////////
 
     private char[] findKeyStorePassphrase() {
-        char[] passphrase = KeyStoreUtils.defaultKeystorePassphrase;
+        char[] passphrase = KeyStoreUtils.DEFAULT_KS_PASSPHRASE;
         final String configuredPassphrase = DbProperties.getDbProperties().getProperty("db.cloud.keyStorePassphrase");
         if (configuredPassphrase != null) {
             passphrase = configuredPassphrase.toCharArray();
@@ -394,7 +394,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             keyStore.setCertificateEntry(caAlias, caCertificate);
             keyStore.setKeyEntry(managementAlias, managementServerCertificate.getPrivateKey(), passphrase,
                     new X509Certificate[]{managementServerCertificate.getClientCertificate(), caCertificate});
-            final String tmpFile = KeyStoreUtils.defaultTmpKeyStoreFile;
+            final String tmpFile = KeyStoreUtils.KS_TMP_FILE;
             final FileOutputStream stream = new FileOutputStream(tmpFile);
             keyStore.store(stream, passphrase);
             stream.close();
@@ -413,7 +413,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             return false;
         }
         final char[] passphrase = findKeyStorePassphrase();
-        final String keystorePath = confFile.getParent() + KeyStoreUtils.defaultKeystoreFile;
+        final String keystorePath = confFile.getParent() + KeyStoreUtils.KS_FILENAME;
         final File keystoreFile = new File(keystorePath);
         if (keystoreFile.exists()) {
             try {

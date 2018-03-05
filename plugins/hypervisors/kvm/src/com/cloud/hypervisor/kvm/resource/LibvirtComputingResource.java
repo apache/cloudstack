@@ -61,8 +61,19 @@ import java.util.regex.Pattern;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.ca.PostCertificateRenewalCommand;
+import org.apache.cloudstack.ca.SetupCertificateAnswer;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.cloudstack.utils.qemu.QemuImg;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import org.apache.cloudstack.utils.qemu.QemuImgException;
+import org.apache.cloudstack.utils.qemu.QemuImgFile;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -83,16 +94,6 @@ import com.ceph.rados.RadosException;
 import com.ceph.rbd.Rbd;
 import com.ceph.rbd.RbdException;
 import com.ceph.rbd.RbdImage;
-
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.utils.qemu.QemuImg;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
-import org.apache.cloudstack.utils.qemu.QemuImgException;
-import org.apache.cloudstack.utils.qemu.QemuImgFile;
-import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.AttachVolumeAnswer;
@@ -237,8 +238,8 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef.guestNetType;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.TermPolicy;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VideoDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.VirtioSerialDef;
 import com.cloud.hypervisor.kvm.storage.KVMPhysicalDisk;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePool;
 import com.cloud.hypervisor.kvm.storage.KVMStoragePoolManager;
@@ -276,6 +277,7 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
+import com.google.common.base.Strings;
 
 /**
  * LibvirtComputingResource execute requests on the computing/routing host using
@@ -466,6 +468,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected boolean _noKvmClock;
     protected String _videoHw;
     protected int _videoRam;
+    protected String _hostDistro;
     protected Pair<Integer,Integer> hostOsVersion;
     private final Map <String, String> _pifs = new HashMap<String, String>();
     private final Map<String, VmStats> _vmStats = new ConcurrentHashMap<String, VmStats>();
@@ -1308,6 +1311,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         try {
             if (cmd instanceof StopCommand) {
                 return execute((StopCommand)cmd);
+            } else if (cmd instanceof PostCertificateRenewalCommand) {
+                return execute((PostCertificateRenewalCommand) cmd);
             } else if (cmd instanceof GetVmStatsCommand) {
                 return execute((GetVmStatsCommand)cmd);
             } else if (cmd instanceof GetVmDiskStatsCommand) {
@@ -3106,6 +3111,13 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return command.execute();
     }
 
+    protected String createMigrationURI(final String destinationIp) {
+        if (Strings.isNullOrEmpty(destinationIp)) {
+            throw new CloudRuntimeException("Provided libvirt destination ip is invalid");
+        }
+        return String.format("%s://%s/system", KeyStoreUtils.isHostSecured() ? "qemu+tls" : "qemu+tcp", destinationIp);
+    }
+
     private Answer execute(MigrateCommand cmd) {
         String vmName = cmd.getVmName();
 
@@ -3114,6 +3126,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         List<InterfaceDef> ifaces = null;
         List<DiskDef> disks = null;
 
+        final String destinationUri = createMigrationURI(cmd.getDestinationIp());
         Domain dm = null;
         Connect dconn = null;
         Domain destDomain = null;
@@ -3148,10 +3161,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
             xmlDesc = dm.getXMLDesc(xmlFlag).replace(_privateIp, cmd.getDestinationIp());
 
-            dconn = new Connect("qemu+tcp://" + cmd.getDestinationIp() + "/system");
+            dconn = new Connect(destinationUri);
 
             //run migration in thread so we can monitor it
-            s_logger.info("Live migration of instance " + vmName + " initiated");
+            s_logger.info("Live migration of instance " + vmName + " initiated to destination host: " + dconn.getURI());
             ExecutorService executor = Executors.newFixedThreadPool(1);
             Callable<Domain> worker = new MigrateKVMAsync(dm, dconn, xmlDesc, vmName, cmd.getDestinationIp());
             Future<Domain> migrateThread = executor.submit(worker);
@@ -3199,6 +3212,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (LibvirtException e) {
             s_logger.debug("Can't migrate domain: " + e.getMessage());
             result = e.getMessage();
+            if (result.startsWith("unable to connect to server") && result.endsWith("refused")) {
+                result = String.format("Migration was refused connection to destination: %s. Please check libvirt configuration compatibility on the source and destination hosts.", destinationUri);
+            }
         } catch (InterruptedException e) {
             s_logger.debug("Interrupted while migrating domain: " + e.getMessage());
             result = e.getMessage();
@@ -3552,6 +3568,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         } catch (LibvirtException e) {
             return new StopAnswer(cmd, e.getMessage(), false);
         }
+    }
+
+    protected Answer execute(final PostCertificateRenewalCommand cmd) {
+        s_logger.info("Restarting libvirt after certificate provisioning/renewal");
+        if (cmd != null) {
+            final int timeout = 30000;
+            Script script = new Script(true, "service", timeout, s_logger);
+            if ("Ubuntu".equals(_hostDistro) || "Debian".equals(_hostDistro)) {
+                script.add("libvirt-bin");
+            } else {
+                script.add("libvirtd");
+            }
+            script.add("restart");
+            script.execute();
+            return new SetupCertificateAnswer(true);
+        }
+        return new SetupCertificateAnswer(false);
     }
 
     protected Answer execute(ModifySshKeysCommand cmd) {
@@ -4303,10 +4336,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         fillNetworkInformation(cmd);
         _privateIp = cmd.getPrivateIpAddress();
         cmd.getHostDetails().putAll(getVersionStrings());
+        cmd.getHostDetails().put(KeyStoreUtils.SECURED, String.valueOf(KeyStoreUtils.isHostSecured()).toLowerCase());
         cmd.setPool(_pool);
         cmd.setCluster(_clusterId);
         cmd.setGatewayIpAddress(_localGateway);
         cmd.setIqn(getIqn());
+
+        if (cmd.getHostDetails().containsKey("Host.OS")) {
+            _hostDistro = cmd.getHostDetails().get("Host.OS");
+        }
 
         StartupStorageCommand sscmd = null;
         try {

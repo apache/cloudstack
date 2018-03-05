@@ -471,6 +471,23 @@ class securityPolicyConfigRedhat(serviceCfgBase):
             logging.debug(formatExceptionInfo())
             return False
 
+def configureLibvirtConfig(tls_enabled = True, cfg = None):
+    cfo = configFileOps("/etc/libvirt/libvirtd.conf", cfg)
+    if tls_enabled:
+        cfo.addEntry("listen_tcp", "0")
+        cfo.addEntry("listen_tls", "1")
+        cfo.addEntry("key_file", "\"/etc/pki/libvirt/private/serverkey.pem\"")
+        cfo.addEntry("cert_file", "\"/etc/pki/libvirt/servercert.pem\"")
+        cfo.addEntry("ca_file", "\"/etc/pki/CA/cacert.pem\"")
+    else:
+        cfo.addEntry("listen_tcp", "1")
+        cfo.addEntry("listen_tls", "0")
+    cfo.addEntry("tcp_port", "\"16509\"")
+    cfo.addEntry("tls_port", "\"16514\"")
+    cfo.addEntry("auth_tcp", "\"none\"")
+    cfo.addEntry("auth_tls", "\"none\"")
+    cfo.save()
+
 class libvirtConfigRedhat(serviceCfgBase):
     def __init__(self, syscfg):
         super(libvirtConfigRedhat, self).__init__(syscfg)
@@ -478,12 +495,7 @@ class libvirtConfigRedhat(serviceCfgBase):
 
     def config(self):
         try:
-            cfo = configFileOps("/etc/libvirt/libvirtd.conf", self)
-            cfo.addEntry("listen_tcp", "1")
-            cfo.addEntry("tcp_port", "\"16509\"")
-            cfo.addEntry("auth_tcp", "\"none\"")
-            cfo.addEntry("listen_tls", "0")
-            cfo.save()
+            configureLibvirtConfig(self.syscfg.env.secure, self)
 
             cfo = configFileOps("/etc/sysconfig/libvirtd", self)
             cfo.addEntry("export CGROUP_DAEMON", "'cpu:/virt'")
@@ -515,24 +527,16 @@ class libvirtConfigUbuntu(serviceCfgBase):
         super(libvirtConfigUbuntu, self).__init__(syscfg)
         self.serviceName = "Libvirt"
 
-    def setupLiveMigration(self):
-        cfo = configFileOps("/etc/libvirt/libvirtd.conf", self)
-        cfo.addEntry("listen_tcp", "1")
-        cfo.addEntry("tcp_port", "\"16509\"");
-        cfo.addEntry("auth_tcp", "\"none\"");
-        cfo.addEntry("listen_tls", "0")
-        cfo.save()
-
-        if os.path.exists("/etc/init/libvirt-bin.conf"):
-            cfo = configFileOps("/etc/init/libvirt-bin.conf", self)
-            cfo.replace_line("exec /usr/sbin/libvirtd","exec /usr/sbin/libvirtd -d -l")
-        else:
-            cfo = configFileOps("/etc/default/libvirt-bin", self)
-            cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l -d'")
-
     def config(self):
         try:
-            self.setupLiveMigration()
+            configureLibvirtConfig(self.syscfg.env.secure, self)
+            if os.path.exists("/etc/init/libvirt-bin.conf"):
+                cfo = configFileOps("/etc/init/libvirt-bin.conf", self)
+                cfo.replace_line("exec /usr/sbin/libvirtd","exec /usr/sbin/libvirtd -d -l")
+            else:
+                cfo = configFileOps("/etc/default/libvirt-bin", self)
+                cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l -d'")
+
 
             filename = "/etc/libvirt/qemu.conf"
 
@@ -564,7 +568,7 @@ class firewallConfigUbuntu(serviceCfgBase):
 
     def config(self):
         try:
-            ports = "22 1798 16509".split()
+            ports = "22 1798 16509 16514".split()
             for p in ports:
                 bash("ufw allow %s"%p)
             bash("ufw allow proto tcp from any to any port 5900:6100")
@@ -624,7 +628,7 @@ class firewallConfigBase(serviceCfgBase):
 class firewallConfigAgent(firewallConfigBase):
     def __init__(self, syscfg):
         super(firewallConfigAgent, self).__init__(syscfg)
-        self.ports = "22 16509 5900:6100 49152:49216".split()
+        self.ports = "22 16509 16514 5900:6100 49152:49216".split()
         if syscfg.env.distribution.getVersion() == "CentOS":
             self.rules = ["-D FORWARD -j RH-Firewall-1-INPUT"]
         else:

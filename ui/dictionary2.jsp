@@ -398,6 +398,7 @@ $.extend(dictionary, {
 'message.action.stop.instance': '<fmt:message key="message.action.stop.instance" />',
 'message.action.stop.router': '<fmt:message key="message.action.stop.router" />',
 'message.action.stop.systemvm': '<fmt:message key="message.action.stop.systemvm" />',
+'message.action.secure.host': '<fmt:message key="message.action.secure.host" />',
 'message.action.take.snapshot': '<fmt:message key="message.action.take.snapshot" />',
 'message.action.revert.snapshot': '<fmt:message key="message.action.revert.snapshot" />',
 'message.action.unmanage.cluster': '<fmt:message key="message.action.unmanage.cluster" />',

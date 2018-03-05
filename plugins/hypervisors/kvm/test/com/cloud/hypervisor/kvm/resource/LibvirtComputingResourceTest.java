@@ -27,8 +27,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
-import junit.framework.Assert;
-
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.lang.SystemUtils;
 import org.junit.Assume;
 import org.junit.Test;
@@ -50,7 +49,10 @@ import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
+
+import junit.framework.Assert;
 
 public class LibvirtComputingResourceTest {
 
@@ -453,5 +455,22 @@ public class LibvirtComputingResourceTest {
         Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
         NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
         LibvirtComputingResource.getCpuSpeed(nodeInfo);
+    }
+
+    @Test
+    public void testMigrationUri() {
+        final String ip = "10.1.1.1";
+        LibvirtComputingResource lcr = new LibvirtComputingResource();
+        if (KeyStoreUtils.isHostSecured()) {
+            Assert.assertEquals(lcr.createMigrationURI(ip), String.format("qemu+tls://%s/system", ip));
+        } else {
+            Assert.assertEquals(lcr.createMigrationURI(ip), String.format("qemu+tcp://%s/system", ip));
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testMigrationUriException() {
+        LibvirtComputingResource lcr = new LibvirtComputingResource();
+        lcr.createMigrationURI(null);
     }
 }
