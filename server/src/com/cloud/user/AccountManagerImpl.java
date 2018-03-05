@@ -16,6 +16,28 @@
 // under the License.
 package com.cloud.user;
 
+import java.net.URLEncoder;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.crypto.KeyGenerator;
+import javax.crypto.Mac;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import javax.ejb.Local;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.configuration.Config;
@@ -128,6 +150,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -141,27 +164,6 @@ import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-
-import javax.crypto.KeyGenerator;
-import javax.crypto.Mac;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.URLEncoder;
-import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 @Local(value = {AccountManager.class, AccountService.class})
 public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
@@ -1662,29 +1664,106 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_DELETE, eventDescription = "deleting User")
     public boolean deleteUser(DeleteUserCmd deleteUserCmd) {
-        long id = deleteUserCmd.getId();
-
-        UserVO user = _userDao.findById(id);
-
-        if (user == null) {
-            throw new InvalidParameterValueException("The specified user doesn't exist in the system");
-        }
+        UserVO user = getValidUserVO(deleteUserCmd.getId());
 
         Account account = _accountDao.findById(user.getAccountId());
 
         // don't allow to delete the user from the account of type Project
+        checkAccountAndAccess(user, account);
+        return _userDao.remove(deleteUserCmd.getId());
+    }
+
+    @ActionEvent(eventType = EventTypes.EVENT_USER_MOVE, eventDescription = "moving User to a new account")
+    public boolean moveUser(final MoveUserCmd cmd) {
+        final UserVO user = getValidUserVO(cmd.getId());
+        Account oldAccount = _accountDao.findById(user.getAccountId());
+        checkAccountAndAccess(user, oldAccount);
+        long domainId = oldAccount.getDomainId();
+
+        final long newAccountId = getNewAccountId(domainId, cmd.getAccountName(), cmd.getAccountId());
+
+        return moveUser(user, newAccountId);
+    }
+
+    public boolean moveUser(long id, Long domainId, long accountId) {
+        UserVO user = getValidUserVO(id);
+        Account oldAccount = _accountDao.findById(user.getAccountId());
+        checkAccountAndAccess(user, oldAccount);
+        Account newAccount = _accountDao.findById(accountId);
+        checkIfNotMovingAcrossDomains(domainId, newAccount);
+        return moveUser(user , accountId);
+    }
+
+    private boolean moveUser(final UserVO user, final long newAccountId) {
+        if(newAccountId == user.getAccountId()) {
+            // could do a not silent fail but the objective of the user is reached
+            return true; // no need to create a new user object for this user
+        }
+
+        return Transaction.execute(new TransactionCallback<Boolean>() {
+            @Override
+            public Boolean doInTransaction(TransactionStatus status) {
+                UserVO newUser = new UserVO(user);
+                user.setExternalEntity(user.getUuid());
+                user.setUuid(UUID.randomUUID().toString());
+                _userDao.update(user.getId(),user);
+                newUser.setAccountId(newAccountId);
+                boolean success = _userDao.remove(user.getId());
+                UserVO persisted = _userDao.persist(newUser);
+                return success && persisted.getUuid().equals(user.getExternalEntity());
+            }
+        });
+    }
+
+    private long getNewAccountId(long domainId, String accountName, Long accountId) {
+        Account newAccount = null;
+        if (StringUtils.isNotBlank(accountName)) {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Getting id for account by name '" + accountName + "' in domain " + domainId);
+            }
+            newAccount = _accountDao.findEnabledAccount(accountName, domainId);
+        }
+        if (newAccount == null && accountId != null) {
+            newAccount = _accountDao.findById(accountId);
+        }
+        if (newAccount == null) {
+            throw new CloudRuntimeException("no account name or account id. this should have been caught before this point");
+        }
+
+        checkIfNotMovingAcrossDomains(domainId, newAccount);
+        return newAccount.getAccountId();
+    }
+
+    private void checkIfNotMovingAcrossDomains(long domainId, Account newAccount) {
+        if(newAccount.getDomainId() != domainId) {
+            // not in scope
+            throw new InvalidParameterValueException("moving a user from an account in one domain to an account in annother domain is not supported!");
+        }
+    }
+
+    private void checkAccountAndAccess(UserVO user, Account account) {
+        // don't allow to delete the user from the account of type Project
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("Project users cannot be deleted or moved.");
+        }
+
+        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
+        CallContext.current().putContextParameter(User.class, user.getUuid());
+    }
+
+    private UserVO getValidUserVO(long id) {
+        UserVO user = _userDao.findById(id);
+
+        if (user == null || user.getRemoved() != null) {
             throw new InvalidParameterValueException("The specified user doesn't exist in the system");
         }
 
         // don't allow to delete default user (system and admin users)
         if (user.isDefault()) {
-            throw new InvalidParameterValueException("The user is default and can't be removed");
+            throw new InvalidParameterValueException("The user is default and can't be (re)moved");
         }
 
-        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
-        CallContext.current().putContextParameter(User.class, user.getUuid());
-        return _userDao.remove(id);
+        return user;
     }
 
     protected class AccountCleanupTask extends ManagedContextRunnable {
@@ -2124,15 +2203,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             s_logger.debug("Attempting to log in user: " + username + " in domain " + domainId);
         }
         UserAccount userAccount = _userAccountDao.getUserAccount(username, domainId);
-        if (userAccount == null) {
-            s_logger.warn("Unable to find an user with username " + username + " in domain " + domainId);
-            return null;
-        }
 
         boolean authenticated = false;
         HashSet<ActionOnFailedAuthentication> actionsOnFailedAuthenticaion = new HashSet<ActionOnFailedAuthentication>();
-        User.Source userSource = userAccount.getSource();
+        User.Source userSource = userAccount != null ? userAccount.getSource() : User.Source.UNKNOWN;
         for (UserAuthenticator authenticator : _userAuthenticators) {
+            if(s_logger.isTraceEnabled()) {
+                s_logger.trace("authenticating '" + username + "' (source: '" + userSource + "') with authenticator " + authenticator.getName());
+            }
             if(userSource != User.Source.UNKNOWN) {
                 if(!authenticator.getName().equalsIgnoreCase(userSource.name())){
                     continue;
@@ -2156,6 +2234,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             if (domain != null) {
                 domainName = domain.getName();
             }
+            userAccount = _userAccountDao.getUserAccount(username, domainId);
 
             if (!userAccount.getState().equalsIgnoreCase(Account.State.enabled.toString()) ||
                 !userAccount.getAccountState().equalsIgnoreCase(Account.State.enabled.toString())) {

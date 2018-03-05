@@ -25,6 +25,7 @@ import javax.naming.ConfigurationException;
 
 import org.apache.log4j.Logger;
 
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -308,6 +309,16 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     @Override
     public boolean deleteUser(DeleteUserCmd arg0) {
         // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean moveUser(MoveUserCmd moveUserCmd) {
+        return false;
+    }
+
+    @Override
+    public boolean moveUser(long id, Long domainId, long accountId) {
         return false;
     }
 

@@ -82,8 +82,13 @@
     <cs.powermock.version>1.5.3</cs.powermock.version>
     <cs.aws.sdk.version>1.3.22</cs.aws.sdk.version>
     <cs.lang.version>2.6</cs.lang.version>
-    <cs.commons-io.version>2.5</cs.commons-io.version>
+    <cs.commons-lang3.version>3.6</cs.commons-lang3.version>
+    <cs.commons-io.version>2.6</cs.commons-io.version>
+    <cs.commons-fileupload.version>1.3.3</cs.commons-fileupload.version>
+    <cs.commons-collections.version>4.1</cs.commons-collections.version>
+    <cs.commons-validator.version>1.6</cs.commons-validator.version>
     <cs.reflections.version>0.9.8</cs.reflections.version>
+    <cs.javassist.version>3.22.0-GA</cs.javassist.version>
     <cs.java-ipv6.version>0.10</cs.java-ipv6.version>
     <cs.replace.properties>build/replace.properties</cs.replace.properties>
     <cs.libvirt-java.version>0.5.1</cs.libvirt-java.version>

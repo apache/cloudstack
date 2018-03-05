@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.ejb.Local;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -116,6 +117,16 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     @Override
     public boolean deleteUser(DeleteUserCmd deleteUserCmd) {
         // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean moveUser(MoveUserCmd moveUserCmd) {
+        return false;
+    }
+
+    @Override
+    public boolean moveUser(long id, Long domainId, long accountId) {
         return false;
     }
 

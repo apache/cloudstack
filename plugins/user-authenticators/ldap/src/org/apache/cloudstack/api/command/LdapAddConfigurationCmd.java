@@ -18,6 +18,8 @@ package org.apache.cloudstack.api.command;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -40,11 +42,14 @@ public class LdapAddConfigurationCmd extends BaseCmd {
     @Inject
     private LdapManager _ldapManager;
 
-    @Parameter(name = "hostname", type = CommandType.STRING, required = true, description = "Hostname")
+    @Parameter(name = ApiConstants.HOST_NAME, type = CommandType.STRING, required = true, description = "Hostname")
     private String hostname;
 
-    @Parameter(name = "port", type = CommandType.INTEGER, required = true, description = "Port")
+    @Parameter(name = ApiConstants.PORT, type = CommandType.INTEGER, required = true, description = "Port")
     private int port;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
+    private Long domainId;
 
     public LdapAddConfigurationCmd() {
         super();
@@ -58,7 +63,7 @@ public class LdapAddConfigurationCmd extends BaseCmd {
     @Override
     public void execute() throws ServerApiException {
         try {
-            final LdapConfigurationResponse response = _ldapManager.addConfiguration(hostname, port);
+            final LdapConfigurationResponse response = _ldapManager.addConfiguration(hostname, port, domainId);
             response.setObjectName("LdapAddConfiguration");
             response.setResponseName(getCommandName());
             setResponseObject(response);
@@ -84,6 +89,10 @@ public class LdapAddConfigurationCmd extends BaseCmd {
 
     public int getPort() {
         return port;
+    }
+
+    public Long getDomainId() {
+        return domainId;
     }
 
     public void setHostname(final String hostname) {

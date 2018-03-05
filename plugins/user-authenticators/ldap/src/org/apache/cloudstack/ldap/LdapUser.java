@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.ldap;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class LdapUser implements Comparable<LdapUser> {
     private final String email;
     private final String principal;
@@ -23,14 +26,19 @@ public class LdapUser implements Comparable<LdapUser> {
     private final String lastname;
     private final String username;
     private final String domain;
+    private final boolean disabled;
+    private List<String> memberships;
 
-    public LdapUser(final String username, final String email, final String firstname, final String lastname, final String principal, String domain) {
+    public LdapUser(final String username, final String email, final String firstname, final String lastname, final String principal, String domain, boolean disabled,
+            List<String> memberships) {
         this.username = username;
         this.email = email;
         this.firstname = firstname;
         this.lastname = lastname;
         this.principal = principal;
         this.domain = domain;
+        this.disabled = disabled;
+        this.memberships = memberships == null ? new ArrayList<String>() : memberships;
     }
 
     @Override
@@ -72,6 +80,14 @@ public class LdapUser implements Comparable<LdapUser> {
 
     public String getDomain() {
         return domain;
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public List<String> getMemberships() {
+        return memberships;
     }
 
     @Override

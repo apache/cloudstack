@@ -27,7 +27,7 @@ class LdapDeleteConfigurationCmdSpec extends spock.lang.Specification {
     def "Test failed response from execute"() {
 		given: "We have an LdapManager and LdapDeleteConfigurationCmd"
 		def ldapManager = Mock(LdapManager)
-        ldapManager.deleteConfiguration(_) >> { throw new InvalidParameterValueException() }
+        ldapManager.deleteConfiguration(_, 0, null) >> { throw new InvalidParameterValueException() }
         def ldapDeleteConfigurationCmd = new LdapDeleteConfigurationCmd(ldapManager)
 		when:"LdapDeleteConfigurationCmd is executed and no configuration exists"
         ldapDeleteConfigurationCmd.execute()
@@ -48,7 +48,7 @@ class LdapDeleteConfigurationCmdSpec extends spock.lang.Specification {
     def "Test successful response from execute"() {
 		given: "We have an LdapManager and LdapDeleteConfigurationCmd"
 		def ldapManager = Mock(LdapManager)
-		ldapManager.deleteConfiguration(_) >> new LdapConfigurationResponse("localhost")
+		ldapManager.deleteConfiguration(_, 0, null) >> new LdapConfigurationResponse("localhost")
 		def ldapDeleteConfigurationCmd = new LdapDeleteConfigurationCmd(ldapManager)
 		when: "LdapDeleteConfigurationCmd is executed"
 		ldapDeleteConfigurationCmd.execute()

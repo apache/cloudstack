@@ -528,3 +528,27 @@ CREATE TABLE IF NOT EXISTS `cloud`.`crl` (
   KEY (`serial`),
   UNIQUE KEY (`serial`, `cn`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ldap binding on domain level
+CREATE TABLE IF NOT EXISTS `cloud`.`domain_details` (
+    `id` bigint unsigned NOT NULL auto_increment,
+    `domain_id` bigint unsigned NOT NULL COMMENT 'account id',
+    `name` varchar(255) NOT NULL,
+    `value` varchar(255) NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_domain_details__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
+)ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE `cloud`.`ldap_trust_map` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `domain_id` bigint unsigned NOT NULL,
+  `type` varchar(10) NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `account_type` int(1) unsigned NOT NULL,
+  account_id BIGINT(20) DEFAULT 0,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_ldap_trust_map__bind_location` (`domain_id`, `account_id`),
+  CONSTRAINT `fk_ldap_trust_map__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE cloud.ldap_configuration ADD COLUMN domain_id BIGINT(20) DEFAULT NULL;

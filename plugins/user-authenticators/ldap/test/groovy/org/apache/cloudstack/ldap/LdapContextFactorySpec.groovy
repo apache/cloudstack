@@ -22,7 +22,6 @@ import spock.lang.Shared
 
 import javax.naming.NamingException
 import javax.naming.directory.SearchControls
-import javax.naming.ldap.LdapContext
 
 class LdapContextFactorySpec extends spock.lang.Specification {
     @Shared
@@ -41,7 +40,7 @@ class LdapContextFactorySpec extends spock.lang.Specification {
         ldapConfiguration = Mock(LdapConfiguration)
 
         ldapConfiguration.getFactory() >> "com.sun.jndi.ldap.LdapCtxFactory"
-        ldapConfiguration.getProviderUrl() >> "ldap://localhost:389"
+        ldapConfiguration.getProviderUrl(_) >> "ldap://localhost:389"
         ldapConfiguration.getAuthentication() >> "none"
         ldapConfiguration.getScope() >> SearchControls.SUBTREE_SCOPE
         ldapConfiguration.getReturnAttributes() >> ["uid", "mail", "cn"]
@@ -49,11 +48,11 @@ class LdapContextFactorySpec extends spock.lang.Specification {
         ldapConfiguration.getEmailAttribute() >> "mail"
         ldapConfiguration.getFirstnameAttribute() >> "givenname"
         ldapConfiguration.getLastnameAttribute() >> "sn"
-        ldapConfiguration.getBaseDn() >> "dc=cloudstack,dc=org"
+        ldapConfiguration.getBaseDn(_) >> "dc=cloudstack,dc=org"
 		ldapConfiguration.getSSLStatus() >> true
 		ldapConfiguration.getTrustStore() >> "/tmp/ldap.ts"
 		ldapConfiguration.getTrustStorePassword() >> "password"
-        ldapConfiguration.getReadTimeout() >> 1000
+        ldapConfiguration.getReadTimeout(_) >> 1000
         ldapConfiguration.getLdapPageSize() >> 1
 
         username = "rmurphy"
@@ -87,7 +86,7 @@ class LdapContextFactorySpec extends spock.lang.Specification {
         def result = ldapContextFactory.getEnvironment(null, null, null, true)
 
 		then: "The resulting values should be set"
-        result['java.naming.provider.url'] == ldapConfiguration.getProviderUrl()
+        result['java.naming.provider.url'] == ldapConfiguration.getProviderUrl(null)
         result['java.naming.factory.initial'] == ldapConfiguration.getFactory()
         result['java.naming.security.principal'] == null
         result['java.naming.security.authentication'] == ldapConfiguration.getAuthentication()
@@ -102,7 +101,7 @@ class LdapContextFactorySpec extends spock.lang.Specification {
 		def result = ldapContextFactory.getEnvironment(principal, password, null, false)
 
 		then: "The resulting values should be set"
-		result['java.naming.provider.url'] == ldapConfiguration.getProviderUrl()
+		result['java.naming.provider.url'] == ldapConfiguration.getProviderUrl(null)
 		result['java.naming.factory.initial'] == ldapConfiguration.getFactory()
 		result['java.naming.security.principal'] == principal
 		result['java.naming.security.authentication'] == "simple"

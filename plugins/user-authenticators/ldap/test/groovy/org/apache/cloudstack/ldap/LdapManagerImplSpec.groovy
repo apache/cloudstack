@@ -16,24 +16,17 @@
 // under the License.
 package groovy.org.apache.cloudstack.ldap
 
-import org.apache.cloudstack.api.command.LDAPConfigCmd
-import org.apache.cloudstack.api.command.LDAPRemoveCmd
-import org.apache.cloudstack.api.command.LdapAddConfigurationCmd
-import org.apache.cloudstack.api.command.LdapCreateAccountCmd
-import org.apache.cloudstack.api.command.LdapDeleteConfigurationCmd
-import org.apache.cloudstack.api.command.LdapImportUsersCmd
-import org.apache.cloudstack.api.command.LdapListUsersCmd
-import org.apache.cloudstack.api.command.LdapUserSearchCmd
+import com.cloud.exception.InvalidParameterValueException
+import com.cloud.utils.Pair
+import org.apache.cloudstack.api.command.LdapListConfigurationCmd
+import org.apache.cloudstack.api.response.LinkDomainToLdapResponse
+import org.apache.cloudstack.ldap.*
+import org.apache.cloudstack.ldap.dao.LdapConfigurationDaoImpl
+import org.apache.cloudstack.ldap.dao.LdapTrustMapDao
 
 import javax.naming.NamingException
 import javax.naming.ldap.InitialLdapContext
-
-import org.apache.cloudstack.api.command.LdapListConfigurationCmd
-import org.apache.cloudstack.ldap.*
-import org.apache.cloudstack.ldap.dao.LdapConfigurationDaoImpl
-
-import com.cloud.exception.InvalidParameterValueException
-import com.cloud.utils.Pair
+import javax.naming.ldap.LdapContext
 
 class LdapManagerImplSpec extends spock.lang.Specification {
     def "Test failing of getUser due to bind issue"() {
@@ -44,7 +37,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapContextFactory.createBindContext() >> { throw new NoLdapUserMatchingQueryException() }
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
         when: "We search for a user but there is a bind issue"
-        ldapManager.getUser("rmurphy")
+        ldapManager.getUser("rmurphy", null)
         then: "an exception is thrown"
         thrown NoLdapUserMatchingQueryException
     }
@@ -57,7 +50,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapContextFactory.createBindContext() >> { throw new NamingException() }
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
         when: "We search for a group of users but there is a bind issue"
-        ldapManager.getUsers()
+        ldapManager.getUsers(null)
         then: "An exception is thrown"
         thrown NoLdapUserMatchingQueryException
     }
@@ -96,7 +89,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
         when: "A ldap user response is generated"
         def result = ldapManager.createLdapUserResponse(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org",
-                "engineering"))
+                "engineering", false, null))
         then: "The result of the response should match the given ldap user"
         result.username == "rmurphy"
         result.email == "rmurphy@test.com"
@@ -113,11 +106,11 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapUserManager = Mock(LdapUserManager)
         ldapContextFactory.createBindContext() >> null
         List<LdapUser> users = new ArrayList<>();
-        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null))
+        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null))
         ldapUserManager.getUsers(_) >> users;
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
         when: "We search for a group of users"
-        def result = ldapManager.getUsers()
+        def result = ldapManager.getUsers(null)
         then: "A list greater than 0 is returned"
         result.size() > 0;
     }
@@ -128,10 +121,10 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapContextFactory = Mock(LdapContextFactory)
         def ldapUserManager = Mock(LdapUserManager)
         ldapContextFactory.createBindContext() >> null
-        ldapUserManager.getUser(_, _) >> new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null)
-        def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
+        ldapUserManager.getUser(_, _, _) >> new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null)
+        def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "We search for a user"
-        def result = ldapManager.getUser("rmurphy")
+        def result = ldapManager.getUser("rmurphy", null)
         then: "The user is returned"
         result.username == "rmurphy"
         result.email == "rmurphy@test.com"
@@ -159,10 +152,13 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapContextFactory = Mock(LdapContextFactory)
         ldapContextFactory.createUserContext(_, _) >> { throw new NamingException() }
         def ldapUserManager = Mock(LdapUserManager)
-        def ldapManager = Spy(LdapManagerImpl, constructorArgs: [ldapConfigurationDao, ldapContextFactory, ldapUserManager])
-        ldapManager.getUser(_) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null) }
+        def ldapUserManagerFactory = Mock(LdapUserManagerFactory)
+        ldapUserManagerFactory.getInstance(_) >> ldapUserManager
+        def ldapConfiguration = Mock(LdapConfiguration)
+        def ldapManager = Spy(LdapManagerImpl, constructorArgs: [ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration])
+        ldapManager.getUser(_, null) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null) }
         when: "The user attempts to authenticate with a bad password"
-        def result = ldapManager.canAuthenticate("rmurphy", "password")
+        def result = ldapManager.canAuthenticate("rmurphy", "password", null)
         then: "The authentication fails"
         result == false
     }
@@ -188,7 +184,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapConfigurationDao.findByHostname(_) >> null
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
         when: "A ldap configuration that doesn't exist is deleted"
-        ldapManager.deleteConfiguration("localhost")
+        ldapManager.deleteConfiguration("localhost", 0, null)
         then: "A exception is thrown"
         thrown InvalidParameterValueException
     }
@@ -213,10 +209,13 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapContextFactory = Mock(LdapContextFactory)
         ldapContextFactory.createUserContext(_, _) >> null
         def ldapUserManager = Mock(LdapUserManager)
-        def ldapManager = Spy(LdapManagerImpl, constructorArgs: [ldapConfigurationDao, ldapContextFactory, ldapUserManager])
-        ldapManager.getUser(_) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null) }
+        def ldapUserManagerFactory = Mock(LdapUserManagerFactory)
+        def ldapConfiguration = Mock(LdapConfiguration)
+        ldapUserManagerFactory.getInstance(_) >> ldapUserManager
+        def ldapManager = Spy(LdapManagerImpl, constructorArgs: [ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration])
+        ldapManager.getUser(_, null) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null) }
         when: "A user authenticates"
-        def result = ldapManager.canAuthenticate("rmurphy", "password")
+        def result = ldapManager.canAuthenticate("rmurphy", "password", null)
         then: "The result is true"
         result == true
     }
@@ -234,7 +233,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapConfigurationDao.remove(_) >> null
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
         when: "A ldap configuration is deleted"
-        def result = ldapManager.deleteConfiguration("localhost")
+        def result = ldapManager.deleteConfiguration("localhost", 0, null)
         then: "The deleted configuration is returned"
         result.hostname == "localhost"
         result.port == 389
@@ -248,7 +247,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapContextFactory.createBindContext() >> null;
 
         List<LdapUser> users = new ArrayList<LdapUser>();
-        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering"))
+        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false, null))
         ldapUserManager.getUsers(_, _) >> users;
 
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
@@ -368,12 +367,162 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapUserManager = Mock(LdapUserManager)
         ldapContextFactory.createBindContext() >> null
         List<LdapUser> users = new ArrayList<>();
-        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", "engineering"))
+        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", "engineering", false, null))
         ldapUserManager.getUsersInGroup("engineering", _) >> users;
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManager)
         when: "We search for a group of users"
-        def result = ldapManager.getUsersInGroup("engineering")
+        def result = ldapManager.getUsersInGroup("engineering", null)
         then: "A list greater of size one is returned"
         result.size() == 1;
+    }
+
+    def "test linkDomainToLdap invalid ldap group type"() {
+        def ldapManager = new LdapManagerImpl()
+        LdapTrustMapDao ldapTrustMapDao = Mock(LdapTrustMapDao)
+        ldapManager._ldapTrustMapDao = ldapTrustMapDao
+
+        def domainId = 1
+        when:
+            println("using type: " + type)
+            LinkDomainToLdapResponse response = ldapManager.linkDomainToLdap(domainId, type, "CN=test,DC=CCP,DC=Citrix,DC=Com", (short)2)
+        then:
+            thrown(IllegalArgumentException)
+        where:
+            type << ["", null, "TEST", "TEST TEST"]
+    }
+    def "test linkDomainToLdap invalid domain"() {
+        def ldapManager = new LdapManagerImpl()
+        LdapTrustMapDao ldapTrustMapDao = Mock(LdapTrustMapDao)
+        ldapManager._ldapTrustMapDao = ldapTrustMapDao
+
+        when:
+            LinkDomainToLdapResponse response = ldapManager.linkDomainToLdap(null, "GROUP", "CN=test,DC=CCP,DC=Citrix,DC=Com", (short)2)
+        then:
+            thrown(IllegalArgumentException)
+    }
+    def "test linkDomainToLdap invalid ldap name"() {
+        def ldapManager = new LdapManagerImpl()
+        LdapTrustMapDao ldapTrustMapDao = Mock(LdapTrustMapDao)
+        ldapManager._ldapTrustMapDao = ldapTrustMapDao
+
+        def domainId = 1
+        when:
+        println("using name: " + name)
+            LinkDomainToLdapResponse response = ldapManager.linkDomainToLdap(domainId, "GROUP", name, (short)2)
+        then:
+            thrown(IllegalArgumentException)
+        where:
+            name << ["", null]
+    }
+    def "test linkDomainToLdap invalid accountType"(){
+
+        def ldapManager = new LdapManagerImpl()
+        LdapTrustMapDao ldapTrustMapDao = Mock(LdapTrustMapDao)
+        ldapManager._ldapTrustMapDao = ldapTrustMapDao
+
+        def domainId = 1
+        when:
+            println("using accountType: " + accountType)
+            LinkDomainToLdapResponse response = ldapManager.linkDomainToLdap(domainId, "GROUP", "TEST", (short)accountType)
+        then:
+            thrown(IllegalArgumentException)
+        where:
+            accountType << [-1, 1, 3, 4, 5, 6, 20000, -500000]
+    }
+    def "test linkDomainToLdap when all is well"(){
+        def ldapManager = new LdapManagerImpl()
+        LdapTrustMapDao ldapTrustMapDao = Mock(LdapTrustMapDao)
+        ldapManager._ldapTrustMapDao = ldapTrustMapDao
+
+        def domainId=1
+        def type=LdapManager.LinkType.GROUP
+        def name="CN=test,DC=CCP, DC=citrix,DC=com"
+        short accountType=2
+
+        1 * ldapTrustMapDao.persist(new LdapTrustMapVO(domainId, type, name, accountType)) >> new LdapTrustMapVO(domainId, type, name, accountType)
+
+        when:
+            LinkDomainToLdapResponse response = ldapManager.linkDomainToLdap(domainId, type.toString(), name, accountType)
+        then:
+            response.getDomainId() == domainId
+            response.getType() == type.toString()
+            response.getName() == name
+            response.getAccountType() == accountType
+    }
+
+    def "test getUser(username,type,group) when username disabled in ldap"(){
+        def ldapUserManager = Mock(LdapUserManager)
+        def ldapUserManagerFactory = Mock(LdapUserManagerFactory)
+        ldapUserManagerFactory.getInstance(_) >> ldapUserManager
+        def ldapContextFactory = Mock(LdapContextFactory)
+        ldapContextFactory.createBindContext() >> Mock(LdapContext)
+        def ldapConfiguration = Mock(LdapConfiguration)
+
+        def ldapManager = new LdapManagerImpl()
+        ldapManager._ldapUserManagerFactory = ldapUserManagerFactory
+        ldapManager._ldapContextFactory = ldapContextFactory
+        ldapManager._ldapConfiguration = ldapConfiguration
+
+        def username = "admin"
+        def type = "GROUP"
+        def name = "CN=test,DC=citrix,DC=com"
+
+        ldapUserManager.getUser(username, type, name, _) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", true, null)
+
+        when:
+            LdapUser user = ldapManager.getUser(username, type, name)
+        then:
+            user.getUsername() == username
+            user.isDisabled() == true
+    }
+
+    def "test getUser(username,type,group) when username doesnt exist in ldap"(){
+        def ldapUserManager = Mock(LdapUserManager)
+        def ldapUserManagerFactory = Mock(LdapUserManagerFactory)
+        ldapUserManagerFactory.getInstance(_) >> ldapUserManager
+        def ldapContextFactory = Mock(LdapContextFactory)
+        ldapContextFactory.createBindContext() >> Mock(LdapContext)
+        def ldapConfiguration = Mock(LdapConfiguration)
+
+        def ldapManager = new LdapManagerImpl()
+        ldapManager._ldapUserManagerFactory = ldapUserManagerFactory
+        ldapManager._ldapContextFactory = ldapContextFactory
+        ldapManager._ldapConfiguration = ldapConfiguration
+
+        def username = "admin"
+        def type = "GROUP"
+        def name = "CN=test,DC=citrix,DC=com"
+
+        ldapUserManager.getUser(username, type, name, _) >> { throw new NamingException("Test naming exception") }
+
+        when:
+            LdapUser user = ldapManager.getUser(username, type, name)
+        then:
+            thrown(NoLdapUserMatchingQueryException)
+    }
+    def "test getUser(username,type,group) when username is an active member of the group in ldap"(){
+        def ldapUserManager = Mock(LdapUserManager)
+        def ldapUserManagerFactory = Mock(LdapUserManagerFactory)
+        ldapUserManagerFactory.getInstance(_) >> ldapUserManager
+        def ldapContextFactory = Mock(LdapContextFactory)
+        ldapContextFactory.createBindContext() >> Mock(LdapContext)
+        def ldapConfiguration = Mock(LdapConfiguration)
+
+        def ldapManager = new LdapManagerImpl()
+        ldapManager._ldapUserManagerFactory = ldapUserManagerFactory
+        ldapManager._ldapContextFactory = ldapContextFactory
+        ldapManager._ldapConfiguration = ldapConfiguration
+
+        def username = "admin"
+        def type = "GROUP"
+        def name = "CN=test,DC=citrix,DC=com"
+
+        ldapUserManager.getUser(username, type, name, _) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false, null)
+
+        when:
+        LdapUser user = ldapManager.getUser(username, type, name)
+        then:
+        user.getUsername() == username
+        user.isDisabled() == false
     }
 }
