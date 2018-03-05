@@ -1325,7 +1325,7 @@
 
                                                     if(items){
                                                         items.sort(function(a, b) {
-                                                            return a.number >= b.number;
+                                                            return a.number - b.number;
                                                         }).map(function(acl) {
                                                             if (parseInt(acl.protocol)) { // protocol number
                                                                 acl.protocolnumber = acl.protocol;
