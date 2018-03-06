@@ -1334,7 +1334,7 @@
                                                 url: createURL('listNetworkACLs&aclid=' + args.context.aclLists[0].id),
                                                 success: function(json) {
                                                     var items = json.listnetworkaclsresponse.networkacl.sort(function(a, b) {
-                                                        return a.number >= b.number;
+                                                        return a.number - b.number;
                                                     }).map(function(acl) {
                                                         if (parseInt(acl.protocol)) { // protocol number
                                                             acl.protocolnumber = acl.protocol;
