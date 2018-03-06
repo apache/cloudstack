@@ -304,7 +304,7 @@ class nuageTestCase(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         # Cleanup resources used
-        cls.debug("Cleaning up the resources")
+        cls.debug("Cleaning up the class resources")
         for obj in reversed(cls._cleanup):
             try:
                 if isinstance(obj, VirtualMachine):
@@ -315,12 +315,12 @@ class nuageTestCase(cloudstackTestCase):
                 cls.error("Failed to cleanup %s, got %s" % (obj, e))
         # cleanup_resources(cls.api_client, cls._cleanup)
         cls._cleanup = []
-        cls.debug("Cleanup complete!")
+        cls.debug("Cleanup class complete!")
         return
 
     def tearDown(self):
         # Cleanup resources used
-        self.debug("Cleaning up the resources")
+        self.debug("Cleaning up the test resources")
         for obj in reversed(self.cleanup):
             try:
                 if isinstance(obj, VirtualMachine):
@@ -333,7 +333,7 @@ class nuageTestCase(cloudstackTestCase):
                 self.error("Failed to cleanup %s, got %s" % (obj, e))
         # cleanup_resources(self.api_client, self.cleanup)
         self.cleanup = []
-        self.debug("Cleanup complete!")
+        self.debug("Cleanup test complete!")
         return
 
     def enable_NuageUnderlayPublicIpRange(self, vlanid):
