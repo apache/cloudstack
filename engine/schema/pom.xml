@@ -48,5 +48,10 @@
       <artifactId>cloud-framework-db</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <dependency>
+      <groupId>org.flywaydb</groupId>
+      <artifactId>flyway-core</artifactId>
+      <version>5.0.7</version>
+    </dependency>
   </dependencies>
 </project>
