@@ -43,11 +43,7 @@ class TestPrimaryStorageServices(cloudstackTestCase):
         self.pod = get_pod(self.apiclient, self.zone.id)
         self.hypervisor = self.testClient.getHypervisorInfo()
         self.domain = get_domain(self.apiclient)
-        self.template = get_template(
-            self.apiclient ,
-            self.zone.id ,
-            self.services["ostype"]
-        )
+        self.template = get_template(self.apiclient, self.zone.id, self.services["ostype"])
 
         return
 
@@ -383,11 +379,7 @@ class TestStorageTags(cloudstackTestCase):
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.domain = get_domain(cls.apiclient)
-        cls.template = get_template(
-            cls.apiclient,
-            cls.zone.id,
-            cls.services["ostype"]
-        )
+        cls.template = get_template(cls.apiclient, cls.zone.id, cls.services["ostype"])
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
         cls.services["storage_tags"] = StorageTagsServices().storage_tags
@@ -477,17 +469,18 @@ class TestStorageTags(cloudstackTestCase):
         try:
             # First expunge vm, so PS can be cleaned up
             cls.virtual_machine_1.delete(cls.apiclient)
+            time.sleep(60)
 
             # Force delete primary storage
             cmd = enableStorageMaintenance.enableStorageMaintenanceCmd()
             cmd.id = cls.storage_pool_1.id
             cls.apiclient.enableStorageMaintenance(cmd)
-            time.sleep(30)
+            time.sleep(45)
             cmd = deleteStoragePool.deleteStoragePoolCmd()
             cmd.id = cls.storage_pool_1.id
             cmd.forced = True
             cls.apiclient.deleteStoragePool(cmd)
-
+            time.sleep(30)
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Cleanup failed with %s" % e)
@@ -660,12 +653,23 @@ class TestStorageTags(cloudstackTestCase):
         if self.hypervisor.lower() not in ["vmware", "xenserver"]:
             self.virtual_machine_1.stop(self.apiclient)
 
+        volumePool = StoragePool.list(
+            self.apiclient,
+            id=vol.storageid
+        )
+        self.debug("Volume %s is on storage: %s" % (vol.id, volumePool))
+        allStoragePools = StoragePool.list(
+            self.apiclient
+        )
+        self.debug("All storage pools in the system: %s" % (allStoragePools))
         # Check migration options for volume
         pools_response = StoragePool.listForMigration(
             self.apiclient,
             id=vol.id
         )
         pools_suitable = filter(lambda p : p.suitableformigration, pools_response)
+        
+        self.debug("Suitable storage pools found: %s" % len(pools_suitable))
         self.assertEquals(1, len(pools_suitable), "Check that there is only one item on the list")
         self.assertEquals(pools_suitable[0].id, storage_pool_2.id, "Check that PS-2 is the migration option for volume")
         
@@ -682,6 +686,8 @@ class TestStorageTags(cloudstackTestCase):
             id=vol.id
         )
         pools_suitable = filter(lambda p : p.suitableformigration, pools_response)
+        
+        self.debug("Suitable storage pools found: %s" % len(pools_suitable))
         self.assertEquals(0, len(pools_suitable), "Check that there is no migration option for volume")
         
         return

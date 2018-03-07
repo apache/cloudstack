@@ -48,11 +48,6 @@ public class ClusterScopeStoragePoolAllocator extends AbstractStoragePoolAllocat
     protected List<StoragePool> select(DiskProfile dskCh, VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid, int returnUpTo) {
         s_logger.debug("ClusterScopeStoragePoolAllocator looking for storage pool");
 
-        if (dskCh.useLocalStorage()) {
-            // cluster wide allocator should bail out in case of local disk
-            return null;
-        }
-
         List<StoragePool> suitablePools = new ArrayList<StoragePool>();
 
         long dcId = plan.getDataCenterId();
