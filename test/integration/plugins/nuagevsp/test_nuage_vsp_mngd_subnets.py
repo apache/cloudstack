@@ -200,7 +200,6 @@ class TestNuageManagedSubnets(nuageTestCase):
         zone1 = self.create_vsd_zone(domain1, "ZoneToBeConsumedByACS")
         subnet1 = self.create_vsd_subnet(zone1, "SubnetToBeConsumedByACS",
                                          "10.0.0.1/24")
-        self.create_vsd_dhcp_option(subnet1, 15, ["nuagenetworks1.net"])
 
         domain2 = self.create_vsd_domain(domain_template, enterprise,
                                          "2ndL3DomainToBeConsumedByACS")
@@ -220,13 +219,13 @@ class TestNuageManagedSubnets(nuageTestCase):
             isolated_network = self.create_Network(
                     self.nuage_isolated_network_offering,
                     gateway="10.0.0.1", netmask="255.255.255.0",
-                    externalid=subnet1.id)
+                    externalid=subnet1.id, cleanup=False)
 
             # On ACS create network using persistent nw offering allow
             isolated_network2 = self.create_Network(
                     self.nuage_isolated_network_offering_persistent,
                     gateway="10.5.0.1", netmask="255.255.255.0",
-                    externalid=subnet2.id)
+                    externalid=subnet2.id, cleanup=False)
 
             with self.assertRaises(Exception):
                 self.create_Network(
@@ -248,11 +247,11 @@ class TestNuageManagedSubnets(nuageTestCase):
                         externalid=subnet2.id+1)
 
             # verify floating ip and intra subnet connectivity
-            vm_1 = self.create_VM(isolated_network)
+            vm_1 = self.create_VM(isolated_network, cleanup=False)
 
             self.test_data["virtual_machine"]["displayname"] = "vm2"
             self.test_data["virtual_machine"]["name"] = "vm2"
-            vm_2 = self.create_VM(isolated_network)
+            vm_2 = self.create_VM(isolated_network, cleanup=False)
             self.test_data["virtual_machine"]["displayname"] = None
             self.test_data["virtual_machine"]["name"] = None
 
@@ -271,10 +270,10 @@ class TestNuageManagedSubnets(nuageTestCase):
                                      self.test_data["ingress_rule"])
             self.verify_ping_to_vm(vm_1, vm_2, public_ip, "vm2")
 
-            vm_3 = self.create_VM(isolated_network2)
+            vm_3 = self.create_VM(isolated_network2, cleanup=False)
             self.test_data["virtual_machine"]["displayname"] = "vm4"
             self.test_data["virtual_machine"]["name"] = "vm4"
-            vm_4 = self.create_VM(isolated_network2)
+            vm_4 = self.create_VM(isolated_network2, cleanup=False)
             self.test_data["virtual_machine"]["displayname"] = None
             self.test_data["virtual_machine"]["name"] = None
             self.verify_vsd_network_not_present(isolated_network2)
@@ -292,6 +291,13 @@ class TestNuageManagedSubnets(nuageTestCase):
                                      self.test_data["ingress_rule"])
 
             self.verify_ping_to_vm(vm_3, vm_4, public_ip2)
+            vm_4.delete(self.api_client, expunge=True)
+            vm_3.delete(self.api_client, expunge=True)
+            vm_2.delete(self.api_client, expunge=True)
+            vm_1.delete(self.api_client, expunge=True)
+            isolated_network2.delete(self.api_client)
+            isolated_network.delete(self.api_client)
+            self.debug("Number of loops %s" % i)
 
     @attr(tags=["advanced", "nuagevsp", "vpc"], required_hardware="false")
     def test_02_nuage_mngd_subnets_vpc(self):
@@ -389,7 +395,8 @@ class TestNuageManagedSubnets(nuageTestCase):
                                            gateway='10.1.0.1',
                                            vpc=vpc,
                                            acl_list=acl_list,
-                                           externalid=subnet1.id)
+                                           externalid=subnet1.id,
+                                           cleanup=False)
             self.validate_Network(vpc_tier, state="Implemented")
             self.debug("Creating 2nd VPC tier network with Static NAT service")
 
@@ -405,7 +412,8 @@ class TestNuageManagedSubnets(nuageTestCase):
                                               gateway='10.1.128.1',
                                               vpc=vpc,
                                               acl_list=acl_list,
-                                              externalid=subnet2.id)
+                                              externalid=subnet2.id,
+                                              cleanup=False)
             self.validate_Network(vpc_2ndtier, state="Implemented")
             vpc_vr = self.get_Router(vpc_tier)
             self.check_Router_state(vpc_vr, state="Running")
@@ -461,17 +469,17 @@ class TestNuageManagedSubnets(nuageTestCase):
             self.debug("Deploying a VM in the created VPC tier network")
             self.test_data["virtual_machine"]["displayname"] = "vpcvm1"
             self.test_data["virtual_machine"]["name"] = "vpcvm1"
-            vpc_vm_1 = self.create_VM(vpc_tier)
+            vpc_vm_1 = self.create_VM(vpc_tier, cleanup=False)
             self.check_VM_state(vpc_vm_1, state="Running")
             self.debug("Deploying another VM in the created VPC tier network")
             self.test_data["virtual_machine"]["displayname"] = "vpcvm2"
             self.test_data["virtual_machine"]["name"] = "vpcvm2"
-            vpc_vm_2 = self.create_VM(vpc_tier)
+            vpc_vm_2 = self.create_VM(vpc_tier, cleanup=False)
             self.check_VM_state(vpc_vm_2, state="Running")
             self.debug("Deploying a VM in the 2nd VPC tier network")
             self.test_data["virtual_machine"]["displayname"] = "vpcvm12"
             self.test_data["virtual_machine"]["name"] = "vpcvm12"
-            vpc_vm_12 = self.create_VM(vpc_2ndtier)
+            vpc_vm_12 = self.create_VM(vpc_2ndtier, cleanup=False)
             self.check_VM_state(vpc_vm_2, state="Running")
             self.test_data["virtual_machine"]["displayname"] = None
             self.test_data["virtual_machine"]["name"] = None
