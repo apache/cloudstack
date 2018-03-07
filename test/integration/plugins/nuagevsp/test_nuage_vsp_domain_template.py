@@ -453,6 +453,8 @@ class TestNuageDomainTemplate(nuageTestCase):
                    "(tier) network gets created on CloudStack as the "
                    "associated pre-configured Nuage VSP domain template is no "
                    "longer existing in VSD")
+        for vpc_2_tier in Network.list(self.api_client, vpcid=vpc_2.id):
+            Network(vpc_2_tier.__dict__).delete(self.api_client)
 
         # Re-creating the associated pre-configured Nuage VSP domain template
         new_domain_template = self.vsdk.NUDomainTemplate(
@@ -504,6 +506,8 @@ class TestNuageDomainTemplate(nuageTestCase):
                    "Network ACLs from CloudStack is not supported when the "
                    "VPC is associated with a Nuage VSP pre-configured domain "
                    "template")
+        for vpc_3_tier in Network.list(self.api_client, vpcid=vpc_3.id):
+            Network(vpc_3_tier.__dict__).delete(self.api_client)
 
         vpc_3_tier_1 = self.create_Network(
             self.network_offering, gateway='10.1.2.1', vpc=vpc_3)
