@@ -26,7 +26,8 @@ import javax.inject.Inject;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.maint.Version;
+import org.apache.cloudstack.utils.CloudStackVersion;
+
 import com.cloud.upgrade.dao.VersionDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.ComponentLifecycle;
@@ -210,7 +211,7 @@ public class DatabaseIntegrityChecker extends AdapterBase implements SystemInteg
                     return false;
                 }
 
-                if (Version.compare(Version.trimToPatch(dbVersion), Version.trimToPatch("2.2.8")) != 0) {
+                if (CloudStackVersion.compare(dbVersion, "2.2.8") != 0) {
                     txn.commit();
                     return true;
                 }
