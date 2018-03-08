@@ -26,6 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -53,6 +55,8 @@ import com.cloud.agent.api.CreateVolumeFromSnapshotCommand;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.GetStorageStatsAnswer;
 import com.cloud.agent.api.GetStorageStatsCommand;
+import com.cloud.agent.api.GetVolumeStatsAnswer;
+import com.cloud.agent.api.GetVolumeStatsCommand;
 import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
@@ -62,6 +66,7 @@ import com.cloud.agent.api.SecStorageSetupAnswer;
 import com.cloud.agent.api.SecStorageSetupCommand;
 import com.cloud.agent.api.SecStorageVMSetupCommand;
 import com.cloud.agent.api.StoragePoolInfo;
+import com.cloud.agent.api.VolumeStatsEntry;
 import com.cloud.agent.api.storage.CopyVolumeAnswer;
 import com.cloud.agent.api.storage.CopyVolumeCommand;
 import com.cloud.agent.api.storage.CreateAnswer;
@@ -578,6 +583,37 @@ public class MockStorageManagerImpl extends ManagerBase implements MockStorageMa
             txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
             txn.close();
         }
+    }
+
+    @Override
+    public GetVolumeStatsAnswer getVolumeStats(final GetVolumeStatsCommand cmd) {
+        HashMap<String, VolumeStatsEntry> volumeStats =
+                cmd.getVolumeUuids()
+                .stream()
+                .collect(Collectors.toMap(Function.identity(),
+                                          this::getVolumeStat,
+                                          (v1, v2) -> v1, HashMap::new));
+
+        return new GetVolumeStatsAnswer(cmd, "", volumeStats);
+    }
+
+    private VolumeStatsEntry getVolumeStat(final String volumeUuid)  {
+        TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
+
+        try {
+            txn.start();
+            MockVolumeVO volume  = _mockVolumeDao.findByUuid(volumeUuid);
+            txn.commit();
+            return new VolumeStatsEntry(volumeUuid, volume.getSize(), volume.getSize());
+        } catch (Exception ex) {
+            txn.rollback();
+            throw new CloudRuntimeException("Error when finding volume " + volumeUuid, ex);
+        } finally {
+            txn.close();
+            txn = TransactionLegacy.open(TransactionLegacy.CLOUD_DB);
+            txn.close();
+        }
+
     }
 
     @Override
