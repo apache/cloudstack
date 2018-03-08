@@ -51,7 +51,7 @@
     <dependency>
       <groupId>org.flywaydb</groupId>
       <artifactId>flyway-core</artifactId>
-      <version>5.0.7</version>
+      <version>${cs.flyway.version}</version>
     </dependency>
   </dependencies>
 </project>

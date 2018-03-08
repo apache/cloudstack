@@ -122,6 +122,7 @@
     <cs.nitro.version>10.1</cs.nitro.version>
     <cs.wiremock.version>2.11.0</cs.wiremock.version>
     <cs.jetty.version>9.4.8.v20171121</cs.jetty.version>
+    <cs.flyway.version>5.0.7</cs.flyway.version>
     <cs.jetty-maven-plugin.version>9.2.22.v20170606</cs.jetty-maven-plugin.version>
   </properties>
 
