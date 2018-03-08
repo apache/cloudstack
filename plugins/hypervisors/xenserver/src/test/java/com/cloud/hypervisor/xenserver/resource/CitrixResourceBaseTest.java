@@ -16,23 +16,59 @@
 package com.cloud.hypervisor.xenserver.resource;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 
+import org.apache.xmlrpc.XmlRpcException;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.Spy;
 import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.utils.script.Script;
+import com.xensource.xenapi.Connection;
+import com.xensource.xenapi.Host;
+import com.xensource.xenapi.Host.Record;
+import com.xensource.xenapi.Types.XenAPIException;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Host.class, Script.class})
 public class CitrixResourceBaseTest {
 
+    @Spy
     protected CitrixResourceBase citrixResourceBase = new CitrixResourceBase() {
         @Override
         protected String getPatchFilePath() {
             return null;
         }
     };
+
+    @Mock
+    private Connection connectionMock;
+    @Mock
+    private Host hostMock;
+    @Mock
+    private Record hostRecordMock;
+
+    private String hostUuidMock = "hostUuidMock";
+
+    @Before
+    public void beforeTest() throws XenAPIException, XmlRpcException {
+        citrixResourceBase._host.setUuid(hostUuidMock);
+
+        PowerMockito.mockStatic(Host.class);
+        PowerMockito.when(Host.getByUuid(connectionMock, hostUuidMock)).thenReturn(hostMock);
+
+        hostRecordMock.softwareVersion = new HashMap<>();
+        Mockito.when(hostMock.getRecord(connectionMock)).thenReturn(hostRecordMock);
+
+    }
 
     public void testGetPathFilesExeption() {
         String patch = citrixResourceBase.getPatchFilePath();
@@ -91,5 +127,45 @@ public class CitrixResourceBaseTest {
 
         String guestOsType = citrixResourceBase.getGuestOsType(platformEmulator);
         Assert.assertEquals(platformEmulator, guestOsType);
+    }
+
+    @Test
+    public void actualIsoTemplateTestXcpHots() throws XenAPIException, XmlRpcException {
+        hostRecordMock.softwareVersion.put("product_brand", "XCP");
+        hostRecordMock.softwareVersion.put("product_version", "1.0");
+
+        String returnedIsoTemplateName = citrixResourceBase.getActualIsoTemplate(connectionMock);
+
+        Assert.assertEquals("xs-tools.iso", returnedIsoTemplateName);
+    }
+
+    @Test
+    public void actualIsoTemplateTestXenServerBefore70() throws XenAPIException, XmlRpcException {
+        hostRecordMock.softwareVersion.put("product_brand", "XenServer");
+        hostRecordMock.softwareVersion.put("product_version", "6.0");
+
+        String returnedIsoTemplateName = citrixResourceBase.getActualIsoTemplate(connectionMock);
+
+        Assert.assertEquals("xs-tools.iso", returnedIsoTemplateName);
+    }
+
+    @Test
+    public void actualIsoTemplateTestXenServer70() throws XenAPIException, XmlRpcException {
+        hostRecordMock.softwareVersion.put("product_brand", "XenServer");
+        hostRecordMock.softwareVersion.put("product_version", "7.0");
+
+        String returnedIsoTemplateName = citrixResourceBase.getActualIsoTemplate(connectionMock);
+
+        Assert.assertEquals("guest-tools.iso", returnedIsoTemplateName);
+    }
+
+    @Test
+    public void actualIsoTemplateTestXenServer71() throws XenAPIException, XmlRpcException {
+        hostRecordMock.softwareVersion.put("product_brand", "XenServer");
+        hostRecordMock.softwareVersion.put("product_version", "7.1");
+
+        String returnedIsoTemplateName = citrixResourceBase.getActualIsoTemplate(connectionMock);
+
+        Assert.assertEquals("guest-tools.iso", returnedIsoTemplateName);
     }
 }
