@@ -388,7 +388,7 @@ class CsIP:
             self.fw.append(["mangle", "",
                             "-A VPN_%s -j RETURN" % self.address['public_ip']])
             self.fw.append(["nat", "",
-                            "-A POSTROUTING -o eth2 -j SNAT --to-source %s" % self.address['public_ip']])
+                            "-A POSTROUTING -o %s -j SNAT --to-source %s" % (self.dev, self.cl.get_eth2_ip())])
             self.fw.append(["mangle", "",
                             "-A PREROUTING -i %s -m state --state NEW " % self.dev +
                             "-j CONNMARK --set-xmark %s/0xffffffff" % self.dnum])
