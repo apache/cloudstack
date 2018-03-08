@@ -34,8 +34,12 @@ Usage:
 END
   exit 0
 }
-echo $@ | grep help >/dev/null && usage
-echo $@ | grep '\-h' >/dev/null && usage
+
+for i in $@; do
+    if [ "$i" == "-h" -o "$i" == "--help" -o "$i" == "help" ]; then
+        usage
+    fi
+done
 
 # requires 32-bit vhd-util and faketime binaries to be available (even for 64 bit builds)
 # Something like (on centos 6.5)...
@@ -194,8 +198,10 @@ function create_definition() {
     cp -r "${appliance}" "${appliance_build_name}"
     set +e
     if [ ! -z "${version}" ]; then
-    sed ${sed_regex_option} -i -e "s/^CLOUDSTACK_RELEASE=.+/CLOUDSTACK_RELEASE=${version}/" \
-        "${appliance_build_name}/configure_systemvm_services.sh"
+    if [ -f "${appliance_build_name}/scripts/configure_systemvm_services.sh" ]; then
+        sed ${sed_regex_option} -i -e "s/^CLOUDSTACK_RELEASE=.+/CLOUDSTACK_RELEASE=${version}/" \
+            "${appliance_build_name}/scripts/configure_systemvm_services.sh"
+        fi
     fi
     set -e
     add_on_exit rm -rf "${appliance_build_name}"
@@ -215,7 +221,7 @@ function packer_build() {
   cd ${appliance_build_name} && packer build template.json && cd ..
 }
 
-function stage_vmx (){
+function stage_vmx() {
   cat << VMXFILE > "${1}.vmx"
 .encoding = "UTF-8"
 displayname = "${1}"

@@ -40,17 +40,103 @@
 # docker run -ti -v /tmp:/src ubuntu:14.04 /bin/bash -c "apt-get update && apt-get install -y dpkg-dev python debhelper openjdk-8-jdk genisoimage python-mysql.connector maven lsb-release devscripts dh-systemd python-setuptools && /src/cloudstack/packaging/build-deb.sh"
 #
 
-cd `dirname $0`
-cd ..
+function usage() {
+    cat << USAGE
+Usage: ./build-deb.sh [OPTIONS]...
+Package CloudStack for Debian based distribution.
+
+If there's a "branding" string in the POM version (e.g. x.y.z.a-NAME[-SNAPSHOT]), the branding name will
+be used in the final generated pacakge like: cloudstack-management_x.y.z.a-NAME-SNAPSHOT~xenial_all.deb
+note that you can override/provide "branding" string with "-b, --brand" flag as well.
+
+Optional arguments:
+   -b, --brand string                      Set branding to be used in package name (it will override any branding string in POM version)
+   -T, --use-timestamp                     Use epoch timestamp instead of SNAPSHOT in the package name (if not provided, use "SNAPSHOT")
+
+Other arguments:
+   -h, --help                              Display this help message and exit
+
+Examples:
+   build-deb.sh --use-timestamp
+   build-deb.sh --brand foo
+
+USAGE
+    exit 0
+}
+
+BRANDING=""
+USE_TIMESTAMP="false"
+
+while [ -n "$1" ]; do
+    case "$1" in
+        -h | --help)
+            usage
+            ;;
+
+        -b | --brand)
+            if [ -n "$BRANDING" ]; then
+                echo "ERROR: you have already entered value for -b, --brand"
+                exit 1
+            else
+                BRANDING=$2
+                shift 2
+            fi
+            ;;
+
+        -T | --use-timestamp)
+            if [ "$USE_TIMESTAMP" == "true" ]; then
+                echo "ERROR: you have already entered value for -T, --use-timestamp"
+                exit 1
+            else
+                USE_TIMESTAMP="true"
+                shift 1
+            fi
+            ;;
+
+        -*|*)
+            echo "ERROR: no such option $1. -h or --help for help"
+            exit 1
+            ;;
+    esac
+done
 
 DCH=$(which dch)
 if [ -z "$DCH" ] ; then
     echo -e "dch not found, please install devscripts at first. \nDEB Build Failed"
-    exit
+    exit 1
 fi
+
+NOW="$(date +%s)"
+PWD=$(cd $(dirname "$0") && pwd -P)
+cd $PWD/../
 
 VERSION=$(head -n1 debian/changelog  |awk -F [\(\)] '{print $2}')
 DISTCODE=$(lsb_release -sc)
+
+if [ "$USE_TIMESTAMP" == "true" ]; then
+    # use timestamp instead of SNAPSHOT
+    if echo "$VERSION" | grep -q SNAPSHOT ; then
+        # apply/override branding, if provided
+        if [ "$BRANDING" != "" ]; then
+            VERSION=$(echo "$VERSION" | cut -d '-' -f 1) # remove any existing branding from POM version to be overriden
+            VERSION="$VERSION-$BRANDING-$NOW"
+        else
+            VERSION=`echo $VERSION | sed 's/-SNAPSHOT/-'$NOW'/g'`
+        fi
+
+        branch=$(cd $PWD; git rev-parse --abbrev-ref HEAD)
+        (cd $PWD; ./tools/build/setnextversion.sh --version $VERSION --sourcedir . --branch $branch --no-commit)
+    fi
+else
+    # apply/override branding, if provided
+    if [ "$BRANDING" != "" ]; then
+        VERSION=$(echo "$VERSION" | cut -d '-' -f 1) # remove any existing branding from POM version to be overriden
+        VERSION="$VERSION-$BRANDING"
+
+        branch=$(cd $PWD; git rev-parse --abbrev-ref HEAD)
+        (cd $PWD; ./tools/build/setnextversion.sh --version $VERSION --sourcedir . --branch $branch --no-commit)
+    fi
+fi
 
 /bin/cp debian/changelog /tmp/changelog.orig
 
@@ -61,3 +147,5 @@ dpkg-checkbuilddeps
 dpkg-buildpackage -uc -us -b
 
 /bin/mv /tmp/changelog.orig debian/changelog
+
+(cd $PWD; git reset --hard)

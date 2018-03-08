@@ -17,48 +17,68 @@
 # under the License.
 
 function usage() {
-    echo ""
-    echo "usage: ./package.sh [-h|--help] -d|--distribution <name> [-r|--release <version>] [-p|--pack oss|OSS|noredist|NOREDIST] [-s|--simulator default|DEFAULT|simulator|SIMULATOR]"
-    echo ""
-    echo "The supported arguments are:"
-    echo "  To package with only redistributable libraries (default)"
-    echo "    -p|--pack oss|OSS"
-    echo "  To package with non-redistributable libraries"
-    echo "    -p|--pack noredist|NOREDIST"
-    echo "  To build a package for a distribution (mandatory)"
-    echo "    -d|--distribution centos7|centos63|fedora20|fedora21"
-    echo "  To set the package release version (optional)"
-    echo "  (default is 1 for normal and prereleases, empty for SNAPSHOT)"
-    echo "    -r|--release version(integer)"
-    echo "  To build for Simulator (optional)"
-    echo "    -s|--simulator default|DEFAULT|simulator|SIMULATOR"
-    echo "  To display this information"
-    echo "    -h|--help"
-    echo ""
-    echo "Examples: ./package.sh --pack oss"
-    echo "          ./package.sh --pack noredist"
-    echo "          ./package.sh --pack oss --distribution centos7 --release 42"
-    echo "          ./package.sh --distribution centos7 --release 42"
-    echo "          ./package.sh --distribution centos7"
+    cat << USAGE
+Usage: ./package.sh -d DISTRO [OPTIONS]...
+Package CloudStack for specific distribution and provided options.
+
+If there's a "branding" string in the POM version (e.g. x.y.z.a-NAME[-SNAPSHOT]), the branding name will
+be used in the final generated pacakge like: cloudstack-management-x.y.z.a-NAME.NUMBER.el7.centos.x86_64
+note that you can override/provide "branding" string with "-b, --brand" flag as well.
+
+Mandatory arguments:
+   -d, --distribution string               Build package for specified distribution ("centos7"|"centos63")
+
+Optional arguments:
+   -p, --pack string                       Define which type of libraries to package ("oss"|"OSS"|"noredist"|"NOREDIST") (default "oss")
+                                             - oss|OSS to package with only redistributable libraries
+                                             - noredist|NOREDIST to package with non-redistributable libraries
+   -r, --release integer                   Set the package release version (default is 1 for normal and prereleases, empty for SNAPSHOT)
+   -s, --simulator string                  Build package for Simulator ("default"|"DEFAULT"|"simulator"|"SIMULATOR") (default "default")
+   -b, --brand string                      Set branding to be used in package name (it will override any branding string in POM version)
+   -T, --use-timestamp                     Use epoch timestamp instead of SNAPSHOT in the package name (if not provided, use "SNAPSHOT")
+
+Other arguments:
+   -h, --help                              Display this help message and exit
+
+Examples:
+   package.sh --distribution centos7
+   package.sh --distribution centos7 --pack oss
+   package.sh --distribution centos7 --pack noredist
+   package.sh --distribution centos7 --release 42
+   package.sh --distribution centos7 --pack noredist --release 42
+
+USAGE
+    exit 0
 }
+
+PWD=$(cd $(dirname "$0") && pwd -P)
+NOW="$(date +%s)"
 
 # packaging
 #   $1 redist flag
 #   $2 simulator flag
 #   $3 distribution name
 #   $4 package release version
+#   $5 brand string to apply/override
+#   $6 use timestamp flag
 function packaging() {
-    CWD=$(pwd)
-    RPMDIR=$CWD/../dist/rpmbuild
+    RPMDIR=$PWD/../dist/rpmbuild
     PACK_PROJECT=cloudstack
+
     if [ -n "$1" ] ; then
         DEFOSSNOSS="-D_ossnoss $1"
     fi
     if [ -n "$2" ] ; then
         DEFSIM="-D_sim $2"
     fi
+    if [ "$6" == "true" ]; then
+        INDICATOR="$NOW"
+    else
+        INDICATOR="SNAPSHOT"
+    fi
 
     DISTRO=$3
+
     MVN=$(which mvn)
     if [ -z "$MVN" ] ; then
         MVN=$(locate bin/mvn | grep -e mvn$ | tail -1)
@@ -67,24 +87,63 @@ function packaging() {
             exit 2
         fi
     fi
-    VERSION=$(cd ../; $MVN org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep --color=none '^[0-9]\.')
-    if echo "$VERSION" | grep -q SNAPSHOT ; then
-        REALVER=$(echo "$VERSION" | cut -d '-' -f 1)
-        if [ -n "$4" ] ; then
-            DEFPRE="-D_prerelease $4"
-            DEFREL="-D_rel SNAPSHOT$4"
-        else
-            DEFPRE="-D_prerelease 1"
-            DEFREL="-D_rel SNAPSHOT"
-        fi
+
+    VERSION=$(cd $PWD/../; $MVN org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep --color=none '^[0-9]\.')
+    REALVER=$(echo "$VERSION" | cut -d '-' -f 1)
+
+    if [ -n "$5" ]; then
+        BRAND="${5}."
     else
-        REALVER="$VERSION"
-        if [ -n "$4" ] ; then
-            DEFREL="-D_rel $4"
+        BASEVER=$(echo "$VERSION" | sed 's/-SNAPSHOT//g')
+        BRAND=$(echo "$BASEVER" | cut -d '-' -f 2)
+
+        if [ "$REALVER" != "$BRAND" ]; then
+            BRAND="${BRAND}."
         else
-            DEFREL="-D_rel 1"
+            BRAND=""
         fi
     fi
+
+    if echo "$VERSION" | grep -q SNAPSHOT ; then
+        if [ -n "$4" ] ; then
+            DEFREL="-D_rel ${BRAND}${INDICATOR0}.$4"
+        else
+            DEFREL="-D_rel ${BRAND}${INDICATOR}"
+        fi
+    else
+        if [ -n "$4" ] ; then
+            DEFREL="-D_rel ${BRAND}$4"
+        else
+            DEFREL="-D_rel ${BRAND}1"
+        fi
+    fi
+
+    if [ "$USE_TIMESTAMP" == "true" ]; then
+        # use timestamp instead of SNAPSHOT
+        if echo "$VERSION" | grep -q SNAPSHOT ; then
+            # apply/override branding, if provided
+            if [ "$BRANDING" != "" ]; then
+                VERSION=$(echo "$VERSION" | cut -d '-' -f 1) # remove any existing branding from POM version to be overriden
+                VERSION="$VERSION-$BRANDING-$NOW"
+            else
+                VERSION=`echo $VERSION | sed 's/-SNAPSHOT/-'$NOW'/g'`
+            fi
+
+            branch=$(cd $PWD/../; git rev-parse --abbrev-ref HEAD)
+            (cd $PWD/../; ./tools/build/setnextversion.sh --version $VERSION --sourcedir . --branch $branch --no-commit)
+        fi
+    else
+        # apply/override branding, if provided
+        if [ "$BRANDING" != "" ]; then
+            VERSION=$(echo "$VERSION" | cut -d '-' -f 1) # remove any existing branding from POM version to be overriden
+            VERSION="$VERSION-$BRANDING"
+
+            branch=$(cd $PWD/../; git rev-parse --abbrev-ref HEAD)
+            (cd $PWD/../; ./tools/build/setnextversion.sh --version $VERSION --sourcedir . --branch $branch --no-commit)
+        fi
+    fi
+
+    DEFFULLVER="-D_fullver $VERSION"
     DEFVER="-D_ver $REALVER"
 
     echo "Preparing to package Apache CloudStack $VERSION"
@@ -96,13 +155,14 @@ function packaging() {
     mkdir -p "$RPMDIR/SOURCES/$PACK_PROJECT-$VERSION"
 
     echo ". preparing source tarball"
-    (cd ../; tar -c --exclude .git --exclude dist . | tar -C "$RPMDIR/SOURCES/$PACK_PROJECT-$VERSION" -x )
+    (cd $PWD/../; tar -c --exclude .git --exclude dist . | tar -C "$RPMDIR/SOURCES/$PACK_PROJECT-$VERSION" -x )
     (cd "$RPMDIR/SOURCES/"; tar -czf "$PACK_PROJECT-$VERSION.tgz" "$PACK_PROJECT-$VERSION")
 
     echo ". executing rpmbuild"
-    cp "$DISTRO/cloud.spec" "$RPMDIR/SPECS"
+    cp "$PWD/$DISTRO/cloud.spec" "$RPMDIR/SPECS"
 
-    (cd "$RPMDIR"; rpmbuild --define "_topdir ${RPMDIR}" "${DEFVER}" "${DEFREL}" ${DEFPRE+"$DEFPRE"} ${DEFOSSNOSS+"$DEFOSSNOSS"} ${DEFSIM+"$DEFSIM"} -bb SPECS/cloud.spec)
+    (cd "$RPMDIR"; rpmbuild --define "_topdir ${RPMDIR}" "${DEFVER}" "${DEFFULLVER}" "${DEFREL}" ${DEFPRE+"$DEFPRE"} ${DEFOSSNOSS+"$DEFOSSNOSS"} ${DEFSIM+"$DEFSIM"} -bb SPECS/cloud.spec)
+    (cd $PWD/../; git reset --hard)
     if [ $? -ne 0 ]; then
         echo "RPM Build Failed "
         exit 3
@@ -116,22 +176,20 @@ TARGETDISTRO=""
 SIM=""
 PACKAGEVAL=""
 RELEASE=""
+BRANDING=""
+USE_TIMESTAMP="false"
 
-SHORTOPTS="hp:s:d:r:"
-LONGOPTS="help,pack:simulator:distribution:release:"
-ARGS=$(getopt -s bash -u -a --options "$SHORTOPTS"  --longoptions "$LONGOPTS" --name "$0" -- "$@")
-eval set -- "$ARGS"
-echo "$ARGS"
-while [ $# -gt 0 ] ; do
+unrecognized_flags=""
+
+while [ -n "$1" ]; do
     case "$1" in
         -h | --help)
             usage
             exit 0
             ;;
+
         -p | --pack)
-            echo "Packaging CloudStack..."
             PACKAGEVAL=$2
-            echo "$PACKAGEVAL"
             if [ "$PACKAGEVAL" == "oss" -o "$PACKAGEVAL" == "OSS" ] ; then
                 PACKAGEVAL=""
             elif [ "$PACKAGEVAL" == "noredist" -o "$PACKAGEVAL" == "NOREDIST" ] ; then
@@ -141,11 +199,11 @@ while [ $# -gt 0 ] ; do
                 usage
                 exit 1
             fi
-            shift
+            shift 2
             ;;
+
         -s | --simulator)
             SIM=$2
-            echo "$SIM"
             if [ "$SIM" == "default" -o "$SIM" == "DEFAULT" ] ; then
                 SIM="false"
             elif [ "$SIM" == "simulator" -o "$SIM" == "SIMULATOR" ] ; then
@@ -155,8 +213,9 @@ while [ $# -gt 0 ] ; do
                 usage
                 exit 1
             fi
-            shift
+            shift 2
             ;;
+
         -d | --distribution)
             TARGETDISTRO=$2
             if [ -z "$TARGETDISTRO" ] ; then
@@ -164,22 +223,41 @@ while [ $# -gt 0 ] ; do
                 usage
                 exit 1
             fi
-            shift
+            shift 2
             ;;
+
         -r | --release)
             RELEASE=$2
-            shift
+            shift 2
             ;;
-        -)
-            echo "Error: Unrecognized option"
-            usage
-            exit 1
+
+        -b | --brand)
+            BRANDING=$2
+            shift 2
             ;;
+
+        -T | --use-timestamp)
+            USE_TIMESTAMP="true"
+            shift 1
+            ;;
+
+        -*)
+            unrecognized_flags="${unrecognized_flags}$1 "
+            shift 1
+            ;;
+
         *)
-            shift
+            shift 1
             ;;
     esac
 done
 
-packaging "$PACKAGEVAL" "$SIM" "$TARGETDISTRO" "$RELEASE"
+if [ -n "$unrecognized_flags" ]; then
+    echo "Warning: Unrecognized option(s) found \" ${unrecognized_flags}\""
+    echo "         You're advised to fix your build job scripts and prevent using these"
+    echo "         flags, as in the future release(s) they will break packaging script."
+    echo ""
+fi
 
+echo "Packaging CloudStack..."
+packaging "$PACKAGEVAL" "$SIM" "$TARGETDISTRO" "$RELEASE" "$BRANDING" "$USE_TIMESTAMP"
