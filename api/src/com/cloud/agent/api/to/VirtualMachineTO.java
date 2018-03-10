@@ -70,6 +70,8 @@ public class VirtualMachineTO {
     String configDriveIsoRootFolder = null;
     String configDriveIsoFile = null;
 
+    Double cpuQuotaPercentage = null;
+
     Map<String, String> guestOsDetails = new HashMap<String, String>();
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
@@ -339,5 +341,13 @@ public class VirtualMachineTO {
 
     public void setGuestOsDetails(Map<String, String> guestOsDetails) {
         this.guestOsDetails = guestOsDetails;
+    }
+
+    public Double getCpuQuotaPercentage() {
+        return cpuQuotaPercentage;
+    }
+
+    public void setCpuQuotaPercentage(Double cpuQuotaPercentage) {
+        this.cpuQuotaPercentage = cpuQuotaPercentage;
     }
 }

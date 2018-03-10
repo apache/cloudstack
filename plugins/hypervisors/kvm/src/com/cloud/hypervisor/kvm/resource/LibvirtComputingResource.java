@@ -1984,6 +1984,24 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return uuid;
     }
 
+    /**
+     * Set quota and period tags on 'ctd' when CPU limit use is set
+     */
+    protected void setQuotaAndPeriod(VirtualMachineTO vmTO, CpuTuneDef ctd) {
+        if (vmTO.getLimitCpuUse() && vmTO.getCpuQuotaPercentage() != null) {
+            Double cpuQuotaPercentage = vmTO.getCpuQuotaPercentage();
+            int period = CpuTuneDef.DEFAULT_PERIOD;
+            int quota = (int) (period * cpuQuotaPercentage);
+            if (quota < CpuTuneDef.MIN_QUOTA) {
+                quota = CpuTuneDef.MIN_QUOTA;
+                period = (int) ((double) quota / cpuQuotaPercentage);
+            }
+            ctd.setQuota(quota);
+            ctd.setPeriod(period);
+            s_logger.info("Setting quota=" + quota + ", period=" + period + " to VM domain " + vmTO.getId());
+        }
+    }
+
     public LibvirtVMDef createVMFromSpec(final VirtualMachineTO vmTO) {
         final LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
@@ -2059,6 +2077,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             } else {
                 ctd.setShares(vmTO.getCpus() * vmTO.getSpeed());
             }
+
+            setQuotaAndPeriod(vmTO, ctd);
+
             vm.addComp(ctd);
         }
 
