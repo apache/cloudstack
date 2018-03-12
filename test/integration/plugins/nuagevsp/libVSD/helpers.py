@@ -1,8 +1,26 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import logging
 import functools
 import bambou
 
 LOG = logging.getLogger()
+
 
 class recreate_session_on_timeout(object):
     def __init__(self, method):
@@ -21,6 +39,7 @@ class recreate_session_on_timeout(object):
                     raise e
 
         return _wrapper
+
 
 class VSDHelpers(object):
 
@@ -43,7 +62,6 @@ class VSDHelpers(object):
             self.vspk = api_client.import_vspk(api_client.version)
         else:
             self.session = self.api_client.session
-
 
     @recreate_session_on_timeout
     def add_user_to_group(self, enterprise, user=None, group=None,
@@ -179,9 +197,11 @@ class VSDHelpers(object):
                 enterprise = self.vspk.NUEnterprise(id=enterprise)
             domain = enterprise.domain_templates.get_first(filter=filter)
         elif filter:
-            domain = self.session.user.domain_templates.get_first(filter=filter)
+            domain = \
+                self.session.user.domain_templates.get_first(filter=filter)
         if not domain:
-            LOG.error('could not fetch the domain template matching the filter "{}"'
+            LOG.error('could not fetch the domain template '
+                      'matching the filter "{}"'
                       .format(filter))
         return domain
 
@@ -304,7 +324,8 @@ class VSDHelpers(object):
         dhcp_options = subnet.dhcp_options.get()
         if not dhcp_options:
             if filter:
-                LOG.error('could not fetch the dhcp options on the subnet matching the filter "{}"'
+                LOG.error('could not fetch the dhcp options on the subnet '
+                          'matching the filter "{}"'
                           .format(filter))
             else:
                 LOG.error('could not fetch the dhcp options on the subnet')
@@ -328,7 +349,8 @@ class VSDHelpers(object):
             return None
         vport = subnet.vports.get_first(filter=filter)
         if not vport:
-            LOG.error('could not fetch the vport from the subnet matching the filter "{}"'
+            LOG.error('could not fetch the vport from the subnet '
+                      'matching the filter "{}"'
                       .format(filter))
         return vport
 
@@ -346,7 +368,8 @@ class VSDHelpers(object):
             return None
         vm_interface = self.session.user.vm_interfaces.get_first(filter=filter)
         if not vm_interface:
-            LOG.error('could not fetch the vm interface matching the filter "{}"'
+            LOG.error('could not fetch the vm interface '
+                      'matching the filter "{}"'
                       .format(filter))
         return vm_interface
 
@@ -357,7 +380,7 @@ class VSDHelpers(object):
                      vm interface filter following vspk filter structure
             @return: vm interface policydecisions object
             @Example:
-            self.vsd.get_vm_interface_policydecisions(vm_interface=vm_interface)
+            self.vsd.get_vm_interface_policydecisions(vm_interface=interface)
             self.vsd.get_vm_interface_policydecisions(
                 filter='externalID == "{}"'.format(vm_interface_externalID))
         """
@@ -365,15 +388,18 @@ class VSDHelpers(object):
             if not filter:
                 LOG.error('a filter is required')
                 return None
-            vm_interface = self.session.user.vm_interfaces.get_first(filter=filter)
+            vm_interface = \
+                self.session.user.vm_interfaces.get_first(filter=filter)
         policy_decisions = self.vspk.NUPolicyDecision(
             id=vm_interface.policy_decision_id).fetch()
         if not policy_decisions:
             if filter:
-                LOG.error('could not fetch the policy decisions on the vm interface matching the filter "{}"'
+                LOG.error('could not fetch the policy decisions on the '
+                          'vm interface matching the filter "{}"'
                           .format(filter))
             else:
-                LOG.error('could not fetch the policy decisions on the vm interface')
+                LOG.error('could not fetch the policy decisions '
+                          'on the vm interface')
         return policy_decisions
 
     @recreate_session_on_timeout
@@ -391,14 +417,17 @@ class VSDHelpers(object):
             if not filter:
                 LOG.error('a filter is required')
                 return None
-            vm_interface = self.session.user.vm_interfaces.get_first(filter=filter)
+            vm_interface = self.session.user.vm_interfaces.get_first(
+                    filter=filter)
         dhcp_options = vm_interface.dhcp_options.get()
         if not dhcp_options:
             if filter:
-                LOG.error('could not fetch the dhcp options on the vm interface matching the filter "{}"'
+                LOG.error('could not fetch the dhcp options on the '
+                          'vm interface matching the filter "{}"'
                           .format(filter))
             else:
-                LOG.error('could not fetch the dhcp options on the vm interface')
+                LOG.error('could not fetch the dhcp options on the '
+                          'vm interface')
         return dhcp_options
 
     @recreate_session_on_timeout
@@ -413,9 +442,11 @@ class VSDHelpers(object):
         if not filter:
             LOG.error('a filter is required')
             return None
-        acl = self.session.user.ingress_acl_entry_templates.get_first(filter=filter)
+        acl = self.session.user.ingress_acl_entry_templates.get_first(
+                filter=filter)
         if not acl:
-            LOG.error('could not fetch the ingress acl entry matching the filter "{}"'
+            LOG.error('could not fetch the ingress acl entry '
+                      'matching the filter "{}"'
                       .format(filter))
         return acl
 
@@ -431,9 +462,11 @@ class VSDHelpers(object):
         if not filter:
             LOG.error('a filter is required')
             return None
-        acl = self.session.user.egress_acl_entry_templates.get_first(filter=filter)
+        acl = self.session.user.egress_acl_entry_templates.get_first(
+                filter=filter)
         if not acl:
-            LOG.error('could not fetch the egress acl entry matching the filter "{}"'
+            LOG.error('could not fetch the egress acl entry '
+                      'matching the filter "{}"'
                       .format(filter))
         return acl
 
@@ -467,14 +500,16 @@ class VSDHelpers(object):
             return None
         floating_ip = self.session.user.floating_ips.get_first(filter=filter)
         if not floating_ip:
-            LOG.error('could not fetch the floating ip matching the filter "{}"'
+            LOG.error('could not fetch the floating ip '
+                      'matching the filter "{}"'
                       .format(filter))
         return floating_ip
 
     @recreate_session_on_timeout
     def get_ingress_acl_entries(self, filter):
         """ get_ingress_acl_entries
-            @params: ingress acl entries (templates) filter following vspk filter structure
+            @params: ingress acl entries (templates) filter following vspk
+                     filter structure
             @return: ingress acl entries (objects) list
             @Example:
             self.vsd.get_ingress_acl_entries(
@@ -485,7 +520,8 @@ class VSDHelpers(object):
             return None
         templates = self.session.user.ingress_acl_templates.get(filter=filter)
         if not templates:
-            LOG.error('could not fetch the ingress acl entries (templates) matching the filter "{}"'
+            LOG.error('could not fetch the ingress acl entries (templates) '
+                      'matching the filter "{}"'
                       .format(filter))
             return None
         acls = []
@@ -498,7 +534,8 @@ class VSDHelpers(object):
     @recreate_session_on_timeout
     def get_egress_acl_entries(self, filter):
         """ get_egress_acl_entries
-            @params: egress acl entries (templates) filter following vspk filter structure
+            @params: egress acl entries (templates) filter
+                     following vspk filter structure
             @return: egress acl entries (objects) list
             @Example:
             self.vsd.get_egress_acl_entries(
@@ -509,7 +546,8 @@ class VSDHelpers(object):
             return None
         templates = self.session.user.egress_acl_templates.get(filter=filter)
         if not templates:
-            LOG.error('could not fetch the egress acl entries (templates) matching the filter "{}"'
+            LOG.error('could not fetch the egress acl entries (templates) '
+                      'matching the filter "{}"'
                       .format(filter))
             return None
         acls = []
@@ -522,7 +560,8 @@ class VSDHelpers(object):
     @recreate_session_on_timeout
     def get_shared_network_resource(self, filter):
         """ get_shared_network_resource
-            @params: shared network resource filter following vspk filter structure
+            @params: shared network resource filter
+                    following vspk filter structure
             @return: shared network resource object
             @Example:
             self.vsd.get_shared_network_resource(
@@ -531,9 +570,11 @@ class VSDHelpers(object):
         if not filter:
             LOG.error('a filter is required')
             return None
-        shared_network_resource = self.session.user.shared_network_resources.get_first(filter=filter)
+        shared_network_resource = \
+            self.session.user.shared_network_resources.get_first(filter=filter)
         if not shared_network_resource:
-            LOG.error('could not fetch the shared network resource matching the filter "{}"'
+            LOG.error('could not fetch the shared network resource '
+                      'matching the filter "{}"'
                       .format(filter))
         return shared_network_resource
 
@@ -553,11 +594,9 @@ class VSDHelpers(object):
         if not filter:
             LOG.error('a filter is required')
             return None
-        virtualip=vport.virtual_ips.get_first(filter=filter)
-
+        virtualip = vport.virtual_ips.get_first(filter=filter)
 
         if not virtualip:
             LOG.error('could not fetch the virtualip matching the filter "{}"'
                       .format(filter))
         return virtualip
-

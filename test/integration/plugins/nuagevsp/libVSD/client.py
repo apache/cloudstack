@@ -1,3 +1,20 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import bambou
 import importlib
 
@@ -13,8 +30,8 @@ class ApiClient(object):
         version (str): version of the API to use.
     """
 
-    def __init__(self, address, port='8443', user='csproot', password='csproot',
-                 enterprise='csp', version=None):
+    def __init__(self, address, port='8443', user='csproot',
+                 password='csproot', enterprise='csp', version=None):
         if not version:
             version = '5.0'
         self.url = 'https://{}:{}'.format(address, port)
@@ -34,9 +51,9 @@ class ApiClient(object):
         """
         version = 'v{}'.format(str(version).replace('.', '_'))
         try:
-            vsdk = importlib.import_module('vspk.%s' %  version)
+            vsdk = importlib.import_module('vspk.%s' % version)
         except:
-            vsdk = importlib.import_module('vspk.vsdk.%s' %  version)
+            vsdk = importlib.import_module('vspk.vsdk.%s' % version)
         return vsdk
 
     def import_vsdenvs(self):
@@ -80,8 +97,8 @@ class ApiClient(object):
 
     def default_callback(self, data):
         """
-        Default callback for the push center. It just stores the new event in a
-        LILO queue exposed as `self.last_pushe`
+        Default callback for the push center. It just stores the new event in
+        a LILO queue exposed as `self.last_pushe`
         """
         self.last_pushes.append(data)
         # keep only the last 10 events
