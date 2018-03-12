@@ -34,7 +34,7 @@ public class SSLUtils {
     public static String[] getSupportedProtocols(String[] protocols) {
         Set<String> set = new HashSet<String>();
         for (String s : protocols) {
-            if (s.equals("SSLv3") || s.equals("SSLv2Hello")) {
+            if (s.equals("TLSv1") || s.equals("TLSv1.1") || s.equals("SSLv3") || s.equals("SSLv2Hello")) {
                 continue;
             }
             set.add(s);
@@ -46,7 +46,7 @@ public class SSLUtils {
      * It returns recommended protocols that are considered secure.
      */
     public static String[] getRecommendedProtocols() {
-        return new String[] { "TLSv1", "TLSv1.1", "TLSv1.2" };
+        return new String[] { "TLSv1.2" };
     }
 
     /**
