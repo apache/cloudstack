@@ -537,16 +537,19 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
 
         for res in qresultset:
             if res[0] == "username":
-                host_username = res[1]
+                host_username = str(res[1])
             else:
-                host_password = res[1]
+                host_password = str(res[1])
+
+        if host_username is None or host_password is None:
+            self.skipTest("Host details cannot be retrieved, skipping test")
+
+        ssh_host = self.get_ssh_client(host_id, host_ip_address, host_username, host_password, 10)
 
         #Execute loop command in background on the VM
         ssh_vm = self.vm.get_ssh_client(reconnect=True)
         ssh_vm.execute("echo 'while true; do x=$(($x+1)); done' > cputest.sh")
         ssh_vm.execute("sh cputest.sh > /dev/null 2>&1 &")
-
-        ssh_host = self.get_ssh_client(host_id, host_ip_address, host_username, host_password, 10)
 
         #Get host CPU usage from top command before and after VM consuming 100% CPU
         cpu_usage_cmd = "top -b n 2 -d 1 | grep '^%Cpu' | tail -n 1 | awk '{print $2+$4+$6}'"

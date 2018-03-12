@@ -82,17 +82,21 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             if (host == null) {
                 throw new CloudRuntimeException("Host with id: " + vm.getHostId() + " not found");
             }
-            s_logger.debug("Limiting CPU usage for VM " + vm.getId() + " on host " + host.getId());
+            s_logger.debug("Limiting CPU usage for VM: " + vm.getUuid() + " on host: " + host.getUuid());
             double hostMaxSpeed = getHostCPUSpeed(host);
             double maxSpeed = getVmSpeed(to);
             try {
                 BigDecimal percent = new BigDecimal(maxSpeed / hostMaxSpeed);
                 percent = percent.setScale(2, RoundingMode.HALF_DOWN);
+                if (percent.compareTo(new BigDecimal(1)) == 1) {
+                    s_logger.debug("VM " + vm.getUuid() + " CPU MHz exceeded host " + host.getUuid() + " CPU MHz, limiting VM CPU to the host maximum");
+                    percent = new BigDecimal(1);
+                }
                 to.setCpuQuotaPercentage(percent.doubleValue());
-                s_logger.debug("Host " + host.getId() + " max CPU speed = " + hostMaxSpeed + "MHz, VM " + vm.getId() +
+                s_logger.debug("Host: " + host.getUuid() + " max CPU speed = " + hostMaxSpeed + "MHz, VM: " + vm.getUuid() +
                         "max CPU speed = " + maxSpeed + "MHz. Setting CPU quota percentage as: " + percent.doubleValue());
             } catch (NumberFormatException e) {
-                s_logger.error("Error calculating vm quota percentage, it wll not be set: " + e.getMessage());
+                s_logger.error("Error calculating VM: " + vm.getUuid() + " quota percentage, it wll not be set. Error: " + e.getMessage(), e);
             }
         }
     }

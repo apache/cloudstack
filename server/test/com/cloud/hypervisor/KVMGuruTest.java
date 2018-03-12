@@ -89,4 +89,11 @@ public class KVMGuruTest {
         Mockito.verify(vmProfile, Mockito.never()).getVirtualMachine();
         Mockito.verify(vmTO, Mockito.never()).setCpuQuotaPercentage(Mockito.anyDouble());
     }
+
+    @Test
+    public void testSetVmQuotaPercentageOverProvision() {
+        Mockito.when(vmTO.getMaxSpeed()).thenReturn(3000);
+        guru.setVmQuotaPercentage(vmTO, vmProfile);
+        Mockito.verify(vmTO).setCpuQuotaPercentage(1d);
+    }
 }

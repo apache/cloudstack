@@ -1175,6 +1175,7 @@ public class LibvirtVMDef {
         private int period = 0;
         static final int DEFAULT_PERIOD = 10000;
         static final int MIN_QUOTA = 1000;
+        static final int MAX_PERIOD = 1000000;
 
         public void setShares(int shares) {
             _shares = shares;
