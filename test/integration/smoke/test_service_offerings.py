@@ -31,7 +31,8 @@ from marvin.lib.common import (list_service_offering,
                                list_virtual_machines,
                                get_domain,
                                get_zone,
-                               get_template)
+                               get_template,
+                               list_hosts)
 from nose.plugins.attrib import attr
 
 import time
@@ -464,6 +465,7 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
         cls.services["small"]["hypervisor"] = cls.hypervisor
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
 
         cls.account = Account.create(
             cls.apiclient,
@@ -484,13 +486,31 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
             offering_data,
             limitcpuuse=True
         )
+
+        def getHost(self, hostId=None):
+            response = list_hosts(
+                self.apiclient,
+                type='Routing',
+                hypervisor='kvm',
+                id=hostId
+            )
+            # Check if more than one kvm hosts are available in order to successfully configure host-ha
+            if response and len(response) > 0:
+                self.host = response[0]
+                return self.host
+            raise self.skipTest("Not enough KVM hosts found, skipping host-ha test")
+
+        cls.host = getHost(cls)
+
         cls.vm = VirtualMachine.create(
             cls.apiclient,
             cls.services["small"],
             accountid=cls.account.name,
             domainid=cls.account.domainid,
             serviceofferingid=cls.offering.id,
-            mode=cls.services["mode"]
+            mode=cls.services["mode"],
+            hostid=cls.host.id
+
         )
         cls._cleanup = [
             cls.offering,
@@ -517,45 +537,20 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
         """
         Test CPU Cap on KVM
         """
-        if self.hypervisor.lower() not in ["kvm"]:
-            self.skipTest("CPU Cap test is supported on KVM")
 
-        qresultset = self.dbclient.execute(
-            "select public_ip_address, id from host where uuid = '%s';" % str(self.vm.hostid)
-        )
-        self.assertEquals(1, len(qresultset), "Check DB Query result set")
-        qresult = qresultset[0]
-        host_ip_address = qresult[0]
-        host_id = qresult[1]
-
-        qresultset = self.dbclient.execute(
-            "select name, value from host_details where host_id = '%s' and name in ('username', 'password');" % str(host_id)
-        )
-        self.assertEquals(2, len(qresultset), "Check DB Query result set")
-        host_username = None
-        host_password = None
-
-        for res in qresultset:
-            if res[0] == "username":
-                host_username = str(res[1])
-            else:
-                host_password = str(res[1])
-
-        if host_username is None or host_password is None:
-            self.skipTest("Host details cannot be retrieved, skipping test")
-
-        ssh_host = self.get_ssh_client(host_id, host_ip_address, host_username, host_password, 10)
-
-        #Execute loop command in background on the VM
-        ssh_vm = self.vm.get_ssh_client(reconnect=True)
-        ssh_vm.execute("echo 'while true; do x=$(($x+1)); done' > cputest.sh")
-        ssh_vm.execute("sh cputest.sh > /dev/null 2>&1 &")
+        ssh_host = self.get_ssh_client(self.host.id, self.host.ipaddress, self.hostConfig["username"], self.hostConfig["password"], 10)
 
         #Get host CPU usage from top command before and after VM consuming 100% CPU
         cpu_usage_cmd = "top -b n 2 -d 1 | grep '^%Cpu' | tail -n 1 | awk '{print $2+$4+$6}'"
         host_cpu_usage_before_str = ssh_host.execute(cpu_usage_cmd)[0]
         host_cpu_usage_before = round(float(host_cpu_usage_before_str))
         self.debug("Host CPU usage before the infinite loop on the VM: " + str(host_cpu_usage_before))
+
+        #Execute loop command in background on the VM
+        ssh_vm = self.vm.get_ssh_client(reconnect=True)
+        ssh_vm.execute("echo 'while true; do x=$(($x+1)); done' > cputest.sh")
+        ssh_vm.execute("sh cputest.sh > /dev/null 2>&1 &")
+
         time.sleep(5)
         host_cpu_usage_after_str = ssh_host.execute(cpu_usage_cmd)[0]
         host_cpu_usage_after = round(float(host_cpu_usage_after_str))
