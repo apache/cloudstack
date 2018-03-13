@@ -77,7 +77,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the ACL," + "can be ingress or egress, defaulted to ingress if not specified")
     private String trafficType;
 
-    @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The network of the VM the ACL will be created for")
+    @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The number of the ACL item, its ordering")
     private Integer number;
 
     @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "scl entry action, allow or deny")
