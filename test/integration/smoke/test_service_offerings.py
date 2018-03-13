@@ -541,8 +541,11 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
         ssh_host = self.get_ssh_client(self.host.id, self.host.ipaddress, self.hostConfig["username"], self.hostConfig["password"], 10)
 
         #Get host CPU usage from top command before and after VM consuming 100% CPU
-        cpu_usage_cmd = "top -b n 2 -d 1 | grep '^%Cpu' | tail -n 1 | awk '{print $2+$4+$6}'"
+        find_pid_cmd = "ps -ax | grep '%s' | head -1 | awk '{print $1}'" % self.vm.id
+        pid = ssh_host.execute(find_pid_cmd)[0]
+        cpu_usage_cmd = "top -b n 1 p %s | tail -1 | awk '{print $9}'" % pid
         host_cpu_usage_before_str = ssh_host.execute(cpu_usage_cmd)[0]
+
         host_cpu_usage_before = round(float(host_cpu_usage_before_str))
         self.debug("Host CPU usage before the infinite loop on the VM: " + str(host_cpu_usage_before))
 
