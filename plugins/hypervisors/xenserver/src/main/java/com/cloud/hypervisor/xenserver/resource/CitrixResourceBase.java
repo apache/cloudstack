@@ -243,7 +243,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected String _guestNetworkName;
     protected int _heartbeatInterval = 60;
     protected int _heartbeatTimeout = 120;
-    protected final XsHost _host = new XsHost();
+    protected XsHost _host = new XsHost();
     protected String _instance; // instance name (default is usually "VM")
     protected boolean _isOvs = false;
     protected String _linkLocalPrivateNetworkName;

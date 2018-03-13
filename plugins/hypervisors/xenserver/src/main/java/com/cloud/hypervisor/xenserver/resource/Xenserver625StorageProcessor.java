@@ -37,6 +37,7 @@ import com.xensource.xenapi.SR;
 import com.xensource.xenapi.Task;
 import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
+import com.xensource.xenapi.Types.StorageOperations;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -45,6 +46,8 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.SnapshotObjectTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
@@ -65,90 +68,182 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         super(resource);
     }
 
-    protected boolean mountNfs(final Connection conn, final String remoteDir, String localDir) {
+    private void mountNfs(Connection conn, String remoteDir, String localDir) {
         if (localDir == null) {
             localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(remoteDir.getBytes());
         }
-
-        final String results = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", 100 * 1000, "localDir", localDir, "remoteDir",
-                remoteDir);
-
-        if (results == null || results.isEmpty()) {
+        String result = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", 100 * 1000, "localDir", localDir, "remoteDir", remoteDir);
+        if (StringUtils.isBlank(result)) {
             final String errMsg = "Could not mount secondary storage " + remoteDir + " on host " + localDir;
-
             s_logger.warn(errMsg);
-
             throw new CloudRuntimeException(errMsg);
         }
-
-        return true;
     }
 
-    protected boolean makeDirectory(final Connection conn, final String path) {
-        final String result = hypervisorResource.callHostPlugin(conn, "cloud-plugin-storage", "makeDirectory", "path", path);
 
-        if (result == null || result.isEmpty()) {
-            return false;
-        }
-
-        return true;
+    protected boolean makeDirectory(Connection conn, String path) {
+        String result = hypervisorResource.callHostPlugin(conn, "cloud-plugin-storage", "makeDirectory", "path", path);
+        return StringUtils.isNotBlank(result);
     }
 
-    protected SR createFileSR(final Connection conn, final String path) {
-        SR sr = null;
-        PBD pbd = null;
-
-        try {
-            final String srname = path.trim();
-            synchronized (srname.intern()) {
-                final Set<SR> srs = SR.getByNameLabel(conn, srname);
-                if (srs != null && !srs.isEmpty()) {
-                    return srs.iterator().next();
-                }
-                final Map<String, String> smConfig = new HashMap<String, String>();
-                final Host host = Host.getByUuid(conn, hypervisorResource.getHost().getUuid());
-                final String uuid = UUID.randomUUID().toString();
-                sr = SR.introduce(conn, uuid, srname, srname, "file", "file", false, smConfig);
-                final PBD.Record record = new PBD.Record();
-                record.host = host;
-                record.SR = sr;
-                smConfig.put("location", path);
-                record.deviceConfig = smConfig;
-                pbd = PBD.create(conn, record);
-                pbd.plug(conn);
-                sr.scan(conn);
+    /**
+     *  Creates the file SR for the given path. If there already exist a file SR for the path, we return the existing one.
+     *  This method uses a synchronized block to guarantee that only a single file SR is created per path.
+     *  If it is not possible to retrieve one file SR or to create one, a runtime exception will be thrown.
+     */
+    protected SR createFileSR(Connection conn, String path) {
+        String srPath = StringUtils.trim(path);
+        synchronized (srPath) {
+            SR sr = retrieveAlreadyConfiguredSrWithoutException(conn, srPath);
+            if (sr == null) {
+                sr = createNewFileSr(conn, srPath);
+            }
+            if (sr == null) {
+                String hostUuid = this.hypervisorResource._host.getUuid();
+                throw new CloudRuntimeException(String.format("Could not retrieve an already used file SR for path [%s] or create a new file SR on host [%s]", srPath, hostUuid));
             }
             return sr;
-        } catch (final Exception ex) {
-            try {
-                if (pbd != null) {
-                    pbd.destroy(conn);
+        }
+    }
+    
+    /**
+     * Creates a new file SR for the given path. If any of XenServer's checked exception occurs, we use method {@link #removeSrAndPbdIfPossible(Connection, SR, PBD)} to clean the created PBD and SR entries.
+     * To avoid race conditions between management servers, we are using a deterministic srUuid for the file SR to be created (we are leaving XenServer with the burden of managing race conditions). The UUID is based on the SR file path, and is generated using {@link UUID#nameUUIDFromBytes(byte[])}.
+     * If there is an SR with the generated UUID, this means that some other management server has just created it. An exception will occur and this exception will be an {@link InternalError}. The exception will contain {@link InternalError#message} a message saying 'Db_exn.Uniqueness_constraint_violation'.
+     * For cases where the previous described error happens, we catch the exception and use the method {@link #retrieveAlreadyConfiguredSrWithoutException(Connection, String)}.
+     */
+    protected SR createNewFileSr(Connection conn, String srPath) {
+        String hostUuid = hypervisorResource.getHost().getUuid();
+        s_logger.debug(String.format("Creating file SR for path [%s] on host [%s]", srPath, this.hypervisorResource._host.getUuid()));
+        SR sr = null;
+        PBD pbd = null;
+        try {
+            Host host = Host.getByUuid(conn, hostUuid);
+            String srUuid = UUID.nameUUIDFromBytes(srPath.getBytes()).toString();
+
+            Map<String, String> smConfig = new HashMap<String, String>();
+            sr = SR.introduce(conn, srUuid, srPath, srPath, "file", "file", false, smConfig);
+
+            PBD.Record record = new PBD.Record();
+            record.host = host;
+            record.SR = sr;
+            smConfig.put("location", srPath);
+            record.deviceConfig = smConfig;
+            pbd = PBD.create(conn, record);
+            pbd.plug(conn);
+            sr.scan(conn);
+            return sr;
+        } catch (XenAPIException | XmlRpcException e) {
+            if (e instanceof Types.InternalError) {
+                String expectedDuplicatedFileSrErrorMessage = "Db_exn.Uniqueness_constraint_violation";
+
+                Types.InternalError internalErrorException = (Types.InternalError)e;
+                if (StringUtils.contains(internalErrorException.message, expectedDuplicatedFileSrErrorMessage)) {
+                    s_logger.debug(String.format(
+                            "It seems that we have hit a race condition case here while creating file SR for [%s]. Instead of creating one, we will reuse the one that already exist in the XenServer pool.",
+                            srPath));
+                    return retrieveAlreadyConfiguredSrWithoutException(conn, srPath);
                 }
-            } catch (final Exception e1) {
-                s_logger.debug("Failed to destroy PBD", ex);
             }
-
-            try {
-                if (sr != null) {
-                    sr.forget(conn);
-                }
-            } catch (final Exception e2) {
-                s_logger.error("Failed to forget SR", ex);
-            }
-
-            final String msg = "createFileSR failed! due to the following: " + ex.toString();
-
-            s_logger.warn(msg, ex);
-
-            throw new CloudRuntimeException(msg, ex);
+            removeSrAndPbdIfPossible(conn, sr, pbd);
+            s_logger.debug(String.format("Could not create file SR [%s] on host [%s].", srPath, hostUuid), e);
+            return null;
+        }
+    }
+    
+    /**
+     * Calls {@link #unplugPbd(Connection, PBD)} and {@link #forgetSr(Connection, SR)}, if respective objects are not null.
+     */
+    protected void removeSrAndPbdIfPossible(Connection conn, SR sr, PBD pbd) {
+        if (pbd != null) {
+            unplugPbd(conn, pbd);
+        }
+        if (sr != null) {
+            forgetSr(conn, sr);
+        }
+    }
+    
+    /**
+     * This is a simple facade for {@link #retrieveAlreadyConfiguredSr(Connection, String)} method.
+     * If we catch any of the checked exception of {@link #retrieveAlreadyConfiguredSr(Connection, String)}, we rethrow as a {@link CloudRuntimeException}.
+     */
+    protected SR retrieveAlreadyConfiguredSrWithoutException(Connection conn, String srPath) {
+        try {
+            return retrieveAlreadyConfiguredSr(conn, srPath);
+        } catch (XenAPIException | XmlRpcException e) {
+            throw new CloudRuntimeException("Unexpected exception while trying to retrieve an already configured file SR for path: " + srPath);
         }
     }
 
-    protected SR createFileSr(final Connection conn, final String remotePath, final String dir) {
-        final String localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(remotePath.getBytes());
-        mountNfs(conn, remotePath, localDir);
-        final SR sr = createFileSR(conn, localDir + "/" + dir);
+    /**
+     *  This method will check if there is an already configured file SR for the given path. If by any chance we find more an one SR with the same name (mount point path) we throw a runtime exception because this situation should never happen.
+     *  If we find an SR, we check if the SR is working properly (performing an {@link SR#scan(Connection)}). If everythign is ok with the SR, we return it.
+     *  Otherwise, we remove the SR using {@link #forgetSr(Connection, SR)} method;
+     */
+    protected SR retrieveAlreadyConfiguredSr(Connection conn, String path) throws XenAPIException, XmlRpcException {
+        Set<SR> srs = SR.getByNameLabel(conn, path);
+        if (CollectionUtils.isEmpty(srs)) {
+            s_logger.debug("No file SR found for path: " + path);
+            return null;
+        }
+        if (srs.size() > 1) {
+            throw new CloudRuntimeException("There should be only one SR with name-label: " + path);
+        }
+        SR sr = srs.iterator().next();
+        String srUuid = sr.getUuid(conn);
+        s_logger.debug(String.format("SR [%s] was already introduced in XenServer. Checking if we can reuse it.", srUuid));
+        Map<String, StorageOperations> currentOperations = sr.getCurrentOperations(conn);
+        if (MapUtils.isEmpty(currentOperations)) {
+            s_logger.debug(String.format("There are no current operation in SR [%s]. It looks like an unusual condition. We will check if it is usable before returning it.", srUuid));
+        }
+        try {
+            sr.scan(conn);
+        } catch (XenAPIException | XmlRpcException e) {
+            s_logger.debug(String.format("Problems while checking if cached temporary SR [%s] is working properly (we executed sr-scan). We will not reuse it.", srUuid));
+            forgetSr(conn, sr);
+            return null;
+        }
+        s_logger.debug(String.format("Cached temporary SR [%s] is working properly. We will reuse it.", srUuid));
         return sr;
+    }
+    
+    /**
+     *  Forgets the given SR. Before executing the command {@link SR#forget(Connection)}, we will unplug all of its PBDs using {@link PBD#unplug(Connection)}.
+     *  Checked exceptions are captured and re-thrown as {@link CloudRuntimeException}.
+     */
+    protected void forgetSr(Connection conn, SR sr) {
+        String srUuid = StringUtils.EMPTY;
+        try {
+            srUuid = sr.getUuid(conn);
+            Set<PBD> pbDs = sr.getPBDs(conn);
+            for (PBD pbd : pbDs) {
+                s_logger.debug(String.format("Unpluging PBD [%s] of SR [%s] as it is not working properly.", pbd.getUuid(conn), srUuid));
+                unplugPbd(conn, pbd);
+            }
+            s_logger.debug(String.format("Forgetting SR [%s] as it is not working properly.", srUuid));
+            sr.forget(conn);
+        } catch (XenAPIException | XmlRpcException e) {
+            throw new CloudRuntimeException("Exception while forgeting SR: " + srUuid, e);
+        }
+    }
+
+    /**
+     * Unplugs the given {@link PBD}. If checked exception happens, we re-throw as {@link CloudRuntimeException}
+     */
+    protected void unplugPbd(Connection conn, PBD pbd) {
+        String pbdUuid = StringUtils.EMPTY;
+        try {
+            pbdUuid = pbd.getUuid(conn);
+            pbd.unplug(conn);
+        } catch (XenAPIException | XmlRpcException e) {
+            throw new CloudRuntimeException(String.format("Exception while unpluging PBD [%s].", pbdUuid));
+        }
+    }
+    
+    protected SR createFileSr(Connection conn, String remotePath, String dir) {
+        String localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(remotePath.getBytes());
+        mountNfs(conn, remotePath, localDir);
+        return createFileSR(conn, localDir + "/" + dir);
     }
 
     @Override
@@ -474,7 +569,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     mountNfs(conn, secondaryStorageMountPath, localDir);
                     final boolean result = makeDirectory(conn, localDir + "/" + folder);
                     if (!result) {
-                        details = " Filed to create folder " + folder + " in secondary storage";
+                        details = " Failed to create folder " + folder + " in secondary storage";
                         s_logger.warn(details);
                         return new CopyCmdAnswer(details);
                     }
