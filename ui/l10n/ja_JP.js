@@ -104,6 +104,8 @@ var dictionary = {
     "label.acl.list.rules": "ACL ルールのリスト",
     "label.acl.name": "ACL 名",
     "label.acl.replaced": "ACL が置き換えられました",
+    "label.acl.reason": "Reason",
+    "label.acl.reason.description": "Enter the reason behind an ACL rule.",
     "label.acquire.new.ip": "新しい IP アドレスの取得",
     "label.acquire.new.secondary.ip": "セカンダリ IP アドレスの取得",
     "label.action": "操作",

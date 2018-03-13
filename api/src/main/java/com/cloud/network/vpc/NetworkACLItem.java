@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface NetworkACLItem extends InternalIdentity, Identity, Displayable {
 
+    @Override
     String getUuid();
 
     Action getAction();
@@ -51,7 +52,7 @@ public interface NetworkACLItem extends InternalIdentity, Identity, Displayable 
     Integer getSourcePortStart();
 
     /**
-     * @return last port of the source prot range.  If this is null, that means only one port is mapped.
+     * @return last port of the source port range.  If this is null, that means only one port is mapped.
      */
     Integer getSourcePortEnd();
 
@@ -70,12 +71,10 @@ public interface NetworkACLItem extends InternalIdentity, Identity, Displayable 
 
     List<String> getSourceCidrList();
 
-    /**
-     * @return
-     */
     TrafficType getTrafficType();
 
     @Override
     boolean isDisplay();
 
+    String getReason();
 }

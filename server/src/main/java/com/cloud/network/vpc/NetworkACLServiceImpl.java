@@ -27,7 +27,9 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -41,6 +43,8 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.vpc.NetworkACLItem.Action;
+import com.cloud.network.vpc.NetworkACLItem.TrafficType;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
@@ -67,31 +71,29 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     private static final Logger s_logger = Logger.getLogger(NetworkACLServiceImpl.class);
 
     @Inject
-    AccountManager _accountMgr;
+    private AccountManager _accountMgr;
     @Inject
-    NetworkModel _networkMgr;
+    private ResourceTagDao _resourceTagDao;
     @Inject
-    ResourceTagDao _resourceTagDao;
+    private NetworkACLDao _networkACLDao;
     @Inject
-    NetworkACLDao _networkACLDao;
+    private NetworkACLItemDao _networkACLItemDao;
     @Inject
-    NetworkACLItemDao _networkACLItemDao;
+    private NetworkModel networkModel;
     @Inject
-    NetworkModel _networkModel;
+    private NetworkDao _networkDao;
     @Inject
-    NetworkDao _networkDao;
+    private NetworkACLManager _networkAclMgr;
     @Inject
-    NetworkACLManager _networkAclMgr;
+    private VpcGatewayDao _vpcGatewayDao;
     @Inject
-    VpcGatewayDao _vpcGatewayDao;
+    private EntityManager _entityMgr;
     @Inject
-    VpcManager _vpcMgr;
+    private VpcDao _vpcDao;
     @Inject
-    EntityManager _entityMgr;
-    @Inject
-    VpcDao _vpcDao;
-    @Inject
-    VpcService _vpcSvc;
+    private VpcService _vpcSvc;
+
+    private String supportedProtocolsForAclRules = "tcp,udp,icmp,all";
 
     @Override
     public NetworkACL createNetworkACL(final String name, final String description, final long vpcId, final Boolean forDisplay) {
@@ -133,7 +135,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             sb.join("networkJoin", network, sb.entity().getId(), network.entity().getNetworkACLId(), JoinBuilder.JoinType.INNER);
         }
 
-        final SearchCriteria<NetworkACLVO> sc = sb.create();
+        SearchCriteria<NetworkACLVO> sc = sb.create();
 
         if (keyword != null) {
             final SearchCriteria<NetworkACLVO> ssc = _networkACLDao.createSearchCriteria();
@@ -146,7 +148,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             sc.setParameters("display", display);
         }
 
-        if(id != null){
+        if (id != null) {
             sc.setParameters("id", id);
         }
 
@@ -173,10 +175,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             final String accountName = cmd.getAccountName();
             final Long projectId = cmd.getProjectId();
             final boolean listAll = cmd.listAll();
-            final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-                    ListProjectResourcesCriteria>(domainId, isRecursive, null);
-            _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
-                    listAll, false);
+            final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
+            _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject, listAll, false);
             domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
             final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
@@ -199,7 +199,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
 
         final Filter filter = new Filter(NetworkACLVO.class, "id", false, null, null);
-        final Pair<List<NetworkACLVO>, Integer> acls =  _networkACLDao.searchAndCount(sc, filter);
+        final Pair<List<NetworkACLVO>, Integer> acls = _networkACLDao.searchAndCount(sc, filter);
         return new Pair<List<? extends NetworkACL>, Integer>(acls.first(), acls.second());
     }
 
@@ -261,7 +261,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         final PrivateGateway privateGateway = _vpcSvc.getVpcPrivateGateway(gateway.getId());
         _accountMgr.checkAccess(caller, null, true, privateGateway);
 
-        return  _networkAclMgr.replaceNetworkACLForPrivateGw(acl, privateGateway);
+        return _networkAclMgr.replaceNetworkACLForPrivateGw(acl, privateGateway);
 
     }
 
@@ -304,164 +304,342 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         return _networkAclMgr.replaceNetworkACL(acl, network);
     }
 
+    /**
+     * Creates and persists a network ACL rule. The network ACL rule is persisted as a {@link NetworkACLItemVO}.
+     * If no ACL list ID is informed, we will create one. To check these details, please refer to {@link #createAclListIfNeeded(CreateNetworkACLCmd)}.
+     * All of the attributes will be validated accordingly using the following methods:
+     * <ul>
+     * <li> {@link #validateAclRuleNumber(CreateNetworkACLCmd, Long, NetworkACL)} to validate the provided ACL rule number;
+     * <li> {@link #validateNetworkAclList(Long, NetworkACL)} to check if the user has access to the informed ACL list ID and respective VPC;
+     * <li> {@link #validateAndCreateNetworkAclRuleAction(String)} to validate the ACL rule action;
+     * <li> {@link #validateNetworkACLItem(NetworkACLItemVO)} to validate general configurations relating to protocol, ports, and ICMP codes and types.
+     * </ul>
+     *
+     * Moreover, if not ACL rule number is provided we generate one based on the last ACL number used. We will increment +1 in the last ACL rule number used. After all of the validation the ACL rule is persisted using the method {@link NetworkACLManagerImpl#createNetworkACLItem(NetworkACLItemVO)}.
+     */
     @Override
-    public NetworkACLItem createNetworkACLItem(final CreateNetworkACLCmd aclItemCmd) {
-        final Account caller = CallContext.current().getCallingAccount();
-        Long aclId = aclItemCmd.getACLId();
-        if (aclId == null) {
-            //ACL id is not specified. Get the ACL details from network
-            if (aclItemCmd.getNetworkId() == null) {
-                throw new InvalidParameterValueException("Cannot create Network ACL Item. ACL Id or network Id is required");
-            }
-            final Network network = _networkMgr.getNetwork(aclItemCmd.getNetworkId());
-            if (network.getVpcId() == null) {
-                throw new InvalidParameterValueException("Network: " + network.getUuid() + " does not belong to VPC");
-            }
-            aclId = network.getNetworkACLId();
+    public NetworkACLItem createNetworkACLItem(CreateNetworkACLCmd createNetworkACLCmd) {
+        Long aclId = createAclListIfNeeded(createNetworkACLCmd);
 
-            if (aclId == null) {
-                //Network is not associated with any ACL. Create a new ACL and add aclItem in it for backward compatibility
-                s_logger.debug("Network " + network.getId() + " is not associated with any ACL. Creating an ACL before adding acl item");
+        Integer sourcePortStart = createNetworkACLCmd.getSourcePortStart();
+        Integer sourcePortEnd = createNetworkACLCmd.getSourcePortEnd();
+        String protocol = createNetworkACLCmd.getProtocol();
+        List<String> sourceCidrList = createNetworkACLCmd.getSourceCidrList();
+        Integer icmpCode = createNetworkACLCmd.getIcmpCode();
+        Integer icmpType = createNetworkACLCmd.getIcmpType();
+        TrafficType trafficType = createNetworkACLCmd.getTrafficType();
+        String reason = createNetworkACLCmd.getReason();
+        String action = createNetworkACLCmd.getAction();
 
-                //verify that ACLProvider is supported by network offering
-                if (!_networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.NetworkACL)) {
-                    throw new InvalidParameterValueException("Network Offering does not support NetworkACL service");
-                }
+        NetworkACL acl = _networkAclMgr.getNetworkACL(aclId);
 
-                final Vpc vpc = _entityMgr.findById(Vpc.class, network.getVpcId());
-                if (vpc == null) {
-                    throw new InvalidParameterValueException("Unable to find Vpc associated with the Network");
-                }
+        validateNetworkAcl(acl);
+        validateAclRuleNumber(createNetworkACLCmd, acl);
 
-                //Create new ACL
-                final String aclName = "VPC_" + vpc.getName() + "_Tier_" + network.getName() + "_ACL_" + network.getUuid();
-                final String description = "ACL for " + aclName;
-                final NetworkACL acl = _networkAclMgr.createNetworkACL(aclName, description, network.getVpcId(), aclItemCmd.getDisplay());
-                if (acl == null) {
-                    throw new CloudRuntimeException("Error while create ACL before adding ACL Item for network " + network.getId());
-                }
-                s_logger.debug("Created ACL: " + aclName + " for network " + network.getId());
-                aclId = acl.getId();
-                //Apply acl to network
-                try {
-                    if (!_networkAclMgr.replaceNetworkACL(acl, (NetworkVO)network)) {
-                        throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId());
-                    }
-                    s_logger.debug("Created ACL is applied to network " + network.getId());
-                } catch (final ResourceUnavailableException e) {
-                    throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId(), e);
-                }
+        NetworkACLItem.Action ruleAction = validateAndCreateNetworkAclRuleAction(action);
+        Integer number = createNetworkACLCmd.getNumber();
+        if (number == null) {
+            number = _networkACLItemDao.getMaxNumberByACL(aclId) + 1;
+        }
+        NetworkACLItemVO networkACLItemVO = new NetworkACLItemVO(sourcePortStart, sourcePortEnd, protocol, aclId, sourceCidrList, icmpCode, icmpType, trafficType, ruleAction, number, reason);
+        networkACLItemVO.setDisplay(createNetworkACLCmd.isDisplay());
+
+        validateNetworkACLItem(networkACLItemVO);
+        return _networkAclMgr.createNetworkACLItem(networkACLItemVO);
+    }
+
+    /**
+     *  We first validate the given ACL action as a string using {@link #validateNetworkAclRuleAction(String)}.
+     *  Afterwards, we convert this ACL to an object of {@link NetworkACLItem.Action}.
+     *  If the action as String matches the word 'deny' (ignoring case), we return an instance of {@link NetworkACLItem.Action#Deny}.
+     *  Otherwise, we return {@link NetworkACLItem.Action#Allow}.
+     */
+    protected NetworkACLItem.Action validateAndCreateNetworkAclRuleAction(String action) {
+        validateNetworkAclRuleAction(action);
+        NetworkACLItem.Action ruleAction = NetworkACLItem.Action.Allow;
+        if ("deny".equalsIgnoreCase(action)) {
+            ruleAction = NetworkACLItem.Action.Deny;
+        }
+        return ruleAction;
+    }
+
+    /**
+     * Validates the network ACL rule action given as a {@link String}.
+     * If the parameter is null, we do not perform any validations. Otherwise, we check if the parameter is equal to 'Allow' or 'Deny' (ignoring the case).
+     * If the parameter is an invalid action, we throw an {@link InvalidParameterValueException}.
+     */
+    protected void validateNetworkAclRuleAction(String action) {
+        if (action != null) {
+            if (!("Allow".equalsIgnoreCase(action) || "Deny".equalsIgnoreCase(action))) {
+                throw new InvalidParameterValueException(String.format("Invalid action [%s]. Permitted actions are Allow and Deny", action));
             }
         }
+    }
 
-        final NetworkACL acl = _networkAclMgr.getNetworkACL(aclId);
+    /**
+     * Validates the ACL rule number field. If the field is null, then we do not have anything to check here.
+     * If the number is not null, we perform the following checks:
+     * <ul>
+     *  <li>If number is less than one, than we throw an {@link InvalidParameterValueException};
+     *  <li>if there is already an ACL configured with the given number for the network, we also throw an {@link InvalidParameterValueException}. The check is performed using {@link NetworkACLItemDao#findByAclAndNumber(long, int)} method.
+     * </ul>
+     *
+     * At the end, if not exception is thrown, the number of the ACL rule is valid.
+     */
+    protected void validateAclRuleNumber(CreateNetworkACLCmd createNetworkAclCmd, NetworkACL acl) {
+        Integer number = createNetworkAclCmd.getNumber();
+        if (number != null) {
+            if (number < 1) {
+                throw new InvalidParameterValueException(String.format("Invalid number [%d]. Number cannot be < 1", number));
+            }
+            if (_networkACLItemDao.findByAclAndNumber(acl.getId(), createNetworkAclCmd.getNumber()) != null) {
+                throw new InvalidParameterValueException("ACL item with number " + number + " already exists in ACL: " + acl.getUuid());
+            }
+        }
+    }
+
+    /**
+     * Validates a given {@link NetworkACL}. The validations are the following:
+     * <ul>
+     *  <li>If the parameter is null, we return an  {@link InvalidParameterValueException};
+     *  <li>Default ACLs {@link NetworkACL#DEFAULT_ALLOW} and {@link NetworkACL#DEFAULT_DENY} cannot be modified. Therefore, if any of them is provided we throw a {@link InvalidParameterValueException};
+     *  <li>If the network does not have a VPC, we will throw an {@link InvalidParameterValueException}.
+     * </ul>
+     *
+     * After all validations, we check if the user has access to the given network ACL using {@link AccountManager#checkAccess(Account, org.apache.cloudstack.acl.SecurityChecker.AccessType, boolean, org.apache.cloudstack.acl.ControlledEntity...)}.
+     */
+    protected void validateNetworkAcl(NetworkACL acl) {
         if (acl == null) {
-            throw new InvalidParameterValueException("Unable to find specified ACL");
+            throw new InvalidParameterValueException("Unable to find specified ACL.");
         }
 
-        if (aclId == NetworkACL.DEFAULT_DENY || aclId == NetworkACL.DEFAULT_ALLOW) {
+        if (acl.getId() == NetworkACL.DEFAULT_DENY || acl.getId() == NetworkACL.DEFAULT_ALLOW) {
             throw new InvalidParameterValueException("Default ACL cannot be modified");
         }
 
-        final Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
+        Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
         if (vpc == null) {
-            throw new InvalidParameterValueException("Unable to find Vpc associated with the NetworkACL");
+            throw new InvalidParameterValueException(String.format("Unable to find Vpc associated with the NetworkACL [%s]", acl.getUuid()));
         }
+        Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vpc);
+    }
 
-        //Ensure that number is unique within the ACL
-        if (aclItemCmd.getNumber() != null) {
-            if (_networkACLItemDao.findByAclAndNumber(aclId, aclItemCmd.getNumber()) != null) {
-                throw new InvalidParameterValueException("ACL item with number " + aclItemCmd.getNumber() + " already exists in ACL: " + acl.getUuid());
+    /**
+     * This methods will simply return the ACL rule list ID if it has been provided by the parameter 'createNetworkACLCmd'.
+     * If no ACL rule List ID has been provided the method behave as follows:
+     * <ul>
+     *  <li> If it has not been provided either, we will throw an {@link InvalidParameterValueException};
+     *  <li> if the network ID has been provided, we will check if the network has a VPC; if it does not have, we will throw an {@link InvalidParameterValueException};
+     *  <ul>
+     *      <li> If the VPC already has an ACL rule list, we will return it;
+     *      <li> otherwise, we will create one using {@link #createAclListForNetworkAndReturnAclListId(CreateNetworkACLCmd, Network)} method. This behavior is a legacy thing that has been maintained so far.
+     *  </ul>
+     * </ul>
+     *
+     * @return The network ACL list ID
+     */
+    protected Long createAclListIfNeeded(CreateNetworkACLCmd createNetworkACLCmd) {
+        Long aclId = createNetworkACLCmd.getACLId();
+        if (aclId != null) {
+            return aclId;
+        }
+        if (createNetworkACLCmd.getNetworkId() == null) {
+            throw new InvalidParameterValueException("Cannot create Network ACL Item. ACL Id or network Id is required");
+        }
+        Network network = networkModel.getNetwork(createNetworkACLCmd.getNetworkId());
+        if (network.getVpcId() == null) {
+            throw new InvalidParameterValueException("Network: " + network.getUuid() + " does not belong to VPC");
+        }
+        aclId = network.getNetworkACLId();
+
+        if (aclId == null) {
+            aclId = createAclListForNetworkAndReturnAclListId(createNetworkACLCmd, network);
+        }
+        return aclId;
+    }
+
+    /**
+     * This method will created a network ACL for the provided network. This method will behave as follows:
+     * <ul>
+     *  <li> If the network offering does not support ACLs ( {@link NetworkModel#areServicesSupportedByNetworkOffering(long, com.cloud.network.Network.Service...)} ), then it throws an {@link InvalidParameterValueException};
+     *  <li> If the network does not have any VPC, it throws an {@link InvalidParameterValueException};
+     *  <li> If everything is OK so far, we try to create the ACL using {@link NetworkACLManagerImpl#createNetworkACL(String, String, long, Boolean)} method.
+     *  <ul>
+     *      <li> If the ACL is not created we throw a {@link CloudRuntimeException};
+     *      <li> otherwise, the workflow continues.
+     *  </ul>
+     *  <li> With the ACL in our hands, we try to apply it. If it does not work we throw a {@link CloudRuntimeException}.
+     * </ul>
+     *
+     * @return the Id of the network ACL that is created.
+     */
+    protected Long createAclListForNetworkAndReturnAclListId(CreateNetworkACLCmd aclItemCmd, Network network) {
+        s_logger.debug("Network " + network.getId() + " is not associated with any ACL. Creating an ACL before adding acl item");
+
+        if (!networkModel.areServicesSupportedByNetworkOffering(network.getNetworkOfferingId(), Network.Service.NetworkACL)) {
+            throw new InvalidParameterValueException("Network Offering does not support NetworkACL service");
+        }
+
+        Vpc vpc = _entityMgr.findById(Vpc.class, network.getVpcId());
+        if (vpc == null) {
+            throw new InvalidParameterValueException("Unable to find Vpc associated with the Network");
+        }
+
+        String aclName = "VPC_" + vpc.getName() + "_Tier_" + network.getName() + "_ACL_" + network.getUuid();
+        String description = "ACL for " + aclName;
+        NetworkACL acl = _networkAclMgr.createNetworkACL(aclName, description, network.getVpcId(), aclItemCmd.isDisplay());
+        if (acl == null) {
+            throw new CloudRuntimeException("Error while create ACL before adding ACL Item for network " + network.getId());
+        }
+        s_logger.debug("Created ACL: " + aclName + " for network " + network.getId());
+        Long aclId = acl.getId();
+        //Apply acl to network
+        try {
+            if (!_networkAclMgr.replaceNetworkACL(acl, (NetworkVO)network)) {
+                throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId());
+            }
+            s_logger.debug("Created ACL is applied to network " + network.getId());
+        } catch (ResourceUnavailableException e) {
+            throw new CloudRuntimeException("Unable to apply auto created ACL to network " + network.getId(), e);
+        }
+        return aclId;
+    }
+
+    /**
+     *  Performs all of the validations for the {@link NetworkACLItem}.
+     *  First we validate the sources start and end ports using {@link #validateSourceStartAndEndPorts(NetworkACLItemVO)};
+     *  then, we validate the source CIDR list using {@link #validateSourceCidrList(NetworkACLItemVO)};
+     *  afterwards, it is validated the protocol entered in the {@link NetworkACLItemVO} using {@link #validateProtocol(NetworkACLItemVO)}.
+     */
+    protected void validateNetworkACLItem(NetworkACLItemVO networkACLItemVO) {
+        validateSourceStartAndEndPorts(networkACLItemVO);
+        validateSourceCidrList(networkACLItemVO);
+        validateProtocol(networkACLItemVO);
+    }
+
+    /**
+     * Validated ICMP type and code of {@link NetworkACLItemVO}. The behavior of this method is the following:
+     * <ul>
+     *  <li>If no ICMP type is provided, we do not perform validations;
+     *  <li>If the ICMP type is not '-1', we validate it using {@link NetUtils#validateIcmpType(long)};
+     *  <li>If the ICMP code is null, we do not perform validations;
+     *  <li>If the ICMP code is not '-1', we validate it using {@link NetUtils#validateIcmpCode(long)};
+     * </ul>
+     * Failing to meet the above conditions, we throw an {@link InvalidParameterValueException}.
+     */
+    protected void validateIcmpTypeAndCode(NetworkACLItemVO networkACLItemVO) {
+        Integer icmpType = networkACLItemVO.getIcmpType();
+        Integer icmpCode = networkACLItemVO.getIcmpCode();
+        if (icmpType == null) {
+            return;
+        }
+        if (icmpType.longValue() != -1 && !NetUtils.validateIcmpType(icmpType.longValue())) {
+            throw new InvalidParameterValueException(String.format("Invalid icmp type [%d]. It should belong to [0-255] range", icmpType));
+        }
+        if (icmpCode != null) {
+            if (icmpCode.longValue() != -1 && !NetUtils.validateIcmpCode(icmpCode.longValue())) {
+                throw new InvalidParameterValueException(String.format("Invalid icmp code [%d]. It should belong to [0-15] range and can be defined when icmpType belongs to [0-40] range", icmpCode));
+            }
+        }
+    }
+
+    /**
+     *   Validates the {@link NetworkACLItemVO} protocol. If the protocol is blank, we do not execute any validations. Otherwise, we perform the following checks:
+     *   <ul>
+     *      <li>If it is a numeric value, the protocol must be bigger or equal to 0 and smaller or equal to 255;
+     *      <li>if it is a {@link String}, it must be one of the following: {@link #supportedProtocolsForAclRules};
+     *   </ul>
+     *    Whenever the conditions enumerated above are not met, we throw an {@link InvalidParameterValueException}.
+     *
+     *    If the parameter passes the protocol type validations, we check the following:
+     *    <ul>
+     *      <li>If it is not an ICMP type protocol, it cannot have any value in {@link NetworkACLItemVO#getIcmpCode()} and {@link NetworkACLItemVO#getIcmpType()};
+     *      <li>If it is an ICMP type protocol, it cannot have any value in {@link NetworkACLItemVO#getSourcePortStart()} and {@link NetworkACLItemVO#getSourcePortEnd()}.
+     *    </ul>
+     *    Failing to meet the above conditions, we throw an {@link InvalidParameterValueException}.
+     *
+     *    The last check is performed via {@link #validateIcmpTypeAndCode(NetworkACLItemVO)} method.
+     */
+    protected void validateProtocol(NetworkACLItemVO networkACLItemVO) {
+        String protocol = networkACLItemVO.getProtocol();
+        if (StringUtils.isBlank(protocol)) {
+            return;
+        }
+        if (StringUtils.isNumeric(protocol)) {
+            int protoNumber = Integer.parseInt(protocol);
+            if (protoNumber < 0 || protoNumber > 255) {
+                throw new InvalidParameterValueException("Invalid protocol number: " + protoNumber);
+            }
+        } else {
+            if (!supportedProtocolsForAclRules.contains(protocol.toLowerCase())) {
+                throw new InvalidParameterValueException(String.format("Invalid protocol [%s]. Expected one of: [%s]", protocol, supportedProtocolsForAclRules));
             }
         }
 
-        validateNetworkACLItem(aclItemCmd.getSourcePortStart(), aclItemCmd.getSourcePortEnd(), aclItemCmd.getSourceCidrList(), aclItemCmd.getProtocol(),
-                aclItemCmd.getIcmpCode(), aclItemCmd.getIcmpType(), aclItemCmd.getAction(), aclItemCmd.getNumber());
+        Integer icmpCode = networkACLItemVO.getIcmpCode();
+        Integer icmpType = networkACLItemVO.getIcmpType();
+        // icmp code and icmp type can't be passed in for any other protocol rather than icmp
+        boolean isIcmpProtocol = protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO);
+        if (!isIcmpProtocol && (icmpCode != null || icmpType != null)) {
+            throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
+        }
 
-        return _networkAclMgr.createNetworkACLItem(aclItemCmd.getSourcePortStart(), aclItemCmd.getSourcePortEnd(), aclItemCmd.getProtocol(),
-                aclItemCmd.getSourceCidrList(), aclItemCmd.getIcmpCode(), aclItemCmd.getIcmpType(), aclItemCmd.getTrafficType(), aclId, aclItemCmd.getAction(),
-                aclItemCmd.getNumber(), aclItemCmd.getDisplay());
+        Integer sourcePortStart = networkACLItemVO.getSourcePortStart();
+        Integer sourcePortEnd = networkACLItemVO.getSourcePortEnd();
+        if (isIcmpProtocol && (sourcePortStart != null || sourcePortEnd != null)) {
+            throw new InvalidParameterValueException("Can't specify start/end port when protocol is ICMP");
+        }
+
+        validateIcmpTypeAndCode(networkACLItemVO);
     }
 
-    private void validateNetworkACLItem(final Integer portStart, final Integer portEnd, final List<String> sourceCidrList, final String protocol, final Integer icmpCode, final Integer icmpType,
-            final String action, final Integer number) {
-
-        if (portStart != null && !NetUtils.isValidPort(portStart)) {
-            throw new InvalidParameterValueException("publicPort is an invalid value: " + portStart);
-        }
-        if (portEnd != null && !NetUtils.isValidPort(portEnd)) {
-            throw new InvalidParameterValueException("Public port range is an invalid value: " + portEnd);
-        }
-
-        // start port can't be bigger than end port
-        if (portStart != null && portEnd != null && portStart > portEnd) {
-            throw new InvalidParameterValueException("Start port can't be bigger than end port");
-        }
-
-        // start port and end port must be null for protocol = 'all'
-        if ((portStart != null || portEnd != null) && protocol != null && protocol.equalsIgnoreCase("all")) {
-            throw new InvalidParameterValueException("start port and end port must be null if protocol = 'all'");
-        }
-
-        if (sourceCidrList != null) {
-            for (final String cidr : sourceCidrList) {
+    /**
+     *  Validates all of the CIDRs in the {@link NetworkACLItemVO#getSourceCidrList()}.
+     *  If the list is empty we do not execute any validation. Otherwise, all of the CIDRs are validated using {@link NetUtils#isValidIp4Cidr(String)}.
+     */
+    protected void validateSourceCidrList(NetworkACLItemVO networkACLItemVO) {
+        List<String> sourceCidrList = networkACLItemVO.getSourceCidrList();
+        if (CollectionUtils.isNotEmpty(sourceCidrList)) {
+            for (String cidr : sourceCidrList) {
                 if (!NetUtils.isValidIp4Cidr(cidr)) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Source cidrs formatting error " + cidr);
                 }
             }
         }
+    }
 
-        //Validate Protocol
-        if (protocol != null) {
-            //Check if protocol is a number
-            if (StringUtils.isNumeric(protocol)) {
-                final int protoNumber = Integer.parseInt(protocol);
-                if (protoNumber < 0 || protoNumber > 255) {
-                    throw new InvalidParameterValueException("Invalid protocol number: " + protoNumber);
-                }
-            } else {
-                //Protocol is not number
-                //Check for valid protocol strings
-                final String supportedProtocols = "tcp,udp,icmp,all";
-                if (!supportedProtocols.contains(protocol.toLowerCase())) {
-                    throw new InvalidParameterValueException("Invalid protocol: " + protocol);
-                }
-            }
-
-            // icmp code and icmp type can't be passed in for any other protocol rather than icmp
-            if (!protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (icmpCode != null || icmpType != null)) {
-                throw new InvalidParameterValueException("Can specify icmpCode and icmpType for ICMP protocol only");
-            }
-
-            if (protocol.equalsIgnoreCase(NetUtils.ICMP_PROTO) && (portStart != null || portEnd != null)) {
-                throw new InvalidParameterValueException("Can't specify start/end port when protocol is ICMP");
-            }
+    /**
+     * Validates the source start and end ports for the given network ACL rule.
+     * If both ports (start and end) are null, we do not execute validations. Otherwise, we check the following:
+     * <ul>
+     *  <li> Check if start port is valid using {@link NetUtils#isValidPort(int)};
+     *  <li> Check if end port is valid using {@link NetUtils#isValidPort(int)};
+     *  <li> Check if start port is bigger than end port;
+     *  <li> Check if start and end ports were used with protocol 'all'
+     *  </ul>
+     *  All of the above cases will generate an {@link InvalidParameterValueException}.
+     */
+    protected void validateSourceStartAndEndPorts(NetworkACLItemVO networkACLItemVO) {
+        Integer sourcePortStart = networkACLItemVO.getSourcePortStart();
+        Integer sourcePortEnd = networkACLItemVO.getSourcePortEnd();
+        if (sourcePortStart == null && sourcePortEnd == null) {
+            return;
         }
 
-        //validate icmp code and type
-        if (icmpType != null) {
-            if (icmpType.longValue() != -1 && !NetUtils.validateIcmpType(icmpType.longValue())) {
-                throw new InvalidParameterValueException("Invalid icmp type; should belong to [0-255] range");
-            }
-            if (icmpCode != null) {
-                if (icmpCode.longValue() != -1 && !NetUtils.validateIcmpCode(icmpCode.longValue())) {
-                    throw new InvalidParameterValueException("Invalid icmp code; should belong to [0-15] range and can"
-                            + " be defined when icmpType belongs to [0-40] range");
-                }
-            }
+        if (!NetUtils.isValidPort(sourcePortStart)) {
+            throw new InvalidParameterValueException("Start public port is an invalid value: " + sourcePortStart);
         }
 
-        //Check ofr valid action Allow/Deny
-        if (action != null) {
-            if (!("Allow".equalsIgnoreCase(action) || "Deny".equalsIgnoreCase(action))) {
-                throw new InvalidParameterValueException("Invalid action. Allowed actions are Allow and Deny");
-            }
+        if (!NetUtils.isValidPort(sourcePortEnd)) {
+            throw new InvalidParameterValueException("End public port is an invalid value: " + sourcePortEnd);
         }
-
-        //Check for valid number
-        if (number != null && number < 1) {
-            throw new InvalidParameterValueException("Invalid number. Number cannot be < 1");
+        if (sourcePortStart > sourcePortEnd) {
+            throw new InvalidParameterValueException(String.format("Start port can't be bigger than end port [startport=%d,endport=%d]", sourcePortStart, sourcePortEnd));
+        }
+        String protocol = networkACLItemVO.getProtocol();
+        if ("all".equalsIgnoreCase(protocol)) {
+            throw new InvalidParameterValueException("start port and end port must be null if protocol = 'all'");
         }
     }
 
@@ -524,7 +702,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         if (networkId != null) {
             final Network network = _networkDao.findById(networkId);
             aclId = network.getNetworkACLId();
-            if( aclId == null){
+            if (aclId == null) {
                 // No aclId associated with the network.
                 //Return empty list
                 return new Pair(new ArrayList<NetworkACLItem>(), 0);
@@ -549,7 +727,6 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         } else {
             //ToDo: Add accountId to network_acl_item table for permission check
 
-
             // aclId is not specified
             // List permitted VPCs and filter aclItems
             final List<Long> permittedAccounts = new ArrayList<Long>();
@@ -558,10 +735,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             final String accountName = cmd.getAccountName();
             final Long projectId = cmd.getProjectId();
             final boolean listAll = cmd.listAll();
-            final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean,
-                    ListProjectResourcesCriteria>(domainId, isRecursive, null);
-            _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject,
-                    listAll, false);
+            final Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject = new Ternary<Long, Boolean, ListProjectResourcesCriteria>(domainId, isRecursive, null);
+            _accountMgr.buildACLSearchParameters(caller, id, accountName, projectId, permittedAccounts, domainIdRecursiveListProject, listAll, false);
             domainId = domainIdRecursiveListProject.first();
             isRecursive = domainIdRecursiveListProject.second();
             final ListProjectResourcesCriteria listProjectResourcesCriteria = domainIdRecursiveListProject.third();
@@ -599,7 +774,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         final Pair<List<NetworkACLItemVO>, Integer> result = _networkACLItemDao.searchAndCount(sc, filter);
         final List<NetworkACLItemVO> aclItemVOs = result.first();
-        for (final NetworkACLItemVO item: aclItemVOs) {
+        for (final NetworkACLItemVO item : aclItemVOs) {
             _networkACLItemDao.loadCidrs(item);
         }
         return new Pair<List<? extends NetworkACLItem>, Integer>(aclItemVOs, result.second());
@@ -609,12 +784,12 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_ITEM_DELETE, eventDescription = "Deleting Network ACL Item", async = true)
     public boolean revokeNetworkACLItem(final long ruleId) {
         final NetworkACLItemVO aclItem = _networkACLItemDao.findById(ruleId);
-        if(aclItem != null){
+        if (aclItem != null) {
             final NetworkACL acl = _networkAclMgr.getNetworkACL(aclItem.getAclId());
 
             final Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
 
-            if(aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW || aclItem.getAclId() == NetworkACL.DEFAULT_DENY){
+            if (aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW || aclItem.getAclId() == NetworkACL.DEFAULT_DENY) {
                 throw new InvalidParameterValueException("ACL Items in default ACL cannot be deleted");
             }
 
@@ -626,38 +801,105 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         return _networkAclMgr.revokeNetworkACLItem(ruleId);
     }
 
+    /**
+     * Updates a network ACL with the given values found in the {@link UpdateNetworkACLItemCmd} parameter.
+     * First we will validate the network ACL rule provided in the command using {@link #validateNetworkAclRuleIdAndRetrieveIt(UpdateNetworkACLItemCmd)}.
+     * Then, we validate the ACL itself using {@link #validateNetworkAcl(NetworkACL)}. If all of the validation is ok, we do the following.
+     * <ul>
+     *  <li>Transfer new data to {@link NetworkACLItemVO} that is intended to be updated;
+     *  <li>Validate the ACL rule being updated using {@link #validateNetworkACLItem(NetworkACLItemVO)}.
+     * </ul>
+     *
+     * After the validations and updating the POJO we execute the update in the database using {@link NetworkACLManagerImpl#updateNetworkACLItem(NetworkACLItemVO)}.
+     *
+     */
     @Override
-    public NetworkACLItem updateNetworkACLItem(final Long id, final String protocol, final List<String> sourceCidrList, final NetworkACLItem.TrafficType trafficType, final String action,
-            final Integer number, final Integer sourcePortStart, final Integer sourcePortEnd, final Integer icmpCode, final Integer icmpType, final String newUUID, final Boolean forDisplay) throws ResourceUnavailableException {
-        final NetworkACLItemVO aclItem = _networkACLItemDao.findById(id);
-        if (aclItem == null) {
-            throw new InvalidParameterValueException("Unable to find ACL Item cannot be found");
-        }
+    public NetworkACLItem updateNetworkACLItem(UpdateNetworkACLItemCmd updateNetworkACLItemCmd) throws ResourceUnavailableException {
+        NetworkACLItemVO networkACLItemVo = validateNetworkAclRuleIdAndRetrieveIt(updateNetworkACLItemCmd);
 
-        if (aclItem.getAclId() == NetworkACL.DEFAULT_ALLOW || aclItem.getAclId() == NetworkACL.DEFAULT_DENY) {
-            throw new InvalidParameterValueException("Default ACL Items cannot be updated");
-        }
+        NetworkACL acl = _networkAclMgr.getNetworkACL(networkACLItemVo.getAclId());
+        validateNetworkAcl(acl);
 
-        final NetworkACL acl = _networkAclMgr.getNetworkACL(aclItem.getAclId());
+        transferDataToNetworkAclRulePojo(updateNetworkACLItemCmd, networkACLItemVo, acl);
+        validateNetworkACLItem(networkACLItemVo);
+        return _networkAclMgr.updateNetworkACLItem(networkACLItemVo);
+    }
 
-        final Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
-
-        final Account caller = CallContext.current().getCallingAccount();
-
-        _accountMgr.checkAccess(caller, null, true, vpc);
-
+    /**
+     *  We transfer the update information form {@link UpdateNetworkACLItemCmd} to the {@link NetworkACLItemVO} POJO passed as parameter.
+     *  There is one validation performed here, which is regarding the number of the ACL. We will check if there is already an ACL rule with that number, and if this is the case an {@link InvalidParameterValueException} is thrown.
+     *  All of the parameters in {@link UpdateNetworkACLItemCmd} that are not null will be set to their corresponding fields in {@link NetworkACLItemVO}.
+     *
+     *  We use {@link #validateAndCreateNetworkAclRuleAction(String)} when converting an action as {@link String} to its Enum corresponding value.
+     */
+    protected void transferDataToNetworkAclRulePojo(UpdateNetworkACLItemCmd updateNetworkACLItemCmd, NetworkACLItemVO networkACLItemVo, NetworkACL acl) {
+        Integer number = updateNetworkACLItemCmd.getNumber();
         if (number != null) {
-            //Check if ACL Item with specified number already exists
-            final NetworkACLItemVO aclNumber = _networkACLItemDao.findByAclAndNumber(acl.getId(), number);
-            if (aclNumber != null && aclNumber.getId() != id) {
+            NetworkACLItemVO aclNumber = _networkACLItemDao.findByAclAndNumber(acl.getId(), number);
+            if (aclNumber != null && aclNumber.getId() != networkACLItemVo.getId()) {
                 throw new InvalidParameterValueException("ACL item with number " + number + " already exists in ACL: " + acl.getUuid());
             }
+            networkACLItemVo.setNumber(number);
         }
 
-        validateNetworkACLItem(sourcePortStart == null ? aclItem.getSourcePortStart() : sourcePortStart, sourcePortEnd == null ? aclItem.getSourcePortEnd()
-                : sourcePortEnd, sourceCidrList, protocol, icmpCode, icmpType == null ? aclItem.getIcmpType() : icmpType, action, number);
+        Integer sourcePortStart = updateNetworkACLItemCmd.getSourcePortStart();
+        if (sourcePortStart != null) {
+            networkACLItemVo.setSourcePortStart(sourcePortStart);
+        }
+        Integer sourcePortEnd = updateNetworkACLItemCmd.getSourcePortEnd();
+        if (sourcePortEnd != null) {
+            networkACLItemVo.setSourcePortEnd(sourcePortEnd);
+        }
+        List<String> sourceCidrList = updateNetworkACLItemCmd.getSourceCidrList();
+        if (CollectionUtils.isNotEmpty(sourceCidrList)) {
+            networkACLItemVo.setSourceCidrList(sourceCidrList);
+        }
+        String protocol = updateNetworkACLItemCmd.getProtocol();
+        if (StringUtils.isNotBlank(protocol)) {
+            networkACLItemVo.setProtocol(protocol);
+        }
+        Integer icmpCode = updateNetworkACLItemCmd.getIcmpCode();
+        if (icmpCode != null) {
+            networkACLItemVo.setIcmpCode(icmpCode);
+        }
+        Integer icmpType = updateNetworkACLItemCmd.getIcmpType();
+        if (icmpType != null) {
+            networkACLItemVo.setIcmpType(icmpType);
+        }
+        String action = updateNetworkACLItemCmd.getAction();
+        if (StringUtils.isNotBlank(action)) {
+            Action aclRuleAction = validateAndCreateNetworkAclRuleAction(action);
+            networkACLItemVo.setAction(aclRuleAction);
+        }
+        TrafficType trafficType = updateNetworkACLItemCmd.getTrafficType();
+        if (trafficType != null) {
+            networkACLItemVo.setTrafficType(trafficType);
+        }
+        String customId = updateNetworkACLItemCmd.getCustomId();
+        if (StringUtils.isNotBlank(customId)) {
+            networkACLItemVo.setUuid(customId);
+        }
+        boolean display = updateNetworkACLItemCmd.isDisplay();
+        if (display != networkACLItemVo.isDisplay()) {
+            networkACLItemVo.setDisplay(display);
+        }
+        String reason = updateNetworkACLItemCmd.getReason();
+        if (StringUtils.isNotBlank(reason)) {
+            networkACLItemVo.setReason(reason);
+        }
+    }
 
-        return _networkAclMgr.updateNetworkACLItem(id, protocol, sourceCidrList, trafficType, action, number, sourcePortStart, sourcePortEnd, icmpCode, icmpType, newUUID, forDisplay);
+    /**
+     * We validate the network ACL rule ID provided. If not ACL rule is found with the given Id an {@link InvalidParameterValueException} is thrown.
+     * If an ACL rule is found, we return the clone of the rule to avoid messing up with CGlib enhanced objects that might be linked to database entries.
+     */
+    protected NetworkACLItemVO validateNetworkAclRuleIdAndRetrieveIt(UpdateNetworkACLItemCmd updateNetworkACLItemCmd) {
+        Long id = updateNetworkACLItemCmd.getId();
+        NetworkACLItemVO networkACLItemVoFromDatabase = _networkACLItemDao.findById(id);
+        if (networkACLItemVoFromDatabase == null) {
+            throw new InvalidParameterValueException(String.format("Unable to find ACL rule with ID [%s]", id));
+        }
+        return networkACLItemVoFromDatabase.clone();
     }
 
     @Override

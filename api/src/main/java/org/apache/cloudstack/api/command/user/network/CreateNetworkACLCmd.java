@@ -40,11 +40,7 @@ import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.user.Account;
 import com.cloud.utils.net.NetUtils;
 
-@APICommand(name = "createNetworkACL",
-            description = "Creates a ACL rule in the given network (the network has to belong to VPC)",
-            responseObject = NetworkACLItemResponse.class,
-            requestHasSensitiveInfo = false,
-            responseHasSensitiveInfo = false)
+@APICommand(name = "createNetworkACL", description = "Creates a ACL rule in the given network (the network has to belong to VPC)", responseObject = NetworkACLItemResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkACLCmd.class.getName());
 
@@ -54,10 +50,7 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     // ////////////// API parameters /////////////////////
     // ///////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.PROTOCOL,
-               type = CommandType.STRING,
-               required = true,
-               description = "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
+    @Parameter(name = ApiConstants.PROTOCOL, type = CommandType.STRING, required = true, description = "the protocol for the ACL rule. Valid values are TCP/UDP/ICMP/ALL or valid protocol number")
     private String protocol;
 
     @Parameter(name = ApiConstants.START_PORT, type = CommandType.INTEGER, description = "the starting port of ACL")
@@ -75,20 +68,13 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ICMP_CODE, type = CommandType.INTEGER, description = "error code for this ICMP message")
     private Integer icmpCode;
 
-    @Parameter(name = ApiConstants.NETWORK_ID,
-               type = CommandType.UUID,
-               entityType = NetworkResponse.class,
-               description = "The network of the VM the ACL will be created for")
+    @Parameter(name = ApiConstants.NETWORK_ID, type = CommandType.UUID, entityType = NetworkResponse.class, description = "The network of the VM the ACL will be created for")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.ACL_ID,
-               type = CommandType.UUID,
-               entityType = NetworkACLResponse.class,
-               description = "The network of the VM the ACL will be created for")
+    @Parameter(name = ApiConstants.ACL_ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, description = "The network of the VM the ACL will be created for")
     private Long aclId;
 
-    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the ACL,"
-        + "can be ingress or egress, defaulted to ingress if not specified")
+    @Parameter(name = ApiConstants.TRAFFIC_TYPE, type = CommandType.STRING, description = "the traffic type for the ACL," + "can be ingress or egress, defaulted to ingress if not specified")
     private String trafficType;
 
     @Parameter(name = ApiConstants.NUMBER, type = CommandType.INTEGER, description = "The network of the VM the ACL will be created for")
@@ -97,16 +83,16 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
     @Parameter(name = ApiConstants.ACTION, type = CommandType.STRING, description = "scl entry action, allow or deny")
     private String action;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the rule to the end user or not", since = "4.4", authorized = {
+            RoleType.Admin})
     private Boolean display;
+
+    @Parameter(name = ApiConstants.ACL_REASON, type = CommandType.STRING, description = "A description indicating why the ACL rule is required.")
+    private String reason;
 
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
-    @Deprecated
-    public Boolean getDisplay() {
-        return display;
-    }
 
     @Override
     public boolean isDisplay() {
@@ -227,6 +213,10 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
         return aclId;
     }
 
+    public String getReason() {
+        return reason;
+    }
+
     @Override
     public void create() {
         NetworkACLItem result = _networkACLService.createNetworkACLItem(this);
@@ -257,5 +247,4 @@ public class CreateNetworkACLCmd extends BaseAsyncCreateCmd {
             }
         }
     }
-
 }

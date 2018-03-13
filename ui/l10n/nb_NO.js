@@ -104,6 +104,8 @@ var dictionary = {
     "label.acl.list.rules": "ACL Liste Regler",
     "label.acl.name": "ACL Navn",
     "label.acl.replaced": "ACL erstattet",
+    "label.acl.reason": "Reason",
+    "label.acl.reason.description": "Enter the reason behind an ACL rule.",
     "label.acquire.new.ip": "Tilegne ny IP",
     "label.acquire.new.secondary.ip": "Tilegne ny sekundær IP",
     "label.action": "Handling",

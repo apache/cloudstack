@@ -20,14 +20,9 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.user.User;
-import junit.framework.TestCase;
-
-import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.test.utils.SpringUtils;
-import org.apache.log4j.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,7 +43,6 @@ import org.springframework.test.context.support.AnnotationConfigContextLoader;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.vpc.NetworkACLItem;
 import com.cloud.network.vpc.NetworkACLItemDao;
 import com.cloud.network.vpc.NetworkACLItemVO;
 import com.cloud.network.vpc.NetworkACLManager;
@@ -66,38 +60,30 @@ import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
+import com.cloud.user.User;
 import com.cloud.user.UserVO;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
 
+import junit.framework.TestCase;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 public class NetworkACLServiceTest extends TestCase {
-    @Inject
-    NetworkACLService _aclService;
 
     @Inject
-    AccountManager _accountMgr;
+    private NetworkACLService _aclService;
     @Inject
-    VpcManager _vpcMgr;
+    private NetworkACLManager _networkAclMgr;
     @Inject
-    NetworkACLManager _networkAclMgr;
+    private NetworkACLDao _networkACLDao;
     @Inject
-    NetworkACLDao _networkACLDao;
+    private NetworkACLItemDao _networkACLItemDao;
     @Inject
-    NetworkACLItemDao _networkACLItemDao;
-    @Inject
-    EntityManager _entityMgr;
-    @Inject
-    VpcDao _vpcDao;
-    @Inject
-    VpcService _vpcSrv;
+    private EntityManager _entityMgr;
 
-    private CreateNetworkACLCmd createACLItemCmd;
     private NetworkACLVO acl;
     private NetworkACLItemVO aclItem;
-
-    private static final Logger s_logger = Logger.getLogger(NetworkACLServiceTest.class);
 
     @Override
     @Before
@@ -107,43 +93,6 @@ public class NetworkACLServiceTest extends TestCase {
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
 
         CallContext.register(user, account);
-
-        createACLItemCmd = new CreateNetworkACLCmd() {
-            @Override
-            public Long getACLId() {
-                return 3L;
-            }
-
-            @Override
-            public Integer getNumber() {
-                return 1;
-            }
-
-            @Override
-            public String getProtocol() {
-                return "TCP";
-            }
-        };
-
-        acl = new NetworkACLVO() {
-            @Override
-            public Long getVpcId() {
-                return 1L;
-            }
-
-            @Override
-            public long getId() {
-                return 1L;
-            }
-
-        };
-
-        aclItem = new NetworkACLItemVO() {
-            @Override
-            public long getAclId() {
-                return 4L;
-            }
-        };
     }
 
     @Override
@@ -152,38 +101,11 @@ public class NetworkACLServiceTest extends TestCase {
         CallContext.unregister();
     }
 
-    @Test
-    public void testCreateACL() throws Exception {
-        Mockito.when(_entityMgr.findById(Matchers.eq(Vpc.class), Matchers.anyLong())).thenReturn(new VpcVO());
-        Mockito.when(_networkAclMgr.createNetworkACL("acl_new", "acl desc", 1L, true)).thenReturn(acl);
-        assertNotNull(_aclService.createNetworkACL("acl_new", "acl desc", 1L, true));
-    }
-
     @Test(expected = InvalidParameterValueException.class)
     public void testDeleteDefaultACL() throws Exception {
         Mockito.when(_networkACLDao.findById(Matchers.anyLong())).thenReturn(acl);
         Mockito.when(_networkAclMgr.deleteNetworkACL(acl)).thenReturn(true);
         _aclService.deleteNetworkACL(1L);
-    }
-
-    @Test
-    public void testCreateACLItem() throws Exception {
-        Mockito.when(_entityMgr.findById(Matchers.eq(Vpc.class), Matchers.anyLong())).thenReturn(new VpcVO());
-        Mockito.when(_networkAclMgr.getNetworkACL(Matchers.anyLong())).thenReturn(acl);
-        Mockito.when(
-            _networkAclMgr.createNetworkACLItem(Matchers.anyInt(), Matchers.anyInt(), Matchers.anyString(), Matchers.anyList(), Matchers.anyInt(), Matchers.anyInt(),
-                        Matchers.any(NetworkACLItem.TrafficType.class), Matchers.anyLong(), Matchers.anyString(), Matchers.anyInt(), Matchers.anyBoolean())).thenReturn(
-                new NetworkACLItemVO());
-        Mockito.when(_networkACLItemDao.findByAclAndNumber(Matchers.anyLong(), Matchers.anyInt())).thenReturn(null);
-        assertNotNull(_aclService.createNetworkACLItem(createACLItemCmd));
-    }
-
-    @Test(expected = InvalidParameterValueException.class)
-    public void testCreateACLItemDuplicateNumber() throws Exception {
-        Mockito.when(_entityMgr.findById(Matchers.eq(Vpc.class), Matchers.anyLong())).thenReturn(new VpcVO());
-        Mockito.when(_networkAclMgr.getNetworkACL(Matchers.anyLong())).thenReturn(acl);
-        Mockito.when(_networkACLItemDao.findByAclAndNumber(Matchers.anyLong(), Matchers.anyInt())).thenReturn(new NetworkACLItemVO());
-        _aclService.createNetworkACLItem(createACLItemCmd);
     }
 
     @Test
@@ -196,8 +118,8 @@ public class NetworkACLServiceTest extends TestCase {
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = {NetworkACLServiceImpl.class}, includeFilters = {@ComponentScan.Filter(value = NetworkACLTestConfiguration.Library.class,
-                                                                                                               type = FilterType.CUSTOM)}, useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {NetworkACLServiceImpl.class}, includeFilters = {
+            @ComponentScan.Filter(value = NetworkACLTestConfiguration.Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
     public static class NetworkACLTestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         @Bean

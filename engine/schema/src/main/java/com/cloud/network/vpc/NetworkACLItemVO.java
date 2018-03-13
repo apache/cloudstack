@@ -33,15 +33,13 @@ import javax.persistence.Table;
 import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 
 @Entity
 @Table(name = "network_acl_item")
-public class NetworkACLItemVO implements NetworkACLItem {
+public class NetworkACLItemVO implements NetworkACLItem, Cloneable {
 
-    /**
-     *
-     */
     private static final long serialVersionUID = 2790623532888742060L;
 
     @Id
@@ -97,12 +95,15 @@ public class NetworkACLItemVO implements NetworkACLItem {
     @Column(name = "display", updatable = true, nullable = false)
     protected boolean display = true;
 
+    @Column(name = "reason", length = 2500)
+    private String reason;
+
     public NetworkACLItemVO() {
         uuid = UUID.randomUUID().toString();
     }
 
-    public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol, long aclId, List<String> sourceCidrs, Integer icmpCode, Integer icmpType,
-            TrafficType trafficType, Action action, int number) {
+    public NetworkACLItemVO(Integer portStart, Integer portEnd, String protocol, long aclId, List<String> sourceCidrs, Integer icmpCode, Integer icmpType, TrafficType trafficType, Action action,
+            int number, String reason) {
         sourcePortStart = portStart;
         sourcePortEnd = portEnd;
         this.protocol = protocol;
@@ -115,6 +116,7 @@ public class NetworkACLItemVO implements NetworkACLItem {
         this.trafficType = trafficType;
         this.action = action;
         this.number = number;
+        this.reason = reason;
     }
 
     public void setSourceCidrList(List<String> sourceCidrs) {
@@ -225,8 +227,8 @@ public class NetworkACLItemVO implements NetworkACLItem {
 
     public void setSourceCidrs(String sourceCidrs) {
         List<String> srcCidrs = new LinkedList<String>();
-        StringTokenizer st = new StringTokenizer(sourceCidrs,",;");
-        while(st.hasMoreTokens()) {
+        StringTokenizer st = new StringTokenizer(sourceCidrs, ",;");
+        while (st.hasMoreTokens()) {
             srcCidrs.add(st.nextToken());
         }
         this.sourceCidrs = srcCidrs;
@@ -251,5 +253,23 @@ public class NetworkACLItemVO implements NetworkACLItem {
     @Override
     public boolean isDisplay() {
         return display;
+    }
+
+    @Override
+    public String getReason() {
+        return reason;
+    }
+
+    public void setReason(String reason) {
+        this.reason = reason;
+    }
+
+    @Override
+    protected NetworkACLItemVO clone() {
+        try {
+            return (NetworkACLItemVO)super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 }

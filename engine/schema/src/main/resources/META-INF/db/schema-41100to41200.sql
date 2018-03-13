@@ -18,3 +18,6 @@
 --;
 -- Schema upgrade from 4.11.0.0 to 4.12.0.0
 --;
+
+-- [CLOUDSTACK-10314] Add reason column to ACL rule table
+ALTER TABLE `cloud`.`network_acl_item` ADD COLUMN `reason` VARCHAR(2500) AFTER `display`;

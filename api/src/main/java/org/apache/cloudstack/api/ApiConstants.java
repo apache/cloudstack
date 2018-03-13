@@ -452,6 +452,7 @@ public class ApiConstants {
     public static final String SUPPORTED_SERVICES = "supportedservices";
     public static final String NSP_ID = "nspid";
     public static final String ACL_TYPE = "acltype";
+    public static final String ACL_REASON = "reason";
     public static final String SUBDOMAIN_ACCESS = "subdomainaccess";
     public static final String LOAD_BALANCER_DEVICE_ID = "lbdeviceid";
     public static final String LOAD_BALANCER_DEVICE_NAME = "lbdevicename";

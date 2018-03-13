@@ -2363,7 +2363,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
         response.setTags(tagResponses);
-
+        response.setReason(aclItem.getReason());
         response.setObjectName("networkacl");
         return response;
     }
