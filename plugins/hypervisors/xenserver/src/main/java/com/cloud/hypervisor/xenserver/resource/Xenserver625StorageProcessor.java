@@ -75,7 +75,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         }
         String result = hypervisorResource.callHostPluginAsync(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", 100 * 1000, "localDir", localDir, "remoteDir", remoteDir);
         if (StringUtils.isBlank(result)) {
-            final String errMsg = "Could not mount secondary storage " + remoteDir + " on host " + localDir;
+            String errMsg = "Could not mount secondary storage " + remoteDir + " on host " + localDir;
             s_logger.warn(errMsg);
             throw new CloudRuntimeException(errMsg);
         }

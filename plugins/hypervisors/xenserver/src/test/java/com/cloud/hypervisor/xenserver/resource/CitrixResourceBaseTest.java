@@ -181,7 +181,7 @@ public class CitrixResourceBaseTest {
 
         Assert.assertEquals("guest-tools.iso", returnedIsoTemplateName);
     }
-    
+
     @Test
     public void getAllLocalSrForTypeTest() throws Exception {
         String mockHostUuid = "hostUuid";
@@ -226,14 +226,14 @@ public class CitrixResourceBaseTest {
         Assert.assertEquals(expectedListOfSrs.size(), allLocalSrForType.size());
         Assert.assertEquals(expectedListOfSrs.get(0), allLocalSrForType.get(0));
     }
-    
+
     @Test
     public void getAllLocalSrForTypeNoSrsFoundTest() throws XenAPIException, XmlRpcException {
         Connection connectionMock = Mockito.mock(Connection.class);
         List<SR> allLocalSrForType = citrixResourceBase.getAllLocalSrForType(connectionMock, SRType.EXT);
         Assert.assertTrue(allLocalSrForType.isEmpty());
     }
-    
+
     @Test
     public void getAllLocalSrsTest() throws XenAPIException, XmlRpcException {
         Connection connectionMock = Mockito.mock(Connection.class);
@@ -258,7 +258,6 @@ public class CitrixResourceBaseTest {
         inOrder.verify(citrixResourceBase).getAllLocalSrForType(connectionMock, SRType.LVM);
         inOrder.verify(citrixResourceBase).getAllLocalSrForType(connectionMock, SRType.EXT);
     }
-
 
     @Test
     public void createStoragePoolInfoTest() throws XenAPIException, XmlRpcException {
@@ -343,7 +342,7 @@ public class CitrixResourceBaseTest {
         Assert.assertEquals(citrixResourceBase._dcId + "", startUpStorageCommand.getDataCenter());
         Assert.assertEquals(StorageResourceType.STORAGE_POOL, startUpStorageCommand.getResourceType());
     }
-    
+
     @Test
     public void initializeLocalSrTest() throws XenAPIException, XmlRpcException {
         Connection connectionMock = Mockito.mock(Connection.class);

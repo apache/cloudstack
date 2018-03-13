@@ -2271,16 +2271,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     }
 
     protected HashMap<String, HostVmStateReportEntry> getHostVmStateReport(final Connection conn) {
-
-        // TODO : new VM sync model does not require a cluster-scope report, we
-        // need to optimize
-        // the report accordingly
         final HashMap<String, HostVmStateReportEntry> vmStates = new HashMap<String, HostVmStateReportEntry>();
         Map<VM, VM.Record> vm_map = null;
         for (int i = 0; i < 2; i++) {
             try {
-                vm_map = VM.getAllRecords(conn); // USE THIS TO GET ALL VMS FROM
-                // A CLUSTER
+                vm_map = VM.getAllRecords(conn);
                 break;
             } catch (final Throwable e) {
                 s_logger.warn("Unable to get vms", e);
