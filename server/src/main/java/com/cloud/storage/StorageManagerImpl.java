@@ -597,7 +597,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             DataStoreLifeCycle lifeCycle = provider.getDataStoreLifeCycle();
             if (pool == null) {
                 Map<String, Object> params = new HashMap<String, Object>();
-                String name = (host.getName() + " Local Storage");
+                String name = createLocalStoragePoolName(host, pInfo);
                 params.put("zoneId", host.getDataCenterId());
                 params.put("clusterId", host.getClusterId());
                 params.put("podId", host.getPodId());
@@ -625,6 +625,14 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return _dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
+    }
+    
+    /**
+    * Creates the local storage pool name.
+    * The name will follow the pattern: <hostname>-local-<firstBlockOfUuid>
+    */
+    protected String createLocalStoragePoolName(Host host, StoragePoolInfo storagePoolInformation) {
+        return String.format("%s-%s-%s", org.apache.commons.lang3.StringUtils.trim(host.getName()), "local", storagePoolInformation.getUuid().split("-")[0]);
     }
 
     @Override
