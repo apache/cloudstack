@@ -514,4 +514,8 @@ public class DiskOfferingVO implements DiskOffering {
     public Integer getHypervisorSnapshotReserve() {
         return hypervisorSnapshotReserve;
     }
+
+    public boolean isShared() {
+        return !useLocalStorage;
+    }
 }

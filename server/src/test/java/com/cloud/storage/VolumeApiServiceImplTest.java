@@ -45,6 +45,8 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.After;
 import org.junit.Assert;
@@ -53,6 +55,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -68,6 +71,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -128,13 +132,24 @@ public class VolumeApiServiceImplTest {
     private AccountDao _accountDao;
     @Mock
     private HostDao _hostDao;
-
+    @Mock
+    private StoragePoolDetailsDao storagePoolDetailsDao;
+    
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     private Class<?> _detachCmdClass = detachCmd.getClass();
 
+    @Mock
+    private StoragePool storagePoolMock;
+    private long storagePoolMockId = 1;
+    @Mock
+    private VolumeVO volumeVOMock;
+    @Mock
+    private DiskOfferingVO newDiskOfferingMock;
 
     @Before
-    public void setup() throws Exception {
+    public void before() throws Exception {
+        Mockito.when(storagePoolMock.getId()).thenReturn(storagePoolMockId);
+        
         volumeApiServiceImpl._gson = GsonHelper.getGsonLogger();
 
         // mock caller context
@@ -477,9 +492,114 @@ public class VolumeApiServiceImplTest {
         }
     }
 
-
     @After
     public void tearDown() {
         CallContext.unregister();
+    }
+    
+    @Test
+    public void getStoragePoolTagsTestStorageWithoutTags() {
+        Mockito.when(storagePoolDetailsDao.listDetails(storagePoolMockId)).thenReturn(new ArrayList<>());
+        
+        String returnedStoragePoolTags = volumeApiServiceImpl.getStoragePoolTags(storagePoolMock);
+        
+        Assert.assertNull(returnedStoragePoolTags);
+        
+    }
+    
+    @Test
+    public void getStoragePoolTagsTestStorageWithTags() {
+        ArrayList<StoragePoolDetailVO> tags = new ArrayList<>();
+        StoragePoolDetailVO tag1 = new StoragePoolDetailVO(1l, "tag1", "value", true);
+        StoragePoolDetailVO tag2 = new StoragePoolDetailVO(1l, "tag2", "value", true);
+        StoragePoolDetailVO tag3 = new StoragePoolDetailVO(1l, "tag3", "value", true);
+        
+        tags.add(tag1);
+        tags.add(tag2);
+        tags.add(tag3);
+        
+        Mockito.when(storagePoolDetailsDao.listDetails(storagePoolMockId)).thenReturn(tags);
+        
+        String returnedStoragePoolTags = volumeApiServiceImpl.getStoragePoolTags(storagePoolMock);
+        
+        Assert.assertEquals("tag1,tag2,tag3", returnedStoragePoolTags);
+    }
+    
+    @Test
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestNoNewDiskOffering() {
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, null, storagePoolMock);
+        
+        Mockito.verify(volumeVOMock, times(0)).getVolumeType();
+    }
+    
+    @Test(expected=InvalidParameterValueException.class)
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestRootVolume() {
+        Mockito.when(volumeVOMock.getVolumeType()).thenReturn(Type.ROOT);
+        
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, newDiskOfferingMock, storagePoolMock);
+    }
+    
+    @Test(expected=InvalidParameterValueException.class)
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestTargetPoolSharedDiskOfferingLocal() {
+        Mockito.when(volumeVOMock.getVolumeType()).thenReturn(Type.DATADISK);
+        Mockito.when(newDiskOfferingMock.getUseLocalStorage()).thenReturn(true);
+        Mockito.when(storagePoolMock.isShared()).thenReturn(true);
+        
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, newDiskOfferingMock, storagePoolMock);
+    }
+    
+    @Test(expected=InvalidParameterValueException.class)
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestTargetPoolLocalDiskOfferingShared() {
+        Mockito.when(volumeVOMock.getVolumeType()).thenReturn(Type.DATADISK);
+        Mockito.when(newDiskOfferingMock.isShared()).thenReturn(true);
+        Mockito.when(storagePoolMock.isLocal()).thenReturn(true);
+        
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, newDiskOfferingMock, storagePoolMock);
+    }
+    
+    @Test(expected=InvalidParameterValueException.class)
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestTagsDoNotMatch() {
+        Mockito.when(volumeVOMock.getVolumeType()).thenReturn(Type.DATADISK);
+
+        Mockito.when(newDiskOfferingMock.getUseLocalStorage()).thenReturn(false);
+        Mockito.when(storagePoolMock.isShared()).thenReturn(true);
+        
+        Mockito.when(newDiskOfferingMock.isShared()).thenReturn(true);
+        Mockito.when(storagePoolMock.isLocal()).thenReturn(false);
+        
+        Mockito.when(newDiskOfferingMock.getTags()).thenReturn("tag1");
+        
+        Mockito.doReturn(null).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+        
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, newDiskOfferingMock, storagePoolMock);
+    }
+    
+    @Test
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestEverythingWorking() {
+        Mockito.when(volumeVOMock.getVolumeType()).thenReturn(Type.DATADISK);
+
+        Mockito.when(newDiskOfferingMock.getUseLocalStorage()).thenReturn(false);
+        Mockito.when(storagePoolMock.isShared()).thenReturn(true);
+        
+        Mockito.when(newDiskOfferingMock.isShared()).thenReturn(true);
+        Mockito.when(storagePoolMock.isLocal()).thenReturn(false);
+        
+        Mockito.when(newDiskOfferingMock.getTags()).thenReturn("tag1");
+        
+        Mockito.doReturn("tag1").when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+        
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, newDiskOfferingMock, storagePoolMock);
+        
+        InOrder inOrder = Mockito.inOrder(volumeVOMock, newDiskOfferingMock, storagePoolMock, volumeApiServiceImpl);
+        inOrder.verify(volumeVOMock).getVolumeType();
+        inOrder.verify(storagePoolMock).isShared();
+        inOrder.verify(newDiskOfferingMock).getUseLocalStorage();
+        inOrder.verify(storagePoolMock).isLocal();
+        inOrder.verify(newDiskOfferingMock, times(0)).isShared();
+        inOrder.verify(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+        inOrder.verify(newDiskOfferingMock).getTags();
+        
+        inOrder.verify(volumeVOMock).getSize();
+        inOrder.verify(newDiskOfferingMock).getDiskSize();
     }
 }

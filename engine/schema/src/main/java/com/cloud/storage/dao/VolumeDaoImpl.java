@@ -685,4 +685,17 @@ public class VolumeDaoImpl extends GenericDaoBase<VolumeVO, Long> implements Vol
         }
         return null;
     }
+
+    private String sqlUpdateDiskOffering = "UPDATE volumes SET disk_offering_id = ? where id =?";
+    public void updateDiskOffering(long volumeId, long diskOfferingId) {
+        try (TransactionLegacy txn = TransactionLegacy.currentTxn();
+                PreparedStatement pstmt = txn.prepareAutoCloseStatement(sqlUpdateDiskOffering)) {
+            pstmt.setLong(1, diskOfferingId);
+            pstmt.setLong(2, volumeId);
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException(e);
+        }
+   }
 }

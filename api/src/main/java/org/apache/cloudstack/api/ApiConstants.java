@@ -86,6 +86,7 @@ public class ApiConstants {
     public static final String DEVICE_ID = "deviceid";
     public static final String DIRECT_DOWNLOAD = "directdownload";
     public static final String DISK_OFFERING_ID = "diskofferingid";
+    public static final String NEW_DISK_OFFERING_ID = "newdiskofferingid";
     public static final String DISK_SIZE = "disksize";
     public static final String UTILIZATION = "utilization";
     public static final String DRIVER = "driver";

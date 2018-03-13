@@ -33,9 +33,7 @@ public class MigrateVolumeCmdByAdmin extends MigrateVolumeCmd {
 
     @Override
     public void execute(){
-        Volume result;
-
-        result = _volumeService.migrateVolume(this);
+        Volume result = _volumeService.migrateVolume(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, result);
             response.setResponseName(getCommandName());

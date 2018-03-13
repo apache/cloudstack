@@ -986,7 +986,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @DB
     public Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException {
         VolumeInfo vol = volFactory.getVolume(volume.getId());
-        AsyncCallFuture<VolumeApiResult> future = volService.copyVolume(vol, (DataStore)destPool);
+
+        DataStore dataStoreTarget = dataStoreMgr.getDataStore(destPool.getId(), DataStoreRole.Primary);
+        AsyncCallFuture<VolumeApiResult> future = volService.copyVolume(vol, dataStoreTarget);
         try {
             VolumeApiResult result = future.get();
             if (result.isFailed()) {
