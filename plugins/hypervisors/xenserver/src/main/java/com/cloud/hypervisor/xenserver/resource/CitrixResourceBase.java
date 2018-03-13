@@ -198,7 +198,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private final static int BASE_TO_CONVERT_BYTES_INTO_KILOBYTES = 1024;
 
-    protected static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
+    private static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
     private static final long mem_128m = 134217728L;
 
