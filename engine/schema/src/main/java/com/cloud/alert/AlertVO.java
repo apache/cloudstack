@@ -53,6 +53,9 @@ public class AlertVO implements Alert {
     @Column(name = "subject", length = 999)
     private String subject;
 
+    @Column(name = "content", length = 5000)
+    private String content;
+
     @Column(name = "sent_count")
     private int sentCount = 0;
 
@@ -190,5 +193,14 @@ public class AlertVO implements Alert {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    @Override
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
     }
 }

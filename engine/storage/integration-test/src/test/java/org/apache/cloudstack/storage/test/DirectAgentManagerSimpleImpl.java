@@ -266,20 +266,16 @@ public class DirectAgentManagerSimpleImpl extends ManagerBase implements AgentMa
     }
 
     @Override
-    public boolean reconnect(long hostId) {
-        // TODO Auto-generated method stub
-        return false;
+    public void reconnect(long hostId) {
     }
 
     @Override
     public boolean isAgentAttached(long hostId) {
-        // TODO Auto-generated method stub
         return false;
     }
 
     @Override
     public boolean handleDirectConnectAgent(Host host, StartupCommand[] cmds, ServerResource resource, boolean forRebalance, boolean newHost) throws ConnectionException {
-        // TODO Auto-generated method stub
         return false;
     }
 

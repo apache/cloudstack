@@ -30,10 +30,6 @@ import java.util.Random;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -50,6 +46,9 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -75,7 +74,6 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -248,8 +246,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Inject
     private VMTemplateDao _templateDao;
-    @Inject
-    private ConfigurationManager _configMgr;
     @Inject
     private ClusterVSMMapDao _clusterVSMMapDao;
 
@@ -610,7 +606,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     private List<HostVO> discoverHostsFull(final Long dcId, final Long podId, Long clusterId, final String clusterName, String url, String username, String password,
             final String hypervisorType, final List<String> hostTags, final Map<String, String> params, final boolean deferAgentCreation) throws IllegalArgumentException, DiscoveryException,
-            InvalidParameterValueException {
+    InvalidParameterValueException {
         URI uri = null;
 
         // Check if the zone exists in the system
@@ -836,7 +832,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
         // Get storage pool host mappings here because they can be removed as a
         // part of handleDisconnect later
-        // TODO: find out the bad boy, what's a buggy logic!
         final List<StoragePoolHostVO> pools = _storagePoolHostDao.listByHostIdIncludingRemoved(hostId);
 
         final ResourceStateAdapter.DeleteHostAnswer answer =
@@ -1166,15 +1161,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
-    public Host reconnectHost(final ReconnectHostCmd cmd) {
-        final Long hostId = cmd.getId();
+    public Host reconnectHost(ReconnectHostCmd cmd) throws AgentUnavailableException {
+        Long hostId = cmd.getId();
 
-        final HostVO host = _hostDao.findById(hostId);
+        HostVO host = _hostDao.findById(hostId);
         if (host == null) {
             throw new InvalidParameterValueException("Host with id " + hostId.toString() + " doesn't exist");
         }
-
-        return _agentMgr.reconnect(hostId) ? host : null;
+        _agentMgr.reconnect(hostId);
+        return host;
     }
 
     @Override
@@ -2310,7 +2305,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         } else if (event == ResourceState.Event.AdminCancelMaintenance) {
             return doCancelMaintenance(hostId);
         } else if (event == ResourceState.Event.DeleteHost) {
-            /* TODO: Ask alex why we assume the last two parameters are false */
             return doDeleteHost(hostId, false, false);
         } else if (event == ResourceState.Event.Unmanaged) {
             return doUmanageHost(hostId);
@@ -2329,7 +2323,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
 
         if (host.getHypervisorType() == HypervisorType.KVM || host.getHypervisorType() == HypervisorType.LXC) {
-            final MaintainAnswer answer = (MaintainAnswer)_agentMgr.easySend(hostId, new MaintainCommand());
+            _agentMgr.easySend(hostId, new MaintainCommand());
         }
 
         _agentMgr.disconnectWithoutInvestigation(hostId, Event.ShutdownRequested);
@@ -2379,10 +2373,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         final List<HostVO> hosts = listAllHostsInCluster(command.getClusterId());
         for (final HostVO host : hosts) {
             try {
-                /*
-                 * FIXME: this is a buggy logic, check with alex. Shouldn't
-                 * return if propagation return non null
-                 */
                 final Boolean result = propagateResourceEvent(host.getId(), ResourceState.Event.UpdatePassword);
                 if (result != null) {
                     return result;
@@ -2852,11 +2842,4 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return false;
         }
     }
-
-    @Override
-    public boolean start() {
-        // TODO Auto-generated method stub
-        return super.start();
-    }
-
 }

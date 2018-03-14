@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,13 +25,16 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.user.Account;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = "reconnectHost", description = "Reconnects a host.", responseObject = HostResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "reconnectHost", description = "Reconnects a host.", responseObject = HostResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ReconnectHostCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(ReconnectHostCmd.class.getName());
 
@@ -101,16 +102,15 @@ public class ReconnectHostCmd extends BaseAsyncCmd {
     public void execute() {
         try {
             Host result = _resourceService.reconnectHost(this);
-            if (result != null) {
-                HostResponse response = _responseGenerator.createHostResponse(result);
-                response.setResponseName(getCommandName());
-                this.setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to reconnect host");
-            }
-        } catch (Exception ex) {
-            s_logger.warn("Exception: ", ex);
-            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
+            HostResponse response = _responseGenerator.createHostResponse(result);
+            response.setResponseName(getCommandName());
+            this.setResponseObject(response);
+        } catch (InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
+        } catch (CloudRuntimeException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        } catch (AgentUnavailableException e) {
+            throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, e.getMessage());
         }
     }
 }
