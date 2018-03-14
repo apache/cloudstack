@@ -49,27 +49,6 @@ test_data = {
         "forvirtualnetwork": "true",
         "vlan": "300"
     },
-    "publiciprange1": {
-        "gateway": "10.200.100.1",
-        "netmask": "255.255.255.0",
-        "startip": "10.200.100.101",
-        "endip": "10.200.100.105",
-        "forvirtualnetwork": "false"
-    },
-    "publiciprange2": {
-        "gateway": "10.219.1.1",
-        "netmask": "255.255.255.0",
-        "startip": "10.219.1.2",
-        "endip": "10.219.1.5",
-        "forvirtualnetwork": "false"
-    },
-    "publiciprange3": {
-        "gateway": "10.200.100.1",
-        "netmask": "255.255.255.0",
-        "startip": "10.200.100.2",
-        "endip": "10.200.100.20",
-        "forvirtualnetwork": "false"
-    },
     "private_gateway": {
         "ipaddress": "172.16.1.2",
         "gateway": "172.16.1.1",
@@ -92,14 +71,14 @@ test_data = {
         "password": "password"
     },
     "user": {
-         "email": "user@test.com",
-         "firstname": "User",
-         "lastname": "User",
-         "username": "User",
-           # Random characters are appended for unique
-           # username
-         "password": "fr3sca",
-     },
+        "email": "user@test.com",
+        "firstname": "User",
+        "lastname": "User",
+        "username": "User",
+        # Random characters are appended for unique
+        # username
+        "password": "fr3sca",
+    },
     "small": {
         "displayname": "testserver",
         "username": "root",
@@ -153,7 +132,7 @@ test_data = {
             "cpuspeed": 100,
             "memory": 512,
         },
-       "large": {
+        "large": {
             "name": "LargeInstance",
             "displaytext": "LargeInstance",
             "cpunumber": 1,
@@ -179,20 +158,20 @@ test_data = {
         },
     },
     "service_offering_h1": {
-            "name": "Tagged h1 Small Instance",
-            "displaytext": "Tagged h1 Small Instance",
-            "cpunumber": 1,
-            "cpuspeed": 100,
-            "memory": 256,
-            "hosttags": "h1"
+        "name": "Tagged h1 Small Instance",
+        "displaytext": "Tagged h1 Small Instance",
+        "cpunumber": 1,
+        "cpuspeed": 100,
+        "memory": 256,
+        "hosttags": "h1"
     },
     "service_offering_h2": {
-            "name": "Tagged h2 Small Instance",
-            "displaytext": "Tagged h2 Small Instance",
-            "cpunumber": 1,
-            "cpuspeed": 100,
-            "memory": 256,
-            "hosttags": "h2"
+        "name": "Tagged h2 Small Instance",
+        "displaytext": "Tagged h2 Small Instance",
+        "cpunumber": 1,
+        "cpuspeed": 100,
+        "memory": 256,
+        "hosttags": "h2"
     },
     "disk_offering": {
         "name": "Disk offering",
@@ -256,23 +235,23 @@ test_data = {
         },
     },
     "nw_off_isolated_netscaler": {
-                "name": 'Netscaler',
-                "displaytext": 'Netscaler',
-                "guestiptype": 'Isolated',
-                "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
-                "traffictype": 'GUEST',
-                "availability": 'Optional',
-                "serviceProviderList": {
-                    "Dhcp": 'VirtualRouter',
-                    "Dns": 'VirtualRouter',
-                    "SourceNat": 'VirtualRouter',
-                    "PortForwarding": 'VirtualRouter',
-                    "Vpn": 'VirtualRouter',
-                    "Firewall": 'VirtualRouter',
-                    "Lb": 'Netscaler',
-                    "UserData": 'VirtualRouter',
-                    "StaticNat": 'VirtualRouter',
-                },
+        "name": 'Netscaler',
+        "displaytext": 'Netscaler',
+        "guestiptype": 'Isolated',
+        "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding,Vpn,Firewall,Lb,UserData,StaticNat',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "serviceProviderList": {
+            "Dhcp": 'VirtualRouter',
+            "Dns": 'VirtualRouter',
+            "SourceNat": 'VirtualRouter',
+            "PortForwarding": 'VirtualRouter',
+            "Vpn": 'VirtualRouter',
+            "Firewall": 'VirtualRouter',
+            "Lb": 'Netscaler',
+            "UserData": 'VirtualRouter',
+            "StaticNat": 'VirtualRouter',
+        },
     },
     "nw_off_isolated_persistent": {
         "name": 'Test Nw off isolated persistent',
@@ -328,50 +307,32 @@ test_data = {
         }
     },
     "network_offering_vlan": {
-    "name": 'Test Network offering',
-    "displaytext": 'Test Network offering',
-    "guestiptype": 'Isolated',
-    "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
-    "traffictype": 'GUEST',
-    "specifyvlan": 'False',
-    "availability": 'Optional',
-    "serviceProviderList": {
-    "Dhcp": 'VirtualRouter',
-    "Dns": 'VirtualRouter',
-    "SourceNat": 'VirtualRouter',
-    "PortForwarding": 'VirtualRouter',
-    },
-    },
-    "network_offering_without_sourcenat": {
-    "name": 'Test Network offering',
-    "displaytext": 'Test Network offering',
-    "guestiptype": 'Isolated',
-    "supportedservices": 'Dhcp,Dns,UserData',
-    "traffictype": 'GUEST',
-    "availability": 'Optional',
-    "serviceProviderList": {
-    "Dhcp": 'VirtualRouter',
-    "Dns": 'VirtualRouter',
-    "UserData": 'VirtualRouter',
-    },
-    },
-    "isolated_staticnat_network_offering": {
-        "name": 'isolated_staticnat_net_off_marvin',
-        "displaytext": 'isolated_staticnat_net_off_marvin',
+        "name": 'Test Network offering',
+        "displaytext": 'Test Network offering',
         "guestiptype": 'Isolated',
-        "supportedservices": 'Dhcp,SourceNat,StaticNat,UserData,Firewall,Dns',
+        "supportedservices": 'Dhcp,Dns,SourceNat,PortForwarding',
         "traffictype": 'GUEST',
-        "ispersistent": 'True',
+        "specifyvlan": 'False',
         "availability": 'Optional',
-        "tags": 'native',
         "serviceProviderList": {
             "Dhcp": 'VirtualRouter',
-            "StaticNat": 'VirtualRouter',
+            "Dns": 'VirtualRouter',
             "SourceNat": 'VirtualRouter',
-            "Firewall": 'VirtualRouter',
+            "PortForwarding": 'VirtualRouter',
+        },
+    },
+    "network_offering_without_sourcenat": {
+        "name": 'Test Network offering',
+        "displaytext": 'Test Network offering',
+        "guestiptype": 'Isolated',
+        "supportedservices": 'Dhcp,Dns,UserData',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "serviceProviderList": {
+            "Dhcp": 'VirtualRouter',
+            "Dns": 'VirtualRouter',
             "UserData": 'VirtualRouter',
-            "Dns": 'VirtualRouter'
-        }
+        },
     },
     "isolated_network": {
         "name": "Isolated Network",
@@ -494,20 +455,6 @@ test_data = {
             "SecurityGroup": "SecurityGroupProvider"
         }
     },
-    "shared_network_config_drive_offering": {
-        "name": 'shared_network_config_drive_offering',
-        "displaytext": 'shared_network_config_drive_offering',
-        "guestiptype": 'shared',
-        "supportedservices": 'Dhcp,UserData',
-        "traffictype": 'GUEST',
-        "specifyVlan": "True",
-        "specifyIpRanges": "True",
-        "availability": 'Optional',
-        "serviceProviderList": {
-            "Dhcp": "VirtualRouter",
-            "UserData": 'ConfigDrive'
-        }
-    },
     "shared_network_sg": {
         "name": "Shared-Network-SG-Test",
         "displaytext": "Shared-Network_SG-Test",
@@ -525,12 +472,6 @@ test_data = {
         "displaytext": "VPC off",
         "supportedservices":
             "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat,NetworkACL"
-    },
-    "vpc_offering_reduced": {
-        "name": "VPC reduced off",
-        "displaytext": "VPC reduced off",
-        "supportedservices":
-            "Dhcp,Dns,SourceNat,UserData,StaticNat,NetworkACL"
     },
     "vpc_offering_multi_lb": {
         "name": "VPC offering with multiple Lb service providers",
@@ -554,10 +495,10 @@ test_data = {
         "cidr": "10.0.0.1/24"
     },
     "vpc_network_domain": {
-    "name": "TestVPC",
-    "displaytext": "TestVPC",
-    "cidr": '10.0.0.1/24',
-    "network_domain": "TestVPC"
+        "name": "TestVPC",
+        "displaytext": "TestVPC",
+        "cidr": '10.0.0.1/24',
+        "network_domain": "TestVPC"
     },
     "clusters": {
         0: {
@@ -695,26 +636,6 @@ test_data = {
             "StaticNat": "VpcVirtualRouter",
             "NetworkACL": "VpcVirtualRouter",
             "Lb": "VpcVirtualRouter"
-        }
-    },
-    "nw_offering_reduced_vpc": {
-        "name": 'Reduced Network for VPC',
-        "displaytext": 'Reduced Network for VPC',
-        "guestiptype": 'Isolated',
-        "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,'
-                             'Dns',
-        "traffictype": 'GUEST',
-        "availability": 'Optional',
-        "tags": "native",
-        "useVpc": 'on',
-        "ispersistent": 'True',
-        "serviceProviderList": {
-            "Dhcp": "VpcVirtualRouter",
-            "StaticNat": "VpcVirtualRouter",
-            "SourceNat": "VpcVirtualRouter",
-            "NetworkACL": "VpcVirtualRouter",
-            "UserData": "VpcVirtualRouter",
-            "Dns": "VpcVirtualRouter"
         }
     },
     "nw_off_persistent_VPCVR_LB": {
@@ -855,11 +776,11 @@ test_data = {
 
     },
     "network_acl_rule": {
-    "protocol": "TCP",
-    "traffictype": "ingress",
-    "cidrlist": "0.0.0.0/0",
-    "startport": "1",
-    "endport": "1"
+        "protocol": "TCP",
+        "traffictype": "ingress",
+        "cidrlist": "0.0.0.0/0",
+        "startport": "1",
+        "endport": "1"
     },
     "network_offering_internal_lb": {
         "name": "Network offering for internal lb service",
@@ -900,7 +821,7 @@ test_data = {
         "privateport": 50,
         "privateendport": 55,
     },
-   "egress_80": {
+    "egress_80": {
         "startport": 80,
         "endport": 80,
         "protocol": "TCP",
@@ -946,14 +867,6 @@ test_data = {
         "startport": 80,
         "endport": 80,
         "protocol": "TCP",
-        "cidrlist": '0.0.0.0/0',
-    },
-    "dns_rule": {
-        "privateport": 53,
-        "publicport": 53,
-        "startport": 53,
-        "endport": 53,
-        "protocol": "UDP",
         "cidrlist": '0.0.0.0/0',
     },
     "icmprule": {
@@ -1053,9 +966,9 @@ test_data = {
         "urlvmware":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-vmware.ova",
         "urlxen":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-xen.vhd.bz2",
         "urlkvm": "http://dl.openvm.eu/cloudstack/coreos/x86_64/" \
-                         "coreos_production_cloudstack_image-kvm.qcow2.bz2",
+                  "coreos_production_cloudstack_image-kvm.qcow2.bz2",
         "urlhyperv":"http://dl.openvm.eu/cloudstack/coreos/x86_64/coreos_production_cloudstack_image-hyperv.vhd.zip"
-        },
+    },
     "CentOS6.3template": {
         "displaytext": "Centos",
         "name": "Centos",
@@ -1105,14 +1018,14 @@ test_data = {
         "hypervisor": "XenServer"
     },
     "Windows Server 2012": {
-            "displaytext": "Windows Server 2012",
-            "name": "Windows Server 2012",
-            "passwordenabled": False,
-            "format": "OVA",
-            "ostype": "Windows Server 2012 (64-bit)",
-            "ispublic": "true",
-            "hypervisor": "Vmware"
-     },
+        "displaytext": "Windows Server 2012",
+        "name": "Windows Server 2012",
+        "passwordenabled": False,
+        "format": "OVA",
+        "ostype": "Windows Server 2012 (64-bit)",
+        "ispublic": "true",
+        "hypervisor": "Vmware"
+    },
     "privatetemplate": {
         "displaytext": "Public Template",
         "name": "Public template",
@@ -1214,29 +1127,29 @@ test_data = {
     },
     "volume": {"diskname": "Test Volume",
                "size": 1
-    },
+               },
     "volume_write_path": {
         "diskname": "APP Data Volume",
         "size": 1,   # in GBs
         "xenserver": {"rootdiskdevice":"/dev/xvda",
-                     "datadiskdevice_1": '/dev/xvdb',
-                    "datadiskdevice_2": '/dev/xvdc',   # Data Disk
-                    },
+                      "datadiskdevice_1": '/dev/xvdb',
+                      "datadiskdevice_2": '/dev/xvdc',   # Data Disk
+                      },
         "kvm":       {"rootdiskdevice": "/dev/vda",
-                    "datadiskdevice_1": "/dev/vdb",
-                    "datadiskdevice_2": "/dev/vdc"
-                    },
+                      "datadiskdevice_1": "/dev/vdb",
+                      "datadiskdevice_2": "/dev/vdc"
+                      },
         "vmware":    {"rootdiskdevice": "/dev/hda",
-                    "datadiskdevice_1": "/dev/hdb",
-                    "datadiskdevice_2": "/dev/hdc"
-                    }
+                      "datadiskdevice_1": "/dev/hdb",
+                      "datadiskdevice_2": "/dev/hdc"
+                      }
     },
     "data_write_paths": {
-                "mount_dir": "/mnt/tmp",
-                "sub_dir": "test",
-                "sub_lvl_dir1": "test1",
-                "sub_lvl_dir2": "test2",
-                "random_data": "random.data",
+        "mount_dir": "/mnt/tmp",
+        "sub_dir": "test",
+        "sub_lvl_dir1": "test1",
+        "sub_lvl_dir2": "test2",
+        "random_data": "random.data",
     },
     "custom_volume": {
         "customdisksize": 1,
@@ -1358,15 +1271,15 @@ test_data = {
             "hypervisor": "XenServer"
         },
         "RHEL 7 (64-bit)": {
-                              "displaytext": "RHEL7 (64-bit)",
-                              "name": "RHEL 7 Insta1",
-                              "passwordenabled": False,
-                              "url": "http://people.apache.org/~sanjeev/RHEL764bitwithtools.vhd",
-                              "format": "VHD" ,
-                              "ostype": "RHEL 7 (64-bit)",
-                              "ispublic": "true",
-                              "hypervisor": "XenServer"
-                              },
+            "displaytext": "RHEL7 (64-bit)",
+            "name": "RHEL 7 Insta1",
+            "passwordenabled": False,
+            "url": "http://people.apache.org/~sanjeev/RHEL764bitwithtools.vhd",
+            "format": "VHD" ,
+            "ostype": "RHEL 7 (64-bit)",
+            "ispublic": "true",
+            "hypervisor": "XenServer"
+        },
         "clusters": {
             "clustername": "Xen Cluster Vgpu",
             "clustertype": "CloudManaged",
@@ -1732,11 +1645,11 @@ test_data = {
             "name": "Primary iSCSI"
         },
         "host": {
-                 "publicport": 22,
-                 "username": "root",
-                 "password": "password",
+            "publicport": 22,
+            "username": "root",
+            "password": "password",
         },
-       "ldap_account": {
+        "ldap_account": {
             "email": "",
             "firstname": "",
             "lastname": "",
@@ -1754,8 +1667,8 @@ test_data = {
             "ldapPassword": ""
         },
         "systemVmDelay": 120,
-	"setUsageConfigurationThroughTestCase": False,
-	"vmware_cluster" : {
+        "setUsageConfigurationThroughTestCase": False,
+        "vmware_cluster" : {
             "hypervisor": 'VMware',
             "clustertype": 'ExternalManaged',
             "username": '',
@@ -1808,87 +1721,87 @@ test_data = {
         ]
     },
 
-"interop":
-    {
-     "VHD":
-     {
-                              "displaytext": "Windows 8 (64-bit)",
-                              "name": "win8withpvxen",
-                              "passwordenabled": False,
-                              "url": "http://people.apache.org/~sanjeev/79211594-1d4a-4dee-ae6c-c5c315ded2be.vhd",
-                              "format": "VHD" ,
-                              "ostype": "Windows 8 (64-bit)",
-                              "ispublic": "true",
-                              "hypervisor": "XenServer"
+    "interop":
+        {
+            "VHD":
+                {
+                    "displaytext": "Windows 8 (64-bit)",
+                    "name": "win8withpvxen",
+                    "passwordenabled": False,
+                    "url": "http://people.apache.org/~sanjeev/79211594-1d4a-4dee-ae6c-c5c315ded2be.vhd",
+                    "format": "VHD" ,
+                    "ostype": "Windows 8 (64-bit)",
+                    "ispublic": "true",
+                    "hypervisor": "XenServer"
 
-     },
-     "OVA":
-     {
-                              "displaytext": "Windows 8 (64-bit)",
-                              "name": "win8withpvvmware",
-                              "passwordenabled": False,
-                              "url": "http://pleaseupdateURL/",
-                              "format": "OVA" ,
-                              "ostype": "Windows 8 (64-bit)",
-                              "ispublic": "true",
-                              "hypervisor": "VMware"
-                              },
-    "template": {
-        "displaytext": "windowsxdtemplate",
-        "name": "windowsxdtemplate",
-        "passwordenabled": False,
-        "ostype": "Windows 8 (64-bit)"
-    },
-},
+                },
+            "OVA":
+                {
+                    "displaytext": "Windows 8 (64-bit)",
+                    "name": "win8withpvvmware",
+                    "passwordenabled": False,
+                    "url": "http://pleaseupdateURL/",
+                    "format": "OVA" ,
+                    "ostype": "Windows 8 (64-bit)",
+                    "ispublic": "true",
+                    "hypervisor": "VMware"
+                },
+            "template": {
+                "displaytext": "windowsxdtemplate",
+                "name": "windowsxdtemplate",
+                "passwordenabled": False,
+                "ostype": "Windows 8 (64-bit)"
+            },
+        },
 
     "browser_upload_volume":{
-          "VHD": {
-        "diskname": "XenUploadVol",
-        "url": "http://people.apache.org/~sanjeev/rajani-thin-volume.vhd",
-        "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
-                },
-          "OVA": {
-        "diskname": "VMwareUploadVol",
-        "url": "http://people.apache.org/~sanjeev/CentOS5.5(64bit)-vmware-autoscale.ova",
-        "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
-                },
-          "QCOW2": {
-        "diskname": "KVMUploadVol",
-        "url": "http://people.apache.org/~sanjeev/rajani-thin-volume.qcow2",
-        "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
-                },
-    'browser_resized_disk_offering': {
-        "displaytext": "Resizeddisk",
-        "name": "Resizeddisk",
-        "disksize": 3,
-    }
-},
+        "VHD": {
+            "diskname": "XenUploadVol",
+            "url": "http://people.apache.org/~sanjeev/rajani-thin-volume.vhd",
+            "checksum": "09b08b6abb1b903fca7711d3ac8d6598",
+        },
+        "OVA": {
+            "diskname": "VMwareUploadVol",
+            "url": "http://people.apache.org/~sanjeev/CentOS5.5(64bit)-vmware-autoscale.ova",
+            "checksum": "da997b697feaa2f1f6e0d4785b0cece2",
+        },
+        "QCOW2": {
+            "diskname": "KVMUploadVol",
+            "url": "http://people.apache.org/~sanjeev/rajani-thin-volume.qcow2",
+            "checksum": "02de0576dd3a61ab59c03fd795fc86ac",
+        },
+        'browser_resized_disk_offering': {
+            "displaytext": "Resizeddisk",
+            "name": "Resizeddisk",
+            "disksize": 3,
+        }
+    },
     "browser_upload_template": {
-          "VHD": {
-        "templatename": "XenUploadtemplate",
-        "displaytext": "XenUploadtemplate",
-        "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
-        "hypervisor":"XenServer",
-        "checksum": "54ebc933e6e07ae58c0dc97dfd37c824",
-        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
-                },
-          "OVA": {
-        "templatename": "VMwareUploadtemplate",
-        "displaytext": "VMwareUploadtemplate",
-        "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
-        "checksum": "d6d97389b129c7d898710195510bf4fb",
-        "hypervisor":"VMware",
-        "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
-                },
-          "QCOW2": {
-        "templatename": "KVMUploadtemplate",
-        "displaytext": "VMwareUploadtemplate",
-        "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
-        "checksum": "ada77653dcf1e59495a9e1ac670ad95f",
-        "hypervisor":"KVM",
-        "ostypeid":"2e02e376-cdf3-11e4-beb3-8aa6272b57ef"
-                },
-                              },
+        "VHD": {
+            "templatename": "XenUploadtemplate",
+            "displaytext": "XenUploadtemplate",
+            "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-xen.vhd.bz2",
+            "hypervisor":"XenServer",
+            "checksum": "54ebc933e6e07ae58c0dc97dfd37c824",
+            "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
+        },
+        "OVA": {
+            "templatename": "VMwareUploadtemplate",
+            "displaytext": "VMwareUploadtemplate",
+            "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-vmware.ova",
+            "checksum": "d6d97389b129c7d898710195510bf4fb",
+            "hypervisor":"VMware",
+            "ostypeid":"74affaea-c658-11e4-ad38-a6d1374244b4"
+        },
+        "QCOW2": {
+            "templatename": "KVMUploadtemplate",
+            "displaytext": "VMwareUploadtemplate",
+            "url": "http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2",
+            "checksum": "ada77653dcf1e59495a9e1ac670ad95f",
+            "hypervisor":"KVM",
+            "ostypeid":"2e02e376-cdf3-11e4-beb3-8aa6272b57ef"
+        },
+    },
     "configurableData":
         {
             "portableIpRange": {
@@ -1973,401 +1886,36 @@ test_data = {
                     "url": "http://dl.openvm.eu/cloudstack/iso/TinyCore-8.0.iso",
                     "ostype": 'Other Linux (64-bit)',
                     "mode": 'HTTP_DOWNLOAD'
-        },
-     "setHostConfigurationForIngressRule": False,
-     "restartManagementServerThroughTestCase": False,
-     "vmxnet3template": {
-            "displaytext": "VMXNET3 Template",
-            "name": "VMXNET3 template",
-            "ostype": "CentOS 5.6 (64-bit)",
-            "isfeatured": True,
-            "ispublic": False,
-            "isextractable": True,
-            "mode": "HTTP_DOWNLOAD",
-            "templatefilter": "self",
-            "url": "http://people.apache.org/~sanjeev/systemvm64template-2014-09-30-4.3-vmware.ova",
-            "hypervisor": "vmware",
-            "format": "OVA",
-            "nicadapter": "vmxnet3",
+                },
+            "setHostConfigurationForIngressRule": False,
+            "restartManagementServerThroughTestCase": False,
+            "vmxnet3template": {
+                "displaytext": "VMXNET3 Template",
+                "name": "VMXNET3 template",
+                "ostype": "CentOS 5.6 (64-bit)",
+                "isfeatured": True,
+                "ispublic": False,
+                "isextractable": True,
+                "mode": "HTTP_DOWNLOAD",
+                "templatefilter": "self",
+                "url": "http://people.apache.org/~sanjeev/systemvm64template-2014-09-30-4.3-vmware.ova",
+                "hypervisor": "vmware",
+                "format": "OVA",
+                "nicadapter": "vmxnet3",
                 "kvm": {
-                        "url": ""
-                    },
-                    "vmware": {
-                        "url": ""
-                    },
-                    "xenserver": {
-                        "url": ""
-                    },
-                    "hyperv": {
-                        "url": ""
-                    },
-                    "ostype": 'CentOS 5.3 (64-bit)',
-                    "mode": 'HTTP_DOWNLOAD'
-                }
-        },
-    # Nuage VSP SDN plugin specific test data
-    "nuagevsp": {
-        # Services supported by the Nuage VSP plugin for Isolated networks
-        "isolated_network_offering": {
-            "name": 'nuage_marvin',
-            "displaytext": 'nuage_marvin',
-            "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall,Dns',
-            "traffictype": 'GUEST',
-            "availability": 'Optional',
-            "tags": "nuage",
-            "serviceProviderList": {
-                "Dhcp": 'NuageVsp',
-                "StaticNat": 'NuageVsp',
-                "SourceNat": 'NuageVsp',
-                "Firewall": 'NuageVsp',
-                "Connectivity": 'NuageVsp',
-                "UserData": 'VirtualRouter',
-                "Dns": 'VirtualRouter'
-            },
-            "serviceCapabilityList": {
-                    "SourceNat": {"SupportedSourceNatTypes": "perzone"}
+                    "url": ""
+                },
+                "vmware": {
+                    "url": ""
+                },
+                "xenserver": {
+                    "url": ""
+                },
+                "hyperv": {
+                    "url": ""
+                },
+                "ostype": 'CentOS 5.3 (64-bit)',
+                "mode": 'HTTP_DOWNLOAD'
             }
-        },
-        # Persistent services supported by the Nuage VSP plugin for Isolated networks
-        "isolated_network_offering_persistent": {
-            "name": 'nuage_marvin',
-            "displaytext": 'nuage_marvin',
-            "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall,Dns',
-            "traffictype": 'GUEST',
-            "availability": 'Optional',
-            "ispersistent": 'True',
-            "tags": "nuage",
-            "serviceProviderList": {
-                "Dhcp": 'NuageVsp',
-                "StaticNat": 'NuageVsp',
-                "SourceNat": 'NuageVsp',
-                "Firewall": 'NuageVsp',
-                "Connectivity": 'NuageVsp',
-                "UserData": 'VirtualRouter',
-                "Dns": 'VirtualRouter'
-            },
-            "serviceCapabilityList": {
-                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
-            }
-        },
-        # Persistent services supported by the Nuage VSP plugin for Isolated networks
-        "isolated_network_offering_persistent": {
-            "name": 'nuage_marvin',
-            "displaytext": 'nuage_marvin',
-            "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,UserData,Firewall,Dns',
-            "traffictype": 'GUEST',
-            "availability": 'Optional',
-            "ispersistent": 'True',
-            "tags": "nuage",
-            "serviceProviderList": {
-                "Dhcp": 'NuageVsp',
-                "StaticNat": 'NuageVsp',
-                "SourceNat": 'NuageVsp',
-                "Firewall": 'NuageVsp',
-                "Connectivity": 'NuageVsp',
-                "UserData": 'VirtualRouter',
-                "Dns": 'VirtualRouter'
-            },
-            "serviceCapabilityList": {
-                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
-            }
-        },
-        # Purely nuage network offering
-        "isolated_network_offering_without_vr": {
-            "name": 'nuage_marvin',
-            "displaytext": 'nuage_marvin',
-            "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,Firewall',
-            "traffictype": 'GUEST',
-            "availabiliy": 'Optional',
-            "tags": "nuage",
-            "serviceProviderList": {
-                "Dhcp": 'NuageVsp',
-                "StaticNat": 'NuageVsp',
-                "SourceNat": 'NuageVsp',
-                "Firewall": 'NuageVsp',
-                "Connectivity": 'NuageVsp'
-            },
-            "serviceCapabilityList": {
-                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
-            }
-        },
-        # Purely persistent nuage network offering
-        "isolated_network_offering_without_vr_persistent": {
-            "name": 'nuage_marvin',
-            "displaytext": 'nuage_marvin',
-            "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,Firewall',
-            "traffictype": 'GUEST',
-            "availability": 'Optional',
-            "tags": "nuage",
-            "ispersistent": 'True',
-            "serviceProviderList": {
-                "Dhcp": 'NuageVsp',
-                "StaticNat": 'NuageVsp',
-                "SourceNat": 'NuageVsp',
-                "Firewall": 'NuageVsp',
-                "Connectivity": 'NuageVsp'
-            },
-            "serviceCapabilityList": {
-                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
-            }
-        },
-        # Purely nuage network offering
-        "isolated_network_offering_without_vr": {
-            "name": 'nuage_marvin',
-            "displaytext": 'nuage_marvin',
-            "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,Firewall',
-            "traffictype": 'GUEST',
-            "availabiliy": 'Optional',
-            "tags": "nuage",
-            "serviceProviderList": {
-                "Dhcp": 'NuageVsp',
-                "StaticNat": 'NuageVsp',
-                "SourceNat": 'NuageVsp',
-                "Firewall": 'NuageVsp',
-                "Connectivity": 'NuageVsp'
-            },
-            "serviceCapabilityList": {
-                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
-            }
-        },
-        # Purely persistent nuage network offering
-        "isolated_network_offering_without_vr_persistent": {
-            "name": 'nuage_marvin',
-            "displaytext": 'nuage_marvin',
-            "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,SourceNat,Connectivity,StaticNat,Firewall',
-            "traffictype": 'GUEST',
-            "availability": 'Optional',
-            "tags": "nuage",
-            "ispersistent": 'True',
-            "serviceProviderList": {
-                "Dhcp": 'NuageVsp',
-                "StaticNat": 'NuageVsp',
-                "SourceNat": 'NuageVsp',
-                "Firewall": 'NuageVsp',
-                "Connectivity": 'NuageVsp'
-            },
-            "serviceCapabilityList": {
-                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
-            }
-        },
-        # Services supported by the Nuage VSP plugin for VPC networks
-        "vpc_network_offering": {
-            "name": 'nuage_vpc_marvin',
-            "displaytext": 'nuage_vpc_marvin',
-            "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
-            "traffictype": 'GUEST',
-            "availability": 'Optional',
-            "useVpc": 'on',
-            "ispersistent": 'True',
-            "tags": "nuage",
-            "serviceProviderList": {
-                "Dhcp": "NuageVsp",
-                "StaticNat": "NuageVsp",
-                "SourceNat": "NuageVsp",
-                "NetworkACL": "NuageVsp",
-                "Connectivity": "NuageVsp",
-                "UserData": "VpcVirtualRouter",
-                "Dns": "VpcVirtualRouter"
-            },
-            "serviceCapabilityList": {
-                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
-            }
-        },
-        "vpc_network_offering_internal_lb": {
-            "name": "nuage_vpc_marvin_internal_lb",
-            "displaytext": "nuage_vpc_marvin_internal_lb",
-            "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,Lb,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
-            "traffictype": 'GUEST',
-            "availability": 'Optional',
-            "tags": "nuage",
-            "useVpc": 'on',
-            "ispersistent": 'True',
-            "serviceProviderList": {
-                "Dhcp": "NuageVsp",
-                "Lb": "InternalLbVm",
-                "StaticNat": "NuageVsp",
-                "SourceNat": "NuageVsp",
-                "NetworkACL": "NuageVsp",
-                "Connectivity": "NuageVsp",
-                "UserData": "VpcVirtualRouter",
-                "Dns": "VpcVirtualRouter"
-            },
-            "serviceCapabilityList": {
-                "SourceNat": {"SupportedSourceNatTypes": "perzone"},
-                "Lb": {"lbSchemes": "internal", "SupportedLbIsolation": "dedicated"}
-            }
-        },
-        # Services supported by the Nuage VSP plugin for VPCs
-        "vpc_offering": {
-            "name": 'Nuage VSP VPC offering',
-            "displaytext": 'Nuage VSP VPC offering',
-            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
-            "serviceProviderList": {
-                "Dhcp": "NuageVsp",
-                "StaticNat": "NuageVsp",
-                "SourceNat": "NuageVsp",
-                "NetworkACL": "NuageVsp",
-                "Connectivity": "NuageVsp",
-                "UserData": "VpcVirtualRouter",
-                "Dns": "VpcVirtualRouter"
-            }
-        },
-        "vpc_offering_lb": {
-            "name": 'Nuage VSP VPC offering with Lb',
-            "displaytext": 'Nuage VSP VPC offering with Lb',
-            "supportedservices": 'Dhcp,Lb,StaticNat,SourceNat,NetworkACL,Connectivity,UserData,Dns',
-            "serviceProviderList": {
-                "Dhcp": "NuageVsp",
-                "Lb": "InternalLbVm",
-                "StaticNat": "NuageVsp",
-                "SourceNat": "NuageVsp",
-                "NetworkACL": "NuageVsp",
-                "Connectivity": "NuageVsp",
-                "UserData": "VpcVirtualRouter",
-                "Dns": "VpcVirtualRouter"
-            }
-        },
-        # Services supported by the Nuage VSP plugin for VPC without userdata
-        "vpc_network_offering_nuage_dhcp": {
-            "name": 'nuage_vpc_marvin',
-            "displaytext": 'nuage_vpc_marvin',
-            "guestiptype": 'Isolated',
-            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,Dns',
-            "traffictype": 'GUEST',
-            "availability": 'Optional',
-            "useVpc": 'on',
-            "ispersistent": 'True',
-            "serviceProviderList": {
-                "Dhcp": "NuageVsp",
-                "StaticNat": "NuageVsp",
-                "SourceNat": "NuageVsp",
-                "NetworkACL": "NuageVsp",
-                "Connectivity": "NuageVsp",
-                "Dns": "VpcVirtualRouter",
-            },
-            "serviceCapabilityList": {
-                "SourceNat": {"SupportedSourceNatTypes": "perzone"}
-            }
-        },
-        # Services supported by the Nuage VSP plugin for VPCs
-        "vpc_offering_nuage_dhcp": {
-            "name": 'Nuage VSP VPC offering',
-            "displaytext": 'Nuage VSP VPC offering',
-            "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,Connectivity,Dns',
-            "serviceProviderList": {
-                "Dhcp": "NuageVsp",
-                "StaticNat": "NuageVsp",
-                "SourceNat": "NuageVsp",
-                "NetworkACL": "NuageVsp",
-                "Connectivity": "NuageVsp",
-                "Dns": "VpcVirtualRouter",
-            }
-        },
-        "shared_nuage_network_offering": {
-            "name": 'nuage_marvin',
-            "displaytext": 'nuage_marvin',
-            "guestiptype": 'shared',
-            "supportedservices": 'Dhcp,Connectivity',
-            "traffictype": 'GUEST',
-            "specifyVlan": "False",
-            "specifyIpRanges": "True",
-            "availability": 'Optional',
-            "tags": "nuage",
-            "serviceProviderList": {
-                "Dhcp": "NuageVsp",
-                "Connectivity": "NuageVsp"
-            }
-        },
-        "shared_nuage_public_network_offering": {
-            "name": 'nuage_marvin',
-            "displaytext": 'nuage_marvin',
-            "guestiptype": 'shared',
-            "supportedservices": 'Dhcp,Connectivity',
-            "traffictype": 'GUEST',
-            "specifyVlan": "False",
-            "specifyIpRanges": "True",
-            "availability": 'Optional',
-            "tags": "nuage",
-            "serviceProviderList": {
-                "Dhcp": "NuageVsp",
-                "Connectivity": "NuageVsp"
-            },
-            "serviceCapabilityList": {
-                "Connectivity": {
-                    "PublicAccess": "true"
-                }
-            }
-
-        },
-        # Test data for Shared Network creation
-        "network_all": {
-            "name": "SharedNetwork-All-nuage",
-            "displaytext": "SharedNetwork-All-nuage",
-            "gateway": "10.200.100.1",
-            "netmask": "255.255.255.0",
-            "startip": "10.200.100.21",
-            "endip": "10.200.100.100",
-            "acltype": "Domain"
-        },
-        "network_domain_with_no_subdomain_access": {
-            "name": "SharedNetwork-Domain-nosubdomain-nuage",
-            "displaytext": "SharedNetwork-Domain-nosubdomain-nuage",
-            "gateway": "10.222.1.1",
-            "netmask": "255.255.255.0",
-            "startip": "10.222.1.2",
-            "endip": "10.222.1.100",
-            "acltype": "Domain",
-            "subdomainaccess": "false"
-        },
-        "network_domain_with_subdomain_access": {
-            "name": "SharedNetwork-Domain-withsubdomain-nuage",
-            "displaytext": "SharedNetwork-Domain-withsubdomain-nuage",
-            "gateway": "10.221.1.1",
-            "netmask": "255.255.255.0",
-            "startip": "10.221.1.2",
-            "endip": "10.221.1.100",
-            "acltype": "Domain",
-            "subdomainaccess": "true"
-        },
-        "network_account": {
-            "name": "SharedNetwork-Account-nuage",
-            "displaytext": "SharedNetwork-Account-nuage",
-            "gateway": "10.220.1.1",
-            "netmask": "255.255.255.0",
-            "startip": "10.220.1.2",
-            "endip": "10.220.1.100",
-            "acltype": "Account"
-        },
-        "publiciprange1": {
-            "gateway": "10.200.100.1",
-            "netmask": "255.255.255.0",
-            "startip": "10.200.100.101",
-            "endip": "10.200.100.105",
-            "forvirtualnetwork": "false"
-        },
-        "publiciprange2": {
-            "gateway": "10.219.1.1",
-            "netmask": "255.255.255.0",
-            "startip": "10.219.1.2",
-            "endip": "10.219.1.5",
-            "forvirtualnetwork": "false"
-        },
-        "publiciprange3": {
-            "gateway": "10.200.100.1",
-            "netmask": "255.255.255.0",
-            "startip": "10.200.100.2",
-            "endip": "10.200.100.20",
-            "forvirtualnetwork": "false"
         }
-    }
 }
-

@@ -31,29 +31,6 @@ import unittest
 import re
 
 
-class Services:
-    """Test network services
-    """
-    def __init__(self):
-        self.services = {
-            "shared_network_offering": {
-                "name": "MySharedOffering-shared",
-                "displaytext": "MySharedOffering",
-                "guestiptype": "Shared",
-                "supportedservices": "Dhcp,Dns,UserData",
-                "specifyVlan": "True",
-                "specifyIpRanges": "True",
-                "traffictype": "GUEST",
-                "tags": "native",
-                "serviceProviderList": {
-                    "Dhcp": "VirtualRouter",
-                    "Dns": "VirtualRouter",
-                    "UserData": "VirtualRouter"
-                }
-            }
-        }
-
-
 class TestNuageMigration(nuageTestCase):
     """Test Native to Nuage Migration
     """
@@ -61,7 +38,6 @@ class TestNuageMigration(nuageTestCase):
     @classmethod
     def setUpClass(cls):
         super(TestNuageMigration, cls).setUpClass()
-        cls.services = Services().services
 
         if not hasattr(cls.vsp_physical_network, "tags") \
                 or cls.vsp_physical_network.tags != 'nuage':

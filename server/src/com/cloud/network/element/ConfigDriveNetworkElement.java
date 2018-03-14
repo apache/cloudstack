@@ -118,9 +118,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Inject
     VolumeOrchestrationService _volumeMgr;
 
-    public final static String CONFIGDRIVEFILENAME = "configdrive.iso";
-    public final static String CONFIGDRIVEDIR= "ConfigDrive";
-    public final static Integer CONFIGDRIVEDISKSEQ= new Integer(4);
+    private final static String CONFIGDRIVEFILENAME = "configdrive.iso";
+    private final static String CONFIGDRIVEDIR = "ConfigDrive";
+    private final static Integer CONFIGDRIVEDISKSEQ = 4;
 
     private boolean canHandle(TrafficType trafficType) {
         return trafficType.equals(TrafficType.Guest);
@@ -320,9 +320,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         s_logger.debug(String.format("%s config drive ISO for  vm %s in host %s",
                 (update?"update":"create"), profile.getInstanceName(), _hostDao.findById(hostId).getName()));
         EndPoint endpoint = _ep.select(secondaryStore);
-        if (endpoint == null )
-            throw new ResourceUnavailableException(String.format("%s failed, secondary store not available",
-                    (update?"Update":"Create")),secondaryStore.getClass(),secondaryStore.getId());
+        if (endpoint == null) {
+            throw new ResourceUnavailableException(String.format("%s failed, secondary store not available", (update ? "Update" : "Create")), secondaryStore.getClass(),
+                                                   secondaryStore.getId());
+        }
         String isoPath = CONFIGDRIVEDIR + "/" + profile.getInstanceName() + "/"  + CONFIGDRIVEFILENAME;
         HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(profile.getVmData(),
                 profile.getConfigDriveLabel(), secondaryStore.getTO(), isoPath, true, update);
