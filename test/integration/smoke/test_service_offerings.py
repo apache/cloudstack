@@ -31,9 +31,13 @@ from marvin.lib.common import (list_service_offering,
                                list_virtual_machines,
                                get_domain,
                                get_zone,
-                               get_test_template)
+                               get_template,
+                               list_hosts)
 from nose.plugins.attrib import attr
 
+import time
+from marvin.sshClient import SshClient
+from marvin.lib.decoratorGenerators import skipTestIf
 
 _multiprocess_shared_ = True
 
@@ -163,13 +167,13 @@ class TestServiceOfferings(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
-        template = get_test_template(
+        template = get_template(
             cls.apiclient,
             cls.zone.id,
             cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_test_template() failed to return template"
+            assert False, "get_template() failed to return template"
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -399,4 +403,163 @@ class TestServiceOfferings(cloudstackTestCase):
                           ),
             "Check Memory(kb) for small offering"
         )
+        return
+
+class TestCpuCapServiceOfferings(cloudstackTestCase):
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+
+    def tearDown(self):
+        try:
+            # Clean up, terminate the created templates
+            cleanup_resources(self.apiclient, self.cleanup)
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+
+        return
+
+    def get_ssh_client(self, id, public_ip, username, password, retries):
+        """ Setup ssh client connection and return connection
+        vm requires attributes public_ip, public_port, username, password """
+
+        try:
+            ssh_client = SshClient(
+                public_ip,
+                22,
+                username,
+                password,
+                retries)
+
+        except Exception as e:
+            self.fail("Unable to create ssh connection: " % e)
+
+        self.assertIsNotNone(
+            ssh_client, "Failed to setup ssh connection to host=%s on public_ip=%s" % (id, public_ip))
+
+        return ssh_client
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestCpuCapServiceOfferings, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+        cls.hypervisor = testClient.getHypervisorInfo()
+
+        cls.hypervisorNotSupported = False
+        if cls.hypervisor.lower() not in ["kvm"]:
+            cls.hypervisorNotSupported = True
+            return
+
+        domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
+
+        template = get_template(cls.apiclient, cls.zone.id, cls.hypervisor)
+        if template == FAILED:
+            assert False, "get_template() failed to return template"
+
+        cls.services["small"]["zoneid"] = cls.zone.id
+        cls.services["small"]["template"] = template.id
+        cls.services["small"]["hypervisor"] = cls.hypervisor
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
+
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            domainid=domain.id
+        )
+
+        offering_data = {
+            'displaytext': 'TestOffering',
+            'cpuspeed': 512,
+            'cpunumber': 2,
+            'name': 'TestOffering',
+            'memory': 1024
+        }
+
+        cls.offering = ServiceOffering.create(
+            cls.apiclient,
+            offering_data,
+            limitcpuuse=True
+        )
+
+        def getHost(self, hostId=None):
+            response = list_hosts(
+                self.apiclient,
+                type='Routing',
+                hypervisor='kvm',
+                id=hostId
+            )
+            # Check if more than one kvm hosts are available in order to successfully configure host-ha
+            if response and len(response) > 0:
+                self.host = response[0]
+                return self.host
+            raise self.skipTest("Not enough KVM hosts found, skipping host-ha test")
+
+        cls.host = getHost(cls)
+
+        cls.vm = VirtualMachine.create(
+            cls.apiclient,
+            cls.services["small"],
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            serviceofferingid=cls.offering.id,
+            mode=cls.services["mode"],
+            hostid=cls.host.id
+
+        )
+        cls._cleanup = [
+            cls.offering,
+            cls.account
+        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            cls.apiclient = super(
+                TestCpuCapServiceOfferings,
+                cls).getClsTestClient().getApiClient()
+            # Clean up, terminate the created templates
+            cleanup_resources(cls.apiclient, cls._cleanup)
+
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @skipTestIf("hypervisorNotSupported")
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="true")
+    def test_01_service_offering_cpu_limit_use(self):
+        """
+        Test CPU Cap on KVM
+        """
+
+        ssh_host = self.get_ssh_client(self.host.id, self.host.ipaddress, self.hostConfig["username"], self.hostConfig["password"], 10)
+
+        #Get host CPU usage from top command before and after VM consuming 100% CPU
+        find_pid_cmd = "ps -ax | grep '%s' | head -1 | awk '{print $1}'" % self.vm.id
+        pid = ssh_host.execute(find_pid_cmd)[0]
+        cpu_usage_cmd = "top -b n 1 p %s | tail -1 | awk '{print $9}'" % pid
+        host_cpu_usage_before_str = ssh_host.execute(cpu_usage_cmd)[0]
+
+        host_cpu_usage_before = round(float(host_cpu_usage_before_str))
+        self.debug("Host CPU usage before the infinite loop on the VM: " + str(host_cpu_usage_before))
+
+        #Execute loop command in background on the VM
+        ssh_vm = self.vm.get_ssh_client(reconnect=True)
+        ssh_vm.execute("echo 'while true; do x=$(($x+1)); done' > cputest.sh")
+        ssh_vm.execute("sh cputest.sh > /dev/null 2>&1 &")
+
+        time.sleep(5)
+        host_cpu_usage_after_str = ssh_host.execute(cpu_usage_cmd)[0]
+        host_cpu_usage_after = round(float(host_cpu_usage_after_str))
+        self.debug("Host CPU usage after the infinite loop on the VM: " + str(host_cpu_usage_after))
+
+        limit = 95
+        self.assertTrue(host_cpu_usage_after < limit, "Host CPU usage after VM usage increased is high")
+
         return
