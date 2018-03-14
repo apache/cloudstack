@@ -253,6 +253,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     private StorageManager storageMgr;
     @Inject
     private StoragePoolDetailsDao storagePoolDetailsDao;
+    @Inject
+    private StorageUtil storageUtil;
 
     protected Gson _gson;
 
@@ -2741,6 +2743,42 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
+    private void verifyManagedStorage(Long storagePoolId, Long hostId) {
+        if (storagePoolId == null || hostId == null) {
+            return;
+        }
+
+        StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePoolId);
+
+        if (storagePoolVO == null || !storagePoolVO.isManaged()) {
+            return;
+        }
+
+        HostVO hostVO = _hostDao.findById(hostId);
+
+        if (hostVO == null) {
+            return;
+        }
+
+        if (!storageUtil.managedStoragePoolCanScale(storagePoolVO, hostVO.getClusterId(), hostVO.getId())) {
+            throw new CloudRuntimeException("Insufficient number of available " + getNameOfClusteredFileSystem(hostVO));
+        }
+    }
+
+    private String getNameOfClusteredFileSystem(HostVO hostVO) {
+        HypervisorType hypervisorType = hostVO.getHypervisorType();
+
+        if (HypervisorType.XenServer.equals(hypervisorType)) {
+            return "SRs";
+        }
+
+        if (HypervisorType.VMware.equals(hypervisorType)) {
+            return "datastores";
+        }
+
+        return "clustered file systems";
+    }
+
     private VolumeVO sendAttachVolumeCommand(UserVmVO vm, VolumeVO volumeToAttach, Long deviceId) {
         String errorMsg = "Failed to attach volume " + volumeToAttach.getName() + " to VM " + vm.getHostName();
         boolean sendCommand = vm.getState() == State.Running;
@@ -2767,6 +2805,8 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 sendCommand = true;
             }
         }
+
+        verifyManagedStorage(volumeToAttachStoragePool.getId(), hostId);
 
         // volumeToAttachStoragePool should be null if the VM we are attaching the disk to has never been started before
         DataStore dataStore = volumeToAttachStoragePool != null ? dataStoreMgr.getDataStore(volumeToAttachStoragePool.getId(), DataStoreRole.Primary) : null;

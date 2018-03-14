@@ -92,6 +92,14 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Global,
             null);
+    ConfigKey<Integer> MaxNumberOfManagedClusteredFileSystems = new ConfigKey<>(Integer.class,
+            "max.number.managed.clustered.file.systems",
+            "Storage",
+            "200",
+            "XenServer and VMware only: Maximum number of managed SRs or datastores per compute cluster",
+            true,
+            ConfigKey.Scope.Cluster,
+            null);
 
     /**
      * Returns a comma separated list of tags for the specified storage pool
