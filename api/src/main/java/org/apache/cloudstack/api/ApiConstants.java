@@ -310,7 +310,7 @@ public class ApiConstants {
     public static final String USERNAME = "username";
     public static final String USER_SECURITY_GROUP_LIST = "usersecuritygrouplist";
     public static final String USE_VIRTUAL_NETWORK = "usevirtualnetwork";
-    public static final String Update_IN_SEQUENCE ="updateinsequence";
+    public static final String Update_IN_SEQUENCE = "updateinsequence";
     public static final String VALUE = "value";
     public static final String VIRTUAL_MACHINE_ID = "virtualmachineid";
     public static final String VIRTUAL_MACHINE_IDS = "virtualmachineids";
@@ -708,13 +708,11 @@ public class ApiConstants {
             + " and just a plain ascii/utf8 representation of a hexadecimal string. If it is required to\n"
             + " use another algorithm the hexadecimal string is to be prefixed with a string of the form,\n"
             + " \"{<algorithm>}\", not including the double quotes. In this <algorithm> is the exact string\n"
-            + " representing the java supported algorithm, i.e. MD5 or SHA-256. Note that java does not\n"
-            + " contain an algorithm called SHA256 or one called sha-256, only SHA-256.";
+            + " representing the java supported algorithm, i.e. MD5 or SHA-256. Note that java does not\n" + " contain an algorithm called SHA256 or one called sha-256, only SHA-256.";
 
     public static final String HAS_ANNOTATION = "hasannotation";
     public static final String LAST_ANNOTATED = "lastannotated";
     public static final String LDAP_DOMAIN = "ldapdomain";
-
 
     public enum HostDetails {
         all, capacity, events, stats, min;
