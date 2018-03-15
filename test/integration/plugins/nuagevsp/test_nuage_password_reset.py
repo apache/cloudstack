@@ -138,6 +138,10 @@ class TestNuagePasswordReset(nuageTestCase):
     # cloud-set-guest-password script from people.apache.org in the given VM
     # (SSH client)
     def install_cloud_set_guest_password_script(self, ssh_client):
+        if self.isSimulator:
+            self.debug( "Simulator Environment: Skipping installing"
+                        " cloud-set-guest-password script")
+            return
         self.debug("Installing cloud-set-guest-password script")
         cmd = "cd /etc/init.d;wget http://people.apache.org/~tsp/" \
               "cloud-set-guest-password"
@@ -254,6 +258,10 @@ class TestNuagePasswordReset(nuageTestCase):
             self.create_and_verify_fw(self.vm_1, public_ip_1, self.network)
             ssh = self.ssh_into_VM(self.vm_1, public_ip_1)
             user_data_cmd = self.get_userdata_url(self.vm_1)
+            if self.isSimulator:
+                self.debug("Simulator Environment: ending test early "
+                           "because we don't have real vms")
+                return
             self.debug("Getting user data with command: " + user_data_cmd)
             actual_user_data = base64.b64decode(self.execute_cmd
                                                 (ssh, user_data_cmd))
@@ -261,7 +269,7 @@ class TestNuagePasswordReset(nuageTestCase):
                        ", Expected user data - " + expected_user_data)
             self.assertEqual(actual_user_data, expected_user_data,
                              "Un-expected VM (VM_1) user data"
-                             )
+                         )
 
             self.debug("Checking for cloud-set-guest-password script in the "
                        "VM for testing password reset functionality...")
@@ -269,6 +277,7 @@ class TestNuagePasswordReset(nuageTestCase):
             ls_result = self.execute_cmd(ssh, ls_cmd)
             ls_result = ls_result.lower()
             self.debug("Response from ls_cmd: " + ls_result)
+
             if "no such file" in ls_result:
                 self.debug("No cloud-set-guest-password script in the VM")
                 self.debug("Installing the cloud-set-guest-password script "

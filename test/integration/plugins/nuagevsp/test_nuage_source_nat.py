@@ -140,12 +140,15 @@ class TestNuageSourceNat(nuageTestCase):
             self.verify_vsd_firewall_rule(public_ssh_rule)
 
             # Checking for wget file
-            ssh_client = self.ssh_into_VM(vm, public_ip)
-            cmd = "ls /"
-            file_list = self.execute_cmd(ssh_client, cmd)
-            if "index.html" in str(file_list):
-                cmd = "rm -rf /index.html*"
-                self.execute_cmd(ssh_client, cmd)
+            is_in_file_list = None
+            if not self.isSimulator:
+                ssh_client = self.ssh_into_VM(vm, public_ip)
+                cmd = "ls /"
+                file_list = self.execute_cmd(ssh_client, cmd)
+                is_in_file_list = "index.html" in str(file_list)
+                if is_in_file_list:
+                    cmd = "rm -rf /index.html*"
+                    self.execute_cmd(ssh_client, cmd)
 
             # Removing Ingress Firewall/Network ACL rule
             self.debug("Removing the created Ingress Firewall/Network ACL "
@@ -194,11 +197,11 @@ class TestNuageSourceNat(nuageTestCase):
                            "VSD")
 
             # Final test result
-            if "index.html" in str(file_list):
+            if is_in_file_list:
                 self.debug("Successfully verified Source NAT traffic "
                            "(wget www.google.com) to the Internet from VM - %s"
                            % vm.name)
-            else:
+            elif not self.isSimulator:
                 self.fail("Failed to verify Source NAT traffic "
                           "(wget www.google.com) to the Internet from VM - %s"
                           % vm.name)

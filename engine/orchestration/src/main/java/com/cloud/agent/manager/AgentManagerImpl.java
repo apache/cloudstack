@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.ClosedChannelException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -37,6 +38,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -116,6 +118,7 @@ import com.cloud.utils.nio.Link;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.time.InaccurateClock;
+import com.google.common.base.Strings;
 
 /**
  * Implementation of the Agent Manager. This class controls the connection to the agents.
@@ -161,6 +164,9 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
 
     @Inject
     protected HypervisorGuruManager _hvGuruMgr;
+
+    @Inject
+    protected IndirectAgentLB indirectAgentLB;
 
     protected int _retry = 2;
 
@@ -1073,14 +1079,31 @@ public class AgentManagerImpl extends ManagerBase implements AgentManager, Handl
         AgentAttache attache = null;
         ReadyCommand ready = null;
         try {
+            final List<String> agentMSHostList = new ArrayList<>();
+            if (startup != null && startup.length > 0) {
+                final String agentMSHosts = startup[0].getMsHostList();
+                if (!Strings.isNullOrEmpty(agentMSHosts)) {
+                    agentMSHostList.addAll(Arrays.asList(agentMSHosts.split(",")));
+                }
+            }
+
             final HostVO host = _resourceMgr.createHostVOForConnectedAgent(startup);
             if (host != null) {
                 ready = new ReadyCommand(host.getDataCenterId(), host.getId());
+
+                if (!indirectAgentLB.compareManagementServerList(host.getId(), host.getDataCenterId(), agentMSHostList)) {
+                    final List<String> newMSList = indirectAgentLB.getManagementServerList(host.getId(), host.getDataCenterId(), null);
+                    ready.setMsHostList(newMSList);
+                    ready.setLbAlgorithm(indirectAgentLB.getLBAlgorithmName());
+                    ready.setLbCheckInterval(indirectAgentLB.getLBPreferredHostCheckInterval(host.getClusterId()));
+                    s_logger.debug("Agent's management server host list is not up to date, sending list update:" + newMSList);
+                }
+
                 attache = createAttacheForConnect(host, link);
                 attache = notifyMonitorsOfConnection(attache, startup, false);
             }
         } catch (final Exception e) {
-            s_logger.debug("Failed to handle host connection: " + e.toString());
+            s_logger.debug("Failed to handle host connection: ", e);
             ready = new ReadyCommand(null);
             ready.setDetails(e.toString());
         } finally {

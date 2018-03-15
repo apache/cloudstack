@@ -28,11 +28,16 @@ import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Map;
 
 public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
@@ -43,6 +48,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     HostDao _hostDao;
 
+    public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
+
     @Override
     public HypervisorType getHypervisorType() {
         return HypervisorType.KVM;
@@ -52,10 +59,53 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         super();
     }
 
+    /**
+     * Retrieve host max CPU speed
+     */
+    protected double getHostCPUSpeed(HostVO host) {
+        return host.getSpeed();
+    }
+
+    protected double getVmSpeed(VirtualMachineTO to) {
+        return to.getMaxSpeed() != null ? to.getMaxSpeed() : to.getSpeed();
+    }
+
+    /**
+    * Set VM CPU quota percentage with respect to host CPU on 'to' if CPU limit option is set
+    * @param to vm to
+    * @param vmProfile vm profile
+    */
+    protected void setVmQuotaPercentage(VirtualMachineTO to, VirtualMachineProfile vmProfile) {
+        if (to.getLimitCpuUse()) {
+            VirtualMachine vm = vmProfile.getVirtualMachine();
+            HostVO host = _hostDao.findById(vm.getHostId());
+            if (host == null) {
+                throw new CloudRuntimeException("Host with id: " + vm.getHostId() + " not found");
+            }
+            s_logger.debug("Limiting CPU usage for VM: " + vm.getUuid() + " on host: " + host.getUuid());
+            double hostMaxSpeed = getHostCPUSpeed(host);
+            double maxSpeed = getVmSpeed(to);
+            try {
+                BigDecimal percent = new BigDecimal(maxSpeed / hostMaxSpeed);
+                percent = percent.setScale(2, RoundingMode.HALF_DOWN);
+                if (percent.compareTo(new BigDecimal(1)) == 1) {
+                    s_logger.debug("VM " + vm.getUuid() + " CPU MHz exceeded host " + host.getUuid() + " CPU MHz, limiting VM CPU to the host maximum");
+                    percent = new BigDecimal(1);
+                }
+                to.setCpuQuotaPercentage(percent.doubleValue());
+                s_logger.debug("Host: " + host.getUuid() + " max CPU speed = " + hostMaxSpeed + "MHz, VM: " + vm.getUuid() +
+                        "max CPU speed = " + maxSpeed + "MHz. Setting CPU quota percentage as: " + percent.doubleValue());
+            } catch (NumberFormatException e) {
+                s_logger.error("Error calculating VM: " + vm.getUuid() + " quota percentage, it wll not be set. Error: " + e.getMessage(), e);
+            }
+        }
+    }
+
     @Override
 
     public VirtualMachineTO implement(VirtualMachineProfile vm) {
         VirtualMachineTO to = toVirtualMachineTO(vm);
+        setVmQuotaPercentage(to, vm);
 
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());

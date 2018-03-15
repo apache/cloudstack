@@ -137,6 +137,11 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-agent-lb</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
       <groupId>org.opensaml</groupId>
       <artifactId>opensaml</artifactId>
       <version>${cs.opensaml.version}</version>

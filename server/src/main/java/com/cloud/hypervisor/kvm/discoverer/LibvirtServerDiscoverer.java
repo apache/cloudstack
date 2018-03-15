@@ -27,9 +27,9 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.ca.SetupCertificateCommand;
-import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.framework.ca.Certificate;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.log4j.Logger;
@@ -76,6 +76,8 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
     private AgentManager agentMgr;
     @Inject
     private CAManager caManager;
+    @Inject
+    private IndirectAgentLB indirectAgentLB;
 
     @Override
     public abstract Hypervisor.HypervisorType getHypervisorType();
@@ -288,7 +290,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
 
             setupAgentSecurity(sshConnection, agentIp, hostname);
 
-            String parameters = " -m " + StringUtils.shuffleCSVList(ApiServiceConfiguration.ManagementHostIPAdr.value()) + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
+            String parameters = " -m " + StringUtils.toCSVList(indirectAgentLB.getManagementServerList(null, dcId, null)) + " -z " + dcId + " -p " + podId     + " -c " + clusterId + " -g " + guid + " -a";
 
             parameters += " --pubNic=" + kvmPublicNic;
             parameters += " --prvNic=" + kvmPrivateNic;

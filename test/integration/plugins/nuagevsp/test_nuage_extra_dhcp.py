@@ -98,12 +98,9 @@ class TestNuageExtraDhcp(nuageTestCase):
         cls.expected_dhcp_options_on_vm = {}
         cls.dhcp_options_map_keys = [1, 16, 28, 41, 64, 93]
 
-        cls._cleanup = [
-            cls.shared_network_all,
-            cls.shared_network_offering,
-            cls.account
-            ]
-        return
+        cls._cleanup.append(cls.account)
+        cls._cleanup.append(cls.shared_network_offering)
+        cls._cleanup.append(cls.shared_network_all)
 
     def setUp(self):
         self.vmdata["displayname"] = "vm"
@@ -273,16 +270,6 @@ class TestNuageExtraDhcp(nuageTestCase):
         # Cleanup resources used
         self.debug("Cleaning up the resources")
         self.update_NuageVspGlobalDomainTemplateName(name="")
-        for obj in reversed(self.cleanup):
-            try:
-                if isinstance(obj, VirtualMachine):
-                    obj.delete(self.api_client, expunge=True)
-                else:
-                    obj.delete(self.api_client)
-            except Exception as e:
-                self.error("Failed to cleanup %s, got %s" % (obj, e))
-        # cleanup_resources(self.api_client, self.cleanup)
-        self.cleanup = []
         self.debug("Cleanup complete!")
         return
 
@@ -435,6 +422,10 @@ class TestNuageExtraDhcp(nuageTestCase):
 
     def verify_dhcp_on_vm(
             self, dhcpleasefile, dhcp_option_map, ssh_client, cleanlease=True):
+        if self.isSimulator:
+            self.debug("Simulator Environment: Skipping VM DHCP option verification")
+            return
+
         cmd = 'cat /var/lib/dhclient/'+dhcpleasefile
         self.debug("get content of dhcp lease file " + cmd)
         outputlist = ssh_client.execute(cmd)
@@ -1071,9 +1062,6 @@ class TestNuageExtraDhcp(nuageTestCase):
 
         self.delete_VM(vm4)
         self.delete_VM(vm3)
-        self.delete_Network(network)
-        if vpc:
-            vpc.delete(self.api_client)
 
     def validate_all_extra_dhcp_for_vm_actions_in_network(
             self, network,

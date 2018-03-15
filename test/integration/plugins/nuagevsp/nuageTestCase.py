@@ -48,6 +48,10 @@ from marvin.cloudstackAPI import (restartVPC,
                                   enableNuageUnderlayVlanIpRange,
                                   disableNuageUnderlayVlanIpRange,
                                   listNuageUnderlayVlanIpRanges)
+
+from nuage_test_data import nuage_test_data
+from nuage_vsp_statistics import VsdDataCollector
+
 # Import System Modules
 from retry import retry
 import importlib
@@ -56,10 +60,12 @@ import logging
 import socket
 import time
 import sys
-from nuage_vsp_statistics import VsdDataCollector
 
 
 class needscleanup(object):
+    """
+    Decorator to add the returned object automatically to the cleanup list.
+    """
     def __init__(self, method):
         self.method = method
 
@@ -84,6 +90,9 @@ class needscleanup(object):
 
 
 class gherkin(object):
+    """Decorator to mark a method as Gherkin style.
+       Add extra colored logging
+    """
     BLACK = "\033[0;30m"
     BLUE = "\033[0;34m"
     GREEN = "\033[0;32m"
@@ -127,6 +136,7 @@ class nuageTestCase(cloudstackTestCase):
         cls.api_client = cls.test_client.getApiClient()
         cls.db_client = cls.test_client.getDbConnection()
         cls.test_data = cls.test_client.getParsedTestDataConfig()
+        cls.test_data.update(nuage_test_data)
 
         # Get Zones and Domains
         cls.zones = Zone.list(cls.api_client)
@@ -150,7 +160,7 @@ class nuageTestCase(cloudstackTestCase):
 
     @classmethod
     def getZoneDetails(cls, zone=None):
-        # Get Zone details
+        """Get Zone details"""
         cls.zone = zone if zone else get_zone(
             cls.api_client,
             zone_name=cls.test_client.getZoneForTests()
@@ -275,12 +285,13 @@ class nuageTestCase(cloudstackTestCase):
         log_handler.setFormatter(formatter)
         root.addHandler(log_handler)
         vsd_info = cls.nuage_vsp_device.__dict__
+
         cls.debug("Nuage VSP device (VSD) details - %s" % vsd_info)
         vsd_api_client = ApiClient(
-            address=vsd_info["hostname"],
-            user=vsd_info["username"],
-            password=vsd_info["password"],
-            version=vsd_info["apiversion"][1] + "." + vsd_info["apiversion"][3]
+            address=cls.nuage_vsp_device.hostname,
+            user=cls.nuage_vsp_device.username,
+            password=cls.nuage_vsp_device.password,
+            version=cls.nuage_vsp_device.apiversion[1] + "." + cls.nuage_vsp_device.apiversion[3]
         )
         vsd_api_client.new_session()
         cls.vsd = VSDHelpers(vsd_api_client)
@@ -293,7 +304,7 @@ class nuageTestCase(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         # Cleanup resources used
-        cls.debug("Cleaning up the resources")
+        cls.debug("Cleaning up the class resources")
         for obj in reversed(cls._cleanup):
             try:
                 if isinstance(obj, VirtualMachine):
@@ -304,12 +315,12 @@ class nuageTestCase(cloudstackTestCase):
                 cls.error("Failed to cleanup %s, got %s" % (obj, e))
         # cleanup_resources(cls.api_client, cls._cleanup)
         cls._cleanup = []
-        cls.debug("Cleanup complete!")
+        cls.debug("Cleanup class complete!")
         return
 
     def tearDown(self):
         # Cleanup resources used
-        self.debug("Cleaning up the resources")
+        self.debug("Cleaning up the test resources")
         for obj in reversed(self.cleanup):
             try:
                 if isinstance(obj, VirtualMachine):
@@ -322,20 +333,28 @@ class nuageTestCase(cloudstackTestCase):
                 self.error("Failed to cleanup %s, got %s" % (obj, e))
         # cleanup_resources(self.api_client, self.cleanup)
         self.cleanup = []
-        self.debug("Cleanup complete!")
+        self.debug("Cleanup test complete!")
         return
 
-    # enable_NuageUnderlayPublicIpRange - Enables/configures underlay
-    # networking for the given public IP range in Nuage VSP
     def enable_NuageUnderlayPublicIpRange(self, vlanid):
+        """Enables/configures underlay networking
+           for the given public IP range in Nuage VSP
+
+        :param vlanid: Vlan ID
+        :type vlanid: marvin.lib.base.PublicIpRange.vlan
+        """
         cmd = enableNuageUnderlayVlanIpRange. \
             enableNuageUnderlayVlanIpRangeCmd()
         cmd.id = vlanid
         self.api_client.enableNuageUnderlayVlanIpRange(cmd)
 
-    # disable_NuageUnderlayPublicIpRange - Disables/de-configures underlay
-    # networking for the given public IP range in Nuage VSP
     def disable_NuageUnderlayPublicIpRange(self, public_ip_range):
+        """Disables underlay networking
+           for the given public IP range in Nuage VSP
+
+        :param public_ip_range: Public IP range
+        :type public_ip_range: marvin.lib.base.PublicIpRange
+        """
         cmd = disableNuageUnderlayVlanIpRange. \
             disableNuageUnderlayVlanIpRangeCmd()
         cmd.id = public_ip_range.vlan.id
@@ -344,6 +363,11 @@ class nuageTestCase(cloudstackTestCase):
     # list_NuageUnderlayPublicIpRanges - Lists underlay networking
     # enabled/configured public IP ranges in Nuage VSP
     def list_NuageUnderlayPublicIpRanges(self, public_ip_range=None):
+        """Lists Vlan IP ranges that have the nuage underlay flag set to True
+
+        :param public_ip_range: Optionally filter by Public IP range
+        :type public_ip_range: marvin.lib.base.PublicIpRange
+        """
         cmd = listNuageUnderlayVlanIpRanges.listNuageUnderlayVlanIpRangesCmd()
         if public_ip_range:
             cmd.id = public_ip_range.vlan.id
@@ -353,6 +377,7 @@ class nuageTestCase(cloudstackTestCase):
     # create_VpcOffering - Creates VPC offering
     @needscleanup
     def create_VpcOffering(cls, vpc_offering, suffix=None):
+        """Creates VPC offering"""
         cls.debug("Creating VPC offering")
         if suffix:
             vpc_offering["name"] = "VPC_OFF-" + str(suffix)
@@ -368,6 +393,16 @@ class nuageTestCase(cloudstackTestCase):
     @needscleanup
     def create_Vpc(cls, vpc_offering, cidr='10.1.0.0/16', testdata=None,
                    account=None, networkDomain=None):
+        """Creates VPC with the given VPC offering
+        :param vpc_offering: vpc offering
+        :type vpc_offering: VpcOffering
+        :param cidr: CIDR
+        :param testdata: vpc details
+        :param account: Account which will be the owner.
+        :param networkDomain:
+        :return: created VPC
+        :rtype: VPC
+        """
         if not account:
             account = cls.account
         cls.debug("Creating a VPC in the account - %s" % account.name)
@@ -389,6 +424,12 @@ class nuageTestCase(cloudstackTestCase):
 
     # restart_Vpc - Restarts the given VPC with/without cleanup
     def restart_Vpc(self, vpc, cleanup=False):
+        """Restarts the given VPC with/without cleanup
+        :param vpc: vpc to restart
+        :type vpc: VPC
+        :param cleanup: whether to restart with cleanup
+        :type cleanup: bool
+        """
         self.debug("Restarting VPC with ID - %s" % vpc.id)
         cmd = restartVPC.restartVPCCmd()
         cmd.id = vpc.id
@@ -401,6 +442,14 @@ class nuageTestCase(cloudstackTestCase):
     @needscleanup
     def create_NetworkOffering(cls, net_offering, suffix=None,
                                conserve_mode=False):
+        """Creates a Network Offering
+        :param net_offering: offering details
+        :type net_offering: object
+        :param suffix: string to append to the offering name
+        :param conserve_mode:
+        :return: created Network Offering
+        :rtype: NetworkOffering
+        """
         cls.debug("Creating Network offering")
         if suffix:
             net_offering["name"] = "NET_OFF-" + str(suffix)
@@ -418,6 +467,23 @@ class nuageTestCase(cloudstackTestCase):
     def create_Network(cls, nw_off, gateway="10.1.1.1",
                        netmask="255.255.255.0", vpc=None, acl_list=None,
                        testdata=None, account=None, vlan=None, externalid=None):
+        """Creates Network with the given Network offering
+        :param nw_off: Network offering
+        :type nw_off: NetworkOffering
+        :param gateway: gateway
+        :param netmask: netmask
+        :param vpc: in case of a VPC tier, the parent VPC
+        :type vpc: VPC
+        :param acl_list: in case of a VPC tier, the acl list
+        :type acl_list: NetworkACLList
+        :param testdata: Network details
+        :param account: Account which will be the owner.
+        :param vlan: vlan id
+        :param externalid: external id, in case of VSD managed networks
+
+        :return: created Network
+        :rtype: Network
+        """
         if not account:
             account = cls.account
         cls.debug("Creating a network in the account - %s" % account.name)
@@ -669,6 +735,10 @@ class nuageTestCase(cloudstackTestCase):
 
     # ssh_into_VM - Gets into the shell of the given VM using its public IP
     def ssh_into_VM(self, vm, public_ip, reconnect=True, negative_test=False):
+        if self.isSimulator:
+            self.debug("Simulator Environment: Skipping ssh into VM")
+            return
+
         self.debug("SSH into VM with ID - %s on public IP address - %s" %
                    (vm.id, public_ip.ipaddress.ipaddress))
         tries = 1 if negative_test else 3
@@ -687,8 +757,15 @@ class nuageTestCase(cloudstackTestCase):
 
         return retry_ssh()
 
-    # execute_cmd - Executes the given command on the given ssh client
     def execute_cmd(self, ssh_client, cmd):
+        """Executes the given command on the given ssh client
+
+        :param ssh_client: SSH session to the remote machine
+        :type ssh_client: marvin.SshClient
+        :param cmd: Command to run on the remote machine
+        :type cmd: str
+        :return: command output
+        """
         self.debug("SSH client executing command - %s" % cmd)
         ret_data = ""
         out_list = ssh_client.execute(cmd)
@@ -699,10 +776,18 @@ class nuageTestCase(cloudstackTestCase):
             self.debug("SSH client executed command result is None")
         return ret_data
 
-    # wget_from_server - Fetches file with the given file name from a web
-    # server listening on the given public IP address and port
+
     def wget_from_server(self, public_ip, port=80, file_name="index.html",
                          disable_system_proxies=True):
+        """Fetches file with the given file name from a web server
+
+        :param public_ip: HTTP server IP
+        :type public_ip: PublicIPAddress
+        :param port: HTTP server port
+        :param file_name: URL path
+        :param disable_system_proxies: whether to bypass system proxy
+        :return: filename, headers
+        """
         import urllib
         if disable_system_proxies:
             urllib.getproxies = lambda: {}
@@ -719,12 +804,15 @@ class nuageTestCase(cloudstackTestCase):
                    (file_name, public_ip.ipaddress.ipaddress, port))
         return filename, headers
 
-    # validate_NetworkServiceProvider - Validates the given Network Service
-    # Provider in the Nuage VSP Physical Network, matches the given provider
-    # name and state against the list of providers fetched
     def validate_NetworkServiceProvider(self, provider_name, state=None):
         """Validates the Network Service Provider in the Nuage VSP Physical
-        Network"""
+        Network.
+
+        :param provider_name Provider name
+        :param state Expected state
+        :raises AssertionError when provider isn't found,
+            or has an incorrect state.
+        """
         self.debug("Validating the creation and state of Network Service "
                    "Provider - %s" % provider_name)
         providers = NetworkServiceProvider.list(
@@ -748,11 +836,19 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully validated the creation and state of Network "
                    "Service Provider - %s" % provider_name)
 
-    # validate_VpcOffering - Validates the given VPC offering, matches the
-    # given VPC offering name and state against the list of VPC offerings
-    # fetched
     def validate_VpcOffering(self, vpc_offering, state=None):
-        """Validates the VPC offering"""
+        """Validates the VPC offering
+
+        Fetches the Vpc offering by id,
+        verifies that the name is correct,
+        and if en expected state is given, verifies that it is correct.
+
+        :param vpc_offering: cs object
+        :type vpc_offering: VpcOffering
+        :param state: optional state
+        :raise AssertionError when VPC offering isn't found,
+            or has an incorrect state.
+        """
         self.debug("Validating the creation and state of VPC offering - %s" %
                    vpc_offering.name)
         vpc_offs = VpcOffering.list(self.api_client,
@@ -772,10 +868,18 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully validated the creation and state of VPC "
                    "offering - %s" % vpc_offering.name)
 
-    # validate_Vpc - Validates the given VPC, matches the given VPC name and
-    # state against the list of VPCs fetched
     def validate_Vpc(self, vpc, state=None):
-        """Validates the VPC"""
+        """Validates the VPC
+
+        Fetches the vpc by id,
+        verifies that the name is correct,
+        and if en expected state is given, verifies that it is correct.
+
+        :param vpc: cs object
+        :type vpc: Vpc
+        :param state: optional state
+        :raise AssertionError when vpc isn't found,
+            or has an incorrect state."""
         self.debug("Validating the creation and state of VPC - %s" % vpc.name)
         vpcs = VPC.list(self.api_client,
                         id=vpc.id
@@ -794,11 +898,19 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully validated the creation and state of VPC - %s"
                    % vpc.name)
 
-    # validate_NetworkOffering - Validates the given Network offering, matches
-    # the given network offering name and state against the list of network
-    # offerings fetched
     def validate_NetworkOffering(self, net_offering, state=None):
-        """Validates the Network offering"""
+        """Validates the Network offering
+
+        Fetches the Network offering by id,
+        verifies that the name is correct,
+        and if en expected state is given, verifies that it is correct.
+
+        :param net_offering: cs object
+        :type net_offering: NetworkOffering
+        :param state: optional state
+        :raise AssertionError when network offering isn't found,
+            or has an incorrect state."""
+
         self.debug("Validating the creation and state of Network offering - %s"
                    % net_offering.name)
         net_offs = NetworkOffering.list(self.api_client,
@@ -818,10 +930,18 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully validated the creation and state of Network "
                    "offering - %s" % net_offering.name)
 
-    # validate_Network - Validates the given network, matches the given network
-    # name and state against the list of networks fetched
     def validate_Network(self, network, state=None):
-        """Validates the network"""
+        """Validates the network
+
+        Fetches the Network by id,
+        verifies that the name is correct,
+        and if en expected state is given, verifies that it is correct.
+
+        :param network: cs object
+        :type network: Network
+        :param state: optional state
+        :raise AssertionError when network isn't found,
+            or has an incorrect state."""
         self.debug("Validating the creation and state of Network - %s" %
                    network.name)
         networks = Network.list(self.api_client,
@@ -841,10 +961,14 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully validated the creation and state of Network "
                    "- %s" % network.name)
 
-    # check_VM_state - Checks if the given VM is in the expected state form the
-    # list of fetched VMs
     def check_VM_state(self, vm, state=None):
-        """Validates the VM state"""
+        """Validates the VM state
+            :param vm: cs object
+            :type vm: VirtualMachine
+            :param state: optional state
+            :raise AssertionError when vm isn't found,
+                or has an incorrect state."""
+
         self.debug("Validating the deployment and state of VM - %s" % vm.name)
         vms = VirtualMachine.list(self.api_client,
                                   id=vm.id,
@@ -860,10 +984,14 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully validated the deployment and state of VM - %s"
                    % vm.name)
 
-    # check_Router_state - Checks if the given router is in the expected state
-    # form the list of fetched routers
     def check_Router_state(self, router, state=None):
-        """Validates the Router state"""
+        """Validates the Router state
+            :param router: cs object
+            :type router: Router
+            :param state: optional state
+            :raise AssertionError when router isn't found,
+                or has an incorrect state."""
+
         self.debug("Validating the deployment and state of Router - %s" %
                    router.name)
         routers = Router.list(self.api_client,
@@ -880,11 +1008,20 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully validated the deployment and state of Router "
                    "- %s" % router.name)
 
-    # validate_PublicIPAddress - Validates if the given public IP address is in
-    # the expected state form the list of fetched public IP addresses
     def validate_PublicIPAddress(self, public_ip, network, static_nat=False,
                                  vm=None):
-        """Validates the Public IP Address"""
+        """Validates the Public IP Address
+            :param public_ip: cs object
+            :type public_ip: PublicIPAddress
+            :param network: cs object
+            :type network: Network
+            :param static_nat: optional state
+            :type static_nat: bool
+            :param vm: Virtual machine the public ip should be forwarding to.
+            :type vm: VirtualMachine
+            :raise AssertionError when Public IP isn't found, isn't Allocated
+                or has an incorrect ip address."""
+
         self.debug("Validating the assignment and state of public IP address "
                    "- %s" % public_ip.ipaddress.ipaddress)
         public_ips = PublicIPAddress.list(self.api_client,
@@ -913,10 +1050,14 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully validated the assignment and state of public "
                    "IP address - %s" % public_ip.ipaddress.ipaddress)
 
-    # verify_VRWithoutPublicIPNIC - Verifies that the given Virtual Router has
-    # no public IP and NIC
     def verify_VRWithoutPublicIPNIC(self, vr):
-        """Verifies VR without Public IP and NIC"""
+        """Verifies that the given Virtual Router has no public IP nor NIC
+            :param vr: cs object
+            :type vr: Router
+            :raise AssertionError when router isn't found,
+                has an incorrect name, has a public ip for source nat
+                or has a nic in the public network."""
+
         self.debug("Verifies that there is no public IP and NIC in Virtual "
                    "Router - %s" % vr.name)
         self.assertEqual(vr.publicip, None,
@@ -930,6 +1071,11 @@ class nuageTestCase(cloudstackTestCase):
                    "in Virtual Router - %s" % vr.name)
 
     def verify_vpc_has_no_src_nat(self, vpc, account=None):
+        """Verifies that the given Vpc has no public IP nor NIC
+            :param vpc: cs object
+            :type vpc: VPC
+            :raise AssertionError when the VPC has a public ip for source nat.
+        """
         if not account:
             account = self.account
         self.debug("Verify that there is no src NAT ip address "
@@ -944,9 +1090,14 @@ class nuageTestCase(cloudstackTestCase):
     # VSD verifications; VSD is a programmable policy and analytics engine of
     # Nuage VSP SDN platform
 
-    # get_externalID_filter - Returns corresponding external ID filter of the
-    # given object in VSD
     def get_externalID_filter(self, object_id):
+        """Builds a VSD filter to search by external ID
+
+        :param object_id: Cloudstack UUID
+        :type object_id: str
+        :rtype: str
+        :return: filter
+        """
         ext_id = object_id + "@" + self.cms_id
         return self.vsd.set_externalID_filter(ext_id)
 
@@ -963,8 +1114,28 @@ class nuageTestCase(cloudstackTestCase):
         :param cs_objects: Cloudstack objects to take the UUID from.
         :return: the VSPK object having the correct externalID
         """
-        return fetcher.get_first(filter="externalID BEGINSWITH '%s'" %
-                                        ":".join([o.id for o in cs_objects]))
+        object_id = ":".join([o.id for o in cs_objects])
+        ext_id = object_id + "@" + self.cms_id
+        return fetcher.get_first(filter="externalID is '%s'" % ext_id)
+
+    def fetch_vsd_objects(self, domain_id, network, vpc=None):
+        vsd_enterprise = self.vsd.get_enterprise(
+            filter=self.get_externalID_filter(domain_id))
+
+        ext_network_filter = self.get_externalID_filter(vpc.id) if vpc \
+            else self.get_externalID_filter(network.id)
+        vsd_domain = self.vsd.get_domain(filter=ext_network_filter)
+        vsd_zone = self.vsd.get_zone(filter=ext_network_filter)
+        vsd_subnet = self.vsd.get_subnet(
+            filter=self.get_externalID_filter(network.id))
+
+        return [
+            ext_network_filter,
+            vsd_enterprise,
+            vsd_domain,
+            vsd_zone,
+            vsd_subnet
+        ]
 
     # verify_vsd_network - Verifies the given CloudStack domain and network/VPC
     # against the corresponding installed enterprise, domain, zone, and subnet
@@ -973,14 +1144,15 @@ class nuageTestCase(cloudstackTestCase):
                            domain_template_name=None):
         self.debug("Verifying the creation and state of Network - %s in VSD" %
                    network.name)
-        vsd_enterprise = self.vsd.get_enterprise(
-            filter=self.get_externalID_filter(domain_id))
-        ext_network_filter = self.get_externalID_filter(vpc.id) if vpc \
-            else self.get_externalID_filter(network.id)
-        vsd_domain = self.vsd.get_domain(filter=ext_network_filter)
-        vsd_zone = self.vsd.get_zone(filter=ext_network_filter)
-        vsd_subnet = self.vsd.get_subnet(
-            filter=self.get_externalID_filter(network.id))
+
+        [
+            ext_network_filter,
+            vsd_enterprise,
+            vsd_domain,
+            vsd_zone,
+            vsd_subnet
+        ] = self.fetch_vsd_objects(domain_id, network, vpc)
+
         self.assertEqual(vsd_enterprise.name, domain_id,
                          "VSD enterprise name should match CloudStack domain "
                          "uuid"
@@ -1039,14 +1211,23 @@ class nuageTestCase(cloudstackTestCase):
             filter=self.get_externalID_filter(network.id))
         self.assertEqual(vsd_subnet, None, "Network is present on the vsd.")
 
-    # get_subnet_id - Calculates and returns the subnet ID in VSD with the
-    # given CloudStack network ID and subnet gateway
     def get_subnet_id(self, network_id, gateway):
+        """ Calculates the subnet ID in VSD with
+            the given CloudStack network ID and subnet gateway
+
+            :param gateway: Gateway
+            :type gateway: str
+            :type network_id: str
+            :rtype: str
+            :return: Expected Subnet UUID
+
+        """
         try:
             import uuid
 
             class NULL_NAMESPACE:
                 bytes = b''
+
             # The UUID of the shared network in ACS
             # The gateway IP of the address range
             network_id = str(network_id)
@@ -1059,11 +1240,12 @@ class nuageTestCase(cloudstackTestCase):
             self.debug("Failed to get the subnet id due to %s" % e)
             self.fail("Unable to get the subnet id, failing the test case")
 
-    # verify_vsd_shared_network - Verifies the given CloudStack domain and
-    # shared network against the corresponding installed enterprise, domain,
-    # zone, subnet, and shared network resource in VSD
+
     def verify_vsd_shared_network(self, domain_id, network,
                                   gateway="10.1.1.1"):
+        """Verifies the given CloudStack domain and
+            shared network against the corresponding installed enterprise,
+            domain, zone, subnet, and shared network resource in VSD"""
         self.debug("Verifying the creation and state of Shared Network - %s "
                    "in VSD" % network.name)
         vsd_enterprise = self.vsd.get_enterprise(
@@ -1074,6 +1256,7 @@ class nuageTestCase(cloudstackTestCase):
         subnet_id = self.get_subnet_id(network.id, gateway)
         vsd_subnet = self.vsd.get_subnet(
             filter=self.get_externalID_filter(subnet_id))
+
         self.assertNotEqual(vsd_enterprise, None,
                             "VSD enterprise (CloudStack domain) data format "
                             "should not be of type None"
@@ -1099,9 +1282,13 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully verified the creation and state of Shared "
                    "Network - %s in VSD" % network.name)
 
-    # verify_vsd_object_status - Verifies the given CloudStack object status in
-    # VSD
     def verify_vsd_object_status(self, cs_object, stopped):
+        """ Verifies the VM status in VSD for a given Cloudstack VM,
+        retrying every 5 seconds for 10 minutes.
+
+        :param cs_object: Cloudstack VM
+        :param stopped: boolean: specifying if the vm is stopped.
+        """
         vsd_object = self.vsd.get_vm(
             filter=self.get_externalID_filter(cs_object.id))
         expected_status = cs_object.state.upper() if not stopped \
@@ -1280,6 +1467,7 @@ class nuageTestCase(cloudstackTestCase):
             public_ipaddress.vlanid)
         vsd_fip_subnet = self.vsd.get_shared_network_resource(
             filter=ext_fip_subnet_filter)
+
         if self.isNuageInfraUnderlay:
             self.assertEqual(vsd_fip_subnet.underlay, True,
                              "Floating IP subnet in VSD should be underlay "
@@ -1290,6 +1478,7 @@ class nuageTestCase(cloudstackTestCase):
                              "Floating IP subnet in VSD should be underlay "
                              "disabled"
                              )
+
         ext_network_filter = self.get_externalID_filter(vpc.id) if vpc \
             else self.get_externalID_filter(network.id)
         vsd_domain = self.vsd.get_domain(filter=ext_network_filter)

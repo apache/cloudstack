@@ -1984,6 +1984,31 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return uuid;
     }
 
+    /**
+     * Set quota and period tags on 'ctd' when CPU limit use is set
+     */
+    protected void setQuotaAndPeriod(VirtualMachineTO vmTO, CpuTuneDef ctd) {
+        if (vmTO.getLimitCpuUse() && vmTO.getCpuQuotaPercentage() != null) {
+            Double cpuQuotaPercentage = vmTO.getCpuQuotaPercentage();
+            int period = CpuTuneDef.DEFAULT_PERIOD;
+            int quota = (int) (period * cpuQuotaPercentage);
+            if (quota < CpuTuneDef.MIN_QUOTA) {
+                s_logger.info("Calculated quota (" + quota + ") below the minimum (" + CpuTuneDef.MIN_QUOTA + ") for VM domain " + vmTO.getUuid() + ", setting it to minimum " +
+                        "and calculating period instead of using the default");
+                quota = CpuTuneDef.MIN_QUOTA;
+                period = (int) ((double) quota / cpuQuotaPercentage);
+                if (period > CpuTuneDef.MAX_PERIOD) {
+                    s_logger.info("Calculated period (" + period + ") exceeds the maximum (" + CpuTuneDef.MAX_PERIOD +
+                            "), setting it to the maximum");
+                    period = CpuTuneDef.MAX_PERIOD;
+                }
+            }
+            ctd.setQuota(quota);
+            ctd.setPeriod(period);
+            s_logger.info("Setting quota=" + quota + ", period=" + period + " to VM domain " + vmTO.getUuid());
+        }
+    }
+
     public LibvirtVMDef createVMFromSpec(final VirtualMachineTO vmTO) {
         final LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
@@ -2059,6 +2084,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             } else {
                 ctd.setShares(vmTO.getCpus() * vmTO.getSpeed());
             }
+
+            setQuotaAndPeriod(vmTO, ctd);
+
             vm.addComp(ctd);
         }
 

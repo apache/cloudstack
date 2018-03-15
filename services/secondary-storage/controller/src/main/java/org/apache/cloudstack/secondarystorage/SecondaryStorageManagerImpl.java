@@ -30,7 +30,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -89,12 +89,12 @@ import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.StorageNetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
-import com.cloud.network.StorageNetworkManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -246,6 +246,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     VolumeDataStoreDao _volumeStoreDao;
     @Inject
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
+    @Inject
+    private IndirectAgentLB indirectAgentLB;
+
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
     private int _secStorageVmMtuSize;
 
@@ -1119,7 +1122,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=secstorage");
-        buf.append(" host=").append(StringUtils.shuffleCSVList(ApiServiceConfiguration.ManagementHostIPAdr.value()));
+        buf.append(" host=").append(StringUtils.toCSVList(indirectAgentLB.getManagementServerList(dest.getHost().getId(), dest.getDataCenter().getId(), null)));
         buf.append(" port=").append(_mgmtPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
 

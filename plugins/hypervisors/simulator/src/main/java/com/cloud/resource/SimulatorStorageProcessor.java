@@ -85,7 +85,7 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     public Answer copyTemplateToPrimaryStorage(CopyCommand cmd) {
         TemplateObjectTO template = new TemplateObjectTO();
         template.setPath(UUID.randomUUID().toString());
-        template.setSize(new Long(100));
+        template.setSize(100L);
         template.setFormat(Storage.ImageFormat.RAW);
         return new CopyCmdAnswer(template);
     }
