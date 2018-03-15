@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,60 +16,125 @@
 # specific language governing permissions and limitations
 # under the License.
 
-version='TESTBUILD'
-sourcedir=~/cloudstack/
-branch='master'
+set -e
 
-usage(){
-    echo "usage: $0 -v version [-b branch] [-s source dir] [-h]"
-    echo "  -v sets the version"
-    echo "  -b sets the branch (defaults to 'master')"
-    echo "  -s sets the source directory (defaults to $sourcedir)"
-    echo "  -h"
+usage() {
+    cat << USAGE
+Usage: setnextversion.sh --version string [OPTIONS]...
+Set the next version of CloudStack in the POMs.
+
+Mandatory arguments:
+   -v, --version string                    Set the next version to be applied
+
+Optional arguments:
+   -b, --branch string                     Set the branch to update the version into (default "master")
+   -s, --sourcedir string                  Set the source directory to clone repo into (default "$sourcedir")
+   -n, --no-commit                         Apply only the version change and don't git commit them (default "false")
+
+Other arguments:
+   -h, --help                              Display this help message and exit
+
+Examples:
+   setnextversion.sh --version x.y.z.a-SNAPSHOT
+   setnextversion.sh --version x.y.z.a-SNAPSHOT --branch foo-feature
+   setnextversion.sh --version x.y.z.a-SNAPSHOT --sourcedir /path/to/cloudstack/repo
+   setnextversion.sh --version x.y.z.a-SNAPSHOT --no-commit
+
+USAGE
+    exit 0
 }
 
-while getopts v:s:b:h opt
-do
-    case "$opt" in
-      v)  version="$OPTARG";;
-      s)  sourcedir="$OPTARG";;
-      b)  branch="$OPTARG";;
-      h)  usage
-          exit 0;;
-      /?)       # unknown flag
-          usage
-          exit 1;;
+while [ -n "$1" ]; do
+    case "$1" in
+        -h | --help)
+            usage
+            ;;
+
+        -v | --version)
+            if [ -n "$version" ]; then
+                echo "ERROR: you have already entered value for -v, --version"
+                exit 1
+            else
+                version=$2
+                shift 2
+            fi
+            ;;
+
+        -b | --branch)
+            if [ -n "$branch" ]; then
+                echo "ERROR: you have already entered value for -b, --branch"
+                exit 1
+            else
+                branch=$2
+                shift 2
+            fi
+            ;;
+
+        -s | --sourcedir)
+            if [ -n "$sourcedir" ]; then
+                echo "ERROR: you have already entered value for -s, --sourcedir"
+                exit 1
+            else
+                sourcedir=$2
+                shift 2
+            fi
+            ;;
+
+        -n | --no-commit)
+            if [ "$nocommit" == "true" ]; then
+                echo "ERROR: you have already entered value for -n, --no-commit"
+                exit 1
+            else
+                nocommit="true"
+                shift 1
+            fi
+            ;;
+
+        -*|*)
+            echo "ERROR: no such option $1. -h or --help for help"
+            exit 1
+            ;;
     esac
 done
-shift `expr $OPTIND - 1`
 
-if [ $version == 'TESTBUILD' ]; then
-    echo >&2 "A version must be specified with the -v option: $0 -v 4.0.0.RC1"
+if [ -z "$version" ]; then
+    echo >&2 "A version must be specified with the -v, --version option: $0 -v 4.0.0.RC1"
     exit 1
 fi
 
-echo "Using version: $version"
-echo "Using source directory: $sourcedir"
-echo "Using branch: $branch"
+if [ -z "$branch" ]; then
+    branch="master"
+fi
+
+if [ -z "$sourcedir" ]; then
+    sourcedir="~/cloudstack/"
+fi
+
+if [ -z "$nocommit" ]; then
+    nocommit="false"
+fi
+
+echo "Using version          : $version"
+echo "Using source directory : $sourcedir"
+echo "Using branch           : $branch"
 
 cd $sourcedir
 
-echo 'checking out correct branch'
+echo "checking out correct branch"
 git checkout $branch
 
-echo 'determining current mvn version'
+echo "determining current POM version"
 export currentversion=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -v '\['`
 echo "found $currentversion"
 
-echo 'setting version numbers'
-mvn versions:set -DnewVersion=$version -P vmware -P developer -P systemvm -P simulator -P baremetal -P ucs -Dnoredist
-mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
-perl -pi -e "s/$currentversion/$version/" deps/XenServerJava/pom.xml
+echo "setting new version numbers"
+mvn versions:set -DnewVersion=$version -P vmware -P developer -P systemvm -P simulator -Dnoredist versions:commit
+
 perl -pi -e "s/$currentversion/$version/" tools/apidoc/pom.xml
 perl -pi -e "s/$currentversion/$version/" debian/changelog
 perl -pi -e "s/$currentversion/$version/" tools/marvin/setup.py
 perl -pi -e "s/$currentversion/$version/" services/iam/plugin/pom.xml
-perl -pi -e "s/$currentversion/$version/" services/iam/pom.xm
+perl -pi -e "s/$currentversion/$version/" services/iam/pom.xml
 perl -pi -e "s/$currentversion/$version/" services/iam/server/pom.xml
 perl -pi -e "s/$currentversion/$version/" tools/checkstyle/pom.xml
 perl -pi -e "s/$currentversion/$version/" services/console-proxy/plugin/pom.xml
@@ -85,8 +150,10 @@ perl -pi -e "s/Marvin-(.*).tar.gz/Marvin-${version}.tar.gz/" tools/docker/Docker
 
 git clean -f
 
-echo 'commit changes'
-git commit -a -s -m "Updating pom.xml version numbers for release $version"
-export commitsh=`git show HEAD | head -n 1 | cut -d ' ' -f 2`
+if [ "$nocommit" == "false" ]; then
+    echo "commit changes"
+    git commit -a -s -m "Updating pom.xml version numbers for release $version"
+    export commitsh=`git show HEAD | head -n 1 | cut -d ' ' -f 2`
 
-echo "committed as $commitsh"
+    echo "committed as $commitsh"
+fi

@@ -24,13 +24,8 @@
 Name:      cloudstack
 Summary:   CloudStack IaaS Platform
 #http://fedoraproject.org/wiki/PackageNamingGuidelines#Pre-Release_packages
-%if "%{?_prerelease}" != ""
-%define _maventag %{_ver}-SNAPSHOT
+%define _maventag %{_fullver}
 Release:   %{_rel}%{dist}
-%else
-%define _maventag %{_ver}
-Release:   %{_rel}%{dist}
-%endif
 
 %{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print(get_python_lib(1))")}
 

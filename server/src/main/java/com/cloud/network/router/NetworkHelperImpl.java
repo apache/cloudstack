@@ -27,12 +27,14 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+import org.cloud.network.router.deployment.RouterDeploymentDefinition;
+
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.log4j.Logger;
-import org.cloud.network.router.deployment.RouterDeploymentDefinition;
+import org.apache.cloudstack.utils.CloudStackVersion;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -61,7 +63,6 @@ import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.maint.Version;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
@@ -265,8 +266,8 @@ public class NetworkHelperImpl implements NetworkHelper {
             return false;
         }
         final long dcid = router.getDataCenterId();
-        final String trimmedVersion = Version.trimRouterVersion(router.getTemplateVersion());
-        return Version.compare(trimmedVersion, NetworkOrchestrationService.MinVRVersion.valueIn(dcid)) >= 0;
+        String routerVersion = CloudStackVersion.trimRouterVersion(router.getTemplateVersion());
+        return CloudStackVersion.compare(routerVersion, NetworkOrchestrationService.MinVRVersion.valueIn(dcid)) >= 0;
     }
 
     protected DomainRouterVO start(DomainRouterVO router, final User user, final Account caller, final Map<Param, Object> params, final DeploymentPlan planToDeploy)
