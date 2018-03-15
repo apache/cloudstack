@@ -16,8 +16,6 @@
 // under the License.
 package com.cloud.dc;
 
-import com.cloud.utils.db.GenericDao;
-
 import java.util.Date;
 import java.util.UUID;
 
@@ -29,6 +27,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import com.cloud.utils.db.GenericDao;
 
 @Entity
 @Table(name = "vlan")
@@ -57,7 +57,7 @@ public class VlanVO implements Vlan {
     @Column(name = "data_center_id")
     long dataCenterId;
 
-    @Column(name = "description")
+    @Column(name = "ip4_range")
     String ipRange;
 
     @Column(name = "ip6_range")
@@ -185,7 +185,7 @@ public class VlanVO implements Vlan {
     public String toString() {
         if (toString == null) {
             toString =
-                new StringBuilder("Vlan[").append(vlanTag)
+                    new StringBuilder("Vlan[").append(vlanTag)
                     .append("|")
                     .append(vlanGateway)
                     .append("|")
