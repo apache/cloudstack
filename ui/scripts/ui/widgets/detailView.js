@@ -606,7 +606,7 @@
                                 } else {
                                     $loading.appendTo($detailView);
                                     cloudStack.ui.notifications.add(
-                                        $.extend(true, {}, action.notification, notificationArgs),
+                                        $.extend(true, {}, notificationArgs, action.notification),
                                         function(args) {
                                             replaceListViewItem($detailView, data);
 
