@@ -54,4 +54,5 @@
     <bean id="userIpAddressDetailsDao" class="org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDaoImpl" />
     <bean id="loadBalancerVMMapDaoImpl" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl" />
     <bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl" />
+    <bean id="messageBus" class="org.apache.cloudstack.framework.messagebus.MessageBusBase" />
 </beans>

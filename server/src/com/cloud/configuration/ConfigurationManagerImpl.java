@@ -76,6 +76,8 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpDao;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -352,6 +354,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     ImageStoreDao _imageStoreDao;
     @Inject
     ImageStoreDetailsDao _imageStoreDetailsDao;
+    @Inject
+    MessageBus messageBus;
 
 
     // FIXME - why don't we have interface for DataCenterLinkLocalIpAddressDao?
@@ -660,6 +664,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         txn.commit();
+        messageBus.publish(_name, EventTypes.EVENT_CONFIGURATION_VALUE_EDIT, PublishScope.GLOBAL, name);
         return _configDao.getValue(name);
     }
 

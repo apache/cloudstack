@@ -55,7 +55,8 @@
     <module>managed-context</module>
     <module>spring/lifecycle</module>
     <module>spring/module</module>
-	<module>security</module>
+    <module>security</module>
+    <module>agent-lb</module>
     <module>direct-download</module>
   </modules>
 </project>
