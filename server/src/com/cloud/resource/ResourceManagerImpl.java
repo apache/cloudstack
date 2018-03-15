@@ -1296,7 +1296,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             if (host.getType() != Host.Type.Storage) {
                 final List<VMInstanceVO> vos = _vmDao.listByHostId(hostId);
                 final List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
-                if (vos.isEmpty() && vosMigrating.isEmpty()) {
+                final List<VMInstanceVO> failedMigratedVms = _vmDao.listRunningVmsByHostAndLastHostSameId(hostId);
+                if (vos.isEmpty() && vosMigrating.isEmpty() && failedMigratedVms.isEmpty()) {
                     resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
                     hostInMaintenance = true;
                     ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE, "completed maintenance for host " + hostId, 0);

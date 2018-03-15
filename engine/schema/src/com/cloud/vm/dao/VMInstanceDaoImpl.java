@@ -305,6 +305,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     }
 
     @Override
+    public List<VMInstanceVO> listRunningVmsByHostAndLastHostSameId(long hostId) {
+        SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
+        sc.setParameters("host", hostId);
+        sc.setParameters("lastHost", hostId);
+        sc.setParameters("state", State.Running);
+        return listBy(sc);
+    }
+
+    @Override
     public List<VMInstanceVO> listByZoneId(long zoneId) {
         SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
         sc.setParameters("zone", zoneId);
