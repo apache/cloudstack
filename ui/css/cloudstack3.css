@@ -3241,6 +3241,7 @@ div.toolbar div.button.main-action,
   height: 12px;
 }
 
+div.toolbar div.button.export:hover,
 div.toolbar div.button.add:hover,
 div.toolbar div.button.refresh:hover,
 div.toolbar div.button.main-action:hover,
@@ -13413,4 +13414,33 @@ div.panel.copy-template-destination-list div.list-view div.fixed-header{
 
 .multi-edit-add-list .ui-button.copytemplatecancel {
     left: 310px;
+}
+
+div.button.export {
+	position: relative;
+	left: 0px;
+	top: 5px;
+	font-size: 12px;
+	font-weight: 100;
+	color: #000000;
+	margin: 0 10px 0 0;
+	cursor: pointer;
+	text-shadow: 0px 1px 1px #DEE5EA;
+	padding: 5px 5px 5px 5px;
+	background: linear-gradient(to bottom, rgba(247,247,247,1) 1%,rgba(234,234,234,1) 100%);
+	border: 1px solid #B7B7B7;
+	float: right;
+	border-radius: 4px 4px 4px 4px;
+	height: 12px;
+}
+
+div.button.export a {
+	padding: 0px 0 3px 20px;
+	background: url(../images/exportCsvIcon.png) no-repeat;
+	position: relative;
+	left: 0px;
+	top: 0px;
+	background-size: 15.5px;
+	text-decoration: none;
+	color: black;
 }

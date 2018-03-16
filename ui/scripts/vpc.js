@@ -15,6 +15,53 @@
 // specific language governing permissions and limitations
 // under the License.
 (function($, cloudStack) {
+    var isNumeric = function (n) {
+        return !isNaN(parseFloat(n));
+    };
+    var createSafeCsvValue = function(value){
+        if(value){
+            return '"' + value + '"';
+        }
+        return "";
+    };
+    
+    var generateCsvForAclRules = function(aclRules){
+        var csv = createSafeCsvValue('id') + ',';
+        for(var field in aclRuleFields){
+            var fieldLabel = aclRuleFields[field].label;
+            var fieldLabelTranslated = _l(fieldLabel);
+            csv = csv + createSafeCsvValue(fieldLabelTranslated) + ',';
+        }
+        csv = csv.substr(0, csv.length - 1) + '\n';
+        if(!aclRules){
+            return csv;
+        }
+        aclRules.forEach(function(entry){
+            csv = csv + 
+            createSafeCsvValue(entry.id) + ',' + 
+            createSafeCsvValue(entry.number) + ',' +
+            createSafeCsvValue(entry.cidrlist) + ',' +
+            createSafeCsvValue(entry.action) + ',' ;
+            
+            if(isNumeric(entry.protocol)){
+                csv = csv +
+                createSafeCsvValue(_l('label.protocol.number')) + ',' +
+                createSafeCsvValue(entry.protocol) + ',';
+            }else{
+                csv = csv +
+                createSafeCsvValue(entry.protocol) + ',' +
+                createSafeCsvValue('') + ',';
+            }
+            csv = csv +
+            createSafeCsvValue(entry.startport) + ',' +
+            createSafeCsvValue(entry.endport) + ',' +
+            createSafeCsvValue(entry.icmptype) + ',' +
+            createSafeCsvValue(entry.icmpcode) + ',' +
+            createSafeCsvValue(entry.traffictype) + ',' +
+            createSafeCsvValue(entry.reason) + '\n';
+        });
+        return csv;
+    };
     var assignVMAction = function() {
         return {
             label: 'label.assign.vms',
@@ -1327,8 +1374,9 @@
                                             networkid: false
                                         },
                                         dataProvider: function(args) {
+                                            var aclListId = args.context.aclLists[0].id;
                                             $.ajax({
-                                                url: createURL('listNetworkACLs&aclid=' + args.context.aclLists[0].id),
+                                                url: createURL('listNetworkACLs&aclid=' + aclListId),
                                                 success: function(json) {
                                                     var items = json.listnetworkaclsresponse.networkacl;
 
@@ -1369,6 +1417,9 @@
                                                                 	 }
                                                                 	 if(data.protocol != 'protocolnumber'){
                                                                 		 data.protocolnumber = undefined;
+                                                                	 }else{
+                                                                	     data.protocol = data.protocolnumber;
+                                                                	     data.protocolnumber = undefined;
                                                                 	 }
                                                                 	 if(data.protocol === 'all'){
                                                                 		 data.startport = undefined;
@@ -1388,6 +1439,32 @@
                                                         	});
                                                         });
                                                         jQuery('#details-tab-aclRules').siblings('div.toolbar').append($addAclRuleDivButton);
+                                                    }
+                                                    if(jQuery('#details-tab-aclRules').siblings('div.toolbar').children('div.export').size() === 0){
+                                                        var $exportAclsDivButton = jQuery('<div>').addClass('button export');
+                                                        var $linkExportAclRulesButtonMessage = jQuery('<a>').html(_l('label.acl.export'));
+                                                        
+                                                        $exportAclsDivButton.html($linkExportAclRulesButtonMessage);
+                                                        $exportAclsDivButton.click(function(){
+                                                            
+                                                            $.ajax({
+                                                                url: createURL('listNetworkACLs&aclid=' + aclListId),
+                                                                type: "GET",
+                                                                async: false,
+                                                                success: function(json) {
+                                                                    var acls = json.listnetworkaclsresponse.networkacl;
+                                                                    var csv = generateCsvForAclRules(acls);
+                                                                    
+                                                                    window.URL = window.URL || window.webkiURL;
+                                                                    var blob = new Blob([csv]);
+                                                                    var blobURL = window.URL.createObjectURL(blob);
+                                                                    
+                                                                    $linkExportAclRulesButtonMessage.attr("href", blobURL);
+                                                                    $linkExportAclRulesButtonMessage.attr("download", "aclRules.csv");
+                                                                }
+                                                            });
+                                                        });
+                                                        jQuery('#details-tab-aclRules').siblings('div.toolbar').append($exportAclsDivButton);
                                                     }
                                                 }
                                             });
@@ -4370,18 +4447,6 @@
                                 )[0].capability, function(capability) {
                                     return capability.name == 'LbSchemes';
                                 }) : [];
-
-                                /*      var lbSchemes = $.grep(
-                  $.grep(
-                    tier.service,
-                    function(service) {
-                      return service.name == 'Lb';
-                    }
-                  )[0].capability,
-                  function(capability) {
-                    return capability.name == 'LbSchemes';
-                  }
-                );*/
 
                                 var hasLbScheme = function(schemeVal) {
                                     return $.grep(

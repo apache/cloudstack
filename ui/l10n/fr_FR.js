@@ -101,6 +101,7 @@ var dictionary = {
     "label.accounts": "Comptes",
     "label.acl": "ACL",
     "label.acl.id": "ID ACL",
+    "label.acl.export": "Export ACLs",
     "label.acl.list.rules": "Liste règles ACL",
     "label.acl.name": "Nom ACL",
     "label.acl.replaced": "ACL remplacée",

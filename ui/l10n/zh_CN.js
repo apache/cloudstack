@@ -101,6 +101,7 @@ var dictionary = {
     "label.accounts": "帐户",
     "label.acl": "ACL",
     "label.acl.id": "ACL ID",
+    "label.acl.export": "Export ACLs",
     "label.acl.list.rules": "ACL列表策略",
     "label.acl.name": "ACL 名称",
     "label.acl.replaced": "ACL 已替换",
