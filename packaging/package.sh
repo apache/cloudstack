@@ -106,7 +106,7 @@ function packaging() {
 
     if echo "$VERSION" | grep -q SNAPSHOT ; then
         if [ -n "$4" ] ; then
-            DEFREL="-D_rel ${BRAND}${INDICATOR0}.$4"
+            DEFREL="-D_rel ${BRAND}${INDICATOR}.$4"
         else
             DEFREL="-D_rel ${BRAND}${INDICATOR}"
         fi
