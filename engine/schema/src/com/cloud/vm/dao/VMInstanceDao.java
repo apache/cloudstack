@@ -151,8 +151,5 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
 
     boolean isPowerStateUpToDate(long instanceId);
 
-    /**
-     * List running VMs which host and lastHost id are the same
-     */
-    List<VMInstanceVO> listRunningVmsByHostAndLastHostSameId(long hostId);
+    List<VMInstanceVO> listNonMigratingVmsByHostEqualsLastHost(long hostId);
 }

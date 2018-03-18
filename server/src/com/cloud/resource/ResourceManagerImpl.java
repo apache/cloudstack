@@ -1296,11 +1296,17 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             if (host.getType() != Host.Type.Storage) {
                 final List<VMInstanceVO> vos = _vmDao.listByHostId(hostId);
                 final List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
-                final List<VMInstanceVO> failedMigratedVms = _vmDao.listRunningVmsByHostAndLastHostSameId(hostId);
-                if (vos.isEmpty() && vosMigrating.isEmpty() && failedMigratedVms.isEmpty()) {
-                    resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
-                    hostInMaintenance = true;
-                    ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE, "completed maintenance for host " + hostId, 0);
+                final List<VMInstanceVO> failedMigratedVms = _vmDao.listNonMigratingVmsByHostEqualsLastHost(hostId);
+                if (vos.isEmpty() && vosMigrating.isEmpty()) {
+                    if (!failedMigratedVms.isEmpty()) {
+                        s_logger.debug("Unable to migrate " + failedMigratedVms.size() + " VM(s) from host " + host.getUuid());
+                        resourceStateTransitTo(host, ResourceState.Event.UnableToMigrate, _nodeId);
+                    } else {
+                        s_logger.debug("Host " + host.getUuid() + " entering in Maintenance");
+                        resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
+                        hostInMaintenance = true;
+                        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE, "completed maintenance for host " + hostId, 0);
+                    }
                 }
             }
         } catch (final NoTransitionException e) {
