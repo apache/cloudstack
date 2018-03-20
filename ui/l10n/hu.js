@@ -101,6 +101,7 @@ var dictionary = {
     "label.accounts": "Számlák",
     "label.acl": "ACL",
     "label.acl.id": "ACL ID",
+    "label.acl.export": "Export ACLs",
     "label.acl.list.rules": "ACL List Rules",
     "label.acl.name": "ACL név",
     "label.acl.replaced": "ACL lehelyettesítve",

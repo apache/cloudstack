@@ -101,6 +101,7 @@ var dictionary = {
     "label.accounts": "계정 정보",
     "label.acl": "ACL",
     "label.acl.id": "ACL ID",
+    "label.acl.export": "Export ACLs",
     "label.acl.list.rules": "ACL List Rules",
     "label.acl.name": "ACL Name",
     "label.acl.replaced": "ACL replaced",

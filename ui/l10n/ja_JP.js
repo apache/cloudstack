@@ -101,6 +101,7 @@ var dictionary = {
     "label.accounts": "アカウント",
     "label.acl": "ACL",
     "label.acl.id": "ACL ID",
+    "label.acl.export": "Export ACLs",
     "label.acl.list.rules": "ACL ルールのリスト",
     "label.acl.name": "ACL 名",
     "label.acl.replaced": "ACL が置き換えられました",
