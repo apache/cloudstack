@@ -22,6 +22,8 @@ package org.apache.cloudstack.agent.directdownload;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 
+import java.util.Map;
+
 public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
 
     public enum DownloadProtocol {
@@ -32,12 +34,14 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
     private Long templateId;
     private PrimaryDataStoreTO destPool;
     private String checksum;
+    private Map<String, String> headers;
 
-    protected DirectDownloadCommand (final String url, final Long templateId, final PrimaryDataStoreTO destPool, final String checksum) {
+    protected DirectDownloadCommand (final String url, final Long templateId, final PrimaryDataStoreTO destPool, final String checksum, final Map<String, String> headers) {
         this.url = url;
         this.templateId = templateId;
         this.destPool = destPool;
         this.checksum = checksum;
+        this.headers = headers;
     }
 
     public String getUrl() {
@@ -54,6 +58,10 @@ public abstract class DirectDownloadCommand extends StorageSubSystemCommand {
 
     public String getChecksum() {
         return checksum;
+    }
+
+    public Map<String, String> getHeaders() {
+        return headers;
     }
 
     @Override

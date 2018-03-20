@@ -24,15 +24,8 @@ import java.util.Map;
 
 public class HttpDirectDownloadCommand extends DirectDownloadCommand {
 
-    private Map<String, String> headers;
-
     public HttpDirectDownloadCommand(String url, Long templateId, PrimaryDataStoreTO destPool, String checksum, Map<String, String> headers) {
-        super(url, templateId, destPool, checksum);
-        this.headers = headers;
-    }
-
-    public Map<String, String> getHeaders() {
-        return headers;
+        super(url, templateId, destPool, checksum, headers);
     }
 
 }

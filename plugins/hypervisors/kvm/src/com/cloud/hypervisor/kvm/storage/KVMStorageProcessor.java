@@ -42,6 +42,7 @@ import com.cloud.agent.direct.download.HttpDirectTemplateDownloader;
 import com.cloud.agent.direct.download.MetalinkDirectTemplateDownloader;
 import com.cloud.agent.direct.download.NfsDirectTemplateDownloader;
 import com.cloud.agent.direct.download.HttpsDirectTemplateDownloader;
+import com.cloud.exception.InvalidParameterValueException;
 import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
@@ -1071,19 +1072,9 @@ public class KVMStorageProcessor implements StorageProcessor {
         final DiskTO disk = cmd.getDisk();
         final TemplateObjectTO isoTO = (TemplateObjectTO)disk.getData();
         final DataStoreTO store = isoTO.getDataStore();
-        String dataStoreUrl = null;
-        if (store instanceof NfsTO) {
-            NfsTO nfsStore = (NfsTO)store;
-            dataStoreUrl = nfsStore.getUrl();
-        } else if (store instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO) store).getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
-            //In order to support directly downloaded ISOs
-            String psHost = ((PrimaryDataStoreTO) store).getHost();
-            String psPath = ((PrimaryDataStoreTO) store).getPath();
-            dataStoreUrl = "nfs://" + psHost + File.separator + psPath;
-        } else {
-            return new AttachAnswer("unsupported protocol");
-        }
+
         try {
+            String dataStoreUrl = getDataStoreUrlFromStore(store);
             final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
             attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), true);
         } catch (final LibvirtException e) {
@@ -1091,6 +1082,8 @@ public class KVMStorageProcessor implements StorageProcessor {
         } catch (final URISyntaxException e) {
             return new Answer(cmd, false, e.toString());
         } catch (final InternalErrorException e) {
+            return new Answer(cmd, false, e.toString());
+        } catch (final InvalidParameterValueException e) {
             return new Answer(cmd, false, e.toString());
         }
 
@@ -1102,22 +1095,43 @@ public class KVMStorageProcessor implements StorageProcessor {
         final DiskTO disk = cmd.getDisk();
         final TemplateObjectTO isoTO = (TemplateObjectTO)disk.getData();
         final DataStoreTO store = isoTO.getDataStore();
-        if (!(store instanceof NfsTO)) {
-            return new AttachAnswer("unsupported protocol");
-        }
-        final NfsTO nfsStore = (NfsTO)store;
+
         try {
+            String dataStoreUrl = getDataStoreUrlFromStore(store);
             final Connect conn = LibvirtConnection.getConnectionByVmName(cmd.getVmName());
-            attachOrDetachISO(conn, cmd.getVmName(), nfsStore.getUrl() + File.separator + isoTO.getPath(), false);
+            attachOrDetachISO(conn, cmd.getVmName(), dataStoreUrl + File.separator + isoTO.getPath(), false);
         } catch (final LibvirtException e) {
             return new Answer(cmd, false, e.toString());
         } catch (final URISyntaxException e) {
             return new Answer(cmd, false, e.toString());
         } catch (final InternalErrorException e) {
             return new Answer(cmd, false, e.toString());
+        } catch (final InvalidParameterValueException e) {
+            return new Answer(cmd, false, e.toString());
         }
 
         return new Answer(cmd);
+    }
+
+    /**
+     * Return data store URL from store
+     */
+    private String getDataStoreUrlFromStore(DataStoreTO store) {
+        if (!(store instanceof NfsTO) && (!(store instanceof PrimaryDataStoreTO) ||
+                store instanceof PrimaryDataStoreTO && !((PrimaryDataStoreTO) store).getPoolType().equals(StoragePoolType.NetworkFilesystem))) {
+            throw new InvalidParameterValueException("unsupported protocol");
+        }
+
+        if (store instanceof NfsTO) {
+            NfsTO nfsStore = (NfsTO)store;
+            return nfsStore.getUrl();
+        } else if (store instanceof PrimaryDataStoreTO && ((PrimaryDataStoreTO) store).getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
+            //In order to support directly downloaded ISOs
+            String psHost = ((PrimaryDataStoreTO) store).getHost();
+            String psPath = ((PrimaryDataStoreTO) store).getPath();
+            return "nfs://" + psHost + File.separator + psPath;
+        }
+        return store.getUrl();
     }
 
     protected synchronized String attachOrDetachDevice(final Connect conn, final boolean attach, final String vmName, final String xml) throws LibvirtException, InternalErrorException {
@@ -1582,36 +1596,57 @@ public class KVMStorageProcessor implements StorageProcessor {
         return new Answer(cmd, false, "not implememented yet");
     }
 
+    /**
+     * Get direct template downloader from direct download command and destination pool
+     */
+    private DirectTemplateDownloader getDirectTemplateDownloaderFromCommand(DirectDownloadCommand cmd, KVMStoragePool destPool) {
+        if (cmd instanceof HttpDirectDownloadCommand) {
+            return new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
+        } else if (cmd instanceof HttpsDirectDownloadCommand) {
+            return new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), cmd.getHeaders());
+        } else if (cmd instanceof NfsDirectDownloadCommand) {
+            return new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
+        } else if (cmd instanceof MetalinkDirectDownloadCommand) {
+            return new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum(), cmd.getHeaders());
+        } else {
+            throw new IllegalArgumentException("Unsupported protocol, please provide HTTP(S), NFS or a metalink");
+        }
+    }
+
     @Override
     public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
         final PrimaryDataStoreTO pool = cmd.getDestPool();
         if (!pool.getPoolType().equals(StoragePoolType.NetworkFilesystem)) {
-            return new DirectDownloadAnswer(false, "Unsupported pool type " + pool.getPoolType().toString());
+            return new DirectDownloadAnswer(false, "Unsupported pool type " + pool.getPoolType().toString(), true);
         }
         KVMStoragePool destPool = storagePoolMgr.getStoragePool(pool.getPoolType(), pool.getUuid());
         DirectTemplateDownloader downloader;
 
-        if (cmd instanceof HttpDirectDownloadCommand) {
-            downloader = new HttpDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum(), ((HttpDirectDownloadCommand) cmd).getHeaders());
-        } else if (cmd instanceof HttpsDirectDownloadCommand) {
-            downloader = new HttpsDirectTemplateDownloader(cmd.getUrl(), cmd.getTemplateId(), destPool.getLocalPath(), cmd.getChecksum());
-        } else if (cmd instanceof NfsDirectDownloadCommand) {
-            downloader = new NfsDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
-        } else if (cmd instanceof MetalinkDirectDownloadCommand) {
-            downloader = new MetalinkDirectTemplateDownloader(cmd.getUrl(), destPool.getLocalPath(), cmd.getTemplateId(), cmd.getChecksum());
-        } else {
-            return new DirectDownloadAnswer(false, "Unsupported protocol, please provide HTTP(S), NFS or a metalink");
+        try {
+            downloader = getDirectTemplateDownloaderFromCommand(cmd, destPool);
+        } catch (IllegalArgumentException e) {
+            return new DirectDownloadAnswer(false, "Unable to create direct downloader: " + e.getMessage(), true);
         }
 
-        if (!downloader.downloadTemplate()) {
-            return new DirectDownloadAnswer(false, "Could not download template " + cmd.getTemplateId() + " on " + destPool.getLocalPath());
+        try {
+            s_logger.info("Trying to download template");
+            if (!downloader.downloadTemplate()) {
+                s_logger.warn("Couldn't download template");
+                return new DirectDownloadAnswer(false, "Unable to download template", true);
+            }
+            if (!downloader.validateChecksum()) {
+                s_logger.warn("Couldn't validate template checksum");
+                return new DirectDownloadAnswer(false, "Checksum validation failed", false);
+            }
+            if (!downloader.extractAndInstallDownloadedTemplate()) {
+                s_logger.warn("Couldn't extract and install template");
+                return new DirectDownloadAnswer(false, "Extraction and installation failed", false);
+            }
+        } catch (CloudRuntimeException e) {
+            s_logger.warn("Error downloading template " + cmd.getTemplateId() + " due to: " + e.getMessage());
+            return new DirectDownloadAnswer(false, "Unable to download template: " + e.getMessage(), true);
         }
-        if (!downloader.validateChecksum()) {
-            return new DirectDownloadAnswer(false, "Checksum validation failed for template " + cmd.getTemplateId());
-        }
-        if (!downloader.extractAndInstallDownloadedTemplate()) {
-            return new DirectDownloadAnswer(false, "Template downloaded but there was an error on installation");
-        }
+
         DirectTemplateInformation info = downloader.getTemplateInformation();
         return new DirectDownloadAnswer(true, info.getSize(), info.getInstallPath());
     }
