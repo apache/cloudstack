@@ -78,7 +78,7 @@ public class UpdateNetworkACLItemCmd extends BaseAsyncCustomIdCmd {
 
     @Parameter(name = ApiConstants.ACL_REASON, type = CommandType.STRING, description = "A description indicating why the ACL rule is required.")
     private String reason;
-    
+
     @Parameter(name = ApiConstants.ACL_RULE_PARTIAL_UPGRADE, type = CommandType.BOOLEAN, required = false, description = "Indicates if the ACL rule is to be updated partially (merging the parameters sent with current configuration) or completely (disconsidering all of the current configurations). The default value is 'true'.")
     private boolean partialUpgrade = true;
 

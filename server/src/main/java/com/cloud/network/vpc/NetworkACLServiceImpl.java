@@ -831,7 +831,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      *  All of the parameters in {@link UpdateNetworkACLItemCmd} that are not null will be set to their corresponding fields in {@link NetworkACLItemVO}.
      *  If the parameter {@link UpdateNetworkACLItemCmd#isPartialUpgrade()} returns false, we will use null parameters, which will allow us to completely update the ACL rule.
      *  However, the number and custom Uuid will never be set to null. Therefore, if it is not a partial upgrade, these values will remain the same.
-     *  
+     *
      *  We use {@link #validateAndCreateNetworkAclRuleAction(String)} when converting an action as {@link String} to its Enum corresponding value.
      */
     protected void transferDataToNetworkAclRulePojo(UpdateNetworkACLItemCmd updateNetworkACLItemCmd, NetworkACLItemVO networkACLItemVo, NetworkACL acl) {
@@ -844,7 +844,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             networkACLItemVo.setNumber(number);
         }
         boolean isPartialUpgrade = updateNetworkACLItemCmd.isPartialUpgrade();
-        
+
         Integer sourcePortStart = updateNetworkACLItemCmd.getSourcePortStart();
         if (!isPartialUpgrade || sourcePortStart != null) {
             networkACLItemVo.setSourcePortStart(sourcePortStart);

@@ -733,11 +733,11 @@ public class NetworkACLServiceImplTest {
         Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setDisplay(Mockito.anyBoolean());
         Mockito.verify(networkAclServiceImpl, Mockito.times(0)).validateAndCreateNetworkAclRuleAction(Mockito.anyString());
     }
-    
+
     @Test
     public void transferDataToNetworkAclRulePojoTestNotPartialUpgradeAllValuesNull() {
         Mockito.when(updateNetworkACLItemCmdMock.isPartialUpgrade()).thenReturn(false);
-        
+
         Mockito.when(updateNetworkACLItemCmdMock.getNumber()).thenReturn(null);
         Mockito.when(updateNetworkACLItemCmdMock.getSourcePortStart()).thenReturn(null);
         Mockito.when(updateNetworkACLItemCmdMock.getSourcePortEnd()).thenReturn(null);
