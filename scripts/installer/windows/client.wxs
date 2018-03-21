@@ -437,9 +437,6 @@
                     <Component Id="cmpA9C076F1199B904BB57D1BC96A919814" Guid="{91870ECD-F1AA-4B69-BCEC-9536BA94A0DC}">
                         <File Id="fil4CE0C842A4EF2E3C8322F88626C527E4" KeyPath="yes" Source="!(wix.SourceClient)\scripts\templates.js" />
                     </Component>
-                    <Component Id="cmp429AD4BBE2ABA44D598EF5DC4482C2A4" Guid="{29B7D8A7-D7FB-46C3-8808-4EBE6D848116}">
-                        <File Id="filDFD0025C484842DE376C881CFB81DC80" KeyPath="yes" Source="!(wix.SourceClient)\scripts\vm_snapshots.js" />
-                    </Component>
                     <Component Id="cmpA7B70148FAF23BE9246895B84B8E76EE" Guid="{06FB0332-62B7-4753-A0DA-B4906498D3A6}">
                         <File Id="fil560BA36DCB23B6FD4BCC65D8B062DAE6" KeyPath="yes" Source="!(wix.SourceClient)\scripts\vpc.js" />
                     </Component>
@@ -1948,7 +1945,6 @@
             <ComponentRef Id="cmp71D078D75E83971F80181453EA717D8B" />
             <ComponentRef Id="cmpD605A23799365004C20E5DE80CA738F3" />
             <ComponentRef Id="cmpA9C076F1199B904BB57D1BC96A919814" />
-            <ComponentRef Id="cmp429AD4BBE2ABA44D598EF5DC4482C2A4" />
             <ComponentRef Id="cmpA7B70148FAF23BE9246895B84B8E76EE" />
             <ComponentRef Id="cmpA09401C5AC6539FD960D21860A2494EA" />
             <ComponentRef Id="cmp4EF2024F5F084664B8B4EA6D2CFC68B7" />
