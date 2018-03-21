@@ -313,6 +313,7 @@ import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 import com.cloud.storage.snapshot.SnapshotApiService;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService, Configurable {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
@@ -6101,10 +6102,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw ex;
                 }
             }
-            TemplateDataStoreVO tmplStore = _templateStoreDao.findByTemplateZoneReady(template.getId(), vm.getDataCenterId());
-            if (tmplStore == null) {
-                throw new InvalidParameterValueException("Cannot restore the vm as the template " + template.getUuid() + " isn't available in the zone");
-            }
+
+            checkRestoreVmFromTemplate(vm, template);
 
             if (needRestart) {
                 try {
@@ -6216,6 +6215,27 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         s_logger.debug("Restore VM " + vmId + " done successfully");
         return vm;
 
+    }
+
+    /**
+     * Perform basic checkings to make sure restore is possible. If not, #InvalidParameterValueException is thrown
+     * @param vm vm
+     * @param template template
+     * @throws InvalidParameterValueException if restore is not possible
+     */
+    private void checkRestoreVmFromTemplate(UserVmVO vm, VMTemplateVO template) {
+        TemplateDataStoreVO tmplStore;
+        if (!template.isDirectDownload()) {
+            tmplStore = _templateStoreDao.findByTemplateZoneReady(template.getId(), vm.getDataCenterId());
+            if (tmplStore == null) {
+                throw new InvalidParameterValueException("Cannot restore the vm as the template " + template.getUuid() + " isn't available in the zone");
+            }
+        } else {
+            tmplStore = _templateStoreDao.findByTemplate(template.getId(), DataStoreRole.Image);
+            if (tmplStore == null || (tmplStore != null && !tmplStore.getDownloadState().equals(VMTemplateStorageResourceAssoc.Status.BYPASSED))) {
+                throw new InvalidParameterValueException("Cannot restore the vm as the bypassed template " + template.getUuid() + " isn't available in the zone");
+            }
+        }
     }
 
     private void handleManagedStorage(UserVmVO vm, VolumeVO root) {
