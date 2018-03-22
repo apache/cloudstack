@@ -203,7 +203,7 @@ public class Script implements Callable<String> {
         String[] command = _command.toArray(new String[_command.size()]);
 
         if (_logger.isDebugEnabled()) {
-            _logger.debug("Executing: " + buildCommandLine(command).split(KeyStoreUtils.defaultKeystoreFile)[0]);
+            _logger.debug("Executing: " + buildCommandLine(command).split(KeyStoreUtils.KS_FILENAME)[0]);
         }
 
         try {
