@@ -60,6 +60,7 @@ function cleanup_misc() {
   # Docs and data files
   rm -fr /var/lib/apt/*
   rm -fr /var/cache/apt/*
+  rm -fr /var/cache/debconf/*old
   rm -fr /usr/share/doc
   rm -fr /usr/share/man
   rm -fr /usr/share/info
@@ -67,6 +68,7 @@ function cleanup_misc() {
   rm -fr /usr/share/apache2/icons
   find /usr/share/locale -type f | grep -v en_US | xargs rm -fr
   find /usr/share/zoneinfo -type f | grep -v UTC | xargs rm -fr
+  rm -fr /tmp/*
 }
 
 function cleanup() {
