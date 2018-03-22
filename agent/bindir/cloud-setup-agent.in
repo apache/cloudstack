@@ -26,6 +26,7 @@ from cloudutils.configFileOps import  configFileOps
 from cloudutils.globalEnv import globalEnv
 from cloudutils.networkConfig import networkConfig
 from cloudutils.syscfg import sysConfigFactory
+from cloudutils.serviceConfig import configureLibvirtConfig
 
 from optparse import OptionParser
 
@@ -100,6 +101,7 @@ if __name__ == '__main__':
     parser.add_option("-c", "--cluster", dest="cluster", help="cluster id")
     parser.add_option("-t", "--hypervisor", default="kvm", dest="hypervisor", help="hypervisor type")
     parser.add_option("-g", "--guid", dest="guid", help="guid")
+    parser.add_option("-s", action="store_true", default=False, dest="secure", help="Secure and enable TLS for libvirtd")
     parser.add_option("--pubNic", dest="pubNic", help="Public traffic interface")
     parser.add_option("--prvNic", dest="prvNic", help="Private traffic interface")
     parser.add_option("--guestNic", dest="guestNic", help="Guest traffic interface")
@@ -110,6 +112,12 @@ if __name__ == '__main__':
         glbEnv.bridgeType = bridgeType
 
     (options, args) = parser.parse_args()
+
+    if not options.auto and options.secure:
+        configureLibvirtConfig(True)
+        print "Libvirtd with TLS configured"
+        sys.exit(0)
+
     if options.auto is None:
         userInputs = getUserInputs()
         glbEnv.mgtSvr = userInputs[0]
@@ -138,7 +146,9 @@ if __name__ == '__main__':
         glbEnv.nics.append(options.prvNic)
         glbEnv.nics.append(options.pubNic)
         glbEnv.nics.append(options.guestNic)
-        
+
+    glbEnv.secure = options.secure
+
     print "Starting to configure your system:"
     syscfg = sysConfigFactory.getSysConfigFactory(glbEnv)
     try:

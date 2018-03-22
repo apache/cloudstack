@@ -419,7 +419,7 @@ public class AgentShell implements IAgentShell, Daemon {
                 final Constructor<?> constructor = impl.getDeclaredConstructor();
                 constructor.setAccessible(true);
                 ServerResource resource = (ServerResource)constructor.newInstance();
-                launchAgent(getNextAgentId(), resource);
+                launchNewAgent(resource);
             } catch (final ClassNotFoundException e) {
                 throw new ConfigurationException("Resource class not found: " + name + " due to: " + e.toString());
             } catch (final SecurityException e) {
@@ -447,9 +447,10 @@ public class AgentShell implements IAgentShell, Daemon {
         s_logger.trace("Launching agent based on type=" + typeInfo);
     }
 
-    private void launchAgent(int localAgentId, ServerResource resource) throws ConfigurationException {
+    public void launchNewAgent(ServerResource resource) throws ConfigurationException {
         // we don't track agent after it is launched for now
-        Agent agent = new Agent(this, localAgentId, resource);
+        _agents.clear();
+        Agent agent = new Agent(this, getNextAgentId(), resource);
         _agents.add(agent);
         agent.start();
     }

@@ -12612,11 +12612,13 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -101px -647px;
 }
 
+.secureKVMHost .icon,
 .resetPassword .icon,
 .changePassword .icon {
   background-position: -68px -30px;
 }
 
+.secureKVMHost:hover .icon,
 .resetPassword:hover .icon,
 .changePassword:hover .icon {
   background-position: -68px -612px;

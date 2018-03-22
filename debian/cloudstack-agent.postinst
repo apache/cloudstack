@@ -50,6 +50,14 @@ case "$1" in
             mkdir /etc/libvirt/hooks
         fi
         cp -a /usr/share/cloudstack-agent/lib/libvirtqemuhook /etc/libvirt/hooks/qemu
+
+        # Enable libvirt TLS if host is secured
+        if [ -f "/etc/cloudstack/agent/cloud.jks" ]; then
+            /usr/bin/cloudstack-setup-agent -s
+            /sbin/service libvirt-bin restart
+            /sbin/iptables -t filter -A INPUT -p tcp -m tcp --dport 16514 -j ACCEPT
+            /sbin/iptables-save > /etc/iptables/rules.v4
+        fi
         ;;
 esac
 
