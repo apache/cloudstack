@@ -23,7 +23,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack-plugins</artifactId>
-    <version>4.9.3.0</version>
+    <version>4.9.3.1</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 </project>
