@@ -176,8 +176,8 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     }
 
     /**
-     *  This method will check if there is an already configured file SR for the given path. If by any chance we find more an one SR with the same name (mount point path) we throw a runtime exception because this situation should never happen.
-     *  If we find an SR, we check if the SR is working properly (performing an {@link SR#scan(Connection)}). If everythign is ok with the SR, we return it.
+     *  This method will check if there is an already configured file SR for the given path. If by any chance we find more than one SR with the same name (mount point path) we throw a runtime exception because this situation should never happen.
+     *  If we find an SR, we check if the SR is working properly (performing an {@link SR#scan(Connection)}). If everything is ok with the SR, we return it.
      *  Otherwise, we remove the SR using {@link #forgetSr(Connection, SR)} method;
      */
     protected SR retrieveAlreadyConfiguredSr(Connection conn, String path) throws XenAPIException, XmlRpcException {
