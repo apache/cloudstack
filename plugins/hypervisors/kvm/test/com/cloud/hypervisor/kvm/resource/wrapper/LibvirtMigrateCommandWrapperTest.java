@@ -312,16 +312,17 @@ public class LibvirtMigrateCommandWrapperTest {
     public void testMigrationUri() {
         final String ip = "10.1.1.1";
         LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
-        if (new LibvirtComputingResource().isHostSecured()) {
-            assertEquals(lw.createMigrationURI(ip), String.format("qemu+tls://%s/system", ip));
+        LibvirtComputingResource lcr = new LibvirtComputingResource();
+        if (lcr.isHostSecured()) {
+            assertEquals(lw.createMigrationURI(ip, lcr), String.format("qemu+tls://%s/system", ip));
         } else {
-            assertEquals(lw.createMigrationURI(ip), String.format("qemu+tcp://%s/system", ip));
+            assertEquals(lw.createMigrationURI(ip, lcr), String.format("qemu+tcp://%s/system", ip));
         }
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testMigrationUriException() {
         LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
-        lw.createMigrationURI(null);
+        lw.createMigrationURI(null, new LibvirtComputingResource());
     }
 }
