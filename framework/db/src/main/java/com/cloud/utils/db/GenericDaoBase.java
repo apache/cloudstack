@@ -1315,6 +1315,10 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     public Pair<List<T>, Integer> searchAndCount(final SearchCriteria<T> sc, final Filter filter) {
         List<T> objects = search(sc, filter, null, false);
         Integer count = getCount(sc);
+        // Count cannot be less than the result set but can be higher due to pagination, see CLOUDSTACK-10320
+        if (count < objects.size()) {
+            count = objects.size();
+        }
         return new Pair<List<T>, Integer>(objects, count);
     }
 
@@ -1323,6 +1327,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     public Pair<List<T>, Integer> searchAndDistinctCount(final SearchCriteria<T> sc, final Filter filter) {
         List<T> objects = search(sc, filter, null, false);
         Integer count = getDistinctCount(sc);
+        // Count cannot be 0 if there is at least a result in the list, see CLOUDSTACK-10320
+        if (count == 0 && !objects.isEmpty()) {
+            // Cannot assume if it's more than one since the count is distinct vs search
+            count = 1;
+        }
         return new Pair<List<T>, Integer>(objects, count);
     }
 
@@ -1331,6 +1340,11 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
     public Pair<List<T>, Integer> searchAndDistinctCount(final SearchCriteria<T> sc, final Filter filter, final String[] distinctColumns) {
         List<T> objects = search(sc, filter, null, false);
         Integer count = getDistinctCount(sc, distinctColumns);
+        // Count cannot be 0 if there is at least a result in the list, see CLOUDSTACK-10320
+        if (count == 0 && !objects.isEmpty()) {
+            // Cannot assume if it's more than one since the count is distinct vs search
+            count = 1;
+        }
         return new Pair<List<T>, Integer>(objects, count);
     }
 
