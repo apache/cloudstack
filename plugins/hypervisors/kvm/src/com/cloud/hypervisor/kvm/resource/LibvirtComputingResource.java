@@ -2601,7 +2601,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         fillNetworkInformation(cmd);
         _privateIp = cmd.getPrivateIpAddress();
         cmd.getHostDetails().putAll(getVersionStrings());
-        cmd.getHostDetails().put(KeyStoreUtils.SECURED, String.valueOf(KeyStoreUtils.isHostSecured()).toLowerCase());
+        cmd.getHostDetails().put(KeyStoreUtils.SECURED, String.valueOf(isHostSecured()).toLowerCase());
         cmd.setPool(_pool);
         cmd.setCluster(_clusterId);
         cmd.setGatewayIpAddress(_localGateway);
@@ -3787,5 +3787,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public String getHostDistro() {
         return _hostDistro;
+    }
+
+    public boolean isHostSecured() {
+        // Test for host certificates
+        final File confFile = PropertiesUtil.findConfigFile(KeyStoreUtils.AGENT_PROPSFILE);
+        boolean certExists = confFile != null && confFile.exists() && new File(confFile.getParent() + "/" + KeyStoreUtils.CERT_FILENAME).exists();
+        // Test for libvirt TLS configuration
+        boolean libvirtTlsEnabled = true;
+        try {
+            new Connect(String.format("qemu+tls://%s/system", _privateIp));
+        } catch (final LibvirtException ignored) {
+            libvirtTlsEnabled = false;
+        }
+        return certExists && libvirtTlsEnabled;
     }
 }
