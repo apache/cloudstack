@@ -271,9 +271,9 @@ function xen_server_export() {
   local result=$?
   set -e
   if [ ${result} == 0 ]; then
-    qemu-img convert -f qcow2 -O raw "dist/${appliance}" img.raw
-    vhd-util convert -s 0 -t 1 -i img.raw -o stagefixed.vhd
-    faketime '2010-01-01' vhd-util convert -s 1 -t 2 -i stagefixed.vhd -o "${appliance_build_name}-xen.vhd"
+    cp "dist/${appliance}" "dist/${appliance}-xen"
+    vhd-util convert -s 0 -t 1 -i "dist/${appliance}-xen" -o stagefixed.vhd
+    faketime '2010-01-01' qemu-img convert -S 512 -O vpc -o subformat=dynamic stagefixed.vhd "${appliance_build_name}-xen.vhd"
     rm -f *.bak
     bzip2 "${appliance_build_name}-xen.vhd"
     mv "${appliance_build_name}-xen.vhd.bz2" dist/
@@ -286,7 +286,7 @@ function xen_server_export() {
 
 function ovm_export() {
   log INFO "creating OVM export"
-  qemu-img convert -f qcow2 -O raw "dist/${appliance}" "dist/${appliance_build_name}-ovm.raw"
+  cp "dist/${appliance}" "dist/${appliance_build_name}-ovm.raw"
   cd dist && bzip2 "${appliance_build_name}-ovm.raw" && cd ..
   log INFO "${appliance} exported for OracleVM: dist/${appliance_build_name}-ovm.raw.bz2"
 }
@@ -294,7 +294,7 @@ function ovm_export() {
 function kvm_export() {
   log INFO "creating kvm export"
   set +e
-  qemu-img convert -o compat=0.10 -f qcow2 -c -O qcow2 "dist/${appliance}" "dist/${appliance_build_name}-kvm.qcow2"
+  qemu-img convert -o compat=0.10 -f raw -c -O qcow2 -S 512k "dist/${appliance}" "dist/${appliance_build_name}-kvm.qcow2"
   local qemuresult=$?
   cd dist && bzip2 "${appliance_build_name}-kvm.qcow2" && cd ..
   log INFO "${appliance} exported for KVM: dist/${appliance_build_name}-kvm.qcow2.bz2"
@@ -302,7 +302,7 @@ function kvm_export() {
 
 function vmware_export() {
   log INFO "creating vmware export"
-  qemu-img convert -f qcow2 -O vmdk "dist/${appliance}" "dist/${appliance_build_name}-vmware.vmdk"
+  qemu-img convert -f raw -O vmdk -S 512k "dist/${appliance}" "dist/${appliance_build_name}-vmware.vmdk"
 
   if ! ovftool_loc="$(type -p "ovftool")" || [ -z "$ovftool_loc" ]; then
     log INFO "ovftool not found, skipping ova generation for VMware"
@@ -322,7 +322,7 @@ function vmware_export() {
 
 function hyperv_export() {
   log INFO "creating hyperv export"
-  qemu-img convert -f qcow2 -O vpc "dist/${appliance}" "dist/${appliance_build_name}-hyperv.vhd"
+  qemu-img convert -S 512k -f raw -O vpc "dist/${appliance}" "dist/${appliance_build_name}-hyperv.vhd"
   CDIR=$PWD
   cd dist
   zip "${appliance_build_name}-hyperv.vhd.zip" "${appliance_build_name}-hyperv.vhd"
