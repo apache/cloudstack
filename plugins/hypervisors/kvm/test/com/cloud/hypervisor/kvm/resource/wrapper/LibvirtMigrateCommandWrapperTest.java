@@ -21,9 +21,9 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.junit.Test;
 
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class LibvirtMigrateCommandWrapperTest {
@@ -312,7 +312,7 @@ public class LibvirtMigrateCommandWrapperTest {
     public void testMigrationUri() {
         final String ip = "10.1.1.1";
         LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
-        if (KeyStoreUtils.isHostSecured()) {
+        if (new LibvirtComputingResource().isHostSecured()) {
             assertEquals(lw.createMigrationURI(ip), String.format("qemu+tls://%s/system", ip));
         } else {
             assertEquals(lw.createMigrationURI(ip), String.format("qemu+tcp://%s/system", ip));

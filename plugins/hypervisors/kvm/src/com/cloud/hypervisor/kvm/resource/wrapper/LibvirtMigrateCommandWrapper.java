@@ -80,17 +80,17 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     private static final String CONTENTS_WILDCARD = "(?s).*";
     private static final Logger s_logger = Logger.getLogger(LibvirtMigrateCommandWrapper.class);
 
-    protected String createMigrationURI(final String destinationIp) {
+    protected String createMigrationURI(final String destinationIp, final LibvirtComputingResource libvirtComputingResource) {
         if (Strings.isNullOrEmpty(destinationIp)) {
             throw new CloudRuntimeException("Provided libvirt destination ip is invalid");
         }
-        return String.format("%s://%s/system", KeyStoreUtils.isHostSecured() ? "qemu+tls" : "qemu+tcp", destinationIp);
+        return String.format("%s://%s/system", libvirtComputingResource.isHostSecured() ? "qemu+tls" : "qemu+tcp", destinationIp);
     }
 
     @Override
     public Answer execute(final MigrateCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
-        final String destinationUri = createMigrationURI(command.getDestinationIp());
+        final String destinationUri = createMigrationURI(command.getDestinationIp(), libvirtComputingResource);
 
         String result = null;
 

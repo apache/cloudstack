@@ -26,14 +26,17 @@ import com.cloud.utils.PropertiesUtil;
 public class KeyStoreUtils {
     public static final String KS_SETUP_SCRIPT = "keystore-setup";
     public static final String KS_IMPORT_SCRIPT = "keystore-cert-import";
+
+    public static final String AGENT_PROPSFILE = "agent.properties";
     public static final String KS_PASSPHRASE_PROPERTY = "keystore.passphrase";
 
-    public static final String PKEY_FILENAME = "cloud.key";
-    public static final String CSR_FILENAME = "cloud.csr";
-    public static final String CERT_FILENAME = "cloud.crt";
-    public static final String CACERT_FILENAME = "cloud.ca.crt";
     public static final String KS_FILENAME = "cloud.jks";
     public static final char[] DEFAULT_KS_PASSPHRASE = "vmops.com".toCharArray();
+
+    public static final String CACERT_FILENAME = "cloud.ca.crt";
+    public static final String CERT_FILENAME = "cloud.crt";
+    public static final String CSR_FILENAME = "cloud.csr";
+    public static final String PKEY_FILENAME = "cloud.key";
 
     public static final String CERT_NEWLINE_ENCODER = "^";
     public static final String CERT_SPACE_ENCODER = "~";
