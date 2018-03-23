@@ -267,6 +267,10 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
         return hypervisorType;
     }
 
+    public void setHypervisorType(HypervisorType hypervisorType) {
+        this.hypervisorType = hypervisorType;
+    }
+
     @Override
     public Date getCreated() {
         return created;
