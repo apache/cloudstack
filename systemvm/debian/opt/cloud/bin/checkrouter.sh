@@ -20,7 +20,7 @@ STATUS=UNKNOWN
 
 if [ "$(systemctl is-active keepalived)" != "active" ]
 then
-    echo "Status: ${STATUS}"
+    echo "Status: FAULT"
     exit
 fi
 
