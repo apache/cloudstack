@@ -535,31 +535,22 @@
             moveDrag: {
                 action: function(args) {
                     var rule = args.context.multiRule[0];
-                    var number = 0;
-                    var prevItem = args.prevItem ? args.prevItem.number : null;
-                    var nextItem = args.nextItem ? args.nextItem.number : null;
-
-                    if (!nextItem) { // Last item
-                        number = prevItem + 100;
-                    } else {
-                        if (nextItem - prevItem <= 10) {
-                            number = nextItem - parseInt(((nextItem - prevItem) / 2));
-                        } else {
-                            number = nextItem > 1 ? nextItem - 10 : 1;
-                        }
-                    }
-
+                    
+                    var previousRuleId = args.prevItem ? args.prevItem.id : undefined;
+                    var nextRuleId = args.nextItem ? args.nextItem.id : undefined;
+                     
                     $.ajax({
-                        url: createURL('updateNetworkACLItem'),
+                        url: createURL('moveNetworkAclItem'),
                         data: {
                             id: rule.id,
-                            number: number
+                            previousaclruleid: previousRuleId, 
+                            nextaclruleid: nextRuleId
                         },
                         success: function(json) {
                             var pollTimer = setInterval(function() {
                                 pollAsyncJobResult({
                                     _custom: {
-                                        jobId: json.createnetworkaclresponse.jobid
+                                        jobId: json.moveNetworkAclItemResponse.jobid
                                     },
                                     complete: function() {
                                         clearInterval(pollTimer);

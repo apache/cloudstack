@@ -17,6 +17,8 @@
 package com.cloud.network.vpc;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +29,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
+import org.apache.cloudstack.api.command.user.network.MoveNetworkAclItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -936,4 +939,123 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         return _networkACLDao.findById(id);
     }
 
+    @Override
+    public NetworkACLItem moveNetworkAclRuleToNewPosition(MoveNetworkAclItemCmd moveNetworkAclItemCmd) {
+        String uuidRuleBeingMoved = moveNetworkAclItemCmd.getUuidRuleBeingMoved();
+        String nextAclRuleUuid = moveNetworkAclItemCmd.getNextAclRuleUuid();
+        String previousAclRuleUuid = moveNetworkAclItemCmd.getPreviousAclRuleUuid();
+
+        if (StringUtils.isBlank(previousAclRuleUuid) && StringUtils.isBlank(nextAclRuleUuid)) {
+            throw new InvalidParameterValueException("Both previous and next ACL rule IDs cannot be blank.");
+        }
+
+        NetworkACLItemVO ruleBeingMoved = _networkACLItemDao.findByUuid(uuidRuleBeingMoved);
+        if (ruleBeingMoved == null) {
+            throw new InvalidParameterValueException(String.format("Could not find a rule with ID[%s]", uuidRuleBeingMoved));
+        }
+        NetworkACLItemVO previousRule = retrieveAndValidateAclRule(previousAclRuleUuid);
+        NetworkACLItemVO nextRule = retrieveAndValidateAclRule(nextAclRuleUuid);
+
+        validateMoveAclRulesData(ruleBeingMoved, previousRule, nextRule);
+
+        List<NetworkACLItemVO> allAclRules = getAllAclRulesSortedByNumber(ruleBeingMoved.getAclId());
+        if(previousRule == null) {
+            return moveRuleToTheTop(ruleBeingMoved, allAclRules);
+        }
+        if (nextRule == null) {
+            return moveRuleToTheBottom(ruleBeingMoved, allAclRules);
+        }
+
+        return moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
+    }
+
+    private List<NetworkACLItemVO> getAllAclRulesSortedByNumber(long aclId) {
+        List<NetworkACLItemVO> allAclRules = _networkACLItemDao.listByACL(aclId);
+        Collections.sort(allAclRules, new Comparator<NetworkACLItemVO>() {
+            @Override
+            public int compare(NetworkACLItemVO o1, NetworkACLItemVO o2) {
+                return o1.number - o2.number;
+            }
+        });
+        return allAclRules;
+    }
+
+    private NetworkACLItem moveRuleBetweenAclRules(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules, NetworkACLItemVO previousRule, NetworkACLItemVO nextRule) {
+        if (previousRule.getNumber() + 1 != nextRule.getNumber()) {
+            int newNumberFieldValue = previousRule.getNumber() + 1;
+            for(NetworkACLItemVO networkACLItemVO: allAclRules) {
+                if(networkACLItemVO.getNumber() == newNumberFieldValue) {
+                    throw new InvalidParameterValueException("There are some inconsistencies with the data you sent. The new position calculated already has a ACL rule on it.");
+                }
+            }
+            ruleBeingMoved.setNumber(newNumberFieldValue);
+            _networkACLItemDao.updateNumberFieldNetworkItem(ruleBeingMoved.getId(), newNumberFieldValue);
+            return _networkACLItemDao.findById(ruleBeingMoved.getId());
+        }
+        int positionToStartProcessing = 0;
+        for (int i = 0; i < allAclRules.size(); i++) {
+            if (allAclRules.get(i).getId() == previousRule.getId()) {
+                positionToStartProcessing = i + 1;
+                break;
+            }
+        }
+        return updateAclRuleToNewPositionAndExecuteShiftIfNecessary(ruleBeingMoved, previousRule.getNumber() + 1, allAclRules, positionToStartProcessing);
+    }
+
+    private NetworkACLItem moveRuleToTheBottom(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules) {
+        NetworkACLItemVO lastAclRule = allAclRules.get(allAclRules.size() - 1);
+
+        int newNumberFieldValue = lastAclRule.getNumber() + 1;
+        ruleBeingMoved.setNumber(newNumberFieldValue);
+
+        _networkACLItemDao.updateNumberFieldNetworkItem(ruleBeingMoved.getId(), newNumberFieldValue);
+        return _networkACLItemDao.findById(ruleBeingMoved.getId());
+    }
+
+    private NetworkACLItem moveRuleToTheTop(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules) {
+        return updateAclRuleToNewPositionAndExecuteShiftIfNecessary(ruleBeingMoved, 1, allAclRules, 0);
+    }
+
+    private NetworkACLItem updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItemVO ruleBeingMoved, int newNumberFieldValue, List<NetworkACLItemVO> allAclRules, int indexToStartProcessing) {
+        ruleBeingMoved.setNumber(newNumberFieldValue);
+        for (int i = indexToStartProcessing; i < allAclRules.size(); i++) {
+            NetworkACLItemVO networkACLItemVO = allAclRules.get(i);
+            if (networkACLItemVO.getId() == ruleBeingMoved.getId()) {
+                continue;
+            }
+            if (newNumberFieldValue != networkACLItemVO.getNumber()) {
+                break;
+            }
+            int newNumberFieldValueNextAclRule = newNumberFieldValue + 1;
+            updateAclRuleToNewPositionAndExecuteShiftIfNecessary(networkACLItemVO, newNumberFieldValueNextAclRule, allAclRules, i);
+        }
+        _networkACLItemDao.updateNumberFieldNetworkItem(ruleBeingMoved.getId(), newNumberFieldValue);
+        return _networkACLItemDao.findById(ruleBeingMoved.getId());
+    }
+
+    private NetworkACLItemVO retrieveAndValidateAclRule(String aclRuleUuid) {
+        if (StringUtils.isBlank(aclRuleUuid)) {
+            return null;
+        }
+        NetworkACLItemVO aclRule = _networkACLItemDao.findByUuid(aclRuleUuid);
+        if (aclRule == null) {
+            throw new InvalidParameterValueException(String.format("Could not find rule with ID [%s]", aclRuleUuid));
+        }
+        return aclRule;
+    }
+
+    private void validateMoveAclRulesData(NetworkACLItemVO ruleBeingMoved, NetworkACLItemVO previousRule, NetworkACLItemVO nextRule) {
+        if (nextRule == null && previousRule == null) {
+            throw new InvalidParameterValueException("Both previous and next ACL rule IDs cannot be invalid.");
+        }
+        long aclId = ruleBeingMoved.getAclId();
+
+        if((nextRule != null && nextRule.getAclId() != aclId) || (previousRule != null && previousRule.getAclId() != aclId)) {
+            throw new InvalidParameterValueException("Cannot use ACL rules from differenting ACLs. Rule being moved.");
+        }
+        NetworkACLVO acl = _networkACLDao.findById(aclId);
+        Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, vpc);
+    }
 }

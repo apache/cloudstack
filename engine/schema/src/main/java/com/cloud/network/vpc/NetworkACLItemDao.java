@@ -36,4 +36,6 @@ public interface NetworkACLItemDao extends GenericDao<NetworkACLItemVO, Long> {
     NetworkACLItemVO findByAclAndNumber(long aclId, int number);
 
     void loadCidrs(NetworkACLItemVO item);
+
+    void updateNumberFieldNetworkItem(long networkItemId, int newNumberValue);
 }

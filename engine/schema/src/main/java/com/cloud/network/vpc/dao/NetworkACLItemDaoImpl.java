@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.network.vpc.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 import javax.inject.Inject;
@@ -35,6 +37,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 @DB()
@@ -171,5 +174,19 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
     public void loadCidrs(NetworkACLItemVO item) {
         List<String> cidrs = _networkACLItemCidrsDao.getCidrs(item.getId());
         item.setSourceCidrList(cidrs);
+    }
+
+    private String sqlUpdateNumberFieldNetworkItem = "UPDATE network_acl_item SET number = ? where id =?";
+    @Override
+    public void updateNumberFieldNetworkItem(long networkItemId, int newNumberValue) {
+        try (TransactionLegacy txn = TransactionLegacy.currentTxn();
+                PreparedStatement pstmt = txn.prepareAutoCloseStatement(sqlUpdateNumberFieldNetworkItem)) {
+            pstmt.setLong(1, newNumberValue);
+            pstmt.setLong(2, networkItemId);
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 }

@@ -382,6 +382,7 @@ import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkOfferingsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
+import org.apache.cloudstack.api.command.user.network.MoveNetworkAclItemCmd;
 import org.apache.cloudstack.api.command.user.network.ReplaceNetworkACLListCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
@@ -2958,6 +2959,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ListNetworkACLListsCmd.class);
         cmdList.add(ReplaceNetworkACLListCmd.class);
         cmdList.add(UpdateNetworkACLItemCmd.class);
+        cmdList.add(MoveNetworkAclItemCmd.class);
         cmdList.add(CleanVMReservationsCmd.class);
         cmdList.add(UpgradeRouterTemplateCmd.class);
         cmdList.add(UploadSslCertCmd.class);
