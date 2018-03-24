@@ -959,7 +959,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         validateMoveAclRulesData(ruleBeingMoved, previousRule, nextRule);
 
         List<NetworkACLItemVO> allAclRules = getAllAclRulesSortedByNumber(ruleBeingMoved.getAclId());
-        if(previousRule == null) {
+        if (previousRule == null) {
             return moveRuleToTheTop(ruleBeingMoved, allAclRules);
         }
         if (nextRule == null) {
@@ -983,8 +983,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     private NetworkACLItem moveRuleBetweenAclRules(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules, NetworkACLItemVO previousRule, NetworkACLItemVO nextRule) {
         if (previousRule.getNumber() + 1 != nextRule.getNumber()) {
             int newNumberFieldValue = previousRule.getNumber() + 1;
-            for(NetworkACLItemVO networkACLItemVO: allAclRules) {
-                if(networkACLItemVO.getNumber() == newNumberFieldValue) {
+            for (NetworkACLItemVO networkACLItemVO : allAclRules) {
+                if (networkACLItemVO.getNumber() == newNumberFieldValue) {
                     throw new InvalidParameterValueException("There are some inconsistencies with the data you sent. The new position calculated already has a ACL rule on it.");
                 }
             }
@@ -1016,7 +1016,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         return updateAclRuleToNewPositionAndExecuteShiftIfNecessary(ruleBeingMoved, 1, allAclRules, 0);
     }
 
-    private NetworkACLItem updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItemVO ruleBeingMoved, int newNumberFieldValue, List<NetworkACLItemVO> allAclRules, int indexToStartProcessing) {
+    private NetworkACLItem updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItemVO ruleBeingMoved, int newNumberFieldValue, List<NetworkACLItemVO> allAclRules,
+            int indexToStartProcessing) {
         ruleBeingMoved.setNumber(newNumberFieldValue);
         for (int i = indexToStartProcessing; i < allAclRules.size(); i++) {
             NetworkACLItemVO networkACLItemVO = allAclRules.get(i);
@@ -1050,7 +1051,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         }
         long aclId = ruleBeingMoved.getAclId();
 
-        if((nextRule != null && nextRule.getAclId() != aclId) || (previousRule != null && previousRule.getAclId() != aclId)) {
+        if ((nextRule != null && nextRule.getAclId() != aclId) || (previousRule != null && previousRule.getAclId() != aclId)) {
             throw new InvalidParameterValueException("Cannot use ACL rules from differenting ACLs. Rule being moved.");
         }
         NetworkACLVO acl = _networkACLDao.findById(aclId);

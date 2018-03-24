@@ -2333,7 +2333,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<String, Integer>(null, -1);
     }
 
-
     @Override
     public Pair<List<? extends Alert>, Integer> searchForAlerts(final ListAlertsCmd cmd) {
         final Filter searchFilter = new Filter(AlertVO.class, "lastSent", false, cmd.getStartIndex(), cmd.getPageSizeVal());

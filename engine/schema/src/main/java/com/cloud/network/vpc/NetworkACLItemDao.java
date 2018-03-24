@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.cloud.utils.db.GenericDao;
 
-/*
+/**
  * Data Access Object for network_acl_item table
  */
 public interface NetworkACLItemDao extends GenericDao<NetworkACLItemVO, Long> {
