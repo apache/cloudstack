@@ -969,7 +969,10 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         return moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
     }
 
-    private List<NetworkACLItemVO> getAllAclRulesSortedByNumber(long aclId) {
+    /**
+     * Loads all ACL rules from given network ACL list. Then, the ACL rules will be sorted according to the 'number' field in ascending order.
+     */
+    protected List<NetworkACLItemVO> getAllAclRulesSortedByNumber(long aclId) {
         List<NetworkACLItemVO> allAclRules = _networkACLItemDao.listByACL(aclId);
         Collections.sort(allAclRules, new Comparator<NetworkACLItemVO>() {
             @Override
@@ -980,7 +983,11 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         return allAclRules;
     }
 
-    private NetworkACLItem moveRuleBetweenAclRules(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules, NetworkACLItemVO previousRule, NetworkACLItemVO nextRule) {
+    /**
+     * Mover an ACL to the space between to other rules. If there is already enough room to accommodate the ACL rule being moved, we simply get the 'number' field from the previous ACL rule and add one, and then define this new value as the 'number' value for the ACL rule being moved.
+     * Otherwise, we will need to make room. This process is executed via {@link #updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItemVO, int, List, int)}, which will create the space between ACL rules if necessary. This involves shifting ACL rules to accommodate the rule being moved.
+     */
+    protected NetworkACLItem moveRuleBetweenAclRules(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules, NetworkACLItemVO previousRule, NetworkACLItemVO nextRule) {
         if (previousRule.getNumber() + 1 != nextRule.getNumber()) {
             int newNumberFieldValue = previousRule.getNumber() + 1;
             for (NetworkACLItemVO networkACLItemVO : allAclRules) {
@@ -1002,7 +1009,11 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         return updateAclRuleToNewPositionAndExecuteShiftIfNecessary(ruleBeingMoved, previousRule.getNumber() + 1, allAclRules, positionToStartProcessing);
     }
 
-    private NetworkACLItem moveRuleToTheBottom(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules) {
+    /**
+     *  Moves a network ACL rule to the bottom of the list. This is executed by getting the 'number' field of the last ACL rule from the ACL list, and incrementing one.
+     *  This new value is assigned to the network ACL being moved and updated in the database using {@link NetworkACLItemDao#updateNumberFieldNetworkItem(long, int)}.
+     */
+    protected NetworkACLItem moveRuleToTheBottom(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules) {
         NetworkACLItemVO lastAclRule = allAclRules.get(allAclRules.size() - 1);
 
         int newNumberFieldValue = lastAclRule.getNumber() + 1;
@@ -1012,11 +1023,33 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         return _networkACLItemDao.findById(ruleBeingMoved.getId());
     }
 
-    private NetworkACLItem moveRuleToTheTop(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules) {
+    /**
+     *  Move the rule to the top of the ACL rule list. This means that the ACL rule being moved will receive the position '1'.
+     *  Also, if necessary other ACL rules will have their 'number' field updated to create room for the new top rule.
+     */
+    protected NetworkACLItem moveRuleToTheTop(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules) {
         return updateAclRuleToNewPositionAndExecuteShiftIfNecessary(ruleBeingMoved, 1, allAclRules, 0);
     }
 
-    private NetworkACLItem updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItemVO ruleBeingMoved, int newNumberFieldValue, List<NetworkACLItemVO> allAclRules,
+    /**
+     * Updates the ACL rule number executing the shift on subsequent ACL rules if necessary.
+     * For example, if we have the following ACL rules:
+     * <ul>
+     *  <li> ACL A - number 1
+     *  <li> ACL B - number 2
+     *  <li> ACL C - number 3
+     *  <li> ACL D - number 12
+     * </ul>
+     * If we move 'ACL D' to a place  between 'ACL A' and 'ACL B', this method will execute the shift needded to create the space for 'ACL D'.
+     * After applying this method, we will have the following condition.
+     * <ul>
+     *  <li> ACL A - number 1
+     *  <li> ACL D - number 2
+     *  <li> ACL B - number 3
+     *  <li> ACL C - number 4
+     * </ul>
+     */
+    protected NetworkACLItem updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItemVO ruleBeingMoved, int newNumberFieldValue, List<NetworkACLItemVO> allAclRules,
             int indexToStartProcessing) {
         ruleBeingMoved.setNumber(newNumberFieldValue);
         for (int i = indexToStartProcessing; i < allAclRules.size(); i++) {
@@ -1034,7 +1067,11 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         return _networkACLItemDao.findById(ruleBeingMoved.getId());
     }
 
-    private NetworkACLItemVO retrieveAndValidateAclRule(String aclRuleUuid) {
+    /**
+     * Searches in the database for an ACL rule by its UUID.
+     * An {@link InvalidParameterValueException} is thrown if no ACL rule is found with the given UUID.
+     */
+    protected NetworkACLItemVO retrieveAndValidateAclRule(String aclRuleUuid) {
         if (StringUtils.isBlank(aclRuleUuid)) {
             return null;
         }
@@ -1045,7 +1082,16 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         return aclRule;
     }
 
-    private void validateMoveAclRulesData(NetworkACLItemVO ruleBeingMoved, NetworkACLItemVO previousRule, NetworkACLItemVO nextRule) {
+    /**
+     *  Validates if the data provided to move the ACL rule is supported by this implementation. The user needs to provide a valid ACL UUID, and at least one of the previous or the next ACL rule.
+     *  The validation is as follows:
+     *  <ul>
+     *      <li> If both ACL rules 'previous' and 'next' are invalid, we throw an {@link InvalidParameterValueException};
+     *      <li> informed previous and next ACL rules must have the same ACL ID as the rule being moved; otherwise, an {@link InvalidParameterValueException} is thrown;
+     *      <li> then we check if the user trying to move ACL rules has access to the VPC, where the ACL rules are being applied.
+     *  </ul>
+     */
+    protected void validateMoveAclRulesData(NetworkACLItemVO ruleBeingMoved, NetworkACLItemVO previousRule, NetworkACLItemVO nextRule) {
         if (nextRule == null && previousRule == null) {
             throw new InvalidParameterValueException("Both previous and next ACL rule IDs cannot be invalid.");
         }

@@ -37,5 +37,11 @@ public interface NetworkACLItemDao extends GenericDao<NetworkACLItemVO, Long> {
 
     void loadCidrs(NetworkACLItemVO item);
 
+    /**
+     * Updated the network ACL item 'number' field.
+     *
+     * @param networkItemId is the ID of the network ACL rule that will have its 'number' field updated.
+     * @param newNumberValue is the new value that will be assigned to the 'number' field.
+     */
     void updateNumberFieldNetworkItem(long networkItemId, int newNumberValue);
 }

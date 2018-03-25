@@ -92,5 +92,8 @@ public interface NetworkACLService {
 
     NetworkACL updateNetworkACL(UpdateNetworkACLListCmd updateNetworkACLListCmd);
 
+    /**
+     * Updates a network item ACL to a new position. This method allows users to inform between which ACLs the given ACL will be placed. Therefore, the 'number' field will be filled out by the system in the best way possible to place the ACL accordingly.
+     */
     NetworkACLItem moveNetworkAclRuleToNewPosition(MoveNetworkAclItemCmd moveNetworkAclItemCmd);
 }
