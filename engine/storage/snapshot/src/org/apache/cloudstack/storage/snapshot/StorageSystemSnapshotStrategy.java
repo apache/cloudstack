@@ -25,7 +25,6 @@ import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -56,7 +55,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotService;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
@@ -86,6 +84,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
 
@@ -102,14 +101,14 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
     @Inject private SnapshotDao snapshotDao;
     @Inject private SnapshotDataFactory snapshotDataFactory;
     @Inject private SnapshotDetailsDao snapshotDetailsDao;
-    @Inject SnapshotDataStoreDao snapshotStoreDao;
+    @Inject private SnapshotDataStoreDao snapshotStoreDao;
     @Inject private VolumeDetailsDao volumeDetailsDao;
     @Inject private VMInstanceDao vmInstanceDao;
     @Inject private VMSnapshotDao vmSnapshotDao;
     @Inject private VMSnapshotService vmSnapshotService;
     @Inject private VolumeDao volumeDao;
     @Inject private VolumeService volService;
-    @Inject private VolumeDetailsDao _volumeDetailsDaoImpl;
+    @Inject private VolumeDetailsDao volumeDetailsDaoImpl;
 
     @Override
     public SnapshotInfo backupSnapshot(SnapshotInfo snapshotInfo) {
@@ -200,7 +199,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         try {
             snapshotObj.processEvent(Snapshot.Event.DestroyRequested);
 
-            List<VolumeDetailVO> volumesFromSnapshot = _volumeDetailsDaoImpl.findDetails("SNAPSHOT_ID", String.valueOf(snapshotId), null);
+            List<VolumeDetailVO> volumesFromSnapshot = volumeDetailsDaoImpl.findDetails("SNAPSHOT_ID", String.valueOf(snapshotId), null);
 
             if (volumesFromSnapshot.size() > 0) {
                 try {
@@ -471,20 +470,11 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         if (ImageFormat.OVA.equals(volumeInfo.getFormat())) {
             setVmdk(snapshotInfo, volumeInfo);
 
-            try {
-                vmSnapshot = takeHypervisorSnapshot(volumeInfo);
-            }
-            catch (ResourceAllocationException ex) {
-                String errMsg = "Unable to allocate VM snapshot";
-
-                s_logger.error(errMsg, ex);
-
-                throw new CloudRuntimeException(errMsg, ex);
-            }
+            vmSnapshot = takeHypervisorSnapshot(volumeInfo);
         }
 
         SnapshotResult result = null;
-        SnapshotInfo snapshotOnPrimary = null;
+        SnapshotInfo snapshotOnPrimary;
 
         try {
             volumeInfo.stateTransit(Volume.Event.SnapshotRequested);
@@ -549,7 +539,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
     }
 
-    private VMSnapshot takeHypervisorSnapshot(VolumeInfo volumeInfo) throws ResourceAllocationException {
+    private VMSnapshot takeHypervisorSnapshot(VolumeInfo volumeInfo) {
         VirtualMachine virtualMachine = volumeInfo.getAttachedVM();
 
         if (virtualMachine != null && VirtualMachine.State.Running.equals(virtualMachine.getState())) {
@@ -678,7 +668,8 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
         if (hostId != null) {
             hostVO = hostDao.findById(hostId);
         }
-        else {
+
+        if (hostVO == null || !ResourceState.Enabled.equals(hostVO.getResourceState())) {
             Optional<HostVO> optHostVO = getHost(volumeInfo.getDataCenterId(), false);
 
             if (optHostVO.isPresent()) {
@@ -836,7 +827,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
 
         HostVO hostVO = hostDao.findById(hostId);
 
-        if (hostVO != null) {
+        if (hostVO != null && ResourceState.Enabled.equals(hostVO.getResourceState())) {
             return hostVO;
         }
 
@@ -867,7 +858,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
                     Collections.shuffle(hosts, new Random(System.nanoTime()));
 
                     for (HostVO host : hosts) {
-                        if (host.getResourceState() == ResourceState.Enabled) {
+                        if (ResourceState.Enabled.equals(host.getResourceState())) {
                             if (computeClusterMustSupportResign) {
                                 if (clusterDao.getSupportsResigning(cluster.getId())) {
                                     return Optional.of(host);
@@ -886,7 +877,7 @@ public class StorageSystemSnapshotStrategy extends SnapshotStrategyBase {
             }
         }
 
-        return Optional.absent();
+        return Optional.empty();
     }
 
     private void markAsBackedUp(SnapshotObject snapshotObj) {
