@@ -984,7 +984,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
     }
 
     /**
-     * Mover an ACL to the space between to other rules. If there is already enough room to accommodate the ACL rule being moved, we simply get the 'number' field from the previous ACL rule and add one, and then define this new value as the 'number' value for the ACL rule being moved.
+     * Moves an ACL to the space between to other rules. If there is already enough room to accommodate the ACL rule being moved, we simply get the 'number' field from the previous ACL rule and add one, and then define this new value as the 'number' value for the ACL rule being moved.
      * Otherwise, we will need to make room. This process is executed via {@link #updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItemVO, int, List, int)}, which will create the space between ACL rules if necessary. This involves shifting ACL rules to accommodate the rule being moved.
      */
     protected NetworkACLItem moveRuleBetweenAclRules(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules, NetworkACLItemVO previousRule, NetworkACLItemVO nextRule) {

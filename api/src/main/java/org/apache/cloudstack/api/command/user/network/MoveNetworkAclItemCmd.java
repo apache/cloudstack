@@ -37,10 +37,10 @@ public class MoveNetworkAclItemCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.STRING, required = true, description = "The ID of the network ACL rule that is being moved to a new position.")
     private String uuidRuleBeingMoved;
 
-    @Parameter(name = ApiConstants.ID_PREVIOUS_ACL_RULE, type = CommandType.STRING, description = "The ID of the first rule that is right before the new position where the rule being moved is going to be placed. This value can be 'NULL' if the rule is being moved to the first position of the network ACL list.")
+    @Parameter(name = ApiConstants.PREVIOUS_ACL_RULE_ID, type = CommandType.STRING, description = "The ID of the first rule that is right before the new position where the rule being moved is going to be placed. This value can be 'NULL' if the rule is being moved to the first position of the network ACL list.")
     private String previousAclRuleUuid;
 
-    @Parameter(name = ApiConstants.ID_NEXT_ACL_RULE, type = CommandType.STRING, description = "The ID of the rule that is right after the new position where the rule being moved is going to be placed. This value can be 'NULL' if the rule is being moved to the last position of the network ACL list.")
+    @Parameter(name = ApiConstants.NEXT_ACL_RULE_ID, type = CommandType.STRING, description = "The ID of the rule that is right after the new position where the rule being moved is going to be placed. This value can be 'NULL' if the rule is being moved to the last position of the network ACL list.")
     private String nextAclRuleUuid;
 
     @Override
