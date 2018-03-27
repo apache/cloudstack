@@ -210,7 +210,7 @@ mkdir -p ${RPM_BUILD_ROOT}%{_sysconfdir}/sudoers.d
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 mkdir -p ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms
 mkdir -p ${RPM_BUILD_ROOT}%{python_sitearch}/
-mkdir -p ${RPM_BUILD_ROOT}%/usr/bin
+mkdir -p ${RPM_BUILD_ROOT}/usr/bin
 cp -r scripts/* ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/scripts
 install -D systemvm/dist/systemvm.iso ${RPM_BUILD_ROOT}%{_datadir}/%{name}-common/vms/systemvm.iso
 install python/lib/cloud_utils.py ${RPM_BUILD_ROOT}%{python_sitearch}/cloud_utils.py
