@@ -42,7 +42,14 @@ hypervisor() {
   grep -q QEMU /var/log/messages && echo "kvm" && return 0
 
   [ -d /proc/xen ] && mount -t xenfs none /proc/xen
-  [ -d /proc/xen ] && echo "xen-domU" && return 0
+  if [ -d /proc/xen ]; then
+    $(dmesg | grep -q "Xen HVM")
+    if [ $? -eq 0 ]; then  # 1=PV,0=HVM
+      echo "xen-hvm" && return 0
+    else
+      echo "xen-pv" && return 0
+    fi
+  fi
 
   vmware-checkvm &> /dev/null && echo "vmware" && return 0
 
@@ -64,9 +71,16 @@ config_guest() {
 
 get_boot_params() {
   case $HYPERVISOR in
-     xen-domU|xen-hvm)
+     xen-pv)
           cat /proc/cmdline > $CMDLINE
           sed -i "s/%/ /g" $CMDLINE
+          ;;
+     xen-hvm)
+          if [ ! -f /usr/sbin/xenstore-read ]; then
+            log_it "ERROR: xentools not installed, cannot found xenstore-read" && exit 5
+          fi
+          /usr/sbin/xenstore-read vm-data/cloudstack/init > /var/cache/cloud/cmdline
+          sed -i "s/%/ /g" /var/cache/cloud/cmdline
           ;;
      kvm)
           VPORT=$(find /dev/virtio-ports -type l -name '*.vport' 2>/dev/null|head -1)
