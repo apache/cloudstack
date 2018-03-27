@@ -32,7 +32,6 @@ import javax.inject.Inject;
 import javax.persistence.TableGenerator;
 
 import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.cluster.agentlb.HostTransferMapVO;
@@ -70,7 +69,6 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@Component
 @DB
 @TableGenerator(name = "host_req_sq", table = "op_host", pkColumnName = "id", valueColumnName = "sequence", allocationSize = 1)
 public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao { //FIXME: , ExternalIdDao {
@@ -917,16 +915,6 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         assert tg != null : "how can this be wrong!";
 
         return s_seqFetcher.getNextSequence(Long.class, tg, hostId);
-    }
-
-    /*TODO: this is used by mycloud, check if it needs resource state Enabled */
-    @Override
-    public long countRoutingHostsByDataCenter(long dcId) {
-        SearchCriteria<Long> sc = CountRoutingByDc.create();
-        sc.setParameters("dc", dcId);
-        sc.setParameters("type", Host.Type.Routing);
-        sc.setParameters("status", Status.Up.toString());
-        return customSearch(sc, null).get(0);
     }
 
     @Override

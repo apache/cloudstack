@@ -61,8 +61,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> listByHostTag(Host.Type type, Long clusterId, Long podId, long dcId, String hostTag);
 
-    long countRoutingHostsByDataCenter(long dcId);
-
     List<HostVO> findAndUpdateApplianceToLoad(long lastPingSecondsAfter, long managementServerId);
 
     boolean updateResourceState(ResourceState oldState, ResourceState.Event event, ResourceState newState, Host vo);
