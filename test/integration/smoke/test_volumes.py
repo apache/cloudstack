@@ -924,6 +924,9 @@ class TestVolumes(cloudstackTestCase):
             pool = pools[0]
         else:
             raise self.skipTest("Not enough storage pools found, skipping test")
+        
+        if hasattr(pool, 'tags'):
+            StoragePool.update(self.apiclient, id=pool.id, tags="")
 
         self.debug("Migrating Volume-ID: %s to Pool: %s" % (volume.id, pool.id))
         Volume.migrate(
@@ -932,21 +935,16 @@ class TestVolumes(cloudstackTestCase):
             storageid = pool.id,
             newdiskofferingid = large_offering.id
         )
-
         if self.virtual_machine.hypervisor == "KVM":
             self.virtual_machine.start(self.apiclient
         )
-
         migrated_vol = Volume.list(
             self.apiclient,
             id = volume.id
         )[0]
-
         self.assertEqual(
             migrated_vol.diskofferingname,
             large_offering.name,
             "Offering name did not match with the new one "
         )
-
         return
-
