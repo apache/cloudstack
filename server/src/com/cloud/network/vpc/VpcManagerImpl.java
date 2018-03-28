@@ -37,6 +37,7 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.dao.DomainRouterDao;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
@@ -88,6 +89,8 @@ import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.VpcProvider;
+import com.cloud.network.router.VirtualRouter;
+import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.vpc.VpcOffering.State;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.network.vpc.dao.PrivateIpDao;
@@ -132,8 +135,10 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.ReservationContextImpl;
+import com.cloud.vm.VirtualMachine;
 
 public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvisioningService, VpcService {
     private static final Logger s_logger = Logger.getLogger(VpcManagerImpl.class);
@@ -196,6 +201,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     NetworkACLManager _networkAclMgr;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    VpcVirtualNetworkApplianceManager _routerMgr;
+    @Inject
+    DomainRouterDao _routerDao;
 
     @Inject
     private VpcPrivateGatewayTransactionCallable vpcTxCallable;
@@ -1482,7 +1491,9 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
     public boolean restartVpc(final long vpcId, final boolean cleanUp, final boolean makeRedundant) throws ConcurrentOperationException, ResourceUnavailableException,
     InsufficientCapacityException {
 
-        final Account caller = CallContext.current().getCallingAccount();
+        final Account callerAccount = CallContext.current().getCallingAccount();
+        final User callerUser = _accountMgr.getActiveUser(CallContext.current().getCallingUserId());
+        final ReservationContext context = new ReservationContextImpl(null, null, callerUser, callerAccount);
 
         // Verify input parameters
         final Vpc vpc = getActiveVpc(vpcId);
@@ -1492,7 +1503,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             throw ex;
         }
 
-        _accountMgr.checkAccess(caller, null, false, vpc);
+        _accountMgr.checkAccess(callerAccount, null, false, vpc);
 
         s_logger.debug("Restarting VPC " + vpc);
         boolean restartRequired = false;
@@ -1516,11 +1527,25 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             }
 
             if (forceCleanup) {
-                s_logger.debug("Shutting down VPC " + vpc + " as a part of VPC restart process");
-                if (!shutdownVpc(vpcId)) {
-                    s_logger.warn("Failed to shutdown vpc as a part of VPC " + vpc + " restart process");
-                    restartRequired = true;
-                    return false;
+                List<DomainRouterVO> routers = _routerDao.listByVpcId(vpc.getId());
+                if (routers != null && !routers.isEmpty()) {
+                    s_logger.debug("Shutting down VPC " + vpc + " as a part of VPC restart process");
+                    // Get rid of any non-Running routers
+                    for (final DomainRouterVO router : routers) {
+                        if (router.getState() != VirtualMachine.State.Running) {
+                            s_logger.debug("Destroying " + router + " as it is not in Running state anyway");
+                            _routerMgr.destroyRouter(router.getId(), context.getAccount(), context.getCaller().getId());
+                        }
+                    }
+                    // Refresh the list of routers
+                    routers = _routerDao.listByVpcId(vpc.getId());
+                    if (routers != null && !routers.isEmpty()) {
+                        if (!rollingRestartVpc(vpc, routers, context)) {
+                            s_logger.warn("Failed to execute a rolling restart as a part of VPC " + vpc + " restart process");
+                            restartRequired = true;
+                            return false;
+                        }
+                    }
                 }
             } else {
                 s_logger.info("Will not shutdown vpc as a part of VPC " + vpc + " restart process.");
@@ -2435,4 +2460,83 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final Map<Network.Service, Set<Network.Provider>> vpcOffSvcProvidersMap = getVpcOffSvcProvidersMap(vpcOfferingId);
         return vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter);
     }
+
+    private boolean rollingRestartVpc(Vpc vpc, List<DomainRouterVO> routers, ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+        final int sleepTimeInMsAfterRouterStart = 10000;
+        final int numberOfRoutersWhenSingle = 1;
+        final int numberOfRoutersWhenRedundant = 2;
+
+        // check the master and backup redundant state
+        DomainRouterVO mainRouter = null;
+        DomainRouterVO secondaryRouter = null;
+        if (routers != null && routers.size() == numberOfRoutersWhenSingle) {
+            mainRouter = routers.get(0);
+            s_logger.debug("Rolling restart found a single router " + mainRouter.getInstanceName() + " as part of rolling restart of VPC " + vpc);
+        } if (routers != null && routers.size() == numberOfRoutersWhenRedundant) {
+            DomainRouterVO router1 = routers.get(0);
+            DomainRouterVO router2 = routers.get(1);
+            if (router1.getRedundantState() == VirtualRouter.RedundantState.MASTER || router2.getRedundantState() == VirtualRouter.RedundantState.BACKUP) {
+                mainRouter = router1;
+                secondaryRouter = router2;
+            } else if (router1.getRedundantState() == VirtualRouter.RedundantState.BACKUP || router2.getRedundantState() == VirtualRouter.RedundantState.MASTER) {
+                mainRouter = router2;
+                secondaryRouter = router1;
+            } else {
+                // both routers are in UNKNOWN state or in the same state. Order doesn't matter.
+                mainRouter = router1;
+                secondaryRouter = router2;
+            }
+            s_logger.debug("Rolling restart of VPC " + vpc + " will first replace router " + secondaryRouter.getInstanceName() + " and then router " + mainRouter.getInstanceName());
+        }
+
+        DeployDestination dest = new DeployDestination(_dcDao.findById(vpc.getZoneId()), null, null, null);
+
+        // If we are supposed to be redundant, let's replace the backup router
+        // We do this even when backupRouter is null, so we first spin a new router before replacing the other router
+        if (vpc.isRedundant()) {
+            if (!replaceRouter(vpc, context, sleepTimeInMsAfterRouterStart, secondaryRouter, dest)) {
+                s_logger.debug("Recreating the secondary router for VPC " + vpc + " failed.");
+                return false;
+            }
+        }
+
+        // If we have a single router, replace it here
+        if (mainRouter != null) {
+            if (!replaceRouter(vpc, context, sleepTimeInMsAfterRouterStart, mainRouter, dest)) {
+                s_logger.debug("Recreating the main router for VPC " + vpc + " failed.");
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean replaceRouter(final Vpc vpc, final ReservationContext context, final int sleepTimeInMsAfterRouterStart, final DomainRouterVO routerToReplace, final DeployDestination dest) throws ResourceUnavailableException, InsufficientCapacityException {
+        if (routerToReplace != null) {
+            s_logger.debug("Destroying router " + routerToReplace.getInstanceName() + " as part of rolling restart of VPC " + vpc);
+            _routerMgr.destroyRouter(routerToReplace.getId(), context.getAccount(), context.getCaller().getId());
+        }
+        s_logger.debug("Triggering new router create as part of rolling restart of VPC " + vpc);
+        startVpc(vpc, dest, context);
+        try {
+            // wait for the keepalived/conntrackd on router
+            Thread.sleep(sleepTimeInMsAfterRouterStart);
+        } catch (InterruptedException e) {
+            s_logger.trace("Ignoring InterruptedException.", e);
+        }
+
+        // Routers after this action
+        List<DomainRouterVO> routers = _routerDao.listByVpcId(vpc.getId());
+        for (final DomainRouterVO router : routers) {
+            // Both should be in state Running, or else the provisioning went wrong somehow as we started with destroying non-Running routers
+            // In order not to kill both routers, we'll stop the procedure.
+            if (router.getState() != VirtualMachine.State.Running) {
+                s_logger.debug("Found router " + router.getInstanceName() + " part of VPC " + vpc + " to be in non-Running state " + router.getState() + ", so not proceeding with" +
+                        "next router to prevent downtime. Please try again.");
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
