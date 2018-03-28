@@ -195,7 +195,7 @@ function create_definition() {
     set +e
     if [ ! -z "${version}" ]; then
     sed ${sed_regex_option} -i -e "s/^CLOUDSTACK_RELEASE=.+/CLOUDSTACK_RELEASE=${version}/" \
-        "${appliance_build_name}/configure_systemvm_services.sh"
+        "${appliance_build_name}/scripts/configure_systemvm_services.sh"
     fi
     set -e
     add_on_exit rm -rf "${appliance_build_name}"

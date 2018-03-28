@@ -304,8 +304,8 @@ class TestVPCRedundancy(cloudstackTestCase):
         time.sleep(3 * self.advert_int + 5)
 
     def check_routers_state(self,count=2, status_to_check="MASTER", expected_count=1, showall=False):
-        vals = ["MASTER", "BACKUP", "UNKNOWN"]
-        cnts = [0, 0, 0]
+        vals = ["MASTER", "BACKUP", "UNKNOWN", "FAULT"]
+        cnts = [0, 0, 0, 0]
 
         self.wait_for_vrrp()
 
@@ -612,7 +612,8 @@ class TestVPCRedundancy(cloudstackTestCase):
 
         time.sleep(total_sleep * 3)
 
-        self.check_routers_state(status_to_check="BACKUP", expected_count=2)
+        # Router will be in FAULT state, i.e. keepalived is stopped
+        self.check_routers_state(status_to_check="FAULT", expected_count=2)
         self.start_vm()
         self.check_routers_state(status_to_check="MASTER")
 
