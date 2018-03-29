@@ -59,7 +59,7 @@ public class ADLdapUserManagerImpl extends OpenLdapUserManagerImpl implements Ld
         return users;
     }
 
-    private String generateADGroupSearchFilter(String groupName, Long domainId) {
+    String generateADGroupSearchFilter(String groupName, Long domainId) {
         final StringBuilder userObjectFilter = new StringBuilder();
         userObjectFilter.append("(objectClass=");
         userObjectFilter.append(_ldapConfiguration.getUserObject(domainId));
