@@ -43,6 +43,7 @@ import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceState;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Snapshot;
@@ -1933,7 +1934,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         if (hosts != null && hosts.size() > 0) {
             Collections.shuffle(hosts, RANDOM);
 
-            return hosts.get(0);
+            for (HostVO host : hosts) {
+                if (ResourceState.Enabled.equals(host.getResourceState())) {
+                    return host;
+                }
+            }
         }
 
         throw new CloudRuntimeException("Unable to locate a host");
@@ -1954,6 +1959,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         Collections.shuffle(hosts, RANDOM);
 
         for (HostVO host : hosts) {
+            if (!ResourceState.Enabled.equals(host.getResourceState())) {
+                continue;
+            }
+
             if (computeClusterMustSupportResign) {
                 long clusterId = host.getClusterId();
 
