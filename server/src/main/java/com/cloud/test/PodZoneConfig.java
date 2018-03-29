@@ -485,7 +485,7 @@ public class PodZoneConfig {
     public void saveVlan(long zoneId, Long podId, String vlanId, String vlanGateway, String vlanNetmask, String vlanType, String ipRange, long networkId,
         long physicalNetworkId) {
         String sql =
-            "INSERT INTO `cloud`.`vlan` (vlan_id, vlan_gateway, vlan_netmask, data_center_id, vlan_type, description, network_id, physical_network_id) " + "VALUES ('" +
+            "INSERT INTO `cloud`.`vlan` (vlan_id, vlan_gateway, vlan_netmask, data_center_id, vlan_type, ip4_range, network_id, physical_network_id) " + "VALUES ('" +
                 vlanId + "','" + vlanGateway + "','" + vlanNetmask + "','" + zoneId + "','" + vlanType + "','" + ipRange + "','" + networkId + "','" + physicalNetworkId +
                 "')";
         DatabaseConfig.saveSQL(sql, "Failed to save vlan due to exception. Please contact Cloud Support.");
