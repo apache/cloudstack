@@ -1011,14 +1011,19 @@ class TestSecuredVmMigration(cloudstackTestCase):
         SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
             .execute("rm -f /etc/cloudstack/agent/cloud*")
 
-        guid = re.sub('\-LibvirtComputingResource$', '', self.dbclient.execute("select guid from host where host.uuid = '"+host.id+"';")[0][0])
         SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
-            .execute(" cloudstack-setup-agent -m "+self.management_ip+" -z 1 -p 1 -c 1 -g "+guid+" -a --pubNic=cloudbr1 --prvNic=cloudbr0 --guestNic=cloudbr1 --hypervisor=kvm")
-
+            .execute("sed -i 's/listen_tls.*/listen_tls=0/g' /etc/libvirt/libvirtd.conf")
+        SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
+            .execute("sed -i 's/listen_tcp.*/listen_tcp=1/g' /etc/libvirt/libvirtd.conf ")
+        SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
+            .execute("sed -i '/.*_file.*/d' /etc/libvirt/libvirtd.conf")
+        SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
+            .execute("service libvirtd restart")
         SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
             .execute("service cloudstack-agent restart")
 
         self.check_connection(host=host, secured='false')
+        time.sleep(10)
         return host
 
     def make_all_hosts_secure(self):
