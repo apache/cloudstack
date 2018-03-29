@@ -198,7 +198,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private final static int BASE_TO_CONVERT_BYTES_INTO_KILOBYTES = 1024;
 
-    protected static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
+    private static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
     private static final long mem_128m = 134217728L;
 
@@ -243,7 +243,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected String _guestNetworkName;
     protected int _heartbeatInterval = 60;
     protected int _heartbeatTimeout = 120;
-    protected final XsHost _host = new XsHost();
+    protected XsHost _host = new XsHost();
     protected String _instance; // instance name (default is usually "VM")
     protected boolean _isOvs = false;
     protected String _linkLocalPrivateNetworkName;
