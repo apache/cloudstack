@@ -1,16 +1,23 @@
 package org.apache.cloudstack.ldap;
 
-import com.cloud.server.auth.*;
-import com.cloud.user.*;
-import com.cloud.user.dao.*;
-import com.cloud.utils.*;
-import org.junit.*;
-import org.junit.runner.*;
-import org.mockito.*;
-import org.mockito.runners.*;
 
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.*;
+import com.cloud.server.auth.UserAuthenticator;
+import com.cloud.user.UserAccount;
+import com.cloud.user.UserAccountVO;
+import com.cloud.user.dao.UserAccountDao;
+import com.cloud.utils.Pair;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.when;
+
 
 @RunWith(MockitoJUnitRunner.class)
 public class LdapAuthenticatorTest {
