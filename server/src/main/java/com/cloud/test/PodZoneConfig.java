@@ -61,7 +61,7 @@ public class PodZoneConfig {
         DatabaseConfig.saveSQL(sql, "Failed to save pod due to exception. Please contact Cloud Support.");
 
         if (printOutput)
-            System.out.println("Successfuly saved pod.");
+            System.out.println("Successfully saved pod.");
     }
 
     public void checkAllPodCidrSubnets() {
