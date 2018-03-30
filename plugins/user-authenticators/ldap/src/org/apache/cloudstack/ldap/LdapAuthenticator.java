@@ -231,8 +231,8 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
             }
         }
         return (!result && user != null) ?
-                new Pair<Boolean, ActionOnFailedAuthentication>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT):
-                new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+                new Pair<Boolean, ActionOnFailedAuthentication>(result, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT):
+                new Pair<Boolean, ActionOnFailedAuthentication>(result, null);
     }
 
     private void enableUserInCloudStack(UserAccount user) {
