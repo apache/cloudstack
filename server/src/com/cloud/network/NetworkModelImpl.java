@@ -33,6 +33,7 @@ import java.util.Collections;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.dc.*;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 
@@ -46,11 +47,7 @@ import org.apache.cloudstack.lb.dao.ApplicationLoadBalancerRuleDao;
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -2344,8 +2341,15 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public List<String[]> generateVmData(String userData, String serviceOffering, String zoneName,
-                                         String vmName, long vmId, String publicKey, String password, Boolean isWindows) {
+    public List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId,
+                                         String vmName, long vmId, String vmUuid,
+                                         String guestIpAddress, String publicKey, String password, Boolean isWindows) {
+
+        DataCenterVO dcVo = _dcDao.findById(datacenterId);
+        final String zoneName = dcVo.getName();
+
+        IPAddressVO publicIp = _ipAddressDao.findByAssociatedVmId(vmId);
+
         final List<String[]> vmData = new ArrayList<String[]>();
 
         if (userData != null) {
@@ -2354,8 +2358,30 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         vmData.add(new String[]{METATDATA_DIR, SERVICE_OFFERING_FILE, StringUtils.unicodeEscape(serviceOffering)});
         vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, StringUtils.unicodeEscape(zoneName)});
         vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, StringUtils.unicodeEscape(vmName)});
-        vmData.add(new String[]{METATDATA_DIR, INSTANCE_ID_FILE, vmName});
-        vmData.add(new String[]{METATDATA_DIR, VM_ID_FILE, String.valueOf(vmId)});
+        vmData.add(new String[]{METATDATA_DIR, LOCAL_IPV4_FILE, guestIpAddress});
+
+        String publicIpAddress = guestIpAddress;
+        String publicHostName = StringUtils.unicodeEscape(vmName);
+
+        if (dcVo.getNetworkType() != DataCenter.NetworkType.Basic) {
+            if (publicIp != null) {
+                publicIpAddress = publicIp.getAddress().addr();
+                publicHostName = publicIp.getAddress().addr();
+            } else {
+                publicHostName = null;
+            }
+        }
+        vmData.add(new String[]{METATDATA_DIR, PUBLIC_IPV4_FILE, publicIpAddress});
+        vmData.add(new String[]{METATDATA_DIR, PUBLIC_HOSTNAME_FILE, publicHostName});
+
+        if (vmUuid == null) {
+            vmData.add(new String[]{METATDATA_DIR, INSTANCE_ID_FILE, vmName});
+            vmData.add(new String[]{METATDATA_DIR, VM_ID_FILE, String.valueOf(vmId)});
+        } else {
+            vmData.add(new String[]{METATDATA_DIR, INSTANCE_ID_FILE, vmUuid});
+            vmData.add(new String[]{METATDATA_DIR, VM_ID_FILE, vmUuid});
+        }
+
         vmData.add(new String[]{METATDATA_DIR, PUBLIC_KEYS_FILE, publicKey});
 
         String cloudIdentifier = _configDao.getValue("cloud.identifier");

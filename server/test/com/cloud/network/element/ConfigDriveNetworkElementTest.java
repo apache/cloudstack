@@ -25,17 +25,15 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.network.dao.*;
+import com.cloud.utils.net.Ip;
 import org.apache.xerces.impl.dv.util.Base64;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -64,9 +62,6 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModelImpl;
 import com.cloud.network.Networks;
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NetworkVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -116,6 +111,7 @@ public class ConfigDriveNetworkElementTest {
     @Mock private UserVmDetailsDao _userVmDetailsDao;
     @Mock private NetworkDao _networkDao;
     @Mock private NetworkServiceMapDao _ntwkSrvcDao;
+    @Mock private IPAddressDao _ipAddressDao;
 
     @Mock private DataCenterVO dataCenterVO;
     @Mock private DataStore dataStore;
@@ -130,6 +126,7 @@ public class ConfigDriveNetworkElementTest {
     @Mock private NicProfile nicp;
     @Mock private ServiceOfferingVO serviceOfferingVO;
     @Mock private UserVmVO virtualMachine;
+    @Mock private IPAddressVO publicIp;
 
     @InjectMocks private final ConfigDriveNetworkElement _configDrivesNetworkElement = new ConfigDriveNetworkElement();
     @InjectMocks @Spy private NetworkModelImpl _networkModel = new NetworkModelImpl();
@@ -236,6 +233,71 @@ public class ConfigDriveNetworkElementTest {
 
     @Test
     public void testAddPasswordAndUserdata() throws InsufficientCapacityException, ResourceUnavailableException {
+        List<String[]> actualVmData = getVmData();
+
+        assertThat(actualVmData, containsInAnyOrder(
+                new String[]{"userdata", "user_data", VMUSERDATA},
+                new String[]{"metadata", "service-offering", VMOFFERING},
+                new String[]{"metadata", "availability-zone", ZONENAME},
+                new String[]{"metadata", "local-hostname", VMINSTANCENAME},
+                new String[]{"metadata", "local-ipv4", "192.168.111.111"},
+                new String[]{"metadata", "public-hostname", null},
+                new String[]{"metadata", "public-ipv4", "192.168.111.111"},
+                new String[]{"metadata", "vm-id", String.valueOf(VMID)},
+                new String[]{"metadata", "instance-id", VMINSTANCENAME},
+                new String[]{"metadata", "public-keys", PUBLIC_KEY},
+                new String[]{"metadata", "cloud-identifier", String.format("CloudStack-{%s}", CLOUD_ID)},
+                new String[]{PASSWORD, "vm_password", PASSWORD}
+        ));
+    }
+
+    @Test
+    public void testAddPasswordAndUserdataStaticNat() throws InsufficientCapacityException, ResourceUnavailableException {
+        when(_ipAddressDao.findByAssociatedVmId(VMID)).thenReturn(publicIp);
+        when(publicIp.getAddress()).thenReturn(new Ip("7.7.7.7"));
+
+        List<String[]> actualVmData = getVmData();
+
+        assertThat(actualVmData, containsInAnyOrder(
+                new String[]{"userdata", "user_data", VMUSERDATA},
+                new String[]{"metadata", "service-offering", VMOFFERING},
+                new String[]{"metadata", "availability-zone", ZONENAME},
+                new String[]{"metadata", "local-hostname", VMINSTANCENAME},
+                new String[]{"metadata", "local-ipv4", "192.168.111.111"},
+                new String[]{"metadata", "public-hostname", "7.7.7.7"},
+                new String[]{"metadata", "public-ipv4", "7.7.7.7"},
+                new String[]{"metadata", "vm-id", String.valueOf(VMID)},
+                new String[]{"metadata", "instance-id", VMINSTANCENAME},
+                new String[]{"metadata", "public-keys", PUBLIC_KEY},
+                new String[]{"metadata", "cloud-identifier", String.format("CloudStack-{%s}", CLOUD_ID)},
+                new String[]{PASSWORD, "vm_password", PASSWORD}
+        ));
+    }
+
+
+    @Test
+    public void testAddPasswordAndUserdataUuid() throws InsufficientCapacityException, ResourceUnavailableException {
+        when(virtualMachine.getUuid()).thenReturn("vm-uuid");
+
+        List<String[]> actualVmData = getVmData();
+
+        assertThat(actualVmData, containsInAnyOrder(
+                new String[]{"userdata", "user_data", VMUSERDATA},
+                new String[]{"metadata", "service-offering", VMOFFERING},
+                new String[]{"metadata", "availability-zone", ZONENAME},
+                new String[]{"metadata", "local-hostname", VMINSTANCENAME},
+                new String[]{"metadata", "local-ipv4", "192.168.111.111"},
+                new String[]{"metadata", "public-hostname", null},
+                new String[]{"metadata", "public-ipv4", "192.168.111.111"},
+                new String[]{"metadata", "vm-id", "vm-uuid"},
+                new String[]{"metadata", "instance-id", "vm-uuid"},
+                new String[]{"metadata", "public-keys", PUBLIC_KEY},
+                new String[]{"metadata", "cloud-identifier", String.format("CloudStack-{%s}", CLOUD_ID)},
+                new String[]{PASSWORD, "vm_password", PASSWORD}
+        ));
+    }
+
+    private List<String[]> getVmData() throws InsufficientCapacityException, ResourceUnavailableException {
         final Answer answer = mock(Answer.class);
         final UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);
         when(endpoint.sendMessage(any(HandleConfigDriveIsoCommand.class))).thenReturn(answer);
@@ -243,6 +305,7 @@ public class ConfigDriveNetworkElementTest {
         when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
         when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
         when(userVmDetailVO.getValue()).thenReturn(PUBLIC_KEY);
+        when(nicp.getIPv4Address()).thenReturn("192.168.111.111");
         when(_userVmDetailsDao.findDetail(anyLong(), anyString())).thenReturn(userVmDetailVO);
         Map<VirtualMachineProfile.Param, Object> parms = Maps.newHashMap();
         parms.put(VirtualMachineProfile.Param.VmPassword, PASSWORD);
@@ -254,19 +317,6 @@ public class ConfigDriveNetworkElementTest {
         ArgumentCaptor<HandleConfigDriveIsoCommand> commandCaptor = ArgumentCaptor.forClass(HandleConfigDriveIsoCommand.class);
         verify(endpoint, times(1)).sendMessage(commandCaptor.capture());
         HandleConfigDriveIsoCommand result = commandCaptor.getValue();
-        List<String[]> actualVmData = result.getVmData();
-
-        assertThat(actualVmData, containsInAnyOrder(
-                new String[]{"userdata", "user_data", VMUSERDATA},
-                new String[]{"metadata", "service-offering", VMOFFERING},
-                new String[]{"metadata", "availability-zone", ZONENAME},
-                new String[]{"metadata", "local-hostname", VMINSTANCENAME},
-                new String[]{"metadata", "vm-id", String.valueOf(VMID)},
-                new String[]{"metadata", "instance-id", String.valueOf(VMINSTANCENAME)},
-                new String[]{"metadata", "public-keys", PUBLIC_KEY},
-                new String[]{"metadata", "cloud-identifier", String.format("CloudStack-{%s}", CLOUD_ID)},
-                new String[]{PASSWORD, "vm_password", PASSWORD}
-        ));
-
+        return result.getVmData();
     }
 }
