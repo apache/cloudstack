@@ -819,8 +819,12 @@ public class LibvirtVMDef {
             diskBuilder.append(" type='" + _diskType + "'");
             diskBuilder.append(">\n");
             if(qemuDriver) {
-                diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType
-                        + "' cache='" + _diskCacheMode + "' ");
+                if (_deviceType == DeviceType.CDROM && _sourcePath == null) {
+                    diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType + "' ");
+                } else {
+                    diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType
+                            + "' cache='" + _diskCacheMode + "' ");
+                }
                 if(_discard != null && _discard != DiscardType.IGNORE) {
                     diskBuilder.append("discard='" + _discard.toString() + "' ");
                 }
