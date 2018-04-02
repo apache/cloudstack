@@ -310,9 +310,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
      * The number of seconds to wait before timing out when trying to acquire a global lock.
      */
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;
-    /**
-     * The number of bytes in a GiB.
-     */
+
     private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
     @Inject
