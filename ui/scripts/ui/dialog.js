@@ -78,7 +78,7 @@
             var ret = function() {
                 $('.overlay').remove();
 
-                return $formContainer.dialog({
+                var $dialog = $formContainer.dialog({
                     dialogClass: args.form.isWarning ? 'create-form warning' : 'create-form',
                     closeOnEscape: false,
                     draggable: false,
@@ -117,10 +117,11 @@
                         text: _l('label.cancel'),
                         'class': 'cancel',
                         click: function() {
+                            $(this).dialog('destroy');
+
                             $('div.overlay').remove();
                             $('.tooltip-box').remove();
                             $formContainer.remove();
-                            $(this).dialog('destroy');
 
                             $('.hovered-elem').hide();
 
@@ -129,7 +130,9 @@
                             }
                         }
                     }]
-                }).closest('.ui-dialog').overlay();
+                });
+                
+                return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
             };
 
             var isLastAsync = function(idx) {
@@ -985,7 +988,7 @@
          * Confirmation dialog
          */
         confirm: function(args) {
-            return $(
+            var $dialog = $(
                 $('<span>').addClass('message').html(
                     _l(args.message)
                 )
@@ -993,7 +996,6 @@
                 title: args.isWarning ? _l('label.warning') : _l('label.confirmation'),
                 dialogClass: args.isWarning ? 'confirm warning': 'confirm',
                 closeOnEscape: false,
-                zIndex: 5000,
                 buttons: [{
                     text: _l('label.no'),
                     'class': 'cancel',
@@ -1015,7 +1017,9 @@
                         $('.hovered-elem').hide();
                     }
                 }]
-            }).closest('.ui-dialog').overlay();
+            });
+            
+            return  cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
         },
 
         /**
@@ -1023,7 +1027,7 @@
          */
         notice: function(args) {
             if (args.message) {
-                return $(
+                var $dialog = $(
                     $('<span>').addClass('message').html(
                         _l(args.message)
                     )
@@ -1031,7 +1035,6 @@
                     title: _l('label.status'),
                     dialogClass: 'notice',
                     closeOnEscape: false,
-                    zIndex: 5000,
                     buttons: [{
                         text: _l('label.close'),
                         'class': 'close',
@@ -1042,6 +1045,9 @@
                         }
                     }]
                 });
+                
+                $('button.ui-dialog-titlebar-close').remove();
+                return cloudStack.applyDefaultZindexOnJqueryDialog($dialog);
             }
 
             return false;

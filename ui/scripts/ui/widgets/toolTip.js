@@ -34,7 +34,8 @@
                 $(this.element).focus(hoverHandler);
                 $(this.element).blur(outHandler);
             } else if (this.options.mode == 'manual') {}
-
+            
+            $(this.element).data('toolTipOptions', this.options);
             $(this.element).data('$tooltip', $tooltip);
 
             // Add arrow
@@ -100,14 +101,14 @@
     });
 
     function hoverHandler(event) {
-        //Fetch Options
-        var o = $.data(this, 'toolTip').options;
-
         //Element who raised the event
         var $this = $(this);
 
+        var toolTipOptionObject = $this.data('toolTipOptions');
+        
+
         //Helper functon for Positioning and Calling Callback function
-        prepare($this, o);
+        prepare($this, toolTipOptionObject);
 
         //Call Show method of the tooltip Widget,
         //Show method should play on any required animations
@@ -115,15 +116,18 @@
     };
 
     function outHandler(event) {
+        //Element who raised the event
+        var $this = $(this);
+        
         //Fetch Options
-        var o = $.data(this, 'toolTip').options;
+        var toolTipOptionObject = $this.data('toolTipOptions');
 
         //Get tooptip Element
-        var $tooltip = $(o.toolTip);
+        var $tooltip = $(toolTipOptionObject.toolTip);
 
         //If call back method defined, initiate the call
-        if ($.data(this, 'toolTip').options.onHide) {
-            $.data(this, 'toolTip').options.onHide.call(this, {
+        if (toolTipOptionObject.onHide) {
+            toolTipOptionObject.onHide.call(this, {
                 target: $(this)
             });
         }

@@ -1120,8 +1120,9 @@
                 else
                     $detailView = args.pageGenerator(data).appendTo($newPanel);
 
-                if (complete) complete($detailView);
-
+                if (complete){
+                    complete($detailView);
+                }
                 return $detailView;
             }
         };

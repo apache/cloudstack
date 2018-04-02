@@ -270,8 +270,8 @@
             $tabs.find('ul li:first').addClass('first');
             $tabs.find('ul li:last').addClass('last');
 
-            $tabs.bind('tabsshow', function(event, ui) {
-                var $panel = $(ui.panel);
+            $tabs.bind('tabsactivate', function(event, ui) {
+                var $panel = $(ui.newPanel);
                 var $management = $panel.find('.management');
                 var $managementInvite = $panel.find('.management-invite');
 
@@ -705,11 +705,12 @@
      * Initiate new project flow
      */
     var addProject = function() {
-        pageElems.newProjectForm().dialog({
+        var $dialog = pageElems.newProjectForm().dialog({
             title: _l('label.new.project'),
             closeOnEscape: false,
             width: 760
-        }).closest('.ui-dialog').overlay();
+        });
+        cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
     };
 
     var deleteProject = function(args) {

@@ -322,13 +322,14 @@
                     });
                 }
 
-                return $wizard.dialog({
+                var $dialog = $wizard.dialog({
                     title: ldapStatus ? _l('label.add.LDAP.account') : _l('label.add.account'),
                     width: ldapStatus ? 800 : 330,
                     height: ldapStatus ? 500 : 500,
-                    closeOnEscape: false,
-                    zIndex: 5000
-                }).closest('.ui-dialog').overlay();
+                    closeOnEscape: false
+                });
+                
+                return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
             };
 
             accountsWizard(args);

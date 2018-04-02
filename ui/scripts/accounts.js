@@ -97,7 +97,6 @@
                             label: 'label.add.ldap.account',
                             isHeader: true,
                             preFilter: function(args) {
-                                //if (isAdmin() && true) { //for testing only
                                 if (isAdmin() && isLdapEnabled()) {
                                     return true;
                                 } else {

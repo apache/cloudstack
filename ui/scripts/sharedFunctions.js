@@ -923,7 +923,10 @@ var addL2GuestNetwork = {
                             url: createURL('listNetworkOfferings'),
                             data: data,
                             success: function(json) {
-                                networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
+                                if(!json.listnetworkofferingsresponse || !json.listnetworkofferingsresponse.networkoffering){
+                                    return;
+                                }
+                                var networkOfferingObjs = json.listnetworkofferingsresponse.networkoffering;
                                 args.$select.change(function() {
                                     var $vlan = args.$select.closest('form').find('[rel=vlan]');
                                     var networkOffering = $.grep(
