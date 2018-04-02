@@ -306,8 +306,14 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 public class UserVmManagerImpl extends ManagerBase implements UserVmManager, VirtualMachineGuru, UserVmService, Configurable {
     private static final Logger s_logger = Logger.getLogger(UserVmManagerImpl.class);
 
+    /**
+     * The number of seconds to wait before timing out when trying to acquire a global lock.
+     */
     private static final int ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION = 3;
-    private static final long GB_TO_BYTES = 1024 * 1024 * 1024;
+    /**
+     * The number of bytes in a GiB.
+     */
+    private static final long GiB_TO_BYTES = 1024 * 1024 * 1024;
 
     @Inject
     private EntityManager _entityMgr;
@@ -2256,7 +2262,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         @Override
         protected void runInContext() {
             GlobalLock scanLock = GlobalLock.getInternLock("vmIpFetch");
-
             try {
                 if (scanLock.lock(ACQUIRE_GLOBAL_LOCK_TIMEOUT_FOR_COOPERATION)) {
                     try {
@@ -3292,7 +3297,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (rootDiskSize <= 0) {
                 throw new InvalidParameterValueException("Root disk size should be a positive number.");
             }
-            size = rootDiskSize * GB_TO_BYTES;
+            size = rootDiskSize * GiB_TO_BYTES;
         } else {
             // For baremetal, size can be null
             Long templateSize = _templateDao.findById(template.getId()).getSize();
@@ -3312,7 +3317,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     throw new InvalidParameterValueException("VM Creation failed. Volume size: " + diskSize + "GB is out of allowed range. Max: " + customDiskOfferingMaxSize
                             + " Min:" + customDiskOfferingMinSize);
                 }
-                size += diskSize * GB_TO_BYTES;
+                size += diskSize * GiB_TO_BYTES;
             }
             size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
         }
@@ -3786,7 +3791,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     {
         // rootdisksize must be larger than template.
         if ((rootDiskSize << 30) < templateVO.getSize()) {
-            Long templateVOSizeGB = templateVO.getSize() / GB_TO_BYTES;
+            Long templateVOSizeGB = templateVO.getSize() / GiB_TO_BYTES;
             String error = "Unsupported: rootdisksize override is smaller than template size " + templateVO.getSize() + "B (" + templateVOSizeGB + "GB)";
             s_logger.error(error);
             throw new InvalidParameterValueException(error);
@@ -3798,7 +3803,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 s_logger.error(error);
                 throw new InvalidParameterValueException(error);
             } else {
-                s_logger.debug("Rootdisksize override validation successful. Template root disk size " + (templateVO.getSize() / GB_TO_BYTES) + "GB Root disk size specified " + rootDiskSize + "GB");
+                s_logger.debug("Rootdisksize override validation successful. Template root disk size " + (templateVO.getSize() / GiB_TO_BYTES) + "GB Root disk size specified " + rootDiskSize + "GB");
             }
         } else {
             s_logger.debug("Root disk size specified is " + (rootDiskSize << 30) + "B and Template root disk size is " + templateVO.getSize() + "B. Both are equal so no need to override");
