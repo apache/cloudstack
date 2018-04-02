@@ -58,7 +58,7 @@ intelligent IaaS cloud implementation.
 
 %package management
 Summary:   CloudStack management server UI
-Requires: java => 1.8.0
+Requires: java-1.8.0-openjdk
 Requires: apache-commons-daemon-jsvc
 Requires: python
 Requires: bash
@@ -97,7 +97,7 @@ The Apache CloudStack files shared between agent and management server
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
 Requires: openssh-clients
-Requires: java => 1.8.0
+Requires: java-1.8.0-openjdk
 Requires: %{name}-common = %{_ver}
 Requires: libvirt
 Requires: bridge-utils
@@ -130,7 +130,7 @@ The CloudStack baremetal agent
 
 %package usage
 Summary: CloudStack Usage calculation server
-Requires: java => 1.8.0
+Requires: java-1.8.0-openjdk
 Requires: mysql-connector-java
 Group: System Environment/Libraries
 %description usage
