@@ -5,12 +5,12 @@ Always add information AFTER of these HTML comments, but no need to delete the c
 -->
 
 ##### ISSUE TYPE
-<!-- Pick one below -->
- * [ ] Bug Report
- * [ ] Enhancement
- * [ ] Feature Idea
- * [ ] Documentation Report
- * [ ] Other
+<!-- Pick one below and delete the rest -->
+ * Bug Report
+ * Enhancement
+ * Feature Idea
+ * Documentation Report
+ * Other
 
 ##### COMPONENT NAME
 <!--
