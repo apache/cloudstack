@@ -198,7 +198,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     private final static int BASE_TO_CONVERT_BYTES_INTO_KILOBYTES = 1024;
 
-    protected static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
+    private static final XenServerConnectionPool ConnPool = XenServerConnectionPool.getInstance();
     // static min values for guests on xenserver
     private static final long mem_128m = 134217728L;
 
@@ -243,7 +243,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     protected String _guestNetworkName;
     protected int _heartbeatInterval = 60;
     protected int _heartbeatTimeout = 120;
-    protected final XsHost _host = new XsHost();
+    protected XsHost _host = new XsHost();
     protected String _instance; // instance name (default is usually "VM")
     protected boolean _isOvs = false;
     protected String _linkLocalPrivateNetworkName;
@@ -286,6 +286,11 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     double _xsVirtualizationFactor = 63.0 / 64.0; // 1 - virtualization overhead
 
     protected StorageSubsystemCommandHandler storageHandler;
+
+    private static final String XENSTORE_DATA_IP = "vm-data/ip";
+    private static final String XENSTORE_DATA_GATEWAY = "vm-data/gateway";
+    private static final String XENSTORE_DATA_NETMASK = "vm-data/netmask";
+    private static final String XENSTORE_DATA_CS_INIT = "vm-data/cloudstack/init";
 
     public CitrixResourceBase() {
     }
@@ -1285,7 +1290,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             if (guestOsDetails.containsKey("xenserver.dynamicMax")) {
                 recommendedMemoryMax = Long.valueOf(guestOsDetails.get("xenserver.dynamicMax")).longValue();
             }
-
         }
 
         if (isDmcEnabled(conn, host) && vmSpec.isEnableDynamicallyScaleVm()) {
@@ -1309,7 +1313,6 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             vmr.memoryStaticMin = vmSpec.getMinRam();
             vmr.memoryStaticMax = vmSpec.getMaxRam();
             vmr.memoryDynamicMin = vmSpec.getMinRam();
-            ;
             vmr.memoryDynamicMax = vmSpec.getMaxRam();
 
             vmr.VCPUsMax = (long)vmSpec.getCpus();
@@ -1323,17 +1326,15 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
             NicTO mgmtNic = vmSpec.getNics()[0];
             if (mgmtNic != null) {
                 Map<String, String> xenstoreData = new HashMap<String, String>(3);
-                xenstoreData.put("vm-data/ip", mgmtNic.getIp().toString().trim());
-                xenstoreData.put("vm-data/gateway", mgmtNic.getGateway().toString().trim());
-                xenstoreData.put("vm-data/netmask", mgmtNic.getNetmask().toString().trim());
+                xenstoreData.put(XENSTORE_DATA_IP, mgmtNic.getIp().toString().trim());
+                xenstoreData.put(XENSTORE_DATA_GATEWAY, mgmtNic.getGateway().toString().trim());
+                xenstoreData.put(XENSTORE_DATA_NETMASK, mgmtNic.getNetmask().toString().trim());
                 vmr.xenstoreData = xenstoreData;
             }
         }
 
         final VM vm = VM.create(conn, vmr);
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Created VM " + vm.getUuid(conn) + " for " + vmSpec.getName());
-        }
+        s_logger.debug("Created VM " + vm.getUuid(conn) + " for " + vmSpec.getName());
 
         final Map<String, String> vcpuParams = new HashMap<String, String>();
 
@@ -1365,12 +1366,18 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
         final String bootArgs = vmSpec.getBootArgs();
         if (bootArgs != null && bootArgs.length() > 0) {
+            // send boot args for PV instances
             String pvargs = vm.getPVArgs(conn);
             pvargs = pvargs + vmSpec.getBootArgs().replaceAll(" ", "%");
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("PV args are " + pvargs);
-            }
             vm.setPVArgs(conn, pvargs);
+            s_logger.debug("PV args are " + pvargs);
+
+            // send boot args into xenstore-data for HVM instances
+            Map<String, String> xenstoreData = new HashMap<>();
+
+            xenstoreData.put(XENSTORE_DATA_CS_INIT, bootArgs);
+            vm.setXenstoreData(conn, xenstoreData);
+            s_logger.debug("HVM args are " + bootArgs);
         }
 
         if (!(guestOsTypeName.startsWith("Windows") || guestOsTypeName.startsWith("Citrix") || guestOsTypeName.startsWith("Other"))) {

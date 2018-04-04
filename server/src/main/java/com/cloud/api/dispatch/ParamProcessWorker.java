@@ -258,13 +258,11 @@ public class ParamProcessWorker implements DispatchWorker {
                 }
 
             } catch (final IllegalArgumentException e) {
-                s_logger.error("Error initializing command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
                 throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() +
-                        " is not accessible]");
+                        " is not accessible]", e);
             } catch (final IllegalAccessException e) {
-                s_logger.error("Error initializing command " + cmd.getCommandName() + ", field " + field.getName() + " is not accessible.");
                 throw new CloudRuntimeException("Internal error initializing parameters for command " + cmd.getCommandName() + " [field " + field.getName() +
-                        " is not accessible]");
+                        " is not accessible]", e);
             }
 
         }

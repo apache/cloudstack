@@ -700,7 +700,8 @@ public class NetworkACLServiceImplTest {
     }
 
     @Test
-    public void transferDataToNetworkAclRulePojoTestAllValuesNull() {
+    public void transferDataToNetworkAclRulePojoTestPartialUpgradeAllValuesNull() {
+        Mockito.when(updateNetworkACLItemCmdMock.isPartialUpgrade()).thenReturn(true);
         Mockito.when(updateNetworkACLItemCmdMock.getNumber()).thenReturn(null);
         Mockito.when(updateNetworkACLItemCmdMock.getSourcePortStart()).thenReturn(null);
         Mockito.when(updateNetworkACLItemCmdMock.getSourcePortEnd()).thenReturn(null);
@@ -731,6 +732,42 @@ public class NetworkACLServiceImplTest {
         Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setReason(Mockito.anyString());
         Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setDisplay(Mockito.anyBoolean());
         Mockito.verify(networkAclServiceImpl, Mockito.times(0)).validateAndCreateNetworkAclRuleAction(Mockito.anyString());
+    }
+
+    @Test
+    public void transferDataToNetworkAclRulePojoTestNotPartialUpgradeAllValuesNull() {
+        Mockito.when(updateNetworkACLItemCmdMock.isPartialUpgrade()).thenReturn(false);
+
+        Mockito.when(updateNetworkACLItemCmdMock.getNumber()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getSourcePortStart()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getSourcePortEnd()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getSourceCidrList()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getProtocol()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getIcmpCode()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getIcmpType()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getAction()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getTrafficType()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getCustomId()).thenReturn(null);
+        Mockito.when(updateNetworkACLItemCmdMock.getReason()).thenReturn(null);
+
+        Mockito.when(updateNetworkACLItemCmdMock.isDisplay()).thenReturn(false);
+        Mockito.when(networkAclItemVoMock.isDisplay()).thenReturn(false);
+
+        networkAclServiceImpl.transferDataToNetworkAclRulePojo(updateNetworkACLItemCmdMock, networkAclItemVoMock, networkAclMock);
+
+        Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setNumber(Mockito.anyInt());
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourcePortStart(Mockito.anyInt());
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourcePortEnd(Mockito.anyInt());
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setSourceCidrList(Mockito.anyListOf(String.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setProtocol(Mockito.anyString());
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setIcmpCode(Mockito.anyInt());
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setIcmpType(Mockito.anyInt());
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setAction(Mockito.any(Action.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setTrafficType(Mockito.any(TrafficType.class));
+        Mockito.verify(networkAclItemVoMock, Mockito.times(0)).setUuid(Mockito.anyString());
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setReason(Mockito.anyString());
+        Mockito.verify(networkAclItemVoMock, Mockito.times(1)).setDisplay(Mockito.anyBoolean());
+        Mockito.verify(networkAclServiceImpl, Mockito.times(1)).validateAndCreateNetworkAclRuleAction(Mockito.anyString());
     }
 
     @Test

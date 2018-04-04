@@ -829,6 +829,8 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
      *  We transfer the update information form {@link UpdateNetworkACLItemCmd} to the {@link NetworkACLItemVO} POJO passed as parameter.
      *  There is one validation performed here, which is regarding the number of the ACL. We will check if there is already an ACL rule with that number, and if this is the case an {@link InvalidParameterValueException} is thrown.
      *  All of the parameters in {@link UpdateNetworkACLItemCmd} that are not null will be set to their corresponding fields in {@link NetworkACLItemVO}.
+     *  If the parameter {@link UpdateNetworkACLItemCmd#isPartialUpgrade()} returns false, we will use null parameters, which will allow us to completely update the ACL rule.
+     *  However, the number and custom Uuid will never be set to null. Therefore, if it is not a partial upgrade, these values will remain the same.
      *
      *  We use {@link #validateAndCreateNetworkAclRuleAction(String)} when converting an action as {@link String} to its Enum corresponding value.
      */
@@ -841,38 +843,39 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             }
             networkACLItemVo.setNumber(number);
         }
+        boolean isPartialUpgrade = updateNetworkACLItemCmd.isPartialUpgrade();
 
         Integer sourcePortStart = updateNetworkACLItemCmd.getSourcePortStart();
-        if (sourcePortStart != null) {
+        if (!isPartialUpgrade || sourcePortStart != null) {
             networkACLItemVo.setSourcePortStart(sourcePortStart);
         }
         Integer sourcePortEnd = updateNetworkACLItemCmd.getSourcePortEnd();
-        if (sourcePortEnd != null) {
+        if (!isPartialUpgrade || sourcePortEnd != null) {
             networkACLItemVo.setSourcePortEnd(sourcePortEnd);
         }
         List<String> sourceCidrList = updateNetworkACLItemCmd.getSourceCidrList();
-        if (CollectionUtils.isNotEmpty(sourceCidrList)) {
+        if (!isPartialUpgrade || CollectionUtils.isNotEmpty(sourceCidrList)) {
             networkACLItemVo.setSourceCidrList(sourceCidrList);
         }
         String protocol = updateNetworkACLItemCmd.getProtocol();
-        if (StringUtils.isNotBlank(protocol)) {
+        if (!isPartialUpgrade || StringUtils.isNotBlank(protocol)) {
             networkACLItemVo.setProtocol(protocol);
         }
         Integer icmpCode = updateNetworkACLItemCmd.getIcmpCode();
-        if (icmpCode != null) {
+        if (!isPartialUpgrade || icmpCode != null) {
             networkACLItemVo.setIcmpCode(icmpCode);
         }
         Integer icmpType = updateNetworkACLItemCmd.getIcmpType();
-        if (icmpType != null) {
+        if (!isPartialUpgrade || icmpType != null) {
             networkACLItemVo.setIcmpType(icmpType);
         }
         String action = updateNetworkACLItemCmd.getAction();
-        if (StringUtils.isNotBlank(action)) {
+        if (!isPartialUpgrade || StringUtils.isNotBlank(action)) {
             Action aclRuleAction = validateAndCreateNetworkAclRuleAction(action);
             networkACLItemVo.setAction(aclRuleAction);
         }
         TrafficType trafficType = updateNetworkACLItemCmd.getTrafficType();
-        if (trafficType != null) {
+        if (!isPartialUpgrade || trafficType != null) {
             networkACLItemVo.setTrafficType(trafficType);
         }
         String customId = updateNetworkACLItemCmd.getCustomId();
@@ -880,11 +883,11 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
             networkACLItemVo.setUuid(customId);
         }
         boolean display = updateNetworkACLItemCmd.isDisplay();
-        if (display != networkACLItemVo.isDisplay()) {
+        if (!isPartialUpgrade || display != networkACLItemVo.isDisplay()) {
             networkACLItemVo.setDisplay(display);
         }
         String reason = updateNetworkACLItemCmd.getReason();
-        if (StringUtils.isNotBlank(reason)) {
+        if (!isPartialUpgrade || StringUtils.isNotBlank(reason)) {
             networkACLItemVo.setReason(reason);
         }
     }
