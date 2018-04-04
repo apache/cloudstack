@@ -7,8 +7,8 @@ Always add information AFTER of these HTML comments, but no need to delete the c
 ##### ISSUE TYPE
 <!-- Pick one below and delete the rest -->
  * Bug Report
- * Enhancement Request
  * Improvement Request
+ * Enhancement Request
  * Feature Idea
  * Documentation Report
  * Other
