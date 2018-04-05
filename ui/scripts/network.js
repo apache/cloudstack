@@ -732,9 +732,9 @@
                                         gateway: args.data.guestGateway
                                     });
                                 }
-                                if (args.data.guestGateway != null && args.data.guestGateway.length > 0) {
+                                if (args.data.guestNetmask != null && args.data.guestNetmask.length > 0) {
                                     $.extend(dataObj, {
-                                        gateway: args.data.guestGateway
+                                        netmask: args.data.guestNetmask
                                     });
                                 }
                                 if (args.data.externalId != null && args.data.externalId.length > 0) {
