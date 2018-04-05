@@ -17,7 +17,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.11.1.0-SNAPSHOT</version>
+    <version>4.12.0.0-SNAPSHOT</version>
   </parent>
 
   <repositories>
@@ -563,7 +563,7 @@
                 <chmod perm="755"
                   file="${project.build.directory}/common/scripts/**" type="both"/>
                 <copy todir="${project.build.directory}/classes/META-INF/webapp/WEB-INF/">
-                  <fileset dir="${basedir}/WEB-INF/">
+                  <fileset dir="${basedir}/src/main/webapp/WEB-INF/">
                     <include name="web.xml"/>
                   </fileset>
                 </copy>
@@ -651,7 +651,7 @@
                   replace="classpath:nonossComponentContext.xml" byline="true"/>
                 <copy overwrite="true"
                   todir="${basedir}/target/common/scripts">
-                  <fileset dir="${basedir}/../plugins/network-elements/cisco-vnmc/scripts">
+                  <fileset dir="${basedir}/../plugins/network-elements/cisco-vnmc/src/main/scripts">
                     <include name="**/*"/>
                   </fileset>
                 </copy>

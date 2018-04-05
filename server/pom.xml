@@ -15,7 +15,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.11.1.0-SNAPSHOT</version>
+    <version>4.12.0.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -148,14 +148,6 @@
     </dependency>
   </dependencies>
   <build>
-    <testResources>
-      <testResource>
-        <directory>test/resources</directory>
-        <excludes>
-          <exclude>%regex[.*[0-9]*To[0-9]*.*Test.*]</exclude>
-        </excludes>
-      </testResource>
-    </testResources>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

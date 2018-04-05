@@ -20,7 +20,7 @@
   generalizations="true" realizations="true" associations="true" dependencies="false" nesting-relationships="true">    
   <class id="1" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.DefaultPrimaryDataStore" project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/DefaultPrimaryDataStore.java" 
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/DefaultPrimaryDataStore.java" 
     binary="false">    
     <position height="-1" width="-1" x="418" y="554"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -30,7 +30,7 @@
   </class>  
   <interface id="2" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle" project="cloud-engine-api" 
-    file="/cloud-engine-api/src/org/apache/cloudstack/engine/subsystem/api/storage/PrimaryDataStoreLifeCycle.java" 
+    file="/cloud-engine-api/src/main/java/org/apache/cloudstack/engine/subsystem/api/storage/PrimaryDataStoreLifeCycle.java" 
     binary="false">    
     <position height="-1" width="-1" x="727" y="1011"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -40,7 +40,7 @@
   </interface>  
   <interface id="3" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.driver.PrimaryDataStoreDriver" project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/driver/PrimaryDataStoreDriver.java" 
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/driver/PrimaryDataStoreDriver.java" 
     binary="false">    
     <position height="-1" width="-1" x="1494" y="1138"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -51,7 +51,7 @@
   <interface id="4" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.configurator.validator.StorageProtocolTransformer" 
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/validator/StorageProtocolTransformer.java" 
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/validator/StorageProtocolTransformer.java" 
     binary="false">    
     <position height="-1" width="-1" x="1584" y="606"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -61,7 +61,7 @@
   </interface>  
   <interface id="5" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreProvider" project="cloud-engine-api" 
-    file="/cloud-engine-api/src/org/apache/cloudstack/engine/subsystem/api/storage/PrimaryDataStoreProvider.java" 
+    file="/cloud-engine-api/src/main/java/org/apache/cloudstack/engine/subsystem/api/storage/PrimaryDataStoreProvider.java" 
     binary="false">    
     <position height="-1" width="-1" x="189" y="87"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -72,7 +72,7 @@
   <class id="6" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.configurator.xenserver.XenNfsConfigurator"
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/xenserver/XenNfsConfigurator.java"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/xenserver/XenNfsConfigurator.java"
     binary="false">    
     <position height="-1" width="-1" x="1482" y="448"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -83,7 +83,7 @@
   <class id="7" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.configurator.xenserver.AbstractXenConfigurator"
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/xenserver/AbstractXenConfigurator.java"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/xenserver/AbstractXenConfigurator.java"
     binary="false">    
     <position height="-1" width="-1" x="1536" y="278"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -94,7 +94,7 @@
   <class id="8" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.configurator.AbstractPrimaryDataStoreConfigurator" 
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/AbstractPrimaryDataStoreConfigurator.java" 
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/AbstractPrimaryDataStoreConfigurator.java" 
     binary="false">    
     <position height="-1" width="-1" x="1386" y="104"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -104,7 +104,7 @@
   </class>  
   <interface id="9" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore" project="cloud-engine-storage"
-    file="/cloud-engine-storage/src/org/apache/cloudstack/storage/datastore/PrimaryDataStore.java" binary="false">    
+    file="/cloud-engine-storage/src/main/java/org/apache/cloudstack/storage/datastore/PrimaryDataStore.java" binary="false">    
     <position height="-1" width="-1" x="770" y="-4"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
       <attributes public="false" package="true" protected="true" private="true"/>      
@@ -114,7 +114,7 @@
   <interface id="10" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.configurator.PrimaryDataStoreConfigurator" 
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/PrimaryDataStoreConfigurator.java" 
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/PrimaryDataStoreConfigurator.java" 
     binary="false">    
     <position height="-1" width="-1" x="1394" y="-75"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -125,7 +125,7 @@
   <class id="11" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.configurator.validator.NfsProtocolTransformer" 
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/validator/NfsProtocolTransformer.java" 
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/validator/NfsProtocolTransformer.java" 
     binary="false">    
     <position height="-1" width="-1" x="1557" y="830"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -136,7 +136,7 @@
   <class id="12" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.lifecycle.DefaultXenServerPrimaryDataStoreLifeCycle"
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/lifecycle/DefaultXenServerPrimaryDataStoreLifeCycle.java"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/lifecycle/DefaultXenServerPrimaryDataStoreLifeCycle.java"
     binary="false">    
     <position height="-1" width="-1" x="724" y="1502"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -147,7 +147,7 @@
   <class id="13" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.lifecycle.DefaultPrimaryDataStoreLifeCycleImpl" 
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/lifecycle/DefaultPrimaryDataStoreLifeCycleImpl.java" 
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/lifecycle/DefaultPrimaryDataStoreLifeCycleImpl.java" 
     binary="false">    
     <position height="-1" width="-1" x="487" y="1290"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -158,7 +158,7 @@
   <class id="14" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.configurator.xenserver.XenServerIscsiConfigurator"
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/xenserver/XenServerIscsiConfigurator.java"
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/xenserver/XenServerIscsiConfigurator.java"
     binary="false">    
     <position height="-1" width="-1" x="1817" y="450"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -169,7 +169,7 @@
   <class id="15" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.configurator.kvm.AbstractKvmConfigurator" 
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/kvm/AbstractKvmConfigurator.java" 
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/kvm/AbstractKvmConfigurator.java" 
     binary="false">    
     <position height="-1" width="-1" x="2255" y="278"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -180,7 +180,7 @@
   <class id="16" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.configurator.kvm.KvmNfsConfigurator" 
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/kvm/KvmNfsConfigurator.java" 
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/kvm/KvmNfsConfigurator.java" 
     binary="false">    
     <position height="-1" width="-1" x="2155" y="459"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -191,7 +191,7 @@
   <class id="17" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.configurator.kvm.KvmCLVMConfigurator" 
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/kvm/KvmCLVMConfigurator.java" 
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/kvm/KvmCLVMConfigurator.java" 
     binary="false">    
     <position height="-1" width="-1" x="2515" y="453"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -202,7 +202,7 @@
   <class id="18" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.configurator.validator.ISCSIProtocolTransformer" 
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/validator/ISCSIProtocolTransformer.java" 
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/validator/ISCSIProtocolTransformer.java" 
     binary="false">    
     <position height="-1" width="-1" x="1935" y="823"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
@@ -213,7 +213,7 @@
   <class id="19" corner="BOTTOM_RIGHT" language="java" 
     name="org.apache.cloudstack.storage.datastore.configurator.validator.CLVMProtocolTransformer" 
     project="cloud-engine-storage-volume" 
-    file="/cloud-engine-storage-volume/src/org/apache/cloudstack/storage/datastore/configurator/validator/CLVMProtocolTransformer.java" 
+    file="/cloud-engine-storage-volume/src/main/java/org/apache/cloudstack/storage/datastore/configurator/validator/CLVMProtocolTransformer.java" 
     binary="false">    
     <position height="-1" width="-1" x="2319" y="824"/>    
     <display autosize="true" stereotype="true" package="true" initial-value="false" signature="true" visibility="true">      
