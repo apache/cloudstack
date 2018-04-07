@@ -255,7 +255,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
             }
         } catch (NetworkRuleConflictException ex) {
             s_logger.trace("Network Rule Conflict: ", ex);
-            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex);
+            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
         }
     }
 
