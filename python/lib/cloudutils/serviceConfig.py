@@ -526,9 +526,12 @@ class libvirtConfigUbuntu(serviceCfgBase):
         if os.path.exists("/etc/init/libvirt-bin.conf"):
             cfo = configFileOps("/etc/init/libvirt-bin.conf", self)
             cfo.replace_line("exec /usr/sbin/libvirtd","exec /usr/sbin/libvirtd -d -l")
-        else:
+        elif os.path.exists("/etc/default/libvirt-bin"):
             cfo = configFileOps("/etc/default/libvirt-bin", self)
-            cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l -d'")
+            cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l'")
+        elif os.path.exists("/etc/default/libvirtd"):
+            cfo = configFileOps("/etc/default/libvirtd", self)
+            cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l'")
 
     def config(self):
         try:
