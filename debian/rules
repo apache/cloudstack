@@ -42,6 +42,7 @@ override_dh_auto_install:
 	install -D agent/target/cloud-agent-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/$(PACKAGE)-agent.jar
 	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
+	chmod -x $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/*.jar
 
 	install -m0755 packaging/debian/$(PACKAGE)-agent.init $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-agent
 	install -d -m0755 debian/$(PACKAGE)-agent/lib/systemd/system
@@ -79,6 +80,7 @@ override_dh_auto_install:
 	cp client/target/conf/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/management/
 	cp client/target/cloud-client-ui-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/cloudstack-$(VERSION).jar
 	cp client/target/lib/*jar $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/
+	chmod -x $(DESTDIR)/usr/share/$(PACKAGE)-management/lib/*.jar
 
 	# nast hack for a couple of configuration files
 	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-limits.conf $(DESTDIR)/$(SYSCONFDIR)/security/limits.d/
@@ -116,6 +118,7 @@ override_dh_auto_install:
 	install -D systemvm/dist/systemvm.iso $(DESTDIR)/usr/share/$(PACKAGE)-common/vms/systemvm.iso
 	# We need jasypt for cloud-install-sys-tmplt, so this is a nasty hack to get it into the right place
 	install -D agent/target/dependencies/jasypt-1.9.2.jar $(DESTDIR)/usr/share/$(PACKAGE)-common/lib
+	chmod -x $(DESTDIR)/usr/share/$(PACKAGE)-common/lib/*.jar
 
 	# cloudstack-python
 	mkdir -p $(DESTDIR)/usr/share/pyshared
@@ -129,6 +132,7 @@ override_dh_auto_install:
 	install -D usage/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/
 	cp usage/target/transformed/db.properties $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/
 	cp usage/target/transformed/log4j-cloud_usage.xml $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/log4j-cloud.xml
+	chmod -x $(DESTDIR)/usr/share/$(PACKAGE)-usage/lib/*.jar
 
 	install -D -m0755 packaging/debian/$(PACKAGE)-usage.init $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-usage
 	install -d -m0755 debian/$(PACKAGE)-usage/lib/systemd/system
