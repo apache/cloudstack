@@ -460,8 +460,6 @@ fi
 
 chown -R cloud:cloud /var/log/cloudstack/management
 
-systemctl daemon-reload
-
 %preun agent
 /sbin/service cloudstack-agent stop || true
 if [ "$1" == "0" ] ; then
