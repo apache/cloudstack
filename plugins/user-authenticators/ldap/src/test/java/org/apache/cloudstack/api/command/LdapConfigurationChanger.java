@@ -38,7 +38,7 @@ interface LdapConfigurationChanger {
      * the first field found by this name in the class "klas" or any of it's superclasses except for {@code Object}. Implementers of this interface can decide to also return any field in implemented interfaces or in {@code Object}.
      *
      * @param name of the field to find
-     * @param klas class to gat a field by name "name" from
+     * @param klas class to get a field by name "name" from
      * @return a {@code Field} by the name "name"
      * @throws NoSuchFieldException
      */

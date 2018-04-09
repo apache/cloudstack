@@ -393,10 +393,12 @@ if [ ! -f %{_datadir}/cloudstack-common/scripts/vm/hypervisor/xenserver/vhd-util
 fi
 
 if [ -f %{_sysconfdir}/sysconfig/%{name}-management ] ; then
-    mv %{_sysconfdir}/sysconfig/%{name}-management  %{_sysconfdir}/default/%{name}-management
+    rm -f %{_sysconfdir}/sysconfig/%{name}-management
 fi
 
 chown -R cloud:cloud /var/log/cloudstack/management
+
+systemctl daemon-reload
 
 %preun agent
 /sbin/service cloudstack-agent stop || true
