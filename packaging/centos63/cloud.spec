@@ -454,7 +454,13 @@ if [ -f "%{_sysconfdir}/cloud.rpmsave/management/db.properties" ]; then
     mv %{_sysconfdir}/cloud.rpmsave/management/db.properties %{_sysconfdir}/cloud.rpmsave/management/db.properties.rpmsave
 fi
 
+if [ -f %{_sysconfdir}/sysconfig/%{name}-management ] ; then
+    rm -f %{_sysconfdir}/sysconfig/%{name}-management
+fi
+
 chown -R cloud:cloud /var/log/cloudstack/management
+
+systemctl daemon-reload
 
 %preun agent
 /sbin/service cloudstack-agent stop || true
