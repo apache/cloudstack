@@ -215,7 +215,7 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
      * @param user cloudstack user object
      * @return false if either user object does not exist or authenitication fails
      */
-    private Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, UserAccount user) {
+    Pair<Boolean, ActionOnFailedAuthentication> authenticate(String username, String password, Long domainId, UserAccount user) {
         boolean result = false;
 
         if(user != null ) {
@@ -231,8 +231,8 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
             }
         }
         return (!result && user != null) ?
-                new Pair<Boolean, ActionOnFailedAuthentication>(false, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT):
-                new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
+                new Pair<Boolean, ActionOnFailedAuthentication>(result, ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT):
+                new Pair<Boolean, ActionOnFailedAuthentication>(result, null);
     }
 
     private void enableUserInCloudStack(UserAccount user) {
