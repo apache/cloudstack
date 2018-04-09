@@ -1359,9 +1359,6 @@
                                 };
 
                                 var password = args.data.password;
-                                if (md5Hashed) {
-                                    password = $.md5(password);
-                                }
                                 $.extend(data, {
                                     password: password
                                 });
@@ -1501,9 +1498,6 @@
                                                     start();
 
                                                     var password = args.data.newPassword;
-
-                                                    if (md5Hashed)
-                                                        password = $.md5(password);
 
                                                     $.ajax({
                                                         url: createURL('updateUser'),

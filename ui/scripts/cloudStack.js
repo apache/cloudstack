@@ -223,11 +223,7 @@
                 var array1 = [];
                 array1.push("&username=" + encodeURIComponent(args.data.username));
 
-                var password;
-                if (md5HashedLogin)
-                    password = $.md5(args.data.password);
-                else
-                    password = todb(args.data.password);
+                var password = todb(args.data.password);
                 array1.push("&password=" + password);
 
                 var domain;
