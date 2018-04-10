@@ -318,6 +318,7 @@ var dictionary = {
     "label.add.accounts": "アカウントの追加",
     "label.add.accounts.to": "アカウントの追加先:",
     "label.add.acl.list": "ACL 一覧の追加",
+    "label.edit.acl.list": "Edit ACL List",
     "label.add.affinity.group": "新しいアフィニティ グループの追加",
     "label.add.baremetal.dhcp.device": "ベアメタル DHCP デバイスの追加",
     "label.add.baremetal.rack.configuration": "ベアメタルラック設定の追加",

@@ -318,6 +318,7 @@ var dictionary = {
     "label.add.accounts": "添加帐户",
     "label.add.accounts.to": "添加帐户至",
     "label.add.acl.list": "添加 ACL 列表",
+    "label.edit.acl.list": "Edit ACL List",
     "label.add.affinity.group": "添加新关联性组",
     "label.add.baremetal.dhcp.device": "添加裸机 DHCP 设备",
     "label.add.baremetal.rack.configuration": "添加 Baremetal Rack 配置",

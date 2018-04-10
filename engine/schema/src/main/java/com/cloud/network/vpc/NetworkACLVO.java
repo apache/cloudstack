@@ -101,4 +101,12 @@ public class NetworkACLVO implements NetworkACL {
     public boolean isDisplay() {
         return display;
     }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
 }

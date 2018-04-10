@@ -22,6 +22,7 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
@@ -38,7 +39,7 @@ public interface NetworkACLService {
     NetworkACL getNetworkACL(long id);
 
     /**
-     * List NetworkACLs by Id/Name/Network or Vpc it belongs to
+     * List NetworkACLs by Id/Name/Network or VPC it belongs to
      */
     Pair<List<? extends NetworkACL>, Integer> listNetworkACLs(ListNetworkACLListsCmd cmd);
 
@@ -87,6 +88,6 @@ public interface NetworkACLService {
      */
     boolean replaceNetworkACLonPrivateGw(long aclId, long privateGatewayId) throws ResourceUnavailableException;
 
-    NetworkACL updateNetworkACL(Long id, String customId, Boolean forDisplay);
+    NetworkACL updateNetworkACL(UpdateNetworkACLListCmd updateNetworkACLListCmd);
 
 }

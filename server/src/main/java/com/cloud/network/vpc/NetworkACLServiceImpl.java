@@ -28,6 +28,7 @@ import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -907,20 +908,30 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_ACL_UPDATE, eventDescription = "updating network acl", async = true)
-    public NetworkACL updateNetworkACL(final Long id, final String customId, final Boolean forDisplay) {
-        final NetworkACLVO acl = _networkACLDao.findById(id);
-        final Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
-        final Account caller = CallContext.current().getCallingAccount();
+    public NetworkACL updateNetworkACL(UpdateNetworkACLListCmd updateNetworkACLListCmd) {
+        Long id = updateNetworkACLListCmd.getId();
+        NetworkACLVO acl = _networkACLDao.findById(id);
+        Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
+
+        Account caller = CallContext.current().getCallingAccount();
         _accountMgr.checkAccess(caller, null, true, vpc);
 
-        if (customId != null) {
+        String name = updateNetworkACLListCmd.getName();
+        if (StringUtils.isNotBlank(name)) {
+            acl.setName(name);
+        }
+        String description = updateNetworkACLListCmd.getDescription();
+        if (StringUtils.isNotBlank(description)) {
+            acl.setDescription(description);
+        }
+        String customId = updateNetworkACLListCmd.getCustomId();
+        if (StringUtils.isNotBlank(customId)) {
             acl.setUuid(customId);
         }
-
+        Boolean forDisplay = updateNetworkACLListCmd.getDisplay();
         if (forDisplay != null) {
             acl.setDisplay(forDisplay);
         }
-
         _networkACLDao.update(id, acl);
         return _networkACLDao.findById(id);
     }

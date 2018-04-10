@@ -1330,6 +1330,37 @@
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
+                            },
+                            edit: {
+                                label: 'label.edit.acl.list',
+                                action: function(args) {
+                                    var data = args.data;
+                                    data.id = args.context.aclLists[0].id;
+                                    $.ajax({
+                                        url: createURL('updateNetworkACLList'),
+                                        type: "POST",
+                                        data: data,
+                                        success: function(json) {
+                                            var jid = json.updatenetworkacllistresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: jid,
+                                                    getUpdatedItem: function() {
+                                                        $(window).trigger('cloudStack.fullRefresh');
+                                                        jQuery('div[id=breadcrumbs] ul:visible li span').last().html(data.name);
+                                                    }
+                                                }
+                                            });
+                                        },
+                                        error: function(json) {
+                                            args.response.error(parseXMLHttpResponse(json));
+                                        }
+                                    });
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult,
+                                    desc: 'label.edit.acl.list'
+                                }
                             }
                         },
 
@@ -1342,7 +1373,8 @@
                                         isEditable: true
                                     },
                                     description: {
-                                        label: 'label.description'
+                                        label: 'label.description',
+                                        isEditable: true  
                                     },
                                     id: {
                                         label: 'label.id'
@@ -1357,6 +1389,7 @@
                                                 var allowedActions = [];
                                                 if (items.vpcid != null) {
                                                     allowedActions.push("remove");
+                                                    allowedActions.push("edit");
                                                 }
                                                 return allowedActions;
                                             }

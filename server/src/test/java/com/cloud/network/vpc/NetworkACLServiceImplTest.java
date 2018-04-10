@@ -23,6 +23,7 @@ import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.junit.Assert;
 import org.junit.Before;
@@ -46,12 +47,14 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.vpc.NetworkACLItem.Action;
 import com.cloud.network.vpc.NetworkACLItem.TrafficType;
+import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(PowerMockRunner.class)
+@PrepareForTest(CallContext.class)
 public class NetworkACLServiceImplTest {
 
     @Spy
@@ -64,9 +67,11 @@ public class NetworkACLServiceImplTest {
     @Mock
     private NetworkACLItemDao networkAclItemDaoMock;
     @Mock
-    private EntityManager EntityManagerMock;
+    private EntityManager entityManagerMock;
     @Mock
-    private AccountManager AccountManager;
+    private AccountManager accountManagerMock;
+    @Mock
+    private NetworkACLDao networkAclDaoMock;
 
     @Mock
     private CreateNetworkACLCmd createNetworkAclCmdMock;
@@ -78,13 +83,22 @@ public class NetworkACLServiceImplTest {
     private NetworkACL networkAclMock;
     @Mock
     private NetworkACLItemVO networkAclItemVoMock;
+    @Mock
+    private NetworkACLVO networkACLVOMock;
+    @Mock
+    private UpdateNetworkACLListCmd updateNetworkACLListCmdMock;
 
     private Long networkAclMockId = 1L;
     private Long networkOfferingMockId = 2L;
     private Long networkMockVpcMockId = 3L;
+    private long networkAclListId = 1l;
 
     @Before
     public void befoteTest() {
+        PowerMockito.mockStatic(CallContext.class);
+        PowerMockito.when(CallContext.current()).thenReturn(Mockito.mock(CallContext.class));
+
+        Mockito.when(networkAclDaoMock.findById(networkAclListId)).thenReturn(networkACLVOMock);
         Mockito.when(createNetworkAclCmdMock.getNetworkId()).thenReturn(1L);
         Mockito.when(createNetworkAclCmdMock.getProtocol()).thenReturn("tcp");
 
@@ -215,7 +229,7 @@ public class NetworkACLServiceImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void createAclListForNetworkAndReturnAclListIdTestServicesSupportedByNetworkOfferingButVpcNotFound() {
         Mockito.doReturn(true).when(networkModelMock).areServicesSupportedByNetworkOffering(networkOfferingMockId, Network.Service.NetworkACL);
-        Mockito.doReturn(null).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
+        Mockito.doReturn(null).when(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
 
         networkAclServiceImpl.createAclListForNetworkAndReturnAclListId(createNetworkAclCmdMock, networkMock);
     }
@@ -223,7 +237,7 @@ public class NetworkACLServiceImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void createAclListForNetworkAndReturnAclListIdTestCreateNetworkAclReturnsNull() {
         Mockito.doReturn(true).when(networkModelMock).areServicesSupportedByNetworkOffering(networkOfferingMockId, Network.Service.NetworkACL);
-        Mockito.doReturn(Mockito.mock(Vpc.class)).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
+        Mockito.doReturn(Mockito.mock(Vpc.class)).when(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
         Mockito.doReturn(null).when(networkAclManager).createNetworkACL(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean());
 
         networkAclServiceImpl.createAclListForNetworkAndReturnAclListId(createNetworkAclCmdMock, networkMock);
@@ -232,7 +246,7 @@ public class NetworkACLServiceImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void createAclListForNetworkAndReturnAclListIdTestAclNetworkIsCreatedButNotApplied() throws ResourceUnavailableException {
         Mockito.doReturn(true).when(networkModelMock).areServicesSupportedByNetworkOffering(networkOfferingMockId, Network.Service.NetworkACL);
-        Mockito.doReturn(Mockito.mock(Vpc.class)).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
+        Mockito.doReturn(Mockito.mock(Vpc.class)).when(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
         Mockito.doReturn(Mockito.mock(NetworkACL.class)).when(networkAclManager).createNetworkACL(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean());
         Mockito.doReturn(false).when(networkAclManager).replaceNetworkACL(Mockito.any(NetworkACL.class), Mockito.any(NetworkVO.class));
 
@@ -246,7 +260,7 @@ public class NetworkACLServiceImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void createAclListForNetworkAndReturnAclListIdTestAclNetworkIsCreatedButNotAppliedWithException() throws ResourceUnavailableException {
         Mockito.doReturn(true).when(networkModelMock).areServicesSupportedByNetworkOffering(networkOfferingMockId, Network.Service.NetworkACL);
-        Mockito.doReturn(Mockito.mock(Vpc.class)).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
+        Mockito.doReturn(Mockito.mock(Vpc.class)).when(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
         Mockito.doReturn(Mockito.mock(NetworkACL.class)).when(networkAclManager).createNetworkACL(Mockito.anyString(), Mockito.anyString(), Mockito.anyLong(), Mockito.anyBoolean());
 
         Mockito.doThrow(ResourceUnavailableException.class).when(networkAclManager).replaceNetworkACL(Mockito.any(NetworkACL.class), Mockito.any(NetworkVO.class));
@@ -261,7 +275,7 @@ public class NetworkACLServiceImplTest {
     @Test
     public void createAclListForNetworkAndReturnAclListIdTestAclIsCreatedAndAppliedWithSuccess() throws ResourceUnavailableException {
         Mockito.doReturn(true).when(networkModelMock).areServicesSupportedByNetworkOffering(networkOfferingMockId, Network.Service.NetworkACL);
-        Mockito.doReturn(Mockito.mock(Vpc.class)).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
+        Mockito.doReturn(Mockito.mock(Vpc.class)).when(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
 
         NetworkACL networkAclMock = Mockito.mock(NetworkACL.class);
         Long expectedNetworkAclId = 5L;
@@ -339,7 +353,7 @@ public class NetworkACLServiceImplTest {
     @Test(expected = InvalidParameterValueException.class)
     public void validateNetworkAclTestAclNotDefaulWithoutVpc() {
         Mockito.when(networkAclMock.getId()).thenReturn(3L);
-        Mockito.doReturn(null).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
+        Mockito.doReturn(null).when(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
         ;
 
         networkAclServiceImpl.validateNetworkAcl(networkAclMock);
@@ -357,13 +371,13 @@ public class NetworkACLServiceImplTest {
         Mockito.when(networkAclMock.getId()).thenReturn(3L);
         Mockito.when(networkAclMock.getVpcId()).thenReturn(networkMockVpcMockId);
 
-        Mockito.doReturn(Mockito.mock(Vpc.class)).when(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
-        Mockito.doNothing().when(AccountManager).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
+        Mockito.doReturn(Mockito.mock(Vpc.class)).when(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
+        Mockito.doNothing().when(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
 
         networkAclServiceImpl.validateNetworkAcl(networkAclMock);
 
-        Mockito.verify(EntityManagerMock).findById(Vpc.class, networkMockVpcMockId);
-        Mockito.verify(AccountManager).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
+        Mockito.verify(entityManagerMock).findById(Vpc.class, networkMockVpcMockId);
+        Mockito.verify(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
 
         PowerMockito.verifyStatic();
         CallContext.current();
@@ -806,6 +820,62 @@ public class NetworkACLServiceImplTest {
         Mockito.verify(networkAclItemVoMock).setReason("reason");
         Mockito.verify(networkAclItemVoMock).setDisplay(true);
         Mockito.verify(networkAclServiceImpl).validateAndCreateNetworkAclRuleAction("deny");
+    }
+
+    @Test
+    @PrepareForTest(CallContext.class)
+    public void updateNetworkACLTestParametersNotNull() {
+        String name = "name";
+        String description = "desc";
+        String customId = "customId";
+
+        Mockito.when(updateNetworkACLListCmdMock.getName()).thenReturn(name);
+        Mockito.when(updateNetworkACLListCmdMock.getDescription()).thenReturn(description);
+        Mockito.when(updateNetworkACLListCmdMock.getCustomId()).thenReturn(customId);
+        Mockito.when(updateNetworkACLListCmdMock.getId()).thenReturn(networkAclListId);
+        Mockito.when(updateNetworkACLListCmdMock.getDisplay()).thenReturn(false);
+
+        networkAclServiceImpl.updateNetworkACL(updateNetworkACLListCmdMock);
+
+        InOrder inOrder = Mockito.inOrder(networkAclDaoMock, entityManagerMock, entityManagerMock, accountManagerMock, networkACLVOMock);
+
+        inOrder.verify(networkAclDaoMock).findById(networkAclListId);
+        inOrder.verify(entityManagerMock).findById(Mockito.eq(Vpc.class), Mockito.anyLong());
+        inOrder.verify(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
+
+        inOrder.verify(networkACLVOMock).setName(name);
+        inOrder.verify(networkACLVOMock).setDescription(description);
+        inOrder.verify(networkACLVOMock).setUuid(customId);
+        inOrder.verify(networkACLVOMock).setDisplay(false);
+
+        inOrder.verify(networkAclDaoMock).update(networkAclListId, networkACLVOMock);
+        inOrder.verify(networkAclDaoMock).findById(networkAclListId);
+    }
+
+    @Test
+    @PrepareForTest(CallContext.class)
+    public void updateNetworkACLTestParametersWithNullValues() {
+        Mockito.when(updateNetworkACLListCmdMock.getName()).thenReturn(null);
+        Mockito.when(updateNetworkACLListCmdMock.getDescription()).thenReturn(null);
+        Mockito.when(updateNetworkACLListCmdMock.getCustomId()).thenReturn(null);
+        Mockito.when(updateNetworkACLListCmdMock.getId()).thenReturn(networkAclListId);
+        Mockito.when(updateNetworkACLListCmdMock.getDisplay()).thenReturn(null);
+
+        networkAclServiceImpl.updateNetworkACL(updateNetworkACLListCmdMock);
+
+        InOrder inOrder = Mockito.inOrder(networkAclDaoMock, entityManagerMock, entityManagerMock, accountManagerMock, networkACLVOMock);
+
+        inOrder.verify(networkAclDaoMock).findById(networkAclListId);
+        inOrder.verify(entityManagerMock).findById(Mockito.eq(Vpc.class), Mockito.anyLong());
+        inOrder.verify(accountManagerMock).checkAccess(Mockito.any(Account.class), Mockito.isNull(AccessType.class), Mockito.eq(true), Mockito.any(Vpc.class));
+
+        Mockito.verify(networkACLVOMock, Mockito.times(0)).setName(null);
+        inOrder.verify(networkACLVOMock, Mockito.times(0)).setDescription(null);
+        inOrder.verify(networkACLVOMock, Mockito.times(0)).setUuid(null);
+        inOrder.verify(networkACLVOMock, Mockito.times(0)).setDisplay(false);
+
+        inOrder.verify(networkAclDaoMock).update(networkAclListId, networkACLVOMock);
+        inOrder.verify(networkAclDaoMock).findById(networkAclListId);
     }
 
 }

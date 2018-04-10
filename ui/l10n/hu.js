@@ -318,6 +318,7 @@ var dictionary = {
     "label.add.accounts": "Számlák felvétele",
     "label.add.accounts.to": "Számla felvétele:",
     "label.add.acl.list": "ACL lista felvétele",
+    "label.edit.acl.list": "Edit ACL List",
     "label.add.affinity.group": "Új affinítási csoport felvétele",
     "label.add.baremetal.dhcp.device": "Baremetal DHCP eszköz felvétele",
     "label.add.baremetal.rack.configuration": "Baremetal rack konfiguráció felvétele",

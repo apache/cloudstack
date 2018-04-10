@@ -320,6 +320,7 @@ var dictionary = {
 "label.add.accounts":"Add accounts",
 "label.add.accounts.to":"Add accounts to",
 "label.add.acl.list":"Add ACL List",
+"label.edit.acl.list": "Edit ACL List",
 "label.add.affinity.group":"Add new affinity group",
 "label.add.baremetal.dhcp.device":"Add Baremetal DHCP Device",
 "label.add.baremetal.rack.configuration":"Add Baremetal Rack Configuration",

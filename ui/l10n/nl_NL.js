@@ -318,6 +318,7 @@ var dictionary = {
     "label.add.accounts": "Voeg accounts toe",
     "label.add.accounts.to": "Voeg accounts toe aan",
     "label.add.acl.list": "voeg een ACL lijst toe",
+    "label.edit.acl.list": "Verander een ACL lijst",
     "label.add.affinity.group": "Nieuwe affinity groep toevoegen",
     "label.add.baremetal.dhcp.device": "Voeg Baremetal DHCP Apparaat toe",
     "label.add.baremetal.rack.configuration": "voeg baremetal rek configuratie toe",

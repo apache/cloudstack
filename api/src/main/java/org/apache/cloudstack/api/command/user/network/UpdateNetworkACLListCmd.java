@@ -31,8 +31,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.vpc.NetworkACL;
 import com.cloud.user.Account;
 
-@APICommand(name = "updateNetworkACLList", description = "Updates network ACL list", responseObject = SuccessResponse.class, since = "4.4",
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "updateNetworkACLList", description = "Updates network ACL list", responseObject = SuccessResponse.class, since = "4.4", requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class UpdateNetworkACLListCmd extends BaseAsyncCustomIdCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateNetworkACLListCmd.class.getName());
     private static final String s_name = "updatenetworkacllistresponse";
@@ -44,8 +43,15 @@ public class UpdateNetworkACLListCmd extends BaseAsyncCustomIdCmd {
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = NetworkACLResponse.class, required = true, description = "the ID of the network ACL")
     private Long id;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the list to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the list to the end user or not", since = "4.4", authorized = {
+            RoleType.Admin})
     private Boolean display;
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "Name of the network ACL list")
+    private String name;
+
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, description = "Description of the network ACL list")
+    private String description;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -85,7 +91,7 @@ public class UpdateNetworkACLListCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() throws ResourceUnavailableException {
-        NetworkACL acl = _networkACLService.updateNetworkACL(id, this.getCustomId(), getDisplay());
+        NetworkACL acl = _networkACLService.updateNetworkACL(this);
         NetworkACLResponse aclResponse = _responseGenerator.createNetworkACLResponse(acl);
         setResponseObject(aclResponse);
         aclResponse.setResponseName(getCommandName());
@@ -96,5 +102,13 @@ public class UpdateNetworkACLListCmd extends BaseAsyncCustomIdCmd {
         if (this.getCustomId() != null) {
             _uuidMgr.checkUuid(this.getCustomId(), NetworkACL.class);
         }
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getName() {
+        return name;
     }
 }
