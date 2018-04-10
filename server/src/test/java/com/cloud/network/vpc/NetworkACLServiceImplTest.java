@@ -881,7 +881,7 @@ public class NetworkACLServiceImplTest {
         inOrder.verify(networkAclDaoMock).update(networkAclListId, networkACLVOMock);
         inOrder.verify(networkAclDaoMock).findById(networkAclListId);
     }
-    
+
     @Test(expected = InvalidParameterValueException.class)
     public void moveNetworkAclRuleToNewPositionTestBothPreviousAndNextAclRuleIdsNull() {
         configureNextAndPreviousAclRuleUuidsForMoveAclRuleCommand(null, null);
@@ -1070,7 +1070,7 @@ public class NetworkACLServiceImplTest {
         inOrder.verify(networkAclDaoMock).update(networkAclListId, networkACLVOMock);
         inOrder.verify(networkAclDaoMock).findById(networkAclListId);
     }
-    
+
     @Test
     public void validateMoveAclRulesDataTestSuccesfullExecution() {
         Mockito.when(nextAclRuleMock.getAclId()).thenReturn(networkAclMockId);
