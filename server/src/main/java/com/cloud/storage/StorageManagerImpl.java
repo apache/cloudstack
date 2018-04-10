@@ -344,7 +344,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 return false;
             }
         }
-
         // ok to share
         return true;
     }
@@ -891,11 +890,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             s_logger.warn("Unable to delete storage id: " + id + " due to it is not in Maintenance state");
             throw new InvalidParameterValueException("Unable to delete storage due to it is not in Maintenance state, id: " + id);
         }
-        if (sPool.isLocal()) {
-            s_logger.warn("Unable to delete local storage id:" + id);
-            throw new InvalidParameterValueException("Unable to delete local storage id: " + id);
-        }
-
         Pair<Long, Long> vlms = _volsDao.getCountAndTotalByPool(id);
         if (forced) {
             if (vlms.first() > 0) {
@@ -1126,7 +1120,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             s_logger.debug("Failed to delete snapshot: " + ssSnapshotVO.getId() + " from storage");
                         }
                     }
-
                     cleanupSecondaryStorage(recurring);
 
                     List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long)StorageCleanupDelay.value() << 10)));
@@ -1931,19 +1924,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public Answer sendToPool(long poolId, Command cmd) throws StorageUnavailableException {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Answer[] sendToPool(long poolId, Commands cmd) throws StorageUnavailableException {
-        // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public String getName() {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -2044,7 +2034,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public ImageStore migrateToObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
+    public ImageStore migrateToObjectStore(String name, String url, String providerName, Map<String, String> details) throws DiscoveryException, InvalidParameterValueException {
         // check if current cloud is ready to migrate, we only support cloud with only NFS secondary storages
         List<ImageStoreVO> imgStores = _imageStoreDao.listImageStores();
         List<ImageStoreVO> nfsStores = new ArrayList<ImageStoreVO>();
