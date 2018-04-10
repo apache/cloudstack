@@ -22,11 +22,11 @@ import java.sql.Connection;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
-public class Upgrade41100to41200 implements DbUpgrade {
+public class Upgrade41110to41200 implements DbUpgrade {
 
     @Override
     public String[] getUpgradableVersionRange() {
-        return new String[] {"4.11.0.0", "4.12.0.0"};
+        return new String[] {"4.11.1.0", "4.12.0.0"};
     }
 
     @Override
@@ -41,7 +41,7 @@ public class Upgrade41100to41200 implements DbUpgrade {
 
     @Override
     public InputStream[] getPrepareScripts() {
-        final String scriptFile = "META-INF/db/schema-41100to41200.sql";
+        final String scriptFile = "META-INF/db/schema-41110to41200.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
@@ -57,7 +57,7 @@ public class Upgrade41100to41200 implements DbUpgrade {
 
     @Override
     public InputStream[] getCleanupScripts() {
-        final String scriptFile = "META-INF/db/schema-41100to41200-cleanup.sql";
+        final String scriptFile = "META-INF/db/schema-41110to41200-cleanup.sql";
         final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             throw new CloudRuntimeException("Unable to find " + scriptFile);
