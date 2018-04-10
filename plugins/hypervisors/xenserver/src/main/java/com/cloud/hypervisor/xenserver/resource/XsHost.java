@@ -43,7 +43,6 @@ public class XsHost {
     private Integer cpuSockets;
     private int cpus;
     private String productVersion;
-    private String localSRuuid;
 
     public String getSystemvmisouuid() {
         return systemvmisouuid;
@@ -195,14 +194,6 @@ public class XsHost {
 
     public void setProductVersion(final String productVersion) {
         this.productVersion = productVersion;
-    }
-
-    public String getLocalSRuuid() {
-        return localSRuuid;
-    }
-
-    public void setLocalSRuuid(final String localSRuuid) {
-        this.localSRuuid = localSRuuid;
     }
 
     @Override

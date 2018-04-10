@@ -19,6 +19,7 @@ import org.apache.xmlrpc.XmlRpcException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Types.XenAPIException;
@@ -28,7 +29,7 @@ public class XenServer56FP1ResourceTest extends CitrixResourceBaseTest {
     @Before
     @Override
     public void beforeTest() throws XenAPIException, XmlRpcException {
-        super.citrixResourceBase = new XenServer56FP1Resource();
+        super.citrixResourceBase = Mockito.spy(new XenServer56FP1Resource());
         super.beforeTest();
     }
 
@@ -41,12 +42,12 @@ public class XenServer56FP1ResourceTest extends CitrixResourceBaseTest {
     }
 
     @Test(expected = CloudRuntimeException.class)
-    public void testGetFiles(){
+    public void testGetFiles() {
         testGetPathFilesExeption();
     }
 
     @Test
-    public void testGetFilesListReturned(){
+    public void testGetFilesListReturned() {
         testGetPathFilesListReturned();
     }
 }

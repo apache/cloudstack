@@ -125,7 +125,6 @@ public class XenServer56Resource extends CitrixResourceBase {
     @Override
     public StartupCommand[] initialize() {
         pingXAPI();
-        final StartupCommand[] cmds = super.initialize();
-        return cmds;
+        return super.initialize();
     }
 }
