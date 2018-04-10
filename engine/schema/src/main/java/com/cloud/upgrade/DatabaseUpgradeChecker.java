@@ -405,7 +405,10 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
             new DbUpgrade[] {new Upgrade41000to41100(), new Upgrade41100to41110(), new Upgrade41110to41200()});
 
         _upgradeMap.put(CloudStackVersion.parse("4.11.0.0"),
-            new DbUpgrade[] {new Upgrade41100to41110(), new Upgrade41110to41200()});
+                new DbUpgrade[] {new Upgrade41100to41110(), new Upgrade41110to41200()});
+
+        _upgradeMap.put(CloudStackVersion.parse("4.11.1.0"),
+                new DbUpgrade[] {new Upgrade41110to41200()});
 
         //CP Upgrades
         _upgradeMap.put(CloudStackVersion.parse("3.0.3"),
