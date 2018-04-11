@@ -19,6 +19,8 @@
 
 package com.cloud.info;
 
+import org.apache.commons.lang3.StringUtils;
+
 public class ConsoleProxyInfo {
 
     private boolean sslEnabled;
@@ -55,6 +57,9 @@ public class ConsoleProxyInfo {
                 proxyImageUrl += ":" + this.proxyUrlPort;
         } else {
             proxyAddress = proxyIpAddress;
+            if (StringUtils.isNotBlank(consoleProxyUrlDomain)) {
+                proxyAddress = consoleProxyUrlDomain;
+            }
             proxyPort = port;
             this.proxyUrlPort = proxyUrlPort;
 
