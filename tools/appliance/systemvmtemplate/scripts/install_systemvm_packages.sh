@@ -72,9 +72,11 @@ function install_packages() {
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins \
     virt-what open-vm-tools qemu-guest-agent hyperv-daemons
 
+  apt-get -q -y -t stretch-backports install nftables
+
   apt-get -y autoremove --purge
-  apt-get autoclean
   apt-get clean
+  apt-get autoclean
 
   #32 bit architecture support:: not required for 32 bit template
   if [ "${arch}" != "i386" ]; then

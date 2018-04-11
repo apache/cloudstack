@@ -19,8 +19,54 @@
 -- Schema upgrade from 4.10.0.0 to 4.11.0.0
 --;
 
+--;
+-- Stored procedure to do idempotent column add;
+--;
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
+
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
+		IN in_table_name VARCHAR(200)
+    , IN in_column_name VARCHAR(200)
+    , IN in_column_definition VARCHAR(1000)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1060 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', 'ADD COLUMN') ; SET @ddl = CONCAT(@ddl, ' ', in_column_name); SET @ddl = CONCAT(@ddl, ' ', in_column_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`;
+
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY` (
+		IN in_table_name VARCHAR(200)
+    , IN in_foreign_key_name VARCHAR(200)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1091 BEGIN END; SET @ddl = CONCAT('ALTER TABLE ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', ' DROP FOREIGN KEY '); SET @ddl = CONCAT(@ddl, ' ', in_foreign_key_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_DROP_INDEX`;
+
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_DROP_INDEX` (
+		IN in_index_name VARCHAR(200)
+    , IN in_table_name VARCHAR(200)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1091 BEGIN END; SET @ddl = CONCAT('DROP INDEX ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', ' ON ') ; SET @ddl = CONCAT(@ddl, ' ', in_table_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
+DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_CREATE_UNIQUE_INDEX`;
+
+CREATE PROCEDURE `cloud`.`IDEMPOTENT_CREATE_UNIQUE_INDEX` (
+		IN in_index_name VARCHAR(200)
+    , IN in_table_name VARCHAR(200)
+    , IN in_index_definition VARCHAR(1000)
+)
+BEGIN
+
+    DECLARE CONTINUE HANDLER FOR 1061 BEGIN END; SET @ddl = CONCAT('CREATE UNIQUE INDEX ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', ' ON ') ; SET @ddl = CONCAT(@ddl, ' ', in_table_name); SET @ddl = CONCAT(@ddl, ' ', in_index_definition); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
+
 -- Add For VPC flag
-ALTER TABLE cloud.network_offerings ADD COLUMN for_vpc INT(1) NOT NULL DEFAULT 0;
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','for_vpc', 'INT(1) NOT NULL DEFAULT 0');
+
 UPDATE cloud.network_offerings o
 SET for_vpc = 1
 where
@@ -88,7 +134,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`annotations` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 DROP VIEW IF EXISTS `cloud`.`last_annotation_view`;
-CREATE VIEW `last_annotation_view` AS
+CREATE VIEW `cloud`.`last_annotation_view` AS
     SELECT
         `annotations`.`uuid` AS `uuid`,
         `annotations`.`annotation` AS `annotation`,
@@ -405,21 +451,18 @@ UPDATE `cloud`.`monitoring_services` SET pidfile="/var/run/apache2/apache2.pid" 
 UPDATE `cloud`.`vm_template` SET guest_os_id=99 WHERE id=8;
 
 -- Network External Ids
-ALTER TABLE `cloud`.`networks` ADD `external_id` varchar(255);
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.networks','external_id', 'varchar(255)');
 
 -- Separate Subnet for CPVM and SSVM (system vms)
-ALTER TABLE `cloud`.`op_dc_ip_address_alloc`
-ADD COLUMN `forsystemvms` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'Indicates if IP is dedicated for CPVM or SSVM';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.op_dc_ip_address_alloc','forsystemvms', 'TINYINT(1) NOT NULL DEFAULT 0 COMMENT ''Indicates if IP is dedicated for CPVM or SSVM'' ');
 
-ALTER TABLE `cloud`.`op_dc_ip_address_alloc`
-ADD COLUMN `vlan` INT(10) UNSIGNED NULL COMMENT 'Vlan the management network range is on';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.op_dc_ip_address_alloc','vlan', 'INT(10) UNSIGNED NULL COMMENT ''Vlan the management network range is on'' ');
 
 -- CLOUDSTACK-4757: Support multidisk OVA
-ALTER TABLE `cloud`.`vm_template` ADD COLUMN `parent_template_id` bigint(20) unsigned DEFAULT NULL COMMENT 'If datadisk template, then id of the root template this template belongs to';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template','parent_template_id', 'bigint(20) unsigned DEFAULT NULL COMMENT ''If datadisk template, then id of the root template this template belongs to'' ');
 
 -- CLOUDSTACK-10146: Bypass Secondary Storage for KVM templates
-ALTER TABLE `cloud`.`vm_template`
-ADD COLUMN `direct_download` TINYINT(1) DEFAULT '0' COMMENT 'Indicates if Secondary Storage is bypassed and template is downloaded to Primary Storage';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vm_template','direct_download', 'TINYINT(1) DEFAULT 0 COMMENT ''Indicates if Secondary Storage is bypassed and template is downloaded to Primary Storage'' ');
 
 -- Changes to template_view for both multidisk OVA and bypass secondary storage for KVM templates
 DROP VIEW IF EXISTS `cloud`.`template_view`;
@@ -528,8 +571,7 @@ CREATE VIEW `cloud`.`template_view` AS
              OR (`resource_tags`.`resource_type` = 'ISO')))));
 
 -- CLOUDSTACK-10109: Enable dedication of public IPs to SSVM and CPVM
-ALTER TABLE `cloud`.`user_ip_address`
-ADD COLUMN `forsystemvms` TINYINT(1) NOT NULL DEFAULT '0' COMMENT 'true if IP is set to system vms, false if not';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.user_ip_address','forsystemvms', 'TINYINT(1) NOT NULL DEFAULT 0 COMMENT ''true if IP is set to system vms, false if not'' ');
 
 -- ldap binding on domain level
 CREATE TABLE IF NOT EXISTS `cloud`.`domain_details` (
@@ -541,11 +583,11 @@ CREATE TABLE IF NOT EXISTS `cloud`.`domain_details` (
     CONSTRAINT `fk_domain_details__domain_id` FOREIGN KEY (`domain_id`) REFERENCES `domain`(`id`) ON DELETE CASCADE
 )ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE cloud.ldap_configuration ADD COLUMN domain_id BIGINT(20) DEFAULT NULL;
-ALTER TABLE cloud.ldap_trust_map ADD COLUMN account_id BIGINT(20) DEFAULT 0;
-ALTER TABLE cloud.ldap_trust_map DROP FOREIGN KEY fk_ldap_trust_map__domain_id;
-DROP INDEX uk_ldap_trust_map__domain_id ON cloud.ldap_trust_map;
-CREATE UNIQUE INDEX uk_ldap_trust_map__bind_location ON ldap_trust_map (domain_id, account_id);
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.ldap_configuration','domain_id', 'BIGINT(20) DEFAULT NULL');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.ldap_trust_map','account_id', 'BIGINT(20) DEFAULT 0');
+CALL `cloud`.`IDEMPOTENT_DROP_FOREIGN_KEY`('cloud.ldap_trust_map','fk_ldap_trust_map__domain_id');
+CALL `cloud`.`IDEMPOTENT_DROP_INDEX`('uk_ldap_trust_map__domain_id','cloud.ldap_trust_map');
+CALL `cloud`.`IDEMPOTENT_CREATE_UNIQUE_INDEX`('uk_ldap_trust_map__bind_location','cloud.ldap_trust_map', '(domain_id, account_id)');
 
 CREATE TABLE IF NOT EXISTS `cloud`.`netscaler_servicepackages` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
@@ -565,5 +607,5 @@ CREATE TABLE IF NOT EXISTS `cloud`.`external_netscaler_controlcenter` (
   PRIMARY KEY  (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-ALTER TABLE `cloud`.`sslcerts` ADD COLUMN `name` varchar(255) NULL default NULL COMMENT 'Name of the Certificate';
-ALTER TABLE `cloud`.`network_offerings` ADD COLUMN `service_package_id` varchar(255) NULL default NULL COMMENT 'Netscaler ControlCenter Service Package';
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.sslcerts','name', 'varchar(255) NULL default NULL COMMENT ''Name of the Certificate'' ');
+CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.network_offerings','service_package_id', 'varchar(255) NULL default NULL COMMENT ''Netscaler ControlCenter Service Package'' ');

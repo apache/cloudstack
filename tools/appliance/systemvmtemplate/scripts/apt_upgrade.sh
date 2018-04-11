@@ -23,7 +23,7 @@ set -x
 function fix_tune2fs() {
   for partition in $(blkid -o list | grep ext | awk '{print $1}')
   do
-    tune2fs -m 1 $partition
+    tune2fs -m 0 $partition
     tune2fs -c 3 $partition
   done
   fdisk -l
@@ -55,7 +55,6 @@ function apt_upgrade() {
   apt-get -q -y update
   apt-get -q -y upgrade
   apt-get -q -y dist-upgrade
-  apt-get -y remove --purge linux-image-4.9.0-4-amd64
   apt-get -y autoremove --purge
   apt-get autoclean
   apt-get clean

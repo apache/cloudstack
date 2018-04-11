@@ -527,6 +527,24 @@ class libvirtConfigUbuntu(serviceCfgBase):
         super(libvirtConfigUbuntu, self).__init__(syscfg)
         self.serviceName = "Libvirt"
 
+    def setupLiveMigration(self):
+        cfo = configFileOps("/etc/libvirt/libvirtd.conf", self)
+        cfo.addEntry("listen_tcp", "1")
+        cfo.addEntry("tcp_port", "\"16509\"");
+        cfo.addEntry("auth_tcp", "\"none\"");
+        cfo.addEntry("listen_tls", "0")
+        cfo.save()
+
+        if os.path.exists("/etc/init/libvirt-bin.conf"):
+            cfo = configFileOps("/etc/init/libvirt-bin.conf", self)
+            cfo.replace_line("exec /usr/sbin/libvirtd","exec /usr/sbin/libvirtd -d -l")
+        elif os.path.exists("/etc/default/libvirt-bin"):
+            cfo = configFileOps("/etc/default/libvirt-bin", self)
+            cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l'")
+        elif os.path.exists("/etc/default/libvirtd"):
+            cfo = configFileOps("/etc/default/libvirtd", self)
+            cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l'")
+
     def config(self):
         try:
             configureLibvirtConfig(self.syscfg.env.secure, self)

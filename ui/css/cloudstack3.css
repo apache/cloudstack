@@ -4451,7 +4451,7 @@ textarea {
 /**** Head*/
 .dashboard.admin .dashboard-container.head {
   width: 966px;
-  height: 331px;
+  height: 431px;
   margin: 9px 0 0;
   float: left;
 }
@@ -4511,7 +4511,7 @@ textarea {
 /**** Charts / stats*/
 .dashboard.admin .zone-stats {
   width: 974px;
-  height: 316px;
+  height: 416px;
   overflow: auto;
   overflow-x: hidden;
   /*+placement:shift 0px 0px;*/
@@ -4710,7 +4710,7 @@ textarea {
 .dashboard.admin .dashboard-container.sub.alerts {
   float: left;
   margin: 0 12px 0 0;
-  height: 270px;
+  height: 170px;
   overflow: hidden;
   position: relative;
 }
