@@ -94,12 +94,12 @@ public class OvmFencer extends AdapterBase implements FenceBuilder {
                 answer = (FenceAnswer)_agentMgr.send(h.getId(), fence);
             } catch (AgentUnavailableException e) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
+                    s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable", e);
                 }
                 continue;
             } catch (OperationTimedoutException e) {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable");
+                    s_logger.debug("Moving on to the next host because " + h.toString() + " is unavailable", e);
                 }
                 continue;
             }

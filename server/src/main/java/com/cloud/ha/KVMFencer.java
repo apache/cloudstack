@@ -99,10 +99,10 @@ public class KVMFencer extends AdapterBase implements FenceBuilder {
                 try {
                     answer = (FenceAnswer)_agentMgr.send(h.getId(), fence);
                 } catch (AgentUnavailableException e) {
-                    s_logger.info("Moving on to the next host because " + h.toString() + " is unavailable");
+                    s_logger.info("Moving on to the next host because " + h.toString() + " is unavailable", e);
                     continue;
                 } catch (OperationTimedoutException e) {
-                    s_logger.info("Moving on to the next host because " + h.toString() + " is unavailable");
+                    s_logger.info("Moving on to the next host because " + h.toString() + " is unavailable", e);
                     continue;
                 }
                 if (answer != null && answer.getResult()) {
