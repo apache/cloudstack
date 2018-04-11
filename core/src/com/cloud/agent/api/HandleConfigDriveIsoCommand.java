@@ -64,6 +64,10 @@ public class HandleConfigDriveIsoCommand extends Command {
         return configDriveLabel;
     }
 
+    /**
+     *
+     * @return a PrimaryDataStore when executed in a HostAgent else a SecStore
+     */
     public DataStoreTO getDestStore() {
         return destStore;
     }
