@@ -199,6 +199,7 @@
     <module>tools/checkstyle</module>
     <module>api</module>
     <module>agent</module>
+    <module>config-drive</module>
     <module>core</module>
     <module>server</module>
     <module>usage</module>

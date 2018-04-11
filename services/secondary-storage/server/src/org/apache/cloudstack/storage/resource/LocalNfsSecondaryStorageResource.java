@@ -66,7 +66,7 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
     }
 
     @Override
-    protected void mount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
+    public void mount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
         ensureLocalRootPathExists(localRootPath, uri);
 
         if (mountExists(localRootPath, uri)) {

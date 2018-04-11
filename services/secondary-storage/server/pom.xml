@@ -40,11 +40,16 @@
       <artifactId>commons-codec</artifactId>
     </dependency>
     <!-- required deps for the systemvm -->
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-agent</artifactId>
-      <version>${project.version}</version>
-    </dependency>
+      <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloud-agent</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloudstack-config-drive</artifactId>
+        <version>${project.version}</version>
+      </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-server</artifactId>
