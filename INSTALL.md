@@ -59,7 +59,7 @@ Following these steps, jenv and pyenv will use .java-version and .python-version
 
 You may get the source code from the repository hosted on Apache:
 
-    $ git clone https://git-wip-us.apache.org/repos/asf/cloudstack.git
+    $ git clone https://gitbox.apache.org/repos/asf/cloudstack.git
 
 Or, you may fork the repository from the official Apache CloudStack mirror on [Github](https://github.com/apache/cloudstack)
 
@@ -97,13 +97,13 @@ field should be left blank which is defaulted to the ROOT domain.
 
 ## Building with non-redistributable plugins
 
-CloudStack supports several plugins that depend on libraries with distribution restrictions. 
-Because of this they are not included in the default build. Enable these additional plugins 
+CloudStack supports several plugins that depend on libraries with distribution restrictions.
+Because of this they are not included in the default build. Enable these additional plugins
 activate their respective profiles. For convenience adding -Dnoredist will enable all plugins
-that depend on libraries with distribution restrictions. The build procedure expects that the 
-required libraries are present in the maven repository. 
+that depend on libraries with distribution restrictions. The build procedure expects that the
+required libraries are present in the maven repository.
 
-The following procedure can be used to add the libraries to the local maven repository. Details 
+The following procedure can be used to add the libraries to the local maven repository. Details
 on obtaining the required libraries can be found in this file. Note that this will vary between
 releases of CloudStack
 
