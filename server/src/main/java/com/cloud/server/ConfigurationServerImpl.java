@@ -715,10 +715,10 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     kStream.write(key.getBytes());
                 }
             } catch (FileNotFoundException e) {
-                s_logger.warn("Failed to write  key to " + keyfile.getAbsolutePath());
+                s_logger.warn("Failed to write  key to " + keyfile.getAbsolutePath(), e);
                 throw new CloudRuntimeException("Failed to update keypairs on disk: cannot find  key file " + keyPath);
             } catch (IOException e) {
-                s_logger.warn("Failed to write  key to " + keyfile.getAbsolutePath());
+                s_logger.warn("Failed to write  key to " + keyfile.getAbsolutePath(), e);
                 throw new CloudRuntimeException("Failed to update keypairs on disk: cannot write to  key file " + keyPath);
             }
         }
