@@ -16,6 +16,7 @@
 // under the License.
 
 package com.cloud.vm;
+
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -44,17 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.VlanDao;
-import com.cloud.network.dao.IPAddressVO;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.BaseCmd;
@@ -71,12 +61,23 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
 
 import com.cloud.capacity.CapacityManager;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.VlanDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.event.dao.UsageEventDao;
 import com.cloud.exception.ConcurrentOperationException;
@@ -93,6 +94,7 @@ import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.element.UserDataServiceProvider;
@@ -127,138 +129,107 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
+@RunWith(MockitoJUnitRunner.class)
 public class UserVmManagerTest {
 
     @Spy
-    UserVmManagerImpl _userVmMgr = new UserVmManagerImpl();
+    @InjectMocks
+    private UserVmManagerImpl _userVmMgr;
     @Mock
-    VirtualMachineManager _itMgr;
+    private VirtualMachineManager _itMgr;
     @Mock
-    VolumeOrchestrationService _storageMgr;
+    private VolumeOrchestrationService _storageMgr;
     @Mock
-    Account _account;
+    private Account _account;
     @Mock
-    AccountManager _accountMgr;
+    private AccountManager _accountMgr;
     @Mock
-    AccountService _accountService;
+    private AccountService _accountService;
     @Mock
-    ConfigurationManager _configMgr;
+    private ConfigurationManager _configMgr;
     @Mock
-    CapacityManager _capacityMgr;
+    private CapacityManager _capacityMgr;
     @Mock
-    AccountDao _accountDao;
+    private AccountDao _accountDao;
     @Mock
-    ConfigurationDao _configDao;
+    private ConfigurationDao _configDao;
     @Mock
-    UserDao _userDao;
+    private UserDao _userDao;
     @Mock
-    UserVmDao _vmDao;
+    private UserVmDao _vmDao;
     @Mock
-    VMInstanceDao _vmInstanceDao;
+    private VMInstanceDao _vmInstanceDao;
     @Mock
-    VMTemplateDao _templateDao;
+    private VMTemplateDao _templateDao;
     @Mock
-    TemplateDataStoreDao _templateStoreDao;
+    private TemplateDataStoreDao _templateStoreDao;
     @Mock
-    VolumeDao _volsDao;
+    private VolumeDao _volsDao;
     @Mock
-    RestoreVMCmd _restoreVMCmd;
+    private RestoreVMCmd _restoreVMCmd;
     @Mock
-    AccountVO _accountMock;
+    private AccountVO _accountMock;
     @Mock
-    UserVO _userMock;
+    private UserVO _userMock;
     @Mock
-    UserVmVO _vmMock;
+    private UserVmVO _vmMock;
     @Mock
-    VMInstanceVO _vmInstance;
+    private VMInstanceVO _vmInstance;
     @Mock
-    VMTemplateVO _templateMock;
+    private VMTemplateVO _templateMock;
     @Mock
-    TemplateDataStoreVO _templateDataStoreMock;
+    private TemplateDataStoreVO _templateDataStoreMock;
     @Mock
-    VolumeVO _volumeMock;
+    private VolumeVO _volumeMock;
     @Mock
-    List<VolumeVO> _rootVols;
+    private List<VolumeVO> _rootVols;
     @Mock
-    Account _accountMock2;
+    private Account _accountMock2;
     @Mock
-    ServiceOfferingDao _offeringDao;
+    private ServiceOfferingDao _offeringDao;
     @Mock
-    ServiceOfferingVO _offeringVo;
+    private ServiceOfferingVO _offeringVo;
     @Mock
-    EntityManager _entityMgr;
+    private EntityManager _entityMgr;
     @Mock
-    ResourceLimitService _resourceLimitMgr;
+    private ResourceLimitService _resourceLimitMgr;
     @Mock
-    PrimaryDataStoreDao _storagePoolDao;
+    private PrimaryDataStoreDao _storagePoolDao;
     @Mock
-    UsageEventDao _usageEventDao;
+    private UsageEventDao _usageEventDao;
     @Mock
-    VMSnapshotDao _vmSnapshotDao;
+    private VMSnapshotDao _vmSnapshotDao;
     @Mock
-    UpdateVmNicIpCmd _updateVmNicIpCmd;
+    private UpdateVmNicIpCmd _updateVmNicIpCmd;
     @Mock
-    NicDao _nicDao;
+    private NicDao _nicDao;
     @Mock
-    VlanDao _vlanDao;
+    private VlanDao _vlanDao;
     @Mock
-    NicVO _nicMock;
+    private NicVO _nicMock;
     @Mock
-    NetworkModel _networkModel;
+    private NetworkModel _networkModel;
     @Mock
-    NetworkDao _networkDao;
+    private NetworkDao _networkDao;
     @Mock
-    NetworkVO _networkMock;
+    private NetworkVO _networkMock;
     @Mock
-    DataCenterDao _dcDao;
+    private DataCenterDao _dcDao;
     @Mock
-    DataCenterVO _dcMock;
+    private DataCenterVO _dcMock;
     @Mock
-    IpAddressManager _ipAddrMgr;
+    private IpAddressManager _ipAddrMgr;
     @Mock
-    IPAddressDao _ipAddressDao;
+    private IPAddressDao _ipAddressDao;
     @Mock
-    NetworkOfferingDao _networkOfferingDao;
+    private NetworkOfferingDao _networkOfferingDao;
     @Mock
-    NetworkOfferingVO _networkOfferingMock;
+    private NetworkOfferingVO _networkOfferingMock;
     @Mock
-    NetworkOrchestrationService _networkMgr;
+    private NetworkOrchestrationService _networkMgr;
 
     @Before
     public void setup() {
-        MockitoAnnotations.initMocks(this);
-
-        _userVmMgr._vmDao = _vmDao;
-        _userVmMgr._vmInstanceDao = _vmInstanceDao;
-        _userVmMgr._templateDao = _templateDao;
-        _userVmMgr._templateStoreDao = _templateStoreDao;
-        _userVmMgr._volsDao = _volsDao;
-        _userVmMgr._usageEventDao = _usageEventDao;
-        _userVmMgr._itMgr = _itMgr;
-        _userVmMgr.volumeMgr = _storageMgr;
-        _userVmMgr._accountDao = _accountDao;
-        _userVmMgr._accountService = _accountService;
-        _userVmMgr._userDao = _userDao;
-        _userVmMgr._accountMgr = _accountMgr;
-        _userVmMgr._configMgr = _configMgr;
-        _userVmMgr._offeringDao = _offeringDao;
-        _userVmMgr._capacityMgr = _capacityMgr;
-        _userVmMgr._resourceLimitMgr = _resourceLimitMgr;
-        _userVmMgr._scaleRetry = 2;
-        _userVmMgr._entityMgr = _entityMgr;
-        _userVmMgr._storagePoolDao = _storagePoolDao;
-        _userVmMgr._vmSnapshotDao = _vmSnapshotDao;
-        _userVmMgr._configDao = _configDao;
-        _userVmMgr._nicDao = _nicDao;
-        _userVmMgr._vlanDao = _vlanDao;
-        _userVmMgr._networkModel = _networkModel;
-        _userVmMgr._networkDao = _networkDao;
-        _userVmMgr._dcDao = _dcDao;
-        _userVmMgr._ipAddrMgr = _ipAddrMgr;
-        _userVmMgr._ipAddressDao = _ipAddressDao;
-        _userVmMgr._networkOfferingDao = _networkOfferingDao;
-        _userVmMgr._networkMgr = _networkMgr;
-
         doReturn(3L).when(_account).getId();
         doReturn(8L).when(_vmMock).getAccountId();
         when(_accountDao.findById(anyLong())).thenReturn(_accountMock);
@@ -267,43 +238,40 @@ public class UserVmManagerTest {
         when(_vmMock.getId()).thenReturn(314L);
         when(_vmInstance.getId()).thenReturn(1L);
         when(_vmInstance.getServiceOfferingId()).thenReturn(2L);
-        List<VMSnapshotVO> mockList = mock(List.class);
+
+        List<VMSnapshotVO> mockList = new ArrayList<>();
         when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
-        when(mockList.size()).thenReturn(0);
-        when(_templateStoreDao.findByTemplateZoneReady(anyLong(),anyLong())).thenReturn(_templateDataStoreMock);
+        when(_templateStoreDao.findByTemplateZoneReady(anyLong(), anyLong())).thenReturn(_templateDataStoreMock);
 
     }
 
-
     @Test
-    public void testValidateRootDiskResize()
-    {
+    public void testValidateRootDiskResize() {
         HypervisorType hypervisorType = HypervisorType.Any;
         Long rootDiskSize = Long.valueOf(10);
-        UserVmVO  vm = Mockito.mock(UserVmVO.class);
+        UserVmVO vm = Mockito.mock(UserVmVO.class);
         VMTemplateVO templateVO = Mockito.mock(VMTemplateVO.class);
         Map<String, String> customParameters = new HashMap<String, String>();
         Map<String, String> vmDetals = new HashMap<String, String>();
 
-
-        vmDetals.put("rootDiskController","ide");
+        vmDetals.put("rootDiskController", "ide");
         when(vm.getDetails()).thenReturn(vmDetals);
-        when(templateVO.getSize()).thenReturn((rootDiskSize<<30)+1);
+        when(templateVO.getSize()).thenReturn((rootDiskSize << 30) + 1);
         //Case 1: >
-        try{
+        try {
             _userVmMgr.validateRootDiskResize(hypervisorType, rootDiskSize, templateVO, vm, customParameters);
             Assert.fail("Function should throw InvalidParameterValueException");
-        }catch(Exception e){
+        } catch (Exception e) {
             assertThat(e, instanceOf(InvalidParameterValueException.class));
         }
 
         //Case 2: =
-        when(templateVO.getSize()).thenReturn((rootDiskSize<<30));
-        customParameters.put("rootdisksize","10");
+        when(templateVO.getSize()).thenReturn((rootDiskSize << 30));
+        customParameters.put("rootdisksize", "10");
         _userVmMgr.validateRootDiskResize(hypervisorType, rootDiskSize, templateVO, vm, customParameters);
-        assert(!customParameters.containsKey("rootdisksize"));
+        assert (!customParameters.containsKey("rootdisksize"));
 
-        when(templateVO.getSize()).thenReturn((rootDiskSize<<30)-1);
+        when(templateVO.getSize()).thenReturn((rootDiskSize << 30) - 1);
 
         //Case 3:  <
 
@@ -315,12 +283,12 @@ public class UserVmManagerTest {
         try {
             _userVmMgr.validateRootDiskResize(hypervisorType, rootDiskSize, templateVO, vm, customParameters);
             Assert.fail("Function should throw InvalidParameterValueException");
-        }catch(Exception e) {
+        } catch (Exception e) {
             assertThat(e, instanceOf(InvalidParameterValueException.class));
         }
 
         //Case 3.3:   1->(rootDiskController==scsi)
-        vmDetals.put("rootDiskController","scsi");
+        vmDetals.put("rootDiskController", "scsi");
         _userVmMgr.validateRootDiskResize(hypervisorType, rootDiskSize, templateVO, vm, customParameters);
     }
 
@@ -344,8 +312,7 @@ public class UserVmManagerTest {
 
     // Test restoreVm when VM is in stopped state
     @Test
-    public void testRestoreVMF2() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-        ResourceAllocationException {
+    public void testRestoreVMF2() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
 
         doReturn(VirtualMachine.State.Stopped).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
@@ -381,8 +348,7 @@ public class UserVmManagerTest {
 
     // Test restoreVM when VM is in running state
     @Test
-    public void testRestoreVMF3() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-        ResourceAllocationException {
+    public void testRestoreVMF3() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
 
         doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
@@ -418,8 +384,7 @@ public class UserVmManagerTest {
 
     // Test restoreVM on providing new template Id, when VM is in running state
     @Test
-    public void testRestoreVMF4() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-        ResourceAllocationException {
+    public void testRestoreVMF4() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
         when(_volsDao.findByInstanceAndType(314L, Volume.Type.ROOT)).thenReturn(_rootVols);
@@ -438,9 +403,9 @@ public class UserVmManagerTest {
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
         doNothing().when(_volsDao).detachVolume(anyLong());
-        List<VMSnapshotVO> mockList = mock(List.class);
+
+        List<VMSnapshotVO> mockList = new ArrayList<>();
         when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
-        when(mockList.size()).thenReturn(0);
         when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
@@ -458,13 +423,12 @@ public class UserVmManagerTest {
         } finally {
             CallContext.unregister();
         }
-
+        verify(_vmMock, times(0)).setIsoId(Mockito.anyLong());
     }
 
     // Test restoreVM on providing new ISO Id, when VM(deployed using ISO) is in running state
     @Test
-    public void testRestoreVMF5() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException,
-        ResourceAllocationException {
+    public void testRestoreVMF5() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException {
         doReturn(VirtualMachine.State.Running).when(_vmMock).getState();
         when(_vmDao.findById(anyLong())).thenReturn(_vmMock);
         when(_volsDao.findByInstanceAndType(314L, Volume.Type.ROOT)).thenReturn(_rootVols);
@@ -485,9 +449,9 @@ public class UserVmManagerTest {
         doNothing().when(_volsDao).attachVolume(anyLong(), anyLong(), anyLong());
         when(_volumeMock.getId()).thenReturn(3L);
         doNothing().when(_volsDao).detachVolume(anyLong());
-        List<VMSnapshotVO> mockList = mock(List.class);
+        List<VMSnapshotVO> mockList = new ArrayList<>();
         when(_vmSnapshotDao.findByVm(anyLong())).thenReturn(mockList);
-        when(mockList.size()).thenReturn(0);
+
         when(_templateMock.getUuid()).thenReturn("b1a3626e-72e0-4697-8c7c-a110940cc55d");
 
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
@@ -512,7 +476,7 @@ public class UserVmManagerTest {
 
     // Test scaleVm on incompatible HV.
     @Test(expected = InvalidParameterValueException.class)
-    public void testScaleVMF1()  throws Exception {
+    public void testScaleVMF1() throws Exception {
 
         ScaleVMCmd cmd = new ScaleVMCmd();
         Class<?> _class = cmd.getClass();
@@ -527,7 +491,7 @@ public class UserVmManagerTest {
 
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
 
-       // UserContext.current().setEventDetails("Vm Id: "+getId());
+        // UserContext.current().setEventDetails("Vm Id: "+getId());
         Account account = new AccountVO("testaccount", 1L, "networkdomain", (short)0, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         //AccountVO(String accountName, long domainId, String networkDomain, short type, int regionId)
@@ -544,7 +508,7 @@ public class UserVmManagerTest {
 
     // Test scaleVm on equal service offerings.
     @Test(expected = InvalidParameterValueException.class)
-    public void testScaleVMF2()  throws Exception {
+    public void testScaleVMF2() throws Exception {
 
         ScaleVMCmd cmd = new ScaleVMCmd();
         Class<?> _class = cmd.getClass();
@@ -566,9 +530,7 @@ public class UserVmManagerTest {
 
         doNothing().when(_itMgr).checkIfCanUpgrade(_vmMock, _offeringVo);
 
-        ServiceOffering so1 =  getSvcoffering(512);
-        ServiceOffering so2 =  getSvcoffering(256);
-
+        ServiceOffering so1 = getSvcoffering(512);
         when(_offeringDao.findById(anyLong())).thenReturn((ServiceOfferingVO)so1);
         when(_offeringDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn((ServiceOfferingVO)so1);
 
@@ -585,7 +547,7 @@ public class UserVmManagerTest {
 
     // Test scaleVm for Stopped vm.
     //@Test(expected=InvalidParameterValueException.class)
-    public void testScaleVMF3()  throws Exception {
+    public void testScaleVMF3() throws Exception {
 
         ScaleVMCmd cmd = new ScaleVMCmd();
         Class<?> _class = cmd.getClass();
@@ -601,8 +563,8 @@ public class UserVmManagerTest {
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
         doReturn(Hypervisor.HypervisorType.XenServer).when(_vmInstance).getHypervisorType();
 
-        ServiceOffering so1 =  getSvcoffering(512);
-        ServiceOffering so2 =  getSvcoffering(256);
+        ServiceOffering so1 = getSvcoffering(512);
+        ServiceOffering so2 = getSvcoffering(256);
 
         when(_entityMgr.findById(eq(ServiceOffering.class), anyLong())).thenReturn(so2);
         when(_entityMgr.findById(ServiceOffering.class, 1L)).thenReturn(so1);
@@ -626,7 +588,7 @@ public class UserVmManagerTest {
     }
 
     // Test scaleVm for Running vm. Full positive test.
-    public void testScaleVMF4()  throws Exception {
+    public void testScaleVMF4() throws Exception {
 
         ScaleVMCmd cmd = new ScaleVMCmd();
         Class<?> _class = cmd.getClass();
@@ -647,8 +609,8 @@ public class UserVmManagerTest {
         when(_vmInstanceDao.findById(anyLong())).thenReturn(_vmInstance);
         doReturn(Hypervisor.HypervisorType.XenServer).when(_vmInstance).getHypervisorType();
 
-        ServiceOffering so1 =  getSvcoffering(512);
-        ServiceOffering so2 =  getSvcoffering(256);
+        ServiceOffering so1 = getSvcoffering(512);
+        ServiceOffering so2 = getSvcoffering(256);
 
         when(_entityMgr.findById(eq(ServiceOffering.class), anyLong())).thenReturn(so2);
         when(_entityMgr.findById(ServiceOffering.class, 1L)).thenReturn(so1);
@@ -656,7 +618,7 @@ public class UserVmManagerTest {
         doReturn(VirtualMachine.State.Running).when(_vmInstance).getState();
 
         //when(ApiDBUtils.getCpuOverprovisioningFactor()).thenReturn(3f);
-        when(_capacityMgr.checkIfHostHasCapacity(anyLong(), anyInt(), anyLong(), anyBoolean(), anyFloat(), anyFloat(),  anyBoolean())).thenReturn(false);
+        when(_capacityMgr.checkIfHostHasCapacity(anyLong(), anyInt(), anyLong(), anyBoolean(), anyFloat(), anyFloat(), anyBoolean())).thenReturn(false);
         when(_itMgr.reConfigureVm(_vmInstance.getUuid(), so1, false)).thenReturn(_vmInstance);
 
         doReturn(true).when(_itMgr).upgradeVmDb(anyLong(), anyLong());
@@ -675,8 +637,6 @@ public class UserVmManagerTest {
     }
 
     private ServiceOfferingVO getSvcoffering(int ramSize) {
-
-        long id  = 4L;
         String name = "name";
         String displayText = "displayText";
         int cpu = 1;
@@ -686,15 +646,14 @@ public class UserVmManagerTest {
         boolean ha = false;
         boolean useLocalStorage = false;
 
-        ServiceOfferingVO serviceOffering =
-            new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, Storage.ProvisioningType.THIN,
-                    useLocalStorage, false, null, false, null, false);
+        ServiceOfferingVO serviceOffering = new ServiceOfferingVO(name, cpu, ramSize, speed, null, null, ha, displayText, Storage.ProvisioningType.THIN, useLocalStorage, false, null, false, null,
+                false);
         return serviceOffering;
     }
 
     // Test Move VM b/w accounts where caller is not ROOT/Domain admin
     @Test(expected = InvalidParameterValueException.class)
-    public void testMoveVmToUser1()  throws Exception {
+    public void testMoveVmToUser1() throws Exception {
         AssignVMCmd cmd = new AssignVMCmd();
         Class<?> _class = cmd.getClass();
 
@@ -717,7 +676,7 @@ public class UserVmManagerTest {
         CallContext.register(user, caller);
         try {
 
-        _userVmMgr.moveVMToUser(cmd);
+            _userVmMgr.moveVMToUser(cmd);
         } finally {
             CallContext.unregister();
         }
@@ -725,7 +684,7 @@ public class UserVmManagerTest {
 
     // Test Move VM b/w accounts where caller doesn't have access to the old or new account
     @Test(expected = PermissionDeniedException.class)
-    public void testMoveVmToUser2()  throws Exception {
+    public void testMoveVmToUser2() throws Exception {
         AssignVMCmd cmd = new AssignVMCmd();
         Class<?> _class = cmd.getClass();
 
@@ -756,8 +715,7 @@ public class UserVmManagerTest {
 
         when(_accountMgr.finalizeOwner(any(Account.class), anyString(), anyLong(), anyLong())).thenReturn(newAccount);
 
-        doThrow(new PermissionDeniedException("Access check failed")).when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class),
-            any(ControlledEntity.class));
+        doThrow(new PermissionDeniedException("Access check failed")).when(_accountMgr).checkAccess(any(Account.class), any(AccessType.class), any(Boolean.class), any(ControlledEntity.class));
 
         CallContext.register(user, caller);
 
@@ -805,7 +763,8 @@ public class UserVmManagerTest {
         when(_dcMock.getNetworkType()).thenReturn(NetworkType.Advanced);
 
         when(_ipAddrMgr.allocateGuestIP(Mockito.eq(_networkMock), anyString())).thenReturn("10.10.10.10");
-        doNothing().when(_networkMgr).implementNetworkElementsAndResources(Mockito.any(DeployDestination.class), Mockito.any(ReservationContext.class), Mockito.eq(_networkMock), Mockito.eq(_networkOfferingMock));
+        doNothing().when(_networkMgr).implementNetworkElementsAndResources(Mockito.any(DeployDestination.class), Mockito.any(ReservationContext.class), Mockito.eq(_networkMock),
+                Mockito.eq(_networkOfferingMock));
         when(_nicDao.persist(any(NicVO.class))).thenReturn(nic);
 
         Account caller = new AccountVO("testaccount", 1, "networkdomain", (short)0, UUID.randomUUID().toString());
