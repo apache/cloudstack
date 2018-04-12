@@ -330,7 +330,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         Answer createIsoAnswer = endpoint.sendMessage(configDriveIsoCommand);
         if (!createIsoAnswer.getResult()) {
             throw new ResourceUnavailableException(String.format("%s ISO failed, details: %s",
-                    (update?"Update":"Create"), createIsoAnswer.getDetails()),ConfigDriveNetworkElement.class,0L);
+                    (update?"Update":"Create"), createIsoAnswer.getDetails()), ConfigDriveNetworkElement.class, 0L);
         }
         configureConfigDriveDisk(profile, secondaryStore);
 
