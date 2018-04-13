@@ -68,7 +68,7 @@ public class HypervInvestigator extends AdapterBase implements Investigator {
                     return answer.getResult() ? Status.Down : Status.Up;
                 }
             } catch (Exception e) {
-                s_logger.debug("Failed to send command to host: " + neighbor.getId());
+                s_logger.debug("Failed to send command to host: " + neighbor.getId(), e);
             }
         }
 
