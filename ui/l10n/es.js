@@ -40,7 +40,7 @@ var dictionary = {
     "force.remove": "Forzar el retiro",
     "force.remove.host.warning": "Advertencia: Elegir esta opción provocará que CloudStack detenga a la fuerza todas las máquinas virtuales antes de eliminar este host del clúster.",
     "force.stop": "Forzar Parar",
-    "force.stop.instance.warning": "Advertencia: Forzar la dertención de esta instancia debería­a ser su última opción. Puede conducir a la pérdida de datos, así­ como un comportamiento incoherente del estado de la máquina virtual.",
+    "force.stop.instance.warning": "Advertencia: Forzar la dertención de esta instancia debería ser su última opción. Puede conducir a la pérdida de datos, así como un comportamiento incoherente del estado de la máquina virtual.",
     "hint.no.host.tags": "No se encontraron las etiquetas de servidor",
     "hint.no.storage.tags": "No se encontraron las etiquetas de almacenamiento",
     "hint.type.part.host.tag": "Introduzca parte de la etiqueta de servidor",
