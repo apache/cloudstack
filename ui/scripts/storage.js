@@ -1528,45 +1528,31 @@
                                 },
                                 action: function(args) {
                                     var array1 = [];
-                                    var newSize;
-                                    if (selectedDiskOfferingObj == null || selectedDiskOfferingObj.iscustomized == true) {
-                                        newSize = args.data.newsize;
-                                        if (newSize != null && newSize.length > 0) {
-                                            array1.push("&size=" + todb(newSize));
-                                        }
-                                    } else {
+                                    if(args.$form.find('.form-item[rel=shrinkok]').css("display") != "none") {
+                                        array1.push("&shrinkok=" + (args.data.shrinkok == "on"));
+                                    }
 
-                                        if(args.$form.find('.form-item[rel=shrinkok]').css("display") != "none") {
-                                            array1.push("&shrinkok=" + (args.data.shrinkok == "on"));
-                                        }
+                                    var newDiskOffering = args.data.newdiskoffering;
+                                    if (newDiskOffering != null && newDiskOffering.length > 0) {
+                                        array1.push("&diskofferingid=" + encodeURIComponent(newDiskOffering));
+                                    }
+                                    if (selectedDiskOfferingObj.iscustomized == true) {
+                                        cloudStack.addNewSizeToCommandUrlParameterArrayIfItIsNotNullAndHigherThanZero(array1, args.data.newsize);
+                                    }
 
-                                        var newDiskOffering = args.data.newdiskoffering;
+                                    var minIops;
+                                    var maxIops
+                                    if (selectedDiskOfferingObj.iscustomizediops == true) {
+                                        minIops = args.data.minIops;
+                                        maxIops = args.data.maxIops;
+                                    }
 
-                                        if (selectedDiskOfferingObj.iscustomized == true) {
-                                            newSize = args.data.newsize;
-                                        }
-                                        if (newDiskOffering != null && newDiskOffering.length > 0) {
-                                            array1.push("&diskofferingid=" + todb(newDiskOffering));
-                                        }
-                                        if (newSize != null && newSize.length > 0) {
-                                            array1.push("&size=" + todb(newSize));
-                                        }
+                                    if (minIops != null && minIops.length > 0) {
+                                        array1.push("&miniops=" + encodeURIComponent(minIops));
+                                    }
 
-                                        var minIops;
-                                        var maxIops
-
-                                        if (selectedDiskOfferingObj.iscustomizediops == true) {
-                                            minIops = args.data.minIops;
-                                            maxIops = args.data.maxIops;
-                                        }
-
-                                        if (minIops != null && minIops.length > 0) {
-                                            array1.push("&miniops=" + todb(minIops));
-                                        }
-
-                                        if (maxIops != null && maxIops.length > 0) {
-                                            array1.push("&maxiops=" + todb(maxIops));
-                                        }
+                                    if (maxIops != null && maxIops.length > 0) {
+                                        array1.push("&maxiops=" + encodeURIComponent(maxIops));
                                     }
                                     //if original disk size  > new disk size
                                     if ((args.context.volumes[0].type == "ROOT")

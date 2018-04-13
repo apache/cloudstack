@@ -209,9 +209,7 @@
                 array1.push("&firstname=" + args.data.firstname);
                 array1.push("&lastname=" + args.data.lastname);
 
-                var password = args.data.password;
-                password = todb(password);
-                array1.push("&password=" + password);
+                cloudStack.addPasswordToCommandUrlParameterArray(array1, args.data.password);
             }
 
             array1.push("&domainid=" + args.data.domainid);

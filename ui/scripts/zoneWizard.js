@@ -2272,7 +2272,7 @@
 
                     var array1 = [];
                     var networkType = args.data.zone.networkType; //"Basic", "Advanced"
-                    array1.push("&networktype=" + todb(networkType));
+                    array1.push("&networktype=" + encodeURIComponent(networkType));
 
                     if (networkType == "Basic") {
                         if (selectedNetworkOfferingHavingSG == true)
@@ -2284,13 +2284,13 @@
                             array1.push("&securitygroupenabled=false");
 
                             if (args.data.zone.guestcidraddress != null && args.data.zone.guestcidraddress.length > 0)
-                                array1.push("&guestcidraddress=" + todb(args.data.zone.guestcidraddress));
+                                array1.push("&guestcidraddress=" + encodeURIComponent(args.data.zone.guestcidraddress));
                         } else { // args.data.zone.sgEnabled    == true
                             array1.push("&securitygroupenabled=true");
                         }
                     }
 
-                    array1.push("&name=" + todb(args.data.zone.name));
+                    array1.push("&name=" + encodeURIComponent(args.data.zone.name));
 
                     if (args.data.zone.localstorageenabled == 'on') {
                         array1.push("&localstorageenabled=true");
@@ -2298,25 +2298,25 @@
 
                     //IPv4
                     if (args.data.zone.ip4dns1 != null && args.data.zone.ip4dns1.length > 0)
-                        array1.push("&dns1=" + todb(args.data.zone.ip4dns1));
+                        array1.push("&dns1=" + encodeURIComponent(args.data.zone.ip4dns1));
                     if (args.data.zone.ip4dns2 != null && args.data.zone.ip4dns2.length > 0)
-                        array1.push("&dns2=" + todb(args.data.zone.ip4dns2));
+                        array1.push("&dns2=" + encodeURIComponent(args.data.zone.ip4dns2));
 
                     //IPv6
                     if (args.data.zone.ip6dns1 != null && args.data.zone.ip6dns1.length > 0)
-                        array1.push("&ip6dns1=" + todb(args.data.zone.ip6dns1));
+                        array1.push("&ip6dns1=" + encodeURIComponent(args.data.zone.ip6dns1));
                     if (args.data.zone.ip6dns2 != null && args.data.zone.ip6dns2.length > 0)
-                        array1.push("&ip6dns2=" + todb(args.data.zone.ip6dns2));
+                        array1.push("&ip6dns2=" + encodeURIComponent(args.data.zone.ip6dns2));
 
 
-                    array1.push("&internaldns1=" + todb(args.data.zone.internaldns1));
+                    array1.push("&internaldns1=" + encodeURIComponent(args.data.zone.internaldns1));
 
                     var internaldns2 = args.data.zone.internaldns2;
                     if (internaldns2 != null && internaldns2.length > 0)
-                        array1.push("&internaldns2=" + todb(internaldns2));
+                        array1.push("&internaldns2=" + encodeURIComponent(internaldns2));
 
                     if (args.data.zone.networkdomain != null && args.data.zone.networkdomain.length > 0)
-                        array1.push("&domain=" + todb(args.data.zone.networkdomain));
+                        array1.push("&domain=" + encodeURIComponent(args.data.zone.networkdomain));
 
                     $.ajax({
                         url: createURL("createZone" + array1.join("")),
@@ -2374,7 +2374,7 @@
                         //Basic zone has only one physical network
                         var array1 = [];
                         if ("physicalNetworks" in args.data) { //from add-zone-wizard
-                            array1.push("&name=" + todb(args.data.physicalNetworks[0].name));
+                            array1.push("&name=" + encodeURIComponent(args.data.physicalNetworks[0].name));
                         } else { //from quick-install-wizard
                             array1.push("&name=PhysicalNetworkInBasicZone");
                         }
@@ -2595,9 +2595,9 @@
                         $(args.data.physicalNetworks).each(function(index) {
                             var thisPhysicalNetwork = this;
                             var array1 = [];
-                            array1.push("&name=" + todb(thisPhysicalNetwork.name));
+                            array1.push("&name=" + encodeURIComponent(thisPhysicalNetwork.name));
                             if (thisPhysicalNetwork.isolationMethod != null && thisPhysicalNetwork.isolationMethod.length > 0)
-                                array1.push("&isolationmethods=" + todb(thisPhysicalNetwork.isolationMethod));
+                                array1.push("&isolationmethods=" + encodeURIComponent(thisPhysicalNetwork.isolationMethod));
                             $.ajax({
                                 url: createURL("createPhysicalNetwork&zoneid=" + args.data.returnedZone.id + array1.join("")),
                                 dataType: "json",
@@ -3701,12 +3701,11 @@
 
                     var array1 = [];
                     array1.push("&physicalnetworkid=" + args.data.returnedBasicPhysicalNetwork.id);
-                    array1.push("&username=" + todb(args.data.basicPhysicalNetwork.username));
-                    array1.push("&password=" + todb(args.data.basicPhysicalNetwork.password));
-                    array1.push("&networkdevicetype=" + todb(args.data.basicPhysicalNetwork.networkdevicetype));
+                    cloudStack.addUsernameAndPasswordToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.basicPhysicalNetwork.username, args.data.basicPhysicalNetwork.password);
+                    array1.push("&networkdevicetype=" + encodeURIComponent(args.data.basicPhysicalNetwork.networkdevicetype));
                     array1.push("&gslbprovider=" + (args.data.basicPhysicalNetwork.gslbprovider == "on"));
-                    array1.push("&gslbproviderpublicip=" + todb(args.data.basicPhysicalNetwork.gslbproviderpublicip));
-                    array1.push("&gslbproviderprivateip=" + todb(args.data.basicPhysicalNetwork.gslbproviderprivateip));
+                    array1.push("&gslbproviderpublicip=" + encodeURIComponent(args.data.basicPhysicalNetwork.gslbproviderpublicip));
+                    array1.push("&gslbproviderprivateip=" + encodeURIComponent(args.data.basicPhysicalNetwork.gslbproviderprivateip));
 
                     //construct URL starts here
                     var url = [];
@@ -3781,7 +3780,7 @@
                     url.push("lbdevicededicated=" + dedicated.toString());
 
 
-                    array1.push("&url=" + todb(url.join("")));
+                    array1.push("&url=" + encodeURIComponent(url.join("")));
                     //construct URL ends here
 
                     $.ajax({
@@ -3905,14 +3904,14 @@
 
                     var array3 = [];
                     array3.push("&zoneId=" + args.data.returnedZone.id);
-                    array3.push("&name=" + todb(args.data.pod.name));
-                    array3.push("&gateway=" + todb(args.data.pod.reservedSystemGateway));
-                    array3.push("&netmask=" + todb(args.data.pod.reservedSystemNetmask));
-                    array3.push("&startIp=" + todb(args.data.pod.reservedSystemStartIp));
+                    array3.push("&name=" + encodeURIComponent(args.data.pod.name));
+                    array3.push("&gateway=" + encodeURIComponent(args.data.pod.reservedSystemGateway));
+                    array3.push("&netmask=" + encodeURIComponent(args.data.pod.reservedSystemNetmask));
+                    array3.push("&startIp=" + encodeURIComponent(args.data.pod.reservedSystemStartIp));
 
                     var endip = args.data.pod.reservedSystemEndIp; //optional
                     if (endip != null && endip.length > 0)
-                        array3.push("&endIp=" + todb(endip));
+                        array3.push("&endIp=" + encodeURIComponent(endip));
 
                     $.ajax({
                         url: createURL("createPod" + array3.join("")),
@@ -3962,7 +3961,7 @@
                             array1.push("&zoneId=" + args.data.returnedZone.id);
 
                             if (this.vlanid != null && this.vlanid.length > 0)
-                                array1.push("&vlan=" + todb(this.vlanid));
+                                array1.push("&vlan=" + encodeURIComponent(this.vlanid));
                             else
                                 array1.push("&vlan=untagged");
 
@@ -4202,7 +4201,7 @@
                                 });
 
                                 $.ajax({
-                                    url: createURL("updatePhysicalNetwork&id=" + returnedId + "&vlan=" + todb(vlan)),
+                                    url: createURL("updatePhysicalNetwork&id=" + returnedId + "&vlan=" + encodeURIComponent(vlan)),
                                     dataType: "json",
                                     success: function(json) {
                                         var jobId = json.updatephysicalnetworkresponse.jobid;
@@ -4273,8 +4272,7 @@
                     var clusterName = args.data.cluster.name;
 
                     if (args.data.cluster.hypervisor == "VMware") {
-                        array1.push("&username=" + todb(args.data.cluster.vCenterUsername));
-                        array1.push("&password=" + todb(args.data.cluster.vCenterPassword));
+                        cloudStack.addUsernameAndPasswordToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.cluster.vCenterUsername, args.data.cluster.vCenterPassword);
 
                         if (args.data.cluster.vsmipaddress != null && args.data.cluster.vsmipaddress.length > 0) {
                             array1.push('&vsmipaddress=' + args.data.cluster.vsmipaddress);
@@ -4297,10 +4295,10 @@
                         else
                             url = hostname;
                         url += "/" + dcName + "/" + clusterName;
-                        array1.push("&url=" + todb(url));
+                        array1.push("&url=" + encodeURIComponent(url));
                         clusterName = hostname + "/" + dcName + "/" + clusterName; //override clusterName
                     }
-                    array1.push("&clustername=" + todb(clusterName));
+                    array1.push("&clustername=" + encodeURIComponent(clusterName));
 
                     if (args.data.cluster.hypervisor == "VMware") {
                         var vmwareData = {
@@ -4466,15 +4464,15 @@
                     array1.push("&zoneid=" + args.data.returnedZone.id);
                     array1.push("&podId=" + args.data.returnedPod.id);
                     array1.push("&clusterid=" + args.data.returnedCluster.id);
-                    array1.push("&name=" + todb(args.data.primaryStorage.name));
-                    array1.push("&scope=" + todb(args.data.primaryStorage.scope));
+                    array1.push("&name=" + encodeURIComponent(args.data.primaryStorage.name));
+                    array1.push("&scope=" + encodeURIComponent(args.data.primaryStorage.scope));
 
                     //zone-wide-primary-storage is supported only for KVM and VMWare
                     if (args.data.primaryStorage.scope == "zone") { //hypervisor type of the hosts in zone that will be attached to this storage pool. KVM, VMware supported as of now.
                         if(args.data.cluster.hypervisor != undefined) {
-                            array1.push("&hypervisor=" + todb(args.data.cluster.hypervisor));
+                            array1.push("&hypervisor=" + encodeURIComponent(args.data.cluster.hypervisor));
                         } else if(args.data.returnedCluster.hypervisortype != undefined) {
-                            array1.push("&hypervisor=" + todb(args.data.returnedCluster.hypervisortype));
+                            array1.push("&hypervisor=" + encodeURIComponent(args.data.returnedCluster.hypervisortype));
                         } else {
                             cloudStack.dialog.notice({
                                 message: "Error: args.data.cluster.hypervisor is undefined. So is args.data.returnedCluster.hypervisortype (zone-wide-primary-storage)"
@@ -4495,7 +4493,7 @@
                             path = "/" + path;
                         url = smbURL(server, path);
                         array1.push("&details[0].user=" + args.data.primaryStorage.smbUsername);
-                        array1.push("&details[1].password=" + todb(args.data.primaryStorage.smbPassword));
+                        array1.push("&details[1].password=" + encodeURIComponent(args.data.primaryStorage.smbPassword));
                         array1.push("&details[2].domain=" + args.data.primaryStorage.smbDomain);
                     } else if (args.data.primaryStorage.protocol == "PreSetup") {
                         var path = args.data.primaryStorage.path;
@@ -4536,10 +4534,10 @@
                         var lun = args.data.primaryStorage.lun;
                         url = iscsiURL(server, iqn, lun);
                     }
-                    array1.push("&url=" + todb(url));
+                    array1.push("&url=" + encodeURIComponent(url));
 
                     if (args.data.primaryStorage.storageTags != null && args.data.primaryStorage.storageTags.length > 0)
-                        array1.push("&tags=" + todb(args.data.primaryStorage.storageTags));
+                        array1.push("&tags=" + encodeURIComponent(args.data.primaryStorage.storageTags));
 
                     $.ajax({
                         url: createURL("createStoragePool" + array1.join("")),
