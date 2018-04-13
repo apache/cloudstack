@@ -16,5 +16,5 @@
 -- under the License.
 
 --;
--- Schema upgrade cleanup from 4.11.0.0 to 4.12.0.0
+-- Schema upgrade cleanup from 4.11.1.0 to 4.12.0.0
 --;

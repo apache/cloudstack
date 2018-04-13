@@ -24,6 +24,9 @@ import com.cloud.upgrade.dao.Upgrade470to471;
 import com.cloud.upgrade.dao.Upgrade471to480;
 import com.cloud.upgrade.dao.Upgrade480to481;
 import com.cloud.upgrade.dao.Upgrade490to4910;
+import com.cloud.upgrade.dao.Upgrade41000to41100;
+import com.cloud.upgrade.dao.Upgrade41100to41110;
+import com.cloud.upgrade.dao.Upgrade41110to41200;
 import org.apache.cloudstack.utils.CloudStackVersion;
 import org.junit.Test;
 
@@ -71,6 +74,30 @@ public class DatabaseUpgradeCheckerTest {
 
         assertTrue(Arrays.equals(new String[] { "4.9.0", currentVersion.toString()}, upgrades[0].getUpgradableVersionRange()));
         assertEquals(currentVersion.toString(), upgrades[0].getUpgradedVersion());
+
+    }
+
+    @Test
+    public void testCalculateUpgradePath410to412() {
+
+        final CloudStackVersion dbVersion = CloudStackVersion.parse("4.10.0.0");
+        assertNotNull(dbVersion);
+
+        final CloudStackVersion currentVersion = CloudStackVersion.parse("4.12.0.0");
+        assertNotNull(currentVersion);
+
+        final DatabaseUpgradeChecker checker = new DatabaseUpgradeChecker();
+        final DbUpgrade[] upgrades = checker.calculateUpgradePath(dbVersion, currentVersion);
+
+        assertNotNull(upgrades);
+        assertTrue(upgrades.length >= 1);
+        assertTrue(upgrades[0] instanceof Upgrade41000to41100);
+        assertTrue(upgrades[1] instanceof Upgrade41100to41110);
+        assertTrue(upgrades[2] instanceof Upgrade41110to41200);
+
+        assertTrue(Arrays.equals(new String[] { "4.11.0.0", "4.11.1.0"},
+                upgrades[1].getUpgradableVersionRange()));
+        assertEquals(currentVersion.toString(), upgrades[2].getUpgradedVersion());
 
     }
 
