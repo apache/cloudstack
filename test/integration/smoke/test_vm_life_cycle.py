@@ -999,7 +999,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     def check_migration_protocol(self, protocol, host):
         resp = SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
-            .execute("cat /var/log/cloudstack/agent/agent.log | grep Live | tail -1")
+            .execute("grep -a Live /var/log/cloudstack/agent/agent.log | tail -1")
 
         if protocol not in resp[0]:
             print 'It failed'
