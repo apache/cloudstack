@@ -205,20 +205,12 @@
             }
 
             if (!ldapStatus) {
-                var password = args.data.password;
-                if (md5Hashed) {
-                    password = $.md5(password);
-                }
                 array1.push("&email=" + args.data.email);
                 array1.push("&firstname=" + args.data.firstname);
                 array1.push("&lastname=" + args.data.lastname);
 
-                password = args.data.password;
-                if (md5Hashed) {
-                    password = $.md5(password);
-                } else {
-                    password = todb(password);
-                }
+                var password = args.data.password;
+                password = todb(password);
                 array1.push("&password=" + password);
             }
 
