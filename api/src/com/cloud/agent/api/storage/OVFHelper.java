@@ -113,7 +113,7 @@ public class OVFHelper {
                 String allocationUnits = disk.getAttribute("ovf:capacityAllocationUnits");
                 od._diskId = disk.getAttribute("ovf:diskId");
                 od._fileRef = disk.getAttribute("ovf:fileRef");
-                od._populatedSize = Long.parseLong(disk.getAttribute("ovf:populatedSize") == null ? "0" : disk.getAttribute("ovf:populatedSize"));
+                od._populatedSize = NumberUtils.toLong(disk.getAttribute("ovf:populatedSize"));
 
                 if ((od._capacity != 0) && (allocationUnits != null)) {
 
