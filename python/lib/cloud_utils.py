@@ -759,7 +759,7 @@ class SetupLiveMigration(ConfigTask):
 			if os.path.exists("/etc/init/libvirt-bin.conf"):
 				replace_line("/etc/init/libvirt-bin.conf", "exec /usr/sbin/libvirtd","exec /usr/sbin/libvirtd -d -l")
 			else:
-				replace_or_add_line("/etc/default/libvirt-bin","libvirtd_opts=","libvirtd_opts='-l -d'")
+				replace_or_add_line("/etc/default/libvirt-bin","libvirtd_opts=","libvirtd_opts='-l'")
 			
 		else:
 			raise AssertionError("Unsupported distribution")

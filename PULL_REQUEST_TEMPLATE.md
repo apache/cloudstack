@@ -12,6 +12,13 @@
 - [ ] Enhancement (improves an existing feature and functionality)
 - [ ] Cleanup (Code refactoring and cleanup, that may add test cases)
 
+## GitHub Issue/PRs
+<!-- If this PR is to fix an issue or another PR on GH, uncomment the section and provide the id of issue/PR -->
+<!-- When "Fixes: #<id>" is specified, the issue/PR will automatically be closed when this PR gets merged -->
+<!-- For addressing multiple issues/PRs, use multiple "Fixes: #<id>" -->
+
+<!-- Fixes: # -->
+
 ## Screenshots (if appropriate):
 
 ## How Has This Been Tested?
