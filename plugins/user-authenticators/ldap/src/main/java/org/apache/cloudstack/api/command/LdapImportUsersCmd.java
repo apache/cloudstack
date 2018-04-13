@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.LdapUserResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -126,8 +127,15 @@ public class LdapImportUsersCmd extends BaseListCmd {
                 _accountService.createUser(user.getUsername(), generatePassword(), user.getFirstname(), user.getLastname(), user.getEmail(), timezone, accountName, domain.getId(),
                                            UUID.randomUUID().toString(), User.Source.LDAP);
             } else {
-                s_logger.debug("account with name: " + accountName + " exist and user with name: " + user.getUsername() + " exists in the account. Updating the account.");
-                _accountService.updateUser(csuser.getId(), user.getFirstname(), user.getLastname(), user.getEmail(), null, null, null, null, null);
+                s_logger.debug("Account [name=%s] and user [name=%s] already exist in CloudStack. Executing the user update.");
+
+                UpdateUserCmd updateUserCmd = new UpdateUserCmd();
+                updateUserCmd.setId(csuser.getId());
+                updateUserCmd.setFirstname(user.getFirstname());
+                updateUserCmd.setLastname(user.getLastname());
+                updateUserCmd.setEmail(user.getEmail());
+
+                _accountService.updateUser(updateUserCmd);
             }
         }
     }

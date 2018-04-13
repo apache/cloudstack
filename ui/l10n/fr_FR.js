@@ -1147,6 +1147,7 @@ var dictionary = {
     "label.networks": "Réseaux",
     "label.new": "Nouveau",
     "label.new.password": "Nouveau mot de passe",
+    "label.old.password": "Old Password",
     "label.new.project": "Nouveau projet",
     "label.new.ssh.key.pair": "Nouvelle bi-clé SSH",
     "label.new.vm": "Nouvelle VM",

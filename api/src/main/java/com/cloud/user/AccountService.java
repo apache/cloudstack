@@ -23,6 +23,7 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
@@ -90,7 +91,7 @@ public interface AccountService {
 
     UserAccount getActiveUserAccount(String username, Long domainId);
 
-    UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey, String timeZone);
+    UserAccount updateUser(UpdateUserCmd updateUserCmd);
 
     Account getActiveAccountById(long accountId);
 

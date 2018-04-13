@@ -163,12 +163,6 @@ public interface AccountManager extends AccountService, Configurable{
      */
     boolean moveUser(MoveUserCmd moveUserCmd);
 
-    /**
-     * Update a user by userId
-     *
-     * @param cmd
-     * @return UserAccount object
-     */
     UserAccount updateUser(UpdateUserCmd cmd);
 
     /**

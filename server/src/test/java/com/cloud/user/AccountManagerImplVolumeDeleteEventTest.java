@@ -58,7 +58,6 @@ import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 
-
 public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplTestBase {
 
     private static final Long ACCOUNT_ID = 1l;
@@ -112,8 +111,8 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
 
         AccountVO account = new AccountVO();
         account.setId(ACCOUNT_ID);
-        when(_accountDao.remove(ACCOUNT_ID)).thenReturn(true);
-        when(_accountDao.findById(ACCOUNT_ID)).thenReturn(account);
+        when(accountDaoMock.remove(ACCOUNT_ID)).thenReturn(true);
+        when(accountDaoMock.findById(ACCOUNT_ID)).thenReturn(account);
 
         DomainVO domain = new DomainVO();
         VirtualMachineEntity vmEntity = mock(VirtualMachineEntity.class);
@@ -182,7 +181,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
         when(vm.getState())
         .thenReturn(vmDestroyedPrior ? VirtualMachine.State.Destroyed : VirtualMachine.State.Running);
         when(vm.getRemoved()).thenReturn(vmDestroyedPrior ? new Date() : null);
-        accountManager.deleteUserAccount(ACCOUNT_ID);
+        accountManagerImpl.deleteUserAccount(ACCOUNT_ID);
 
         return _usageEventDao.listAll();
     }

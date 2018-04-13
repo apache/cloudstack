@@ -168,13 +168,6 @@ public class MockAccountManager extends ManagerBase implements AccountManager {
     }
 
     @Override
-    public UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey,
-                                  String timeZone) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public User getActiveUser(long arg0) {
         return _systemUser;
     }

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -39,9 +38,11 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-
+import org.powermock.modules.junit4.PowerMockRunner;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.RoleType;
@@ -1058,7 +1059,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         // Check permissions
-        checkAccess(CallContext.current().getCallingAccount(), domain);
+        checkAccess(getCurrentCallingAccount(), domain);
 
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new InvalidParameterValueException("The user " + userName + " already exists in domain " + domainId);
@@ -1132,7 +1133,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new CloudRuntimeException("The user cannot be created as domain " + domain.getName() + " is being deleted");
         }
 
-        checkAccess(CallContext.current().getCallingAccount(), domain);
+        checkAccess(getCurrentCallingAccount(), domain);
 
         Account account = _accountDao.findEnabledAccount(accountName, domainId);
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -1160,150 +1161,241 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_USER_UPDATE, eventDescription = "updating User")
-    public UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey,
-            String timeZone) {
-        // Input validation
-        UserVO user = _userDao.getUser(userId);
+    @ActionEvent(eventType = EventTypes.EVENT_USER_UPDATE, eventDescription = "Updating User")
+    public UserAccount updateUser(UpdateUserCmd updateUserCmd) {
+        UserVO user = retrieveAndValidateUser(updateUserCmd);
+        s_logger.debug("Updating user with Id: " + user.getUuid());
 
-        if (user == null) {
-            throw new InvalidParameterValueException("unable to find user by id");
+        validateAndUpdatApiAndSecretKeyIfNeeded(updateUserCmd, user);
+        Account account = retrieveAndValidateAccount(user);
+
+        validateAndUpdateFirstNameIfNeeded(updateUserCmd, user);
+        validateAndUpdateLastNameIfNeeded(updateUserCmd, user);
+        validateAndUpdateUsernameIfNeeded(updateUserCmd, user, account);
+
+        validateUserPasswordAndUpdateIfNeeded(updateUserCmd.getPassword(), user, updateUserCmd.getOldPassword());
+        String email = updateUserCmd.getEmail();
+        if (StringUtils.isNotBlank(email)) {
+            user.setEmail(email);
         }
-
-        if ((apiKey == null && secretKey != null) || (apiKey != null && secretKey == null)) {
-            throw new InvalidParameterValueException("Please provide an userApiKey/userSecretKey pair");
+        String timezone = updateUserCmd.getTimezone();
+        if (StringUtils.isNotBlank(timezone)) {
+            user.setTimezone(timezone);
         }
+        _userDao.update(user.getId(), user);
+        return _userAccountDao.findById(user.getId());
+    }
 
-        // If the account is an admin type, return an error. We do not allow this
-        Account account = _accountDao.findById(user.getAccountId());
-        if (account == null) {
-            throw new InvalidParameterValueException("unable to find user account " + user.getAccountId());
+    /**
+     * Updates the password in the user POJO if needed. If no password is provided, then the password is not updated.
+     * The following validations are executed if 'password' is not null. Admins (root admins or domain admins) can execute password updates without entering the old password.
+     * <ul>
+     *  <li> If 'password' is blank, we throw an {@link InvalidParameterValueException};
+     *  <li> If old password is not provided and user is not an Admin, we throw an {@link InvalidParameterValueException}; 
+     *  <li> If a normal user is calling this method, we use {@link #validateOldPassword(UserVO, String)} to check if the provided old password matches the database one;
+     * </ul>
+     * 
+     * If all checks pass, we encode the given password with the most preferable password mechanism given in {@link #_userPasswordEncoders}.
+     */
+    protected void validateUserPasswordAndUpdateIfNeeded(String password, UserVO user, String oldPassword) {
+        if (password == null) {
+            s_logger.trace("No new password to update for user: " + user.getUuid());
+            return;
         }
-
-        // don't allow updating project account
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("unable to find user by id");
+        if (StringUtils.isBlank(password)) {
+            throw new InvalidParameterValueException("Password cannot be empty or blank.");
         }
-
-        // don't allow updating system account
-        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new PermissionDeniedException("user id : " + userId + " is system account, update is not allowed");
+        Account callingAccount = getCurrentCallingAccount();
+        boolean isRootAdminExecutingPasswordUpdate = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
+        boolean isDomainAdmin = isDomainAdmin(callingAccount.getId());
+        boolean isAdmin = isDomainAdmin || isRootAdminExecutingPasswordUpdate;
+        if (isAdmin) {
+            s_logger.trace(String.format("Admin account [uuid=%s] executing password update for user [%s] ", callingAccount.getUuid(), user.getUuid()));
         }
+        if (!isAdmin && StringUtils.isBlank(oldPassword)) {
+            throw new InvalidParameterValueException("You must inform the old password when updating a user password.");
+        }
+        if (CollectionUtils.isEmpty(_userPasswordEncoders)) {
+            throw new CloudRuntimeException("No user authenticatiors configured!");
+        }
+        if (!isAdmin) {
+            validateOldPassword(user, oldPassword);
+        }
+        UserAuthenticator userAuthenticator = _userPasswordEncoders.get(0);
+        String newPasswordEncoded = userAuthenticator.encode(password);
+        user.setPassword(newPasswordEncoded);
+    }
 
-        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
-
-        if (firstName != null) {
-            if (firstName.isEmpty()) {
-                throw new InvalidParameterValueException("Firstname is empty");
+    /**
+     * Iterates over all configured user authenticators and tries to authenticated the user using the old password.
+     * If the user is authenticated with success, we have nothing else to do here; otherwise, an {@link InvalidParameterValueException} is thrown.
+     */
+    protected void validateOldPassword(UserVO user, String oldPassword) {
+        AccountVO userAccount = _accountDao.findById(user.getAccountId());
+        boolean oldPasswordMatchesDataBasePassword = false;
+        for (UserAuthenticator userAuthenticator : _userPasswordEncoders) {
+            Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = userAuthenticator.authenticate(user.getUsername(), oldPassword, userAccount.getDomainId(), null);
+            if(authenticationResult == null) {
+                s_logger.trace(String.format("Authenticator [%s] is returning null for the authenticate mehtod.", userAuthenticator.getClass()));
+                continue;
             }
-
-            user.setFirstname(firstName);
+            if (BooleanUtils.toBoolean(authenticationResult.first())) {
+                s_logger.debug(String.format("User [id=%s] re-authenticated [authenticator=%s] during password update.", user.getUuid(), userAuthenticator.getName()));
+                oldPasswordMatchesDataBasePassword = true;
+                break;
+            }
         }
+        if (!oldPasswordMatchesDataBasePassword) {
+            throw new InvalidParameterValueException("Old password does not match the database password.");
+        }
+    }
+
+
+    /**
+     * Validates the user 'username' if provided. The 'username' cannot be blank (when provided).
+     * <ul>
+     *  <li> If the 'username' is not provided, we do not update it (setting to null) in the User POJO.
+     *  <li> If the 'username' is blank, we throw an {@link InvalidParameterValueException}.
+     *  <li> The username must be unique in each domain. Therefore, if there is already another user with the same username, an {@link InvalidParameterValueException} is thrown.
+     * </ul> 
+     */
+    protected void validateAndUpdateUsernameIfNeeded(UpdateUserCmd updateUserCmd, UserVO user, Account account) {
+        String userName = updateUserCmd.getUsername();
+        if(userName == null) {
+            return;
+        }
+        if (StringUtils.isBlank(userName)) {
+            throw new InvalidParameterValueException("Username cannot be empty.");
+        }
+        List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
+        for (UserVO duplicatedUser : duplicatedUsers) {
+            if(duplicatedUser.getId() == user.getId()) {
+                continue;
+            }
+            Account duplicatedUserAccountWithUserThatHasTheSameUserName = _accountDao.findById(duplicatedUser.getAccountId());
+            if (duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId() == account.getDomainId()) {
+                DomainVO domain = _domainDao.findById(duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId());
+                throw new InvalidParameterValueException(String.format("Username [%s] already exists in domain [id=%s,name=%s]", duplicatedUser.getUsername(), domain.getUuid(), domain.getName()));
+            }
+        }
+        user.setUsername(userName);
+    }
+
+    /**
+     * Validates the user 'lastName' if provided. The 'lastName' cannot be blank (when provided).
+     * <ul>
+     *  <li> If the 'lastName' is not provided, we do not update it (setting to null) in the User POJO.
+     *  <li> If the 'lastName' is blank, we throw an {@link InvalidParameterValueException}.
+     * </ul> 
+     */
+    protected void validateAndUpdateLastNameIfNeeded(UpdateUserCmd updateUserCmd, UserVO user) {
+        String lastName = updateUserCmd.getLastname();
         if (lastName != null) {
-            if (lastName.isEmpty()) {
-                throw new InvalidParameterValueException("Lastname is empty");
+            if (StringUtils.isBlank(lastName)) {
+                throw new InvalidParameterValueException("Lastname cannot be empty.");
             }
 
             user.setLastname(lastName);
         }
-        if (userName != null) {
-            if (userName.isEmpty()) {
-                throw new InvalidParameterValueException("Username is empty");
-            }
-
-            // don't allow to have same user names in the same domain
-            List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
-            for (UserVO duplicatedUser : duplicatedUsers) {
-                if (duplicatedUser.getId() != user.getId()) {
-                    Account duplicatedUserAccount = _accountDao.findById(duplicatedUser.getAccountId());
-                    if (duplicatedUserAccount.getDomainId() == account.getDomainId()) {
-                        throw new InvalidParameterValueException("User with name " + userName + " already exists in domain " + duplicatedUserAccount.getDomainId());
-                    }
-                }
-            }
-
-            user.setUsername(userName);
-        }
-
-        if (password != null) {
-            if (password.isEmpty()) {
-                throw new InvalidParameterValueException("Password cannot be empty");
-            }
-            String encodedPassword = null;
-            for (Iterator<UserAuthenticator> en = _userPasswordEncoders.iterator(); en.hasNext();) {
-                UserAuthenticator authenticator = en.next();
-                encodedPassword = authenticator.encode(password);
-                if (encodedPassword != null) {
-                    break;
-                }
-            }
-            if (encodedPassword == null) {
-                throw new CloudRuntimeException("Failed to encode password");
-            }
-            user.setPassword(encodedPassword);
-        }
-        if (email != null) {
-            user.setEmail(email);
-        }
-        if (timeZone != null) {
-            user.setTimezone(timeZone);
-        }
-        if (apiKey != null) {
-            user.setApiKey(apiKey);
-        }
-        if (secretKey != null) {
-            user.setSecretKey(secretKey);
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("updating user with id: " + userId);
-        }
-        try {
-            // check if the apiKey and secretKey are globally unique
-            if (apiKey != null && secretKey != null) {
-                Pair<User, Account> apiKeyOwner = _accountDao.findUserAccountByApiKey(apiKey);
-
-                if (apiKeyOwner != null) {
-                    User usr = apiKeyOwner.first();
-                    if (usr.getId() != userId) {
-                        throw new InvalidParameterValueException("The api key:" + apiKey + " exists in the system for user id:" + userId + " ,please provide a unique key");
-                    } else {
-                        // allow the updation to take place
-                    }
-                }
-            }
-
-            _userDao.update(userId, user);
-        } catch (Throwable th) {
-            s_logger.error("error updating user", th);
-            throw new CloudRuntimeException("Unable to update user " + userId);
-        }
-
-        CallContext.current().putContextParameter(User.class, user.getUuid());
-
-        return _userAccountDao.findById(userId);
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_USER_UPDATE, eventDescription = "updating User")
-    public UserAccount updateUser(UpdateUserCmd cmd) {
-        Long id = cmd.getId();
-        String apiKey = cmd.getApiKey();
-        String firstName = cmd.getFirstname();
-        String email = cmd.getEmail();
-        String lastName = cmd.getLastname();
-        String password = cmd.getPassword();
-        String secretKey = cmd.getSecretKey();
-        String timeZone = cmd.getTimezone();
-        String userName = cmd.getUsername();
+    /**
+     * Validates the user 'firstName' if provided. The 'firstName' cannot be blank (when provided).
+     * <ul>
+     *  <li> If the 'firstName' is not provided, we do not update it (setting to null) in the User POJO.
+     *  <li> If the 'firstName' is blank, we throw an {@link InvalidParameterValueException}.
+     * </ul> 
+     */
+    protected void validateAndUpdateFirstNameIfNeeded(UpdateUserCmd updateUserCmd, UserVO user) {
+        String firstName = updateUserCmd.getFirstname();
+        if (firstName != null) {
+            if (StringUtils.isBlank(firstName)) {
+                throw new InvalidParameterValueException("Firstname cannot be empty.");
+            }
+            user.setFirstname(firstName);
+        }
+    }
 
-        return updateUser(id, firstName, lastName, email, userName, password, apiKey, secretKey, timeZone);
+    /**
+     * Searches an account for the given users. Then, we validate it as follows:
+     * <ul>
+     *  <li>If no account is found for the given user, we throw a {@link CloudRuntimeException}. There must be something wrong in the database for this case.
+     *  <li>If the account is of {@link Account#ACCOUNT_TYPE_PROJECT}, we throw an {@link InvalidParameterValueException}.
+     *  <li>If the account is of {@link Account#ACCOUNT_ID_SYSTEM}, we throw an {@link InvalidParameterValueException}.
+     * </ul>
+     * 
+     * Afterwards, we check if the logged user has access to the user being updated via {@link #checkAccess(Account, AccessType, boolean, ControlledEntity...)}
+     */
+    protected Account retrieveAndValidateAccount(UserVO user) {
+        Account account = _accountDao.findById(user.getAccountId());
+        if (account == null) {
+            throw new CloudRuntimeException("Unable to find user account with ID: " + user.getAccountId());
+        }
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("Unable to find user with ID: " + user.getUuid());
+        }
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
+            throw new PermissionDeniedException("user UUID : " + user.getUuid() + " is a system account; update is not allowed.");
+        }
+        checkAccess(getCurrentCallingAccount(), AccessType.OperateEntry, true, account);
+        return account;
+    }
+
+    /**
+     * Returns the calling account using the method {@link CallContext#getCallingAccount()}.
+     * We are introducing this method to avoid using {@link PowerMockRunner}. Then, we can mock the calls to this method, which facilitates the development of test cases. 
+     */
+    protected Account getCurrentCallingAccount() {
+        return CallContext.current().getCallingAccount();
+    }
+
+    /**
+     * Validates user API and Secret keys. If a new pair of keys is provided, we update them in the user POJO.
+     * <ul>
+     * <li>When updating the keys, it must be provided a pair (API and Secret keys); otherwise, an {@link InvalidParameterValueException} is thrown.
+     * <li>If a pair of keys is provided, we validate to see if there is an user already using the provided API key. If there is someone else using, we throw an {@link InvalidParameterValueException} because two users cannot have the same API key.
+     * </ul>
+     */
+    protected void validateAndUpdatApiAndSecretKeyIfNeeded(UpdateUserCmd updateUserCmd, UserVO user) {
+        String apiKey = updateUserCmd.getApiKey();
+        String secretKey = updateUserCmd.getSecretKey();
+
+        boolean isApiKeyBlank = StringUtils.isBlank(apiKey);
+        boolean isSecretKeyBlank = StringUtils.isBlank(secretKey);
+        if (isApiKeyBlank ^ isSecretKeyBlank) {
+            throw new InvalidParameterValueException("Please provide a userApiKey/userSecretKey pair");
+        }
+        if(isApiKeyBlank && isSecretKeyBlank) {
+            return;
+        }
+        Pair<User, Account> apiKeyOwner = _accountDao.findUserAccountByApiKey(apiKey);
+        if (apiKeyOwner != null) {
+            User userThatHasTheProvidedApiKey = apiKeyOwner.first();
+            if (userThatHasTheProvidedApiKey.getId() != user.getId()) {
+                throw new InvalidParameterValueException(String.format("The API key [%s] already exists in the system. Please provide a unique key.", apiKey));
+            }
+        }
+        user.setApiKey(apiKey);
+        user.setSecretKey(secretKey);
+    }
+
+    /**
+     * Searches for a user with the given userId. If no user is found we throw an {@link InvalidParameterValueException}. 
+     */
+    protected UserVO retrieveAndValidateUser(UpdateUserCmd updateUserCmd) {
+        Long userId = updateUserCmd.getId();
+
+        UserVO user = _userDao.getUser(userId);
+        if (user == null) {
+            throw new InvalidParameterValueException("Unable to find user with id: " + userId);
+        }
+        return user;
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_DISABLE, eventDescription = "disabling User", async = true)
     public UserAccount disableUser(long userId) {
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
 
         // Check if user exists in the system
         User user = _userDao.findById(userId);
@@ -1345,7 +1437,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @ActionEvent(eventType = EventTypes.EVENT_USER_ENABLE, eventDescription = "enabling User")
     public UserAccount enableUser(final long userId) {
 
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
 
         // Check if user exists in the system
         final User user = _userDao.findById(userId);
@@ -1396,7 +1488,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_LOCK, eventDescription = "locking User")
     public UserAccount lockUser(long userId) {
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
 
         // Check if user with id exists in the system
         User user = _userDao.findById(userId);
@@ -1462,7 +1554,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DELETE, eventDescription = "deleting account", async = true)
-    // This method deletes the account
     public boolean deleteUserAccount(long accountId) {
 
         CallContext ctx = CallContext.current();
@@ -1528,7 +1619,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         // Check if user performing the action is allowed to modify this account
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
         checkAccess(caller, AccessType.OperateEntry, true, account);
 
         boolean success = enableAccount(account.getId());
@@ -1545,7 +1636,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "locking account", async = true)
     public AccountVO lockAccount(String accountName, Long domainId, Long accountId) {
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
 
         Account account = null;
         if (accountId != null) {
@@ -1575,7 +1666,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "disabling account", async = true)
     public AccountVO disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
 
         Account account = null;
         if (accountId != null) {
@@ -1633,7 +1724,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         // Check if user performing the action is allowed to modify this account
-        checkAccess(CallContext.current().getCallingAccount(), _domainMgr.getDomain(account.getDomainId()));
+        checkAccess(getCurrentCallingAccount(), _domainMgr.getDomain(account.getDomainId()));
 
         // check if the given account name is unique in this domain for updating
         Account duplicateAcccount = _accountDao.findActiveAccount(newAccountName, domainId);
@@ -1775,7 +1866,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("Project users cannot be deleted or moved.");
         }
 
-        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
+        checkAccess(getCurrentCallingAccount(), AccessType.OperateEntry, true, account);
         CallContext.current().putContextParameter(User.class, user.getUuid());
     }
 
@@ -2351,7 +2442,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY, eventDescription = "register for the developer API keys")
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
         final Long userId = cmd.getId();
 
         User user = getUserIncludingRemoved(userId);

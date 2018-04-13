@@ -65,6 +65,8 @@ public class UpdateUserCmd extends BaseCmd {
             acceptedOnAdminPort = false)
     private String password;
 
+    @Parameter(name = ApiConstants.OLD_PASSWORD, type = CommandType.STRING, description = "Old password that was being used by the user. You must inform the old password when updating the password.", acceptedOnAdminPort = false)
+    private String oldPassword;
 
     @Parameter(name = ApiConstants.SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userSecretKey")
     private String secretKey;
@@ -78,7 +80,7 @@ public class UpdateUserCmd extends BaseCmd {
     private String username;
 
     @Inject
-    RegionService _regionService;
+    private RegionService _regionService;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -106,6 +108,10 @@ public class UpdateUserCmd extends BaseCmd {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getOldPassword() {
+        return oldPassword;
     }
 
     public String getSecretKey() {
@@ -151,5 +157,21 @@ public class UpdateUserCmd extends BaseCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update user");
         }
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setFirstname(String firstname) {
+        this.firstname = firstname;
+    }
+
+    public void setLastname(String lastname) {
+        this.lastname = lastname;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }
