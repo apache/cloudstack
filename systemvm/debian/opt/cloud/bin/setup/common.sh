@@ -496,9 +496,6 @@ clean_ipalias_config() {
 
 setup_apache2_common() {
   sed -i 's/^Include ports.conf.*/# CS: Done by Python CsApp config\n#Include ports.conf/g' /etc/apache2/apache2.conf
-  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerTokens .*/ServerTokens Prod/g" /etc/apache2/conf.d/security
-  [ -f /etc/apache2/conf.d/security ] && sed -i -e "s/^ServerSignature .*/ServerSignature Off/g" /etc/apache2/conf.d/security
-
   # Disable listing of http://SSVM-IP/icons folder for security issue. see article http://www.i-lateral.com/tutorials/disabling-the-icons-folder-on-an-ubuntu-web-server/
   [ -f /etc/apache2/mods-available/alias.conf ] && sed -i s/"Options Indexes MultiViews"/"Options -Indexes MultiViews"/ /etc/apache2/mods-available/alias.conf
 
