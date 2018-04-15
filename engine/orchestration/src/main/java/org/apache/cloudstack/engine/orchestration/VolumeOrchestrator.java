@@ -499,6 +499,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         // Find a suitable storage to create volume on
         StoragePool destPool = findStoragePool(dskCh, dc, pod, clusterId, null, vm, avoidPools);
+        if (destPool == null) {
+            throw new CloudRuntimeException("Failed to find a storage pool with enough capacity to copy the volume to.");
+        }
         DataStore destStore = dataStoreMgr.getDataStore(destPool.getId(), DataStoreRole.Primary);
         AsyncCallFuture<VolumeApiResult> future = volService.copyVolume(volume, destStore);
 

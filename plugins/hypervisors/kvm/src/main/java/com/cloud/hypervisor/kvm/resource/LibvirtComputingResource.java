@@ -2337,8 +2337,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
                 }
             }
-
-            vm.getDevices().addDevice(disk);
+            if (vm.getDevices() != null) {
+                vm.getDevices().addDevice(disk);
+            }
         }
 
         if (vmSpec.getType() != VirtualMachine.Type.User) {
@@ -2391,8 +2392,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                         + ") is " + nic.getType() + " traffic type. So, vsp-vr-ip " + vrIp + " is set in the metadata");
             }
         }
-
-        vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter));
+        
+        if (vm.getDevices() != null) {
+        	vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName())
+        	   .plug(nic, vm.getPlatformEmulator(), nicAdapter));
+        }
     }
 
     public boolean cleanupDisk(Map<String, String> volumeToDisconnect) {

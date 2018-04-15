@@ -256,14 +256,15 @@ public class ImplicitDedicationPlanner extends FirstFitPlanner implements Deploy
 
             // Get the list of all the hosts in the given clusters
             List<Long> allHosts = new ArrayList<Long>();
-            for (Long cluster : clusterList) {
-                List<HostVO> hostsInCluster = resourceMgr.listAllHostsInCluster(cluster);
-                for (HostVO hostVO : hostsInCluster) {
+            if (clusterList != null && !clusterList.isEmpty()) {
+                for (Long cluster : clusterList) {
+                    List<HostVO> hostsInCluster = resourceMgr.listAllHostsInCluster(cluster);
+                    for (HostVO hostVO : hostsInCluster) {
 
-                    allHosts.add(hostVO.getId());
+                        allHosts.add(hostVO.getId());
+                    }
                 }
             }
-
             // Go over all the hosts in the cluster and get a list of
             // 1. All empty hosts, not running any vms.
             // 2. Hosts running vms for this account and created by a service
