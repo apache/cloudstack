@@ -2337,9 +2337,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
                 }
             }
-            if (vm.getDevices() != null) {
-                vm.getDevices().addDevice(disk);
+            if (vm.getDevices() == null) {
+                s_logger.error("There is no devices for" + vm);
+                throw new RuntimeException("There is no devices for" + vm);
             }
+            vm.getDevices().addDevice(disk);
         }
 
         if (vmSpec.getType() != VirtualMachine.Type.User) {
