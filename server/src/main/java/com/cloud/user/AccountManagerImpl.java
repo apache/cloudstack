@@ -65,7 +65,6 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ControlledViewEntity;
@@ -1340,7 +1339,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     /**
      * Returns the calling account using the method {@link CallContext#getCallingAccount()}.
-     * We are introducing this method to avoid using {@link PowerMockRunner}. Then, we can mock the calls to this method, which facilitates the development of test cases.
+     * We are introducing this method to avoid using 'PowerMockRunner' in unit tests. Then, we can mock the calls to this method, which facilitates the development of test cases.
      */
     protected Account getCurrentCallingAccount() {
         return CallContext.current().getCallingAccount();
