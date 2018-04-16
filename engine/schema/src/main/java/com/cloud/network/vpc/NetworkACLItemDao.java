@@ -20,7 +20,7 @@ import java.util.List;
 
 import com.cloud.utils.db.GenericDao;
 
-/*
+/**
  * Data Access Object for network_acl_item table
  */
 public interface NetworkACLItemDao extends GenericDao<NetworkACLItemVO, Long> {
@@ -36,4 +36,12 @@ public interface NetworkACLItemDao extends GenericDao<NetworkACLItemVO, Long> {
     NetworkACLItemVO findByAclAndNumber(long aclId, int number);
 
     void loadCidrs(NetworkACLItemVO item);
+
+    /**
+     * Updated the network ACL item 'number' field.
+     *
+     * @param networkItemId is the ID of the network ACL rule that will have its 'number' field updated.
+     * @param newNumberValue is the new value that will be assigned to the 'number' field.
+     */
+    void updateNumberFieldNetworkItem(long networkItemId, int newNumberValue);
 }

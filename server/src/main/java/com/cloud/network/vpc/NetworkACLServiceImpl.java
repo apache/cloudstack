@@ -17,6 +17,8 @@
 package com.cloud.network.vpc;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +29,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
+import org.apache.cloudstack.api.command.user.network.MoveNetworkAclItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -936,4 +939,170 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
         return _networkACLDao.findById(id);
     }
 
+    @Override
+    public NetworkACLItem moveNetworkAclRuleToNewPosition(MoveNetworkAclItemCmd moveNetworkAclItemCmd) {
+        String uuidRuleBeingMoved = moveNetworkAclItemCmd.getUuidRuleBeingMoved();
+        String nextAclRuleUuid = moveNetworkAclItemCmd.getNextAclRuleUuid();
+        String previousAclRuleUuid = moveNetworkAclItemCmd.getPreviousAclRuleUuid();
+
+        if (StringUtils.isBlank(previousAclRuleUuid) && StringUtils.isBlank(nextAclRuleUuid)) {
+            throw new InvalidParameterValueException("Both previous and next ACL rule IDs cannot be blank.");
+        }
+
+        NetworkACLItemVO ruleBeingMoved = _networkACLItemDao.findByUuid(uuidRuleBeingMoved);
+        if (ruleBeingMoved == null) {
+            throw new InvalidParameterValueException(String.format("Could not find a rule with ID[%s]", uuidRuleBeingMoved));
+        }
+        NetworkACLItemVO previousRule = retrieveAndValidateAclRule(previousAclRuleUuid);
+        NetworkACLItemVO nextRule = retrieveAndValidateAclRule(nextAclRuleUuid);
+
+        validateMoveAclRulesData(ruleBeingMoved, previousRule, nextRule);
+
+        List<NetworkACLItemVO> allAclRules = getAllAclRulesSortedByNumber(ruleBeingMoved.getAclId());
+        if (previousRule == null) {
+            return moveRuleToTheTop(ruleBeingMoved, allAclRules);
+        }
+        if (nextRule == null) {
+            return moveRuleToTheBottom(ruleBeingMoved, allAclRules);
+        }
+
+        return moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
+    }
+
+    /**
+     * Loads all ACL rules from given network ACL list. Then, the ACL rules will be sorted according to the 'number' field in ascending order.
+     */
+    protected List<NetworkACLItemVO> getAllAclRulesSortedByNumber(long aclId) {
+        List<NetworkACLItemVO> allAclRules = _networkACLItemDao.listByACL(aclId);
+        Collections.sort(allAclRules, new Comparator<NetworkACLItemVO>() {
+            @Override
+            public int compare(NetworkACLItemVO o1, NetworkACLItemVO o2) {
+                return o1.number - o2.number;
+            }
+        });
+        return allAclRules;
+    }
+
+    /**
+     * Moves an ACL to the space between to other rules. If there is already enough room to accommodate the ACL rule being moved, we simply get the 'number' field from the previous ACL rule and add one, and then define this new value as the 'number' value for the ACL rule being moved.
+     * Otherwise, we will need to make room. This process is executed via {@link #updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItemVO, int, List, int)}, which will create the space between ACL rules if necessary. This involves shifting ACL rules to accommodate the rule being moved.
+     */
+    protected NetworkACLItem moveRuleBetweenAclRules(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules, NetworkACLItemVO previousRule, NetworkACLItemVO nextRule) {
+        if (previousRule.getNumber() + 1 != nextRule.getNumber()) {
+            int newNumberFieldValue = previousRule.getNumber() + 1;
+            for (NetworkACLItemVO networkACLItemVO : allAclRules) {
+                if (networkACLItemVO.getNumber() == newNumberFieldValue) {
+                    throw new InvalidParameterValueException("There are some inconsistencies with the data you sent. The new position calculated already has a ACL rule on it.");
+                }
+            }
+            ruleBeingMoved.setNumber(newNumberFieldValue);
+            _networkACLItemDao.updateNumberFieldNetworkItem(ruleBeingMoved.getId(), newNumberFieldValue);
+            return _networkACLItemDao.findById(ruleBeingMoved.getId());
+        }
+        int positionToStartProcessing = 0;
+        for (int i = 0; i < allAclRules.size(); i++) {
+            if (allAclRules.get(i).getId() == previousRule.getId()) {
+                positionToStartProcessing = i + 1;
+                break;
+            }
+        }
+        return updateAclRuleToNewPositionAndExecuteShiftIfNecessary(ruleBeingMoved, previousRule.getNumber() + 1, allAclRules, positionToStartProcessing);
+    }
+
+    /**
+     *  Moves a network ACL rule to the bottom of the list. This is executed by getting the 'number' field of the last ACL rule from the ACL list, and incrementing one.
+     *  This new value is assigned to the network ACL being moved and updated in the database using {@link NetworkACLItemDao#updateNumberFieldNetworkItem(long, int)}.
+     */
+    protected NetworkACLItem moveRuleToTheBottom(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules) {
+        NetworkACLItemVO lastAclRule = allAclRules.get(allAclRules.size() - 1);
+
+        int newNumberFieldValue = lastAclRule.getNumber() + 1;
+        ruleBeingMoved.setNumber(newNumberFieldValue);
+
+        _networkACLItemDao.updateNumberFieldNetworkItem(ruleBeingMoved.getId(), newNumberFieldValue);
+        return _networkACLItemDao.findById(ruleBeingMoved.getId());
+    }
+
+    /**
+     *  Move the rule to the top of the ACL rule list. This means that the ACL rule being moved will receive the position '1'.
+     *  Also, if necessary other ACL rules will have their 'number' field updated to create room for the new top rule.
+     */
+    protected NetworkACLItem moveRuleToTheTop(NetworkACLItemVO ruleBeingMoved, List<NetworkACLItemVO> allAclRules) {
+        return updateAclRuleToNewPositionAndExecuteShiftIfNecessary(ruleBeingMoved, 1, allAclRules, 0);
+    }
+
+    /**
+     * Updates the ACL rule number executing the shift on subsequent ACL rules if necessary.
+     * For example, if we have the following ACL rules:
+     * <ul>
+     *  <li> ACL A - number 1
+     *  <li> ACL B - number 2
+     *  <li> ACL C - number 3
+     *  <li> ACL D - number 12
+     * </ul>
+     * If we move 'ACL D' to a place  between 'ACL A' and 'ACL B', this method will execute the shift needded to create the space for 'ACL D'.
+     * After applying this method, we will have the following condition.
+     * <ul>
+     *  <li> ACL A - number 1
+     *  <li> ACL D - number 2
+     *  <li> ACL B - number 3
+     *  <li> ACL C - number 4
+     * </ul>
+     */
+    protected NetworkACLItem updateAclRuleToNewPositionAndExecuteShiftIfNecessary(NetworkACLItemVO ruleBeingMoved, int newNumberFieldValue, List<NetworkACLItemVO> allAclRules,
+            int indexToStartProcessing) {
+        ruleBeingMoved.setNumber(newNumberFieldValue);
+        for (int i = indexToStartProcessing; i < allAclRules.size(); i++) {
+            NetworkACLItemVO networkACLItemVO = allAclRules.get(i);
+            if (networkACLItemVO.getId() == ruleBeingMoved.getId()) {
+                continue;
+            }
+            if (newNumberFieldValue != networkACLItemVO.getNumber()) {
+                break;
+            }
+            int newNumberFieldValueNextAclRule = newNumberFieldValue + 1;
+            updateAclRuleToNewPositionAndExecuteShiftIfNecessary(networkACLItemVO, newNumberFieldValueNextAclRule, allAclRules, i);
+        }
+        _networkACLItemDao.updateNumberFieldNetworkItem(ruleBeingMoved.getId(), newNumberFieldValue);
+        return _networkACLItemDao.findById(ruleBeingMoved.getId());
+    }
+
+    /**
+     * Searches in the database for an ACL rule by its UUID.
+     * An {@link InvalidParameterValueException} is thrown if no ACL rule is found with the given UUID.
+     */
+    protected NetworkACLItemVO retrieveAndValidateAclRule(String aclRuleUuid) {
+        if (StringUtils.isBlank(aclRuleUuid)) {
+            return null;
+        }
+        NetworkACLItemVO aclRule = _networkACLItemDao.findByUuid(aclRuleUuid);
+        if (aclRule == null) {
+            throw new InvalidParameterValueException(String.format("Could not find rule with ID [%s]", aclRuleUuid));
+        }
+        return aclRule;
+    }
+
+    /**
+     *  Validates if the data provided to move the ACL rule is supported by this implementation. The user needs to provide a valid ACL UUID, and at least one of the previous or the next ACL rule.
+     *  The validation is as follows:
+     *  <ul>
+     *      <li> If both ACL rules 'previous' and 'next' are invalid, we throw an {@link InvalidParameterValueException};
+     *      <li> informed previous and next ACL rules must have the same ACL ID as the rule being moved; otherwise, an {@link InvalidParameterValueException} is thrown;
+     *      <li> then we check if the user trying to move ACL rules has access to the VPC, where the ACL rules are being applied.
+     *  </ul>
+     */
+    protected void validateMoveAclRulesData(NetworkACLItemVO ruleBeingMoved, NetworkACLItemVO previousRule, NetworkACLItemVO nextRule) {
+        if (nextRule == null && previousRule == null) {
+            throw new InvalidParameterValueException("Both previous and next ACL rule IDs cannot be invalid.");
+        }
+        long aclId = ruleBeingMoved.getAclId();
+
+        if ((nextRule != null && nextRule.getAclId() != aclId) || (previousRule != null && previousRule.getAclId() != aclId)) {
+            throw new InvalidParameterValueException("Cannot use ACL rules from differenting ACLs. Rule being moved.");
+        }
+        NetworkACLVO acl = _networkACLDao.findById(aclId);
+        Vpc vpc = _entityMgr.findById(Vpc.class, acl.getVpcId());
+        Account caller = CallContext.current().getCallingAccount();
+        _accountMgr.checkAccess(caller, null, true, vpc);
+    }
 }

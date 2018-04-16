@@ -27,3 +27,9 @@ ALTER TABLE `cloud`.`alert` ADD COLUMN `content` VARCHAR(5000);
 
 -- Fix the name of the column used to hold IPv4 range in 'vlan' table.
 ALTER TABLE `vlan` CHANGE `description` `ip4_range` varchar(255);
+
+-- [CLOUDSTACK-10344] bug when moving ACL rules (change order with drag and drop)
+-- We are only adding the permission to the default rules. Any custom rule must be configured by the root admin.
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 2, 'moveNetworkAclItem', 'ALLOW', 100) ON DUPLICATE KEY UPDATE rule=rule;
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'moveNetworkAclItem', 'ALLOW', 302) ON DUPLICATE KEY UPDATE rule=rule;
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'moveNetworkAclItem', 'ALLOW', 260) ON DUPLICATE KEY UPDATE rule=rule;

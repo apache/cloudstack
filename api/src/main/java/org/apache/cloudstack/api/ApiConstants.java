@@ -152,6 +152,8 @@ public class ApiConstants {
     public static final String ICMP_TYPE = "icmptype";
     public static final String ID = "id";
     public static final String IDS = "ids";
+    public static final String PREVIOUS_ACL_RULE_ID = "previousaclruleid";
+    public static final String NEXT_ACL_RULE_ID = "nextaclruleid";
     public static final String INTERNAL_DNS1 = "internaldns1";
     public static final String INTERNAL_DNS2 = "internaldns2";
     public static final String INTERVAL_TYPE = "intervaltype";

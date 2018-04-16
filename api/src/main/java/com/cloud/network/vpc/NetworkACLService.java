@@ -21,6 +21,7 @@ import java.util.List;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkACLCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLListsCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworkACLsCmd;
+import org.apache.cloudstack.api.command.user.network.MoveNetworkAclItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 
@@ -28,6 +29,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.Pair;
 
 public interface NetworkACLService {
+
     /**
      * Creates Network ACL for the specified VPC
      */
@@ -90,4 +92,8 @@ public interface NetworkACLService {
 
     NetworkACL updateNetworkACL(UpdateNetworkACLListCmd updateNetworkACLListCmd);
 
+    /**
+     * Updates a network item ACL to a new position. This method allows users to inform between which ACLs the given ACL will be placed. Therefore, the 'number' field will be filled out by the system in the best way possible to place the ACL accordingly.
+     */
+    NetworkACLItem moveNetworkAclRuleToNewPosition(MoveNetworkAclItemCmd moveNetworkAclItemCmd);
 }
