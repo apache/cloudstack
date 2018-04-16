@@ -127,8 +127,8 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
 
         ResourceCountVO resourceCountVO = findByOwnerAndType(domainId, ResourceOwnerType.Domain, type);
         if (resourceCountVO != null) {
-        	resourceCountVO.setCount(resourceCountVO.getCount() + delta);
-        	update(resourceCountVO.getId(), resourceCountVO);
+            resourceCountVO.setCount(resourceCountVO.getCount() + delta);
+            update(resourceCountVO.getId(), resourceCountVO);
         }
     }
 

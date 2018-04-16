@@ -2394,8 +2394,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
         
         if (vm.getDevices() != null) {
-        	vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName())
-        	   .plug(nic, vm.getPlatformEmulator(), nicAdapter));
+        	vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter));
         }
     }
 
