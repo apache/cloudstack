@@ -21,8 +21,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.context.CallContext;
@@ -38,7 +36,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -202,7 +199,7 @@ public class AccountManagetImplTestBase {
     UsageEventDao _usageEventDao;
 
     @Before
-    public void setup(){
+    public void setup() {
         accountManagerImpl.setUserAuthenticators(Arrays.asList(userAuthenticator));
         accountManagerImpl.setSecurityCheckers(Arrays.asList(securityChecker));
         CallContext.register(callingUser, callingAccount);

@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.user;
 
-import static org.mockito.Mockito.when;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyLong;
-import static org.mockito.Mockito.anyString;
-import static org.mockito.Mockito.anyBoolean;
+import static org.mockito.Mockito.when;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -52,8 +52,8 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.CloudException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.service.ServiceOfferingVO;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeVO;
 import com.cloud.vm.UserVmManagerImpl;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
@@ -69,12 +69,10 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
     Map<String, Object> oldFields = new HashMap<>();
     UserVmVO vm = mock(UserVmVO.class);
 
-
     // Configures the static fields of the UsageEventUtils class, Storing the
     // previous values to be restored during the cleanup phase, to avoid
     // interference with other unit tests.
-    protected UsageEventUtils setupUsageUtils() throws NoSuchMethodException, SecurityException, IllegalAccessException,
-    IllegalArgumentException, InvocationTargetException {
+    protected UsageEventUtils setupUsageUtils() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException {
 
         _usageEventDao = new MockUsageEventDao();
         UsageEventUtils utils = new UsageEventUtils();
@@ -92,8 +90,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
                 Field staticField = UsageEventUtils.class.getDeclaredField("s_" + fieldName);
                 staticField.setAccessible(true);
                 oldFields.put(f.getName(), staticField.get(null));
-                f.set(utils,
-                        this.getClass().getSuperclass().getDeclaredField("_" + fieldName).get(this));
+                f.set(utils, this.getClass().getSuperclass().getDeclaredField("_" + fieldName).get(this));
             } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
                 e.printStackTrace();
             }
@@ -105,9 +102,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
         return utils;
     }
 
-
-    protected void defineMocksBehavior()
-            throws AgentUnavailableException, ConcurrentOperationException, CloudException {
+    protected void defineMocksBehavior() throws AgentUnavailableException, ConcurrentOperationException, CloudException {
 
         AccountVO account = new AccountVO();
         account.setId(ACCOUNT_ID);
@@ -127,8 +122,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
         List<VolumeVO> volumes = new ArrayList<>();
         volumes.add(vol);
 
-        when(securityChecker.checkAccess(any(Account.class), any(ControlledEntity.class), any(AccessType.class),
-                anyString())).thenReturn(true);
+        when(securityChecker.checkAccess(any(Account.class), any(ControlledEntity.class), any(AccessType.class), anyString())).thenReturn(true);
 
         when(_userVmDao.findById(anyLong())).thenReturn(vm);
         when(_userVmDao.listByAccountId(ACCOUNT_ID)).thenReturn(Arrays.asList(vm));
@@ -141,8 +135,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
         when(offering.getId()).thenReturn(1l);
         when(offering.getCpu()).thenReturn(500);
         when(offering.getRamSize()).thenReturn(500);
-        when(_serviceOfferingDao.findByIdIncludingRemoved(anyLong(), anyLong()))
-        .thenReturn(offering);
+        when(_serviceOfferingDao.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(offering);
 
         when(_domainMgr.getDomain(anyLong())).thenReturn(domain);
 
@@ -151,9 +144,8 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
     }
 
     @Before
-    public void init()
-            throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException,
-            InvocationTargetException, AgentUnavailableException, ConcurrentOperationException, CloudException {
+    public void init() throws NoSuchMethodException, SecurityException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, AgentUnavailableException,
+    ConcurrentOperationException, CloudException {
 
         setupUsageUtils();
         defineMocksBehavior();
@@ -174,12 +166,9 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
         method.invoke(utils);
     }
 
-    @SuppressWarnings("unchecked")
-    protected List<UsageEventVO> deleteUserAccountRootVolumeUsageEvents(boolean vmDestroyedPrior)
-            throws AgentUnavailableException, ConcurrentOperationException, CloudException {
+    protected List<UsageEventVO> deleteUserAccountRootVolumeUsageEvents(boolean vmDestroyedPrior) throws AgentUnavailableException, ConcurrentOperationException, CloudException {
 
-        when(vm.getState())
-        .thenReturn(vmDestroyedPrior ? VirtualMachine.State.Destroyed : VirtualMachine.State.Running);
+        when(vm.getState()).thenReturn(vmDestroyedPrior ? VirtualMachine.State.Destroyed : VirtualMachine.State.Running);
         when(vm.getRemoved()).thenReturn(vmDestroyedPrior ? new Date() : null);
         accountManagerImpl.deleteUserAccount(ACCOUNT_ID);
 
@@ -188,8 +177,8 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
 
     @Test
     // If the VM is alerady destroyed, no events should get emitted
-    public void destroyedVMRootVolumeUsageEvent() throws SecurityException, IllegalArgumentException,
-    ReflectiveOperationException, AgentUnavailableException, ConcurrentOperationException, CloudException {
+    public void destroyedVMRootVolumeUsageEvent()
+            throws SecurityException, IllegalArgumentException, ReflectiveOperationException, AgentUnavailableException, ConcurrentOperationException, CloudException {
         List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(true);
         Assert.assertEquals(0, emittedEvents.size());
     }
@@ -197,8 +186,8 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
     @Test
     // If the VM is running, we should see one emitted event for the root
     // volume.
-    public void runningVMRootVolumeUsageEvent() throws SecurityException, IllegalArgumentException,
-    ReflectiveOperationException, AgentUnavailableException, ConcurrentOperationException, CloudException {
+    public void runningVMRootVolumeUsageEvent()
+            throws SecurityException, IllegalArgumentException, ReflectiveOperationException, AgentUnavailableException, ConcurrentOperationException, CloudException {
         List<UsageEventVO> emittedEvents = deleteUserAccountRootVolumeUsageEvents(false);
         Assert.assertEquals(1, emittedEvents.size());
         UsageEventVO event = emittedEvents.get(0);
