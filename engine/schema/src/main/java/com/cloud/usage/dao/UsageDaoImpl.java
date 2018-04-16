@@ -91,7 +91,7 @@ public class UsageDaoImpl extends GenericDaoBase<UsageVO, Long> implements Usage
             txn.commit();
         } catch (Exception ex) {
             txn.rollback();
-            s_logger.error("error retrieving usage vm instances for account id: " + accountId);
+            s_logger.error("error retrieving usage vm instances for account id: " + accountId, ex);
         } finally {
             txn.close();
         }

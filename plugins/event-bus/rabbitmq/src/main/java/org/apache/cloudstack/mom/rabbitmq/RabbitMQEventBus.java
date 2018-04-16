@@ -237,9 +237,9 @@ public class RabbitMQEventBus extends ManagerBase implements EventBus {
             s_subscribers.put(queueName, queueDetails);
 
         } catch (AlreadyClosedException closedException) {
-            s_logger.warn("Connection to AMQP service is lost. Subscription:" + queueName + " will be active after reconnection");
+            s_logger.warn("Connection to AMQP service is lost. Subscription:" + queueName + " will be active after reconnection", closedException);
         } catch (ConnectException connectException) {
-            s_logger.warn("Connection to AMQP service is lost. Subscription:" + queueName + " will be active after reconnection");
+            s_logger.warn("Connection to AMQP service is lost. Subscription:" + queueName + " will be active after reconnection", connectException);
         } catch (Exception e) {
             throw new EventBusException("Failed to subscribe to event due to " + e.getMessage());
         }
