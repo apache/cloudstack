@@ -2392,10 +2392,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                         + ") is " + nic.getType() + " traffic type. So, vsp-vr-ip " + vrIp + " is set in the metadata");
             }
         }
-        
-        if (vm.getDevices() != null) {
-        	vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter));
+        if (vm.getDevices() == null) {
+            s_logger.error("LibvirtVMDef object get devices with null result");
+            throw new InternalErrorException("LibvirtVMDef object get devices with null result");
         }
+        vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter));
     }
 
     public boolean cleanupDisk(Map<String, String> volumeToDisconnect) {
