@@ -180,11 +180,8 @@ var pollAsyncJobResult = function(args) {
         return urlString;
     }
 
-    function todb(val) {
-        return encodeURIComponent(val);
-    }
 
-    //LB provider map
+//LB provider map
 var lbProviderMap = {
     "publicLb": {
         "non-vpc": ["VirtualRouter", "Netscaler", "F5"],
@@ -735,16 +732,16 @@ var addGuestNetworkDialog = {
 
             if (selectedNetworkOfferingObj.guestiptype == "Shared")
                 array1.push("&physicalnetworkid=" + args.data.physicalNetworkId);
+            
+            cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array1, "name", args.data.name);
+            cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array1, "displayText", args.data.description);
 
-            array1.push("&name=" + todb(args.data.name));
-            array1.push("&displayText=" + todb(args.data.description));
-
-            if (($form.find('.form-item[rel=vlanId]').css("display") != "none") && (args.data.vlanId != null && args.data.vlanId.length > 0))
-                array1.push("&vlan=" + todb(args.data.vlanId));
-
-            if (($form.find('.form-item[rel=isolatedpvlanId]').css("display") != "none") && (args.data.isolatedpvlanId != null && args.data.isolatedpvlanId.length > 0))
-                array1.push("&isolatedpvlan=" + todb(args.data.isolatedpvlanId));
-
+            if ($form.find('.form-item[rel=vlanId]').css("display") != "none"){
+                cloudStack.addVlanToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty(array1, args.data.vlanId)
+            }
+            if (($form.find('.form-item[rel=isolatedpvlanId]').css("display") != "none") && (args.data.isolatedpvlanId != null && args.data.isolatedpvlanId.length > 0)){
+                array1.push("&isolatedpvlan=" + encodeURIComponent(args.data.isolatedpvlanId));
+            }
             if ($form.find('.form-item[rel=domainId]').css("display") != "none") {
                 array1.push("&domainId=" + args.data.domainId);
 
@@ -788,9 +785,9 @@ var addGuestNetworkDialog = {
                 array1.push("&endipv6=" + args.data.endipv6);
             //IPv6 (end)
 
-            if (args.data.networkdomain != null && args.data.networkdomain.length > 0)
-                array1.push("&networkdomain=" + todb(args.data.networkdomain));
-
+            if (args.data.networkdomain != null && args.data.networkdomain.length > 0){
+                array1.push("&networkdomain=" + encodeURIComponent(args.data.networkdomain));
+            }
             $.ajax({
                 url: createURL("createNetwork" + array1.join("")),
                 dataType: "json",
@@ -2801,3 +2798,56 @@ cloudStack.createTemplateMethod = function (isSnapshot){
         }
     };
 };
+
+cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty = function(array, parameterName, value){
+    if (value != null && value.length > 0) {
+        array.push("&" + parameterName + "=" + encodeURIComponent(value));
+    }
+}
+
+cloudStack.addUsernameAndPasswordToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty = function(array, username, password){
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "username", username);
+    cloudStack.addPasswordToCommandUrlParameterArray(array, password);
+};
+
+cloudStack.addPasswordToCommandUrlParameterArray = function(array, password){
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "password", password);
+};
+
+/**
+ * We will only add the name and description data to the array of parameters if they are not null.
+ * Moreover, we expect the name parameter to be a property ('name') of data object. 
+ * The description must be a property called 'description' in the data object.   
+ */
+cloudStack.addNameAndDescriptionToCommandUrlParameterArray = function (array, data){
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "name", data.name);
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "description", data.description);
+};
+
+cloudStack.addNewSizeToCommandUrlParameterArrayIfItIsNotNullAndHigherThanZero = function(array, newSize){
+    if(newSize == undefined || newSize == null){
+        return;
+    }
+    var newSizeAsNumber = new Number(newSize);
+    if(isNaN(newSizeAsNumber)){
+        return;
+    }
+    if (newSizeAsNumber > 0) {
+        array.push("&size=" + encodeURIComponent(newSize));
+    }
+};
+
+cloudStack.addVlanToCommandUrlParameterArrayIfItIsNotNullAndNotEmpty = function(array, vlan){
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "vlan", vlan);
+};
+
+cloudStack.createArrayOfParametersForCreatePodCommand = function (zoneId, data){
+    var array =[];
+    array.push("&zoneId=" + zoneId);
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "name", data.podName);
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "gateway", data.podGateway);
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "netmask", data.podNetmask);
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "startIp", data.podStartIp);
+    cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "endIp", data.podEndIp);
+    return array;
+}

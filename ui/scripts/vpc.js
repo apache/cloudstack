@@ -3228,16 +3228,16 @@
                         },
                         action: function(args) {
                             var array1 = [];
-                            array1.push("&name=" + todb(args.data.name));
-                            array1.push("&displaytext=" + todb(args.data.displaytext));
+                            array1.push("&name=" + encodeURIComponent(args.data.name));
+                            array1.push("&displaytext=" + encodeURIComponent(args.data.displaytext));
 
                             //args.data.networkdomain is null when networkdomain field is hidden
                             if (args.data.networkdomain != null && args.data.networkdomain != args.context.networks[0].networkdomain)
-                                array1.push("&networkdomain=" + todb(args.data.networkdomain));
+                                array1.push("&networkdomain=" + encodeURIComponent(args.data.networkdomain));
 
                             //args.data.networkofferingid is null when networkofferingid field is hidden
                             if (args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) {
-                                array1.push("&networkofferingid=" + todb(args.data.networkofferingid));
+                                array1.push("&networkofferingid=" + encodeURIComponent(args.data.networkofferingid));
 
                                 if (args.context.networks[0].type == "Isolated") { //Isolated network
                                     cloudStack.dialog.confirm({

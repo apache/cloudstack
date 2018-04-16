@@ -228,14 +228,7 @@
                     var array1 = [];
                     array1.push("&snapshotmemory=" + (args.data.snapshotMemory == "on"));
                     array1.push("&quiescevm=" + (args.data.quiescevm == "on"));
-                    var displayname = args.data.name;
-                    if (displayname != null && displayname.length > 0) {
-                        array1.push("&name=" + todb(displayname));
-                    }
-                    var description = args.data.description;
-                    if (description != null && description.length > 0) {
-                        array1.push("&description=" + todb(description));
-                    }
+                    cloudStack.addNameAndDescriptionToCommandUrlParameterArray(array1, args.data);
                     $.ajax({
                         url: createURL("createVMSnapshot&virtualmachineid=" + instance.id + array1.join("")),
                         dataType: "json",
