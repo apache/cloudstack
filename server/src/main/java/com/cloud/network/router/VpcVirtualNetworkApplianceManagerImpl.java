@@ -93,6 +93,7 @@ import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -740,14 +741,25 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
         }
         Answer answer = cmds.getAnswer("users");
-        if (answer != null && !answer.getResult()) {
+        if (answer == null) {
+            s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
+                    + router.getInstanceName() + " due to null Answer object");
+            throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId()
+                    + " on domR: " + router.getInstanceName() + " due to null Answer object", DataCenter.class, router.getDataCenterId());
+        }
+        if (BooleanUtils.isFalse(answer.getResult())) {
             s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
                     + router.getInstanceName() + " due to " + answer.getDetails());
             throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId()
             + " on domR: " + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
         }
         answer = cmds.getAnswer("startVpn");
-        if (answer != null && !answer.getResult()) {
+        if (answer == null) {
+            s_logger.error("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to null Answer object");
+            throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
+                    + router.getInstanceName() + " due to null Answer object", DataCenter.class, router.getDataCenterId());
+        }
+        if (BooleanUtils.isFalse(answer.getResult())) {
             s_logger.error("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to "
                     + answer.getDetails());
             throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
