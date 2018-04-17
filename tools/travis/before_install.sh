@@ -111,5 +111,5 @@ do
   cat /tmp/piplog
 done
 
-echo -e "\nVersion of pip troublesome packages:\n"
-echo $(pip freeze | grep -e six -e mock -e astroid -e enum34)
+echo -e "\nVersion of pip packages:\n"
+echo $(pip freeze)
