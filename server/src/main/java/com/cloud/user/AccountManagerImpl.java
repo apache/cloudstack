@@ -1194,12 +1194,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
      *
      * If all checks pass, we encode the given password with the most preferable password mechanism given in {@link #_userPasswordEncoders}.
      */
-    protected void validateUserPasswordAndUpdateIfNeeded(String password, UserVO user, String oldPassword) {
-        if (password == null) {
+    protected void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String oldPassword) {
+        if (newPassword == null) {
             s_logger.trace("No new password to update for user: " + user.getUuid());
             return;
         }
-        if (StringUtils.isBlank(password)) {
+        if (StringUtils.isBlank(newPassword)) {
             throw new InvalidParameterValueException("Password cannot be empty or blank.");
         }
         Account callingAccount = getCurrentCallingAccount();
@@ -1213,13 +1213,13 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("You must inform the old password when updating a user password.");
         }
         if (CollectionUtils.isEmpty(_userPasswordEncoders)) {
-            throw new CloudRuntimeException("No user authenticatiors configured!");
+            throw new CloudRuntimeException("No user authenticators configured!");
         }
         if (!isAdmin) {
             validateOldPassword(user, oldPassword);
         }
         UserAuthenticator userAuthenticator = _userPasswordEncoders.get(0);
-        String newPasswordEncoded = userAuthenticator.encode(password);
+        String newPasswordEncoded = userAuthenticator.encode(newPassword);
         user.setPassword(newPasswordEncoded);
     }
 
