@@ -38,5 +38,6 @@ class TestCsAddress(unittest.TestCase):
     def test_get_guest_netmask(self):
         self.assertTrue(self.csaddress.get_guest_netmask() == "255.255.255.0")
 
+
 if __name__ == '__main__':
     unittest.main()

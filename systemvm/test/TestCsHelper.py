@@ -31,5 +31,6 @@ class TestCsHelper(unittest.TestCase):
         result = CsHelper.execute("/bin/false")
         self.assertTrue(result is not None)
 
+
 if __name__ == '__main__':
     unittest.main()

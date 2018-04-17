@@ -34,5 +34,6 @@ class TestCsInterface(unittest.TestCase):
     def test_is_public(self):
         self.assertTrue(self.csinterface.is_public() is False)
 
+
 if __name__ == '__main__':
     unittest.main()

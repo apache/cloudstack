@@ -29,5 +29,6 @@ class TestCsRule(unittest.TestCase):
         csrule = CsRule("eth1")
         self.assertTrue(csrule is not None)
 
+
 if __name__ == '__main__':
     unittest.main()

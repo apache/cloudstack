@@ -29,5 +29,6 @@ class TestCsFile(unittest.TestCase):
         csfile = CsFile("testfile")
         self.assertTrue(csfile is not None)
 
+
 if __name__ == '__main__':
     unittest.main()
