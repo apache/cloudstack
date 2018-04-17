@@ -121,16 +121,6 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
     }
 
     @Override
-    @Deprecated
-    public void updateDomainCount(long domainId, ResourceType type, boolean increment, long delta) {
-        delta = increment ? delta : delta * -1;
-
-        ResourceCountVO resourceCountVO = findByOwnerAndType(domainId, ResourceOwnerType.Domain, type);
-        resourceCountVO.setCount(resourceCountVO.getCount() + delta);
-        update(resourceCountVO.getId(), resourceCountVO);
-    }
-
-    @Override
     public boolean updateById(long id, boolean increment, long delta) {
         delta = increment ? delta : delta * -1;
 
