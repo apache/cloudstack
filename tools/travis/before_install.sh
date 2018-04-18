@@ -22,6 +22,8 @@
 #
 
 echo -e "#### System Information ####"
+echo -e "\nO.S. information:"
+echo $(uname -a)
 
 echo -e "\nWho am I:"
 whoami
@@ -100,7 +102,7 @@ pip install --user --upgrade pip
 
 for ((i=0;i<$RETRY_COUNT;i++))
 do
-  pip install --user --upgrade lxml paramiko nose texttable ipmisim pyopenssl mock flask netaddr pylint pep8 > /tmp/piplog
+  pip install --user --upgrade lxml paramiko nose texttable ipmisim pyopenssl mock flask netaddr pylint pycodestyle six astroid > /tmp/piplog
   if [[ $? -eq 0 ]]; then
     echo -e "\npython packages installed successfully"
     break;
@@ -109,3 +111,5 @@ do
   cat /tmp/piplog
 done
 
+echo -e "\nVersion of pip packages:\n"
+echo $(pip freeze)

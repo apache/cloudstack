@@ -29,5 +29,6 @@ class TestCsProcess(unittest.TestCase):
         csprocess = CsProcess({})
         self.assertTrue(csprocess is not None)
 
+
 if __name__ == '__main__':
     unittest.main()

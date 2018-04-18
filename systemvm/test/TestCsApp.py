@@ -34,5 +34,6 @@ class TestCsApp(unittest.TestCase):
         csapp = CsApp(csip)
         self.assertTrue(csapp is not None)
 
+
 if __name__ == '__main__':
     unittest.main()

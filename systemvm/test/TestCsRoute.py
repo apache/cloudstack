@@ -43,5 +43,6 @@ class TestCsRoute(unittest.TestCase):
         name = "eth1"
         self.assertEqual("Table_eth1", csroute.get_tablename(name))
 
+
 if __name__ == '__main__':
     unittest.main()

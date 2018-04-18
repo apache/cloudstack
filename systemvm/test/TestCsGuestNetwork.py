@@ -41,5 +41,6 @@ class TestCsGuestNetwork(unittest.TestCase):
         dns = csguestnetwork.get_dns()
         self.assertTrue(len(dns) == 2)
 
+
 if __name__ == '__main__':
     unittest.main()
