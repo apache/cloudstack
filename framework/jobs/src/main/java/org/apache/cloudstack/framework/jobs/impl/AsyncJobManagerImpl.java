@@ -62,7 +62,7 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.slf4j.MDC;
 
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.dao.SnapshotDao;

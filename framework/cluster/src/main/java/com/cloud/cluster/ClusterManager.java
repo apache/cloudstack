@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.cluster;
 
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.utils.component.Manager;

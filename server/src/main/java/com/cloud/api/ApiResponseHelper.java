@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api;
 
+import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.agent.api.VgpuTypesInfo;
@@ -235,6 +236,7 @@ import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
 import org.apache.cloudstack.api.response.LBStickinessResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
@@ -3973,6 +3975,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         Domain domain = ApiDBUtils.findDomainById(sshkeyPair.getDomainId());
         response.setDomainId(domain.getUuid());
         response.setDomainName(domain.getName());
+        return response;
+    }
+    public ManagementServerResponse createManagementResponse(ManagementServerHost mgmt) {
+        ManagementServerResponse response = new ManagementServerResponse();
+        response.setId(mgmt.getUuid());
+        response.setName(mgmt.getName());
+        response.setVersion(mgmt.getVersion());
+        response.setState(mgmt.getState());
         return response;
     }
 }

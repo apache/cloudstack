@@ -19,7 +19,7 @@ package com.cloud.server;
 import java.util.List;
 
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.utils.db.Merovingian2;
 
 /**
