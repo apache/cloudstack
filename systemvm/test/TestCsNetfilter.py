@@ -29,5 +29,6 @@ class TestCsNetfilter(unittest.TestCase):
         csnetfilter = CsNetfilter()
         self.assertTrue(csnetfilter is not None)
 
+
 if __name__ == '__main__':
     unittest.main()

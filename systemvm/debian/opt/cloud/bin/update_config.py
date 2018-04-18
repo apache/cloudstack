@@ -112,6 +112,7 @@ def is_guestnet_configured(guestnet_dict, keys):
 
     return exists
 
+
 # If the command line json file is unprocessed process it
 # This is important or, the control interfaces will get deleted!
 if jsonFilename != "cmd_line.json" and os.path.isfile(jsonPath % "cmd_line.json"):

@@ -36,5 +36,6 @@ class TestCsRedundant(unittest.TestCase):
         csredundant = CsRedundant(csconfig)
         self.assertTrue(csredundant is not None)
 
+
 if __name__ == '__main__':
     unittest.main()

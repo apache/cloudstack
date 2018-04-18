@@ -33,5 +33,6 @@ class TestCsDhcp(unittest.TestCase):
         csdhcp = CsDhcp("dhcpentry", {})
         self.assertTrue(csdhcp is not None)
 
+
 if __name__ == '__main__':
     unittest.main()

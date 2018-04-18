@@ -29,5 +29,6 @@ class TestCsConfig(unittest.TestCase):
         csconfig = CsConfig()
         self.assertTrue(csconfig is not None)
 
+
 if __name__ == '__main__':
     unittest.main()
