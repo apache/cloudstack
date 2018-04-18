@@ -1,33 +1,37 @@
 Source: cloudstack
-Section: libs
-Priority: extra
-Maintainer: Wido den Hollander <wido@widodh.nl>
+Section: net
+Priority: optional
+Maintainer: Rohit Yadav <rohit@apache.org>
 Build-Depends: debhelper (>= 9), openjdk-8-jdk | java8-sdk | java8-jdk, genisoimage,
  python-mysql.connector, maven (>= 3) | maven3, python (>= 2.7), lsb-release, dh-systemd, python-setuptools
-Standards-Version: 3.8.1
-Homepage: http://www.cloudstack.org/
+Standards-Version: 4.0.0
+Homepage: http://cloudstack.apache.org/
 
 Package: cloudstack-common
 Architecture: all
 Depends: ${misc:Depends}, ${python:Depends}, genisoimage, nfs-common, python-netaddr
 Conflicts: cloud-scripts, cloud-utils, cloud-system-iso, cloud-console-proxy, cloud-daemonize, cloud-deps, cloud-python, cloud-setup
-Description: A common package which contains files which are shared by several CloudStack packages
+Description: The Apache CloudStack common package
+  A common package which contains files which are shared by several Apache
+  CloudStack packages.
 
 Package: cloudstack-management
 Architecture: all
 Depends: ${python:Depends}, openjdk-8-jre-headless | java8-runtime-headless | java8-runtime, cloudstack-common (= ${source:Version}), sudo, jsvc, python-mysql.connector, libmysql-java, augeas-tools, mysql-client, adduser, bzip2, ipmitool, lsb-release, init-system-helpers (>= 1.14~)
 Conflicts: cloud-server, cloud-client, cloud-client-ui
-Description: CloudStack server library
- The CloudStack management server
+Description: The Apache CloudStack management server
+  The CloudStack management server is in charge of overall cloud
+  orchestation, management and service. The management server
+  also provides the UI and API services.
 
 Package: cloudstack-agent
 Architecture: all
 Depends: ${python:Depends}, openjdk-8-jre-headless | java8-runtime-headless | java8-runtime, cloudstack-common (= ${source:Version}), lsb-base (>= 4.0), libcommons-daemon-java, openssh-client, qemu-kvm (>= 1.0), libvirt-bin (>= 1.2.2), uuid-runtime, iproute, ebtables, vlan, jsvc, ipset, python-libvirt, ethtool, iptables, lsb-release, init-system-helpers (>= 1.14~), aria2
 Recommends: init-system-helpers
 Conflicts: cloud-agent, cloud-agent-libs, cloud-agent-deps, cloud-agent-scripts
-Description: CloudStack agent
+Description: The Apache CloudStack agent
  The CloudStack agent is in charge of managing shared computing resources in
- a CloudStack powered cloud.  Install this package if this computer
+ a CloudStack powered cloud. Install this package on the host that
  will participate in your cloud as a KVM HyperVisor.
 
 Package: cloudstack-usage
@@ -37,17 +41,15 @@ Description: CloudStack usage monitor
  The CloudStack usage monitor provides usage accounting across the entire cloud for
  cloud operators to charge based on usage parameters.
 
-Package: cloudstack-docs
-Architecture: all
-Depends: ${misc:Depends}
-Description: The CloudStack documentation
-
 Package: cloudstack-marvin
 Architecture: all
 Depends: ${misc:Depends}, python-pip, python-dev, libffi-dev
-Description: The CloudStack Marvin library
+Description: The Apache CloudStack Marvin library
+  Marvin is a Python library that is used to write and run integration tests.
 
 Package: cloudstack-integration-tests
 Architecture: all
 Depends: ${misc:Depends}, cloudstack-marvin (= ${source:Version})
 Description: The CloudStack Marvin integration tests
+  This packages smoke and component integration tests based on Marvin for
+  Apache CloudStack.
