@@ -5028,14 +5028,14 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
                 checkForSuccess(conn, task);
             } catch (final Types.HandleInvalid e) {
                 if (vm.getPowerState(conn) == VmPowerState.RUNNING) {
-                    s_logger.debug("VM " + vmName + " is in Running status");
+                    s_logger.debug("VM " + vmName + " is in Running status", e);
                     task = null;
                     return;
                 }
                 throw new CloudRuntimeException("Start VM " + vmName + " catch HandleInvalid and VM is not in RUNNING state");
             } catch (final TimeoutException e) {
                 if (vm.getPowerState(conn) == VmPowerState.RUNNING) {
-                    s_logger.debug("VM " + vmName + " is in Running status");
+                    s_logger.debug("VM " + vmName + " is in Running status", e);
                     task = null;
                     return;
                 }

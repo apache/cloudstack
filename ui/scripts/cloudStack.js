@@ -223,9 +223,7 @@
                 var array1 = [];
                 array1.push("&username=" + encodeURIComponent(args.data.username));
 
-                var password = todb(args.data.password);
-                array1.push("&password=" + password);
-
+                cloudStack.addPasswordToCommandUrlParameterArray(array1, args.data.password);
                 var domain;
                 if (args.data.domain != null && args.data.domain.length > 0) {
                     if (args.data.domain.charAt(0) != "/")

@@ -231,7 +231,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private String _instance;
 
     private int _proxySessionTimeoutValue = DEFAULT_PROXY_SESSION_TIMEOUT;
-    private boolean _sslEnabled = true;
+    private boolean _sslEnabled = false;
     private String _consoleProxyUrlDomain;
 
     // global load picture at zone basis
@@ -1246,8 +1246,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
-        String value = configs.get(Config.ConsoleProxyCmdPort.key());
-        value = configs.get("consoleproxy.sslEnabled");
+        String value = configs.get("consoleproxy.sslEnabled");
         if (value != null && value.equalsIgnoreCase("true")) {
             _sslEnabled = true;
         }

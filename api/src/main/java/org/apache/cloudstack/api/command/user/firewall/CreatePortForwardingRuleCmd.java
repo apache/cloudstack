@@ -358,9 +358,8 @@ public class CreatePortForwardingRuleCmd extends BaseAsyncCreateCmd implements P
             setEntityId(result.getId());
             setEntityUuid(result.getUuid());
         } catch (NetworkRuleConflictException ex) {
-            s_logger.info("Network rule conflict: ", ex);
             s_logger.trace("Network Rule Conflict: ", ex);
-            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.NETWORK_RULE_CONFLICT_ERROR, ex.getMessage(), ex);
         }
     }
 

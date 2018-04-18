@@ -16,12 +16,12 @@
 // under the License.
 package com.cloud.network.vpc.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.List;
 
 import javax.inject.Inject;
 
-import com.google.common.collect.Lists;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.vpc.NetworkACLItem.State;
@@ -35,11 +35,12 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.collect.Lists;
 
-@Component
 @DB()
+@Component
 public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long> implements NetworkACLItemDao {
-    private static final Logger s_logger = Logger.getLogger(NetworkACLItemDaoImpl.class);
 
     protected final SearchBuilder<NetworkACLItemVO> AllFieldsSearch;
     protected final SearchBuilder<NetworkACLItemVO> NotRevokedSearch;
@@ -115,12 +116,14 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
 
     @Override
     public List<NetworkACLItemVO> listByACL(Long aclId) {
-        if (aclId == null) return Lists.newArrayList();
+        if (aclId == null) {
+            return Lists.newArrayList();
+        }
 
         SearchCriteria<NetworkACLItemVO> sc = AllFieldsSearch.create();
         sc.setParameters("aclId", aclId);
         List<NetworkACLItemVO> list = listBy(sc);
-        for(NetworkACLItemVO item :list) {
+        for (NetworkACLItemVO item : list) {
             loadCidrs(item);
         }
         return list;
@@ -140,7 +143,7 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
         sc.setParameters("aclId", aclId);
         sc.setParameters("number", number);
         NetworkACLItemVO vo = findOneBy(sc);
-        if(vo != null) {
+        if (vo != null) {
             loadCidrs(vo);
         }
         return vo;
@@ -171,5 +174,20 @@ public class NetworkACLItemDaoImpl extends GenericDaoBase<NetworkACLItemVO, Long
     public void loadCidrs(NetworkACLItemVO item) {
         List<String> cidrs = _networkACLItemCidrsDao.getCidrs(item.getId());
         item.setSourceCidrList(cidrs);
+    }
+
+    private String sqlUpdateNumberFieldNetworkItem = "UPDATE network_acl_item SET number = ? where id =?";
+
+    @Override
+    public void updateNumberFieldNetworkItem(long networkItemId, int newNumberValue) {
+        try (TransactionLegacy txn = TransactionLegacy.currentTxn();
+                PreparedStatement pstmt = txn.prepareAutoCloseStatement(sqlUpdateNumberFieldNetworkItem)) {
+            pstmt.setLong(1, newNumberValue);
+            pstmt.setLong(2, networkItemId);
+            pstmt.executeUpdate();
+            txn.commit();
+        } catch (SQLException e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 }

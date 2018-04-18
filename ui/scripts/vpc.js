@@ -535,31 +535,22 @@
             moveDrag: {
                 action: function(args) {
                     var rule = args.context.multiRule[0];
-                    var number = 0;
-                    var prevItem = args.prevItem ? args.prevItem.number : null;
-                    var nextItem = args.nextItem ? args.nextItem.number : null;
-
-                    if (!nextItem) { // Last item
-                        number = prevItem + 100;
-                    } else {
-                        if (nextItem - prevItem <= 10) {
-                            number = nextItem - parseInt(((nextItem - prevItem) / 2));
-                        } else {
-                            number = nextItem > 1 ? nextItem - 10 : 1;
-                        }
-                    }
-
+                    
+                    var previousRuleId = args.prevItem ? args.prevItem.id : undefined;
+                    var nextRuleId = args.nextItem ? args.nextItem.id : undefined;
+                     
                     $.ajax({
-                        url: createURL('updateNetworkACLItem'),
+                        url: createURL('moveNetworkAclItem'),
                         data: {
                             id: rule.id,
-                            number: number
+                            previousaclruleid: previousRuleId, 
+                            nextaclruleid: nextRuleId
                         },
                         success: function(json) {
                             var pollTimer = setInterval(function() {
                                 pollAsyncJobResult({
                                     _custom: {
-                                        jobId: json.createnetworkaclresponse.jobid
+                                        jobId: json.moveNetworkAclItemResponse.jobid
                                     },
                                     complete: function() {
                                         clearInterval(pollTimer);
@@ -3228,16 +3219,16 @@
                         },
                         action: function(args) {
                             var array1 = [];
-                            array1.push("&name=" + todb(args.data.name));
-                            array1.push("&displaytext=" + todb(args.data.displaytext));
+                            array1.push("&name=" + encodeURIComponent(args.data.name));
+                            array1.push("&displaytext=" + encodeURIComponent(args.data.displaytext));
 
                             //args.data.networkdomain is null when networkdomain field is hidden
                             if (args.data.networkdomain != null && args.data.networkdomain != args.context.networks[0].networkdomain)
-                                array1.push("&networkdomain=" + todb(args.data.networkdomain));
+                                array1.push("&networkdomain=" + encodeURIComponent(args.data.networkdomain));
 
                             //args.data.networkofferingid is null when networkofferingid field is hidden
                             if (args.data.networkofferingid != null && args.data.networkofferingid != args.context.networks[0].networkofferingid) {
-                                array1.push("&networkofferingid=" + todb(args.data.networkofferingid));
+                                array1.push("&networkofferingid=" + encodeURIComponent(args.data.networkofferingid));
 
                                 if (args.context.networks[0].type == "Isolated") { //Isolated network
                                     cloudStack.dialog.confirm({
