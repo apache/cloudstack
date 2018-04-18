@@ -324,7 +324,7 @@ public class CloudianClient {
             final HttpResponse response = post("/group", group);
             return response.getStatusLine().getStatusCode() == HttpStatus.SC_OK;
         } catch (final IOException e) {
-            LOG.error("Failed to remove group due to:", e);
+            LOG.error("Failed to update group due to:", e);
             checkResponseTimeOut(e);
         }
         return false;

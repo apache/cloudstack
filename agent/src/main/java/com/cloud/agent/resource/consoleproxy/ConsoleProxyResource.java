@@ -246,7 +246,7 @@ public class ConsoleProxyResource extends ServerResourceBase implements ServerRe
                 }
                 String internalDns1 = (String) params.get("internaldns1");
                 if (internalDns1 == null) {
-                    s_logger.warn("No DNS entry found during configuration of NfsSecondaryStorage");
+                    s_logger.warn("No DNS entry found during configuration of ConsoleProxy");
                 } else {
                     addRouteToInternalIpOrCidr(_localgw, _eth1ip, _eth1mask, internalDns1);
                 }

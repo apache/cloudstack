@@ -1482,7 +1482,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
     public void doScaleDown(final long groupId) {
         AutoScaleVmGroupVO asGroup = _autoScaleVmGroupDao.findById(groupId);
         if (asGroup == null) {
-            s_logger.error("Can not find the groupid " + groupId + " for scaling up");
+            s_logger.error("Can not find the groupid " + groupId + " for scaling down");
             return;
         }
         if (!checkConditionDown(asGroup)) {

@@ -1731,7 +1731,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
             }
         } catch (Exception ex) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Failed to retrive the default label for management traffic:" + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to:" +
+                s_logger.debug("Failed to retrive the default label for guest traffic:" + "zone: " + dcId + " hypervisor: " + hypervisorType + " due to:" +
                     ex.getMessage());
             }
         }

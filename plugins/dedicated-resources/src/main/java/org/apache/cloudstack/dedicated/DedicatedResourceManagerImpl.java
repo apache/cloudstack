@@ -497,7 +497,7 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                     }
                     dedicatedResource = _dedicatedDao.persist(dedicatedResource);
                 } catch (Exception e) {
-                    s_logger.error("Unable to dedicate host due to " + e.getMessage(), e);
+                    s_logger.error("Unable to dedicate cluster due to " + e.getMessage(), e);
                     throw new CloudRuntimeException("Failed to dedicate cluster. Please contact Cloud Support.");
                 }
 

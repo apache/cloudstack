@@ -1492,14 +1492,14 @@ public class VirtualMachineMO extends BaseMO {
 
         if (!result) {
             if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - detachIso() done(failed)");
+                s_logger.trace("vCenter API trace - attachIso() done(failed)");
             throw new Exception("Failed to attach ISO due to " + TaskMO.getTaskFailureInfo(_context, morTask));
         }
 
         _context.waitForTaskProgressDone(morTask);
 
         if (s_logger.isTraceEnabled())
-            s_logger.trace("vCenter API trace - detachIso() done(successfully)");
+            s_logger.trace("vCenter API trace - attachIso() done(successfully)");
     }
 
     public int detachIso(String isoDatastorePath) throws Exception {
