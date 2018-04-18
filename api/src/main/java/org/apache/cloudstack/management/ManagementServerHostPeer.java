@@ -14,16 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.cluster;
+package org.apache.cloudstack.management;
 
-import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.api.InternalIdentity;
 
-import java.util.List;
+import java.util.Date;
 
-public interface ClusterManagerListener {
-    void onManagementNodeJoined(List<? extends ManagementServerHost> nodeList, long selfNodeId);
+public interface ManagementServerHostPeer extends InternalIdentity {
 
-    void onManagementNodeLeft(List<? extends ManagementServerHost> nodeList, long selfNodeId);
-
-    void onManagementNodeIsolated();
+    long getOwnerMshost();
+    long getPeerMshost();
+    long getPeerRunid();
+    ManagementServerHost.State getPeerState();
+    Date getLastUpdateTime();
 }

@@ -19,8 +19,8 @@ package com.cloud.cluster.dao;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.cluster.ManagementServerHost;
-import com.cloud.cluster.ManagementServerHost.State;
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHost.State;
 import com.cloud.cluster.ManagementServerHostVO;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDao;

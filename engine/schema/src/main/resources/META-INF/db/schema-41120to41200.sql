@@ -49,3 +49,6 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 
 -- changed fingerprint type to TEXT, it avoids db exception when creating the certificate issue #3123
 ALTER TABLE `cloud`.`sslcerts` MODIFY `fingerprint` TEXT;
+
+-- PR#2578 New column for listManagementServers API call
+ALTER TABLE `mshost` ADD COLUMN `uuid` varchar(40) AFTER `name`;

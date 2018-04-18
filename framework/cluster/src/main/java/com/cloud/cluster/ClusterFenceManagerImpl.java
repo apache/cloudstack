@@ -22,6 +22,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 

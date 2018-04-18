@@ -25,6 +25,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -41,6 +43,7 @@ import org.apache.cloudstack.api.command.admin.host.ListHostTagsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
@@ -80,6 +83,7 @@ import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -375,6 +379,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private EntityManager _entityMgr;
+
+    @Inject
+    ManagementServerHostDao managementServerHostDao;
 
     /*
      * (non-Javadoc)
@@ -3682,6 +3689,23 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         resourceDetailResponse.setObjectName("resourcedetail");
         return resourceDetailResponse;
     }
+
+    @Override
+    public ListResponse<ManagementServerResponse> listManagementServers(ListMgmtsCmd cmd) {
+        ListResponse<ManagementServerResponse> response = new ListResponse<>();
+        List<ManagementServerResponse> result = new ArrayList<>();
+        for (ManagementServerHostVO mgmt : managementServerHostDao.listAll()) {
+            ManagementServerResponse mgmtResponse = new ManagementServerResponse();
+            mgmtResponse.setId(mgmt.getUuid());
+            mgmtResponse.setName(mgmt.getName());
+            mgmtResponse.setState(mgmt.getState());
+            mgmtResponse.setVersion(mgmt.getVersion());
+            mgmtResponse.setObjectName("managementserver");
+            result.add(mgmtResponse);
+        }
+        response.setResponses(result);
+        return response;
+     }
 
     @Override
     public String getConfigComponentName() {

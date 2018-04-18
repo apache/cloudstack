@@ -117,6 +117,18 @@ public class NetUtils {
         return "localhost";
     }
 
+    public static String getCanonicalHostName() {
+        try {
+            InetAddress localAddr = InetAddress.getLocalHost();
+            if (localAddr != null) {
+                return localAddr.getCanonicalHostName();
+            }
+        } catch (UnknownHostException e) {
+            s_logger.warn("UnknownHostException when trying to get canonical host name. ", e);
+        }
+        return "localhost";
+    }
+
     public static InetAddress getLocalInetAddress() {
         try {
             return InetAddress.getLocalHost();
