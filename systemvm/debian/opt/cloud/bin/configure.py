@@ -801,6 +801,7 @@ class CsForwardingRules(CsDataBag):
             return "%s%s%s" % (ports_parts[0], delimiter, ports_parts[1])
 
     def processForwardRule(self, rule):
+        logging.info("Is going to process VPC forwarding: %s",  self.config.is_vpc())
         if self.config.is_vpc():
             self.forward_vpc(rule)
         else:
@@ -894,6 +895,15 @@ class CsForwardingRules(CsDataBag):
         if not rule["internal_ports"] == "any":
             fw_prerout_rule += ":" + self.portsToString(rule["internal_ports"], "-")
 
+        fw_prerout_rule2 = "-A PREROUTING -d %s/32 -i %s" % (rule["public_ip"], self.getDeviceByIp(rule['internal_ip']))
+        if not rule["protocol"] == "any":
+            fw_prerout_rule2 += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
+        if not rule["public_ports"] == "any":
+            fw_prerout_rule2 += " --dport %s" % self.portsToString(rule["public_ports"], ":")
+        fw_prerout_rule2 += " -j DNAT --to-destination %s" % rule["internal_ip"]
+        if not rule["internal_ports"] == "any":
+            fw_prerout_rule2 += ":" + self.portsToString(rule["internal_ports"], "-")
+
         fw_postrout_rule = "-A POSTROUTING -d %s/32 " % rule["public_ip"]
         if not rule["protocol"] == "any":
             fw_postrout_rule += " -m %s -p %s" % (rule["protocol"], rule["protocol"])
@@ -913,6 +923,7 @@ class CsForwardingRules(CsDataBag):
             fw_output_rule += ":" + self.portsToString(rule["internal_ports"], "-")
 
         self.fw.append(["nat", "", fw_prerout_rule])
+        self.fw.append(["nat", "", fw_prerout_rule2])
         self.fw.append(["nat", "", fw_postrout_rule])
         self.fw.append(["nat", "", fw_output_rule])
 
