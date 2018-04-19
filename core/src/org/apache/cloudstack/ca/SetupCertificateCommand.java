@@ -82,15 +82,15 @@ public class SetupCertificateCommand extends NetworkElementCommand {
     }
 
     public String getEncodedPrivateKey() {
-        return privateKey.replace("\n", KeyStoreUtils.certNewlineEncoder).replace(" ", KeyStoreUtils.certSpaceEncoder);
+        return privateKey.replace("\n", KeyStoreUtils.CERT_NEWLINE_ENCODER).replace(" ", KeyStoreUtils.CERT_SPACE_ENCODER);
     }
 
     public String getEncodedCertificate() {
-        return certificate.replace("\n", KeyStoreUtils.certNewlineEncoder).replace(" ", KeyStoreUtils.certSpaceEncoder);
+        return certificate.replace("\n", KeyStoreUtils.CERT_NEWLINE_ENCODER).replace(" ", KeyStoreUtils.CERT_SPACE_ENCODER);
     }
 
     public String getEncodedCaCertificates() {
-        return caCertificates.replace("\n", KeyStoreUtils.certNewlineEncoder).replace(" ", KeyStoreUtils.certSpaceEncoder);
+        return caCertificates.replace("\n", KeyStoreUtils.CERT_NEWLINE_ENCODER).replace(" ", KeyStoreUtils.CERT_SPACE_ENCODER);
     }
 
     public boolean isHandleByAgent() {

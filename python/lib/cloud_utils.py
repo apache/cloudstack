@@ -802,9 +802,9 @@ class SetupFirewall(ConfigTask):
 		rule = "-p tcp -m tcp --dport 16509 -j ACCEPT"
 		if rule in iptablessave().stdout: return True
 		return False
-	
+
 	def execute(self):
-		ports = "22 1798 16509".split()
+		ports = "22 1798 16509 16514".split()
 		if distro in (Fedora , CentOS, RHEL6):
 			for p in ports: iptables("-I","INPUT","1","-p","tcp","--dport",p,'-j','ACCEPT')
 			o = service.iptables.save() ; print o.stdout + o.stderr

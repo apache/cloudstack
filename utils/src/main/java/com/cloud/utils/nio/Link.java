@@ -379,7 +379,7 @@ public class Link {
             return caService.createSSLEngine(sslContext, clientAddress);
         }
         s_logger.error("CA service is not configured, by-passing CA manager to create SSL engine");
-        char[] passphrase = KeyStoreUtils.defaultKeystorePassphrase;
+        char[] passphrase = KeyStoreUtils.DEFAULT_KS_PASSPHRASE;
         final KeyStore ks = loadKeyStore(NioConnection.class.getResourceAsStream("/cloud.keystore"), passphrase);
         final KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
         final TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
@@ -409,11 +409,11 @@ public class Link {
     }
 
     public static SSLContext initClientSSLContext() throws GeneralSecurityException, IOException {
-        char[] passphrase = KeyStoreUtils.defaultKeystorePassphrase;
+        char[] passphrase = KeyStoreUtils.DEFAULT_KS_PASSPHRASE;
         File confFile = PropertiesUtil.findConfigFile("agent.properties");
         if (confFile != null) {
             s_logger.info("Conf file found: " + confFile.getAbsolutePath());
-            final String pass = PropertiesUtil.loadFromFile(confFile).getProperty(KeyStoreUtils.passphrasePropertyName);
+            final String pass = PropertiesUtil.loadFromFile(confFile).getProperty(KeyStoreUtils.KS_PASSPHRASE_PROPERTY);
             if (pass != null) {
                 passphrase = pass.toCharArray();
             }
@@ -421,7 +421,7 @@ public class Link {
 
         InputStream stream = null;
         if (confFile != null) {
-            final String keystorePath = confFile.getParent() + "/" + KeyStoreUtils.defaultKeystoreFile;
+            final String keystorePath = confFile.getParent() + "/" + KeyStoreUtils.KS_FILENAME;
             if (new File(keystorePath).exists()) {
                 stream = new FileInputStream(keystorePath);
             }

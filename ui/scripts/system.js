@@ -9200,6 +9200,11 @@
                                                     if (host && host.outofbandmanagement) {
                                                         items[idx].powerstate = host.outofbandmanagement.powerstate;
                                                     }
+
+                                                    if (host && host.hypervisor == "KVM" && host.state == 'Up' && host.details && host.details["secured"] != 'true') {
+                                                        items[idx].state = 'Unsecure';
+                                                    }
+
                                                 });
                                             }
 
@@ -15713,7 +15718,8 @@
                                 'Down': 'off',
                                 'Disconnected': 'off',
                                 'Alert': 'off',
-                                'Error': 'off'
+                                'Error': 'off',
+                                'Unsecure': 'warning'
                             }
                         },
                         powerstate: {
@@ -15760,6 +15766,10 @@
                                     $.each(items, function(idx, host) {
                                         if (host && host.outofbandmanagement) {
                                             items[idx].powerstate = host.outofbandmanagement.powerstate;
+                                        }
+
+                                        if (host && host.hypervisor == "KVM" && host.state == 'Up' && host.details && host.details["secured"] != 'true') {
+                                            items[idx].state = 'Unsecure';
                                         }
                                     });
                                 }
@@ -16530,6 +16540,40 @@
                                 }
                             },
 
+                            secureKVMHost: {
+                                label: 'label.action.secure.host',
+                                action: function(args) {
+                                    var data = {
+                                        hostid: args.context.hosts[0].id
+                                    };
+                                    $.ajax({
+                                        url: createURL('provisionCertificate'),
+                                        data: data,
+                                        async: true,
+                                        success: function(json) {
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId: json.provisioncertificateresponse.jobid,
+                                                    getActionFilter: function () {
+                                                        return hostActionfilter;
+                                                    }
+                                                }
+                                            });
+                                        }
+                                    });
+                                },
+                                messages: {
+                                    confirm: function (args) {
+                                        return 'message.action.secure.host';
+                                    },
+                                    notification: function (args) {
+                                        return 'label.action.secure.host';
+                                    }
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
 
                             enableMaintenanceMode: {
                                 label: 'label.action.enable.maintenance.mode',
@@ -21968,6 +22012,11 @@
 
             if (jsonObj.state != "Disconnected")
             allowedActions.push("forceReconnect");
+
+            if (jsonObj.hypervisor == "KVM") {
+                allowedActions.push("secureKVMHost");
+            }
+
         } else if (jsonObj.resourcestate == "ErrorInMaintenance") {
             allowedActions.push("edit");
             allowedActions.push("enableMaintenanceMode");

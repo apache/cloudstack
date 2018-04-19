@@ -18,9 +18,13 @@
 //
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
+
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class LibvirtMigrateCommandWrapperTest {
     String fullfile =
@@ -302,5 +306,23 @@ public class LibvirtMigrateCommandWrapperTest {
         final LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
         final String result = lw.replaceIpForVNCInDescFile(xmlDesc, targetIp);
         assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
+    }
+
+    @Test
+    public void testMigrationUri() {
+        final String ip = "10.1.1.1";
+        LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
+        LibvirtComputingResource lcr = new LibvirtComputingResource();
+        if (lcr.isHostSecured()) {
+            assertEquals(lw.createMigrationURI(ip, lcr), String.format("qemu+tls://%s/system", ip));
+        } else {
+            assertEquals(lw.createMigrationURI(ip, lcr), String.format("qemu+tcp://%s/system", ip));
+        }
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    public void testMigrationUriException() {
+        LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
+        lw.createMigrationURI(null, new LibvirtComputingResource());
     }
 }
