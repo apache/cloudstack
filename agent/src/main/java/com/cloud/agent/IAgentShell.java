@@ -19,6 +19,9 @@ package com.cloud.agent;
 import java.util.Map;
 import java.util.Properties;
 
+import javax.naming.ConfigurationException;
+
+import com.cloud.resource.ServerResource;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 
 public interface IAgentShell {
@@ -66,4 +69,6 @@ public interface IAgentShell {
     void updateConnectedHost();
 
     String getConnectedHost();
+
+    void launchNewAgent(ServerResource resource) throws ConfigurationException;
 }

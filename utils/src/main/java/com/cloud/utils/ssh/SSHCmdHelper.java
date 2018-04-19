@@ -139,7 +139,7 @@ public class SSHCmdHelper {
     }
 
     public static SSHCmdResult sshExecuteCmdOneShot(com.trilead.ssh2.Connection sshConnection, String cmd) throws SshException {
-        s_logger.debug("Executing cmd: " + cmd.split(KeyStoreUtils.defaultKeystoreFile)[0]);
+        s_logger.debug("Executing cmd: " + cmd.split(KeyStoreUtils.KS_FILENAME)[0]);
         Session sshSession = null;
         try {
             sshSession = sshConnection.openSession();
@@ -202,7 +202,7 @@ public class SSHCmdHelper {
 
             final SSHCmdResult result = new SSHCmdResult(-1, sbStdoutResult.toString(), sbStdErrResult.toString());
             if (!Strings.isNullOrEmpty(result.getStdOut()) || !Strings.isNullOrEmpty(result.getStdErr())) {
-                s_logger.debug("SSH command: " + cmd.split(KeyStoreUtils.defaultKeystoreFile)[0] + "\nSSH command output:" + result.getStdOut().split("-----BEGIN")[0] + "\n" + result.getStdErr());
+                s_logger.debug("SSH command: " + cmd.split(KeyStoreUtils.KS_FILENAME)[0] + "\nSSH command output:" + result.getStdOut().split("-----BEGIN")[0] + "\n" + result.getStdErr());
             }
 
             // exit status delivery might get delayed

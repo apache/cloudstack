@@ -27,7 +27,6 @@ import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -191,8 +190,7 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
             if (Strings.isNullOrEmpty(csr)) {
                 return false;
             }
-            final Certificate certificate = issueCertificate(csr, Collections.singletonList(host.getName()),
-                    Arrays.asList(host.getPrivateIpAddress(), host.getPublicIpAddress(), host.getStorageIpAddress()), CAManager.CertValidityPeriod.value(), caProvider);
+            final Certificate certificate = issueCertificate(csr, Arrays.asList(host.getName(), host.getPrivateIpAddress()), Arrays.asList(host.getPrivateIpAddress(), host.getPublicIpAddress(), host.getStorageIpAddress()), CAManager.CertValidityPeriod.value(), caProvider);
             return deployCertificate(host, certificate, reconnect, null);
         } catch (final AgentUnavailableException | OperationTimedoutException e) {
             LOG.error("Host/agent is not available or operation timed out, failed to setup keystore and generate CSR for host/agent id=" + host.getId() + ", due to: ", e);

@@ -20,8 +20,8 @@
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
 import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -46,12 +46,10 @@ import javax.xml.transform.stream.StreamResult;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-
 import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.LibvirtException;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -71,6 +69,7 @@ import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.base.Strings;
 
 @ResourceWrapper(handles =  MigrateCommand.class)
 public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCommand, Answer, LibvirtComputingResource> {
@@ -80,9 +79,17 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     private static final String CONTENTS_WILDCARD = "(?s).*";
     private static final Logger s_logger = Logger.getLogger(LibvirtMigrateCommandWrapper.class);
 
+    protected String createMigrationURI(final String destinationIp, final LibvirtComputingResource libvirtComputingResource) {
+        if (Strings.isNullOrEmpty(destinationIp)) {
+            throw new CloudRuntimeException("Provided libvirt destination ip is invalid");
+        }
+        return String.format("%s://%s/system", libvirtComputingResource.isHostSecured() ? "qemu+tls" : "qemu+tcp", destinationIp);
+    }
+
     @Override
     public Answer execute(final MigrateCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
+        final String destinationUri = createMigrationURI(command.getDestinationIp(), libvirtComputingResource);
 
         String result = null;
 
@@ -140,10 +147,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                 xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage);
             }
 
-            dconn = libvirtUtilitiesHelper.retrieveQemuConnection("qemu+tcp://" + command.getDestinationIp() + "/system");
+            dconn = libvirtUtilitiesHelper.retrieveQemuConnection(destinationUri);
 
             //run migration in thread so we can monitor it
-            s_logger.info("Live migration of instance " + vmName + " initiated");
+            s_logger.info("Live migration of instance " + vmName + " initiated to destination host: " + dconn.getURI());
             final ExecutorService executor = Executors.newFixedThreadPool(1);
             final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc, migrateStorage,
                     command.isAutoConvergence(), vmName, command.getDestinationIp());
@@ -203,6 +210,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         } catch (final LibvirtException e) {
             s_logger.debug("Can't migrate domain: " + e.getMessage());
             result = e.getMessage();
+            if (result.startsWith("unable to connect to server") && result.endsWith("refused")) {
+                result = String.format("Migration was refused connection to destination: %s. Please check libvirt configuration compatibility and firewall rules on the source and destination hosts.", destinationUri);
+            }
         } catch (final InterruptedException e) {
             s_logger.debug("Interrupted while migrating domain: " + e.getMessage());
             result = e.getMessage();

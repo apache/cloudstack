@@ -50,6 +50,7 @@ case "$1" in
             mkdir /etc/libvirt/hooks
         fi
         cp -a /usr/share/cloudstack-agent/lib/libvirtqemuhook /etc/libvirt/hooks/qemu
+
         ;;
 esac
 

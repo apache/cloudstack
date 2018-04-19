@@ -157,11 +157,11 @@ public class VirtualRoutingResource {
                         "/usr/local/cloud/systemvm/conf/%s " +
                         "%s %d " +
                         "/usr/local/cloud/systemvm/conf/%s",
-                KeyStoreUtils.defaultKeystoreFile,
+                KeyStoreUtils.KS_FILENAME,
                 cmd.getKeystorePassword(),
                 cmd.getValidityDays(),
-                KeyStoreUtils.defaultCsrFile);
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), KeyStoreUtils.keyStoreSetupScript, args);
+                KeyStoreUtils.CSR_FILENAME);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), KeyStoreUtils.KS_SETUP_SCRIPT, args);
         return new SetupKeystoreAnswer(result.getDetails());
     }
 
@@ -171,15 +171,15 @@ public class VirtualRoutingResource {
                         "/usr/local/cloud/systemvm/conf/%s \"%s\" " +
                         "/usr/local/cloud/systemvm/conf/%s \"%s\" " +
                         "/usr/local/cloud/systemvm/conf/%s \"%s\"",
-                KeyStoreUtils.defaultKeystoreFile,
-                KeyStoreUtils.sshMode,
-                KeyStoreUtils.defaultCertFile,
+                KeyStoreUtils.KS_FILENAME,
+                KeyStoreUtils.SSH_MODE,
+                KeyStoreUtils.CERT_FILENAME,
                 cmd.getEncodedCertificate(),
-                KeyStoreUtils.defaultCaCertFile,
+                KeyStoreUtils.CACERT_FILENAME,
                 cmd.getEncodedCaCertificates(),
-                KeyStoreUtils.defaultPrivateKeyFile,
+                KeyStoreUtils.PKEY_FILENAME,
                 cmd.getEncodedPrivateKey());
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), KeyStoreUtils.keyStoreImportScript, args);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), KeyStoreUtils.KS_IMPORT_SCRIPT, args);
         return new SetupCertificateAnswer(result.isSuccess());
     }
 
