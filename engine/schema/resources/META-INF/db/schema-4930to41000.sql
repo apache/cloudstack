@@ -111,7 +111,7 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'KVM', 'default', 'CentOS 7.2', 274, now(), 0);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'KVM', 'default', 'Other PV Virtio-SCSI (64-bit)', 275, now(), 0);
 
-CREATE TABLE `cloud`.`vlan_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vlan_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `vlan_id` bigint unsigned NOT NULL COMMENT 'vlan id',
   `name` varchar(255) NOT NULL,
@@ -137,7 +137,7 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`,
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'createSnapshotFromVMSnapshot', 'ALLOW', 260) ON DUPLICATE KEY UPDATE rule=rule;
 
 -- Create table storage_pool_tags
-CREATE TABLE `cloud`.`storage_pool_tags` (
+CREATE TABLE IF NOT EXISTS `cloud`.`storage_pool_tags` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `pool_id` bigint(20) unsigned NOT NULL COMMENT "pool id",
   `tag` varchar(255) NOT NULL,
@@ -235,7 +235,7 @@ WHERE (o.cpu is null AND o.speed IS NULL AND o.ram_size IS NULL) AND
 -- CLOUDSTACK-9827: Storage tags stored in multiple places
 DROP VIEW IF EXISTS `cloud`.`storage_tag_view`;
 
-CREATE TABLE `cloud`.`guest_os_details` (
+CREATE TABLE IF NOT EXISTS `cloud`.`guest_os_details` (
   `id` bigint unsigned NOT NULL auto_increment,
   `guest_os_id` bigint unsigned NOT NULL COMMENT 'VPC gateway id',
   `name` varchar(255) NOT NULL,
@@ -246,7 +246,7 @@ CREATE TABLE `cloud`.`guest_os_details` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `user_ip_address` ADD COLUMN `rule_state` VARCHAR(32) COMMENT 'static  rule state while removing';
-CREATE TABLE `cloud`.`firewall_rules_dcidrs`(
+CREATE TABLE IF NOT EXISTS `cloud`.`firewall_rules_dcidrs`(
   `id` BIGINT(20) unsigned NOT NULL AUTO_INCREMENT,
   `firewall_rule_id` BIGINT(20) unsigned NOT NULL,
   `destination_cidr` VARCHAR(18) DEFAULT NULL,
