@@ -29,5 +29,6 @@ class TestCsDatabag(unittest.TestCase):
         csdatabag = CsDataBag("koffie")
         self.assertTrue(csdatabag is not None)
 
+
 if __name__ == '__main__':
     unittest.main()

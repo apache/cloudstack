@@ -21,9 +21,9 @@
 export PYTHONPATH="../debian/opt/cloud/bin/"
 export PYTHONDONTWRITEBYTECODE=False
 
-echo "Running pep8 to check systemvm/python code for errors"
-pep8 --max-line-length=179 *py
-pep8 --max-line-length=179 --exclude=monitorServices.py,baremetal-vr.py,passwd_server_ip.py `find ../debian -name \*.py`
+echo "Running pycodestyle to check systemvm/python code for errors"
+pycodestyle --max-line-length=179 *py
+pycodestyle --max-line-length=179 --exclude=monitorServices.py,baremetal-vr.py,passwd_server_ip.py `find ../debian -name \*.py`
 if [ $? -gt 0 ]
 then
     echo "Pylint failed, please check your code"

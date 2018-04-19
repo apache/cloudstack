@@ -42,5 +42,6 @@ class TestCsCmdLine(unittest.TestCase):
         self.cscmdline.set_guest_gw(tval)
         self.assertTrue(self.cscmdline.get_guest_gw() == tval)
 
+
 if __name__ == '__main__':
     unittest.main()

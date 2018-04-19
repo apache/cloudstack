@@ -196,7 +196,7 @@ class CsAcl(CsDataBag):
                 egressIpsetStr = ''
                 if sflag and dflag:
                     egressIpsetStr = " -m set --match-set %s src " % sourceIpsetName + \
-                                " -m set --match-set %s dst " % destIpsetName
+                                     " -m set --match-set %s dst " % destIpsetName
                 elif sflag:
                     egressIpsetStr = " -m set --match-set %s src " % sourceIpsetName
                 elif dflag:
@@ -204,10 +204,10 @@ class CsAcl(CsDataBag):
 
                 if rule['protocol'] == "icmp":
                     fwr += egressIpsetStr + " -p %s " % rule['protocol'] + " -m %s " % rule['protocol'] + \
-                                    " --icmp-type %s" % icmp_type
+                                     " --icmp-type %s" % icmp_type
                 elif rule['protocol'] != "all":
                     fwr += egressIpsetStr + " -p %s " % rule['protocol'] + " -m %s " % rule['protocol'] + \
-                           " %s" % rnge
+                                     " %s" % rnge
                 elif rule['protocol'] == "all":
                     fwr += egressIpsetStr
 
@@ -1051,6 +1051,7 @@ def main(argv):
     red = CsRedundant(config)
     red.set()
     return 0
+
 
 if __name__ == "__main__":
     main(sys.argv)
