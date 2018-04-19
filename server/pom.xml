@@ -183,7 +183,6 @@
             <exclude>com/cloud/storage/dao/*</exclude>
             <exclude>com/cloud/vm/dao/*</exclude>
             <exclude>com/cloud/api/ListPerfTest.java</exclude>
-            <exclude>com/cloud/network/vpn/RemoteAccessVpnTest.java</exclude>
             <exclude>com/cloud/network/security/SecurityGroupManagerImpl2Test.java</exclude>
             <exclude>com/cloud/network/security/SecurityGroupManagerImpl2Test.java</exclude>
             <exclude>com/cloud/vpc/VpcTestConfiguration.java</exclude>
