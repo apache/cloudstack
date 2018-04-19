@@ -244,6 +244,25 @@ public class Agent implements HandlerFactory, IAgentControl {
         return _resource.getClass().getSimpleName();
     }
 
+    /**
+     * In case of a software based agent restart, this method
+     * can help to perform explicit garbage collection of any old
+     * agent instances and its inner objects.
+     */
+    private void scavengeOldAgentObjects() {
+        _executor.submit(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(2000L);
+                } catch (final InterruptedException ignored) {
+                } finally {
+                    System.gc();
+                }
+            }
+        });
+    }
+
     public void start() {
         if (!_resource.start()) {
             s_logger.error("Unable to start the resource: " + _resource.getName());
@@ -279,19 +298,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             }
         }
         _shell.updateConnectedHost();
-
-        // In case of software based restart, GC to remove old instances
-        _executor.submit(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    Thread.sleep(2000L);
-                } catch (final InterruptedException ignored) {
-                } finally {
-                    System.gc();
-                }
-            }
-        });
+        scavengeOldAgentObjects();
     }
 
     public void stop(final String reason, final String detail) {

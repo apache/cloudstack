@@ -528,12 +528,7 @@ class libvirtConfigUbuntu(serviceCfgBase):
         self.serviceName = "Libvirt"
 
     def setupLiveMigration(self):
-        cfo = configFileOps("/etc/libvirt/libvirtd.conf", self)
-        cfo.addEntry("listen_tcp", "1")
-        cfo.addEntry("tcp_port", "\"16509\"");
-        cfo.addEntry("auth_tcp", "\"none\"");
-        cfo.addEntry("listen_tls", "0")
-        cfo.save()
+        configureLibvirtConfig(self.syscfg.env.secure, self)
 
         if os.path.exists("/etc/init/libvirt-bin.conf"):
             cfo = configFileOps("/etc/init/libvirt-bin.conf", self)
@@ -547,14 +542,7 @@ class libvirtConfigUbuntu(serviceCfgBase):
 
     def config(self):
         try:
-            configureLibvirtConfig(self.syscfg.env.secure, self)
-            if os.path.exists("/etc/init/libvirt-bin.conf"):
-                cfo = configFileOps("/etc/init/libvirt-bin.conf", self)
-                cfo.replace_line("exec /usr/sbin/libvirtd","exec /usr/sbin/libvirtd -d -l")
-            else:
-                cfo = configFileOps("/etc/default/libvirt-bin", self)
-                cfo.replace_or_add_line("libvirtd_opts=","libvirtd_opts='-l -d'")
-
+            self.setupLiveMigration()
 
             filename = "/etc/libvirt/qemu.conf"
 

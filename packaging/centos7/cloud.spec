@@ -439,12 +439,6 @@ if [ -f "%{_sysconfdir}/cloud.rpmsave/agent/agent.properties" ]; then
     mv %{_sysconfdir}/cloud.rpmsave/agent/agent.properties %{_sysconfdir}/cloud.rpmsave/agent/agent.properties.rpmsave
 fi
 
-# Enable TLS enabled VM migration for libvirtd
-if ! iptables-save | grep -- "-A INPUT -p tcp -m tcp --dport 16514 -j ACCEPT" > /dev/null; then
-    iptables -t filter -A INPUT -p tcp -m tcp --dport 16514 -j ACCEPT
-    iptables-save > /etc/iptables/rules.v4
-fi
-
 %pre usage
 id cloud > /dev/null 2>&1 || /usr/sbin/useradd -M -c "CloudStack unprivileged user" \
      -r -s /bin/sh -d %{_localstatedir}/cloudstack/management cloud|| true

@@ -841,7 +841,6 @@ class TestSecuredVmMigration(cloudstackTestCase):
             cleanup_resources(cls.apiclient, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -850,7 +849,6 @@ class TestSecuredVmMigration(cloudstackTestCase):
         self.updateConfiguration("ca.plugin.root.auth.strictness", "false")
         self.make_all_hosts_secure()
 
-
         if self.hypervisor.lower() not in ["kvm"]:
             self.skipTest("Secured migration is not supported on other than KVM")
 
@@ -858,11 +856,9 @@ class TestSecuredVmMigration(cloudstackTestCase):
         self.make_all_hosts_secure()
 
         try:
-            #Clean up, terminate the created ISOs
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_01_secured_vm_migration(self):
@@ -891,7 +887,6 @@ class TestSecuredVmMigration(cloudstackTestCase):
         target_host = self.get_target_host(secured='true', virtualmachineid=self.vm_to_migrate.id)
 
         self.migrate_and_check(origin_host, target_host, proto='tls')
-        return
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_02_not_secured_vm_migration(self):
@@ -924,8 +919,6 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
         self.migrate_and_check(origin_host, target_host, proto='tcp')
 
-        return
-
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_03_secured_to_nonsecured_vm_migration(self):
         """Test destroy Virtual Machine
@@ -954,9 +947,6 @@ class TestSecuredVmMigration(cloudstackTestCase):
             pass
         else: self.fail("Migration succeed, instead it should fail")
 
-
-        return
-
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
     def test_04_nonsecured_to_secured_vm_migration(self):
         """Test Non-secured VM Migration
@@ -983,9 +973,8 @@ class TestSecuredVmMigration(cloudstackTestCase):
             self.migrate_and_check(origin_host=non_secured_host, destination_host=secured_hosts[0], proto='tcp')
         except Exception:
             pass
-        else: self.fail("Migration succeed, instead it should fail")
-
-        return
+        else:
+            self.fail("Migration succeed, instead it should fail")
 
     def get_target_host(self, secured, virtualmachineid):
         target_hosts = Host.listForMigration(self.apiclient,
@@ -1002,10 +991,8 @@ class TestSecuredVmMigration(cloudstackTestCase):
             .execute("grep -a Live /var/log/cloudstack/agent/agent.log | tail -1")
 
         if protocol not in resp[0]:
-            print 'It failed'
             cloudstackTestCase.fail(self, "Migration protocol was not as expected: '" + protocol + "\n"
                                     "Instead we got: " + resp[0])
-        pass
 
     def make_unsecure_connection(self, host):
         SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
@@ -1039,8 +1026,6 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
         for host in hosts:
             self.check_connection(secured='true', host=host)
-
-        pass
 
     def get_hosts(self):
 
@@ -1092,7 +1077,6 @@ class TestSecuredVmMigration(cloudstackTestCase):
         vm_response = VirtualMachine.list(self.apiclient, id=self.vm_to_migrate.id)[0]
 
         self.assertEqual(vm_response.hostid, destination_host.id, "Check destination hostID of migrated VM")
-        pass
 
     def updateConfiguration(self, name, value):
         cmd = updateConfiguration.updateConfigurationCmd()
