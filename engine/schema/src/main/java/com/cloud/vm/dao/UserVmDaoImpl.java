@@ -410,7 +410,7 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
             }
             catch (Exception e)
             {
-                s_logger.error("listVmDetails:Exception:" + e.getMessage());
+                s_logger.error("listPodIdsHavingVmsforAccount:Exception:" + e.getMessage());
             }
         }
 

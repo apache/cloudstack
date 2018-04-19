@@ -1309,10 +1309,10 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             return new DettachAnswer(disk);
         } catch (final LibvirtException e) {
-            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to ", e);
+            s_logger.debug("Failed to detach volume: " + vol.getPath() + ", due to ", e);
             return new DettachAnswer(e.toString());
         } catch (final InternalErrorException e) {
-            s_logger.debug("Failed to attach volume: " + vol.getPath() + ", due to ", e);
+            s_logger.debug("Failed to detach volume: " + vol.getPath() + ", due to ", e);
             return new DettachAnswer(e.toString());
         }
     }

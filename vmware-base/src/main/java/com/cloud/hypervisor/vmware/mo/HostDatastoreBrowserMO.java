@@ -97,7 +97,7 @@ public class HostDatastoreBrowserMO extends BaseMO {
             }
         } finally {
             if (s_logger.isTraceEnabled())
-                s_logger.trace("vCenter API trace - searchDatastore() done");
+                s_logger.trace("vCenter API trace - searchDatastoreSubFolders() done");
         }
 
         return null;

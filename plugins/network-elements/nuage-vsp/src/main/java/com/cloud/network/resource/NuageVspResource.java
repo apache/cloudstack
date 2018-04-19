@@ -189,7 +189,7 @@ public class NuageVspResource extends ManagerBase implements ServerResource, Vsp
         try {
             JmxUtil.unregisterMBean("NuageVspResource", _name);
         } catch (Exception e) {
-            s_logger.warn("Unable to initialize inaccurate clock", e);
+            s_logger.warn("Unable to stop NuageVspResource", e);
         }
 
         return true;

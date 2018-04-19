@@ -64,8 +64,8 @@ public class DeleteBaremetalRctCmd extends BaseAsyncCmd {
             SuccessResponse response = new SuccessResponse(getCommandName());
             setResponseObject(response);
         } catch (Exception e) {
-            s_logger.warn(String.format("unable to add baremetal RCT[%s]", getId()), e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+            s_logger.warn(String.format("unable to delete baremetal RCT[%s]", getId()), e);
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage(), e);
         }
     }
 

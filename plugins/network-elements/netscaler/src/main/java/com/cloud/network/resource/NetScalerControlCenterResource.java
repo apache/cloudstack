@@ -785,7 +785,7 @@ public class NetScalerControlCenterResource implements ServerResource {
         // use Apache.
         String logMessage = StringEscapeUtils.unescapeJava(jsonCmd);
         logMessage = cleanPassword(logMessage);
-        s_logger.debug("POST request to " + agentUri.toString()
+        s_logger.debug("GET request to " + agentUri.toString()
                 + " with contents " + logMessage);
 
         // Create request
