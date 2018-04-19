@@ -101,6 +101,13 @@ public interface SnapshotApiService {
     Snapshot createSnapshot(Long volumeId, Long policyId, Long snapshotId, Account snapshotOwner);
 
     /**
+     * Archives a snapshot from primary storage to secondary storage.
+     * @param id Snapshot ID
+     * @return Archived Snapshot object
+     */
+    Snapshot archiveSnapshot(Long id);
+
+    /**
      * @param vol
      * @return
      */
