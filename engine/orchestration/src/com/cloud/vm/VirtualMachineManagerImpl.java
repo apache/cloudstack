@@ -2518,7 +2518,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             if (defaultNic != null) {
                 UserVmVO userVm = _userVmDao.findById(vm.getId());
                 Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
-                vm.setDetails(details);
+                userVm.setDetails(details);
 
                 Network network = _networkModel.getNetwork(defaultNic.getNetworkId());
                 if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
@@ -2526,7 +2526,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
                     vmData = _networkModel.generateVmData(userVm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getId(),
-                            vm.getUuid(), defaultNic.getMacAddress(), (String) profile.getParameter(VirtualMachineProfile.Param.VmSshPubKey), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
+                            vm.getUuid(), defaultNic.getMacAddress(), userVm.getDetail("SSH.PublicKey"), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
                     String vmName = vm.getInstanceName();
                     String configDriveIsoRootFolder = "/tmp";
                     String isoFile = configDriveIsoRootFolder + "/" + vmName + "/configDrive/" + vmName + ".iso";

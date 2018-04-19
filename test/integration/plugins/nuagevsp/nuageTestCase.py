@@ -733,8 +733,12 @@ class nuageTestCase(cloudstackTestCase):
                                      traffictype=traffic_type
                                      )
 
-    # ssh_into_VM - Gets into the shell of the given VM using its public IP
-    def ssh_into_VM(self, vm, public_ip, reconnect=True, negative_test=False):
+    def ssh_into_VM(self, vm, public_ip, reconnect=True, negative_test=False, keypair=None):
+        """Creates a SSH connection to the VM
+
+        :returns: the SSH connection
+        :rtype: marvin.sshClient.SshClient
+        """
         if self.isSimulator:
             self.debug("Simulator Environment: Skipping ssh into VM")
             return
@@ -748,7 +752,8 @@ class nuageTestCase(cloudstackTestCase):
             ssh_client = vm.get_ssh_client(
                 ipaddress=public_ip.ipaddress.ipaddress,
                 reconnect=reconnect,
-                retries=3 if negative_test else 30
+                retries=3 if negative_test else 30,
+                keyPairFileLocation=keypair.private_key_file if keypair else None
             )
             self.debug("Successful to SSH into VM with ID - %s on "
                        "public IP address - %s" %

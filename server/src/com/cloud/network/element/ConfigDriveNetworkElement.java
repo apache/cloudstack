@@ -206,18 +206,24 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return false;
     }
 
+    private String getSshKey(VirtualMachineProfile profile) {
+        UserVmDetailVO vmDetailSshKey = _userVmDetailsDao.findDetail(profile.getId(), "SSH.PublicKey");
+        return (vmDetailSshKey!=null ? vmDetailSshKey.getValue() : null);
+    }
+
     @Override
     public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        UserVmDetailVO vmDetailSshKey = _userVmDetailsDao.findDetail(profile.getId(), "SSH.PublicKey");
-        return (canHandle(network.getTrafficType()) && updateConfigDrive(profile,
-                (vmDetailSshKey!=null?vmDetailSshKey.getValue():null), nic))
+        String sshPublicKey = getSshKey(profile);
+        return (canHandle(network.getTrafficType())
+                && updateConfigDrive(profile, sshPublicKey, nic))
                 && updateConfigDriveIso(network, profile, dest.getHost(), false);
     }
 
     @Override
     public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile profile) throws ResourceUnavailableException {
-        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(profile, (String) profile.getParameter(VirtualMachineProfile.Param.VmSshPubKey), nic))) return false;
+        String sshPublicKey = getSshKey(profile);
+        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(profile, sshPublicKey, nic))) return false;
         return updateConfigDriveIso(network, profile, true);
     }
 
@@ -229,7 +235,8 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     @Override
     public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile profile) throws ResourceUnavailableException {
-        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(profile, (String) profile.getParameter(VirtualMachineProfile.Param.VmSshPubKey), nic))) return false;
+        String sshPublicKey = getSshKey(profile);
+        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(profile, sshPublicKey, nic))) return false;
         return updateConfigDriveIso(network, profile, true);
     }
 
