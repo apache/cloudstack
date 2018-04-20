@@ -297,9 +297,7 @@ class CsIP:
 
             interfaces = [CsInterface(address, self.config)]
             CsHelper.reconfigure_interfaces(self.cl, interfaces)
-            if not self.config.is_vpc() and (self.get_type() in ['public']):
-                self.set_mark()
-            if self.config.is_vpc() and (self.get_type() in ['public']):
+            if self.get_type() in ['public']:
                 self.set_mark()
 
             if 'gateway' in self.address:
@@ -363,6 +361,7 @@ class CsIP:
     def fw_router(self):
         if self.config.is_vpc():
             return
+
         self.fw.append(["mangle", "front", "-A PREROUTING " +
                         "-m state --state RELATED,ESTABLISHED " +
                         "-j CONNMARK --restore-mark --nfmask 0xffffffff --ctmask 0xffffffff"])
@@ -534,6 +533,13 @@ class CsIP:
             if self.config.is_vpc():
                 if self.get_type() in ["public"] and "gateway" in self.address and self.address["gateway"] != "None":
                     route.add_route(self.dev, self.address["gateway"])
+                    for inf, addresses in self.config.address().dbag.iteritems():
+                        if not inf.startswith("eth"):
+                            continue
+                        for address in addresses:
+                            if "nw_type" in address and address["nw_type"] == "guest":
+                                route.add_network_route(self.dev, str(address["network"]))
+
                 route.add_network_route(self.dev, str(self.address["network"]))
 
             CsHelper.execute("sudo ip route flush cache")
