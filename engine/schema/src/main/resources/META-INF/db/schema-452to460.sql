@@ -385,8 +385,7 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Advanced', 'DEFAULT', 'Netwo
 
 UPDATE IGNORE `cloud`.`configuration` SET `value`="PLAINTEXT" WHERE `name`="user.authenticators.exclude";
 
-DROP TABLE IF EXISTS `cloud`.`external_bigswitch_vns_devices`;
-CREATE TABLE `cloud`.`external_bigswitch_bcf_devices` (
+CREATE TABLE IF NOT EXISTS `cloud`.`external_bigswitch_bcf_devices` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `physical_network_id` bigint unsigned NOT NULL COMMENT 'id of the physical network in to which bigswitch bcf device is added',
@@ -405,7 +404,7 @@ CREATE TABLE `cloud`.`external_bigswitch_bcf_devices` (
 
 UPDATE `cloud`.`host` SET `resource`='com.cloud.hypervisor.xenserver.resource.XenServer600Resource' WHERE `resource`='com.cloud.hypervisor.xenserver.resource.XenServer602Resource';
 
-CREATE TABLE `cloud`.`ldap_trust_map` (
+CREATE TABLE IF NOT EXISTS `cloud`.`ldap_trust_map` (
   `id` int unsigned NOT NULL AUTO_INCREMENT,
   `domain_id` bigint unsigned NOT NULL,
   `type` varchar(10) NOT NULL,

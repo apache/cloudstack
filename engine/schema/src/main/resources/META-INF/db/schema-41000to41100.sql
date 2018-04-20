@@ -392,7 +392,7 @@ CREATE VIEW `cloud`.`volume_view` AS
         `cloud`.`domain` resource_tag_domain ON resource_tag_domain.id = resource_tags.domain_id;
 
 -- Extra Dhcp Options
-CREATE TABLE  IF NOT EXISTS `cloud`.`nic_extra_dhcp_options` (
+CREATE TABLE IF NOT EXISTS `cloud`.`nic_extra_dhcp_options` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
   `uuid` varchar(255) UNIQUE,
   `nic_id` bigint unsigned NOT NULL COMMENT ' nic id where dhcp options are applied',
@@ -427,8 +427,7 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '7.2.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.1.0' AND guest_os_id not in (1,2,3,4,56,101,56,58,93,94,50,51,87,88,89,90,91,92,26,27,28,29,40,41,42,43,44,45,96,97,107,108,109,110,151,152,153);
 
 -- Add table to track primary storage in use for snapshots
-DROP TABLE IF EXISTS `cloud_usage`.`usage_snapshot_on_primary`;
-CREATE TABLE `cloud_usage`.`usage_snapshot_on_primary` (
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_snapshot_on_primary` (
   `id` bigint(20) unsigned NOT NULL,
   `zone_id` bigint(20) unsigned NOT NULL,
   `account_id` bigint(20) unsigned NOT NULL,
