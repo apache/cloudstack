@@ -37,5 +37,3 @@
 - [ ] I have added tests to cover my changes.
 - [ ] All new and existing tests passed.
 
-<!-- The following will kick a packaging job, remove if as applicable -->
-@blueorangutan package
