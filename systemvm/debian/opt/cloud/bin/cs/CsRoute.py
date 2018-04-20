@@ -62,13 +62,16 @@ class CsRoute:
         table = self.get_tablename(dev)
         logging.info("Adding route: dev " + dev + " table: " +
                      table + " network: " + address + " if not present")
-        cmd = "dev %s table %s throw %s proto static" % (dev, table, address)
+        cmd = "throw %s table %s proto static" % (address, table)
         self.set_route(cmd)
 
     def set_route(self, cmd, method="add"):
         """ Add a route if it is not already defined """
         found = False
-        for i in CsHelper.execute("ip route show " + cmd):
+        search = cmd
+        if "throw" in search:
+            search = "type " + search
+        for i in CsHelper.execute("ip route show " + search):
             found = True
         if not found and method == "add":
             logging.info("Add " + cmd)

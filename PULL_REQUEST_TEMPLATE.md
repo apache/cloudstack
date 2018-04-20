@@ -39,5 +39,3 @@ Testing
 - [ ] All relevant new and existing integration tests have passed.
 - [ ] A full integration testsuite with all test that can run on my environment has passed.
 
-<!-- The following will kick a packaging job, remove if as applicable -->
-@blueorangutan package
