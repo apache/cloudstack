@@ -521,9 +521,9 @@ class TestRouterServices(cloudstackTestCase):
         )
         if str(result[3]) == "min,":
             self.assertEqual(
-                (int(result[2]) < 3),
+                (int(result[2]) < 20),
                 True,
-                "Check uptime is less than 3 mins or not"
+                "Check uptime is less than 20 mins or not"
             )
         else:
             self.assertEqual(
