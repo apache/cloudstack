@@ -192,7 +192,7 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
         String ikePolicy = cmd.getIkePolicy();
         String espPolicy = cmd.getEspPolicy();
         if (!NetUtils.isValidS2SVpnPolicy("ike", ikePolicy)) {
-            throw new InvalidParameterValueException("The customer gateway IKE policy " + ikePolicy + " is invalid!  Verify the required Diffie Hellman (DH) group is specified.");
+            throw new InvalidParameterValueException("Error while creating a customer gateway. The IKE policy " + ikePolicy + " is invalid! Verify whether the required Diffie Hellman (DH) group is specified.");
         }
         if (!NetUtils.isValidS2SVpnPolicy("esp", espPolicy)) {
             throw new InvalidParameterValueException("The customer gateway ESP policy " + espPolicy + " is invalid!");
@@ -427,73 +427,103 @@ public class Site2SiteVpnManagerImpl extends ManagerBase implements Site2SiteVpn
                 }
             }
         }
-        String name = cmd.getName();
         String gatewayIp = cmd.getGatewayIp();
+        if (gatewayIp != null) {
+            if (!NetUtils.isValidIp(gatewayIp) && !NetUtils.verifyDomainName(gatewayIp)) {
+                throw new InvalidParameterValueException("The customer gateway IP/domain " + gatewayIp + " is invalid!");
+            }
+            gw.setGatewayIp(gatewayIp);
+        } else {
+            // TODO: Change API to make this param optional on update
+            throw new InvalidParameterValueException("The customer gateway IP/domain param is required");
+        }
 
-        if (!NetUtils.isValidIp4(gatewayIp) && !NetUtils.verifyDomainName(gatewayIp)) {
-            throw new InvalidParameterValueException("The customer gateway ip/Domain " + gatewayIp + " is invalid!");
-        }
-        if (name == null) {
-            name = "VPN-" + gatewayIp;
-        }
         String guestCidrList = cmd.getGuestCidrList();
-        if (!NetUtils.isValidCidrList(guestCidrList)) {
-            throw new InvalidParameterValueException("The customer gateway peer cidr list " + guestCidrList + " contains an invalid cidr!");
+        if (guestCidrList != null) {
+            if (!NetUtils.isValidCidrList(guestCidrList)) {
+                throw new InvalidParameterValueException("The customer gateway peer cidr list " + guestCidrList + " contains an invalid cidr!");
+            }
+            checkCustomerGatewayCidrList(guestCidrList);
+            gw.setGuestCidrList(guestCidrList);
+        } else {
+            // TODO: Change API to make this param optional on update
+            throw new InvalidParameterValueException("The customer gateway peer cidr list param is required");
         }
-        String ipsecPsk = cmd.getIpsecPsk();
+
         String ikePolicy = cmd.getIkePolicy();
+        if (ikePolicy != null) {
+            if (!NetUtils.isValidS2SVpnPolicy("ike", ikePolicy)) {
+                throw new InvalidParameterValueException("Error while updating a customer gateway. The IKE policy" + ikePolicy + " is invalid! Verify whether the required Diffie Hellman (DH) group is specified.");
+            }
+            gw.setIkePolicy(ikePolicy);
+        } else {
+            // TODO: Change API to make this param optional on update
+            throw new InvalidParameterValueException("The customer gateway IKE policy param is required");
+        }
+
         String espPolicy = cmd.getEspPolicy();
-        if (!NetUtils.isValidS2SVpnPolicy("ike", ikePolicy)) {
-            throw new InvalidParameterValueException("The customer gateway IKE policy" + ikePolicy + " is invalid!  Verify the required Diffie Hellman (DH) group is specified.");
-        }
-        if (!NetUtils.isValidS2SVpnPolicy("esp", espPolicy)) {
-            throw new InvalidParameterValueException("The customer gateway ESP policy" + espPolicy + " is invalid!");
-        }
+        if (espPolicy != null) {
+            if (!NetUtils.isValidS2SVpnPolicy("esp", espPolicy)) {
+                throw new InvalidParameterValueException("The customer gateway ESP policy" + espPolicy + " is invalid!");
+            }
+            gw.setEspPolicy(espPolicy);
+          } else {
+              // TODO: Change API to make this param optional on update
+              throw new InvalidParameterValueException("The customer gateway ESP policy param is required");
+          }
+
         Long ikeLifetime = cmd.getIkeLifetime();
-        if (ikeLifetime == null) {
-            // Default value of lifetime is 1 day
-            ikeLifetime = (long)86400;
+        if (ikeLifetime != null) {
+            if (ikeLifetime > 86400) {
+                throw new InvalidParameterValueException("The IKE lifetime " + ikeLifetime + " of vpn connection is invalid!");
+            }
+            gw.setIkeLifetime(ikeLifetime);
         }
-        if (ikeLifetime > 86400) {
-            throw new InvalidParameterValueException("The IKE lifetime " + ikeLifetime + " of vpn connection is invalid!");
-        }
+
         Long espLifetime = cmd.getEspLifetime();
-        if (espLifetime == null) {
-            // Default value of lifetime is 1 hour
-            espLifetime = (long)3600;
+        if (espLifetime != null {
+            if espLifetime > 86400) {
+                throw new InvalidParameterValueException("The ESP lifetime " + espLifetime + " of vpn connection is invalid!");
+            }
+            gw.setEspLifetime(espLifetime);
         }
-        if (espLifetime > 86400) {
-            throw new InvalidParameterValueException("The ESP lifetime " + espLifetime + " of vpn connection is invalid!");
+
+        Long espLifetime = cmd.getEspLifetime();
+        if (espLifetime != null {
+            if espLifetime > 86400) {
+                throw new InvalidParameterValueException("The ESP lifetime " + espLifetime + " of vpn connection is invalid!");
+            }
+            gw.setEspLifetime(espLifetime);
+        }
+
+        String ipsecPsk = cmd.getIpsecPsk();
+        if (ipsecPsk != null) {
+            gw.setIpsecPsk(ipsecPsk);
+        } else {
+            // TODO: Change API to make this param optional on update
+            throw new InvalidParameterValueException("The customer gateway IPSec PSK param is required");
+        }
+
+        String name = cmd.getName();
+        if (name != null) {
+            long accountId = gw.getAccountId();
+            Site2SiteCustomerGatewayVO existedGw = _customerGatewayDao.findByNameAndAccountId(name, accountId);
+            if (existedGw != null && existedGw.getId() != gw.getId()) {
+                throw new InvalidParameterValueException("A customer gateway with name " + name + " already exists. Please choose a different name.");
+            }
+            gw.setName(name);
         }
 
         Boolean dpd = cmd.getDpd();
-        if (dpd == null) {
-            dpd = false;
+        if (dpd != null) {
+            gw.setDpd(dpd);
         }
 
         Boolean encap = cmd.getEncap();
-        if (encap == null) {
-            encap = false;
+        if (encap != null) {
+            gw.setEncap(encap);
         }
 
-        checkCustomerGatewayCidrList(guestCidrList);
-
-        long accountId = gw.getAccountId();
-        Site2SiteCustomerGatewayVO existedGw = _customerGatewayDao.findByNameAndAccountId(name, accountId);
-        if (existedGw != null && existedGw.getId() != gw.getId()) {
-            throw new InvalidParameterValueException("The customer gateway with name " + name + " already existed!");
-        }
-
-        gw.setName(name);
-        gw.setGatewayIp(gatewayIp);
-        gw.setGuestCidrList(guestCidrList);
-        gw.setIkePolicy(ikePolicy);
-        gw.setEspPolicy(espPolicy);
-        gw.setIpsecPsk(ipsecPsk);
-        gw.setIkeLifetime(ikeLifetime);
-        gw.setEspLifetime(espLifetime);
-        gw.setDpd(dpd);
-        gw.setEncap(encap);
         _customerGatewayDao.persist(gw);
         return gw;
     }
