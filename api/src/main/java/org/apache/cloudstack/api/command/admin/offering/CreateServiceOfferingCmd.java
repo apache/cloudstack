@@ -194,7 +194,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return hostTag;
     }
 
-    public Boolean getIsSystem() {
+    public Boolean isSystem() {
         return isSystem == null ? false : isSystem;
     }
 
@@ -210,7 +210,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return deploymentPlanner;
     }
 
-    public boolean getCustomized() {
+    public boolean isCustomized() {
         return (cpuNumber == null || memory == null || cpuSpeed == null);
     }
 
