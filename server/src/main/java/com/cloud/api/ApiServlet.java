@@ -140,9 +140,9 @@ public class ApiServlet extends HttpServlet {
             s_logger.warn("UnknownHostException when trying to lookup remote IP-Address. This should never happen. Blocking request.", e);
             final String response = apiServer.getSerializedApiError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
                     "UnknownHostException when trying to lookup remote IP-Address", null,
-                    HttpUtils.RESPONSE_TYPE_XML);
+                    HttpUtils.RESPONSE_TYPE_JSON);
             HttpUtils.writeHttpResponse(resp, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    HttpUtils.RESPONSE_TYPE_XML, ApiServer.JSONcontentType.value());
+                    HttpUtils.RESPONSE_TYPE_JSON, ApiServer.JSONcontentType.value());
             return;
         }
 
@@ -150,7 +150,7 @@ public class ApiServlet extends HttpServlet {
         auditTrailSb.append(" ").append(remoteAddress.getHostAddress());
         auditTrailSb.append(" -- ").append(req.getMethod()).append(' ');
         // get the response format since we'll need it in a couple of places
-        String responseType = HttpUtils.RESPONSE_TYPE_XML;
+        String responseType = HttpUtils.RESPONSE_TYPE_JSON;
         final Map<String, Object[]> params = new HashMap<String, Object[]>();
         params.putAll(req.getParameterMap());
 
@@ -169,12 +169,6 @@ public class ApiServlet extends HttpServlet {
         }
 
         try {
-
-            if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-                resp.setContentType(ApiServer.JSONcontentType.value());
-            } else if (HttpUtils.RESPONSE_TYPE_XML.equalsIgnoreCase(responseType)){
-                resp.setContentType(HttpUtils.XML_CONTENT_TYPE);
-            }
 
             HttpSession session = req.getSession(false);
             final Object[] responseTypeParam = params.get(ApiConstants.RESPONSE);
