@@ -123,11 +123,11 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
         return supportedServices;
     }
 
-    public Boolean getRestartRequired() {
+    public Boolean isRestartRequired() {
         return restartRequired;
     }
 
-    public Boolean getSpecifyIpRanges() {
+    public Boolean isSpecifyIpRanges() {
         return specifyIpRanges;
     }
 

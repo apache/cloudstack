@@ -166,15 +166,15 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return serviceOfferingName;
     }
 
-    public Boolean getOfferHa() {
+    public Boolean isOfferHa() {
         return offerHa == null ? Boolean.FALSE : offerHa;
     }
 
-    public Boolean GetLimitCpuUse() {
+    public Boolean isLimitCpuUse() {
         return limitCpuUse == null ? Boolean.FALSE : limitCpuUse;
     }
 
-    public Boolean getVolatileVm() {
+    public Boolean isVolatileVm() {
         return isVolatile == null ? Boolean.FALSE : isVolatile;
     }
 

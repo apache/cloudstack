@@ -119,7 +119,7 @@ public class ListVlanIpRangesCmd extends BaseListCmd {
         return networkId;
     }
 
-    public Boolean getForVirtualNetwork() {
+    public Boolean isForVirtualNetwork() {
         return forVirtualNetwork;
     }
 

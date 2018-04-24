@@ -164,7 +164,7 @@ public class TemplateProfile {
         this.bits = bits;
     }
 
-    public Boolean getPasswordEnabled() {
+    public Boolean isPasswordEnabled() {
         return passwordEnabled;
     }
 
@@ -172,7 +172,7 @@ public class TemplateProfile {
         this.passwordEnabled = enabled;
     }
 
-    public Boolean getRequiresHVM() {
+    public Boolean isRequiresHVM() {
         return requiresHvm;
     }
 
@@ -188,7 +188,7 @@ public class TemplateProfile {
         this.url = url;
     }
 
-    public Boolean getIsPublic() {
+    public Boolean isPublic() {
         return isPublic;
     }
 
@@ -196,7 +196,7 @@ public class TemplateProfile {
         this.isPublic = is;
     }
 
-    public Boolean getFeatured() {
+    public Boolean isFeatured() {
         return featured;
     }
 
@@ -204,7 +204,7 @@ public class TemplateProfile {
         this.featured = featured;
     }
 
-    public Boolean getIsExtractable() {
+    public Boolean isExtractable() {
         return isExtractable;
     }
 
@@ -264,7 +264,7 @@ public class TemplateProfile {
         this.chksum = chksum;
     }
 
-    public Boolean getBootable() {
+    public Boolean isBootable() {
         return this.bootable;
     }
 
@@ -300,7 +300,7 @@ public class TemplateProfile {
         this.sshKeyEnbaled = enabled;
     }
 
-    public Boolean getSshKeyEnabled() {
+    public Boolean isSshKeyEnabled() {
         return this.sshKeyEnbaled;
     }
 

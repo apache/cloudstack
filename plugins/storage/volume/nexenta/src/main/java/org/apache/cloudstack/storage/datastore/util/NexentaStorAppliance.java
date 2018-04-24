@@ -337,7 +337,7 @@ public class NexentaStorAppliance {
         final String zvolName = getVolumeName(volumeName);
         String volumeSizeString = String.format("%dB", volumeSize);
 
-        client.execute(NmsResponse.class, "zvol", "create", zvolName, volumeSizeString, parameters.getVolumeBlockSize(), parameters.getSparseVolumes());
+        client.execute(NmsResponse.class, "zvol", "create", zvolName, volumeSizeString, parameters.getVolumeBlockSize(), parameters.isSparseVolumes());
 
         final String targetName = getTargetName(volumeName);
         final String targetGroupName = getTargetGroupName(volumeName);

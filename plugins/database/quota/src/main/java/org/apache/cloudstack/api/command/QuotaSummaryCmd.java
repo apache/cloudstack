@@ -63,7 +63,7 @@ public class QuotaSummaryCmd extends BaseListCmd {
             if (getAccountName() != null && getDomainId() != null)
                 responses = _responseBuilder.createQuotaSummaryResponse(caller.getAccountName(), caller.getDomainId());
             else
-                responses = _responseBuilder.createQuotaSummaryResponse(getListAll());
+                responses = _responseBuilder.createQuotaSummaryResponse(isListAll());
         } else {
             responses = _responseBuilder.createQuotaSummaryResponse(caller.getAccountName(), caller.getDomainId());
         }
@@ -94,7 +94,7 @@ public class QuotaSummaryCmd extends BaseListCmd {
         return s_name;
     }
 
-    public Boolean getListAll() {
+    public Boolean isListAll() {
         return listAll == null ? false: listAll;
     }
 

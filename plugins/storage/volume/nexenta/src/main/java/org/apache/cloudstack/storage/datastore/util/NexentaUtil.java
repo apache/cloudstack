@@ -194,7 +194,7 @@ public class NexentaUtil {
             this.sparseVolumes = Boolean.TRUE.toString().equalsIgnoreCase(sparseVolumes);
         }
 
-        public Boolean getSparseVolumes() {
+        public Boolean isSparseVolumes() {
             return sparseVolumes;
         }
 

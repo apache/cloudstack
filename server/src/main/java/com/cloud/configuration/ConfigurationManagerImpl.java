@@ -2255,7 +2255,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Please specify a valid domain id");
         }
 
-        final Boolean offerHA = cmd.getOfferHa();
+        final Boolean offerHA = cmd.isOfferHa();
 
         boolean localStorageRequired = false;
         final String storageType = cmd.getStorageType();
@@ -2270,8 +2270,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        final Boolean limitCpuUse = cmd.GetLimitCpuUse();
-        final Boolean volatileVm = cmd.getVolatileVm();
+        final Boolean limitCpuUse = cmd.isLimitCpuUse();
+        final Boolean volatileVm = cmd.isVolatileVm();
 
         final String vmTypeString = cmd.getSystemVmType();
         VirtualMachine.Type vmType = null;

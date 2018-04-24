@@ -102,7 +102,7 @@ public class NexentaPrimaryDataStoreLifeCycle
         details.put(NexentaUtil.NMS_URL, params.getNmsUrl().toString());
 
         details.put(NexentaUtil.VOLUME, params.getVolume());
-        details.put(NexentaUtil.SPARSE_VOLUMES, params.getSparseVolumes().toString());
+        details.put(NexentaUtil.SPARSE_VOLUMES, params.isSparseVolumes().toString());
 
         details.put(NexentaUtil.STORAGE_TYPE, params.getStorageType().toString());
         details.put(NexentaUtil.STORAGE_HOST, params.getStorageHost());
