@@ -61,7 +61,7 @@ public class UpdateUserCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.PASSWORD,
             type = CommandType.STRING,
-            description = "Clear text password (default hashed to SHA256SALT). If you wish to use any other hasing algorithm, you would need to write a custom authentication adapter. Can't be passed when command is executed via integration.api.port",
+            description = "Clear text password (default hashed to SHA256SALT). If you wish to use any other hashing algorithm, you would need to write a custom authentication adapter. Can't be passed when command is executed via integration.api.port",
             acceptedOnAdminPort = false)
     private String password;
 
