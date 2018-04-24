@@ -61,24 +61,10 @@ import com.cloud.network.rules.FirewallRule.Purpose;
 import com.cloud.network.rules.FirewallRuleVO;
 import com.cloud.utils.component.ComponentContext;
 
-//@Ignore("Requires database to be set up")
 @RunWith(MockitoJUnitRunner.class)
-//@ContextConfiguration(locations = "classpath:/testContext.xml")
-//@ComponentSetup(managerName="management-server", setupXml="network-mgr-component.xml")
 public class FirewallManagerTest {
     private static final Logger s_logger = Logger.getLogger(FirewallManagerTest.class);
 
-//    @Before
-//    public void setUp() {
-//        Logger daoLogger = Logger.getLogger(GenericDaoBase.class);
-//        Logger cloudLogger = Logger.getLogger("com.cloud");
-//
-//        componentlogger.setLevel(Level.WARN);
-//        daoLogger.setLevel(Level.ERROR);
-//        cloudLogger.setLevel(Level.ERROR);
-//        s_logger.setLevel(Level.INFO);
-//        super.setUp();
-//    }
 
     @Ignore("Requires database to be set up")
     @Test
