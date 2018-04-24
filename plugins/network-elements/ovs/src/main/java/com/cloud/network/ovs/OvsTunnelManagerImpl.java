@@ -212,7 +212,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
         Long from = r.getFrom();
         Long to = r.getTo();
         long networkId = r.getNetworkId();
-        OvsTunnelNetworkVO tunnel = _tunnelNetworkDao.getByFromToNetwork(from, to, networkId);
+        OvsTunnelNetworkVO tunnel = _tunnelNetworkDao.findByFromToNetwork(from, to, networkId);
         if (tunnel == null) {
             throw new CloudRuntimeException(
                     String.format("Unable find tunnelNetwork record" +
@@ -321,7 +321,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
             if (rh == hostId) {
                 continue;
             }
-            OvsTunnelNetworkVO ta = _tunnelNetworkDao.getByFromToNetwork(hostId, rh.longValue(), nw.getId());
+            OvsTunnelNetworkVO ta = _tunnelNetworkDao.findByFromToNetwork(hostId, rh.longValue(), nw.getId());
             // Try and create the tunnel even if a previous attempt failed
             if (ta == null || ta.getState().equals(OvsTunnel.State.Failed.name())) {
                 s_logger.debug("Attempting to create tunnel from:" + hostId + " to:" + rh.longValue());
@@ -333,7 +333,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 }
             }
 
-            ta = _tunnelNetworkDao.getByFromToNetwork(rh.longValue(),
+            ta = _tunnelNetworkDao.findByFromToNetwork(rh.longValue(),
                     hostId, nw.getId());
             // Try and create the tunnel even if a previous attempt failed
             if (ta == null || ta.getState().equals(OvsTunnel.State.Failed.name())) {
@@ -605,7 +605,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 if (rh == hostId) {
                     continue;
                 }
-                tunnelRecord = _tunnelNetworkDao.getByFromToNetwork(hostId, rh.longValue(), vpcNetwork.getId());
+                tunnelRecord = _tunnelNetworkDao.findByFromToNetwork(hostId, rh.longValue(), vpcNetwork.getId());
                 // Try and create the tunnel if does not exit or previous attempt failed
                 if (tunnelRecord == null || tunnelRecord.getState().equals(OvsTunnel.State.Failed.name())) {
                     s_logger.debug("Attempting to create tunnel from:" + hostId + " to:" + rh.longValue());
@@ -616,7 +616,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                         toHostIds.add(rh);
                     }
                 }
-                tunnelRecord = _tunnelNetworkDao.getByFromToNetwork(rh.longValue(), hostId, vpcNetwork.getId());
+                tunnelRecord = _tunnelNetworkDao.findByFromToNetwork(rh.longValue(), hostId, vpcNetwork.getId());
                 // Try and create the tunnel if does not exit or previous attempt failed
                 if (tunnelRecord == null || tunnelRecord.getState().equals(OvsTunnel.State.Failed.name())) {
                     s_logger.debug("Attempting to create tunnel from:" + rh.longValue() + " to:" + hostId);

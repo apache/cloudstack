@@ -136,7 +136,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
 
             alreadyRunning = _secStorageVmDao.getSecStorageVmListInStates(null, dataCenterId, State.Running, State.Migrating, State.Starting);
 
-            List<CommandExecLogVO> activeCmds = listActiveCommands(dataCenterId, cutTime);
+            List<CommandExecLogVO> activeCmds = findActiveCommands(dataCenterId, cutTime);
             if (alreadyRunning.size() * _capacityPerSSVM - activeCmds.size() < _standbyCapacity) {
                 s_logger.info("secondary storage command execution standby capactiy low (running VMs: " + alreadyRunning.size() + ", active cmds: " + activeCmds.size() +
                         "), starting a new one");
@@ -163,7 +163,7 @@ public class PremiumSecondaryStorageManagerImpl extends SecondaryStorageManagerI
         return null;
     }
 
-    private List<CommandExecLogVO> listActiveCommands(long dcId, Date cutTime) {
+    private List<CommandExecLogVO> findActiveCommands(long dcId, Date cutTime) {
         SearchCriteria<CommandExecLogVO> sc = activeCommandSearch.create();
 
         sc.setParameters("created", cutTime);

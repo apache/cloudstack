@@ -22,7 +22,7 @@ import java.util.List;
 import com.cloud.utils.db.GenericDao;
 
 public interface OvsTunnelNetworkDao extends GenericDao<OvsTunnelNetworkVO, Long> {
-    OvsTunnelNetworkVO getByFromToNetwork(long from, long to, long networkId);
+    OvsTunnelNetworkVO findByFromToNetwork(long from, long to, long networkId);
 
     void removeByFromNetwork(long from, long networkId);
 

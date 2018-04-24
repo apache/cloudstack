@@ -482,7 +482,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         throw new CloudRuntimeException("Unable to find dispatcher name: " + dispatcherName);
     }
 
-    private AsyncJobDispatcher getWakeupDispatcher(AsyncJob job) {
+    private AsyncJobDispatcher findWakeupDispatcher(AsyncJob job) {
         if (_jobDispatchers != null) {
             List<AsyncJobJoinMapVO> joinRecords = _joinMapDao.listJoinRecords(job.getId());
             if (joinRecords.size() > 0) {
@@ -567,7 +567,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     }
 
                     if ((getAndResetPendingSignals(job) & AsyncJob.Constants.SIGNAL_MASK_WAKEUP) != 0) {
-                        AsyncJobDispatcher jobDispatcher = getWakeupDispatcher(job);
+                        AsyncJobDispatcher jobDispatcher = findWakeupDispatcher(job);
                         if (jobDispatcher != null) {
                             jobDispatcher.runJob(job);
                         } else {
