@@ -68,7 +68,7 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         }
         jobResponse.setJobResultCode(job.getResultCode());
 
-        boolean savedValue = SerializationContext.current().getUuidTranslation();
+        boolean savedValue = SerializationContext.current().isUuidTranslation();
         SerializationContext.current().setUuidTranslation(false);
 
         Object resultObject = ApiSerializerHelper.fromSerializedString(job.getResult());

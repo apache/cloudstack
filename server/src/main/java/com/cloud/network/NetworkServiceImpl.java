@@ -1376,7 +1376,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
                             throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
                         }
-                        if (ntwkOff.getInternalLb()) {
+                        if (ntwkOff.isInternalLb()) {
                             throw new InvalidParameterValueException("Internal Lb can be enabled on vpc networks only");
                         }
 
@@ -2751,7 +2751,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         //can't update from internal LB to public LB
         if (areServicesSupportedByNetworkOffering(oldNetworkOfferingId, Service.Lb) && areServicesSupportedByNetworkOffering(newNetworkOfferingId, Service.Lb)) {
-            if (oldNetworkOffering.getPublicLb() != newNetworkOffering.getPublicLb() || oldNetworkOffering.getInternalLb() != newNetworkOffering.getInternalLb()) {
+            if (oldNetworkOffering.getPublicLb() != newNetworkOffering.getPublicLb() || oldNetworkOffering.isInternalLb() != newNetworkOffering.isInternalLb()) {
                 throw new InvalidParameterValueException("Original and new offerings support different types of LB - Internal vs Public," + " can't upgrade");
             }
         }

@@ -3195,7 +3195,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VMInstanceVO vmForUpdate = _vmDao.createForUpdate();
         vmForUpdate.setServiceOfferingId(serviceOfferingId);
         final ServiceOffering newSvcOff = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
-        vmForUpdate.setHaEnabled(newSvcOff.getOfferHA());
+        vmForUpdate.setHaEnabled(newSvcOff.isOfferHA());
         vmForUpdate.setLimitCpuUse(newSvcOff.getLimitCpuUse());
         vmForUpdate.setServiceOfferingId(newSvcOff.getId());
         return _vmDao.update(vmId, vmForUpdate);

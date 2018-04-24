@@ -210,7 +210,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return deploymentPlanner;
     }
 
-    public boolean getCustomized() {
+    public boolean isCustomized() {
         return (cpuNumber == null || memory == null || cpuSpeed == null);
     }
 
