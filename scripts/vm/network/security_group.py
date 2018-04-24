@@ -1163,8 +1163,7 @@ def addFWFramework(brname):
         execute("sysctl -w net.bridge.bridge-nf-call-iptables=1")
         execute("sysctl -w net.bridge.bridge-nf-call-ip6tables=1")
     except:
-        logging.debug("failed to turn on bridge netfilter")
-        return False
+        logging.warn("failed to turn on bridge netfilter")
 
     brfw = getBrfw(brname)
     try:
