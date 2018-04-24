@@ -31,6 +31,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -388,6 +389,7 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         addFilter(str, filter);
 
         final TransactionLegacy txn = TransactionLegacy.currentTxn();
+
         if (lock != null) {
             assert (txn.dbTxnStarted() == true) : "As nice as I can here now....how do you lock when there's no DB transaction?  Review your db 101 course from college.";
             str.append(lock ? FOR_UPDATE_CLAUSE : SHARE_MODE_CLAUSE);
@@ -398,6 +400,8 @@ public abstract class GenericDaoBase<T, ID extends Serializable> extends Compone
         PreparedStatement pstmt = null;
         final List<T> result = new ArrayList<T>();
         try {
+            Connection currentConnection = txn.getCurrentConnection();
+            s_logger.info("Connection: " + (currentConnection.isClosed() ? "closed" : "open"));
             pstmt = txn.prepareAutoCloseStatement(sql);
             int i = 1;
             if (clause != null) {

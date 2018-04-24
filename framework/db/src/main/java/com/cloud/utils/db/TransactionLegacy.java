@@ -33,6 +33,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.sql.DataSource;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import org.apache.commons.dbcp.ConnectionFactory;
 import org.apache.commons.dbcp.DriverManagerConnectionFactory;
 import org.apache.commons.dbcp.PoolableConnectionFactory;
@@ -426,9 +428,6 @@ public class TransactionLegacy implements Closeable {
     protected void closePreviousStatement() {
         if (_stmt != null) {
             try {
-                if (s_stmtLogger.isTraceEnabled()) {
-                    s_stmtLogger.trace("Closing: " + _stmt.toString());
-                }
                 try {
                     ResultSet rs = _stmt.getResultSet();
                     if (rs != null && _stmt.getResultSetHoldability() != ResultSet.HOLD_CURSORS_OVER_COMMIT) {
@@ -1062,6 +1061,7 @@ public class TransactionLegacy implements Closeable {
             final long cloudMinEvcitableIdleTimeMillis = Long.parseLong(dbProps.getProperty("db.cloud.minEvictableIdleTimeMillis"));
             final boolean cloudPoolPreparedStatements = Boolean.parseBoolean(dbProps.getProperty("db.cloud.poolPreparedStatements"));
             final String url = dbProps.getProperty("db.cloud.url.params");
+            final String connPool = dbProps.getProperty("db.cloud.connPool");
 
             String cloudDbHAParams = null;
             String cloudSlaves = null;
@@ -1087,6 +1087,55 @@ public class TransactionLegacy implements Closeable {
                     "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") +
                     (s_dbHAEnabled ? "&" + cloudDbHAParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
             DriverLoader.loadDriver(cloudDriver);
+
+            if (connPool.equalsIgnoreCase("hikari")) {
+                HikariConfig hikariConfig = new HikariConfig();
+                hikariConfig.setJdbcUrl(cloudConnectionUri);
+                hikariConfig.setUsername(cloudUsername);
+                hikariConfig.setPassword(cloudPassword);
+                hikariConfig.addDataSourceProperty("cachePrepStmts", "true");
+                hikariConfig.addDataSourceProperty("prepStmtCacheSize", "250");
+                hikariConfig.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+                hikariConfig.setMinimumIdle(100);
+                hikariConfig.setMaximumPoolSize(200);
+                hikariConfig.setAutoCommit(false);
+
+                s_ds = new HikariDataSource(hikariConfig);
+
+                // Configure the usage db
+                final int usageMaxActive = Integer.parseInt(dbProps.getProperty("db.usage.maxActive"));
+                final int usageMaxIdle = Integer.parseInt(dbProps.getProperty("db.usage.maxIdle"));
+                final long usageMaxWait = Long.parseLong(dbProps.getProperty("db.usage.maxWait"));
+                final String usageUsername = dbProps.getProperty("db.usage.username");
+                final String usagePassword = dbProps.getProperty("db.usage.password");
+                final String usageHost = dbProps.getProperty("db.usage.host");
+                final String usageDriver = dbProps.getProperty("db.usage.driver");
+                final int usagePort = Integer.parseInt(dbProps.getProperty("db.usage.port"));
+                final String usageDbName = dbProps.getProperty("db.usage.name");
+                final boolean usageAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.usage.autoReconnect"));
+                final String usageUrl = dbProps.getProperty("db.usage.url.params");
+
+                final GenericObjectPool usageConnectionPool =
+                        new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, usageMaxWait, usageMaxIdle);
+
+                final String usageConnectionUri = usageDriver + "://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.slaves") : "") + ":" + usagePort +
+                        "/" + usageDbName + "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") +
+                        (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
+                DriverLoader.loadDriver(usageDriver);
+
+                HikariConfig hikariConfigUsage = new HikariConfig();
+                hikariConfigUsage.setJdbcUrl(usageConnectionUri);
+                hikariConfigUsage.setUsername(usageUsername);
+                hikariConfigUsage.setPassword(usagePassword);
+                hikariConfigUsage.addDataSourceProperty("cachePrepStmts", "true");
+                hikariConfigUsage.addDataSourceProperty("prepStmtCacheSize", "250");
+                hikariConfigUsage.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+                hikariConfigUsage.setIdleTimeout(600000l);
+                hikariConfigUsage.setMinimumIdle(5);
+                s_usageDS = new HikariDataSource(hikariConfigUsage);
+                return;
+
+            }
 
             final ConnectionFactory cloudConnectionFactory = new DriverManagerConnectionFactory(cloudConnectionUri, cloudUsername, cloudPassword);
 
