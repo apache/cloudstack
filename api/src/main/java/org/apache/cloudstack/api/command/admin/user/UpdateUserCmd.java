@@ -66,7 +66,7 @@ public class UpdateUserCmd extends BaseCmd {
     private String password;
 
 
-    @Parameter(name = ApiConstants.SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userSecretKey")
+    @Parameter(name = ApiConstants.SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userApiKey")
     private String secretKey;
 
     @Parameter(name = ApiConstants.TIMEZONE,
