@@ -34,6 +34,7 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.RequestLimitException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.UnavailableCommandException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -958,6 +959,9 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         } catch (final RequestLimitException ex) {
             s_logger.debug(ex.getMessage());
             throw new ServerApiException(ApiErrorCode.API_LIMIT_EXCEED, ex.getMessage());
+        }  catch (final UnavailableCommandException ex) {
+            s_logger.debug(ex.getMessage());
+            throw new ServerApiException(ApiErrorCode.UNSUPPORTED_ACTION_ERROR, ex.getMessage());
         } catch (final PermissionDeniedException ex) {
             final String errorMessage = "The given command '" + commandName + "' either does not exist, is not available" +
                     " for user, or not available from ip address '" + remoteAddress + "'.";

@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.UnavailableCommandException;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -45,6 +46,7 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
     protected static final Logger LOGGER = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
 
     private Set<String> commandPropertyFiles = new HashSet<String>();
+    private Set<String> commandNames = new HashSet<String>();
     private Set<String> commandsPropertiesOverrides = new HashSet<String>();
     private Map<RoleType, Set<String>> commandsPropertiesRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
     private Map<RoleType, Set<String>> annotationRoleBasedApisMap = new HashMap<RoleType, Set<String>>();
@@ -87,7 +89,11 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
             return true;
         }
 
-        throw new PermissionDeniedException("The API does not exist or is blacklisted. Role type=" + roleType.toString() + " is not allowed to request the api: " + commandName);
+        if (commandNames.contains(commandName)) {
+            throw new PermissionDeniedException("The API is blacklisted. Role type=" + roleType.toString() + " is not allowed to request the api: " + commandName);
+        } else {
+            throw new UnavailableCommandException("The API " + commandName + " does not exist or is not available for this account.");
+        }
     }
 
     @Override
@@ -110,6 +116,9 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
                     if (!commands.contains(command.name()))
                         commands.add(command.name());
                 }
+                if (!commandNames.contains(command.name())) {
+                    commandNames.add(command.name());
+                }
             }
         }
         return super.start();
@@ -119,6 +128,9 @@ public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIC
         for (Map.Entry<String, String> entry : configMap.entrySet()) {
             String apiName = entry.getKey();
             String roleMask = entry.getValue();
+            if (!commandNames.contains(apiName)) {
+                commandNames.add(apiName);
+            }
             commandsPropertiesOverrides.add(apiName);
             try {
                 short cmdPermissions = Short.parseShort(roleMask);
