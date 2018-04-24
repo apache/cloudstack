@@ -310,7 +310,7 @@ public interface NetworkModel {
     boolean getNetworkEgressDefaultPolicy(Long networkId);
 
     List<String[]> generateVmData(String userData, String serviceOffering, String zoneName,
-                                  String vmName, long vmId, String publicKey, String password, Boolean isWindows);
+                                  String vmName, String vmHostName, long vmId, String publicKey, String password, Boolean isWindows);
 
     String getValidNetworkCidr(Network guestNetwork);
 

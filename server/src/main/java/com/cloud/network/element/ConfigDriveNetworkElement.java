@@ -375,7 +375,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             final String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
-            List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, zoneName, vm.getInstanceName(), vm.getId(),
+            List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, zoneName, vm.getInstanceName(), vm.getHostName(), vm.getId(),
                     publicKey, (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
             profile.setVmData(vmData);
             profile.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());
