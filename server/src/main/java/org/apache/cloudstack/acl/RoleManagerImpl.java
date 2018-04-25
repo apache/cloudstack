@@ -47,7 +47,6 @@ import com.cloud.event.EventTypes;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
-import com.cloud.user.AccountManagerImpl;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.ListUtils;
 import com.cloud.utils.component.ManagerBase;
@@ -110,7 +109,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     /**
      * Simple call to {@link CallContext#current()} to retrieve the current calling account.
-     * This method facilitates unit testing because this avoids static methods mocks. 
+     * This method facilitates unit testing because this avoids static methods mocks.
      */
     protected Account getCurrentAccount() {
         return CallContext.current().getCallingAccount();
@@ -255,7 +254,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     /**
      *  Removes roles of the given list that have the type '{@link RoleType#Admin}' if the user calling the method is not a 'root admin'.
-     *  The actual removal is executed via {@link #removeRootAdminRoles(List)}. Therefore, if the method is called by a 'root admin', we do nothing here. 
+     *  The actual removal is executed via {@link #removeRootAdminRoles(List)}. Therefore, if the method is called by a 'root admin', we do nothing here.
      */
     protected void removeRootAdminRolesIfNeeded(List<? extends Role> roles) {
         Account account = getCurrentAccount();
@@ -265,7 +264,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     /**
-     * Remove all roles that have the {@link RoleType#Admin}. 
+     * Remove all roles that have the {@link RoleType#Admin}.
      */
     protected void removeRootAdminRoles(List<? extends Role> roles) {
         if (CollectionUtils.isEmpty(roles)) {
@@ -283,8 +282,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public List<Role> findRolesByType(RoleType roleType) {
-        if (roleType == null ||
-                RoleType.Admin == roleType && !accountManager.isRootAdmin(getCurrentAccount().getId())) {
+        if (roleType == null || RoleType.Admin == roleType && !accountManager.isRootAdmin(getCurrentAccount().getId())) {
             return Collections.emptyList();
         }
         List<? extends Role> roles = roleDao.findAllByRoleType(roleType);
