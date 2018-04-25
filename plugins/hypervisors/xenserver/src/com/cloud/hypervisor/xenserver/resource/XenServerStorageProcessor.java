@@ -79,6 +79,7 @@ import com.cloud.agent.api.to.SwiftTO;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.xenserver.resource.CitrixResourceBase.SRType;
+import com.cloud.hypervisor.xenserver.resource.wrapper.xenbase.XenServerUtilitiesHelper;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Storage.ImageFormat;
@@ -410,7 +411,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
                 }
             }
 
-            if (!sr.getNameLabel(conn).startsWith("XenServer Tools")) {
+            if (!XenServerUtilitiesHelper.isXenServerToolsSR(sr.getNameLabel(conn))) {
                 hypervisorResource.removeSR(conn, sr);
             }
 
