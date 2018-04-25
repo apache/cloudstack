@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.RoleResponse;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -112,11 +113,11 @@ public class ListRolesCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        final List<Role> roles;
+    public void execute(){
+        List<Role> roles;
         if (getId() != null && getId() > 0L) {
             roles = Collections.singletonList(roleService.findRole(getId()));
-        } else if (!Strings.isNullOrEmpty(getName())) {
+        } else if (StringUtils.isNotBlank(getName())) {
             roles = roleService.findRolesByName(getName());
         } else if (getRoleType() != null){
             roles = roleService.findRolesByType(getRoleType());
