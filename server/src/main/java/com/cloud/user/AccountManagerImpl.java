@@ -1170,7 +1170,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         validateAndUpdateLastNameIfNeeded(updateUserCmd, user);
         validateAndUpdateUsernameIfNeeded(updateUserCmd, user, account);
 
-        validateUserPasswordAndUpdateIfNeeded(updateUserCmd.getPassword(), user, updateUserCmd.getOldPassword());
+        validateUserPasswordAndUpdateIfNeeded(updateUserCmd.getPassword(), user, updateUserCmd.getCurrentPassword());
         String email = updateUserCmd.getEmail();
         if (StringUtils.isNotBlank(email)) {
             user.setEmail(email);
@@ -1185,16 +1185,16 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     /**
      * Updates the password in the user POJO if needed. If no password is provided, then the password is not updated.
-     * The following validations are executed if 'password' is not null. Admins (root admins or domain admins) can execute password updates without entering the old password.
+     * The following validations are executed if 'password' is not null. Admins (root admins or domain admins) can execute password updates without entering the current password.
      * <ul>
      *  <li> If 'password' is blank, we throw an {@link InvalidParameterValueException};
-     *  <li> If old password is not provided and user is not an Admin, we throw an {@link InvalidParameterValueException};
-     *  <li> If a normal user is calling this method, we use {@link #validateOldPassword(UserVO, String)} to check if the provided old password matches the database one;
+     *  <li> If 'current password' is not provided and user is not an Admin, we throw an {@link InvalidParameterValueException};
+     *  <li> If a normal user is calling this method, we use {@link #validateCurrentPassword(UserVO, String)} to check if the provided old password matches the database one;
      * </ul>
      *
      * If all checks pass, we encode the given password with the most preferable password mechanism given in {@link #_userPasswordEncoders}.
      */
-    protected void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String oldPassword) {
+    protected void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword) {
         if (newPassword == null) {
             s_logger.trace("No new password to update for user: " + user.getUuid());
             return;
@@ -1209,14 +1209,14 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         if (isAdmin) {
             s_logger.trace(String.format("Admin account [uuid=%s] executing password update for user [%s] ", callingAccount.getUuid(), user.getUuid()));
         }
-        if (!isAdmin && StringUtils.isBlank(oldPassword)) {
-            throw new InvalidParameterValueException("You must inform the old password when updating a user password.");
+        if (!isAdmin && StringUtils.isBlank(currentPassword)) {
+            throw new InvalidParameterValueException("You must inform the current password when updating a user password.");
         }
         if (CollectionUtils.isEmpty(_userPasswordEncoders)) {
             throw new CloudRuntimeException("No user authenticators configured!");
         }
         if (!isAdmin) {
-            validateOldPassword(user, oldPassword);
+            validateCurrentPassword(user, currentPassword);
         }
         UserAuthenticator userAuthenticator = _userPasswordEncoders.get(0);
         String newPasswordEncoded = userAuthenticator.encode(newPassword);
@@ -1224,26 +1224,26 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     /**
-     * Iterates over all configured user authenticators and tries to authenticated the user using the old password.
+     * Iterates over all configured user authenticators and tries to authenticated the user using the current password.
      * If the user is authenticated with success, we have nothing else to do here; otherwise, an {@link InvalidParameterValueException} is thrown.
      */
-    protected void validateOldPassword(UserVO user, String oldPassword) {
+    protected void validateCurrentPassword(UserVO user, String currentPassword) {
         AccountVO userAccount = _accountDao.findById(user.getAccountId());
-        boolean oldPasswordMatchesDataBasePassword = false;
+        boolean currentPasswordMatchesDataBasePassword = false;
         for (UserAuthenticator userAuthenticator : _userPasswordEncoders) {
-            Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = userAuthenticator.authenticate(user.getUsername(), oldPassword, userAccount.getDomainId(), null);
+            Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = userAuthenticator.authenticate(user.getUsername(), currentPassword, userAccount.getDomainId(), null);
             if (authenticationResult == null) {
                 s_logger.trace(String.format("Authenticator [%s] is returning null for the authenticate mehtod.", userAuthenticator.getClass()));
                 continue;
             }
             if (BooleanUtils.toBoolean(authenticationResult.first())) {
                 s_logger.debug(String.format("User [id=%s] re-authenticated [authenticator=%s] during password update.", user.getUuid(), userAuthenticator.getName()));
-                oldPasswordMatchesDataBasePassword = true;
+                currentPasswordMatchesDataBasePassword = true;
                 break;
             }
         }
-        if (!oldPasswordMatchesDataBasePassword) {
-            throw new InvalidParameterValueException("Old password does not match the database password.");
+        if (!currentPasswordMatchesDataBasePassword) {
+            throw new InvalidParameterValueException("Current password informed does not match the database password.");
         }
     }
 

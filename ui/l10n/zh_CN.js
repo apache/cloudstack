@@ -1147,7 +1147,7 @@ var dictionary = {
     "label.networks": "网络",
     "label.new": "新建",
     "label.new.password": "新密码",
-    "label.old.password": "Old Password",
+    "label.current.password": "Current Password",
     "label.new.project": "新建项目",
     "label.new.ssh.key.pair": "新SSH密钥对",
     "label.new.vm": "新建 VM",

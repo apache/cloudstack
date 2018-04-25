@@ -1476,13 +1476,13 @@
                                                 form: {
                                                     title: 'label.action.change.password',
                                                     fields: {
-                                                        oldPassword: {
-                                                            label: 'label.old.password',
+                                                        currentPassword: {
+                                                            label: 'label.current.password',
                                                             isPassword: true,
                                                             validation: {
                                                                 required: !(isAdmin() || isDomainAdmin())
                                                             },
-                                                            id: 'oldPassword'
+                                                            id: 'currentPassword'
                                                         },
                                                         newPassword: {
                                                             label: 'label.new.password',
@@ -1504,13 +1504,13 @@
                                                 },
                                                 after: function(args) {
                                                     start();
-                                                    var oldPassword = args.data.oldPassword;
+                                                    var currentPassword = args.data.currentPassword;
                                                     var password = args.data.newPassword;
                                                     $.ajax({
                                                         url: createURL('updateUser'),
                                                         data: {
                                                             id: context.users[0].id,
-                                                            oldPassword: oldPassword,
+                                                            currentPassword: currentPassword,
                                                             password: password
                                                         },
                                                         type: "POST",
@@ -1524,7 +1524,7 @@
                                                 }
                                             });
                                             if(isAdmin() || isDomainAdmin()){
-                                                $('div[rel=oldPassword]').hide();
+                                                $('div[rel=currentPassword]').hide();
                                             }
                                         } else {
                                             cloudStack.dialog.notice({ message: _l('error.could.not.change.your.password.because.non.native.user') });

@@ -544,7 +544,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void valiateUserPasswordAndUpdateIfNeededTestNoAdminAndNoOldPasswordProvided() {
+    public void valiateUserPasswordAndUpdateIfNeededTestNoAdminAndNoCurrentPasswordProvided() {
         Mockito.doReturn(accountMock).when(accountManagerImpl).getCurrentCallingAccount();
         Mockito.doReturn(false).when(accountManagerImpl).isRootAdmin(accountMockId);
         Mockito.doReturn(false).when(accountManagerImpl).isDomainAdmin(accountMockId);
@@ -559,7 +559,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Mockito.doReturn(true).when(accountManagerImpl).isRootAdmin(accountMockId);
         Mockito.doReturn(false).when(accountManagerImpl).isDomainAdmin(accountMockId);
 
-        Mockito.doNothing().when(accountManagerImpl).validateOldPassword(Mockito.eq(userVoMock), Mockito.anyString());
+        Mockito.doNothing().when(accountManagerImpl).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
 
         accountManagerImpl.validateUserPasswordAndUpdateIfNeeded("newPassword", userVoMock, null);
     }
@@ -574,11 +574,11 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         String expectedUserPasswordAfterEncoded = configureUserMockAuthenticators(newPassword);
 
-        Mockito.doNothing().when(accountManagerImpl).validateOldPassword(Mockito.eq(userVoMock), Mockito.anyString());
+        Mockito.doNothing().when(accountManagerImpl).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
 
         accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, null);
 
-        Mockito.verify(accountManagerImpl, Mockito.times(0)).validateOldPassword(Mockito.eq(userVoMock), Mockito.anyString());
+        Mockito.verify(accountManagerImpl, Mockito.times(0)).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
         Mockito.verify(userVoMock, Mockito.times(1)).setPassword(expectedUserPasswordAfterEncoded);
     }
 
@@ -592,11 +592,11 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
         String expectedUserPasswordAfterEncoded = configureUserMockAuthenticators(newPassword);
 
-        Mockito.doNothing().when(accountManagerImpl).validateOldPassword(Mockito.eq(userVoMock), Mockito.anyString());
+        Mockito.doNothing().when(accountManagerImpl).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
 
         accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, null);
 
-        Mockito.verify(accountManagerImpl, Mockito.times(0)).validateOldPassword(Mockito.eq(userVoMock), Mockito.anyString());
+        Mockito.verify(accountManagerImpl, Mockito.times(0)).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
         Mockito.verify(userVoMock, Mockito.times(1)).setPassword(expectedUserPasswordAfterEncoded);
     }
 
@@ -609,12 +609,12 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         String newPassword = "newPassword";
         String expectedUserPasswordAfterEncoded = configureUserMockAuthenticators(newPassword);
 
-        Mockito.doNothing().when(accountManagerImpl).validateOldPassword(Mockito.eq(userVoMock), Mockito.anyString());
+        Mockito.doNothing().when(accountManagerImpl).validateCurrentPassword(Mockito.eq(userVoMock), Mockito.anyString());
 
-        String oldPassword = "theOldPassword";
-        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, oldPassword);
+        String currentPassword = "theCurrentPassword";
+        accountManagerImpl.validateUserPasswordAndUpdateIfNeeded(newPassword, userVoMock, currentPassword);
 
-        Mockito.verify(accountManagerImpl, Mockito.times(1)).validateOldPassword(userVoMock, oldPassword);
+        Mockito.verify(accountManagerImpl, Mockito.times(1)).validateCurrentPassword(userVoMock, currentPassword);
         Mockito.verify(userVoMock, Mockito.times(1)).setPassword(expectedUserPasswordAfterEncoded);
     }
 
@@ -633,16 +633,16 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     }
 
     @Test(expected = InvalidParameterValueException.class)
-    public void validateOldPasswordTestUserNotAuthenticatedWithProvidedOldPassword() {
+    public void validateCurrentPasswordTestUserNotAuthenticatedWithProvidedCurrentPassword() {
         Mockito.doReturn(Mockito.mock(AccountVO.class)).when(accountDaoMock).findById(accountMockId);
         String newPassword = "newPassword";
         configureUserMockAuthenticators(newPassword);
 
-        accountManagerImpl.validateOldPassword(userVoMock, "oldPassword");
+        accountManagerImpl.validateCurrentPassword(userVoMock, "currentPassword");
     }
 
     @Test
-    public void validateOldPasswordTestUserAuthenticatedWithProvidedOldPasswordViaFirstAuthenticator() {
+    public void validateCurrentPasswordTestUserAuthenticatedWithProvidedCurrentPasswordViaFirstAuthenticator() {
         AccountVO accountVoMock = Mockito.mock(AccountVO.class);
         long domainId = 14l;
         Mockito.doReturn(domainId).when(accountVoMock).getDomainId();
@@ -661,17 +661,17 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = new Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication>(true,
                 UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
 
-        String oldPassword = "oldPassword";
-        Mockito.doReturn(authenticationResult).when(authenticatorMock1).authenticate(username, oldPassword, domainId, null);
+        String currentPassword = "currentPassword";
+        Mockito.doReturn(authenticationResult).when(authenticatorMock1).authenticate(username, currentPassword, domainId, null);
 
-        accountManagerImpl.validateOldPassword(userVoMock, oldPassword);
+        accountManagerImpl.validateCurrentPassword(userVoMock, currentPassword);
 
-        Mockito.verify(authenticatorMock1, Mockito.times(1)).authenticate(username, oldPassword, domainId, null);
-        Mockito.verify(authenticatorMock2, Mockito.times(0)).authenticate(username, oldPassword, domainId, null);
+        Mockito.verify(authenticatorMock1, Mockito.times(1)).authenticate(username, currentPassword, domainId, null);
+        Mockito.verify(authenticatorMock2, Mockito.times(0)).authenticate(username, currentPassword, domainId, null);
     }
 
     @Test
-    public void validateOldPasswordTestUserAuthenticatedWithProvidedOldPasswordViaSecondAuthenticator() {
+    public void validateCurrentPasswordTestUserAuthenticatedWithProvidedCurrentPasswordViaSecondAuthenticator() {
         AccountVO accountVoMock = Mockito.mock(AccountVO.class);
         long domainId = 14l;
         Mockito.doReturn(domainId).when(accountVoMock).getDomainId();
@@ -690,13 +690,13 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = new Pair<Boolean, UserAuthenticator.ActionOnFailedAuthentication>(true,
                 UserAuthenticator.ActionOnFailedAuthentication.INCREMENT_INCORRECT_LOGIN_ATTEMPT_COUNT);
 
-        String oldPassword = "oldPassword";
-        Mockito.doReturn(authenticationResult).when(authenticatorMock2).authenticate(username, oldPassword, domainId, null);
+        String currentPassword = "currentPassword";
+        Mockito.doReturn(authenticationResult).when(authenticatorMock2).authenticate(username, currentPassword, domainId, null);
 
-        accountManagerImpl.validateOldPassword(userVoMock, oldPassword);
+        accountManagerImpl.validateCurrentPassword(userVoMock, currentPassword);
 
-        Mockito.verify(authenticatorMock1, Mockito.times(1)).authenticate(username, oldPassword, domainId, null);
-        Mockito.verify(authenticatorMock2, Mockito.times(1)).authenticate(username, oldPassword, domainId, null);
+        Mockito.verify(authenticatorMock1, Mockito.times(1)).authenticate(username, currentPassword, domainId, null);
+        Mockito.verify(authenticatorMock2, Mockito.times(1)).authenticate(username, currentPassword, domainId, null);
     }
 
 }
