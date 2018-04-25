@@ -2645,7 +2645,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         final String[] items = xenVersion.split("\\.");
 
         // guest-tools.iso for XenServer version 7.0+
-        if (xenBrand.equals("XenServer") && Integer.parseInt(items[0]) >= 7) {
+        if ((xenBrand.equals("XenServer") || xenBrand.equals("XCP-ng")) && Integer.parseInt(items[0]) >= 7) {
             return "guest-tools.iso";
         }
 
