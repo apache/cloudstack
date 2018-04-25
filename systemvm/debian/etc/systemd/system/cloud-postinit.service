@@ -1,7 +1,7 @@
 [Unit]
 Description=CloudStack post-patching init script
 After=cloud-early-config.service network.target local-fs.target
-Before=ssh.service apache2.service
+Before=ssh.service
 Requires=network.service
 
 [Install]
