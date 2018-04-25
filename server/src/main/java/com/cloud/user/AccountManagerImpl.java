@@ -1210,7 +1210,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             s_logger.trace(String.format("Admin account [uuid=%s] executing password update for user [%s] ", callingAccount.getUuid(), user.getUuid()));
         }
         if (!isAdmin && StringUtils.isBlank(currentPassword)) {
-            throw new InvalidParameterValueException("You must inform the current password when updating a user password.");
+            throw new InvalidParameterValueException("To set a new password the current password must be provided.");
         }
         if (CollectionUtils.isEmpty(_userPasswordEncoders)) {
             throw new CloudRuntimeException("No user authenticators configured!");
@@ -1243,7 +1243,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
         }
         if (!currentPasswordMatchesDataBasePassword) {
-            throw new InvalidParameterValueException("Current password informed does not match the database password.");
+            throw new InvalidParameterValueException("Current password is incorrect.");
         }
     }
 
