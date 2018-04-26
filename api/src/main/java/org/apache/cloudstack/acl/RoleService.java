@@ -31,7 +31,9 @@ public interface RoleService {
 
     /**
      *  Searches for a role with the given ID. If the ID is null or less than zero, this method will return null.
-     *  This method will also return null if no role is found with the provided ID. Moreover, we will check if the requested role is of 'Admin' type; roles with 'Admin' type should only be visible to 'root admins'.  Therefore, if a non-'root admin' user tries to search for an 'Admin' role, this method will return null.
+     *  This method will also return null if no role is found with the provided ID.
+     *  Moreover, we will check if the requested role is of 'Admin' type; roles with 'Admin' type should only be visible to 'root admins'.
+     *  Therefore, if a non-'root admin' user tries to search for an 'Admin' role, this method will return null.
      */
     Role findRole(Long id);
 
