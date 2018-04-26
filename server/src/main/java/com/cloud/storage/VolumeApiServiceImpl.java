@@ -2125,9 +2125,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (newDiskOffering == null) {
             return;
         }
-        if (Volume.Type.ROOT.equals(volume.getVolumeType())) {
-            throw new InvalidParameterValueException(String.format("Cannot change the disk offering of a ROOT volume [id=%s].", volume.getUuid()));
-        }
         if ((destPool.isShared() && newDiskOffering.getUseLocalStorage()) || destPool.isLocal() && newDiskOffering.isShared()) {
             throw new InvalidParameterValueException("You cannot move the volume to a shared storage and assing a disk offering for local storage and vice versa.");
         }
@@ -2142,7 +2139,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                     "You are migrating a volume [id=%s] and changing the disk offering[from id=%s to id=%s] to reflect this migration. However, the sizes of the volume and the new disk offering are different.",
                     volume.getUuid(), oldDiskOffering.getUuid(), newDiskOffering.getUuid()));
         }
-
+        s_logger.info(String.format("Changing disk offering to [uuid=%s] while migrating volume [uuid=%s, name=%s].", newDiskOffering.getUuid(), volume.getUuid(), volume.getName()));
     }
 
     /**
