@@ -45,6 +45,8 @@ import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.framework.jobs.dao.AsyncJobJoinMapDao;
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.junit.After;
 import org.junit.Assert;
@@ -53,6 +55,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -68,6 +71,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.org.Grouping;
 import com.cloud.serializer.GsonHelper;
+import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -128,13 +132,24 @@ public class VolumeApiServiceImplTest {
     private AccountDao _accountDao;
     @Mock
     private HostDao _hostDao;
+    @Mock
+    private StoragePoolDetailsDao storagePoolDetailsDao;
 
     private DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     private Class<?> _detachCmdClass = detachCmd.getClass();
 
+    @Mock
+    private StoragePool storagePoolMock;
+    private long storagePoolMockId = 1;
+    @Mock
+    private VolumeVO volumeVOMock;
+    @Mock
+    private DiskOfferingVO newDiskOfferingMock;
 
     @Before
-    public void setup() throws Exception {
+    public void before() throws Exception {
+        Mockito.when(storagePoolMock.getId()).thenReturn(storagePoolMockId);
+
         volumeApiServiceImpl._gson = GsonHelper.getGsonLogger();
 
         // mock caller context
@@ -151,38 +166,31 @@ public class VolumeApiServiceImplTest {
         TransactionLegacy txn = TransactionLegacy.open("runVolumeDaoImplTest");
         try {
             // volume of running vm id=1
-            VolumeVO volumeOfRunningVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO volumeOfRunningVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             when(_volumeDao.findById(1L)).thenReturn(volumeOfRunningVm);
 
-            UserVmVO runningVm = new UserVmVO(1L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false,
-                    false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO runningVm = new UserVmVO(1L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
             runningVm.setState(State.Running);
             runningVm.setDataCenterId(1L);
             when(_userVmDao.findById(1L)).thenReturn(runningVm);
 
             // volume of stopped vm id=2
-            VolumeVO volumeOfStoppedVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO volumeOfStoppedVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             volumeOfStoppedVm.setPoolId(1L);
             when(_volumeDao.findById(2L)).thenReturn(volumeOfStoppedVm);
 
-            UserVmVO stoppedVm = new UserVmVO(2L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false,
-                    false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO stoppedVm = new UserVmVO(2L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
             stoppedVm.setState(State.Stopped);
             stoppedVm.setDataCenterId(1L);
             when(_userVmDao.findById(2L)).thenReturn(stoppedVm);
 
-
             // volume of hyperV vm id=3
-            UserVmVO hyperVVm = new UserVmVO(3L, "vm", "vm", 1, HypervisorType.Hyperv, 1L, false,
-                    false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO hyperVVm = new UserVmVO(3L, "vm", "vm", 1, HypervisorType.Hyperv, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
             hyperVVm.setState(State.Stopped);
             hyperVVm.setDataCenterId(1L);
             when(_userVmDao.findById(3L)).thenReturn(hyperVVm);
 
-            VolumeVO volumeOfStoppeHyperVVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 3L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO volumeOfStoppeHyperVVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 3L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             volumeOfStoppeHyperVVm.setPoolId(1L);
             when(_volumeDao.findById(3L)).thenReturn(volumeOfStoppeHyperVVm);
 
@@ -194,8 +202,7 @@ public class VolumeApiServiceImplTest {
             StoragePoolVO managedPool = new StoragePoolVO();
             managedPool.setManaged(true);
             when(_storagePoolDao.findById(2L)).thenReturn(managedPool);
-            VolumeVO managedPoolVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO managedPoolVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             managedPoolVolume.setPoolId(2L);
             when(_volumeDao.findById(4L)).thenReturn(managedPoolVolume);
 
@@ -216,8 +223,7 @@ public class VolumeApiServiceImplTest {
             when(correctRootVolume.getPoolId()).thenReturn(1L);
             when(_volFactory.getVolume(6L)).thenReturn(correctRootVolume);
 
-            VolumeVO correctRootVolumeVO = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO correctRootVolumeVO = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             when(_volumeDao.findById(6L)).thenReturn(correctRootVolumeVO);
 
             // managed root volume
@@ -229,15 +235,13 @@ public class VolumeApiServiceImplTest {
             when(managedVolume.getPoolId()).thenReturn(2L);
             when(_volFactory.getVolume(7L)).thenReturn(managedVolume);
 
-            VolumeVO managedVolume1 = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO managedVolume1 = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             managedVolume1.setPoolId(2L);
             managedVolume1.setDataCenterId(1L);
             when(_volumeDao.findById(7L)).thenReturn(managedVolume1);
 
             // vm having root volume
-            UserVmVO vmHavingRootVolume = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false,
-                    false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO vmHavingRootVolume = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
             vmHavingRootVolume.setState(State.Stopped);
             vmHavingRootVolume.setDataCenterId(1L);
             when(_userVmDao.findById(4L)).thenReturn(vmHavingRootVolume);
@@ -255,8 +259,7 @@ public class VolumeApiServiceImplTest {
             when(uploadedVolume.getState()).thenReturn(Volume.State.Uploaded);
             when(_volFactory.getVolume(8L)).thenReturn(uploadedVolume);
 
-            VolumeVO upVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO upVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             upVolume.setPoolId(1L);
             upVolume.setDataCenterId(1L);
             upVolume.setState(Volume.State.Uploaded);
@@ -283,7 +286,6 @@ public class VolumeApiServiceImplTest {
 
     /**
      * TESTS FOR DETACH ROOT VOLUME, COUNT=4
-     * @throws Exception
      */
 
     @Test(expected = InvalidParameterValueException.class)
@@ -384,7 +386,7 @@ public class VolumeApiServiceImplTest {
         when(volumeInfoMock.getState()).thenReturn(Volume.State.Ready);
         when(volumeInfoMock.getInstanceId()).thenReturn(null);
         when(volumeInfoMock.getPoolId()).thenReturn(1L);
-        when (volService.takeSnapshot(Mockito.any(VolumeInfo.class))).thenReturn(snapshotInfoMock);
+        when(volService.takeSnapshot(Mockito.any(VolumeInfo.class))).thenReturn(snapshotInfoMock);
         volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false);
     }
 
@@ -427,10 +429,10 @@ public class VolumeApiServiceImplTest {
         verify(userVmManager, times(1)).persistDeviceBusInfo(any(UserVmVO.class), eq("scsi"));
     }
 
-    @Test
     /**
      * Setting locationType for a non-managed storage should give an error
      */
+    @Test
     public void testAllocSnapshotNonManagedStorageArchive() {
         try {
             volumeApiServiceImpl.allocSnapshot(6L, 1L, "test", Snapshot.LocationType.SECONDARY);
@@ -446,9 +448,6 @@ public class VolumeApiServiceImplTest {
 
     /**
      * The resource limit check for primary storage should not be skipped for Volume in 'Uploaded' state.
-     * @throws NoSuchFieldException
-     * @throws IllegalAccessException
-     * @throws ResourceAllocationException
      */
     @Test
     public void testResourceLimitCheckForUploadedVolume() throws NoSuchFieldException, IllegalAccessException, ResourceAllocationException {
@@ -477,9 +476,114 @@ public class VolumeApiServiceImplTest {
         }
     }
 
-
     @After
     public void tearDown() {
         CallContext.unregister();
+    }
+
+    @Test
+    public void getStoragePoolTagsTestStorageWithoutTags() {
+        Mockito.when(storagePoolDetailsDao.listDetails(storagePoolMockId)).thenReturn(new ArrayList<>());
+
+        String returnedStoragePoolTags = volumeApiServiceImpl.getStoragePoolTags(storagePoolMock);
+
+        Assert.assertNull(returnedStoragePoolTags);
+
+    }
+
+    @Test
+    public void getStoragePoolTagsTestStorageWithTags() {
+        ArrayList<StoragePoolDetailVO> tags = new ArrayList<>();
+        StoragePoolDetailVO tag1 = new StoragePoolDetailVO(1l, "tag1", "value", true);
+        StoragePoolDetailVO tag2 = new StoragePoolDetailVO(1l, "tag2", "value", true);
+        StoragePoolDetailVO tag3 = new StoragePoolDetailVO(1l, "tag3", "value", true);
+
+        tags.add(tag1);
+        tags.add(tag2);
+        tags.add(tag3);
+
+        Mockito.when(storagePoolDetailsDao.listDetails(storagePoolMockId)).thenReturn(tags);
+
+        String returnedStoragePoolTags = volumeApiServiceImpl.getStoragePoolTags(storagePoolMock);
+
+        Assert.assertEquals("tag1,tag2,tag3", returnedStoragePoolTags);
+    }
+
+    @Test
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestNoNewDiskOffering() {
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, null, storagePoolMock);
+
+        Mockito.verify(volumeVOMock, times(0)).getVolumeType();
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestRootVolume() {
+        Mockito.when(volumeVOMock.getVolumeType()).thenReturn(Type.ROOT);
+
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, newDiskOfferingMock, storagePoolMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestTargetPoolSharedDiskOfferingLocal() {
+        Mockito.when(volumeVOMock.getVolumeType()).thenReturn(Type.DATADISK);
+        Mockito.when(newDiskOfferingMock.getUseLocalStorage()).thenReturn(true);
+        Mockito.when(storagePoolMock.isShared()).thenReturn(true);
+
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, newDiskOfferingMock, storagePoolMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestTargetPoolLocalDiskOfferingShared() {
+        Mockito.when(volumeVOMock.getVolumeType()).thenReturn(Type.DATADISK);
+        Mockito.when(newDiskOfferingMock.isShared()).thenReturn(true);
+        Mockito.when(storagePoolMock.isLocal()).thenReturn(true);
+
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, newDiskOfferingMock, storagePoolMock);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestTagsDoNotMatch() {
+        Mockito.when(volumeVOMock.getVolumeType()).thenReturn(Type.DATADISK);
+
+        Mockito.when(newDiskOfferingMock.getUseLocalStorage()).thenReturn(false);
+        Mockito.when(storagePoolMock.isShared()).thenReturn(true);
+
+        Mockito.when(newDiskOfferingMock.isShared()).thenReturn(true);
+        Mockito.when(storagePoolMock.isLocal()).thenReturn(false);
+
+        Mockito.when(newDiskOfferingMock.getTags()).thenReturn("tag1");
+
+        Mockito.doReturn(null).when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, newDiskOfferingMock, storagePoolMock);
+    }
+
+    @Test
+    public void validateConditionsToReplaceDiskOfferingOfVolumeTestEverythingWorking() {
+        Mockito.when(volumeVOMock.getVolumeType()).thenReturn(Type.DATADISK);
+
+        Mockito.when(newDiskOfferingMock.getUseLocalStorage()).thenReturn(false);
+        Mockito.when(storagePoolMock.isShared()).thenReturn(true);
+
+        Mockito.when(newDiskOfferingMock.isShared()).thenReturn(true);
+        Mockito.when(storagePoolMock.isLocal()).thenReturn(false);
+
+        Mockito.when(newDiskOfferingMock.getTags()).thenReturn("tag1");
+
+        Mockito.doReturn("tag1").when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+
+        volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, newDiskOfferingMock, storagePoolMock);
+
+        InOrder inOrder = Mockito.inOrder(volumeVOMock, newDiskOfferingMock, storagePoolMock, volumeApiServiceImpl);
+        inOrder.verify(volumeVOMock).getVolumeType();
+        inOrder.verify(storagePoolMock).isShared();
+        inOrder.verify(newDiskOfferingMock).getUseLocalStorage();
+        inOrder.verify(storagePoolMock).isLocal();
+        inOrder.verify(newDiskOfferingMock, times(0)).isShared();
+        inOrder.verify(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+        inOrder.verify(newDiskOfferingMock).getTags();
+
+        inOrder.verify(volumeVOMock).getSize();
+        inOrder.verify(newDiskOfferingMock).getDiskSize();
     }
 }

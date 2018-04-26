@@ -37,7 +37,8 @@ from marvin.lib.common import (get_domain,
                                 get_zone,
                                 get_template,
                                 find_storage_pool_type,
-                                get_pod)
+                                get_pod,
+                                list_disk_offering)
 from marvin.lib.utils import checkVolumeSize
 from marvin.codes import SUCCESS, FAILED, XEN_SERVER
 from nose.plugins.attrib import attr
@@ -875,3 +876,75 @@ class TestVolumes(cloudstackTestCase):
         if not res:
             self.fail("Failed to return root volume response")
         return response
+
+
+    @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
+    def test_11_migrate_volume_and_change_offering(self):
+
+    # Validates the following
+    #
+    # 1. Creates a new Volume with a small disk offering
+    #
+    # 2. Migrates the Volume to another primary storage and changes the offering
+    #
+    # 3. Verifies the Volume has new offering when migrated to the new storage.
+
+        small_offering = list_disk_offering(
+            self.apiclient,
+            name = "Small"
+        )[0]
+
+        large_offering = list_disk_offering(
+            self.apiclient,
+            name = "Large"
+        )[0]
+        volume = Volume.create(
+            self.apiClient,
+            self.services,
+            zoneid = self.zone.id,
+            account = self.account.name,
+            domainid = self.account.domainid,
+            diskofferingid = small_offering.id
+        )
+        self.debug("Created a small volume: %s" % volume.id)
+
+        self.virtual_machine.attach_volume(self.apiclient, volume=volume)
+
+        if self.virtual_machine.hypervisor == "KVM":
+            self.virtual_machine.stop(self.apiclient)
+
+        pools = StoragePool.listForMigration(
+            self.apiclient,
+            id=volume.id
+            )
+
+        pool = None
+
+        if pools and len(pools) > 0:
+            pool = pools[0]
+        else:
+            raise self.skipTest("Not enough storage pools found, skipping test")
+        
+        if hasattr(pool, 'tags'):
+            StoragePool.update(self.apiclient, id=pool.id, tags="")
+
+        self.debug("Migrating Volume-ID: %s to Pool: %s" % (volume.id, pool.id))
+        Volume.migrate(
+            self.apiclient,
+            volumeid = volume.id,
+            storageid = pool.id,
+            newdiskofferingid = large_offering.id
+        )
+        if self.virtual_machine.hypervisor == "KVM":
+            self.virtual_machine.start(self.apiclient
+        )
+        migrated_vol = Volume.list(
+            self.apiclient,
+            id = volume.id
+        )[0]
+        self.assertEqual(
+            migrated_vol.diskofferingname,
+            large_offering.name,
+            "Offering name did not match with the new one "
+        )
+        return

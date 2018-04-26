@@ -25,17 +25,13 @@ import org.apache.cloudstack.api.response.VolumeResponse;
 
 import com.cloud.storage.Volume;
 
-
-@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Full, entityType = {Volume.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Full, entityType = {
+        Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class MigrateVolumeCmdByAdmin extends MigrateVolumeCmd {
 
-
     @Override
-    public void execute(){
-        Volume result;
-
-        result = _volumeService.migrateVolume(this);
+    public void execute() {
+        Volume result = _volumeService.migrateVolume(this);
         if (result != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, result);
             response.setResponseName(getCommandName());

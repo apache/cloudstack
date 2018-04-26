@@ -22,12 +22,14 @@ public class VmWorkMigrateVolume extends VmWork {
     private long volumeId;
     private long destPoolId;
     private boolean liveMigrate;
+    private Long newDiskOfferingId;
 
-    public VmWorkMigrateVolume(long userId, long accountId, long vmId, String handlerName, long volumeId, long destPoolId, boolean liveMigrate) {
+    public VmWorkMigrateVolume(long userId, long accountId, long vmId, String handlerName, long volumeId, long destPoolId, boolean liveMigrate, Long newDiskOfferingId) {
         super(userId, accountId, vmId, handlerName);
         this.volumeId = volumeId;
         this.destPoolId = destPoolId;
         this.liveMigrate = liveMigrate;
+        this.newDiskOfferingId = newDiskOfferingId;
     }
 
     public long getVolumeId() {
@@ -40,5 +42,9 @@ public class VmWorkMigrateVolume extends VmWork {
 
     public boolean isLiveMigrate() {
         return liveMigrate;
+    }
+
+    public Long getNewDiskOfferingId() {
+        return newDiskOfferingId;
     }
 }

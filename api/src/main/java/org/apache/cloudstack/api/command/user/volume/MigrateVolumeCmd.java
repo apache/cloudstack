@@ -30,30 +30,26 @@ import com.cloud.event.EventTypes;
 import com.cloud.storage.Volume;
 import com.cloud.user.Account;
 
-@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {Volume.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "migrateVolume", description = "Migrate volume", responseObject = VolumeResponse.class, since = "3.0.0", responseView = ResponseView.Restricted, entityType = {
+        Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class MigrateVolumeCmd extends BaseAsyncCmd {
     private static final String s_name = "migratevolumeresponse";
 
-     /////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.VOLUME_ID, type = CommandType.UUID, entityType = VolumeResponse.class, required = true, description = "the ID of the volume")
     private Long volumeId;
 
-    @Parameter(name = ApiConstants.STORAGE_ID,
-               type = CommandType.UUID,
-               entityType = StoragePoolResponse.class,
-               required = true,
-               description = "destination storage pool ID to migrate the volume to")
+    @Parameter(name = ApiConstants.STORAGE_ID, type = CommandType.UUID, entityType = StoragePoolResponse.class, required = true, description = "destination storage pool ID to migrate the volume to")
     private Long storageId;
 
-    @Parameter(name = ApiConstants.LIVE_MIGRATE,
-               type = CommandType.BOOLEAN,
-               required = false,
-               description = "if the volume should be live migrated when it is attached to a running vm")
+    @Parameter(name = ApiConstants.LIVE_MIGRATE, type = CommandType.BOOLEAN, required = false, description = "if the volume should be live migrated when it is attached to a running vm")
     private Boolean liveMigrate;
+
+    @Parameter(name = ApiConstants.NEW_DISK_OFFERING_ID, type = CommandType.STRING, description = "The new disk offering ID that replaces the current one used by the volume. This new disk offering is used to better reflect the new storage where the volume is going to be migrated to.")
+    private String newDiskOfferingUuid;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -87,12 +83,12 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public long getEntityOwnerId() {
-          Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
-          if (volume != null) {
-              return volume.getAccountId();
-          }
+        Volume volume = _entityMgr.findById(Volume.class, getVolumeId());
+        if (volume != null) {
+            return volume.getAccountId();
+        }
 
-          return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
+        return Account.ACCOUNT_ID_SYSTEM; // no account info given, parent this command to SYSTEM so ERROR events are tracked
     }
 
     @Override
@@ -103,6 +99,10 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
     @Override
     public String getEventDescription() {
         return "Attempting to migrate volume Id: " + getVolumeId() + " to storage pool Id: " + getStoragePoolId();
+    }
+
+    public String getNewDiskOfferingUuid() {
+        return newDiskOfferingUuid;
     }
 
     @Override

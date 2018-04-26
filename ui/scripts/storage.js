@@ -15,6 +15,155 @@
 // specific language governing permissions and limitations
 // under the License.
 (function(cloudStack) {
+    var migrateVolumeCreateFormAction = {
+            title: 'label.migrate.volume',
+            fields: {
+                storagePool: {
+                    label: 'label.storage.pool',
+                    validation: {
+                        required: true
+                    },
+                    select: function(args) {
+                        var mapStoragePoolsByUuid = new Map();
+                        var volumeId = args.context.volumes[0].id;
+                        
+                        var volumeBeingMigrated = undefined;
+                        $.ajax({
+                            url: createURL("listVolumes&id=" + volumeId),
+                            dataType: "json",
+                            async: false,
+                            success: function(json){
+                                volumeBeingMigrated = json.listvolumesresponse.volume[0]; 
+                            }
+                        });
+                        
+                        var currentStoragePool = undefined;
+                        $.ajax({
+                            url: createURL("listStoragePools&id=" + volumeBeingMigrated.storageid),
+                            dataType: "json",
+                            async: false,
+                            success: function(json){
+                                currentStoragePool = json.liststoragepoolsresponse.storagepool[0]; 
+                            }
+                        });
+                        var isVolumeNotAttachedToVm = volumeBeingMigrated.virtualmachineid == undefined;
+                        var urlToRetrieveStoragePools = "findStoragePoolsForMigration&id=" + args.context.volumes[0].id;
+                        if(isVolumeNotAttachedToVm){
+                            urlToRetrieveStoragePools = "listStoragePools&zoneid=" + args.context.volumes[0].zoneid;
+                        }
+                        $.ajax({
+                            url: createURL(urlToRetrieveStoragePools),
+                            dataType: "json",
+                            async: true,
+                            success: function(json) {
+                                var pools = undefined;
+                                if(isVolumeNotAttachedToVm){
+                                    pools = json.liststoragepoolsresponse.storagepool;
+                                }else{
+                                    pools = json.findstoragepoolsformigrationresponse.storagepool;
+                                }
+                                var items = [];
+                                $(pools).each(function() {
+                                    mapStoragePoolsByUuid.set(this.id, this);
+                                    var description = this.name;
+                                    if(!isVolumeNotAttachedToVm){
+                                        description = description + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")";
+                                    }
+                                    items.push({
+                                        id: this.id,
+                                        description: description
+                                    });
+                                });
+                                args.response.success({
+                                    data: items
+                                });
+                                $('select[name=storagePool]').change(function(){
+                                    var uuidOfStoragePoolSelected = $(this).val();
+                                    var storagePoolSelected = mapStoragePoolsByUuid.get(uuidOfStoragePoolSelected);
+                                    
+                                    if(currentStoragePool.scope === storagePoolSelected.scope){
+                                        $('div[rel=newDiskOffering],div[rel=useNewDiskOffering]').hide();
+                                    }else{
+                                        $('div[rel=newDiskOffering],div[rel=useNewDiskOffering]').show();
+                                    }
+                                });
+                                var functionHideShowNewDiskOfferint = function(){
+                                    if($('div[rel=useNewDiskOffering] input[type=checkbox]').is(':checked')){
+                                        $('div[rel=newDiskOffering]').show();
+                                    }else{
+                                        $('div[rel=newDiskOffering]').hide();
+                                    }  
+                                };
+                                $('div[rel=useNewDiskOffering] input[type=checkbox]').click(functionHideShowNewDiskOfferint);
+                                
+                                $('select[name=storagePool]').change();
+                                functionHideShowNewDiskOfferint();
+                            }
+                        });
+                    }
+                },
+            useNewDiskOffering:{
+                label: 'label.migrate.volume.newDiskOffering',
+                desc: 'label.migrate.volume.newDiskOffering.desc',
+                validation: {
+                    required: false
+                   },
+                isEditable: true, 
+                isBoolean: true,
+                defaultValue: 'Yes'
+            },
+            newDiskOffering: {
+                label: 'label.disk.newOffering',
+                desc: 'label.disk.newOffering.description',
+                validation: {
+                    required: false
+                   },
+                select: function(args){
+                    $.ajax({
+                        url: createURL("listDiskOfferings&listall=true"),
+                        dataType: "json",
+                        async: true,
+                        success: function(json){
+                            var diskOfferings = json.listdiskofferingsresponse.diskoffering;
+                            var items = [];
+                            $(diskOfferings).each(function() {
+                                items.push({
+                                    id: this.id,
+                                    description: this.name
+                                });
+                            });
+                            args.response.success({
+                                data: items
+                            });
+                        }
+                    });
+                   }
+               }
+           }
+        };
+    var functionMigrateVolume = function(args) {
+        var volumeBeingMigrated = args.context.volumes[0];
+        var isLiveMigrate = volumeBeingMigrated.vmstate == 'Running';
+        
+        var migrateVolumeUrl = "migrateVolume&livemigrate="+ isLiveMigrate +"&storageid=" + args.data.storagePool + "&volumeid=" + volumeBeingMigrated.id;
+        if($('div[rel=useNewDiskOffering] input[name=useNewDiskOffering]:checkbox').is(':checked')){
+            migrateVolumeUrl = migrateVolumeUrl + '&newdiskofferingid=' + $('div[rel=newDiskOffering] select').val();
+        }
+        $.ajax({
+            url: createURL(migrateVolumeUrl),
+            dataType: "json",
+            async: true,
+            success: function(json) {
+                $(window).trigger('cloudStack.fullRefresh');
+                var jid = json.migratevolumeresponse.jobid;
+                args.response.success({
+                    _custom: {
+                        jobId: jid
+                    }
+                });
+            }
+        });
+    }
 
     var diskofferingObjs, selectedDiskOfferingObj;
 
@@ -746,7 +895,6 @@
                             label: 'label.snapshots'
                         },
                         actions: {
-
                             migrateVolume: {
                                 label: 'label.migrate.volume',
                                 messages: {
@@ -758,56 +906,9 @@
                                     }
                                 },
 
-                                createForm: {
-                                    title: 'label.migrate.volume',
-                                    desc: '',
-                                    fields: {
-                                        storagePool: {
-                                            label: 'label.storage.pool',
-                                            validation: {
-                                                required: true
-                                            },
-                                            select: function(args) {
-                                                $.ajax({
-                                                    url: createURL("findStoragePoolsForMigration&id=" + args.context.volumes[0].id),
-                                                    dataType: "json",
-                                                    async: true,
-                                                    success: function(json) {
-                                                        var pools = json.findstoragepoolsformigrationresponse.storagepool;
-                                                        var items = [];
-                                                        $(pools).each(function() {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.name + " (" + (this.suitableformigration ? "Suitable" : "Not Suitable") + ")"
-                                                            });
-                                                        });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
+                                createForm: migrateVolumeCreateFormAction,
 
-                                                    }
-                                                });
-                                            }
-                                        }
-                                    }
-
-                                },
-
-                                action: function(args) {
-                                    $.ajax({
-                                        url: createURL("migrateVolume&livemigrate=true&storageid=" + args.data.storagePool + "&volumeid=" + args.context.volumes[0].id),
-                                        dataType: "json",
-                                        async: true,
-                                        success: function(json) {
-                                            var jid = json.migratevolumeresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid
-                                                }
-                                            });
-                                        }
-                                    });
-                                },
+                                action: functionMigrateVolume,
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
@@ -1314,59 +1415,8 @@
                                         return 'label.migrate.volume.to.primary.storage';
                                     }
                                 },
-                                createForm: {
-                                    title: 'label.migrate.volume.to.primary.storage',
-                                    desc: '',
-                                    fields: {
-                                        storageId: {
-                                            label: 'label.primary.storage',
-                                            validation: {
-                                                required: true
-                                            },
-                                            select: function(args) {
-                                                $.ajax({
-                                                    url: createURL("listStoragePools&zoneid=" + args.context.volumes[0].zoneid),
-                                                    dataType: "json",
-                                                    async: true,
-                                                    success: function(json) {
-                                                        var pools = json.liststoragepoolsresponse.storagepool;
-                                                        var items = [];
-                                                        $(pools).each(function() {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.name
-                                                            });
-                                                        });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
-                                                    }
-                                                });
-                                            }
-                                        }
-                                    }
-                                },
-                                action: function(args) {
-                                    $.ajax({
-                                        url: createURL("migrateVolume&storageid=" + args.data.storageId + "&volumeid=" + args.context.volumes[0].id),
-                                        dataType: "json",
-                                        async: true,
-                                        success: function(json) {
-                                            var jid = json.migratevolumeresponse.jobid;
-                                            args.response.success({
-                                                _custom: {
-                                                    jobId: jid,
-                                                    getUpdatedItem: function(json) {
-                                                        return json.queryasyncjobresultresponse.jobresult.volume;
-                                                    },
-                                                    getActionFilter: function() {
-                                                        return volumeActionfilter;
-                                                    }
-                                                }
-                                            });
-                                        }
-                                    });
-                                },
+                                createForm: $.extend({}, migrateVolumeCreateFormAction, {title: 'label.migrate.volume.to.primary.storage'}),
+                                action: functionMigrateVolume,
                                 notification: {
                                     poll: pollAsyncJobResult
                                 }
@@ -2539,7 +2589,7 @@
                     }
                 } else { // Disk not attached
                     allowedActions.push("remove");
-                    if (jsonObj.state == "Ready" && isAdmin() && jsonObj.storagetype == "shared") {
+                    if (jsonObj.state == "Ready" && isAdmin()) {
                         allowedActions.push("migrateToAnotherStorage");
                     }
                     allowedActions.push("attachDisk");
