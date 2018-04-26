@@ -109,7 +109,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     /**
      * Simple call to {@link CallContext#current()} to retrieve the current calling account.
-     * This method facilitates unit testing because this avoids static methods mocks.
+     * This method facilitates unit testing, it avoids mocking static methods.
      */
     protected Account getCurrentAccount() {
         return CallContext.current().getCallingAccount();
