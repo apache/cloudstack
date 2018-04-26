@@ -32,6 +32,8 @@ import javax.naming.ConfigurationException;
 import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keys.KeysManager;
 import org.apache.cloudstack.framework.security.keystore.KeystoreDao;
@@ -153,7 +155,7 @@ import com.google.gson.GsonBuilder;
 // Starting, HA, Migrating, Running state are all counted as "Open" for available capacity calculation
 // because sooner or later, it will be driven into Running state
 //
-public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter {
+public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxyManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>, ResourceStateAdapter, Configurable {
     private static final Logger s_logger = Logger.getLogger(ConsoleProxyManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30 seconds
@@ -249,6 +251,19 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private KeystoreDao _ksDao;
     @Inject
     private KeystoreManager _ksMgr;
+
+    private static final ConfigKey<String> ConsoleProxyTemplateXenServer = new ConfigKey<String>("Console Proxy", String.class, "consoleproxy.template.xenserver",
+            "SystemVM Template (XenServer)", "Name of the console proxy template on Xenserver.", true);
+    private static final ConfigKey<String> ConsoleProxyTemplateKVM = new ConfigKey<String>("Console Proxy", String.class, "consoleproxy.template.kvm", "SystemVM Template (KVM)",
+            "Name of the console proxy template on KVM.", true);
+    private static final ConfigKey<String> ConsoleProxyTemplateVMware = new ConfigKey<String>("Console Proxy", String.class, "consoleproxy.template.vmware",
+            "SystemVM Template (vSphere)", "Name of the console proxy template on VMware.", true);
+    private static final ConfigKey<String> ConsoleProxyTemplateHyperV = new ConfigKey<String>("Console Proxy", String.class, "consoleproxy.template.hyperv",
+            "SystemVM Template (HyperV)", "Name of the console proxy template on Hyperv.", true);
+    private static final ConfigKey<String> ConsoleProxyTemplateLxc = new ConfigKey<String>("Console Proxy", String.class, "consoleproxy.template.lxc", "SystemVM Template (LXC)",
+            "Name of the console proxy template on LXC.", true);
+    private static final ConfigKey<String> ConsoleProxyTemplateOvm3 = new ConfigKey<String>("Console Proxy", String.class, "consoleproxy.template.ovm3", "SystemVM Template (Ovm3)",
+            "Name of the console proxy template on Ovm3.", true);
 
     public class VmBasedAgentHook extends AgentHookBase {
 
@@ -642,9 +657,34 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         VMTemplateVO template = null;
         HypervisorType availableHypervisor = _resourceMgr.getAvailableHypervisor(dataCenterId);
-        template = _templateDao.findSystemVMReadyTemplate(dataCenterId, availableHypervisor);
+
+        String templateName = null;
+        switch (availableHypervisor) {
+        case XenServer:
+            templateName = ConsoleProxyTemplateXenServer.value();
+            break;
+        case KVM:
+            templateName = ConsoleProxyTemplateKVM.value();
+            break;
+        case VMware:
+            templateName = ConsoleProxyTemplateVMware.value();
+            break;
+        case Hyperv:
+            templateName = ConsoleProxyTemplateHyperV.value();
+            break;
+        case LXC:
+            templateName = ConsoleProxyTemplateLxc.value();
+            break;
+        case Ovm3:
+            templateName = ConsoleProxyTemplateOvm3.value();
+            break;
+        default:
+            break;
+        }
+        template = _templateDao.findRoutingTemplate(availableHypervisor, templateName);
+
         if (template == null) {
-            throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
+            throw new CloudRuntimeException("Not able to find the Console Proxy System template or not downloaded in zone " + dataCenterId);
         }
 
         Map<String, Object> context = createProxyInstance(dataCenterId, template);
@@ -1733,6 +1773,17 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     @Inject
     public void setConsoleProxyAllocators(List<ConsoleProxyAllocator> consoleProxyAllocators) {
         _consoleProxyAllocators = consoleProxyAllocators;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ConsoleProxyManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ConsoleProxyTemplateXenServer, ConsoleProxyTemplateKVM, ConsoleProxyTemplateVMware, ConsoleProxyTemplateHyperV, ConsoleProxyTemplateLxc,
+                ConsoleProxyTemplateOvm3};
     }
 
 }

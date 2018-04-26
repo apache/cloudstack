@@ -263,6 +263,18 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     private final GlobalLock _allocLock = GlobalLock.getInternLock(getAllocLockName());
 
+    private static final ConfigKey<String> SsvmTemplateXenServer = new ConfigKey<String>("Storage", String.class, "ssvm.template.xenserver", "SystemVM Template (XenServer)",
+            "Name of the SSVM template on Xenserver.", true);
+    private static final ConfigKey<String> SsvmTemplateKVM = new ConfigKey<String>("Storage", String.class, "ssvm.template.kvm", "SystemVM Template (KVM)",
+            "Name of the SSVM template on KVM.", true);
+    private static final ConfigKey<String> SsvmTemplateVMware = new ConfigKey<String>("Storage", String.class, "ssvm.template.vmware", "SystemVM Template (vSphere)",
+            "Name of the SSVM template on VMware.", true);
+    private static final ConfigKey<String> SsvmTemplateHyperV = new ConfigKey<String>("Storage", String.class, "ssvm.template.hyperv", "SystemVM Template (HyperV)",
+            "Name of the SSVM template on Hyperv.", true);
+    private static final ConfigKey<String> SsvmTemplateLxc = new ConfigKey<String>("Storage", String.class, "ssvm.template.lxc", "SystemVM Template (LXC)",
+            "Name of the SSVM template on LXC.", true);
+    private static final ConfigKey<String> SsvmTemplateOvm3 = new ConfigKey<String>("Storage", String.class, "ssvm.template.ovm3", "SystemVM Template (Ovm3)",
+            "Name of the SSVM template on Ovm3.", true);
     static final ConfigKey<String> NTPServerConfig = new ConfigKey<String>(String.class, "ntp.server.list", "Advanced", null,
             "Comma separated list of NTP servers to configure in Secondary storage VM", false, ConfigKey.Scope.Global, null);
 
@@ -642,9 +654,33 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         VMTemplateVO template = null;
         HypervisorType availableHypervisor = _resourceMgr.getAvailableHypervisor(dataCenterId);
-        template = _templateDao.findSystemVMReadyTemplate(dataCenterId, availableHypervisor);
+
+        String templateName = null;
+        switch (availableHypervisor) {
+        case XenServer:
+            templateName = SsvmTemplateXenServer.value();
+            break;
+        case KVM:
+            templateName = SsvmTemplateKVM.value();
+            break;
+        case VMware:
+            templateName = SsvmTemplateVMware.value();
+            break;
+        case Hyperv:
+            templateName = SsvmTemplateHyperV.value();
+            break;
+        case LXC:
+            templateName = SsvmTemplateLxc.value();
+        case Ovm3:
+            templateName = SsvmTemplateOvm3.value();
+            break;
+        default:
+            break;
+        }
+        template = _templateDao.findRoutingTemplate(availableHypervisor, templateName);
+
         if (template == null) {
-            throw new CloudRuntimeException("Not able to find the System templates or not downloaded in zone " + dataCenterId);
+            throw new CloudRuntimeException("Not able to find the Secondary Storage System template or not downloaded in zone " + dataCenterId);
         }
 
         ServiceOfferingVO serviceOffering = _serviceOffering;
@@ -1510,7 +1546,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {NTPServerConfig};
+        return new ConfigKey<?>[] {NTPServerConfig, SsvmTemplateXenServer, SsvmTemplateKVM, SsvmTemplateVMware, SsvmTemplateHyperV, SsvmTemplateLxc, SsvmTemplateOvm3};
     }
 
 }
