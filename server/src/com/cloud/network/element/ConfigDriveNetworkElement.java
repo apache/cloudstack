@@ -206,30 +206,37 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return false;
     }
 
+    private String getSshKey(VirtualMachineProfile profile) {
+        UserVmDetailVO vmDetailSshKey = _userVmDetailsDao.findDetail(profile.getId(), "SSH.PublicKey");
+        return (vmDetailSshKey!=null ? vmDetailSshKey.getValue() : null);
+    }
+
     @Override
     public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        UserVmDetailVO vmDetailSshKey = _userVmDetailsDao.findDetail(profile.getId(), "SSH.PublicKey");
-        return (canHandle(network.getTrafficType()) && updateConfigDrive(profile,
-                (vmDetailSshKey!=null?vmDetailSshKey.getValue():null)))
+        String sshPublicKey = getSshKey(profile);
+        return (canHandle(network.getTrafficType())
+                && updateConfigDrive(profile, sshPublicKey, nic))
                 && updateConfigDriveIso(network, profile, dest.getHost(), false);
     }
 
     @Override
     public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile profile) throws ResourceUnavailableException {
-        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(profile, (String) profile.getParameter(VirtualMachineProfile.Param.VmSshPubKey)))) return false;
+        String sshPublicKey = getSshKey(profile);
+        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(profile, sshPublicKey, nic))) return false;
         return updateConfigDriveIso(network, profile, true);
     }
 
     @Override
     public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String sshPublicKey) throws ResourceUnavailableException {
-        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(vm, sshPublicKey))) return false;
+        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(vm, sshPublicKey, nic))) return false;
         return updateConfigDriveIso(network, vm, true);
     }
 
     @Override
     public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile profile) throws ResourceUnavailableException {
-        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(profile, (String) profile.getParameter(VirtualMachineProfile.Param.VmSshPubKey)))) return false;
+        String sshPublicKey = getSshKey(profile);
+        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(profile, sshPublicKey, nic))) return false;
         return updateConfigDriveIso(network, profile, true);
     }
 
@@ -330,7 +337,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         Answer createIsoAnswer = endpoint.sendMessage(configDriveIsoCommand);
         if (!createIsoAnswer.getResult()) {
             throw new ResourceUnavailableException(String.format("%s ISO failed, details: %s",
-                    (update?"Update":"Create"), createIsoAnswer.getDetails()),ConfigDriveNetworkElement.class,0L);
+                    (update?"Update":"Create"), createIsoAnswer.getDetails()), ConfigDriveNetworkElement.class, 0L);
         }
         configureConfigDriveDisk(profile, secondaryStore);
 
@@ -363,7 +370,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
     }
 
-    private boolean updateConfigDrive(VirtualMachineProfile profile, String publicKey) {
+    private boolean updateConfigDrive(VirtualMachineProfile profile, String publicKey, NicProfile nic) {
         UserVmVO vm = _userVmDao.findById(profile.getId());
         if (vm.getType() != VirtualMachine.Type.User) {
             return false;
@@ -372,11 +379,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         Nic defaultNic = _networkModel.getDefaultNic(vm.getId());
         if (defaultNic != null) {
             final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
-            final String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
-            List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, zoneName, vm.getInstanceName(), vm.getId(),
-                    publicKey, (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
+            List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getId(),
+                    vm.getUuid(), nic.getIPv4Address(), publicKey, (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
             profile.setVmData(vmData);
             profile.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());
         }

@@ -55,13 +55,17 @@ import tempfile
 import socket
 import base64
 import sys
+import time
 import os
+
+NO_SUCH_FILE = "No such file or directory"
 
 
 class MySSHKeyPair:
     """Manage SSH Key pairs"""
 
     def __init__(self, items):
+        self.private_key_file = None
         self.__dict__.update(items)
 
     @classmethod
@@ -166,11 +170,7 @@ class Services:
         }
 
 
-class TestConfigDrive(cloudstackTestCase):
-    """Test user data and password reset functionality
-    using configDrive
-    """
-
+class ConfigDriveUtils:
     class CreateResult:
         def __init__(self, success, offering=None, network=None, vpc=None):
             self.success = success
@@ -191,6 +191,626 @@ class TestConfigDrive(cloudstackTestCase):
                 self.test_presence = True
                 self.password = password
                 self.presence = True
+
+    def updateTemplate(self, value):
+        """Updates value of the guest VM template's password enabled setting
+        """
+        self.debug("Updating value of guest VM template's password enabled "
+                   "setting")
+        cmd = updateTemplate.updateTemplateCmd()
+        cmd.id = self.template.id
+        cmd.passwordenabled = value
+        self.api_client.updateTemplate(cmd)
+        list_template_response = list_templates(self.api_client,
+                                                templatefilter="all",
+                                                id=self.template.id
+                                                )
+        self.template = list_template_response[0]
+        self.debug("Updated guest VM template")
+
+    def get_userdata_url(self, vm):
+        """Returns user data URL for the given VM object"""
+        self.debug("Getting user data url")
+        nic = vm.nic[0]
+        gateway = str(nic.gateway)
+        self.debug("Gateway: " + gateway)
+        user_data_url = 'curl "http://' + gateway + ':80/latest/user-data"'
+        return user_data_url
+
+    def validate_firewall_rule(self, fw_rule):
+        pass
+
+    def validate_StaticNat_rule_For_VM(self, public_ip, network, vm):
+        self.validate_PublicIPAddress(
+            public_ip, network, static_nat=True, vm=vm)
+
+    def create_and_verify_fip_and_fw(self, vm, public_ip, network):
+        """
+        Creates and verifies (Ingress) firewall rule
+        with a Static NAT rule enabled public IP"""
+
+        self.debug("Creating and verifying firewall rule")
+        self.create_StaticNatRule_For_VM(vm, public_ip, network)
+
+        # Verification
+        self.validate_StaticNat_rule_For_VM(public_ip, network, vm)
+
+        fw_rule = self.create_FirewallRule(public_ip, self.test_data["ingress_rule"])
+        self.validate_firewall_rule(fw_rule)
+        self.debug("Successfully created and verified firewall rule")
+
+    def mount_config_drive(self, ssh):
+        """
+        This method is to verify whether configdrive iso
+        is attached to vm or not
+        Returns mount path if config drive is attached else False
+        """
+        mountdir = "/root/iso"
+        cmd = "blkid -t LABEL='config-2' /dev/sr? /dev/hd? /dev/sd? /dev/xvd? -o device"
+        tmp_cmd = [
+            'bash -c "if [ ! -d /root/iso ] ; then mkdir /root/iso ; fi"',
+            "umount /root/iso"]
+        for tcmd in tmp_cmd:
+            ssh.execute(tcmd)
+        configDrive = ssh.execute(cmd)
+        res = ssh.execute("mount {} {}".format(str(configDrive[0]), mountdir))
+        if str(res).lower().find("mounting read-only") > -1:
+            self.debug("configDrive iso is mounted at location %s" % mountdir)
+            return mountdir
+        else:
+            return None
+
+    def _get_config_drive_data(self, ssh, file, name, fail_on_missing=True):
+        """Fetches the content of a file file on the config drive
+
+        :param ssh: SSH connection to the VM
+        :param file: path to the file to fetch
+        :param name: description of the file
+        :param fail_on_missing:
+                 whether the test should fail if the file is missing
+        :type ssh: marvin.sshClient.SshClient
+        :type file: str
+        :type name: str
+        :type fail_on_missing: bool
+        :returns: the content of the file
+        :rtype: str
+        """
+        cmd = "cat %s" % file
+        res = ssh.execute(cmd)
+        content = '\n'.join(res)
+
+        if fail_on_missing and NO_SUCH_FILE in content:
+            self.debug("{} is not found".format(name))
+            self.fail("{} is not found".format(name))
+
+        return content
+
+    def verify_config_drive_data(self, ssh, file, expected_content, name):
+        """Verifies that the file contains the expected content
+
+        :param ssh: SSH connection to the VM
+        :param file: path to the file to verify
+        :param expected_content:
+        :param name:
+        :type ssh: marvin.sshClient.SshClient
+        :type file: str
+        :type expected_content: str
+        :type name: str
+        """
+        actual_content = self._get_config_drive_data(ssh, file, name)
+
+        self.debug("Expected {}: {}".format(name, expected_content))
+        self.debug("Actual {}: {}".format(name, actual_content))
+
+        self.assertEqual(expected_content, actual_content,
+                         'Userdata found: %s is not equal to expected: %s'
+                         % (actual_content, expected_content))
+
+    def verifyUserData(self, ssh, iso_path, userdata):
+        """
+        verify Userdata
+
+        :param ssh: SSH connection to the VM
+        :param iso_path: mount point of the config drive
+        :param userdata: Expected userdata
+        :type ssh: marvin.sshClient.SshClient
+        :type iso_path: str
+        :type userdata: str
+        """
+        self.verify_config_drive_data(
+            ssh,
+            iso_path + "/cloudstack/userdata/user_data.txt",
+            userdata,
+            "userdata (ACS)"
+        )
+
+    def verifyOpenStackUserData(self, ssh, iso_path, userdata):
+        """
+        verify Userdata in Openstack format
+
+        :param ssh: SSH connection to the VM
+        :param iso_path: mount point of the config drive
+        :param userdata: Expected userdata
+        :type ssh: marvin.sshClient.SshClient
+        :type iso_path: str
+        :type userdata: str
+        """
+        self.verify_config_drive_data(
+            ssh,
+            iso_path + "/openstack/latest/user_data",
+            userdata,
+            "userdata (Openstack)"
+        )
+
+    def verifyPassword(self, ssh, iso_path, password):
+        self.debug("Expected VM password is %s " % password.password)
+        password_file = iso_path + "/cloudstack/password/vm_password.txt"
+        vmpassword = self._get_config_drive_data(ssh, password_file,
+                                                 "ConfigDrive password",
+                                                 fail_on_missing=False)
+
+        self.debug("ConfigDrive password is %s " % vmpassword)
+
+        if NO_SUCH_FILE in vmpassword:
+            self.debug("Password file is not found")
+            return False, False
+        elif (password.password is not None) \
+                and (password.password in vmpassword):
+            self.debug("Expected Password is found in configDriveIso")
+            return True, True
+        else:
+            self.debug("Expected password is not found in configDriveIso")
+            return True, False
+
+    def verifySshKey(self, ssh, iso_path, ssh_key):
+        self.debug("Expected VM sshkey is %s " % ssh_key.name)
+        publicKey_file = iso_path + "/cloudstack/metadata/public-keys.txt"
+        cmd = "ssh-keygen -lf %s | cut -f2 -d' '" % publicKey_file
+        res = ssh.execute(cmd)
+        vmsshkey = str(res[0])
+
+        self.debug("ConfigDrive ssh key is %s " % vmsshkey)
+
+        if NO_SUCH_FILE in vmsshkey:
+            self.fail("SSH keyfile is not found")
+
+        self.assertEqual(
+            vmsshkey,
+            ssh_key.fingerprint,
+            "Fingerprint of authorized key does not match ssh key fingerprint"
+        )
+
+    def verifyMetaData(self, vm, ssh, iso_path):
+        """
+        verify metadata files in CloudStack format
+
+        :param vm: the VM
+        :param ssh: SSH connection to the VM
+        :param iso_path: mount point of the config drive
+        :type vm: VirtualMachine
+        :type ssh: marvin.sshClient.SshClient
+        :type iso_path: str
+        """
+
+        metadata_dir = iso_path + "/cloudstack/metadata/"
+        vm_files = ["availability-zone.txt",
+                    "service-offering.txt",
+                    "instance-id.txt",
+                    "vm-id.txt",
+                    "local-hostname.txt",
+                    "local-ipv4.txt",
+                    "public-ipv4.txt"]
+
+        get_name = lambda file: \
+            "{} metadata".format(file.split('.'[-1].replace('-', ' ')))
+
+        metadata = {vm_file:
+                        self._get_config_drive_data(ssh,
+                                                    metadata_dir + vm_file,
+                                                    get_name(vm_file))
+                    for vm_file in vm_files}
+
+        self.assertEqual(
+            str(metadata["availability-zone.txt"]),
+            self.zone.name,
+            "Zone name inside metadata does not match with the zone"
+        )
+        self.assertEqual(
+            str(metadata["local-hostname.txt"]),
+            vm.instancename,
+            "vm name inside metadata does not match with the "
+            "instance name"
+        )
+        self.assertEqual(
+            str(metadata["vm-id.txt"]),
+            vm.id,
+            "vm name inside metadata does not match with the "
+            "instance name"
+        )
+        self.assertEqual(
+            str(metadata["instance-id.txt"]),
+            vm.id,
+            "vm name inside metadata does not match with the "
+            "instance name"
+        )
+        self.assertEqual(
+            str(metadata["service-offering.txt"]),
+            vm.serviceofferingname,
+            "Service offering inside metadata does not match "
+            "with the instance offering"
+        )
+        return
+
+    def verifyOpenStackData(self, ssh, iso_path):
+        """
+        verify existence of metadata and user data files in OpenStack format
+
+        :param ssh: SSH connection to the VM
+        :param iso_path: mount point of the config drive
+        :type ssh: marvin.sshClient.SshClient
+        :type iso_path: str
+        """
+        openstackdata_dir = iso_path + "/openstack/latest/"
+        openstackdata_files = ["meta_data.json",
+                               "vendor_data.json",
+                               "network_data.json"]
+        for file in openstackdata_files:
+            res = ssh.execute("cat %s" % openstackdata_dir + file)
+            if NO_SUCH_FILE in res[0]:
+                self.fail("{} file not found in vm openstack".format(file))
+
+    def generate_ssh_keys(self):
+        """Generates ssh key pair
+
+        Writes the private key into a temp file and returns the file name
+
+        :returns: path of the private key file
+
+        """
+        self.keypair = MySSHKeyPair.create(
+            self.api_client,
+            name=random_gen() + ".pem",
+            account=self.account.user[0].account,
+            domainid=self.account.domainid)
+
+        self.cleanup.append(self.keypair)
+        self.debug("Created keypair with name: %s" % self.keypair.name)
+        self.debug("Writing the private key to local file")
+        pkfile = tempfile.gettempdir() + os.sep + self.keypair.name
+        self.keypair.private_key_file = pkfile
+        self.tmp_files.append(pkfile)
+        self.debug("File path: %s" % pkfile)
+        with open(pkfile, "w+") as f:
+            f.write(self.keypair.privatekey)
+        os.chmod(pkfile, 0o400)
+
+        return self.keypair
+
+    def umount_config_drive(self, ssh, iso_path):
+        """unmount config drive inside guest vm
+
+        :param ssh: SSH connection to the VM
+        :param iso_path: mount point of the config drive
+        :type ssh: marvin.sshClient.SshClient
+        :type iso_path: str
+        """
+        ssh.execute("umount -d %s" % iso_path)
+        # Give the VM time to unlock the iso device
+        time.sleep(2)
+        # Verify umount
+        result = ssh.execute("ls %s" % iso_path)
+        self.assertTrue(len(result) == 0,
+                        "After umount directory should be empty "
+                        "but contains: %s" % result)
+
+    def update_provider_state(self, new_state):
+        """
+        Enables or disables the ConfigDrive Service Provider
+
+        :param new_state: "Enabled" | "Disabled"
+        :type new_state: str
+        :return: original state
+        :rtype: str
+        """
+        self.debug("Updating Service Provider ConfigDrive to %s" % new_state)
+        configdriveprovider = NetworkServiceProvider.list(
+            self.api_client,
+            name="ConfigDrive",
+            physicalnetworkid=self.vsp_physical_network.id)[0]
+        orig_state = configdriveprovider.state
+        NetworkServiceProvider.update(self.api_client,
+                                      configdriveprovider.id,
+                                      state=new_state)
+        self.validate_NetworkServiceProvider("ConfigDrive", state=new_state)
+        return orig_state
+
+    def verify_network_creation(self, offering=None,
+                                offering_name=None,
+                                gateway=None,
+                                vpc=None, acl_list=None, testdata=None):
+        """
+        Creates a network
+
+        :param offering: Network Offering
+        :type offering: NetworkOffering
+        :param offering_name: Offering name
+        :type offering_name: Optional[str]
+        :param gateway: gateway
+        :type gateway: str
+        :param vpc: in case of a VPC tier, the parent VPC
+        :type vpc: VPC
+        :param acl_list: in case of a VPC tier, the acl list
+        :type acl_list: NetworkACLList
+        :param testdata: Test data
+        :type testdata: dict
+        :return: Network Creation Result
+        :rtype: CreateResult
+        """
+        if offering is None:
+            self.debug("Creating Nuage VSP network offering...")
+            offering = self.create_NetworkOffering(
+                self.test_data["nuagevsp"][offering_name])
+            self.validate_NetworkOffering(offering, state="Enabled")
+        try:
+            network = self.create_Network(offering,
+                                          gateway=gateway,
+                                          vpc=vpc,
+                                          acl_list=acl_list,
+                                          testdata=testdata)
+            return self.CreateResult(True, offering=offering, network=network)
+        except Exception:
+            self.debug("Exception: %s" % sys.exc_info()[0])
+            return self.CreateResult(False, offering=offering)
+
+    def verify_vpc_creation(self, offering=None, offering_name=None):
+        """
+        Creates a VPC
+
+        :param offering: VPC Offering
+        :type offering: VpcOffering
+        :param offering_name: Offering name
+        :type offering_name: Optional[str]
+        :return: VPC Creation Result
+        :rtype: CreateResult
+        """
+        if offering is None:
+            self.debug("Creating Nuage VSP VPC offering...")
+            offering = self.create_VpcOffering(
+                self.test_data["nuagevsp"][offering_name])
+            self.validate_VpcOffering(offering, state="Enabled")
+        try:
+            vpc = self.create_Vpc(offering, cidr='10.1.0.0/16')
+            self.validate_Vpc(vpc, state="Enabled")
+            return self.CreateResult(True, offering=offering, vpc=vpc)
+        except Exception:
+            return self.CreateResult(False, offering=offering)
+
+    def update_password_enable_in_template(self, new_state):
+        self.debug("Updating guest VM template to password %s" % new_state)
+        orig_state = self.template.passwordenabled
+        if self.template.passwordenabled is not new_state:
+            self.updateTemplate(new_state)
+        self.assertEqual(self.template.passwordenabled, new_state,
+                         "Guest VM template is not password enabled")
+        return orig_state
+
+    def verify_config_drive_content(self, vm,
+                                    public_ip,
+                                    password_test,
+                                    userdata=None,
+                                    metadata=False,
+                                    ssh_key=None,
+                                    ssh_client=None):
+        """Verify Config Drive Content
+
+        :param vm:
+        :param public_ip:
+        :param password_test:
+        :param userdata:
+        :param metadata:
+        :param ssh_key:
+        :param ssh_client: SSH Connection
+        :type vm:
+        :type public_ip:
+        :type password_test:
+        :type userdata: object
+        :type metadata:
+        :type ssh_key:
+        :type ssh_client:
+        :return: SSH Connection
+        """
+
+        if self.isSimulator:
+            self.debug(
+                "Simulator Environment: Skipping Config Drive content verification")
+            return
+
+        self.debug("SSHing into the VM %s" % vm.name)
+        if ssh_client is None:
+            ssh = self.ssh_into_VM(vm, public_ip, keypair=ssh_key)
+        else:
+            ssh = ssh_client
+        d = {x.name: x for x in ssh.logger.handlers}
+        ssh.logger.handlers = list(d.values())
+        config_drive_path = self.mount_config_drive(ssh)
+        self.assertIsNotNone(config_drive_path,
+                             'ConfigdriveIso is not attached to vm')
+        if metadata:
+            self.debug("Verifying metadata for vm: %s" % vm.name)
+            self.verifyMetaData(vm, ssh, config_drive_path)
+            self.debug("Verifying openstackdata for vm: %s" % vm.name)
+            self.verifyOpenStackData(ssh, config_drive_path)
+
+        if userdata is not None:
+            self.debug("Verifying userdata for vm: %s" % vm.name)
+            self.verifyUserData(ssh, config_drive_path, userdata)
+            self.verifyOpenStackUserData(ssh, config_drive_path, userdata)
+
+        if password_test.test_presence:
+            self.debug("Verifying password for vm: %s" % vm.name)
+            test_result = self.verifyPassword(ssh, config_drive_path,
+                                              password_test)
+            self.assertEqual(test_result[0], password_test.presence,
+                             "Expected is that password is present: %s "
+                             " but found is: %s"
+                             % (test_result[0], password_test.presence))
+
+        if password_test.password is not None:
+            self.debug("Password for vm is %s" % password_test.password)
+            self.assertEqual(test_result[1], True,
+                             "Password value test failed.")
+        if ssh_key is not None:
+            self.debug("Verifying sshkey for vm: %s" % vm.name)
+            self.verifySshKey(ssh, config_drive_path, ssh_key)
+
+        self.umount_config_drive(ssh, config_drive_path)
+        return ssh
+
+    def create_guest_vm(self, networks, acl_item=None,
+                        vpc=None, keypair=None):
+        vm = self.create_VM(
+            networks,
+            testdata=self.test_data["virtual_machine_userdata"],
+            keypair=keypair)
+        # Check VM
+        self.check_VM_state(vm, state="Running")
+        self.verify_vsd_vm(vm)
+        # Check networks
+        network_list = []
+        if isinstance(networks, list):
+            for network in networks:
+                network_list.append(network)
+        else:
+            network_list.append(networks)
+
+        for network in network_list:
+            self.validate_Network(network, state="Implemented")
+            self.verify_vsd_network(self.domain.id, network, vpc=vpc)
+
+        if acl_item is not None:
+            self.verify_vsd_firewall_rule(acl_item)
+        return vm
+
+    # nic_operation_VM - Performs NIC operations such as add, remove, and
+    # update default NIC in the given VM and network
+    def nic_operation_VM(self, vm, network, operation="add"):
+        self.debug("Performing %s NIC operation in VM with ID - %s and "
+                   "network with ID - %s" % (operation, vm.id, network.id))
+        if operation is "add":
+            vm.add_nic(self.api_client, network.id)
+            self.debug("Added NIC in VM with ID - %s and network with ID - %s"
+                       % (vm.id, network.id))
+        vm_info = VirtualMachine.list(self.api_client, id=vm.id)[0]
+        for nic in vm_info.nic:
+            if nic.networkid == network.id:
+                nic_id = nic.id
+        if operation is "update":
+            vm.update_default_nic(self.api_client, nic_id)
+            self.debug("Updated default NIC to NIC with ID- %s in VM with ID "
+                       "- %s and network with ID - %s" %
+                       (nic_id, vm.id, network.id))
+        if operation is "remove":
+            vm.remove_nic(self.api_client, nic_id)
+            self.debug("Removed NIC with ID - %s in VM with ID - %s and "
+                       "network with ID - %s" % (nic_id, vm.id, network.id))
+
+    def update_userdata(self, vm, new_user_data):
+        """Updates the user data of a VM
+
+        :param vm: the Virtual Machine
+        :param new_user_data: UserData to set
+        :type vm: VirtualMachine
+        :type new_user_data: str
+        :returns: User data in base64 format
+        :rtype: str
+        """
+        updated_user_data = base64.b64encode(new_user_data)
+        vm.update(self.api_client, userdata=updated_user_data)
+        return new_user_data
+
+    def reset_password(self, vm):
+        vm.password = vm.resetPassword(self.api_client)
+        self.debug("Password reset to - %s" % vm.password)
+        self.debug("VM - %s password - %s !" %
+                   (vm.name, vm.password))
+
+    def wait_until_done(self, thread_list, name):
+        for aThread in thread_list:
+            self.debug("[Concurrency]Join %s for vm %s" % (name,
+                                                           aThread.get_vm()))
+            aThread.join()
+
+    def update_sshkeypair(self, vm):
+        """
+
+        :type vm: VirtualMachine
+        """
+        vm.stop(self.api_client)
+        vm_new_ssh = vm.resetSshKey(self.api_client,
+                       keypair=self.keypair.name,
+                       account=self.account.user[0].account,
+                       domainid=self.account.domainid)
+
+        self.debug("Sshkey reset to - %s" % self.keypair.name)
+        vm.start(self.api_client)
+
+        # reset SSH key also resets the password.
+        # the new password is available in VM detail,
+        # named "Encrypted.Password".
+        # It is encrypted using the SSH Public Key,
+        # and thus can be decrypted using the SSH Private Key
+
+        try:
+            from base64 import b64decode
+            from Crypto.PublicKey import RSA
+            from Crypto.Cipher import PKCS1_v1_5
+            with open(self.keypair.private_key_file, "r") as pkfile:
+                key = RSA.importKey(pkfile.read())
+                cipher = PKCS1_v1_5.new(key)
+            new_password = cipher.decrypt(
+                b64decode(vm_new_ssh.details['Encrypted.Password']), None)
+            if new_password:
+                vm.password = new_password
+            else:
+                self.debug("Failed to decrypt new password")
+        except:
+            self.debug("Failed to decrypt new password")
+
+
+    def add_subnet_verify(self, network, services):
+        """verify required nic is present in the VM"""
+
+        self.debug("Going to add new ip range in shared network %s" %
+                   network.name)
+        cmd = createVlanIpRange.createVlanIpRangeCmd()
+        cmd.networkid = network.id
+        cmd.gateway = services["gateway"]
+        cmd.netmask = services["netmask"]
+        cmd.startip = services["startip"]
+        cmd.endip = services["endip"]
+        cmd.forVirtualNetwork = services["forvirtualnetwork"]
+        addedsubnet = self.api_client.createVlanIpRange(cmd)
+
+        self.debug("verify above iprange is successfully added in shared "
+                   "network %s or not" % network.name)
+
+        cmd1 = listVlanIpRanges.listVlanIpRangesCmd()
+        cmd1.networkid = network.id
+        cmd1.id = addedsubnet.vlan.id
+
+        allsubnets = self.api_client.listVlanIpRanges(cmd1)
+        self.assertEqual(
+            allsubnets[0].id,
+            addedsubnet.vlan.id,
+            "Check New subnet is successfully added to the shared Network"
+        )
+        return addedsubnet
+
+
+class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
+    """Test user data and password reset functionality
+    using configDrive
+    """
 
     @classmethod
     def setUpClass(cls):
@@ -266,31 +886,6 @@ class TestConfigDrive(cloudstackTestCase):
         self.debug("Cleanup complete!")
         return
 
-    # updateTemplate - Updates value of the guest VM template's password
-    # enabled setting
-    def updateTemplate(self, value):
-        self.debug("Updating value of guest VM template's password enabled "
-                   "setting")
-        cmd = updateTemplate.updateTemplateCmd()
-        cmd.id = self.template.id
-        cmd.passwordenabled = value
-        self.api_client.updateTemplate(cmd)
-        list_template_response = list_templates(self.api_client,
-                                                templatefilter="all",
-                                                id=self.template.id
-                                                )
-        self.template = list_template_response[0]
-        self.debug("Updated guest VM template")
-
-    # get_userdata_url - Returns user data URL for the given VM object
-    def get_userdata_url(self, vm):
-        self.debug("Getting user data url")
-        nic = vm.nic[0]
-        gateway = str(nic.gateway)
-        self.debug("Gateway: " + gateway)
-        user_data_url = 'curl "http://' + gateway + ':80/latest/user-data"'
-        return user_data_url
-
     # create_StaticNatRule_For_VM - Creates Static NAT rule on the given
     # public IP for the given VM in the given network
     def create_StaticNatRule_For_VM(self, vm, public_ip, network,
@@ -310,39 +905,6 @@ class TestConfigDrive(cloudstackTestCase):
                    (public_ip.ipaddress.ipaddress, vm.id, network.id))
         return static_nat_rule
 
-    # validate_PublicIPAddress - Validates if the given public IP address is in
-    # the expected state form the list of fetched public IP addresses
-    def validate_PublicIPAddress(self, public_ip, network, static_nat=False,
-                                 vm=None):
-        """Validates the Public IP Address"""
-        self.debug("Validating the assignment and state of public IP address "
-                   "- %s" % public_ip.ipaddress.ipaddress)
-        public_ips = PublicIPAddress.list(self.api_client,
-                                          id=public_ip.ipaddress.id,
-                                          networkid=network.id,
-                                          isstaticnat=static_nat,
-                                          listall=True
-                                          )
-        self.assertEqual(isinstance(public_ips, list), True,
-                         "List public IP for network should return a "
-                         "valid list"
-                         )
-        self.assertEqual(public_ips[0].ipaddress,
-                         public_ip.ipaddress.ipaddress,
-                         "List public IP for network should list the assigned "
-                         "public IP address"
-                         )
-        self.assertEqual(public_ips[0].state, "Allocated",
-                         "Assigned public IP is not in the allocated state"
-                         )
-        if static_nat and vm:
-            self.assertEqual(public_ips[0].virtualmachineid, vm.id,
-                             "Static NAT rule is not enabled for the VM on "
-                             "the assigned public IP"
-                             )
-        self.debug("Successfully validated the assignment and state of public "
-                   "IP address - %s" % public_ip.ipaddress.ipaddress)
-
     # create_FirewallRule - Creates (Ingress) Firewall rule on the given
     # Static NAT rule enabled public IP for Isolated networks
     def create_FirewallRule(self, public_ip, rule=None):
@@ -357,149 +919,6 @@ class TestConfigDrive(cloudstackTestCase):
                                    startport=rule["startport"],
                                    endport=rule["endport"]
                                    )
-
-    # create_and_verify_fw - Creates and verifies (Ingress) firewall rule
-    # with a Static NAT rule enabled public IP
-    def create_and_verify_fip_and_fw(self, vm, public_ip, network):
-        self.debug("Creating and verifying firewall rule")
-        self.create_StaticNatRule_For_VM(vm, public_ip, network)
-
-        # Verification
-        self.validate_PublicIPAddress(
-            public_ip, network, static_nat=True, vm=vm)
-
-        self.create_FirewallRule(public_ip, self.test_data["ingress_rule"])
-        self.debug("Successfully created and verified firewall rule")
-
-    def getConfigDriveContent(self, ssh):
-        """
-        This method is to verify whether configdrive iso
-        is attached to vm or not
-        Returns mount path if config drive is attached else False
-        """
-        mountdir = "/root/iso"
-        cmd = "blkid -t LABEL='config-2' /dev/sr? /dev/hd? /dev/sd? /dev/xvd? -o device"
-        tmp_cmd = [
-            'bash -c "if [ ! -d /root/iso ] ; then mkdir /root/iso ; fi"',
-            "umount /root/iso"]
-        for tcmd in tmp_cmd:
-            ssh.execute(tcmd)
-        configDrive = ssh.execute(cmd)
-        res = ssh.execute("mount {} {}".format(str(configDrive[0]), mountdir))
-        if str(res).lower().find("mounting read-only") > -1:
-            self.debug("configDrive iso is mounted at location %s" % mountdir)
-            return mountdir
-        else:
-            return None
-
-    def verifyUserData(self, ssh, iso_path, userdata):
-        """
-        verify Userdata
-        """
-        userdata_path = iso_path+"/cloudstack/userdata/user_data.txt"
-        cmd = "cat %s" % userdata_path
-        res = ssh.execute(cmd)
-        vmuserdata = str(res[0])
-        self.debug("Expected userdata is %s" % userdata)
-        self.debug("ConfigDrive userdata is %s" % vmuserdata)
-        self.assertEqual(vmuserdata, userdata,
-                         'Userdata found: %s is not equal to expected: %s'
-                         % (vmuserdata, userdata))
-
-    def verifyPassword(self, vm, ssh, iso_path, password):
-        self.debug("Expected VM password is %s " % password.password)
-        password_file = iso_path+"/cloudstack/password/vm_password.txt"
-        cmd = "cat %s" % password_file
-        res = ssh.execute(cmd)
-        vmpassword = str(res[0])
-        self.debug("ConfigDrive password is %s " % vmpassword)
-        nosuchfile = "No such file or directory"
-        if nosuchfile in vmpassword:
-            self.debug("Password file is not found")
-            return False, False
-        elif (password.password is not None) \
-                and (password.password in vmpassword):
-                self.debug("Expected Password is found in configDriveIso")
-                return True, True
-        else:
-            self.debug("Expected password is not found in configDriveIso")
-            return True, False
-
-    def verifySshKey(self, ssh, iso_path, sshkey):
-        self.debug("Expected VM sshkey is %s " % sshkey)
-        publicKey_file = iso_path+"/cloudstack/metadata/public-keys.txt"
-        cmd = "cat %s" % publicKey_file
-        res = ssh.execute(cmd)
-        vmsshkey = str(res[0])
-        self.debug("ConfigDrive ssh key is %s " % vmsshkey)
-
-    def verifyMetaData(self, vm, ssh, iso_path):
-
-        metadata_dir = iso_path+"/cloudstack/metadata/"
-        metadata = {}
-        vm_files = ["availability-zone.txt",
-                    "instance-id.txt",
-                    "service-offering.txt",
-                    "vm-id.txt"]
-        for file in vm_files:
-            cmd = "cat %s" % metadata_dir+file
-            res = ssh.execute(cmd)
-            metadata[file] = res
-
-        for mfile in vm_files:
-            if mfile not in metadata:
-                self.fail("{} file is not found in vm metadata".format(mfile))
-        self.assertEqual(
-                str(metadata["availability-zone.txt"][0]),
-                self.zone.name,
-                "Zone name inside metadata does not match with the zone"
-        )
-        self.assertEqual(
-                str(metadata["instance-id.txt"][0]),
-                vm.instancename,
-                "vm name inside metadata does not match with the "
-                "instance name"
-        )
-        self.assertEqual(
-                str(metadata["service-offering.txt"][0]),
-                vm.serviceofferingname,
-                "Service offering inside metadata does not match "
-                "with the instance offering"
-        )
-        return
-
-    def generate_ssh_keys(self):
-        """
-        This method generates ssh key pair and writes the private key
-        into a temp file and returns the file name
-        """
-        self.keypair = MySSHKeyPair.create(
-                self.api_client,
-                name=random_gen() + ".pem",
-                account=self.account.user[0].account,
-                domainid=self.account.domainid)
-
-        self.cleanup.append(self.keypair)
-        self.debug("Created keypair with name: %s" % self.keypair.name)
-        self.debug("Writing the private key to local file")
-        keyPairFilePath = tempfile.gettempdir() + os.sep + self.keypair.name
-        self.tmp_files.append(keyPairFilePath)
-        self.debug("File path: %s" % keyPairFilePath)
-        with open(keyPairFilePath, "w+") as f:
-            f.write(self.keypair.privatekey)
-        os.system("chmod 400 " + keyPairFilePath)
-        return keyPairFilePath
-
-    def umountConfigDrive(self, ssh, iso_path):
-        """umount config drive iso attached inside guest vm"""
-        ssh.execute("umount -d %s" % iso_path)
-        # Give the VM time to unlock the iso device
-        # time.sleep(2)
-        # Verify umount
-        result = ssh.execute("ls %s" % iso_path)
-        self.assertTrue(len(result) == 0,
-                        "After umount directory should be empty "
-                        "but contains: %s" % result)
 
     # validate_NetworkServiceProvider - Validates the given Network Service
     # Provider in the Nuage VSP Physical Network, matches the given provider
@@ -528,18 +947,6 @@ class TestConfigDrive(cloudstackTestCase):
                              )
         self.debug("Successfully validated the creation and state of Network "
                    "Service Provider - %s" % provider_name)
-
-    def update_provider_state(self, new_state):
-        self.debug("Updating Service Provider ConfigDrive to %s" % new_state)
-        configdriveprovider = NetworkServiceProvider.list(
-            self.api_client,
-            name="ConfigDrive")[0]
-        orig_state = configdriveprovider.state
-        NetworkServiceProvider.update(self.api_client,
-                                      configdriveprovider.id,
-                                      state=new_state)
-        self.validate_NetworkServiceProvider("ConfigDrive", state=new_state)
-        return orig_state
 
     # create_NetworkOffering - Creates Network offering
     def create_NetworkOffering(self, net_offering, suffix=None,
@@ -605,26 +1012,6 @@ class TestConfigDrive(cloudstackTestCase):
                                  )
         self.debug("Created network with ID - %s" % network.id)
         return network
-
-    def verify_network_creation(self, offering=None,
-                                offering_name=None,
-                                gateway=None,
-                                vpc=None, acl_list=None, testdata=None):
-        if offering is None:
-            self.debug("Creating network offering...")
-            offering = self.create_NetworkOffering(
-                self.test_data[offering_name])
-            self.validate_NetworkOffering(offering, state="Enabled")
-        try:
-            network = self.create_Network(offering,
-                                          gateway=gateway,
-                                          vpc=vpc,
-                                          acl_list=acl_list,
-                                          testdata=testdata)
-            return self.CreateResult(True, offering=offering, network=network)
-        except Exception:
-            self.debug("Exception: %s" % sys.exc_info()[0])
-            return self.CreateResult(False, offering=offering)
 
     # create_VpcOffering - Creates VPC offering
     def create_VpcOffering(self, vpc_offering, suffix=None):
@@ -707,29 +1094,6 @@ class TestConfigDrive(cloudstackTestCase):
         self.debug("Successfully validated the creation and state of VPC - %s"
                    % vpc.name)
 
-    def verify_vpc_creation(self, offering=None, offering_name=None):
-
-        if offering is None:
-            self.debug("Creating VPC offering...")
-            offering = self.create_VpcOffering(
-                self.test_data[offering_name])
-            self.validate_VpcOffering(offering, state="Enabled")
-        try:
-            vpc = self.create_Vpc(offering, cidr='10.1.0.0/16')
-            self.validate_Vpc(vpc, state="Enabled")
-            return self.CreateResult(True, offering=offering, vpc=vpc)
-        except Exception:
-            return self.CreateResult(False, offering=offering)
-
-    def update_password_enable_in_template(self, new_state):
-        self.debug("Updating guest VM template to password %s" % new_state)
-        orig_state = self.template.passwordenabled
-        if self.template.passwordenabled is not new_state:
-            self.updateTemplate(new_state)
-        self.assertEqual(self.template.passwordenabled, new_state,
-                         "Guest VM template is not password enabled")
-        return orig_state
-
     # ssh_into_VM - Gets into the shell of the given VM using its public IP
     def ssh_into_VM(self, vm, public_ip, reconnect=True, negative_test=False):
         self.debug("SSH into VM with ID - %s on public IP address - %s" %
@@ -749,41 +1113,6 @@ class TestConfigDrive(cloudstackTestCase):
             return ssh_client
 
         return retry_ssh()
-
-    def verify_config_drive_content(self, vm,
-                                    public_ip,
-                                    password_test,
-                                    userdata=None,
-                                    metadata=False,
-                                    sshkey=None):
-        self.debug("SSHing into the VM %s" % vm.name)
-        ssh = self.ssh_into_VM(vm, public_ip)
-        config_drive_path = self.getConfigDriveContent(ssh)
-        self.assertIsNotNone(config_drive_path,
-                             'ConfigdriveIso is not attached to vm')
-        if metadata:
-            self.debug("Verifying metadata for vm: %s" % vm.name)
-            self.verifyMetaData(vm, ssh, config_drive_path)
-        if userdata is not None:
-            self.debug("Verifying userdata for vm: %s" % vm.name)
-            self.verifyUserData(ssh, config_drive_path, userdata)
-        if password_test.test_presence:
-            self.debug("Verifying password for vm: %s" % vm.name)
-            test_result = self.verifyPassword(vm, ssh, config_drive_path,
-                                              password_test)
-            self.assertEqual(test_result[0], password_test.presence,
-                             "Expected is that password is present: %s "
-                             " but found is: %s"
-                             % (test_result[0], password_test.presence))
-        if password_test.password is not None:
-            self.debug("Password for vm is %s" % password_test.password)
-            self.assertEqual(test_result[1], True,
-                             "Password value test failed.")
-        if sshkey is not None:
-            self.debug("Verifying sshkey for vm: %s" % vm.name)
-            self.verifySshKey(ssh, config_drive_path, sshkey)
-
-        self.umountConfigDrive(ssh, config_drive_path)
 
     # create_VM - Creates VM in the given network(s)
     def create_VM(self, network_list, host_id=None, start_vm=True,
@@ -857,116 +1186,6 @@ class TestConfigDrive(cloudstackTestCase):
                              )
         self.debug("Successfully validated the creation and state of Network "
                    "- %s" % network.name)
-
-    def create_guest_vm(self, networks, acl_item=None,
-                        vpc=None, keypair=None):
-        vm = self.create_VM(
-            networks,
-            testdata=self.test_data["virtual_machine_userdata"],
-            keypair=keypair)
-
-        # Check VM
-        self.check_VM_state(vm, state="Running")
-
-        # Check networks
-        network_list = []
-        if isinstance(networks, list):
-            for network in networks:
-                network_list.append(network)
-        else:
-            network_list.append(networks)
-
-        for network in network_list:
-            self.validate_Network(network, state="Implemented")
-
-        return vm
-
-    # nic_operation_VM - Performs NIC operations such as add, remove, and
-    # update default NIC in the given VM and network
-    def nic_operation_VM(self, vm, network, operation="add"):
-        self.debug("Performing %s NIC operation in VM with ID - %s and "
-                   "network with ID - %s" % (operation, vm.id, network.id))
-        if operation is "add":
-            vm.add_nic(self.api_client, network.id)
-            self.debug("Added NIC in VM with ID - %s and network with ID - %s"
-                       % (vm.id, network.id))
-        vm_info = VirtualMachine.list(self.api_client, id=vm.id)[0]
-        for nic in vm_info.nic:
-            if nic.networkid == network.id:
-                nic_id = nic.id
-        if operation is "update":
-            vm.update_default_nic(self.api_client, nic_id)
-            self.debug("Updated default NIC to NIC with ID- %s in VM with ID "
-                       "- %s and network with ID - %s" %
-                       (nic_id, vm.id, network.id))
-        if operation is "remove":
-            vm.remove_nic(self.api_client, nic_id)
-            self.debug("Removed NIC with ID - %s in VM with ID - %s and "
-                       "network with ID - %s" % (nic_id, vm.id, network.id))
-
-    def update_userdata(self, vm, expected_user_data):
-        updated_user_data = base64.b64encode(expected_user_data)
-        vm.update(self.api_client, userdata=updated_user_data)
-        return expected_user_data
-
-    def reset_password(self, vm):
-        vm.password = vm.resetPassword(self.api_client)
-        self.debug("Password reset to - %s" % vm.password)
-        self.debug("VM - %s password - %s !" %
-                   (vm.name, vm.password))
-
-    def wait_until_done(self, thread_list, name):
-        for aThread in thread_list:
-            self.debug("[Concurrency]Join %s for vm %s" % (name,
-                                                           aThread.get_vm()))
-            aThread.join()
-
-    def resetsshkey(self, vm, keypair, account=None, domainid=None):
-        """Resets SSH key"""
-        cmd = resetSSHKeyForVirtualMachine.resetSSHKeyForVirtualMachineCmd()
-        cmd.id = vm.id
-        cmd.keypair = keypair
-        cmd.account = account
-        cmd.domainid = domainid
-        return(self.api_client.resetSSHKeyForVirtualMachine(cmd))
-
-    def update_sshkeypair(self, vm):
-        vm.stop(self.api_client)
-        self.resetsshkey(vm,
-                         self.keypair.name,
-                         account=self.account.user[0].account,
-                         domainid=self.account.domainid)
-        self.debug("Sshkey reset to - %s" % self.keypair.name)
-        vm.start(self.api_client)
-
-    def add_subnet_verify(self, network, services):
-        """verify required nic is present in the VM"""
-
-        self.debug("Going to add new ip range in shared network %s" %
-                   network.name)
-        cmd = createVlanIpRange.createVlanIpRangeCmd()
-        cmd.networkid = network.id
-        cmd.gateway = services["gateway"]
-        cmd.netmask = services["netmask"]
-        cmd.startip = services["startip"]
-        cmd.endip = services["endip"]
-        cmd.forVirtualNetwork = services["forvirtualnetwork"]
-        addedsubnet = self.api_client.createVlanIpRange(cmd)
-
-        self.debug("verify above iprange is successfully added in shared "
-                   "network %s or not" % network.name)
-
-        cmd1 = listVlanIpRanges.listVlanIpRangesCmd()
-        cmd1.networkid = network.id
-        cmd1.id = addedsubnet.vlan.id
-
-        allsubnets = self.api_client.listVlanIpRanges(cmd1)
-        self.assertEqual(
-            allsubnets[0].id,
-            addedsubnet.vlan.id,
-            "Check New subnet is successfully added to the shared Network"
-        )
-        return addedsubnet
 
     # get_Router - Returns router for the given network
     def get_Router(self, network):
@@ -1129,7 +1348,7 @@ class TestConfigDrive(cloudstackTestCase):
             metadata=True,
             userdata=self.test_data[
                 "virtual_machine_userdata"]["userdata"],
-            sshkey=self.keypair.name)
+            ssh_key=self.keypair)
 
         expected_user_data1 = self.update_userdata(vm1, "helloworld vm1")
         self.verify_config_drive_content(vm1, public_ip_1,
@@ -1147,7 +1366,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm1.password),
                                          metadata=True,
                                          userdata=expected_user_data1,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("Adding a non-default nic to the VM "
                    "making it a multi-nic VM...")
@@ -1157,7 +1376,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm1.password),
                                          metadata=True,
                                          userdata=expected_user_data1,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
         vm1.password = vm1.resetPassword(self.api_client)
         self.debug("Password reset to - %s" % vm1.password)
         self.debug("VM - %s password - %s !" %
@@ -1168,7 +1387,7 @@ class TestConfigDrive(cloudstackTestCase):
         self.verify_config_drive_content(vm1, public_ip_1,
                                          self.PasswordTest(vm1.password),
                                          userdata=expected_user_data1,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("updating non-default nic as the default nic "
                    "of the multi-nic VM and enable staticnat...")
@@ -1253,7 +1472,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm1.password),
                                          userdata=expected_user_data1,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("+++ Restarting the created Isolated network with "
                    "cleanup...")
@@ -1264,7 +1483,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm1.password),
                                          userdata=expected_user_data1,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("+++Verifying userdata after rebootVM - %s" % vm1.name)
         vm1.reboot(self.api_client)
@@ -1272,14 +1491,14 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm1.password),
                                          metadata=True,
                                          userdata=expected_user_data1,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("Updating userdata for VM - %s" % vm1.name)
         expected_user_data1 = self.update_userdata(vm1, "hello afterboot")
         self.verify_config_drive_content(vm1, public_ip_1,
                                          self.PasswordTest(vm1.password),
                                          userdata=expected_user_data1,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
         self.debug("Resetting password for VM - %s" % vm1.name)
         self.reset_password(vm1)
         self.debug("SSHing into the VM for verifying its new password "
@@ -1294,7 +1513,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm1.password),
                                          userdata=expected_user_data1,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("Updating userdata after migrating VM - %s" % vm1.name)
         expected_user_data1 = self.update_userdata(vm1,
@@ -1316,7 +1535,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(False),
                                          userdata=expected_user_data1,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("Updating userdata for VM - %s" % vm1.name)
         expected_user_data1 = self.update_userdata(vm1,
@@ -1340,7 +1559,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(False),
                                          userdata=expected_user_data1,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
         self.update_provider_state("Disabled")
         expected_user_data1 = self.update_userdata(vm1,
                                                    "hello after recover")
@@ -1348,7 +1567,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(False),
                                          userdata=expected_user_data1,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("+++ When template is not password enabled, "
                    "verify configdrive of VM - %s" % vm1.name)
@@ -1370,7 +1589,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(False),
                                          userdata=expected_user_data1,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
         vm1.delete(self.api_client, expunge=True)
         create_network1.network.delete(self.api_client)
 
@@ -1514,21 +1733,21 @@ class TestConfigDrive(cloudstackTestCase):
         self.verify_config_drive_content(vm, vpc_public_ip_1,
                                          self.PasswordTest(True),
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         expected_user_data = self.update_userdata(vm, "helloworld vm1")
         self.verify_config_drive_content(vm, vpc_public_ip_1,
                                          self.PasswordTest(True),
                                          metadata=True,
                                          userdata=expected_user_data,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("Resetting password for VM - %s" % vm.name)
         self.reset_password(vm)
         self.verify_config_drive_content(vm, vpc_public_ip_1,
                                          self.PasswordTest(vm.password),
                                          userdata=expected_user_data,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.generate_ssh_keys()
         self.update_sshkeypair(vm)
@@ -1542,7 +1761,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm.password),
                                          metadata=True,
                                          userdata=expected_user_data,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("+++ Restarting the created vpc without "
                    "cleanup...")
@@ -1552,7 +1771,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm.password),
                                          userdata=expected_user_data,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("Adding a non-default nic to the VM "
                    "making it a multi-nic VM...")
@@ -1562,7 +1781,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm.password),
                                          metadata=True,
                                          userdata=expected_user_data,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
         vpc_public_ip_2 = \
             self.acquire_PublicIPAddress(create_tiernetwork2.network,
                                          create_vpc.vpc)
@@ -1576,12 +1795,12 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm.password),
                                          metadata=True,
                                          userdata=expected_user_data,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
         expected_user_data1 = self.update_userdata(vm, "hellomultinicvm1")
         self.verify_config_drive_content(vm, vpc_public_ip_2,
                                          self.PasswordTest(vm.password),
                                          userdata=expected_user_data1,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("updating non-default nic as the default nic "
                    "of the multi-nic VM and enable staticnat...")
@@ -1628,7 +1847,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm.password),
                                          userdata=expected_user_data1,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("+++ Restarting the created vpc with "
                    "cleanup...")
@@ -1638,7 +1857,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm.password),
                                          userdata=expected_user_data1,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("+++ Restarting the created VPC Tier network without "
                    "cleanup...")
@@ -1649,7 +1868,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm.password),
                                          userdata=expected_user_data1,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("+++ Restarting the created VPC Tier network with "
                    "cleanup...")
@@ -1660,7 +1879,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm.password),
                                          userdata=expected_user_data1,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("+++ Restarting the created vpc without "
                    "cleanup...")
@@ -1686,7 +1905,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm.password),
                                          metadata=True,
                                          userdata=expected_user_data1,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("Updating userdata for VM - %s" % vm.name)
         expected_user_data = self.update_userdata(vm,
@@ -1694,7 +1913,7 @@ class TestConfigDrive(cloudstackTestCase):
         self.verify_config_drive_content(vm, vpc_public_ip_1,
                                          self.PasswordTest(vm.password),
                                          userdata=expected_user_data,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
         self.debug("Resetting password for VM - %s" % vm.name)
         self.reset_password(vm)
         self.debug("SSHing into the VM for verifying its new password "
@@ -1709,7 +1928,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(vm.password),
                                          userdata=expected_user_data,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("Updating userdata after migrating VM - %s" % vm.name)
         expected_user_data = self.update_userdata(vm,
@@ -1717,7 +1936,7 @@ class TestConfigDrive(cloudstackTestCase):
         self.verify_config_drive_content(vm, vpc_public_ip_1,
                                          self.PasswordTest(vm.password),
                                          userdata=expected_user_data,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
         self.debug("Resetting password for VM - %s" % vm.name)
         self.reset_password(vm)
         self.debug("SSHing into the VM for verifying its new password "
@@ -1732,7 +1951,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(False),
                                          userdata=expected_user_data,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("Updating userdata for VM - %s" % vm.name)
         expected_user_data = self.update_userdata(vm,
@@ -1740,7 +1959,7 @@ class TestConfigDrive(cloudstackTestCase):
         self.verify_config_drive_content(vm, vpc_public_ip_1,
                                          self.PasswordTest(False),
                                          userdata=expected_user_data,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
         self.debug("Resetting password for VM - %s" % vm.name)
         self.reset_password(vm)
         self.debug("SSHing into the VM for verifying its new password "
@@ -1757,13 +1976,13 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(False),
                                          userdata=expected_user_data,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
         self.update_provider_state("Disabled")
         self.verify_config_drive_content(vm, vpc_public_ip_1,
                                          self.PasswordTest(False),
                                          userdata=expected_user_data,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
 
         self.debug("+++ When template is not password enabled "
                    "verify configdrive of VM - %s" % vm.name)
@@ -1789,7 +2008,7 @@ class TestConfigDrive(cloudstackTestCase):
                                          self.PasswordTest(False),
                                          userdata=expected_user_data,
                                          metadata=True,
-                                         sshkey=self.keypair.name)
+                                         ssh_key=self.keypair)
         vm.delete(self.api_client, expunge=True)
         create_tiernetwork.network.delete(self.api_client)
 
