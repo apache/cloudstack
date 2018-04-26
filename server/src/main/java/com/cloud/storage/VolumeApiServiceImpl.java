@@ -2083,7 +2083,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     /**
-     * Retrieve the new disk offering UUID that might be sent to replace the current one in the volume being migrated.
+     * Retrieves the new disk offering UUID that might be sent to replace the current one in the volume being migrated.
      * If no disk offering UUID is provided we return null. Otherwise, we perform the following checks.
      * <ul>
      *  <li>Is the disk offering UUID entered valid? If not, an  {@link InvalidParameterValueException} is thrown;
@@ -2146,7 +2146,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
     }
 
     /**
-     *  Retrieve the storage pool tags as a {@link String}. If the storage pool does not have tags we return a null value.
+     *  Retrieves the storage pool tags as a {@link String}. If the storage pool does not have tags we return a null value.
      */
     protected String getStoragePoolTags(StoragePool destPool) {
         List<StoragePoolDetailVO> storagePoolDetails = storagePoolDetailsDao.listDetails(destPool.getId());
