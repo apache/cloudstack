@@ -64,27 +64,27 @@ public class RoleManagerImplTest {
 
     @Test
     public void findRoleTestIdNull() {
-        Role returedRole = roleManagerImpl.findRole(null);
-        Assert.assertNull(returedRole);
+        Role returnedRole = roleManagerImpl.findRole(null);
+        Assert.assertNull(returnedRole);
     }
 
     @Test
     public void findRoleTestIdZero() {
-        Role returedRole = roleManagerImpl.findRole(0l);
-        Assert.assertNull(returedRole);
+        Role returnedRole = roleManagerImpl.findRole(0l);
+        Assert.assertNull(returnedRole);
     }
 
     @Test
     public void findRoleTestIdNegative() {
-        Role returedRole = roleManagerImpl.findRole(-1l);
-        Assert.assertNull(returedRole);
+        Role returnedRole = roleManagerImpl.findRole(-1l);
+        Assert.assertNull(returnedRole);
     }
 
     @Test
     public void findRoleTestRoleNotFound() {
         Mockito.doReturn(null).when(roleDaoMock).findById(roleMockId);
-        Role returedRole = roleManagerImpl.findRole(roleMockId);
-        Assert.assertNull(returedRole);
+        Role returnedRole = roleManagerImpl.findRole(roleMockId);
+        Assert.assertNull(returnedRole);
     }
 
     @Test
@@ -93,9 +93,9 @@ public class RoleManagerImplTest {
         Mockito.doReturn(roleVoMock).when(roleDaoMock).findById(roleMockId);
         Mockito.doReturn(false).when(accountManagerMock).isRootAdmin(accountMockId);
 
-        Role returedRole = roleManagerImpl.findRole(roleMockId);
+        Role returnedRole = roleManagerImpl.findRole(roleMockId);
 
-        Assert.assertEquals(roleMockId, returedRole.getId());
+        Assert.assertEquals(roleMockId, returnedRole.getId());
         Mockito.verify(accountManagerMock).isRootAdmin(accountMockId);
         Mockito.verify(roleVoMock, Mockito.times(1)).getRoleType();
     }
@@ -106,9 +106,9 @@ public class RoleManagerImplTest {
         Mockito.doReturn(roleVoMock).when(roleDaoMock).findById(roleMockId);
         Mockito.doReturn(true).when(accountManagerMock).isRootAdmin(accountMockId);
 
-        Role returedRole = roleManagerImpl.findRole(roleMockId);
+        Role returnedRole = roleManagerImpl.findRole(roleMockId);
 
-        Assert.assertEquals(roleMockId, returedRole.getId());
+        Assert.assertEquals(roleMockId, returnedRole.getId());
         Mockito.verify(accountManagerMock).isRootAdmin(accountMockId);
         Mockito.verify(roleVoMock, Mockito.times(0)).getRoleType();
     }
@@ -119,9 +119,9 @@ public class RoleManagerImplTest {
         Mockito.doReturn(roleVoMock).when(roleDaoMock).findById(roleMockId);
         Mockito.doReturn(true).when(accountManagerMock).isRootAdmin(accountMockId);
 
-        Role returedRole = roleManagerImpl.findRole(roleMockId);
+        Role returnedRole = roleManagerImpl.findRole(roleMockId);
 
-        Assert.assertEquals(roleMockId, returedRole.getId());
+        Assert.assertEquals(roleMockId, returnedRole.getId());
         Mockito.verify(accountManagerMock).isRootAdmin(accountMockId);
         Mockito.verify(roleVoMock, Mockito.times(0)).getRoleType();
     }
@@ -132,9 +132,9 @@ public class RoleManagerImplTest {
         Mockito.doReturn(roleVoMock).when(roleDaoMock).findById(roleMockId);
         Mockito.doReturn(false).when(accountManagerMock).isRootAdmin(accountMockId);
 
-        Role returedRole = roleManagerImpl.findRole(roleMockId);
+        Role returnedRole = roleManagerImpl.findRole(roleMockId);
 
-        Assert.assertNull(returedRole);
+        Assert.assertNull(returnedRole);
         Mockito.verify(accountManagerMock).isRootAdmin(accountMockId);
         Mockito.verify(roleVoMock, Mockito.times(1)).getRoleType();
     }
