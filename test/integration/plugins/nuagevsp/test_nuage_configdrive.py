@@ -19,8 +19,15 @@
     and password reset functionality with
     ConfigDrive and Nuage VSP SDN plugin
 """
-# Import Local Modules
-from nuageTestCase import nuageTestCase
+import base64
+import copy
+import os
+import tempfile
+import threading
+
+import sys
+import time
+from datetime import datetime
 from marvin.cloudstackAPI import updateTemplate, resetSSHKeyForVirtualMachine
 from marvin.lib.base import (Account,
                              createVlanIpRange,
@@ -28,79 +35,23 @@ from marvin.lib.base import (Account,
                              NetworkServiceProvider,
                              PublicIpRange,
                              PublicIPAddress,
-                             createSSHKeyPair,
-                             deleteSSHKeyPair,
                              VirtualMachine)
-
 from marvin.lib.common import list_templates
 from marvin.lib.utils import random_gen
 # Import System Modules
 from nose.plugins.attrib import attr
-from datetime import datetime
-import threading
-import tempfile
-import base64
-import sys
-import time
-import os
-import copy
-import json
+
+# Import Local Modules
+from component.test_configdrive import MySSHKeyPair, ConfigDriveUtils
+from nuageTestCase import nuageTestCase, needscleanup
+
+NO_SUCH_FILE = "No such file or directory"
 
 
-class MySSHKeyPair:
-    """Manage SSH Key pairs"""
-
-    def __init__(self, items):
-        self.__dict__.update(items)
-
-    @classmethod
-    def create(cls, apiclient, name=None, account=None,
-               domainid=None, projectid=None):
-        """Creates SSH keypair"""
-        cmd = createSSHKeyPair.createSSHKeyPairCmd()
-        cmd.name = name
-        if account is not None:
-            cmd.account = account
-        if domainid is not None:
-            cmd.domainid = domainid
-        if projectid is not None:
-            cmd.projectid = projectid
-        return MySSHKeyPair(apiclient.createSSHKeyPair(cmd).__dict__)
-
-    def delete(self, apiclient):
-        """Delete SSH key pair"""
-        cmd = deleteSSHKeyPair.deleteSSHKeyPairCmd()
-        cmd.name = self.name
-        cmd.account = self.account
-        cmd.domainid = self.domainid
-        apiclient.deleteSSHKeyPair(cmd)
-
-
-class TestNuageConfigDrive(nuageTestCase):
+class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
     """Test user data and password reset functionality
     using configDrive with Nuage VSP SDN plugin
     """
-
-    class CreateResult:
-        def __init__(self, success, offering=None, network=None, vpc=None):
-            self.success = success
-            self.network = network
-            self.offering = offering
-            self.vpc = vpc
-
-    class PasswordTest:
-        def __init__(self, password):
-            self.test_presence = False
-            self.presence = None
-            self.password = None
-            if type(password) is bool:
-                self.test_presence = True
-                self.presence = password
-                self.password = None
-            elif type(password) is unicode or type(password) is str:
-                self.test_presence = True
-                self.password = password
-                self.presence = True
 
     class StartVM(threading.Thread):
 
@@ -247,312 +198,11 @@ class TestNuageConfigDrive(nuageTestCase):
         self.updateTemplate(False)
         return
 
-    # updateTemplate - Updates value of the guest VM template's password
-    # enabled setting
-    def updateTemplate(self, value):
-        self.debug("Updating value of guest VM template's password enabled "
-                   "setting")
-        cmd = updateTemplate.updateTemplateCmd()
-        cmd.id = self.template.id
-        cmd.passwordenabled = value
-        self.api_client.updateTemplate(cmd)
-        list_template_response = list_templates(self.api_client,
-                                                templatefilter="all",
-                                                id=self.template.id
-                                                )
-        self.template = list_template_response[0]
-        self.debug("Updated guest VM template")
-
-    # get_userdata_url - Returns user data URL for the given VM object
-    def get_userdata_url(self, vm):
-        self.debug("Getting user data url")
-        nic = vm.nic[0]
-        gateway = str(nic.gateway)
-        self.debug("Gateway: " + gateway)
-        user_data_url = 'curl "http://' + gateway + ':80/latest/user-data"'
-        return user_data_url
-
-    # create_and_verify_fw - Creates and verifies (Ingress) firewall rule
-    # with a Static NAT rule enabled public IP
-    def create_and_verify_fip_and_fw(self, vm, public_ip, network):
-        self.debug("Creating and verifying firewall rule")
-        self.create_StaticNatRule_For_VM(vm, public_ip, network)
-
-        # VSD verification
-        self.verify_vsd_floating_ip(network, vm, public_ip.ipaddress)
-
-        fw_rule = self.create_FirewallRule(
-                public_ip, self.test_data["ingress_rule"])
-
-        # VSD verification
+    def validate_firewall_rule(self, fw_rule):
         self.verify_vsd_firewall_rule(fw_rule)
-        self.debug("Successfully created and verified firewall rule")
 
-    def getConfigDriveContent(self, ssh):
-        """
-        This method is to verify whether configdrive iso
-        is attached to vm or not
-        Returns mount path if config drive is attached else False
-        """
-        mountdir = "/root/iso"
-        cmd = "blkid -t LABEL='config-2' /dev/sr? /dev/hd? /dev/sd? /dev/xvd? -o device"
-        tmp_cmd = [
-            'bash -c "if [ ! -d /root/iso ] ; then mkdir /root/iso ; fi"',
-            "umount /root/iso"]
-        for tcmd in tmp_cmd:
-            ssh.execute(tcmd)
-        configDrive = ssh.execute(cmd)
-        res = ssh.execute("mount {} {}".format(str(configDrive[0]), mountdir))
-        if str(res).lower().find("mounting read-only") > -1:
-            self.debug("configDrive iso is mounted at location %s" % mountdir)
-            return mountdir
-        else:
-            return None
-
-    def verifyUserData(self, ssh, iso_path, userdata):
-        """
-        verify Userdata
-        """
-        userdata_path = iso_path+"/cloudstack/userdata/user_data.txt"
-        cmd = "cat %s" % userdata_path
-        res = ssh.execute(cmd)
-        vmuserdata = str(res[0])
-        self.debug("Expected userdata is %s" % userdata)
-        self.debug("ConfigDrive userdata acsformat is %s" % vmuserdata)
-        self.assertEqual(vmuserdata, userdata,
-                         'Userdata found: %s is not equal to expected: %s'
-                         % (vmuserdata, userdata))
-
-    def verifyOpenStackUserData(self, ssh, iso_path, userdata):
-        """
-        verify Userdata in Openstack format
-        """
-        userdata_path = iso_path+"/openstack/latest/user_data"
-        cmd = "cat %s" % userdata_path
-        res = ssh.execute(cmd)
-        vmuserdata = str(res[0])
-        self.debug("Expected userdata is %s" % userdata)
-        self.debug("ConfigDrive userdata openstackformat is %s" % vmuserdata)
-        self.assertEqual(vmuserdata, userdata,
-                         'Userdata found: %s is not equal to expected: %s'
-                         % (vmuserdata, userdata))
-
-    def verifyPassword(self, ssh, iso_path, password):
-        self.debug("Expected VM password is %s " % password.password)
-        password_file = iso_path+"/cloudstack/password/vm_password.txt"
-        cmd = "cat %s" % password_file
-        res = ssh.execute(cmd)
-        vmpassword = str(res[0])
-        self.debug("ConfigDrive password is %s " % vmpassword)
-        nosuchfile = "No such file or directory"
-        if nosuchfile in vmpassword:
-            self.debug("Password file is not found")
-            return False, False
-        elif (password.password is not None) \
-                and (password.password in vmpassword):
-                self.debug("Expected Password is found in configDriveIso")
-                return True, True
-        else:
-            self.debug("Expected password is not found in configDriveIso")
-            return True, False
-
-    def verifySshKey(self, ssh, iso_path, sshkey):
-        self.debug("Expected VM sshkey is %s " % sshkey)
-        publicKey_file = iso_path+"/cloudstack/metadata/public-keys.txt"
-        cmd = "cat %s" % publicKey_file
-        res = ssh.execute(cmd)
-        vmsshkey = str(res[0])
-        self.debug("ConfigDrive ssh key is %s " % vmsshkey)
-
-    def verifyMetaData(self, vm, ssh, iso_path):
-
-        metadata_dir = iso_path+"/cloudstack/metadata/"
-        metadata = {}
-        vm_files = ["availability-zone.txt",
-                    "instance-id.txt",
-                    "service-offering.txt",
-                    "vm-id.txt"]
-        for file in vm_files:
-            cmd = "cat %s" % metadata_dir+file
-            res = ssh.execute(cmd)
-            metadata[file] = res
-
-        for mfile in vm_files:
-            if mfile not in metadata:
-                self.fail("{} file is not found in vm metadata".format(mfile))
-        self.assertEqual(
-                str(metadata["availability-zone.txt"][0]),
-                self.zone.name,
-                "Zone name inside metadata does not match with the zone"
-        )
-        self.assertEqual(
-                str(metadata["instance-id.txt"][0]),
-                vm.instancename,
-                "vm name inside metadata does not match with the "
-                "instance name"
-        )
-        self.assertEqual(
-                str(metadata["service-offering.txt"][0]),
-                vm.serviceofferingname,
-                "Service offering inside metadata does not match "
-                "with the instance offering"
-        )
-        return
-
-    def verifyOpenStackData(self, ssh, iso_path):
-
-        openstackdata_dir = iso_path+"/openstack/latest/"
-        openstackdata = {}
-        openstackdata_files = ["user_data",
-                               "meta_data.json",
-                               "vendor_data.json",
-                               "network_data.json"]
-        for file in openstackdata_files:
-            cmd = "cat %s" % openstackdata_dir+file
-            res = ssh.execute(cmd)
-            openstackdata[file] = res
-            if file not in openstackdata:
-                self.fail("{} file not found in vm openstack".format(file))
-        return
-
-    def generate_ssh_keys(self):
-        """
-        This method generates ssh key pair and writes the private key
-        into a temp file and returns the file name
-        """
-        self.keypair = MySSHKeyPair.create(
-                self.api_client,
-                name=random_gen() + ".pem",
-                account=self.account.user[0].account,
-                domainid=self.account.domainid)
-
-        self.cleanup.append(self.keypair)
-        self.debug("Created keypair with name: %s" % self.keypair.name)
-        self.debug("Writing the private key to local file")
-        keyPairFilePath = tempfile.gettempdir() + os.sep + self.keypair.name
-        self.tmp_files.append(keyPairFilePath)
-        self.debug("File path: %s" % keyPairFilePath)
-        with open(keyPairFilePath, "w+") as f:
-            f.write(self.keypair.privatekey)
-        os.system("chmod 400 " + keyPairFilePath)
-        return keyPairFilePath
-
-    def umountConfigDrive(self, ssh, iso_path):
-        """umount config drive iso attached inside guest vm"""
-        ssh.execute("umount -d %s" % iso_path)
-        # Give the VM time to unlock the iso device
-        time.sleep(2)
-        # Verify umount
-        result = ssh.execute("ls %s" % iso_path)
-        self.assertTrue(len(result) == 0,
-                        "After umount directory should be empty "
-                        "but contains: %s" % result)
-
-    def update_provider_state(self, new_state):
-        self.debug("Updating Service Provider ConfigDrive to %s" % new_state)
-        configdriveprovider = NetworkServiceProvider.list(
-            self.api_client,
-            name="ConfigDrive",
-            physicalnetworkid=self.vsp_physical_network.id)[0]
-        orig_state = configdriveprovider.state
-        NetworkServiceProvider.update(self.api_client,
-                                      configdriveprovider.id,
-                                      state=new_state)
-        self.validate_NetworkServiceProvider("ConfigDrive", state=new_state)
-        return orig_state
-
-    def verify_network_creation(self, offering=None,
-                                offering_name=None,
-                                gateway=None,
-                                vpc=None, acl_list=None, testdata=None):
-        if offering is None:
-            self.debug("Creating Nuage VSP network offering...")
-            offering = self.create_NetworkOffering(
-                self.test_data["nuagevsp"][offering_name])
-            self.validate_NetworkOffering(offering, state="Enabled")
-        try:
-            network = self.create_Network(offering,
-                                          gateway=gateway,
-                                          vpc=vpc,
-                                          acl_list=acl_list,
-                                          testdata=testdata)
-            return self.CreateResult(True, offering=offering, network=network)
-        except Exception:
-            self.debug("Exception: %s" % sys.exc_info()[0])
-            return self.CreateResult(False, offering=offering)
-
-    def verify_vpc_creation(self, offering=None, offering_name=None):
-
-        if offering is None:
-            self.debug("Creating Nuage VSP VPC offering...")
-            offering = self.create_VpcOffering(
-                self.test_data["nuagevsp"][offering_name])
-            self.validate_VpcOffering(offering, state="Enabled")
-        try:
-            vpc = self.create_Vpc(offering, cidr='10.1.0.0/16')
-            self.validate_Vpc(vpc, state="Enabled")
-            return self.CreateResult(True, offering=offering, vpc=vpc)
-        except Exception:
-            return self.CreateResult(False, offering=offering)
-
-    def update_password_enable_in_template(self, new_state):
-        self.debug("Updating guest VM template to password %s" % new_state)
-        orig_state = self.template.passwordenabled
-        if self.template.passwordenabled is not new_state:
-            self.updateTemplate(new_state)
-        self.assertEqual(self.template.passwordenabled, new_state,
-                         "Guest VM template is not password enabled")
-        return orig_state
-
-    def verify_config_drive_content(self, vm,
-                                    public_ip,
-                                    password_test,
-                                    userdata=None,
-                                    metadata=False,
-                                    sshkey=None,
-                                    ssh_client=None):
-        if self.isSimulator:
-            self.debug("Simulator Environment: Skipping Config Drive content verification")
-            return
-
-        self.debug("SSHing into the VM %s" % vm.name)
-        if ssh_client is None:
-            ssh = self.ssh_into_VM(vm, public_ip)
-        else:
-            ssh = ssh_client
-        d = {x.name: x for x in ssh.logger.handlers}
-        ssh.logger.handlers = list(d.values())
-        config_drive_path = self.getConfigDriveContent(ssh)
-        self.assertIsNotNone(config_drive_path,
-                             'ConfigdriveIso is not attached to vm')
-        if metadata:
-            self.debug("Verifying metadata for vm: %s" % vm.name)
-            self.verifyMetaData(vm, ssh, config_drive_path)
-            self.debug("Verifying openstackdata for vm: %s" % vm.name)
-            self.verifyOpenStackData(ssh, config_drive_path)
-
-        if userdata is not None:
-            self.debug("Verifying userdata for vm: %s" % vm.name)
-            self.verifyUserData(ssh, config_drive_path, userdata)
-            self.verifyOpenStackUserData(ssh, config_drive_path, userdata)
-        if password_test.test_presence:
-            self.debug("Verifying password for vm: %s" % vm.name)
-            test_result = self.verifyPassword(ssh, config_drive_path,
-                                              password_test)
-            self.assertEqual(test_result[0], password_test.presence,
-                             "Expected is that password is present: %s "
-                             " but found is: %s"
-                             % (test_result[0], password_test.presence))
-        if password_test.password is not None:
-            self.debug("Password for vm is %s" % password_test.password)
-            self.assertEqual(test_result[1], True,
-                             "Password value test failed.")
-        if sshkey is not None:
-            self.debug("Verifying sshkey for vm: %s" % vm.name)
-            self.verifySshKey(ssh, config_drive_path, sshkey)
-
-        self.umountConfigDrive(ssh, config_drive_path)
-        return ssh
+    def validate_StaticNat_rule_For_VM(self, public_ip, network, vm):
+        self.verify_vsd_floating_ip(network, vm, public_ip.ipaddress)
 
     def create_guest_vm(self, networks, acl_item=None,
                         vpc=None, keypair=None):
@@ -579,92 +229,13 @@ class TestNuageConfigDrive(nuageTestCase):
             self.verify_vsd_firewall_rule(acl_item)
         return vm
 
-    # nic_operation_VM - Performs NIC operations such as add, remove, and
-    # update default NIC in the given VM and network
-    def nic_operation_VM(self, vm, network, operation="add"):
-        self.debug("Performing %s NIC operation in VM with ID - %s and "
-                   "network with ID - %s" % (operation, vm.id, network.id))
-        if operation is "add":
-            vm.add_nic(self.api_client, network.id)
-            self.debug("Added NIC in VM with ID - %s and network with ID - %s"
-                       % (vm.id, network.id))
-        vm_info = VirtualMachine.list(self.api_client, id=vm.id)[0]
-        for nic in vm_info.nic:
-            if nic.networkid == network.id:
-                nic_id = nic.id
-        if operation is "update":
-            vm.update_default_nic(self.api_client, nic_id)
-            self.debug("Updated default NIC to NIC with ID- %s in VM with ID "
-                       "- %s and network with ID - %s" %
-                       (nic_id, vm.id, network.id))
-        if operation is "remove":
-            vm.remove_nic(self.api_client, nic_id)
-            self.debug("Removed NIC with ID - %s in VM with ID - %s and "
-                       "network with ID - %s" % (nic_id, vm.id, network.id))
+    # =========================================================================
+    # ---                    Gherkin style helper methods                   ---
+    # =========================================================================
 
-    def update_userdata(self, vm, expected_user_data):
-        updated_user_data = base64.b64encode(expected_user_data)
-        vm.update(self.api_client, userdata=updated_user_data)
-        return expected_user_data
-
-    def reset_password(self, vm):
-        vm.password = vm.resetPassword(self.api_client)
-        self.debug("Password reset to - %s" % vm.password)
-        self.debug("VM - %s password - %s !" %
-                   (vm.name, vm.password))
-
-    def wait_until_done(self, thread_list, name):
-        for aThread in thread_list:
-            self.debug("[Concurrency]Join %s for vm %s" % (name,
-                                                           aThread.get_vm()))
-            aThread.join()
-
-    def resetsshkey(self, vm, keypair, account=None, domainid=None):
-        """Resets SSH key"""
-        cmd = resetSSHKeyForVirtualMachine.resetSSHKeyForVirtualMachineCmd()
-        cmd.id = vm.id
-        cmd.keypair = keypair
-        cmd.account = account
-        cmd.domainid = domainid
-        return self.api_client.resetSSHKeyForVirtualMachine(cmd)
-
-    def update_sshkeypair(self, vm):
-        vm.stop(self.api_client)
-        self.resetsshkey(vm,
-                         self.keypair.name,
-                         account=self.account.user[0].account,
-                         domainid=self.account.domainid)
-        self.debug("Sshkey reset to - %s" % self.keypair.name)
-        vm.start(self.api_client)
-
-    def add_subnet_verify(self, network, services):
-        """verify required nic is present in the VM"""
-
-        self.debug("Going to add new ip range in shared network %s" %
-                   network.name)
-        cmd = createVlanIpRange.createVlanIpRangeCmd()
-        cmd.networkid = network.id
-        cmd.gateway = services["gateway"]
-        cmd.netmask = services["netmask"]
-        cmd.startip = services["startip"]
-        cmd.endip = services["endip"]
-        cmd.forVirtualNetwork = services["forvirtualnetwork"]
-        addedsubnet = self.api_client.createVlanIpRange(cmd)
-
-        self.debug("verify above iprange is successfully added in shared "
-                   "network %s or not" % network.name)
-
-        cmd1 = listVlanIpRanges.listVlanIpRangesCmd()
-        cmd1.networkid = network.id
-        cmd1.id = addedsubnet.vlan.id
-
-        allsubnets = self.api_client.listVlanIpRanges(cmd1)
-        self.assertEqual(
-            allsubnets[0].id,
-            addedsubnet.vlan.id,
-            "Check New subnet is successfully added to the shared Network"
-        )
-        return addedsubnet
+    # =========================================================================
+    # ---                            TEST CASES                             ---
+    # =========================================================================
 
     @attr(tags=["advanced", "nuagevsp", "isonw"], required_hardware="true")
     def test_nuage_configdrive_isolated_network(self):
@@ -673,27 +244,23 @@ class TestNuageConfigDrive(nuageTestCase):
            with Nuage VSP SDN plugin
         """
 
-        # 1. When ConfigDrive is disabled as provider in zone
-        #    Verify Isolated Network creation with a network offering
-        #    which has userdata provided by ConfigDrive fails
-        # 2. When ConfigDrive is enabled as provider in zone
-        #    Create an Isolated Network with Nuage VSP Isolated Network
-        #    offering specifying ConfigDrive as serviceProvider
-        #    for userdata,
-        #    make sure no Dns is in the offering so no VR is spawned.
-        #    check if it is successfully created and
-        #    is in the "Allocated" state.
-        # 3. Deploy a VM in the created Isolated network with user data,
-        #    check if the Isolated network state is changed to
-        #    "Implemented", and the VM is successfully deployed and
-        #    is in the "Running" state.
-        #    Check that no VR is deployed.
-        # 4. SSH into the deployed VM and verify its user data in the iso
-        #    (expected user data == actual user data).
-        # 5. Verify that the guest VM's password in the iso.
-        # 6. Reset VM password, and start the VM.
-        # 7. Verify that the new guest VM template is password enabled by
-        #     checking the VM's password (password != "password").
+        # 2. Given ConfigDrive provider is enabled in zone
+        #    And a network offering which has
+        #    * user data provided by ConfigDrive
+        #    * No DNS
+        #    When I create an Isolated Network using that network offering
+        #    Then the network is successfully created,
+        #    And is in the "Allocated" state.
+        #
+        # 3. When I deploy a VM in the created Isolated network with user data,
+        #    Then the Isolated network state is changed to "Implemented"
+        #    And the VM is successfully deployed and is in the "Running" state
+        #    And there is no VR is deployed.
+        # 4. And the user data in the ConfigDrive device is as expected
+        # 5. And the the vm's password in the ConfigDrive device is as expected
+        #
+        # 6. When I stop, reset the password, and start the VM
+        # 7. Then I can login into the VM using the new password.
         # 8. SSH into the VM for verifying its new password
         #     after its password reset.
         # 9. Verify various scenarios and check the data in configdriveIso
@@ -706,6 +273,12 @@ class TestNuageConfigDrive(nuageTestCase):
             # Configure VSD sessions
             self.configureVSDSessions()
 
+            # 1. Given ConfigDrive provider is disabled in zone
+            #    And a network offering which has
+            #      user data provided by ConfigDrive
+            #    Then creating an Isolated Network
+            #    using that network offering fails
+
             self.debug("+++Testing configdrive in an Isolated network fails..."
                        "as provider configdrive is still disabled...")
             self.update_provider_state("Disabled")
@@ -716,6 +289,8 @@ class TestNuageConfigDrive(nuageTestCase):
             self.assertFalse(create_network.success,
                              'Network found success = %s, expected success =%s'
                              % (str(create_network.success), 'False'))
+
+
 
             self.debug("+++Test user data & password reset functionality "
                        "using configdrive in an Isolated network without VR")
@@ -763,7 +338,7 @@ class TestNuageConfigDrive(nuageTestCase):
                 metadata=True,
                 userdata=self.test_data[
                     "virtual_machine_userdata"]["userdata"],
-                sshkey=self.keypair.name)
+                ssh_key=self.keypair)
 
             expected_user_data1 = self.update_userdata(vm1, "helloworld vm1")
             self.verify_config_drive_content(vm1, public_ip_1,
@@ -776,7 +351,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(True),
                                              metadata=True,
                                              userdata=expected_user_data1,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             # After sshkey reset we need to have the vm password again
             vm1.password = vm1.resetPassword(self.api_client)
             self.debug("Password reset to - %s" % vm1.password)
@@ -791,7 +366,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm1.password),
                                              metadata=True,
                                              userdata=expected_user_data1,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             vm1.password = vm1.resetPassword(self.api_client)
             self.debug("Password reset to - %s" % vm1.password)
             self.debug("VM - %s password - %s !" %
@@ -802,7 +377,7 @@ class TestNuageConfigDrive(nuageTestCase):
             self.verify_config_drive_content(vm1, public_ip_1,
                                              self.PasswordTest(vm1.password),
                                              userdata=expected_user_data1,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("updating non-default nic as the default nic "
                        "of the multi-nic VM and enable staticnat...")
@@ -887,7 +462,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm1.password),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("+++ Restarting the created Isolated network without "
                        "VR with cleanup...")
@@ -898,12 +473,12 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm1.password),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("+++ Upgrade offering of created Isolated network with "
                        "a dns offering which spins a VR")
             self.upgrade_Network(self.test_data["nuagevsp"][
-                                 "isolated_configdrive_network_offering"],
+                                     "isolated_configdrive_network_offering"],
                                  create_network1.network)
             vr = self.get_Router(create_network1.network)
             self.check_Router_state(vr, state="Running")
@@ -996,14 +571,14 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm1.password),
                                              metadata=True,
                                              userdata=expected_user_data1,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("Updating userdata for VM - %s" % vm1.name)
             expected_user_data1 = self.update_userdata(vm1, "hello afterboot")
             self.verify_config_drive_content(vm1, public_ip_1,
                                              self.PasswordTest(vm1.password),
                                              userdata=expected_user_data1,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             self.debug("Resetting password for VM - %s" % vm1.name)
             self.reset_password(vm1)
             self.debug("SSHing into the VM for verifying its new password "
@@ -1018,7 +593,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm1.password),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("Updating userdata after migrating VM - %s" % vm1.name)
             expected_user_data1 = self.update_userdata(vm1,
@@ -1040,7 +615,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(False),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("Updating userdata for VM - %s" % vm1.name)
             expected_user_data1 = self.update_userdata(vm1,
@@ -1064,7 +639,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(False),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             self.update_provider_state("Disabled")
             expected_user_data1 = self.update_userdata(vm1,
                                                        "hello after recover")
@@ -1072,7 +647,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(False),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("+++ When template is not password enabled, "
                        "verify configdrive of VM - %s" % vm1.name)
@@ -1094,7 +669,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(False),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             vm1.delete(self.api_client, expunge=True)
             create_network1.network.delete(self.api_client)
 
@@ -1205,21 +780,21 @@ class TestNuageConfigDrive(nuageTestCase):
             self.verify_config_drive_content(vm, vpc_public_ip_1,
                                              self.PasswordTest(True),
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             expected_user_data = self.update_userdata(vm, "helloworld vm1")
             self.verify_config_drive_content(vm, vpc_public_ip_1,
                                              self.PasswordTest(True),
                                              metadata=True,
                                              userdata=expected_user_data,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("Resetting password for VM - %s" % vm.name)
             self.reset_password(vm)
             self.verify_config_drive_content(vm, vpc_public_ip_1,
                                              self.PasswordTest(vm.password),
                                              userdata=expected_user_data,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.generate_ssh_keys()
             self.update_sshkeypair(vm)
@@ -1227,7 +802,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(True),
                                              metadata=True,
                                              userdata=expected_user_data,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             # After sshkey reset we need to have the vm password again
             vm.password = vm.resetPassword(self.api_client)
             self.debug("Password reset to - %s" % vm.password)
@@ -1242,7 +817,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm.password),
                                              userdata=expected_user_data,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("Adding a non-default nic to the VM "
                        "making it a multi-nic VM...")
@@ -1252,7 +827,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm.password),
                                              metadata=True,
                                              userdata=expected_user_data,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             vm.password = vm.resetPassword(self.api_client)
             self.debug("Password reset to - %s" % vm.password)
             self.debug("VM - %s password - %s !" %
@@ -1262,7 +837,7 @@ class TestNuageConfigDrive(nuageTestCase):
             self.verify_config_drive_content(vm, vpc_public_ip_1,
                                              self.PasswordTest(vm.password),
                                              userdata=expected_user_data1,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("updating non-default nic as the default nic "
                        "of the multi-nic VM and enable staticnat...")
@@ -1323,7 +898,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm.password),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("+++ Restarting the created VPC Tier network without "
                        "cleanup...")
@@ -1334,7 +909,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm.password),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("+++ Restarting the created VPC Tier network with "
                        "cleanup...")
@@ -1345,7 +920,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm.password),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("Testing user data & password reset functionality "
                        " using configdrive in a VPC network with VR...")
@@ -1355,9 +930,9 @@ class TestNuageConfigDrive(nuageTestCase):
                             'Vpc found success = %s, expected success = %s'
                             % (str(create_vrvpc.success), 'True'))
             acl_list2 = self.create_NetworkAclList(
-                    name="acl", description="acl", vpc=create_vrvpc.vpc)
+                name="acl", description="acl", vpc=create_vrvpc.vpc)
             acl_item2 = self.create_NetworkAclRule(
-                    self.test_data["ingress_rule"], acl_list=acl_list2)
+                self.test_data["ingress_rule"], acl_list=acl_list2)
             create_vrnetwork = \
                 self.verify_network_creation(
                     offering_name="vpc_network_offering_configdrive_withdns",
@@ -1445,8 +1020,8 @@ class TestNuageConfigDrive(nuageTestCase):
             self.debug("+++ Upgrade offering of created VPC network with "
                        "an offering which removes the VR...")
             self.upgrade_Network(self.test_data["nuagevsp"][
-                                 "vpc_network_offering_configdrive_"
-                                 "withoutdns"],
+                                     "vpc_network_offering_configdrive_"
+                                     "withoutdns"],
                                  create_vrnetwork.network)
 
             self.verify_config_drive_content(vm2, vpc_public_ip_2,
@@ -1464,7 +1039,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm.password),
                                              metadata=True,
                                              userdata=expected_user_data1,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("Updating userdata for VM - %s" % vm.name)
             expected_user_data = self.update_userdata(vm,
@@ -1472,7 +1047,7 @@ class TestNuageConfigDrive(nuageTestCase):
             self.verify_config_drive_content(vm, vpc_public_ip_1,
                                              self.PasswordTest(vm.password),
                                              userdata=expected_user_data,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             self.debug("Resetting password for VM - %s" % vm.name)
             self.reset_password(vm)
             self.debug("SSHing into the VM for verifying its new password "
@@ -1487,7 +1062,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm.password),
                                              userdata=expected_user_data,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("Updating userdata after migrating VM - %s" % vm.name)
             expected_user_data = self.update_userdata(vm,
@@ -1495,7 +1070,7 @@ class TestNuageConfigDrive(nuageTestCase):
             self.verify_config_drive_content(vm, vpc_public_ip_1,
                                              self.PasswordTest(vm.password),
                                              userdata=expected_user_data,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             self.debug("Resetting password for VM - %s" % vm.name)
             self.reset_password(vm)
             self.debug("SSHing into the VM for verifying its new password "
@@ -1510,7 +1085,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(False),
                                              userdata=expected_user_data,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("Updating userdata for VM - %s" % vm.name)
             expected_user_data = self.update_userdata(vm,
@@ -1518,7 +1093,7 @@ class TestNuageConfigDrive(nuageTestCase):
             self.verify_config_drive_content(vm, vpc_public_ip_1,
                                              self.PasswordTest(False),
                                              userdata=expected_user_data,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             self.debug("Resetting password for VM - %s" % vm.name)
             self.reset_password(vm)
             self.debug("SSHing into the VM for verifying its new password "
@@ -1535,13 +1110,13 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(False),
                                              userdata=expected_user_data,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             self.update_provider_state("Disabled")
             self.verify_config_drive_content(vm, vpc_public_ip_1,
                                              self.PasswordTest(False),
                                              userdata=expected_user_data,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("+++ When template is not password enabled "
                        "verify configdrive of VM - %s" % vm.name)
@@ -1567,7 +1142,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(False),
                                              userdata=expected_user_data,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             vm.delete(self.api_client, expunge=True)
             create_tiernetwork.network.delete(self.api_client)
 
@@ -1637,7 +1212,6 @@ class TestNuageConfigDrive(nuageTestCase):
 
         try:
             for i in range(2):
-
                 self.debug("\n+++ [Concurrency]Start update on all VM's")
                 #
                 # 5. Concurrently update all VM's
@@ -1684,7 +1258,6 @@ class TestNuageConfigDrive(nuageTestCase):
             # 10. Verify the passwords
             self.debug("\n+++ [Concurrency]Verify passwords on all VM's")
             for aThread in my_reset_threads:
-
                 # create floating ip
                 self.create_and_verify_fip_and_fw(aThread.get_vm(),
                                                   public_ip_1,
@@ -1753,9 +1326,10 @@ class TestNuageConfigDrive(nuageTestCase):
             # Configure VSD sessions
             self.configureVSDSessions()
             if not self.isNuageInfraUnderlay:
-                self.skipTest("Configured Nuage VSP SDN platform infrastructure "
-                              "does not support underlay networking: "
-                              "skipping test")
+                self.skipTest(
+                    "Configured Nuage VSP SDN platform infrastructure "
+                    "does not support underlay networking: "
+                    "skipping test")
 
             self.debug("+++Testing configdrive in an shared network fails..."
                        "as provider configdrive is still disabled...")
@@ -1816,9 +1390,9 @@ class TestNuageConfigDrive(nuageTestCase):
                 self.test_data["nuagevsp"]["network_all"]["endip"]
 
             with self.assertRaises(Exception):
-                    self.create_VM(
-                        [shared_network.network],
-                        testdata=tmp_test_data)
+                self.create_VM(
+                    [shared_network.network],
+                    testdata=tmp_test_data)
 
             self.debug("+++ In a shared network with multiple ip ranges, "
                        "userdata with config drive must be allowed.")
@@ -1872,7 +1446,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm1.password),
                                              metadata=True,
                                              userdata=expected_user_data,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             vm1.password = vm1.resetPassword(self.api_client)
             self.debug("Password reset to - %s" % vm1.password)
             self.debug("VM - %s password - %s !" %
@@ -1883,7 +1457,7 @@ class TestNuageConfigDrive(nuageTestCase):
             self.verify_config_drive_content(vm1, public_ip,
                                              self.PasswordTest(vm1.password),
                                              userdata=expected_user_data1,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("+++ Updating non-default nic as the default nic "
                        "of the multi-nic VM...")
@@ -1939,9 +1513,9 @@ class TestNuageConfigDrive(nuageTestCase):
                     {"ipaddress": VirtualMachine.list(
                         self.api_client, id=multinicvm1.id)[0].nic[0]})
             self.verify_config_drive_content(
-                    multinicvm1, public_ip_3,
-                    self.PasswordTest(multinicvm1.password),
-                    metadata=True)
+                multinicvm1, public_ip_3,
+                self.PasswordTest(multinicvm1.password),
+                metadata=True)
             expected_user_data2 = self.update_userdata(multinicvm1,
                                                        "hello multinicvm1")
             self.verify_config_drive_content(multinicvm1, public_ip_3,
@@ -1963,14 +1537,14 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm1.password),
                                              metadata=True,
                                              userdata=expected_user_data1,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("Updating userdata for VM - %s" % vm1.name)
             expected_user_data1 = self.update_userdata(vm1, "hello afterboot")
             self.verify_config_drive_content(vm1, public_ip,
                                              self.PasswordTest(vm1.password),
                                              userdata=expected_user_data1,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             self.debug("Resetting password for VM - %s" % vm1.name)
             self.reset_password(vm1)
             self.debug("SSHing into the VM for verifying its new password "
@@ -1985,7 +1559,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(vm1.password),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("Updating userdata after migrating VM - %s" % vm1.name)
             expected_user_data1 = self.update_userdata(vm1,
@@ -2007,7 +1581,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(False),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("Updating userdata for VM - %s" % vm1.name)
             expected_user_data1 = self.update_userdata(vm1,
@@ -2031,7 +1605,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(False),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             self.update_provider_state("Disabled")
             expected_user_data1 = self.update_userdata(vm1,
                                                        "hello after recover")
@@ -2039,7 +1613,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(False),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
 
             self.debug("+++ When template is not password enabled, "
                        "verify configdrive of VM - %s" % vm1.name)
@@ -2049,9 +1623,9 @@ class TestNuageConfigDrive(nuageTestCase):
             self.generate_ssh_keys()
             self.debug("keypair name %s " % self.keypair.name)
             vm1 = self.create_VM(
-                    [shared_network.network],
-                    testdata=self.test_data["virtual_machine_userdata"],
-                    keypair=self.keypair.name)
+                [shared_network.network],
+                testdata=self.test_data["virtual_machine_userdata"],
+                keypair=self.keypair.name)
             expected_user_data1 = self.update_userdata(vm1,
                                                        "This is sample data")
             public_ip = PublicIPAddress({"ipaddress": vm1})
@@ -2059,7 +1633,7 @@ class TestNuageConfigDrive(nuageTestCase):
                                              self.PasswordTest(False),
                                              userdata=expected_user_data1,
                                              metadata=True,
-                                             sshkey=self.keypair.name)
+                                             ssh_key=self.keypair)
             vm1.delete(self.api_client, expunge=True)
             shared_network.network.delete(self.api_client)
 
@@ -2120,7 +1694,7 @@ class TestNuageConfigDrive(nuageTestCase):
                 self.PasswordTest(vm1.password),
                 metadata=True,
                 userdata=expected_user_data,
-                sshkey=self.keypair.name)
+                ssh_key=self.keypair)
 
             for i in range(0, 300):
                 self.verify_config_drive_content(
@@ -2128,8 +1702,11 @@ class TestNuageConfigDrive(nuageTestCase):
                     self.PasswordTest(vm1.password),
                     metadata=True,
                     userdata=expected_user_data,
-                    sshkey=self.keypair.name,
+                    ssh_key=self.keypair,
                     ssh_client=ssh_client)
                 expected_user_data = \
                     self.update_userdata(vm1,
                                          'This is sample data %s' % i)
+
+if __name__ == "__main__" and __package__ is None:
+    __package__ = "integration.plugins.nuage"

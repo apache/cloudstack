@@ -40,6 +40,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URI;
@@ -52,6 +53,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
 import javax.naming.ConfigurationException;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -68,6 +70,7 @@ import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
@@ -155,11 +158,11 @@ import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.agent.api.to.NfsTO;
 import com.cloud.agent.api.to.S3TO;
 import com.cloud.agent.api.to.SwiftTO;
+import com.cloud.configuration.Resource;
 import com.cloud.exception.InternalErrorException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.Host.Type;
-import com.cloud.configuration.Resource;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.NetworkModel;
 import com.cloud.resource.ServerResourceBase;
@@ -189,9 +192,6 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.vm.SecondaryStorageVm;
-
-
-import java.io.OutputStreamWriter;
 
 public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource {
 
@@ -492,8 +492,13 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                         if (typeFolder.exists() || typeFolder.mkdirs()) {
                             if (StringUtils.isNotEmpty(content)) {
                                 File file = new File(typeFolder, fileName + ".txt");
-                                try (FileWriter fw = new FileWriter(file); BufferedWriter bw = new BufferedWriter(fw)) {
-                                    bw.write(content);
+                                try  {
+                                    if (fileName.equals(USERDATA_FILE)) {
+                                        // User Data is passed as a base64 encoded string
+                                        FileUtils.writeByteArrayToFile(file, Base64.decodeBase64(content));
+                                    } else {
+                                        FileUtils.write(file, content, com.cloud.utils.StringUtils.getPreferredCharset());
+                                    }
                                 } catch (IOException ex) {
                                     s_logger.error("Failed to create file ", ex);
                                     return new Answer(cmd, ex);

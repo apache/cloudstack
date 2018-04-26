@@ -4085,11 +4085,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Network network = _networkModel.getNetwork(defaultNic.getNetworkId());
             if (_networkModel.isSharedNetworkWithoutServices(network.getId())) {
                 final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
-                final String zoneName = _dcDao.findById(vm.getDataCenterId()).getName();
                 boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
-                List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, zoneName, vm.getInstanceName(), vm.getId(),
-                        (String) profile.getParameter(VirtualMachineProfile.Param.VmSshPubKey), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
+                List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getId(),
+                        vm.getUuid(), defaultNic.getIPv4Address(), vm.getDetail("SSH.PublicKey"), (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
                 String vmName = vm.getInstanceName();
                 String configDriveIsoRootFolder = "/tmp";
                 String isoFile = configDriveIsoRootFolder + "/" + vmName + "/configDrive/" + vmName + ".iso";
