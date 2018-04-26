@@ -740,18 +740,20 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             throw new AgentUnavailableException("Unable to send commands to virtual router ", router.getHostId(), e);
         }
         Answer answer = cmds.getAnswer("users");
-        if (!answer.getResult()) {
+        if (answer == null || !answer.getResult()) {
+            String errorMessage = (answer == null) ? "null answer object" : answer.getDetails();
             s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                    + router.getInstanceName() + " due to " + answer.getDetails());
+                    + router.getInstanceName() + " due to " + errorMessage);
             throw new ResourceUnavailableException("Unable to start vpn: Unable to add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId()
-            + " on domR: " + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+            + " on domR: " + router.getInstanceName() + " due to " + errorMessage, DataCenter.class, router.getDataCenterId());
         }
         answer = cmds.getAnswer("startVpn");
-        if (!answer.getResult()) {
+        if (answer == null || !answer.getResult()) {
+            String errorMessage = (answer == null) ? "null answer object" : answer.getDetails();
             s_logger.error("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: " + router.getInstanceName() + " due to "
-                    + answer.getDetails());
+                    + errorMessage);
             throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
-                    + router.getInstanceName() + " due to " + answer.getDetails(), DataCenter.class, router.getDataCenterId());
+                    + router.getInstanceName() + " due to " + errorMessage, DataCenter.class, router.getDataCenterId());
         }
 
         return true;

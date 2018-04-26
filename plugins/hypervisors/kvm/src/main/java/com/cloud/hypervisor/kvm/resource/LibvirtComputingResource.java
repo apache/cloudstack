@@ -2339,7 +2339,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
                 }
             }
-
+            if (vm.getDevices() == null) {
+                s_logger.error("There is no devices for" + vm);
+                throw new RuntimeException("There is no devices for" + vm);
+            }
             vm.getDevices().addDevice(disk);
         }
 
@@ -2393,7 +2396,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                         + ") is " + nic.getType() + " traffic type. So, vsp-vr-ip " + vrIp + " is set in the metadata");
             }
         }
-
+        if (vm.getDevices() == null) {
+            s_logger.error("LibvirtVMDef object get devices with null result");
+            throw new InternalErrorException("LibvirtVMDef object get devices with null result");
+        }
         vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter));
     }
 

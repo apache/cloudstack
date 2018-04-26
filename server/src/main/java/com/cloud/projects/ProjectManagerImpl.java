@@ -479,6 +479,10 @@ public class ProjectManagerImpl extends ManagerBase implements ProjectManager {
                 throw new InvalidParameterValueException("Unable to find account name=" + newOwnerName + " in domain id=" + project.getDomainId());
             }
             Account currentOwnerAccount = getProjectOwner(projectId);
+            if (currentOwnerAccount == null) {
+                s_logger.error("Unable to find the current owner for the project id=" + projectId);
+                throw new InvalidParameterValueException("Unable to find the current owner for the project id=" + projectId);
+            }
             if (currentOwnerAccount.getId() != futureOwnerAccount.getId()) {
                 ProjectAccountVO futureOwner = _projectAccountDao.findByProjectIdAccountId(projectId, futureOwnerAccount.getAccountId());
                 if (futureOwner == null) {

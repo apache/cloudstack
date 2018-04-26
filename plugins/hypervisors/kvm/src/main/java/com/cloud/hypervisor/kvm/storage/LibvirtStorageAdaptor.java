@@ -522,7 +522,9 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     s_logger.debug("Checking path of existing pool " + poolname + " against pool we want to create");
                     StoragePool p = conn.storagePoolLookupByName(poolname);
                     LibvirtStoragePoolDef pdef = getStoragePoolDef(conn, p);
-
+                    if (pdef == null) {
+                        throw new CloudRuntimeException("Unable to parse the storage pool definition for storage pool " + poolname);
+                    }
                     String targetPath = pdef.getTargetPath();
                     if (targetPath != null && targetPath.equals(path)) {
                         s_logger.debug("Storage pool utilizing path '" + path + "' already exists as pool " + poolname +

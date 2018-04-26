@@ -39,9 +39,6 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
      */
     void setResourceCount(long ownerId, ResourceOwnerType ownerType, ResourceType type, long count);
 
-    @Deprecated
-    void updateDomainCount(long domainId, ResourceType type, boolean increment, long delta);
-
     boolean updateById(long id, boolean increment, long delta);
 
     void createResourceCounts(long ownerId, ResourceOwnerType ownerType);

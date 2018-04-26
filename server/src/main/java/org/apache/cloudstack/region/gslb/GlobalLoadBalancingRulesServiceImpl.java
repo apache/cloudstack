@@ -650,9 +650,12 @@ public class GlobalLoadBalancingRulesServiceImpl implements GlobalLoadBalancingR
             SiteLoadBalancerConfig siteLb =
                 new SiteLoadBalancerConfig(gslbLbMapVo.isRevoke(), serviceType, ip.getAddress().addr(), Integer.toString(loadBalancer.getDefaultPortStart()),
                     dataCenterId);
-
-            siteLb.setGslbProviderPublicIp(lookupGslbServiceProvider().getZoneGslbProviderPublicIp(dataCenterId, physicalNetworkId));
-            siteLb.setGslbProviderPrivateIp(lookupGslbServiceProvider().getZoneGslbProviderPrivateIp(dataCenterId, physicalNetworkId));
+            GslbServiceProvider gslbProvider = lookupGslbServiceProvider();
+            if (gslbProvider == null) {
+                throw new CloudRuntimeException("No GSLB provider is available");
+            }
+            siteLb.setGslbProviderPublicIp(gslbProvider.getZoneGslbProviderPublicIp(dataCenterId, physicalNetworkId));
+            siteLb.setGslbProviderPrivateIp(gslbProvider.getZoneGslbProviderPrivateIp(dataCenterId, physicalNetworkId));
             siteLb.setWeight(gslbLbMapVo.getWeight());
 
             zoneSiteLoadbalancerMap.put(network.getDataCenterId(), siteLb);

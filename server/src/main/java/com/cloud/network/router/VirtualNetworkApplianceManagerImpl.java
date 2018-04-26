@@ -2139,6 +2139,12 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
 
             Answer answer = cmds.getAnswer("users");
+            if (answer == null) {
+                s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
+                        + router.getInstanceName() + " due to null answer");
+                throw new ResourceUnavailableException("Unable to start vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
+                        + router.getInstanceName() + " due to null answer", DataCenter.class, router.getDataCenterId());
+            }
             if (!answer.getResult()) {
                 s_logger.error("Unable to start vpn: unable add users to vpn in zone " + router.getDataCenterId() + " for account " + vpn.getAccountId() + " on domR: "
                         + router.getInstanceName() + " due to " + answer.getDetails());

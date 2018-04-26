@@ -1232,7 +1232,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         // prepare ISO ready to mount on hypervisor resource level
         TemplateInfo tmplt = prepareIso(isoId, vm.getDataCenterId(), vm.getHostId(), null);
-
+        if (tmplt == null) {
+            s_logger.error("Failed to prepare ISO ready to mount on hypervisor resource level");
+            throw new CloudRuntimeException("Failed to prepare ISO ready to mount on hypervisor resource level");
+        }
         String vmName = vm.getInstanceName();
 
         HostVO host = _hostDao.findById(vm.getHostId());
