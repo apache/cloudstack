@@ -77,6 +77,7 @@
                                 args.response.success({
                                     data: items
                                 });
+                                var diskOfferings = cloudStack.listDiskOfferings({listAll: true});
                                 $('select[name=storagePool]').change(function(){
                                     var uuidOfStoragePoolSelected = $(this).val();
                                     var storagePoolSelected = mapStoragePoolsByUuid.get(uuidOfStoragePoolSelected);
@@ -86,6 +87,20 @@
                                     }else{
                                         $('div[rel=newDiskOffering],div[rel=useNewDiskOffering]').show();
                                     }
+                                    var storageType = 'shared';
+                                    if(storagePoolSelected.scope == 'HOST'){
+                                        storageType = 'local';
+                                    }
+                                    $(diskOfferings).each(function(){
+                                        var diskOfferingOption = $('option[value=' + this.id + ']');
+                                        if(this.storagetype == storageType){
+                                            diskOfferingOption.show();
+                                        }else{
+                                            diskOfferingOption.hide();
+                                        }
+                                    });
+                                    var firstAvailableDiskOfferingForStorageType = $('select#label_disk_newOffering').children('option:visible').first().attr('value');
+                                    $('select#label_disk_newOffering').attr('value', firstAvailableDiskOfferingForStorageType);
                                 });
                                 var functionHideShowNewDiskOfferint = function(){
                                     if($('div[rel=useNewDiskOffering] input[type=checkbox]').is(':checked')){
@@ -119,23 +134,16 @@
                     required: false
                    },
                 select: function(args){
-                    $.ajax({
-                        url: createURL("listDiskOfferings&listall=true"),
-                        dataType: "json",
-                        async: true,
-                        success: function(json){
-                            var diskOfferings = json.listdiskofferingsresponse.diskoffering;
-                            var items = [];
-                            $(diskOfferings).each(function() {
-                                items.push({
-                                    id: this.id,
-                                    description: this.name
-                                });
-                            });
-                            args.response.success({
-                                data: items
-                            });
-                        }
+                    var diskOfferings = cloudStack.listDiskOfferings({listAll: true});
+                    var items = [];
+                    $(diskOfferings).each(function() {
+                        items.push({
+                            id: this.id,
+                            description: this.name
+                        });
+                    });
+                    args.response.success({
+                        data: items
                     });
                    }
                }
@@ -165,7 +173,7 @@
         });
     }
 
-    var diskofferingObjs, selectedDiskOfferingObj;
+    var selectedDiskOfferingObj = null;
 
     cloudStack.sections.storage = {
         title: 'label.storage',
@@ -277,36 +285,28 @@
                                         label: 'label.disk.offering',
                                         docID: 'helpVolumeDiskOffering',
                                         select: function(args) {
-                                            $.ajax({
-                                                url: createURL("listDiskOfferings"),
-                                                dataType: "json",
-                                                async: false,
-                                                success: function(json) {
-                                                    diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
-                                                    var items = [];
-                                                    $(diskofferingObjs).each(function() {
-                                                        items.push({
-                                                            id: this.id,
-                                                            description: this.displaytext
-                                                        });
-                                                    });
-                                                    args.response.success({
-                                                        data: items
-                                                    });
-                                                }
+                                            var diskOfferings = cloudStack.listDiskOfferings({});
+                                            var items = [];
+                                            $(diskOfferings).each(function() {
+                                                items.push({
+                                                    id: this.id,
+                                                    description: this.displaytext
+                                                });
                                             });
-
+                                            args.response.success({
+                                                data: items
+                                            });
                                             args.$select.change(function() {
                                                 var diskOfferingId = $(this).val();
-                                                $(diskofferingObjs).each(function() {
+                                                $(diskOfferings).each(function() {
                                                     if (this.id == diskOfferingId) {
                                                         selectedDiskOfferingObj = this;
                                                         return false; //break the $.each() loop
                                                     }
                                                 });
-                                                if (selectedDiskOfferingObj == null)
+                                                if (selectedDiskOfferingObj == null){
                                                     return;
-
+                                                }
                                                 var $form = $(this).closest('form');
                                                 var $diskSize = $form.find('.form-item[rel=diskSize]');
                                                 if (selectedDiskOfferingObj.iscustomized == true) {
@@ -510,29 +510,21 @@
                                         label: 'label.custom.disk.offering',
                                         docID: 'helpVolumeDiskOffering',
                                         select: function(args) {
-                                            var diskofferingObjs;
-                                            $.ajax({
-                                                url: createURL("listDiskOfferings"),
-                                                dataType: "json",
-                                                async: false,
-                                                success: function(json) {
-                                                    diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
-                                                    var items = [{
-                                                        id: '',
-                                                        description: ''
-                                                    }];
-                                                    $(diskofferingObjs).each(function() {
-                                                        if (this.iscustomized == true) {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.displaytext
-                                                            });
-                                                        }
-                                                    });
-                                                    args.response.success({
-                                                        data: items
+                                            var diskOfferings = cloudStack.listDiskOfferings({});
+                                            var items = [{
+                                                id: '',
+                                                description: ''
+                                            }];
+                                            $(diskOfferings).each(function() {
+                                                if (this.iscustomized == true) {
+                                                    items.push({
+                                                        id: this.id,
+                                                        description: this.displaytext
                                                     });
                                                 }
+                                            });
+                                            args.response.success({
+                                                data: items
                                             });
                                         }
                                     },
@@ -540,29 +532,21 @@
                                         label: 'label.custom.disk.offering',
                                         docID: 'helpVolumeDiskOffering',
                                         select: function(args) {
-                                            var diskofferingObjs;
-                                            $.ajax({
-                                                url: createURL("listDiskOfferings"),
-                                                dataType: "json",
-                                                async: false,
-                                                success: function(json) {
-                                                    diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
-                                                    var items = [{
-                                                        id: '',
-                                                        description: ''
-                                                    }];
-                                                    $(diskofferingObjs).each(function() {
-                                                        if (this.iscustomized == true) {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.displaytext
-                                                            });
-                                                        }
-                                                    });
-                                                    args.response.success({
-                                                        data: items
+                                            var diskOfferings = cloudStack.listDiskOfferings({});
+                                            var items = [{
+                                                id: '',
+                                                description: ''
+                                            }];
+                                            $(diskOfferings).each(function() {
+                                                if (this.iscustomized == true) {
+                                                    items.push({
+                                                        id: this.id,
+                                                        description: this.displaytext
                                                     });
                                                 }
+                                            });
+                                            args.response.success({
+                                                data: items
                                             });
                                         }
                                     },
@@ -1480,25 +1464,18 @@
                                                     });
                                                     return;
                                                 }
-
-                                                $.ajax({
-                                                    url: createURL("listDiskOfferings"),
-                                                    dataType: "json",
-                                                    success: function(json) {
-                                                        diskofferingObjs = json.listdiskofferingsresponse.diskoffering;
-                                                        var items = [];
-                                                        $(diskofferingObjs).each(function() {
-                                                            items.push({
-                                                                id: this.id,
-                                                                description: this.displaytext
-                                                            });
-                                                        });
-                                                        args.response.success({
-                                                            data: items
-                                                        });
-                                                    }
+                                                var diskOfferings = cloudStack.listDiskOfferings({});
+                                                var items = [];
+                                                $(diskOfferings).each(function() {
+                                                    items.push({
+                                                        id: this.id,
+                                                        description: this.displaytext
+                                                    });
                                                 });
-
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                                
                                                 args.$select.change(function() {
                                                     if(args.context.volumes[0].type == "ROOT") {
                                                         selectedDiskOfferingObj = null;
@@ -1506,15 +1483,15 @@
                                                     }
 
                                                     var diskOfferingId = $(this).val();
-                                                    $(diskofferingObjs).each(function() {
+                                                    $(diskOfferings).each(function() {
                                                         if (this.id == diskOfferingId) {
                                                             selectedDiskOfferingObj = this;
                                                             return false; //break the $.each() loop
                                                         }
                                                     });
-                                                    if (selectedDiskOfferingObj == null)
+                                                    if (selectedDiskOfferingObj == null){
                                                         return;
-
+                                                    }
                                                     var $form = $(this).closest('form');
 
                                                     var $shrinkok = $form.find('.form-item[rel=shrinkok]');
