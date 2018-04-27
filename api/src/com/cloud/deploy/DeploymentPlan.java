@@ -19,6 +19,8 @@ package com.cloud.deploy;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.vm.ReservationContext;
 
+import java.util.List;
+
 /**
  */
 public interface DeploymentPlan {
@@ -65,4 +67,8 @@ public interface DeploymentPlan {
     Long getPhysicalNetworkId();
 
     ReservationContext getReservationContext();
+
+    void setPreferredHosts(List<Long> hostIds);
+
+    List<Long> getPreferredHosts();
 }

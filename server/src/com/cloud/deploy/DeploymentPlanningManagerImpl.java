@@ -33,6 +33,7 @@ import javax.naming.ConfigurationException;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.fsm.StateMachine2;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -321,7 +322,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     suitableHosts.add(host);
                     Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
                             suitableHosts, suitableVolumeStoragePools, avoids,
-                            getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes);
+                            getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes, plan.getPreferredHosts());
                     if (potentialResources != null) {
                         pod = _podDao.findById(host.getPodId());
                         cluster = _clusterDao.findById(host.getClusterId());
@@ -461,7 +462,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                 suitableHosts.add(host);
                                 Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
                                         suitableHosts, suitableVolumeStoragePools, avoids,
-                                        getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes);
+                                        getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes, plan.getPreferredHosts());
                                 if (potentialResources != null) {
                                     Map<Volume, StoragePool> storageVolMap = potentialResources.second();
                                     // remove the reused vol<->pool from
@@ -1077,7 +1078,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     // choose the potential host and pool for the VM
                     if (!suitableVolumeStoragePools.isEmpty()) {
                         Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(suitableHosts, suitableVolumeStoragePools, avoid,
-                                resourceUsageRequired, readyAndReusedVolumes);
+                                resourceUsageRequired, readyAndReusedVolumes, plan.getPreferredHosts());
 
                         if (potentialResources != null) {
                             Host host = _hostDao.findById(potentialResources.first().getId());
@@ -1217,11 +1218,12 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     }
 
     protected Pair<Host, Map<Volume, StoragePool>> findPotentialDeploymentResources(List<Host> suitableHosts, Map<Volume, List<StoragePool>> suitableVolumeStoragePools,
-            ExcludeList avoid, DeploymentPlanner.PlannerResourceUsage resourceUsageRequired, List<Volume> readyAndReusedVolumes) {
+            ExcludeList avoid, DeploymentPlanner.PlannerResourceUsage resourceUsageRequired, List<Volume> readyAndReusedVolumes, List<Long> preferredHosts) {
         s_logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
 
         boolean hostCanAccessPool = false;
         boolean haveEnoughSpace = false;
+        boolean hostAffinity = true;
 
         if (readyAndReusedVolumes == null) {
             readyAndReusedVolumes = new ArrayList<Volume>();
@@ -1245,6 +1247,10 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 s_logger.debug("Checking if host: " + potentialHost.getId() + " can access any suitable storage pool for volume: " + vol.getVolumeType());
                 List<StoragePool> volumePoolList = suitableVolumeStoragePools.get(vol);
                 hostCanAccessPool = false;
+                hostAffinity = true;
+                if (CollectionUtils.isNotEmpty(preferredHosts) && !preferredHosts.contains(potentialHost.getId())) {
+                    hostAffinity = false;
+                }
                 for (StoragePool potentialSPool : volumePoolList) {
                     if (hostCanAccessSPool(potentialHost, potentialSPool)) {
                         hostCanAccessPool = true;
@@ -1274,7 +1280,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     break;
                 }
             }
-            if (hostCanAccessPool && haveEnoughSpace && checkIfHostFitsPlannerUsage(potentialHost.getId(), resourceUsageRequired)) {
+            if (hostCanAccessPool && haveEnoughSpace && hostAffinity && checkIfHostFitsPlannerUsage(potentialHost.getId(), resourceUsageRequired)) {
                 s_logger.debug("Found a potential host " + "id: " + potentialHost.getId() + " name: " + potentialHost.getName() +
                         " and associated storage pools for this VM");
                 return new Pair<Host, Map<Volume, StoragePool>>(potentialHost, storage);
