@@ -131,12 +131,8 @@ public class ApiResponseSerializer {
                     sb.append("}");
                     log.append("}");
                 }
-            } else if (result instanceof SuccessResponse) {
-                sb.append("{\"success\":\"").append(((SuccessResponse)result).getSuccess()).append("\"}");
-                log.append("{\"success\":\"").append(((SuccessResponse)result).getSuccess()).append("\"}");
-            } else if (result instanceof ExceptionResponse) {
-                String jsonErrorText = responseBuilder.toJson(result);
-                jsonErrorText = unescape(jsonErrorText);
+            } else if (result instanceof SuccessResponse || result instanceof ExceptionResponse) {
+                final String jsonErrorText = unescape(responseBuilder.toJson(result));
                 sb.append(jsonErrorText);
                 log.append(jsonErrorText);
             } else {
