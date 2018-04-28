@@ -32,9 +32,6 @@
         <defaultGoal>install</defaultGoal>
     </build>
     <modules>
-<!-- The plugin isn't used by anything
-        <module>plugin</module>
--->
         <module>server</module>
     </modules>
 </project>
