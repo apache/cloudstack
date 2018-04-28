@@ -17,29 +17,29 @@
   under the License.
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <artifactId>cloud-mom-rabbitmq</artifactId>
-  <name>Apache CloudStack Plugin - RabbitMQ Event Bus</name>
-  <parent>
-    <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloudstack-plugins</artifactId>
-    <version>4.12.0.0-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
-  </parent>
-  <dependencies>
-    <dependency>
-    <groupId>com.rabbitmq</groupId>
-      <artifactId>amqp-client</artifactId>
-        <version>5.1.1</version>
-    </dependency>
-    <dependency>
-    <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-framework-events</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
-  <build>
-    <defaultGoal>install</defaultGoal>
-  </build>
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>cloud-mom-rabbitmq</artifactId>
+    <name>Apache CloudStack Plugin - RabbitMQ Event Bus</name>
+    <parent>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloudstack-plugins</artifactId>
+        <version>4.12.0.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <build>
+        <defaultGoal>install</defaultGoal>
+    </build>
+    <dependencies>
+        <dependency>
+            <groupId>com.rabbitmq</groupId>
+            <artifactId>amqp-client</artifactId>
+            <version>5.1.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-events</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
 </project>
