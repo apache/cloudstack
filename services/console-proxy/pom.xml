@@ -33,5 +33,6 @@
     </build>
     <modules>
         <module>server</module>
+        <module>rdpconsole</module>
     </modules>
 </project>
