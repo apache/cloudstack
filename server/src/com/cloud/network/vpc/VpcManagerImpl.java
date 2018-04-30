@@ -2453,9 +2453,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         final List<DomainRouterVO> oldRouters = _routerDao.listByVpcId(vpc.getId());
 
         // Create a new router
-        vpc.setRollingRestart(true);
+        if (oldRouters.size() > 0) {
+            vpc.setRollingRestart(true);
+        }
         startVpc(vpc, dest, context);
-        vpc.setRollingRestart(false);
+        if (oldRouters.size() > 0) {
+            vpc.setRollingRestart(false);
+        }
 
         // For redundant vpc wait for 3*advert_int+skew_seconds for VRRP to kick in
         if (vpc.isRedundant() || (oldRouters.size() == 1 && oldRouters.get(0).getIsRedundantRouter())) {
@@ -2470,12 +2474,10 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             _routerService.destroyRouter(oldRouter.getId(), context.getAccount(), context.getCaller().getId());
         }
 
-        // Add a new backup router for redundant vpc or re-apply rules
-        if (vpc.isRedundant()) {
-            if (!startVpc(vpc, dest, context)) {
-                s_logger.debug("Failed to re-program VPC router or deploy a new backup router for VPC" + vpc);
-                return false;
-            }
+        // Re-program VPC VR or add a new backup router for redundant VPC
+        if (!startVpc(vpc, dest, context)) {
+            s_logger.debug("Failed to re-program VPC router or deploy a new backup router for VPC" + vpc);
+            return false;
         }
 
         return _ntwkMgr.validateNewRouters(_routerDao.listByVpcId(vpc.getId()));

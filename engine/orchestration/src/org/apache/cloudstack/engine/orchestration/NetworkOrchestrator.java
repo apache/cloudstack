@@ -2902,9 +2902,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final List<DomainRouterVO> oldRouters = _routerDao.findByNetwork(network.getId());
 
         // Deploy a new router
-        network.setRollingRestart(true);
+        if (oldRouters.size() > 0) {
+            network.setRollingRestart(true);
+        }
         implementNetworkElements(dest, context, network, offering, providersToImplement);
-        network.setRollingRestart(false);
+        if (oldRouters.size() > 0) {
+            network.setRollingRestart(false);
+        }
 
         // For redundant network wait for 3*advert_int+skew_seconds for VRRP to kick in
         if (network.isRedundant() || (oldRouters.size() == 1 && oldRouters.get(0).getIsRedundantRouter())) {
@@ -2918,9 +2922,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             _routerService.destroyRouter(oldRouter.getId(), context.getAccount(), context.getCaller().getId());
         }
 
-        // Add a new backup router for redundant network
         if (network.isRedundant()) {
+            // Add a new backup router for redundant network
             implementNetworkElements(dest, context, network, offering, providersToImplement);
+        } else {
+            // Re-apply rules for non-redundant network
+            implementNetworkElementsAndResources(dest, context, network, offering);
         }
 
         return validateNewRouters(_routerDao.findByNetwork(network.getId()));
