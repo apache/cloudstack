@@ -152,7 +152,7 @@ public class ConfigKey<T> {
             return value();
         }
 
-        String value = s_depot != null ? s_depot.scoped(this).getConfigValue(id, this) : null;
+        String value = s_depot != null ? s_depot.findScopedConfigStorage(this).getConfigValue(id, this) : null;
         if (value == null) {
             return value();
         } else {

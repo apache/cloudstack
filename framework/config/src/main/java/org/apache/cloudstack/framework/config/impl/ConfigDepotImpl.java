@@ -166,7 +166,7 @@ public class ConfigDepotImpl implements ConfigDepot, ConfigDepotAdmin {
         return _configDao;
     }
 
-    public ScopedConfigStorage scoped(ConfigKey<?> config) {
+    public ScopedConfigStorage findScopedConfigStorage(ConfigKey<?> config) {
         for (ScopedConfigStorage storage : _scopedStorages) {
             if (storage.getScope() == config.scope()) {
                 return storage;
