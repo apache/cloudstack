@@ -16,54 +16,56 @@
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <artifactId>cloud-engine</artifactId>
-  <name>Apache CloudStack Cloud Engine</name>
-  <packaging>pom</packaging>
-  <parent>
-    <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloudstack</artifactId>
-    <version>4.12.0.0-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
-  </parent>
-  <build>
-    <defaultGoal>install</defaultGoal>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-          <executions>
-            <execution>
-              <id>cloudstack-checkstyle</id>
-              <phase>none</phase>
-              <inherited>false</inherited>
-            </execution>
-          </executions>
-      </plugin>
-    </plugins>
-  </build>
-  <modules>
-    <module>api</module>
-    <module>orchestration</module>
-    <module>schema</module>
-    <module>storage</module>
-    <module>storage/volume</module>
-    <module>storage/image</module>
-    <module>storage/datamotion</module>
-    <module>storage/cache</module>
-    <module>storage/snapshot</module>
-    <module>storage/configdrive</module>
-    <module>components-api</module>
-    <module>network</module>
-    <module>service</module>
-  </modules>
-  <profiles>
-  <profile>
-      <id>integration-test</id>
-      <modules>
-        <module>storage/integration-test</module>
-      </modules>
-  </profile>
-  </profiles>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>cloud-engine</artifactId>
+    <name>Apache CloudStack Cloud Engine</name>
+    <packaging>pom</packaging>
+    <parent>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloudstack</artifactId>
+        <version>4.12.0.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+    <build>
+        <defaultGoal>install</defaultGoal>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>cloudstack-checkstyle</id>
+                        <phase>none</phase>
+                        <inherited>false</inherited>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    <modules>
+        <!-- keep in alphabetic order -->
+        <module>api</module>
+        <module>components-api</module>
+        <module>network</module>
+        <module>orchestration</module>
+        <module>schema</module>
+        <module>service</module>
+        <module>storage</module>
+        <module>storage/cache</module>
+        <module>storage/configdrive</module>
+        <module>storage/datamotion</module>
+        <module>storage/image</module>
+        <module>storage/snapshot</module>
+        <module>storage/volume</module>
+    </modules>
+    <profiles>
+        <profile>
+            <id>integration-test</id>
+            <modules>
+                <module>storage/integration-test</module>
+            </modules>
+        </profile>
+    </profiles>
 </project>

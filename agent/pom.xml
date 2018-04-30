@@ -70,8 +70,7 @@
                                     </fileset>
                                     <globmapper from="*.in" to="*" />
                                     <filterchain>
-                                        <filterreader
-                                            classname="org.apache.tools.ant.filters.ReplaceTokens">
+                                        <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
                                             <param type="propertiesfile" value="${cs.replace.properties}" />
                                         </filterreader>
                                     </filterchain>
@@ -82,8 +81,7 @@
                                     </fileset>
                                     <globmapper from="*.in" to="*" />
                                     <filterchain>
-                                        <filterreader
-                                            classname="org.apache.tools.ant.filters.ReplaceTokens">
+                                        <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
                                             <param type="propertiesfile" value="${cs.replace.properties}" />
                                         </filterreader>
                                     </filterchain>

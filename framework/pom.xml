@@ -44,20 +44,21 @@
         </plugins>
     </build>
     <modules>
-        <module>ipc</module>
+        <!-- keep in alphabetic order -->
+        <module>agent-lb</module>
         <module>ca</module>
-        <module>rest</module>
-        <module>events</module>
-        <module>jobs</module>
-        <module>quota</module>
         <module>cluster</module>
-        <module>db</module>
         <module>config</module>
+        <module>db</module>
+        <module>direct-download</module>
+        <module>events</module>
+        <module>ipc</module>
+        <module>jobs</module>
         <module>managed-context</module>
+        <module>quota</module>
+        <module>rest</module>
+        <module>security</module>
         <module>spring/lifecycle</module>
         <module>spring/module</module>
-        <module>security</module>
-        <module>agent-lb</module>
-        <module>direct-download</module>
     </modules>
 </project>
