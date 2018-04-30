@@ -1183,7 +1183,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         for (final VpcProvider element : getVpcElements()) {
             if (providersToImplement.contains(element.getProvider())) {
                 if (element.implementVpc(vpc, dest, context)) {
-                    s_logger.debug("Vpc " + vpc + " has started succesfully");
+                    s_logger.debug("Vpc " + vpc + " has started successfully");
                 } else {
                     s_logger.warn("Vpc " + vpc + " failed to start");
                     success = false;
@@ -1512,7 +1512,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                 final VpcOfferingVO redundantOffering = _vpcOffDao.findByUniqueName(VpcOffering.redundantVPCOfferingName);
 
                 final VpcVO entity = _vpcDao.findById(vpcId);
-                entity.setRedundant(makeRedundant);
+                entity.setRedundant(true);
                 entity.setVpcOfferingId(redundantOffering.getId());
 
                 // Change the VPC in order to get it updated after the end of

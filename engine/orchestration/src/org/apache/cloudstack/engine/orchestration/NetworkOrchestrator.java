@@ -2853,7 +2853,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Override
     public void destroyExpendableRouters(final List<? extends VirtualRouter> routers, final ReservationContext context) throws ResourceUnavailableException {
         final List<VirtualRouter> remainingRouters = new ArrayList<>();
-        // Purge invalid routers
         for (final VirtualRouter router : routers) {
             if (router.getState() == VirtualMachine.State.Stopped ||
                     router.getState() == VirtualMachine.State.Error ||
@@ -2870,7 +2869,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             return;
         }
 
-        // Purge any backup router
         VirtualRouter backupRouter = null;
         for (final VirtualRouter router : remainingRouters) {
             if (router.getRedundantState() == VirtualRouter.RedundantState.BACKUP) {

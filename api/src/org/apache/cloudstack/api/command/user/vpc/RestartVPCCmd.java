@@ -66,14 +66,14 @@ public class RestartVPCCmd extends BaseAsyncCmd {
         if (cleanup != null) {
             return cleanup;
         }
-        return true;
+        return false;
     }
 
     public Boolean getMakeredundant() {
         if (makeredundant != null) {
             return makeredundant;
         }
-        return true;
+        return false;
     }
 
     /////////////////////////////////////////////////////

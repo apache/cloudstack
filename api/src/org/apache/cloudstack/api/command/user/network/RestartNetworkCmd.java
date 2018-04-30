@@ -77,14 +77,14 @@ public class RestartNetworkCmd extends BaseAsyncCmd {
         if (cleanup != null) {
             return cleanup;
         }
-        return true;
+        return false;
     }
 
     public Boolean getMakeRedundant() {
         if (makeRedundant != null) {
             return makeRedundant;
         }
-        return true;
+        return false;
     }
 
     /////////////////////////////////////////////////////
