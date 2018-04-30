@@ -59,7 +59,6 @@ import io.netty.handler.codec.http.HttpResponseEncoder;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.cloudstack.storage.ConfigDriveFactory;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
@@ -176,8 +175,6 @@ import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.S3.S3Utils;
 import com.cloud.vm.SecondaryStorageVm;
-
-import java.io.OutputStreamWriter;
 
 public class NfsSecondaryStorageResource extends ServerResourceBase implements SecondaryStorageResource, StorageAttacher {
 
