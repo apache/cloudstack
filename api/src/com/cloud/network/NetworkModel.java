@@ -73,7 +73,7 @@ public interface NetworkModel {
             AVAILABILITY_ZONE_FILE, "availability_zone",
             LOCAL_HOSTNAME_FILE, "hostname",
             VM_ID_FILE, "uuid",
-            INSTANCE_ID_FILE, "name"
+            PUBLIC_HOSTNAME_FILE, "name"
     );
 
     static final ConfigKey<Integer> MACIdentifier = new ConfigKey<Integer>("Advanced",Integer.class, "mac.identifier", "0",

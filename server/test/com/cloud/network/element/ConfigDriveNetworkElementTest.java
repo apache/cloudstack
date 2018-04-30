@@ -166,6 +166,7 @@ public class ConfigDriveNetworkElementTest {
         when(virtualMachine.getDataCenterId()).thenReturn(DATACENTERID);
         when(virtualMachine.getInstanceName()).thenReturn(VMINSTANCENAME);
         when(virtualMachine.getUserData()).thenReturn(VMUSERDATA);
+        when(virtualMachine.getHostName()).thenReturn("vm-hostname");
         when(deployDestination.getHost()).thenReturn(hostVO);
         when(hostVO.getId()).thenReturn(HOSTID);
         when(nic.isDefaultNic()).thenReturn(true);
