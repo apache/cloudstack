@@ -98,13 +98,13 @@ public class ConfigDriveNetworkElementTest {
     public static final long NETWORK_ID = 1L;
     private final long DATACENTERID = NETWORK_ID;
     private final String ZONENAME = "zone1";
-    private final String VMINSTANCENAME = "vm_name";
+    private final String VMINSTANCENAME = "i-x-y";
+    private final String VMHOSTNAME = "vm-hostname";
     private final String VMOFFERING = "custom_instance";
     private final long VMID = 30L;
     private final String VMUSERDATA = "H4sIABCvw1oAAystTi1KSSxJ5AIAUPllwQkAAAA=";
     private final long SOID = 31L;
     private final long HOSTID = NETWORK_ID;
-    private final String HOSTNAME = "host1";
 
     @Mock private ConfigurationDao _configDao;
     @Mock private DataCenterDao _dcDao;
@@ -166,6 +166,7 @@ public class ConfigDriveNetworkElementTest {
         when(virtualMachine.getDataCenterId()).thenReturn(DATACENTERID);
         when(virtualMachine.getInstanceName()).thenReturn(VMINSTANCENAME);
         when(virtualMachine.getUserData()).thenReturn(VMUSERDATA);
+        when(virtualMachine.getHostName()).thenReturn(VMHOSTNAME);
         when(deployDestination.getHost()).thenReturn(hostVO);
         when(hostVO.getId()).thenReturn(HOSTID);
         when(nic.isDefaultNic()).thenReturn(true);
@@ -246,7 +247,7 @@ public class ConfigDriveNetworkElementTest {
                 new String[]{"userdata", "user_data", VMUSERDATA},
                 new String[]{"metadata", "service-offering", VMOFFERING},
                 new String[]{"metadata", "availability-zone", ZONENAME},
-                new String[]{"metadata", "local-hostname", VMINSTANCENAME},
+                new String[]{"metadata", "local-hostname", VMHOSTNAME},
                 new String[]{"metadata", "local-ipv4", "192.168.111.111"},
                 new String[]{"metadata", "public-hostname", null},
                 new String[]{"metadata", "public-ipv4", "192.168.111.111"},
@@ -269,7 +270,7 @@ public class ConfigDriveNetworkElementTest {
                 new String[]{"userdata", "user_data", VMUSERDATA},
                 new String[]{"metadata", "service-offering", VMOFFERING},
                 new String[]{"metadata", "availability-zone", ZONENAME},
-                new String[]{"metadata", "local-hostname", VMINSTANCENAME},
+                new String[]{"metadata", "local-hostname", VMHOSTNAME},
                 new String[]{"metadata", "local-ipv4", "192.168.111.111"},
                 new String[]{"metadata", "public-hostname", "7.7.7.7"},
                 new String[]{"metadata", "public-ipv4", "7.7.7.7"},
@@ -292,7 +293,7 @@ public class ConfigDriveNetworkElementTest {
                 new String[]{"userdata", "user_data", VMUSERDATA},
                 new String[]{"metadata", "service-offering", VMOFFERING},
                 new String[]{"metadata", "availability-zone", ZONENAME},
-                new String[]{"metadata", "local-hostname", VMINSTANCENAME},
+                new String[]{"metadata", "local-hostname", VMHOSTNAME},
                 new String[]{"metadata", "local-ipv4", "192.168.111.111"},
                 new String[]{"metadata", "public-hostname", null},
                 new String[]{"metadata", "public-ipv4", "192.168.111.111"},
