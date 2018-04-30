@@ -51,7 +51,7 @@ class CsApache(CsApp):
         file.search("ServerName.*", "\tServerName %s.%s" % (self.config.cl.get_type(), self.config.get_domain()))
         if file.is_changed():
             file.commit()
-            CsHelper.service("apache2", "restart")
+            CsHelper.execute2("systemctl restart apache2", False)
 
         self.fw.append([
             "", "front",

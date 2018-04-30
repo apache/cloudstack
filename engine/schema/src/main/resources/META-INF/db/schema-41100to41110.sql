@@ -79,3 +79,15 @@ UPDATE `cloud`.`guest_os_hypervisor` SET `guest_os_name`='debian5_64Guest' WHERE
 UPDATE `cloud`.`guest_os_hypervisor` SET `guest_os_name`='debian5_64Guest' WHERE `hypervisor_version`='5.5' AND hypervisor_type='VMware' AND guest_os_id='15';
 UPDATE `cloud`.`guest_os_hypervisor` SET `guest_os_name`='debian5_64Guest' WHERE `hypervisor_version`='6.0' AND hypervisor_type='VMware' AND guest_os_id='15';
 UPDATE `cloud`.`guest_os_hypervisor` SET `guest_os_name`='debian5_64Guest' WHERE `hypervisor_version`='6.5' AND hypervisor_type='VMware' AND guest_os_id='15';
+
+-- XenServer 7.3
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, storage_motion_supported) values (UUID(), 'XenServer', '7.3.0', 500, 13, 1);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '7.3.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.2.0';
+
+-- XenServer 7.4
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, storage_motion_supported) values (UUID(), 'XenServer', '7.4.0', 500, 13, 1);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '7.4.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.3.0';
+
+-- XCP-NG 7.4
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, storage_motion_supported) values (UUID(), 'XenServer', 'XCP-ng 7.4.0', 500, 13, 1);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', 'XCP-ng 7.4.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.4.0';
