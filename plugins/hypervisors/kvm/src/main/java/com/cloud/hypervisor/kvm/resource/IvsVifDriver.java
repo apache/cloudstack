@@ -168,12 +168,12 @@ public class IvsVifDriver extends VifDriverBase {
             }
         }
         String brName = "";
-        brName = setVnetBrName(nic, vNetId);
+        brName = generateVnetBrName(nic, vNetId);
         createVnet(vNetId, nic, brName, protocol);
         return brName;
     }
 
-    private String setVnetBrName(String pifName, String vnetId) {
+    private String generateVnetBrName(String pifName, String vnetId) {
         return "br" + pifName + "-" + vnetId;
     }
 
