@@ -255,7 +255,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             try {
                 nfsVersion = Integer.valueOf(nfsVersionParam);
             } catch (NumberFormatException e){
-                s_logger.error("Couldn't cast " + nfsVersionParam + " to integer");
+                s_logger.error("No NFS version known; Couldn't cast " + nfsVersionParam + " to integer");
                 return null;
             }
         }
