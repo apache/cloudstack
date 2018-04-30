@@ -40,8 +40,6 @@ public interface VirtualRouter extends VirtualMachine {
 
     RedundantState getRedundantState();
 
-    void setRedundantState(final RedundantState redundantState);
-
     String getPublicIpAddress();
 
     boolean isStopPending();
