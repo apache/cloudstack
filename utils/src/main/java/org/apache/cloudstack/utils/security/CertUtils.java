@@ -40,6 +40,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import javax.security.auth.x500.X500Principal;
@@ -219,7 +220,7 @@ public class CertUtils {
 
         final List<ASN1Encodable> subjectAlternativeNames = new ArrayList<ASN1Encodable>();
         if (publicIPAddresses != null) {
-            for (final String publicIPAddress: publicIPAddresses) {
+            for (final String publicIPAddress: new HashSet<>(publicIPAddresses)) {
                 if (Strings.isNullOrEmpty(publicIPAddress)) {
                     continue;
                 }
@@ -227,7 +228,7 @@ public class CertUtils {
             }
         }
         if (dnsNames != null) {
-            for (final String dnsName : dnsNames) {
+            for (final String dnsName : new HashSet<>(dnsNames)) {
                 if (Strings.isNullOrEmpty(dnsName)) {
                     continue;
                 }
