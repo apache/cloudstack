@@ -1055,9 +1055,13 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
     public VBD createPatchVbd(final Connection conn, final String vmName, final VM vm) throws XmlRpcException, XenAPIException {
 
         if (_host.getSystemvmisouuid() == null) {
-            final Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
+            Set<SR> srs = SR.getByNameLabel(conn, "XenServer Tools");
             if (srs.size() != 1) {
-                throw new CloudRuntimeException("There are " + srs.size() + " SRs with name XenServer Tools");
+                s_logger.debug("Failed to find SR by name 'XenServer Tools', will try to find 'XCP-ng Tools' SR");
+                srs = SR.getByNameLabel(conn, "XCP-ng Tools");
+                if (srs.size() != 1) {
+                    throw new CloudRuntimeException("There are " + srs.size() + " SRs with name XenServer Tools");
+                }
             }
             final SR sr = srs.iterator().next();
             sr.scan(conn);
@@ -2645,7 +2649,7 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
         final String[] items = xenVersion.split("\\.");
 
         // guest-tools.iso for XenServer version 7.0+
-        if (xenBrand.equals("XenServer") && Integer.parseInt(items[0]) >= 7) {
+        if ((xenBrand.equals("XenServer") || xenBrand.equals("XCP-ng")) && Integer.parseInt(items[0]) >= 7) {
             return "guest-tools.iso";
         }
 

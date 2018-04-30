@@ -20,6 +20,7 @@ import java.io.File;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.ssh.SshHelper;
+import com.google.common.base.Strings;
 
 
 /**
@@ -41,5 +42,9 @@ public class XenServerUtilitiesHelper {
         cmdLine.append(scriptPath).append(script).append(' ').append(username).append(' ').append(newPassword);
 
         return cmdLine.toString();
+    }
+
+    public static boolean isXenServerToolsSR(final String label) {
+        return !Strings.isNullOrEmpty(label) && (label.startsWith("XenServer Tools") || label.startsWith("XCP-ng Tools"));
     }
 }

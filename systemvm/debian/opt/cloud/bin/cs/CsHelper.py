@@ -211,11 +211,12 @@ def save_iptables(command, iptables_file):
     fIptables.close()
 
 
-def execute2(command):
+def execute2(command, wait=True):
     """ Execute command """
     logging.debug("Executing: %s" % command)
     p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
-    p.wait()
+    if wait:
+        p.wait()
     return p
 
 
