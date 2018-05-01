@@ -53,7 +53,7 @@ public class OvsTunnelNetworkDaoImpl extends GenericDaoBase<OvsTunnelNetworkVO, 
     }
 
     @Override
-    public OvsTunnelNetworkVO getByFromToNetwork(long from, long to, long networkId) {
+    public OvsTunnelNetworkVO findByFromToNetwork(long from, long to, long networkId) {
         SearchCriteria<OvsTunnelNetworkVO> sc = fromToNetworkSearch.create();
         sc.setParameters("from", from);
         sc.setParameters("to", to);
