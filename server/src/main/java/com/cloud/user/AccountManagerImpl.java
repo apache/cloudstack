@@ -1224,7 +1224,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     /**
-     * Iterates over all configured user authenticators and tries to authenticated the user using the current password.
+     * Iterates over all configured user authenticators and tries to authenticate the user using the current password.
      * If the user is authenticated with success, we have nothing else to do here; otherwise, an {@link InvalidParameterValueException} is thrown.
      */
     protected void validateCurrentPassword(UserVO user, String currentPassword) {
@@ -1724,12 +1724,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         // check if the given account name is unique in this domain for updating
         Account duplicateAcccount = _accountDao.findActiveAccount(newAccountName, domainId);
-        if (duplicateAcccount != null && duplicateAcccount.getId() != account.getId()) {// allow
-            // same
-            // account
-            // to
-            // update
-            // itself
+        if (duplicateAcccount != null && duplicateAcccount.getId() != account.getId()) {
             throw new InvalidParameterValueException(
                     "There already exists an account with the name:" + newAccountName + " in the domain:" + domainId + " with existing account id:" + duplicateAcccount.getId());
         }
