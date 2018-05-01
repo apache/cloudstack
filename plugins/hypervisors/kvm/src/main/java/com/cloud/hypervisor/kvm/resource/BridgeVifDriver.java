@@ -298,11 +298,11 @@ public class BridgeVifDriver extends VifDriverBase {
         Script.runSimpleBashScript("test -d /sys/class/net/" + iface.getBrName() + "/brif/" + iface.getDevName() + " && brctl delif " + iface.getBrName() + " " + iface.getDevName());
     }
 
-    private String setVnetBrName(String pifName, String vnetId) {
+    private String generateVnetBrName(String pifName, String vnetId) {
         return "br" + pifName + "-" + vnetId;
     }
 
-    private String setVxnetBrName(String pifName, String vnetId) {
+    private String generateVxnetBrName(String pifName, String vnetId) {
         return "brvx-" + vnetId;
     }
 
@@ -317,9 +317,9 @@ public class BridgeVifDriver extends VifDriverBase {
         }
         String brName = "";
         if (protocol.equals(Networks.BroadcastDomainType.Vxlan.scheme())) {
-            brName = setVxnetBrName(nic, vNetId);
+            brName = generateVxnetBrName(nic, vNetId);
         } else {
-            brName = setVnetBrName(nic, vNetId);
+            brName = generateVnetBrName(nic, vNetId);
         }
         createVnet(vNetId, nic, brName, protocol);
         return brName;
