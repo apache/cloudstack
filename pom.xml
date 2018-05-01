@@ -59,7 +59,19 @@
         <cs.logging.version>1.1.1</cs.logging.version>
         <cs.discovery.version>0.5</cs.discovery.version>
 
+        <cs.xercesImpl.version>2.11.0</cs.xercesImpl.version>
+        <cs.testng.version>6.1.1</cs.testng.version>
+        <cs.dbunit.version>2.5.4</cs.dbunit.version>
+
         <!-- do not forget to also upgrade hamcrest library with junit -->
+        <cs.tomcat-embed-core.version>8.0.30</cs.tomcat-embed-core.version>
+        <cs.jersey-bundle.version>1.19.4</cs.jersey-bundle.version>
+        <cs.apache-cloudstack-java-client.version>1.0.9</cs.apache-cloudstack-java-client.version>
+        <cs.json.version>20090211</cs.json.version>
+        <cs.globodns-client.version>0.0.23</cs.globodns-client.version>
+        <cs.amqp-client.version>5.1.1</cs.amqp-client.version>
+        <cs.kafka-clients.version>0.11.0.1</cs.kafka-clients.version>
+        <cs.aspectjrt.version>1.7.1</cs.aspectjrt.version>
         <cs.junit.version>4.12</cs.junit.version>
         <cs.hamcrest.version>1.3</cs.hamcrest.version>
         <cs.junit.dataprovider.version>1.13.1</cs.junit.dataprovider.version>
@@ -89,6 +101,7 @@
         <cs.jstl.version>1.2</cs.jstl.version>
         <cs.jstl-api.version>1.2.1</cs.jstl-api.version>
         <cs.selenium.server.version>1.0-20081010.060147</cs.selenium.server.version>
+        <cs.selenium-java-client-driver.version>1.0.1</cs.selenium-java-client-driver.version>
         <cs.vmware.api.version>6.5</cs.vmware.api.version>
         <org.springframework.version>5.0.2.RELEASE</org.springframework.version>
         <cs.mockito.version>1.10.19</cs.mockito.version>
@@ -97,10 +110,13 @@
         <cs.jackson.version>2.9.2</cs.jackson.version>
         <cs.lang.version>2.6</cs.lang.version>
         <cs.commons-lang3.version>3.6</cs.commons-lang3.version>
+        <cs.commons-net.version>3.6</cs.commons-net.version>
         <cs.commons-io.version>2.6</cs.commons-io.version>
         <cs.commons-fileupload.version>1.3.3</cs.commons-fileupload.version>
         <cs.commons-collections.version>4.1</cs.commons-collections.version>
         <cs.commons-validator.version>1.6</cs.commons-validator.version>
+        <cs.commons-compress.version>1.15</cs.commons-compress.version>
+        <cs.commons-exec.version>1.3</cs.commons-exec.version>
         <cs.reflections.version>0.9.11</cs.reflections.version>
         <cs.javassist.version>3.22.0-GA</cs.javassist.version>
         <cs.java-ipv6.version>0.16</cs.java-ipv6.version>
@@ -216,6 +232,56 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>commons-net</groupId>
+                <artifactId>commons-net</artifactId>
+                <version>${cs.commons-net.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>${cs.tomcat-embed-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.jersey</groupId>
+                <artifactId>jersey-bundle</artifactId>
+                <version>${cs.jersey-bundle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>br.com.autonomiccs</groupId>
+                <artifactId>apache-cloudstack-java-client</artifactId>
+                <version>${cs.apache-cloudstack-java-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.json</groupId>
+                <artifactId>json</artifactId>
+                <version>${cs.json.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.globo.globodns</groupId>
+                <artifactId>globodns-client</artifactId>
+                <version>${cs.globodns-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rabbitmq</groupId>
+                <artifactId>amqp-client</artifactId>
+                <version>${cs.amqp-client.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.kafka</groupId>
+                <artifactId>kafka-clients</artifactId>
+                <version>${cs.kafka-clients.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.testng</groupId>
+                <artifactId>testng</artifactId>
+                <version>${cs.testng.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.aspectj</groupId>
+                <artifactId>aspectjrt</artifactId>
+                <version>${cs.aspectjrt.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
                 <version>${cs.groovy.version}</version>
@@ -251,10 +317,25 @@
                 <version>${cs.commons-collections.version}</version>
             </dependency>
             <dependency>
+                <groupId>commons-discovery</groupId>
+                <artifactId>commons-discovery</artifactId>
+                <version>${cs.discovery.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
                 <version>${cs.mysql.version}</version>
                 <scope>provided,test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>${cs.commons-compress.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-exec</artifactId>
+                <version>${cs.commons-exec.version}</version>
             </dependency>
             <dependency>
                 <groupId>log4j</groupId>

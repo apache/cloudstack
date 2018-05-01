@@ -86,7 +86,6 @@
         <dependency>
             <groupId>org.aspectj</groupId>
             <artifactId>aspectjrt</artifactId>
-            <version>1.7.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
@@ -132,7 +131,6 @@
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
-            <version>6.1.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

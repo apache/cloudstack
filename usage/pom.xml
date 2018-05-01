@@ -69,7 +69,7 @@
         <dependency>
             <groupId>org.dbunit</groupId>
             <artifactId>dbunit</artifactId>
-            <version>2.5.4</version>
+            <version>${cs.dbunit.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

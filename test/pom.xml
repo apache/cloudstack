@@ -58,7 +58,7 @@
         <dependency>
             <groupId>org.seleniumhq.selenium.client-drivers</groupId>
             <artifactId>selenium-java-client-driver</artifactId>
-            <version>1.0.1</version>
+            <version>${cs.selenium-java-client-driver.version}</version>
         </dependency>
     </dependencies>
     <build>
