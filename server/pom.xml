@@ -34,7 +34,7 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloudstack-config-drive</artifactId>
+      <artifactId>cloud-config-drive</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
