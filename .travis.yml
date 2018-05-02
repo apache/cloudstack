@@ -149,9 +149,9 @@ env:
 #    - TESTS="component/test_accounts"
 #    - TESTS="component/test_organization_states"
 
-before_install: travis_wait 30 ./tools/travis/before_install.sh
+before_install: travis_wait 60 ./tools/travis/before_install.sh
 install: ./tools/travis/install.sh
-before_script: travis_wait 30 ./tools/travis/before_script.sh
+before_script: travis_wait 60 ./tools/travis/before_script.sh
 script:
   - travis_wait 40 ./tools/travis/script.sh ${TESTS}
 after_success: ./tools/travis/after_success.sh
