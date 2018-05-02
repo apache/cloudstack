@@ -16,15 +16,17 @@
 // under the License.
 package com.cloud.user;
 
+import java.net.InetAddress;
 import java.util.List;
 import java.util.Map;
-import java.net.InetAddress;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
 import com.cloud.api.query.vo.ControlledViewEntity;
 import com.cloud.exception.ConcurrentOperationException;
@@ -34,17 +36,14 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
 
 /**
  * AccountManager includes logic that deals with accounts, domains, and users.
  *
  */
-public interface AccountManager extends AccountService, Configurable{
+public interface AccountManager extends AccountService, Configurable {
     /**
      * Disables an account by accountId
-     * @param accountId
      * @return true if disable was successful, false otherwise
      */
     boolean disableAccount(long accountId) throws ConcurrentOperationException, ResourceUnavailableException;
@@ -57,24 +56,23 @@ public interface AccountManager extends AccountService, Configurable{
 
     /**
      * Logs out a user
-     * @param userId
      */
     void logoutUser(long userId);
 
     /**
-      * Authenticates a user when s/he logs in.
-      *
-      * @param username
-      *            required username for authentication
-      * @param password
-      *            password to use for authentication, can be null for single sign-on case
-      * @param domainId
-      *            id of domain where user with username resides
-      * @param requestParameters
-      *            the request parameters of the login request, which should contain timestamp of when the request signature is
-      *            made, and the signature itself in the single sign-on case
-      * @return a user object, null if the user failed to authenticate
-      */
+     * Authenticates a user when s/he logs in.
+     *
+     * @param username
+     *            required username for authentication
+     * @param password
+     *            password to use for authentication, can be null for single sign-on case
+     * @param domainId
+     *            id of domain where user with username resides
+     * @param requestParameters
+     *            the request parameters of the login request, which should contain timestamp of when the request signature is
+     *            made, and the signature itself in the single sign-on case
+     * @return a user object, null if the user failed to authenticate
+     */
     UserAccount authenticateUser(String username, String password, Long domainId, InetAddress loginIpAddress, Map<String, Object[]> requestParameters);
 
     /**
@@ -88,23 +86,20 @@ public interface AccountManager extends AccountService, Configurable{
 
     boolean enableAccount(long accountId);
 
+    void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+            ListProjectResourcesCriteria listProjectResourcesCriteria);
 
-    void buildACLSearchBuilder(SearchBuilder<? extends ControlledEntity> sb, Long domainId,
-            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+    void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+            ListProjectResourcesCriteria listProjectResourcesCriteria);
 
-    void buildACLViewSearchBuilder(SearchBuilder<? extends ControlledViewEntity> sb, Long domainId,
-            boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+    void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+            ListProjectResourcesCriteria listProjectResourcesCriteria);
 
-    void buildACLSearchCriteria(SearchCriteria<? extends ControlledEntity> sc,
-            Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
+    void buildACLSearchParameters(Account caller, Long id, String accountName, Long projectId, List<Long> permittedAccounts,
+            Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll, boolean forProjectInvitation);
 
-    void buildACLSearchParameters(Account caller, Long id,
-            String accountName, Long projectId, List<Long> permittedAccounts, Ternary<Long, Boolean, ListProjectResourcesCriteria> domainIdRecursiveListProject, boolean listAll,
-            boolean forProjectInvitation);
-
-    void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc,
-            Long domainId, boolean isRecursive, List<Long> permittedAccounts, ListProjectResourcesCriteria listProjectResourcesCriteria);
-
+    void buildACLViewSearchCriteria(SearchCriteria<? extends ControlledViewEntity> sc, Long domainId, boolean isRecursive, List<Long> permittedAccounts,
+            ListProjectResourcesCriteria listProjectResourcesCriteria);
 
     /**
      * Deletes a user by userId
@@ -127,10 +122,6 @@ public interface AccountManager extends AccountService, Configurable{
 
     /**
      * Disables an account by accountName and domainId
-     *
-     * @param accountName
-     * @param domainId
-     * @param accountId
      * @param disabled
      *            account if success
      * @return true if disable was successful, false otherwise
@@ -142,33 +133,21 @@ public interface AccountManager extends AccountService, Configurable{
      *
      * @param accountName
      *            - the enableAccount command defining the accountId to be deleted.
-     * @param domainId
-     *            TODO
-     * @param accountId
-     * @return account object
      */
     Account enableAccount(String accountName, Long domainId, Long accountId);
 
     /**
      * Deletes user by Id
-     * @param deleteUserCmd
-     * @return
      */
     boolean deleteUser(DeleteUserCmd deleteUserCmd);
 
     /**
      * moves a user to another account within the same domain
-     * @param moveUserCmd
      * @return true if the user was successfully moved
      */
     boolean moveUser(MoveUserCmd moveUserCmd);
 
-    /**
-     * Update a user by userId
-     *
-     * @param cmd
-     * @return UserAccount object
-     */
+    @Override
     UserAccount updateUser(UpdateUserCmd cmd);
 
     /**
@@ -196,10 +175,6 @@ public interface AccountManager extends AccountService, Configurable{
      *
      * @param accountName
      *            - the LockAccount command defining the accountId to be locked.
-     * @param domainId
-     *            TODO
-     * @param accountId
-     * @return account object
      */
     Account lockAccount(String accountName, Long domainId, Long accountId);
 
@@ -208,13 +183,8 @@ public interface AccountManager extends AccountService, Configurable{
     public static final String MESSAGE_ADD_ACCOUNT_EVENT = "Message.AddAccount.Event";
 
     public static final String MESSAGE_REMOVE_ACCOUNT_EVENT = "Message.RemoveAccount.Event";
-    public static final ConfigKey<Boolean> UseSecretKeyInResponse = new ConfigKey<Boolean>(
-            "Advanced",
-            Boolean.class,
-            "use.secret.key.in.response",
-            "false",
-            "This parameter allows the users to enable or disable of showing secret key as a part of response for various APIs. By default it is set to false.",
-            true);
+    public static final ConfigKey<Boolean> UseSecretKeyInResponse = new ConfigKey<Boolean>("Advanced", Boolean.class, "use.secret.key.in.response", "false",
+            "This parameter allows the users to enable or disable of showing secret key as a part of response for various APIs. By default it is set to false.", true);
 
     boolean moveUser(long id, Long domainId, long accountId);
 }

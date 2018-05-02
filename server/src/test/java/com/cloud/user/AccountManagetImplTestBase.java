@@ -21,8 +21,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.inject.Inject;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.context.CallContext;
@@ -34,9 +32,10 @@ import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -84,17 +83,17 @@ import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 public class AccountManagetImplTestBase {
 
     @Mock
-    AccountDao _accountDao;
+    AccountDao accountDaoMock;
     @Mock
     ConfigurationDao _configDao;
     @Mock
     ResourceCountDao _resourceCountDao;
     @Mock
-    UserDao _userDao;
+    UserDao userDaoMock;
     @Mock
     InstanceGroupDao _vmGroupDao;
     @Mock
-    UserAccountDao _userAccountDao;
+    UserAccountDao userAccountDaoMock;
     @Mock
     VolumeDao _volumeDao;
     @Mock
@@ -193,27 +192,16 @@ public class AccountManagetImplTestBase {
     @Mock
     SSHKeyPairDao _sshKeyPairDao;
 
-    AccountManagerImpl accountManager;
-
-    UsageEventDao _usageEventDao = new MockUsageEventDao();
+    @Spy
+    @InjectMocks
+    AccountManagerImpl accountManagerImpl;
+    @Mock
+    UsageEventDao _usageEventDao;
 
     @Before
-    public void setup()
-            throws NoSuchFieldException, SecurityException,
-            IllegalArgumentException, IllegalAccessException {
-        accountManager = new AccountManagerImpl();
-        Map<String, Field> declaredFields = getInheritedFields(this.getClass());
-        for (Field field : AccountManagerImpl.class.getDeclaredFields()) {
-            if (field.getAnnotation(Inject.class) != null) {
-                field.setAccessible(true);
-                if (declaredFields.containsKey(field.getName())) {
-                    Field mockField = declaredFields.get(field.getName());
-                    field.set(accountManager, mockField.get(this));
-                }
-            }
-        }
-        ReflectionTestUtils.setField(accountManager, "_userAuthenticators", Arrays.asList(userAuthenticator));
-        accountManager.setSecurityCheckers(Arrays.asList(securityChecker));
+    public void setup() {
+        accountManagerImpl.setUserAuthenticators(Arrays.asList(userAuthenticator));
+        accountManagerImpl.setSecurityCheckers(Arrays.asList(securityChecker));
         CallContext.register(callingUser, callingAccount);
     }
 
@@ -227,16 +215,6 @@ public class AccountManagetImplTestBase {
         for (Class<?> c = type; c != null; c = c.getSuperclass()) {
             for (Field f : c.getDeclaredFields()) {
                 fields.put(f.getName(), f);
-            }
-        }
-        return fields;
-    }
-
-    public static Map<Class<?>, Field> getInheritedFieldsByClass(Class<?> type) {
-        Map<Class<?>, Field> fields = new HashMap<>();
-        for (Class<?> c = type; c != null; c = c.getSuperclass()) {
-            for (Field f : c.getDeclaredFields()) {
-                fields.put(f.getType(), f);
             }
         }
         return fields;

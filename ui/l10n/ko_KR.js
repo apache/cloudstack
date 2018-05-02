@@ -1151,6 +1151,7 @@ var dictionary = {
     "label.networks": "네트워크",
     "label.new": "신규",
     "label.new.password": "새로운 암호",
+    "label.current.password": "Current Password",
     "label.new.project": "새 프로젝트",
     "label.new.ssh.key.pair": "New SSH Key Pair",
     "label.new.vm": "새 VM",

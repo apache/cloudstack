@@ -1151,6 +1151,7 @@ var dictionary = {
     "label.networks": "Hálózatok",
     "label.new": "Új",
     "label.new.password": "Új jelszó",
+    "label.current.password": "Current Password",
     "label.new.project": "Új projekt",
     "label.new.ssh.key.pair": "Új SSH kulcspár",
     "label.new.vm": "Új VM",

@@ -23,53 +23,28 @@ import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
+import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 
-
 public interface AccountService {
 
     /**
      * Creates a new user and account, stores the password as is so encrypted passwords are recommended.
-     *
-     * @param userName
-     *            TODO
-     * @param password
-     *            TODO
-     * @param firstName
-     *            TODO
-     * @param lastName
-     *            TODO
-     * @param email
-     *            TODO
-     * @param timezone
-     *            TODO
-     * @param accountName
-     *            TODO
-     * @param accountType
-     *            TODO
-     * @param domainId
-     *            TODO
-     * @param networkDomain
-     *            TODO
-     *
      * @return the user if created successfully, null otherwise
      */
-    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName,
-        short accountType, Long roleId, Long domainId, String networkDomain, Map<String, String> details, String accountUUID, String userUUID);
+    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long roleId, Long domainId,
+            String networkDomain, Map<String, String> details, String accountUUID, String userUUID);
 
-    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long roleId, Long domainId, String networkDomain,
-                                  Map<String, String> details, String accountUUID, String userUUID, User.Source source);
+    UserAccount createUserAccount(String userName, String password, String firstName, String lastName, String email, String timezone, String accountName, short accountType, Long roleId, Long domainId,
+            String networkDomain, Map<String, String> details, String accountUUID, String userUUID, User.Source source);
 
     /**
      * Locks a user by userId. A locked user cannot access the API, but will still have running VMs/IP addresses
      * allocated/etc.
-     *
-     * @param userId
-     * @return UserAccount object
      */
     UserAccount lockUser(long userId);
 
@@ -79,8 +54,7 @@ public interface AccountService {
 
     User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID);
 
-    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID,
-                    User.Source source);
+    User createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID, User.Source source);
 
     boolean isAdmin(Long accountId);
 
@@ -90,7 +64,7 @@ public interface AccountService {
 
     UserAccount getActiveUserAccount(String username, Long domainId);
 
-    UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey, String timeZone);
+    UserAccount updateUser(UpdateUserCmd updateUserCmd);
 
     Account getActiveAccountById(long accountId);
 
@@ -128,15 +102,14 @@ public interface AccountService {
 
     void checkAccess(User user, ControlledEntity entity);
 
-    void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName,
-            ControlledEntity... entities) throws PermissionDeniedException;
+    void checkAccess(Account account, AccessType accessType, boolean sameOwner, String apiName, ControlledEntity... entities) throws PermissionDeniedException;
 
     Long finalyzeAccountId(String accountName, Long domainId, Long projectId, boolean enabledOnly);
 
     /**
      * returns the user account object for a given user id
      * @param userId user id
-     * @return useraccount object if it exists else null
+     * @return {@link UserAccount} object if it exists else null
      */
     UserAccount getUserAccountById(Long userId);
 

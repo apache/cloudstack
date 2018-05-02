@@ -34,7 +34,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 
 @APICommand(name = "updateUser", description = "Updates a user account", responseObject = UserResponse.class,
-        requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
+requestHasSensitiveInfo = true, responseHasSensitiveInfo = true)
 public class UpdateUserCmd extends BaseCmd {
     public static final Logger s_logger = Logger.getLogger(UpdateUserCmd.class.getName());
 
@@ -65,20 +65,22 @@ public class UpdateUserCmd extends BaseCmd {
             acceptedOnAdminPort = false)
     private String password;
 
+    @Parameter(name = ApiConstants.CURRENT_PASSWORD, type = CommandType.STRING, description = "Current password that was being used by the user. You must inform the current password when updating the password.", acceptedOnAdminPort = false)
+    private String currentPassword;
 
     @Parameter(name = ApiConstants.SECRET_KEY, type = CommandType.STRING, description = "The secret key for the user. Must be specified with userApiKey")
     private String secretKey;
 
     @Parameter(name = ApiConstants.TIMEZONE,
-               type = CommandType.STRING,
-               description = "Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
+            type = CommandType.STRING,
+            description = "Specifies a timezone for this command. For more information on the timezone parameter, see Time Zone Format.")
     private String timezone;
 
     @Parameter(name = ApiConstants.USERNAME, type = CommandType.STRING, description = "Unique username")
     private String username;
 
     @Inject
-    RegionService _regionService;
+    private RegionService _regionService;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -106,6 +108,10 @@ public class UpdateUserCmd extends BaseCmd {
 
     public String getPassword() {
         return password;
+    }
+
+    public String getCurrentPassword() {
+        return currentPassword;
     }
 
     public String getSecretKey() {
@@ -151,5 +157,21 @@ public class UpdateUserCmd extends BaseCmd {
         } else {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to update user");
         }
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public void setFirstname(String firstname) {
+        this.firstname = firstname;
+    }
+
+    public void setLastname(String lastname) {
+        this.lastname = lastname;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

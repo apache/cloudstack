@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -38,10 +37,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.QuerySelector;
 import org.apache.cloudstack.acl.RoleType;
@@ -55,6 +50,7 @@ import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
+import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -64,6 +60,11 @@ import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.region.gslb.GlobalLoadBalancerRuleDao;
 import org.apache.cloudstack.utils.baremetal.BaremetalUtils;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ControlledViewEntity;
@@ -172,8 +173,6 @@ import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotManager;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import org.apache.cloudstack.config.ApiServiceConfiguration;
-
 
 public class AccountManagerImpl extends ManagerBase implements AccountManager, Manager {
     public static final Logger s_logger = Logger.getLogger(AccountManagerImpl.class);
@@ -540,8 +539,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 Account account = ApiDBUtils.findAccountById(entity.getAccountId());
                 domainId = account != null ? account.getDomainId() : -1;
             }
-            if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate)
-                    && !(entity instanceof Network && accessType != null && accessType == AccessType.UseEntry) && !(entity instanceof AffinityGroup)) {
+            if (entity.getAccountId() != -1 && domainId != -1 && !(entity instanceof VirtualMachineTemplate) && !(entity instanceof Network && accessType != null && accessType == AccessType.UseEntry)
+                    && !(entity instanceof AffinityGroup)) {
                 List<ControlledEntity> toBeChecked = domains.get(entity.getDomainId());
                 // for templates, we don't have to do cross domains check
                 if (toBeChecked == null) {
@@ -563,7 +562,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             if (!granted) {
                 assert false : "How can all of the security checkers pass on checking this check: " + entity;
-                throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + entity);
+            throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + entity);
             }
         }
 
@@ -590,26 +589,27 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     public Long checkAccessAndSpecifyAuthority(Account caller, Long zoneId) {
         // We just care for resource domain admin for now. He should be permitted to see only his zone.
         if (isResourceDomainAdmin(caller.getAccountId())) {
-            if (zoneId == null)
+            if (zoneId == null) {
                 return getZoneIdForAccount(caller);
-            else if (zoneId.compareTo(getZoneIdForAccount(caller)) != 0)
+            } else if (zoneId.compareTo(getZoneIdForAccount(caller)) != 0) {
                 throw new PermissionDeniedException("Caller " + caller + "is not allowed to access the zone " + zoneId);
-            else
+            } else {
                 return zoneId;
-        }
-
-        else
+            }
+        } else {
             return zoneId;
+        }
     }
 
     private Long getZoneIdForAccount(Account account) {
 
         // Currently just for resource domain admin
         List<DataCenterVO> dcList = _dcDao.findZonesByDomainId(account.getDomainId());
-        if (dcList != null && dcList.size() != 0)
+        if (dcList != null && dcList.size() != 0) {
             return dcList.get(0).getId();
-        else
+        } else {
             throw new CloudRuntimeException("Failed to find any private zone for Resource domain admin.");
+        }
 
     }
 
@@ -1011,13 +1011,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @ActionEvents({@ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account"),
-            @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")})
-    public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email, final String timezone,
-            String accountName, final short accountType, final Long roleId, Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID,
-            final String userUUID) {
+        @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")})
+    public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email, final String timezone, String accountName,
+            final short accountType, final Long roleId, Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID) {
 
-        return createUserAccount(userName, password, firstName, lastName, email, timezone, accountName, accountType, roleId, domainId, networkDomain, details, accountUUID,
-                userUUID, User.Source.UNKNOWN);
+        return createUserAccount(userName, password, firstName, lastName, email, timezone, accountName, accountType, roleId, domainId, networkDomain, details, accountUUID, userUUID,
+                User.Source.UNKNOWN);
     }
 
     // ///////////////////////////////////////////////////
@@ -1027,10 +1026,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @DB
     @ActionEvents({@ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_CREATE, eventDescription = "creating Account"),
-            @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")})
-    public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email, final String timezone,
-            String accountName, final short accountType, final Long roleId, Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID,
-            final String userUUID, final User.Source source) {
+        @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")})
+    public UserAccount createUserAccount(final String userName, final String password, final String firstName, final String lastName, final String email, final String timezone, String accountName,
+            final short accountType, final Long roleId, Long domainId, final String networkDomain, final Map<String, String> details, String accountUUID, final String userUUID,
+            final User.Source source) {
 
         if (accountName == null) {
             accountName = userName;
@@ -1058,7 +1057,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         // Check permissions
-        checkAccess(CallContext.current().getCallingAccount(), domain);
+        checkAccess(getCurrentCallingAccount(), domain);
 
         if (!_userAccountDao.validateUsernameInDomain(userName, domainId)) {
             throw new InvalidParameterValueException("The user " + userName + " already exists in domain " + domainId);
@@ -1132,7 +1131,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new CloudRuntimeException("The user cannot be created as domain " + domain.getName() + " is being deleted");
         }
 
-        checkAccess(CallContext.current().getCallingAccount(), domain);
+        checkAccess(getCurrentCallingAccount(), domain);
 
         Account account = _accountDao.findEnabledAccount(accountName, domainId);
         if (account == null || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
@@ -1153,157 +1152,246 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_CREATE, eventDescription = "creating User")
-    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId,
-            String userUUID) {
+    public UserVO createUser(String userName, String password, String firstName, String lastName, String email, String timeZone, String accountName, Long domainId, String userUUID) {
 
         return createUser(userName, password, firstName, lastName, email, timeZone, accountName, domainId, userUUID, User.Source.UNKNOWN);
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_USER_UPDATE, eventDescription = "updating User")
-    public UserAccount updateUser(Long userId, String firstName, String lastName, String email, String userName, String password, String apiKey, String secretKey,
-            String timeZone) {
-        // Input validation
-        UserVO user = _userDao.getUser(userId);
+    @ActionEvent(eventType = EventTypes.EVENT_USER_UPDATE, eventDescription = "Updating User")
+    public UserAccount updateUser(UpdateUserCmd updateUserCmd) {
+        UserVO user = retrieveAndValidateUser(updateUserCmd);
+        s_logger.debug("Updating user with Id: " + user.getUuid());
 
-        if (user == null) {
-            throw new InvalidParameterValueException("unable to find user by id");
+        validateAndUpdatApiAndSecretKeyIfNeeded(updateUserCmd, user);
+        Account account = retrieveAndValidateAccount(user);
+
+        validateAndUpdateFirstNameIfNeeded(updateUserCmd, user);
+        validateAndUpdateLastNameIfNeeded(updateUserCmd, user);
+        validateAndUpdateUsernameIfNeeded(updateUserCmd, user, account);
+
+        validateUserPasswordAndUpdateIfNeeded(updateUserCmd.getPassword(), user, updateUserCmd.getCurrentPassword());
+        String email = updateUserCmd.getEmail();
+        if (StringUtils.isNotBlank(email)) {
+            user.setEmail(email);
         }
-
-        if ((apiKey == null && secretKey != null) || (apiKey != null && secretKey == null)) {
-            throw new InvalidParameterValueException("Please provide an userApiKey/userSecretKey pair");
+        String timezone = updateUserCmd.getTimezone();
+        if (StringUtils.isNotBlank(timezone)) {
+            user.setTimezone(timezone);
         }
+        _userDao.update(user.getId(), user);
+        return _userAccountDao.findById(user.getId());
+    }
 
-        // If the account is an admin type, return an error. We do not allow this
-        Account account = _accountDao.findById(user.getAccountId());
-        if (account == null) {
-            throw new InvalidParameterValueException("unable to find user account " + user.getAccountId());
+    /**
+     * Updates the password in the user POJO if needed. If no password is provided, then the password is not updated.
+     * The following validations are executed if 'password' is not null. Admins (root admins or domain admins) can execute password updates without entering the current password.
+     * <ul>
+     *  <li> If 'password' is blank, we throw an {@link InvalidParameterValueException};
+     *  <li> If 'current password' is not provided and user is not an Admin, we throw an {@link InvalidParameterValueException};
+     *  <li> If a normal user is calling this method, we use {@link #validateCurrentPassword(UserVO, String)} to check if the provided old password matches the database one;
+     * </ul>
+     *
+     * If all checks pass, we encode the given password with the most preferable password mechanism given in {@link #_userPasswordEncoders}.
+     */
+    protected void validateUserPasswordAndUpdateIfNeeded(String newPassword, UserVO user, String currentPassword) {
+        if (newPassword == null) {
+            s_logger.trace("No new password to update for user: " + user.getUuid());
+            return;
         }
-
-        // don't allow updating project account
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-            throw new InvalidParameterValueException("unable to find user by id");
+        if (StringUtils.isBlank(newPassword)) {
+            throw new InvalidParameterValueException("Password cannot be empty or blank.");
         }
-
-        // don't allow updating system account
-        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
-            throw new PermissionDeniedException("user id : " + userId + " is system account, update is not allowed");
+        Account callingAccount = getCurrentCallingAccount();
+        boolean isRootAdminExecutingPasswordUpdate = callingAccount.getId() == Account.ACCOUNT_ID_SYSTEM || isRootAdmin(callingAccount.getId());
+        boolean isDomainAdmin = isDomainAdmin(callingAccount.getId());
+        boolean isAdmin = isDomainAdmin || isRootAdminExecutingPasswordUpdate;
+        if (isAdmin) {
+            s_logger.trace(String.format("Admin account [uuid=%s] executing password update for user [%s] ", callingAccount.getUuid(), user.getUuid()));
         }
+        if (!isAdmin && StringUtils.isBlank(currentPassword)) {
+            throw new InvalidParameterValueException("To set a new password the current password must be provided.");
+        }
+        if (CollectionUtils.isEmpty(_userPasswordEncoders)) {
+            throw new CloudRuntimeException("No user authenticators configured!");
+        }
+        if (!isAdmin) {
+            validateCurrentPassword(user, currentPassword);
+        }
+        UserAuthenticator userAuthenticator = _userPasswordEncoders.get(0);
+        String newPasswordEncoded = userAuthenticator.encode(newPassword);
+        user.setPassword(newPasswordEncoded);
+    }
 
-        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
-
-        if (firstName != null) {
-            if (firstName.isEmpty()) {
-                throw new InvalidParameterValueException("Firstname is empty");
+    /**
+     * Iterates over all configured user authenticators and tries to authenticate the user using the current password.
+     * If the user is authenticated with success, we have nothing else to do here; otherwise, an {@link InvalidParameterValueException} is thrown.
+     */
+    protected void validateCurrentPassword(UserVO user, String currentPassword) {
+        AccountVO userAccount = _accountDao.findById(user.getAccountId());
+        boolean currentPasswordMatchesDataBasePassword = false;
+        for (UserAuthenticator userAuthenticator : _userPasswordEncoders) {
+            Pair<Boolean, ActionOnFailedAuthentication> authenticationResult = userAuthenticator.authenticate(user.getUsername(), currentPassword, userAccount.getDomainId(), null);
+            if (authenticationResult == null) {
+                s_logger.trace(String.format("Authenticator [%s] is returning null for the authenticate mehtod.", userAuthenticator.getClass()));
+                continue;
             }
-
-            user.setFirstname(firstName);
+            if (BooleanUtils.toBoolean(authenticationResult.first())) {
+                s_logger.debug(String.format("User [id=%s] re-authenticated [authenticator=%s] during password update.", user.getUuid(), userAuthenticator.getName()));
+                currentPasswordMatchesDataBasePassword = true;
+                break;
+            }
         }
+        if (!currentPasswordMatchesDataBasePassword) {
+            throw new InvalidParameterValueException("Current password is incorrect.");
+        }
+    }
+
+    /**
+     * Validates the user 'username' if provided. The 'username' cannot be blank (when provided).
+     * <ul>
+     *  <li> If the 'username' is not provided, we do not update it (setting to null) in the User POJO.
+     *  <li> If the 'username' is blank, we throw an {@link InvalidParameterValueException}.
+     *  <li> The username must be unique in each domain. Therefore, if there is already another user with the same username, an {@link InvalidParameterValueException} is thrown.
+     * </ul>
+     */
+    protected void validateAndUpdateUsernameIfNeeded(UpdateUserCmd updateUserCmd, UserVO user, Account account) {
+        String userName = updateUserCmd.getUsername();
+        if (userName == null) {
+            return;
+        }
+        if (StringUtils.isBlank(userName)) {
+            throw new InvalidParameterValueException("Username cannot be empty.");
+        }
+        List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
+        for (UserVO duplicatedUser : duplicatedUsers) {
+            if (duplicatedUser.getId() == user.getId()) {
+                continue;
+            }
+            Account duplicatedUserAccountWithUserThatHasTheSameUserName = _accountDao.findById(duplicatedUser.getAccountId());
+            if (duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId() == account.getDomainId()) {
+                DomainVO domain = _domainDao.findById(duplicatedUserAccountWithUserThatHasTheSameUserName.getDomainId());
+                throw new InvalidParameterValueException(String.format("Username [%s] already exists in domain [id=%s,name=%s]", duplicatedUser.getUsername(), domain.getUuid(), domain.getName()));
+            }
+        }
+        user.setUsername(userName);
+    }
+
+    /**
+     * Validates the user 'lastName' if provided. The 'lastName' cannot be blank (when provided).
+     * <ul>
+     *  <li> If the 'lastName' is not provided, we do not update it (setting to null) in the User POJO.
+     *  <li> If the 'lastName' is blank, we throw an {@link InvalidParameterValueException}.
+     * </ul>
+     */
+    protected void validateAndUpdateLastNameIfNeeded(UpdateUserCmd updateUserCmd, UserVO user) {
+        String lastName = updateUserCmd.getLastname();
         if (lastName != null) {
-            if (lastName.isEmpty()) {
-                throw new InvalidParameterValueException("Lastname is empty");
+            if (StringUtils.isBlank(lastName)) {
+                throw new InvalidParameterValueException("Lastname cannot be empty.");
             }
 
             user.setLastname(lastName);
         }
-        if (userName != null) {
-            if (userName.isEmpty()) {
-                throw new InvalidParameterValueException("Username is empty");
-            }
-
-            // don't allow to have same user names in the same domain
-            List<UserVO> duplicatedUsers = _userDao.findUsersByName(userName);
-            for (UserVO duplicatedUser : duplicatedUsers) {
-                if (duplicatedUser.getId() != user.getId()) {
-                    Account duplicatedUserAccount = _accountDao.findById(duplicatedUser.getAccountId());
-                    if (duplicatedUserAccount.getDomainId() == account.getDomainId()) {
-                        throw new InvalidParameterValueException("User with name " + userName + " already exists in domain " + duplicatedUserAccount.getDomainId());
-                    }
-                }
-            }
-
-            user.setUsername(userName);
-        }
-
-        if (password != null) {
-            if (password.isEmpty()) {
-                throw new InvalidParameterValueException("Password cannot be empty");
-            }
-            String encodedPassword = null;
-            for (Iterator<UserAuthenticator> en = _userPasswordEncoders.iterator(); en.hasNext();) {
-                UserAuthenticator authenticator = en.next();
-                encodedPassword = authenticator.encode(password);
-                if (encodedPassword != null) {
-                    break;
-                }
-            }
-            if (encodedPassword == null) {
-                throw new CloudRuntimeException("Failed to encode password");
-            }
-            user.setPassword(encodedPassword);
-        }
-        if (email != null) {
-            user.setEmail(email);
-        }
-        if (timeZone != null) {
-            user.setTimezone(timeZone);
-        }
-        if (apiKey != null) {
-            user.setApiKey(apiKey);
-        }
-        if (secretKey != null) {
-            user.setSecretKey(secretKey);
-        }
-
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("updating user with id: " + userId);
-        }
-        try {
-            // check if the apiKey and secretKey are globally unique
-            if (apiKey != null && secretKey != null) {
-                Pair<User, Account> apiKeyOwner = _accountDao.findUserAccountByApiKey(apiKey);
-
-                if (apiKeyOwner != null) {
-                    User usr = apiKeyOwner.first();
-                    if (usr.getId() != userId) {
-                        throw new InvalidParameterValueException("The api key:" + apiKey + " exists in the system for user id:" + userId + " ,please provide a unique key");
-                    } else {
-                        // allow the updation to take place
-                    }
-                }
-            }
-
-            _userDao.update(userId, user);
-        } catch (Throwable th) {
-            s_logger.error("error updating user", th);
-            throw new CloudRuntimeException("Unable to update user " + userId);
-        }
-
-        CallContext.current().putContextParameter(User.class, user.getUuid());
-
-        return _userAccountDao.findById(userId);
     }
 
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_USER_UPDATE, eventDescription = "updating User")
-    public UserAccount updateUser(UpdateUserCmd cmd) {
-        Long id = cmd.getId();
-        String apiKey = cmd.getApiKey();
-        String firstName = cmd.getFirstname();
-        String email = cmd.getEmail();
-        String lastName = cmd.getLastname();
-        String password = cmd.getPassword();
-        String secretKey = cmd.getSecretKey();
-        String timeZone = cmd.getTimezone();
-        String userName = cmd.getUsername();
+    /**
+     * Validates the user 'firstName' if provided. The 'firstName' cannot be blank (when provided).
+     * <ul>
+     *  <li> If the 'firstName' is not provided, we do not update it (setting to null) in the User POJO.
+     *  <li> If the 'firstName' is blank, we throw an {@link InvalidParameterValueException}.
+     * </ul>
+     */
+    protected void validateAndUpdateFirstNameIfNeeded(UpdateUserCmd updateUserCmd, UserVO user) {
+        String firstName = updateUserCmd.getFirstname();
+        if (firstName != null) {
+            if (StringUtils.isBlank(firstName)) {
+                throw new InvalidParameterValueException("Firstname cannot be empty.");
+            }
+            user.setFirstname(firstName);
+        }
+    }
 
-        return updateUser(id, firstName, lastName, email, userName, password, apiKey, secretKey, timeZone);
+    /**
+     * Searches an account for the given users. Then, we validate it as follows:
+     * <ul>
+     *  <li>If no account is found for the given user, we throw a {@link CloudRuntimeException}. There must be something wrong in the database for this case.
+     *  <li>If the account is of {@link Account#ACCOUNT_TYPE_PROJECT}, we throw an {@link InvalidParameterValueException}.
+     *  <li>If the account is of {@link Account#ACCOUNT_ID_SYSTEM}, we throw an {@link InvalidParameterValueException}.
+     * </ul>
+     *
+     * Afterwards, we check if the logged user has access to the user being updated via {@link #checkAccess(Account, AccessType, boolean, ControlledEntity...)}
+     */
+    protected Account retrieveAndValidateAccount(UserVO user) {
+        Account account = _accountDao.findById(user.getAccountId());
+        if (account == null) {
+            throw new CloudRuntimeException("Unable to find user account with ID: " + user.getAccountId());
+        }
+        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+            throw new InvalidParameterValueException("Unable to find user with ID: " + user.getUuid());
+        }
+        if (account.getId() == Account.ACCOUNT_ID_SYSTEM) {
+            throw new PermissionDeniedException("user UUID : " + user.getUuid() + " is a system account; update is not allowed.");
+        }
+        checkAccess(getCurrentCallingAccount(), AccessType.OperateEntry, true, account);
+        return account;
+    }
+
+    /**
+     * Returns the calling account using the method {@link CallContext#getCallingAccount()}.
+     * We are introducing this method to avoid using 'PowerMockRunner' in unit tests. Then, we can mock the calls to this method, which facilitates the development of test cases.
+     */
+    protected Account getCurrentCallingAccount() {
+        return CallContext.current().getCallingAccount();
+    }
+
+    /**
+     * Validates user API and Secret keys. If a new pair of keys is provided, we update them in the user POJO.
+     * <ul>
+     * <li>When updating the keys, it must be provided a pair (API and Secret keys); otherwise, an {@link InvalidParameterValueException} is thrown.
+     * <li>If a pair of keys is provided, we validate to see if there is an user already using the provided API key. If there is someone else using, we throw an {@link InvalidParameterValueException} because two users cannot have the same API key.
+     * </ul>
+     */
+    protected void validateAndUpdatApiAndSecretKeyIfNeeded(UpdateUserCmd updateUserCmd, UserVO user) {
+        String apiKey = updateUserCmd.getApiKey();
+        String secretKey = updateUserCmd.getSecretKey();
+
+        boolean isApiKeyBlank = StringUtils.isBlank(apiKey);
+        boolean isSecretKeyBlank = StringUtils.isBlank(secretKey);
+        if (isApiKeyBlank ^ isSecretKeyBlank) {
+            throw new InvalidParameterValueException("Please provide a userApiKey/userSecretKey pair");
+        }
+        if (isApiKeyBlank && isSecretKeyBlank) {
+            return;
+        }
+        Pair<User, Account> apiKeyOwner = _accountDao.findUserAccountByApiKey(apiKey);
+        if (apiKeyOwner != null) {
+            User userThatHasTheProvidedApiKey = apiKeyOwner.first();
+            if (userThatHasTheProvidedApiKey.getId() != user.getId()) {
+                throw new InvalidParameterValueException(String.format("The API key [%s] already exists in the system. Please provide a unique key.", apiKey));
+            }
+        }
+        user.setApiKey(apiKey);
+        user.setSecretKey(secretKey);
+    }
+
+    /**
+     * Searches for a user with the given userId. If no user is found we throw an {@link InvalidParameterValueException}.
+     */
+    protected UserVO retrieveAndValidateUser(UpdateUserCmd updateUserCmd) {
+        Long userId = updateUserCmd.getId();
+
+        UserVO user = _userDao.getUser(userId);
+        if (user == null) {
+            throw new InvalidParameterValueException("Unable to find user with id: " + userId);
+        }
+        return user;
     }
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_DISABLE, eventDescription = "disabling User", async = true)
     public UserAccount disableUser(long userId) {
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
 
         // Check if user exists in the system
         User user = _userDao.findById(userId);
@@ -1345,7 +1433,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @ActionEvent(eventType = EventTypes.EVENT_USER_ENABLE, eventDescription = "enabling User")
     public UserAccount enableUser(final long userId) {
 
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
 
         // Check if user exists in the system
         final User user = _userDao.findById(userId);
@@ -1396,7 +1484,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_LOCK, eventDescription = "locking User")
     public UserAccount lockUser(long userId) {
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
 
         // Check if user with id exists in the system
         User user = _userDao.findById(userId);
@@ -1462,7 +1550,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DELETE, eventDescription = "deleting account", async = true)
-    // This method deletes the account
     public boolean deleteUserAccount(long accountId) {
 
         CallContext ctx = CallContext.current();
@@ -1528,7 +1615,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         // Check if user performing the action is allowed to modify this account
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
         checkAccess(caller, AccessType.OperateEntry, true, account);
 
         boolean success = enableAccount(account.getId());
@@ -1545,7 +1632,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "locking account", async = true)
     public AccountVO lockAccount(String accountName, Long domainId, Long accountId) {
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
 
         Account account = null;
         if (accountId != null) {
@@ -1575,7 +1662,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ACCOUNT_DISABLE, eventDescription = "disabling account", async = true)
     public AccountVO disableAccount(String accountName, Long domainId, Long accountId) throws ConcurrentOperationException, ResourceUnavailableException {
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
 
         Account account = null;
         if (accountId != null) {
@@ -1633,16 +1720,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         }
 
         // Check if user performing the action is allowed to modify this account
-        checkAccess(CallContext.current().getCallingAccount(), _domainMgr.getDomain(account.getDomainId()));
+        checkAccess(getCurrentCallingAccount(), _domainMgr.getDomain(account.getDomainId()));
 
         // check if the given account name is unique in this domain for updating
         Account duplicateAcccount = _accountDao.findActiveAccount(newAccountName, domainId);
-        if (duplicateAcccount != null && duplicateAcccount.getId() != account.getId()) {// allow
-                                                                                        // same
-                                                                                        // account
-                                                                                        // to
-                                                                                        // update
-                                                                                        // itself
+        if (duplicateAcccount != null && duplicateAcccount.getId() != account.getId()) {
             throw new InvalidParameterValueException(
                     "There already exists an account with the name:" + newAccountName + " in the domain:" + domainId + " with existing account id:" + duplicateAcccount.getId());
         }
@@ -1700,6 +1782,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return _userDao.remove(deleteUserCmd.getId());
     }
 
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_USER_MOVE, eventDescription = "moving User to a new account")
     public boolean moveUser(MoveUserCmd cmd) {
         final Long id = cmd.getId();
@@ -1713,17 +1796,18 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         return moveUser(user, newAccountId);
     }
 
+    @Override
     public boolean moveUser(long id, Long domainId, long accountId) {
         UserVO user = getValidUserVO(id);
         Account oldAccount = _accountDao.findById(user.getAccountId());
         checkAccountAndAccess(user, oldAccount);
         Account newAccount = _accountDao.findById(accountId);
         checkIfNotMovingAcrossDomains(domainId, newAccount);
-        return moveUser(user , accountId);
+        return moveUser(user, accountId);
     }
 
     private boolean moveUser(UserVO user, long newAccountId) {
-        if(newAccountId == user.getAccountId()) {
+        if (newAccountId == user.getAccountId()) {
             // could do a not silent fail but the objective of the user is reached
             return true; // no need to create a new user object for this user
         }
@@ -1734,7 +1818,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 UserVO newUser = new UserVO(user);
                 user.setExternalEntity(user.getUuid());
                 user.setUuid(UUID.randomUUID().toString());
-                _userDao.update(user.getId(),user);
+                _userDao.update(user.getId(), user);
                 newUser.setAccountId(newAccountId);
                 boolean success = _userDao.remove(user.getId());
                 UserVO persisted = _userDao.persist(newUser);
@@ -1746,7 +1830,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private long getNewAccountId(long domainId, String accountName, Long accountId) {
         Account newAccount = null;
         if (StringUtils.isNotBlank(accountName)) {
-            if(s_logger.isDebugEnabled()) {
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Getting id for account by name '" + accountName + "' in domain " + domainId);
             }
             newAccount = _accountDao.findEnabledAccount(accountName, domainId);
@@ -1763,7 +1847,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     private void checkIfNotMovingAcrossDomains(long domainId, Account newAccount) {
-        if(newAccount.getDomainId() != domainId) {
+        if (newAccount.getDomainId() != domainId) {
             // not in scope
             throw new InvalidParameterValueException("moving a user from an account in one domain to an account in annother domain is not supported!");
         }
@@ -1775,7 +1859,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             throw new InvalidParameterValueException("Project users cannot be deleted or moved.");
         }
 
-        checkAccess(CallContext.current().getCallingAccount(), AccessType.OperateEntry, true, account);
+        checkAccess(getCurrentCallingAccount(), AccessType.OperateEntry, true, account);
         CallContext.current().putContextParameter(User.class, user.getUuid());
     }
 
@@ -1995,8 +2079,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     @DB
-    public AccountVO createAccount(final String accountName, final short accountType, final Long roleId, final Long domainId, final String networkDomain,
-            final Map<String, String> details, final String uuid) {
+    public AccountVO createAccount(final String accountName, final short accountType, final Long roleId, final Long domainId, final String networkDomain, final Map<String, String> details,
+            final String uuid) {
         // Validate domain
         Domain domain = _domainMgr.getDomain(domainId);
         if (domain == null) {
@@ -2064,8 +2148,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
         });
     }
 
-    protected UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID,
-            User.Source source) {
+    protected UserVO createUser(long accountId, String userName, String password, String firstName, String lastName, String email, String timezone, String userUUID, User.Source source) {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Creating user: " + userName + ", accountId: " + accountId + " timezone:" + timezone);
         }
@@ -2098,8 +2181,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public UserAccount authenticateUser(final String username, final String password, final Long domainId, final InetAddress loginIpAddress, final Map<String, Object[]>
-            requestParameters) {
+    public UserAccount authenticateUser(final String username, final String password, final Long domainId, final InetAddress loginIpAddress, final Map<String, Object[]> requestParameters) {
         UserAccount user = null;
         if (password != null && !password.isEmpty()) {
             user = getUserAccount(username, password, domainId, requestParameters);
@@ -2211,10 +2293,10 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
             // We authenticated successfully by now, let's check if we are allowed to login from the ip address the reqest comes from
             final Account account = _accountMgr.getAccount(user.getAccountId());
-            final DomainVO domain = (DomainVO) _domainMgr.getDomain(account.getDomainId());
+            final DomainVO domain = (DomainVO)_domainMgr.getDomain(account.getDomainId());
 
             // Get the CIDRs from where this account is allowed to make calls
-            final String accessAllowedCidrs = ApiServiceConfiguration.ApiAllowedSourceCidrList.valueIn(account.getId()).replaceAll("\\s","");
+            final String accessAllowedCidrs = ApiServiceConfiguration.ApiAllowedSourceCidrList.valueIn(account.getId()).replaceAll("\\s", "");
             final Boolean ApiSourceCidrChecksEnabled = ApiServiceConfiguration.ApiSourceCidrChecksEnabled.value();
 
             if (ApiSourceCidrChecksEnabled) {
@@ -2222,10 +2304,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
                 // Block when is not in the list of allowed IPs
                 if (!NetUtils.isIpInCidrList(loginIpAddress, accessAllowedCidrs.split(","))) {
-                    s_logger.warn("Request by account '" + account.toString() + "' was denied since " + loginIpAddress.toString().replaceAll("/","")
-                            + " does not match " + accessAllowedCidrs);
+                    s_logger.warn("Request by account '" + account.toString() + "' was denied since " + loginIpAddress.toString().replaceAll("/", "") + " does not match " + accessAllowedCidrs);
                     throw new CloudAuthenticationException("Failed to authenticate user '" + username + "' in domain '" + domain.getPath() + "' from ip "
-                            + loginIpAddress.toString().replaceAll("/","") + "; please provide valid credentials");
+                            + loginIpAddress.toString().replaceAll("/", "") + "; please provide valid credentials");
                 }
             }
 
@@ -2234,8 +2315,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 s_logger.debug("User: " + username + " in domain " + domainId + " has successfully logged in");
             }
 
-            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN,
-                    "user has logged in from IP Address " + loginIpAddress);
+            ActionEventUtils.onActionEvent(user.getId(), user.getAccountId(), user.getDomainId(), EventTypes.EVENT_USER_LOGIN, "user has logged in from IP Address " + loginIpAddress);
 
             return user;
         } else {
@@ -2285,12 +2365,12 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (s_logger.isInfoEnabled()) {
                     s_logger.info("User " + username + " in domain " + domainName + " is disabled/locked (or account is disabled/locked)");
                 }
-                throw new CloudAuthenticationException(
-                        "User " + username + " (or their account) in domain " + domainName + " is disabled/locked. Please contact the administrator.");
+                throw new CloudAuthenticationException("User " + username + " (or their account) in domain " + domainName + " is disabled/locked. Please contact the administrator.");
             }
             // Whenever the user is able to log in successfully, reset the login attempts to zero
-            if (!isInternalAccount(userAccount.getId()))
+            if (!isInternalAccount(userAccount.getId())) {
                 updateLoginAttempts(userAccount.getId(), 0, false);
+            }
 
             return userAccount;
         } else {
@@ -2351,7 +2431,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_REGISTER_FOR_SECRET_API_KEY, eventDescription = "register for the developer API keys")
     public String[] createApiKeyAndSecretKey(RegisterCmd cmd) {
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentCallingAccount();
         final Long userId = cmd.getId();
 
         User user = getUserIncludingRemoved(userId);
@@ -2668,8 +2748,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
     @Override
     public List<String> listAclGroupsByAccount(Long accountId) {
-        if (_querySelectors == null || _querySelectors.size() == 0)
+        if (_querySelectors == null || _querySelectors.size() == 0) {
             return new ArrayList<String>();
+        }
 
         QuerySelector qs = _querySelectors.get(0);
         return qs.listAclGroupsByAccount(accountId);
@@ -2692,8 +2773,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 if (!enabledOnly || account.getState() == Account.State.enabled) {
                     return account.getId();
                 } else {
-                    throw new PermissionDeniedException(
-                            "Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
+                    throw new PermissionDeniedException("Can't add resources to the account id=" + account.getId() + " in state=" + account.getState() + " as it's no longer active");
                 }
             } else {
                 // idList is not used anywhere, so removed it now

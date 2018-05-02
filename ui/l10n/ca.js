@@ -1151,6 +1151,7 @@ var dictionary = {
     "label.networks": "Xarxes",
     "label.new": "Nou",
     "label.new.password": "New Password",
+    "label.current.password": "Current Password",
     "label.new.project": "Nou projecte",
     "label.new.ssh.key.pair": "New SSH Key Pair",
     "label.new.vm": "Nova MV",
