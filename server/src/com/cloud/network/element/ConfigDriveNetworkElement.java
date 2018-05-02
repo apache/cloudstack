@@ -159,7 +159,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         String isoFile =  "/" + CONFIGDRIVEDIR + "/" + vm.getInstanceName()+ "/" + CONFIGDRIVEFILENAME;
         HandleConfigDriveIsoCommand deleteCommand = new HandleConfigDriveIsoCommand(vm.getVmData(),
                 vm.getConfigDriveLabel(), dataStore.getTO(), isoFile, false, false);
-        // Delete the ISO on the secondary store
+        s_logger.info("Delete the ISO on the secondary store; " + dataStore);
         EndPoint endpoint = _ep.select(dataStore);
         if (endpoint == null) {
             s_logger.error(String.format("ConfigDrive store: %s not available", dataStore.getName()));
@@ -241,6 +241,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
         String sshPublicKey = getSshKey(profile);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("adding password and userdata to configdrive for vm " + profile.getInstanceName());
+        }
         return (canHandle(network.getTrafficType())
                 && updateConfigDrive(profile, sshPublicKey, nic))
                 && updateConfigDriveIso(network, profile, dest.getHost(), false);
@@ -249,20 +252,38 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Override
     public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile profile) throws ResourceUnavailableException {
         String sshPublicKey = getSshKey(profile);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("saving password to configdrive for vm " + profile.getInstanceName());
+        }
         if (!(canHandle(network.getTrafficType()) && updateConfigDrive(profile, sshPublicKey, nic))) return false;
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("update configdrive iso with password for vm " + profile.getInstanceName());
+        }
         return updateConfigDriveIso(network, profile, true);
     }
 
     @Override
     public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String sshPublicKey) throws ResourceUnavailableException {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("saving ssh key  to configdrive for vm " + vm.getInstanceName());
+        }
         if (!(canHandle(network.getTrafficType()) && updateConfigDrive(vm, sshPublicKey, nic))) return false;
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("updating configdrive iso with ssh key for vm " + vm.getInstanceName());
+        }
         return updateConfigDriveIso(network, vm, true);
     }
 
     @Override
     public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile profile) throws ResourceUnavailableException {
         String sshPublicKey = getSshKey(profile);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("saving userdata to configdrive for vm " + profile.getInstanceName());
+        }
         if (!(canHandle(network.getTrafficType()) && updateConfigDrive(profile, sshPublicKey, nic))) return false;
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("updating configdrive iso with userdata for vm " + profile.getInstanceName());
+        }
         return updateConfigDriveIso(network, profile, true);
     }
 
@@ -279,6 +300,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Override
     public boolean postStateTransitionEvent(StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition, VirtualMachine vo, boolean status, Object opaque) {
         if (transition.getToState().equals(VirtualMachine.State.Expunging) && transition.getEvent().equals(VirtualMachine.Event.ExpungeOperation)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("handling expunge state for configdrive of vm " + vo.getInstanceName());
+            }
             Nic nic = _networkModel.getDefaultNic(vo.getId());
             try {
                 if (nic != null) {
@@ -312,6 +336,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     @Override
     public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("preparing configdrive for migration for vm " + vm.getInstanceName());
+        }
         if (nic.isDefaultNic() && _networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.ConfigDrive)) {
             s_logger.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
             DataStore dataStore = getDataStore(network,vm);
