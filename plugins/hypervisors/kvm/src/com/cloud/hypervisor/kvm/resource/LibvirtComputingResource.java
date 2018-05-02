@@ -26,6 +26,7 @@ import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -47,6 +48,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.storage.ConfigDriveFactory;
+import org.apache.cloudstack.storage.StorageAttacher;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
@@ -192,7 +195,7 @@ import com.google.common.base.Strings;
  *         private mac addresses for domrs | mac address | start + 126 || ||
  *         pool | the parent of the storage pool hierarchy * }
  **/
-public class LibvirtComputingResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer {
+public class LibvirtComputingResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer, StorageAttacher {
     private static final Logger s_logger = Logger.getLogger(LibvirtComputingResource.class);
 
     private String _modifyVlanPath;
@@ -313,6 +316,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected MemStat _memStat = new MemStat();
 
     private final LibvirtUtilitiesHelper libvirtUtilitiesHelper = new LibvirtUtilitiesHelper();
+
+    ConfigDriveFactory configDriveFactory;
+
+    public ConfigDriveFactory getConfigDriveFactory() {
+        return configDriveFactory;
+    }
 
     @Override
     public ExecutionResult executeInVR(final String routerIp, final String script, final String args) {
@@ -479,6 +488,132 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public StorageSubsystemCommandHandler getStorageHandler() {
         return storageHandler;
+    }
+
+    @Override
+    synchronized public String getRootDir(String url, Integer nfsVersion) {
+        try {
+            URI uri = new URI(url);
+            String dir = mountUri(uri, nfsVersion);
+            return _mountPoint + "/" + dir;
+        } catch (Exception e) {
+            String msg = "GetRootDir for " + url + " failed due to " + e.toString();
+            s_logger.error(msg, e);
+            throw new CloudRuntimeException(msg);
+        }
+    }
+
+    protected String mountUri(URI uri, Integer nfsVersion) throws UnknownHostException {
+        String uriHostIp = getUriHostIp(uri);
+        String nfsPath = uriHostIp + ":" + uri.getPath();
+
+        // Single means of calculating mount directory regardless of scheme
+        String dir = UUID.nameUUIDFromBytes(nfsPath.getBytes(com.cloud.utils.StringUtils.getPreferredCharset())).toString();
+        String localRootPath = _mountPoint + "/" + dir;
+
+        // remote device syntax varies by scheme.
+        String remoteDevice = nfsPath;
+        s_logger.debug("Mounting device with nfs-style path of " + remoteDevice);
+
+        mount(localRootPath, remoteDevice, uri, nfsVersion);
+        return dir;
+    }
+
+    protected String getUriHostIp(URI uri) throws UnknownHostException {
+        String nfsHost = uri.getHost();
+        InetAddress nfsHostAddr = InetAddress.getByName(nfsHost);
+        String nfsHostIp = nfsHostAddr.getHostAddress();
+        s_logger.info("Determined host " + nfsHost + " corresponds to IP " + nfsHostIp);
+        return nfsHostIp;
+    }
+
+    @Override public void umount(String localRootPath, URI uri) {
+        ensureLocalRootPathExists(localRootPath, uri);
+
+        if (!mountExists(localRootPath, uri)) {
+            return;
+        }
+
+        Script command = new Script("mount", _timeout, s_logger);
+        command.add(localRootPath);
+        String result = command.execute();
+        if (result != null) {
+            // Fedora Core 12 errors out with any -o option executed from java
+            String errMsg = "Unable to umount " + localRootPath + " due to " + result;
+            s_logger.error(errMsg);
+            File file = new File(localRootPath);
+            if (file.exists()) {
+                file.delete();
+            }
+            throw new CloudRuntimeException(errMsg);
+        }
+        s_logger.debug("Successfully umounted " + localRootPath);
+    }
+
+    protected boolean mountExists(String localRootPath, URI uri) {
+        Script script = null;
+        script = new Script( "mount", _timeout, s_logger);
+
+        List<String> res = new ArrayList<String>();
+        AllLinesParser parser = new AllLinesParser();
+        script.execute(parser);
+        if(parser.getLines().contains(localRootPath)) {
+            s_logger.debug("Some device already mounted at " + localRootPath + ", no need to mount " + uri.toString());
+            return true;
+        }
+        return false;
+    }
+
+    protected void ensureLocalRootPathExists(String localRootPath, URI uri) {
+        s_logger.debug("making available " + localRootPath + " on " + uri.toString());
+        File file = new File(localRootPath);
+        s_logger.debug("local folder for mount will be " + file.getPath());
+        if (!file.exists()) {
+            s_logger.debug("create mount point: " + file.getPath());
+            _storage.mkdir(file.getPath());
+
+            // Need to check after mkdir to allow O/S to complete operation
+            if (!file.exists()) {
+                String errMsg = "Unable to create local folder for: " + localRootPath + " in order to mount " + uri.toString();
+                s_logger.error(errMsg);
+                throw new CloudRuntimeException(errMsg);
+            }
+        }
+    }
+
+    @Override public void mount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
+        s_logger.debug("mount " + uri.toString() + " on " + localRootPath + ((nfsVersion != null) ? " nfsVersion=" + nfsVersion : ""));
+        ensureLocalRootPathExists(localRootPath, uri);
+
+        if (mountExists(localRootPath, uri)) {
+            return;
+        }
+
+        attemptMount(localRootPath, remoteDevice, uri, nfsVersion);
+    }
+
+    protected void attemptMount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
+        String result;
+        s_logger.debug("Make cmdline call to mount " + remoteDevice + " at " + localRootPath + " based on uri " + uri + ((nfsVersion != null) ? " nfsVersion=" + nfsVersion : ""));
+        Script command = new Script("mount", _timeout, s_logger);
+
+        String scheme = uri.getScheme().toLowerCase();
+        command.add("-t", scheme);
+
+        command.add(remoteDevice);
+        command.add(localRootPath);
+        result = command.execute();
+        if (result != null) {
+            // Fedora Core 12 errors out with any -o option executed from java
+            String errMsg = "Unable to mount " + remoteDevice + " at " + localRootPath + " due to " + result;
+            s_logger.error(errMsg);
+            File file = new File(localRootPath);
+            if (file.exists()) {
+                file.delete();
+            }
+            throw new CloudRuntimeException(errMsg);
+        }
+        s_logger.debug("Successfully mounted " + remoteDevice + " at " + localRootPath);
     }
 
     private static final class KeyValueInterpreter extends OutputInterpreter {
@@ -987,18 +1122,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         configureVifDrivers(params);
 
-        /*
-        switch (_bridgeType) {
-        case OPENVSWITCH:
-            getOvsPifs();
-            break;
-        case NATIVE:
-        default:
-            getPifs();
-            break;
-        }
-        */
-
         if (_pifs.get("private") == null) {
             s_logger.debug("Failed to get private nic name");
             throw new ConfigurationException("Failed to get private nic name");
@@ -1060,6 +1183,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final KVMStorageProcessor storageProcessor = new KVMStorageProcessor(_storagePoolMgr, this);
         storageProcessor.configure(name, params);
         storageHandler = new StorageSubsystemCommandHandlerBase(storageProcessor);
+
+        configDriveFactory = new ConfigDriveFactory(3, this);
 
         return true;
     }

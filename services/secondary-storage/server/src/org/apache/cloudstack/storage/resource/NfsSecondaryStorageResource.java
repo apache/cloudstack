@@ -2362,16 +2362,16 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     }
 
     @Override
-    synchronized public String getRootDir(String secUrl, Integer nfsVersion) {
+    synchronized public String getRootDir(String url, Integer nfsVersion) {
         if (!_inSystemVM) {
             return _parent;
         }
         try {
-            URI uri = new URI(secUrl);
+            URI uri = new URI(url);
             String dir = mountUri(uri, nfsVersion);
             return _parent + "/" + dir;
         } catch (Exception e) {
-            String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
+            String msg = "GetRootDir for " + url + " failed due to " + e.toString();
             s_logger.error(msg, e);
             throw new CloudRuntimeException(msg);
         }

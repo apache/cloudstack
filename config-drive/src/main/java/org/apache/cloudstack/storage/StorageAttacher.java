@@ -19,7 +19,7 @@ package org.apache.cloudstack.storage;
 import java.net.URI;
 
 public interface StorageAttacher {
-    String getRootDir(String secUrl, Integer nfsVersion);
+    String getRootDir(String url, Integer nfsVersion);
 
     void umount(String localRootPath, URI uri);
 
