@@ -44,7 +44,4 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
-    <build>
-        <defaultGoal>install</defaultGoal>
-    </build>
 </project>

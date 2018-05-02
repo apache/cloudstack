@@ -28,9 +28,6 @@
     <artifactId>cloud-plugin-example-dns-notifier</artifactId>
     <name>Apache CloudStack Plugin - Dns Notifier Example</name>
     <description>This is sample source code on how to write a plugin for CloudStack</description>
-    <build>
-        <defaultGoal>install</defaultGoal>
-    </build>
     <dependencies>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>

@@ -28,9 +28,6 @@
     <artifactId>cloud-plugin-hypervisor-simulator</artifactId>
     <name>Apache CloudStack Plugin - Hypervisor Simulator</name>
     <description>Simulator Hypervisor for Cloudstack</description>
-    <build>
-        <defaultGoal>install</defaultGoal>
-    </build>
     <dependencies>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>

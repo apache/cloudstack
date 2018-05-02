@@ -37,7 +37,6 @@
         </dependency>
     </dependencies>
     <build>
-        <defaultGoal>install</defaultGoal>
         <plugins>
             <plugin>
                 <artifactId>maven-antrun-plugin</artifactId>
