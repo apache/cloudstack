@@ -17,38 +17,64 @@
 
 package org.apache.cloudstack.acl;
 
+import java.util.List;
+
 import org.apache.cloudstack.acl.RolePermission.Permission;
 import org.apache.cloudstack.framework.config.ConfigKey;
-
-import java.util.List;
 
 public interface RoleService {
 
     ConfigKey<Boolean> EnableDynamicApiChecker = new ConfigKey<>("Advanced", Boolean.class, "dynamic.apichecker.enabled", "false",
-            "If set to true, this enables the dynamic role-based api access checker and disables the default static role-based api access checker.",
-            true);
+            "If set to true, this enables the dynamic role-based api access checker and disables the default static role-based api access checker.", true);
 
     boolean isEnabled();
-    Role findRole(final Long id);
-    Role createRole(final String name, final RoleType roleType, final String description);
-    Role updateRole(final Role role, final String name, final RoleType roleType, final String description);
-    boolean deleteRole(final Role role);
 
-    RolePermission findRolePermission(final Long id);
-    RolePermission findRolePermissionByUuid(final String uuid);
+    /**
+     *  Searches for a role with the given ID. If the ID is null or less than zero, this method will return null.
+     *  This method will also return null if no role is found with the provided ID.
+     *  Moreover, we will check if the requested role is of 'Admin' type; roles with 'Admin' type should only be visible to 'root admins'.
+     *  Therefore, if a non-'root admin' user tries to search for an 'Admin' role, this method will return null.
+     */
+    Role findRole(Long id);
 
-    RolePermission createRolePermission(final Role role, final Rule rule, final Permission permission, final String description);
+    Role createRole(String name, RoleType roleType, String description);
+
+    Role updateRole(Role role, String name, RoleType roleType, String description);
+
+    boolean deleteRole(Role role);
+
+    RolePermission findRolePermission(Long id);
+
+    RolePermission findRolePermissionByUuid(String uuid);
+
+    RolePermission createRolePermission(Role role, Rule rule, Permission permission, String description);
+
     /**
      * updateRolePermission updates the order/position of an role permission
      * @param role The role whose permissions needs to be re-ordered
      * @param newOrder The new list of ordered role permissions
      */
-    boolean updateRolePermission(final Role role, final List<RolePermission> newOrder);
-    boolean updateRolePermission(final Role role, final RolePermission rolePermission, final Permission permission);
-    boolean deleteRolePermission(final RolePermission rolePermission);
+    boolean updateRolePermission(Role role, List<RolePermission> newOrder);
 
+    boolean updateRolePermission(Role role, RolePermission rolePermission, Permission permission);
+
+    boolean deleteRolePermission(RolePermission rolePermission);
+
+    /**
+     *  List all roles configured in the database. Roles that have the type {@link RoleType#Admin} will not be shown for users that are not 'root admin'.
+     */
     List<Role> listRoles();
-    List<Role> findRolesByName(final String name);
-    List<Role> findRolesByType(final RoleType roleType);
-    List<RolePermission> findAllPermissionsBy(final Long roleId);
+
+    /**
+     *  Find all roles that have the giving {@link String} as part of their name.
+     *  If the user calling the method is not a 'root admin', roles of type {@link RoleType#Admin} wil lbe removed of the returned list.
+     */
+    List<Role> findRolesByName(String name);
+
+    /**
+     *  Find all roles by {@link RoleType}. If the role type is {@link RoleType#Admin}, the calling account must be a root admin, otherwise we return an empty list.
+     */
+    List<Role> findRolesByType(RoleType roleType);
+
+    List<RolePermission> findAllPermissionsBy(Long roleId);
 }
