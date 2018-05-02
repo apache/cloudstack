@@ -86,9 +86,9 @@ function install_packages() {
   fi
 
   # Install xenserver guest utilities as debian repos don't have it
-  wget https://mirrors.kernel.org/ubuntu/pool/universe/x/xe-guest-utilities/xe-guest-utilities_7.4.0-0ubuntu1_amd64.deb
-  dpkg -i xe-guest-utilities_7.4.0-0ubuntu1_amd64.deb
-  rm -f xe-guest-utilities_7.4.0-0ubuntu1_amd64.deb
+  wget https://mirrors.kernel.org/ubuntu/pool/main/x/xe-guest-utilities/xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
+  dpkg -i xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
+  rm -f xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
 }
 
 return 2>/dev/null || install_packages
