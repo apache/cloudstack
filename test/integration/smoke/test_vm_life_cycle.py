@@ -794,6 +794,10 @@ class TestSecuredVmMigration(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         cls.hypervisor = testClient.getHypervisorInfo()
+        cls._cleanup = []
+
+        if cls.hypervisor.lower() not in ["kvm"]:
+            return
 
         # Get Zone, Domain and templates
         domain = get_domain(cls.apiclient)
@@ -846,11 +850,11 @@ class TestSecuredVmMigration(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
-        self.updateConfiguration("ca.plugin.root.auth.strictness", "false")
-        self.make_all_hosts_secure()
-
         if self.hypervisor.lower() not in ["kvm"]:
             self.skipTest("Secured migration is not supported on other than KVM")
+
+        self.updateConfiguration("ca.plugin.root.auth.strictness", "false")
+        self.make_all_hosts_secure()
 
     def tearDown(self):
         self.make_all_hosts_secure()
