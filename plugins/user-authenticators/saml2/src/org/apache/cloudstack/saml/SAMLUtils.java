@@ -28,15 +28,20 @@ import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.List;
 import java.util.zip.Deflater;
 import java.util.zip.DeflaterOutputStream;
@@ -264,12 +269,6 @@ public class SAMLUtils {
         return url;
     }
 
-    public static X509Certificate generateRandomX509Certificate(KeyPair keyPair) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateException, SignatureException, InvalidKeyException, OperatorCreationException {
-        return CertUtils.generateV1Certificate(keyPair,
-                "CN=ApacheCloudStack", "CN=ApacheCloudStack",
-                3, "SHA256WithRSA");
-    }
-
     public static void setupSamlUserCookies(final LoginCmdResponse loginResponse, final HttpServletResponse resp) throws IOException {
         resp.addCookie(new Cookie("userid", URLEncoder.encode(loginResponse.getUserId(), HttpUtils.UTF_8)));
         resp.addCookie(new Cookie("domainid", URLEncoder.encode(loginResponse.getDomainId(), HttpUtils.UTF_8)));
@@ -284,4 +283,82 @@ public class SAMLUtils {
         resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, loginResponse.getSessionKey()));
     }
 
+    /**
+     * Returns base64 encoded PublicKey
+     * @param key PublicKey
+     * @return public key encoded string
+     */
+    public static String encodePublicKey(PublicKey key) {
+        try {
+            KeyFactory keyFactory = CertUtils.getKeyFactory();
+            if (keyFactory == null) return null;
+            X509EncodedKeySpec spec = keyFactory.getKeySpec(key, X509EncodedKeySpec.class);
+            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), Charset.forName("UTF-8"));
+        } catch (InvalidKeySpecException e) {
+            s_logger.error("Unable to create KeyFactory:" + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Returns base64 encoded PrivateKey
+     * @param key PrivateKey
+     * @return privatekey encoded string
+     */
+    public static String encodePrivateKey(PrivateKey key) {
+        try {
+            KeyFactory keyFactory = CertUtils.getKeyFactory();
+            if (keyFactory == null) return null;
+            PKCS8EncodedKeySpec spec = keyFactory.getKeySpec(key,
+                    PKCS8EncodedKeySpec.class);
+            return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), Charset.forName("UTF-8"));
+        } catch (InvalidKeySpecException e) {
+            s_logger.error("Unable to create KeyFactory:" + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Decodes base64 encoded public key to PublicKey
+     * @param publicKey encoded public key string
+     * @return returns PublicKey
+     */
+    public static PublicKey decodePublicKey(String publicKey) {
+        byte[] sigBytes = org.bouncycastle.util.encoders.Base64.decode(publicKey);
+        X509EncodedKeySpec x509KeySpec = new X509EncodedKeySpec(sigBytes);
+        KeyFactory keyFactory = CertUtils.getKeyFactory();
+        if (keyFactory == null)
+            return null;
+        try {
+            return keyFactory.generatePublic(x509KeySpec);
+        } catch (InvalidKeySpecException e) {
+            s_logger.error("Unable to create PrivateKey from privateKey string:" + e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Decodes base64 encoded private key to PrivateKey
+     * @param privateKey encoded private key string
+     * @return returns PrivateKey
+     */
+    public static PrivateKey decodePrivateKey(String privateKey) {
+        byte[] sigBytes = org.bouncycastle.util.encoders.Base64.decode(privateKey);
+        PKCS8EncodedKeySpec pkscs8KeySpec = new PKCS8EncodedKeySpec(sigBytes);
+        KeyFactory keyFactory = CertUtils.getKeyFactory();
+        if (keyFactory == null)
+            return null;
+        try {
+            return keyFactory.generatePrivate(pkscs8KeySpec);
+        } catch (InvalidKeySpecException e) {
+            s_logger.error("Unable to create PrivateKey from privateKey string:" + e.getMessage());
+        }
+        return null;
+    }
+
+    public static X509Certificate generateRandomX509Certificate(KeyPair keyPair) throws NoSuchAlgorithmException, NoSuchProviderException, CertificateException, SignatureException, InvalidKeyException, OperatorCreationException {
+        return CertUtils.generateV1Certificate(keyPair,
+                "CN=ApacheCloudStack", "CN=ApacheCloudStack",
+                3, "SHA256WithRSA");
+    }
 }
