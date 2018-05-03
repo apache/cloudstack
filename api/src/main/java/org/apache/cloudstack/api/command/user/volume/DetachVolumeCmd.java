@@ -129,9 +129,9 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
     public String getEventDescription() {
         StringBuilder sb = new StringBuilder();
         if (id != null) {
-            sb.append(": " + id);
+            sb.append(": " + this._uuidMgr.getUuid(Volume.class, id));
         } else if ((deviceId != null) && (virtualMachineId != null)) {
-            sb.append(" with device id: " + deviceId + " from vm: " + virtualMachineId);
+            sb.append(" with device id: " + deviceId + " from vm: " + ((getVirtualMachineId() != null) ? this._uuidMgr.getUuid(VirtualMachine.class, getVirtualMachineId()) : "" ));
         } else {
             sb.append(" <error:  either volume id or deviceId/vmId need to be specified>");
         }
@@ -140,7 +140,7 @@ public class DetachVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + getId() + " VmId: " + getVirtualMachineId());
+        CallContext.current().setEventDetails(getEventDescription());
         Volume result = _volumeService.detachVolumeFromVM(this);
         if (result != null){
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Restricted, result);

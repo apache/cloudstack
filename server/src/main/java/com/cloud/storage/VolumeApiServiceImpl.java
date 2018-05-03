@@ -485,7 +485,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                 volume.setDomainId((owner == null) ? Domain.ROOT_DOMAIN : owner.getDomainId());
                 volume.setFormat(ImageFormat.valueOf(format));
                 volume = _volsDao.persist(volume);
-                CallContext.current().setEventDetails("Volume Id: " + volume.getId());
+                CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
 
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it
@@ -753,7 +753,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
                             Volume.class.getName(), volume.getUuid(), displayVolume);
                 }
 
-                CallContext.current().setEventDetails("Volume Id: " + volume.getId());
+                CallContext.current().setEventDetails("Volume Id: " + volume.getUuid());
 
                 // Increment resource count during allocation; if actual creation fails,
                 // decrement it

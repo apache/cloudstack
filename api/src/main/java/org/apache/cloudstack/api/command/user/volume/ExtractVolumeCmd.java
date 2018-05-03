@@ -133,7 +133,7 @@ public class ExtractVolumeCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Volume Id: " + getId());
+        CallContext.current().setEventDetails("Volume Id: " + this._uuidMgr.getUuid(Volume.class, getId()));
         String uploadUrl = _volumeService.extractVolume(this);
         if (uploadUrl != null) {
             ExtractResponse response = new ExtractResponse();

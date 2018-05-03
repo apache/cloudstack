@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.user.vm;
 import java.util.ArrayList;
 import java.util.EnumSet;
 
+import com.cloud.vm.Nic;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -90,7 +91,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "Updating NIC " + getNicId() + " on user vm: " + getVmId();
+        return  "Updating NIC " + this._uuidMgr.getUuid(Nic.class, getNicId()) + " on user vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId());
     }
 
     @Override
@@ -104,7 +105,7 @@ public class UpdateDefaultNicForVMCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Vm Id: " + getVmId() + " Nic Id: " + getNicId());
+        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getVmId()) + " Nic Id: " + this._uuidMgr.getUuid(Nic.class, getNicId()));
         UserVm result = _userVmService.updateDefaultNicForVirtualMachine(this);
         ArrayList<VMDetails> dc = new ArrayList<VMDetails>();
         dc.add(VMDetails.valueOf("nics"));

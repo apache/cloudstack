@@ -45,7 +45,7 @@ public class StartVMCmdByAdmin extends StartVMCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException {
         try {
-            CallContext.current().setEventDetails("Vm Id: " + getId());
+            CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
 
             UserVm result ;
             result = _userVmService.startVirtualMachine(this);

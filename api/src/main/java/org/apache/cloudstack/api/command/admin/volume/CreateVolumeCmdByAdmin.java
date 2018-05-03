@@ -38,7 +38,7 @@ public class CreateVolumeCmdByAdmin extends CreateVolumeCmd {
 
     @Override
     public void execute(){
-        CallContext.current().setEventDetails("Volume Id: "+getEntityId()+((getSnapshotId() == null) ? "" : " from snapshot: " + getSnapshotId()));
+        CallContext.current().setEventDetails("Volume Id: "+ getEntityUuid() + ((getSnapshotId() == null) ? "" : " from snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getSnapshotId())));
         Volume volume = _volumeService.createVolume(this);
         if (volume != null) {
             VolumeResponse response = _responseGenerator.createVolumeResponse(ResponseView.Full, volume);

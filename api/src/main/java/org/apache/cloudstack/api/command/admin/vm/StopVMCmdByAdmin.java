@@ -39,7 +39,7 @@ public class StopVMCmdByAdmin extends StopVMCmd {
 
     @Override
     public void execute() throws ServerApiException, ConcurrentOperationException {
-        CallContext.current().setEventDetails("Vm Id: " + getId());
+        CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
         UserVm result;
 
         result = _userVmService.stopVirtualMachine(getId(), isForced());

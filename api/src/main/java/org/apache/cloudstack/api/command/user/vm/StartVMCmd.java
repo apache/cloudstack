@@ -117,7 +117,7 @@ public class StartVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "starting user vm: " + getId();
+        return "starting user vm: " + this._uuidMgr.getUuid(VirtualMachine.class, getId());
     }
 
     @Override
@@ -133,7 +133,7 @@ public class StartVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ResourceAllocationException {
         try {
-            CallContext.current().setEventDetails("Vm Id: " + getId());
+            CallContext.current().setEventDetails("Vm Id: " + this._uuidMgr.getUuid(VirtualMachine.class, getId()));
 
             UserVm result;
             result = _userVmService.startVirtualMachine(this);

@@ -83,7 +83,7 @@ public class RebootRouterCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return "rebooting router: " + getId();
+        return "rebooting router: " + this._uuidMgr.getUuid(VirtualMachine.class,getId());
     }
 
     @Override
@@ -98,7 +98,7 @@ public class RebootRouterCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
-        CallContext.current().setEventDetails("Router Id: " + getId());
+        CallContext.current().setEventDetails("Router Id: " + this._uuidMgr.getUuid(VirtualMachine.class,getId()));
         VirtualRouter result = _routerService.rebootRouter(getId(), true);
         if (result != null) {
             DomainRouterResponse response = _responseGenerator.createDomainRouterResponse(result);

@@ -46,7 +46,7 @@ public class DeployVMCmdByAdmin extends DeployVMCmd {
 
         if (getStartVm()) {
             try {
-                CallContext.current().setEventDetails("Vm Id: "+getEntityId());
+                CallContext.current().setEventDetails("Vm Id: " + getEntityUuid());
                 result = _userVmService.startVirtualMachine(this);
             } catch (ResourceUnavailableException ex) {
                 s_logger.warn("Exception: ", ex);

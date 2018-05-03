@@ -82,7 +82,7 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "revert snapshot: " + getId();
+        return  "revert snapshot: " + this._uuidMgr.getUuid(Snapshot.class, getId());
     }
 
     @Override
@@ -97,7 +97,7 @@ public class RevertSnapshotCmd extends BaseAsyncCmd {
 
     @Override
     public void execute() {
-        CallContext.current().setEventDetails("Snapshot Id: " + getId());
+        CallContext.current().setEventDetails("Snapshot Id: " + this._uuidMgr.getUuid(Snapshot.class, getId()));
         Snapshot snapshot = _snapshotService.revertSnapshot(getId());
         if (snapshot != null) {
             SnapshotResponse response = _responseGenerator.createSnapshotResponse(snapshot);

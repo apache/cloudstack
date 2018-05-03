@@ -126,7 +126,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventDescription() {
-        return  "associating ip to nic id: " + getNetworkId() + " in zone " + getZoneId();
+        return  "associating ip to nic id: " + this._uuidMgr.getUuid(Network.class, getNetworkId()) + " in zone " + this._uuidMgr.getUuid(DataCenter.class, getZoneId());
     }
 
     /////////////////////////////////////////////////////
