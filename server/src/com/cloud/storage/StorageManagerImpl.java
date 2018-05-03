@@ -887,10 +887,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             s_logger.warn("Unable to delete storage id: " + id + " due to it is not in Maintenance state");
             throw new InvalidParameterValueException("Unable to delete storage due to it is not in Maintenance state, id: " + id);
         }
-        if (sPool.isLocal()) {
-            s_logger.warn("Unable to delete local storage id:" + id);
-            throw new InvalidParameterValueException("Unable to delete local storage id: " + id);
-        }
 
         Pair<Long, Long> vlms = _volsDao.getCountAndTotalByPool(id);
         if (forced) {
