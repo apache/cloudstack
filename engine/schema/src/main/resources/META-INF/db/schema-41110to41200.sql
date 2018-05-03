@@ -33,3 +33,31 @@ ALTER TABLE `vlan` CHANGE `description` `ip4_range` varchar(255);
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 2, 'moveNetworkAclItem', 'ALLOW', 100) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'moveNetworkAclItem', 'ALLOW', 302) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'moveNetworkAclItem', 'ALLOW', 260) ON DUPLICATE KEY UPDATE rule=rule;
+
+-- Backup and Recovery
+
+CREATE TABLE IF NOT EXISTS `cloud`.`backup_and_recovery_providers` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+  `uuid` varchar(40),
+  `name` varchar(255) COMMENT 'name for the backup and recovery provider',
+  `url` varchar(255) DEFAULT NULL COMMENT 'the url of the backup and recovery provider',
+  `zone_id` bigint unsigned NOT NULL COMMENT 'foreign key to zone id',
+  `host_id` bigint(20) unsigned NOT NULL COMMENT 'host id coresponding to the backup and recovery provider',
+  `provider` varchar(255) DEFAULT NULL COMMENT 'the backup and recovery provider',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`),
+  KEY `fk_backup_and_recovery_providers__host_id` (`host_id`),
+  CONSTRAINT `fk_backup_and_recovery_providers__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_backup_and_recovery_providers__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`backup_policies` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40) NOT NULL,
+  `provider_id` bigint(20) unsigned NOT NULL COMMENT 'backup and recovery provider id',
+  `name` varchar(255) NOT NULL COMMENT 'backup policy name',
+  `policy_uuid` varchar(40) NOT NULL COMMENT 'backup policy ID on provider side',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`),
+  CONSTRAINT `fk_backup_polocies__provider_id` FOREIGN KEY (`provider_id`) REFERENCES `backup_and_recovery_providers` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
