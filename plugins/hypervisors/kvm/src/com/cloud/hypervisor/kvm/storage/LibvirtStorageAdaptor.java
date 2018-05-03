@@ -661,7 +661,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         switch (pool.getType()) {
             case RBD:
-                return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                return createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size);
             case NetworkFilesystem:
             case Filesystem:
                 switch (format) {
