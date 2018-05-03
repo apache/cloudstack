@@ -19,46 +19,12 @@
 
 package com.cloud.network.manager;
 
-import com.google.common.base.MoreObjects;
-import com.google.common.base.Strings;
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.ImmutableMultimap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import net.nuage.vsp.acs.client.api.NuageVspPluginClientLoader;
-import net.nuage.vsp.acs.client.api.model.VspApiDefaults;
-import net.nuage.vsp.acs.client.api.model.VspDomain;
-import net.nuage.vsp.acs.client.api.model.VspDomainCleanUp;
-import net.nuage.vsp.acs.client.api.model.VspDomainTemplate;
-import net.nuage.vsp.acs.client.api.model.VspHost;
-import net.nuage.vsp.acs.client.common.NuageVspApiVersion;
-import net.nuage.vsp.acs.client.common.NuageVspConstants;
-import net.nuage.vsp.acs.client.common.model.Pair;
-import net.nuage.vsp.acs.client.exception.NuageVspException;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
-import org.apache.cloudstack.resourcedetail.VpcDetailVO;
-import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
+import static com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand.SyncType;
 
-import javax.annotation.Nonnull;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -69,6 +35,45 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import javax.annotation.Nonnull;
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import net.nuage.vsp.acs.client.api.NuageVspPluginClientLoader;
+import net.nuage.vsp.acs.client.api.model.VspApiDefaults;
+import net.nuage.vsp.acs.client.api.model.VspDomain;
+import net.nuage.vsp.acs.client.api.model.VspDomainCleanUp;
+import net.nuage.vsp.acs.client.api.model.VspDomainTemplate;
+import net.nuage.vsp.acs.client.api.model.VspHost;
+import net.nuage.vsp.acs.client.common.NuageVspApiVersion;
+import net.nuage.vsp.acs.client.common.NuageVspConstants;
+import net.nuage.vsp.acs.client.common.model.Pair;
+import net.nuage.vsp.acs.client.exception.NuageVspException;
+
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Strings;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
+import org.apache.cloudstack.resourcedetail.VpcDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -142,9 +147,6 @@ import com.cloud.network.vpc.VpcVO;
 import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
-import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.NetworkOfferingServiceMapVO;
-import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
@@ -166,8 +168,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
-
-import static com.cloud.agent.api.sync.SyncNuageVspCmsIdCommand.SyncType;
 
 public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager, Configurable, StateListener<Status, Status.Event, Host> {
 
@@ -1219,7 +1219,6 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         initMessageBusListeners();
         initNuageVspResourceListeners();
-        initNuageNetworkOffering();
         initNuageVspVpcOffering();
         Status.getStateMachine().registerListener(this);
         return true;
@@ -1288,39 +1287,6 @@ public class NuageVspManagerImpl extends ManagerBase implements NuageVspManager,
     @DB
     private void initNuageVspResourceListeners() {
         _agentMgr.registerForHostEvents(new NuageVspResourceListener(), false, true, false);
-    }
-
-    @DB
-    private void initNuageNetworkOffering() {
-        Transaction.execute(new TransactionCallbackNoReturn() {
-            @Override
-            public void doInTransactionWithoutResult(TransactionStatus status) {
-                NetworkOffering sharedNetworkOfferingWithSG = _networkOfferingDao.findByUniqueName(nuageVspSharedNetworkOfferingWithSGServiceName);
-                if (sharedNetworkOfferingWithSG == null) {
-                    NetworkOfferingVO defaultNuageVspSharedSGNetworkOffering =
-                            new NetworkOfferingVO(nuageVspSharedNetworkOfferingWithSGServiceName, "Offering for NuageVsp Shared Security group enabled networks",
-                                    Networks.TrafficType.Guest, false, false, null, null, true, NetworkOffering.Availability.Optional, null, Network.GuestType.Shared, true, true, false, false, false,
-                                    false);
-
-                    defaultNuageVspSharedSGNetworkOffering.setState(NetworkOffering.State.Enabled);
-                    defaultNuageVspSharedSGNetworkOffering = _networkOfferingDao.persistDefaultNetworkOffering(defaultNuageVspSharedSGNetworkOffering);
-
-                    Map<Network.Service, Network.Provider> defaultNuageVspSharedSGNetworkOfferingProviders = new HashMap<Network.Service, Network.Provider>();
-                    defaultNuageVspSharedSGNetworkOfferingProviders.put(Network.Service.Dhcp, Network.Provider.NuageVsp);
-                    defaultNuageVspSharedSGNetworkOfferingProviders.put(Network.Service.SecurityGroup, Network.Provider.NuageVsp);
-                    defaultNuageVspSharedSGNetworkOfferingProviders.put(Network.Service.Connectivity, Network.Provider.NuageVsp);
-
-                    for (Network.Service service : defaultNuageVspSharedSGNetworkOfferingProviders.keySet()) {
-                        NetworkOfferingServiceMapVO offService =
-                                new NetworkOfferingServiceMapVO(defaultNuageVspSharedSGNetworkOffering.getId(), service, defaultNuageVspSharedSGNetworkOfferingProviders.get(service));
-                        _networkOfferingServiceMapDao.persist(offService);
-                        if (s_logger.isTraceEnabled()) {
-                            s_logger.trace("Added service for the NuageVsp network offering: " + offService);
-                        }
-                    }
-                }
-            }
-        });
     }
 
     private Long getNuageVspHostId(long physicalNetworkId) {
