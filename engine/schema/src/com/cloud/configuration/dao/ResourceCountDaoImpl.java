@@ -252,16 +252,16 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         return 0;
     }
 
-    private String baseSqlCountComputingResourceAllocatedToAccount = "Select "  
-            + " SUM((CASE "  
+    private String baseSqlCountComputingResourceAllocatedToAccount = "Select "
+            + " SUM((CASE "
             + "        WHEN so.%s is not null THEN so.%s "
-            + "        ELSE CONVERT(vmd.value, UNSIGNED INTEGER) " 
+            + "        ELSE CONVERT(vmd.value, UNSIGNED INTEGER) "
             + "    END)) as total "
-            + " from vm_instance vm " 
+            + " from vm_instance vm "
             + " join service_offering_view so on so.id = vm.service_offering_id "
             + " left join user_vm_details vmd on vmd.vm_id = vm.id and vmd.name = '%s' "
             + " where vm.type = 'User' and state not in ('Destroyed', 'Error', 'Expunging') and display_vm = true and account_id = ? ";
-    
+
     @Override
     public long countCpuNumberAllocatedToAccount(long accountId) {
         String sqlCountCpuNumberAllocatedToAccount = String.format(baseSqlCountComputingResourceAllocatedToAccount, ResourceType.cpu, ResourceType.cpu, "cpuNumber");
@@ -279,7 +279,7 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
         try (TransactionLegacy tx = TransactionLegacy.currentTxn()) {
             PreparedStatement pstmt = tx.prepareAutoCloseStatement(sqlCountComputingResourcesAllocatedToAccount);
             pstmt.setLong(1, accountId);
-            
+
             ResultSet rs = pstmt.executeQuery();
             if (!rs.next()) {
               throw new CloudRuntimeException(String.format("An unexpected case happened while counting allocated computing resources for account: " + accountId));
@@ -289,5 +289,4 @@ public class ResourceCountDaoImpl extends GenericDaoBase<ResourceCountVO, Long> 
             throw new CloudRuntimeException(e);
         }
     }
-
 }
