@@ -3926,7 +3926,8 @@
                                             });
                                             networkServiceObjs.push({
                                                 name: 'UserData',
-                                                provider: [{name: 'VpcVirtualRouter'}]
+                                                provider: [{name: 'VpcVirtualRouter'},
+                                                           {name: 'ConfigDrive'}]
                                             });
                                             networkServiceObjs.push({
                                                 name: 'Vpn',
