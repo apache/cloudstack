@@ -56,20 +56,20 @@
 
         <!-- Plugins versions -->
         <cs.antrun-plugin.version>1.8</cs.antrun-plugin.version>
-        <cs.builder-helper-plugin.version>1.9.1</cs.builder-helper-plugin.version>
+        <cs.builder-helper-plugin.version>3.0.0</cs.builder-helper-plugin.version>
         <cs.checkstyle-plugin.version>3.0.0</cs.checkstyle-plugin.version>
-        <cs.cobertura-plugin.version>2.6</cs.cobertura-plugin.version>
-        <cs.compiler-plugin.version>3.2</cs.compiler-plugin.version>
-        <cs.dependency-plugin.version>2.9</cs.dependency-plugin.version>
-        <cs.failsafe-plugin.version>2.18.1</cs.failsafe-plugin.version>
-        <cs.findbugs-plugin.version>3.0.3</cs.findbugs-plugin.version>
-        <cs.jar-plugin.version>2.5</cs.jar-plugin.version>
-        <cs.pmd-plugin.version>3.3</cs.pmd-plugin.version>
-        <cs.project-info-plugin.version>2.7</cs.project-info-plugin.version>
-        <cs.release-plugin.version>2.5.1</cs.release-plugin.version>
-        <cs.resources-plugin.version>2.7</cs.resources-plugin.version>
+        <cs.cobertura-plugin.version>2.7</cs.cobertura-plugin.version>
+        <cs.compiler-plugin.version>3.7.0</cs.compiler-plugin.version>
+        <cs.dependency-plugin.version>3.1.0</cs.dependency-plugin.version>
+        <cs.failsafe-plugin.version>2.21.0</cs.failsafe-plugin.version>
+        <cs.findbugs-plugin.version>3.0.5</cs.findbugs-plugin.version>
+        <cs.jar-plugin.version>3.1.0</cs.jar-plugin.version>
+        <cs.pmd-plugin.version>3.9.0</cs.pmd-plugin.version>
+        <cs.project-info-plugin.version>2.9</cs.project-info-plugin.version>
+        <cs.release-plugin.version>2.5.3</cs.release-plugin.version>
+        <cs.resources-plugin.version>3.1.0</cs.resources-plugin.version>
         <cs.site-plugin.version>3.7.1</cs.site-plugin.version>
-        <cs.surefire-plugin.version>2.18.1</cs.surefire-plugin.version>
+        <cs.surefire-plugin.version>2.21.0</cs.surefire-plugin.version>
 
         <!-- Logging versions -->
         <cs.log4j.version>1.2.17</cs.log4j.version>
