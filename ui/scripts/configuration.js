@@ -2415,7 +2415,7 @@
                                             $supportedServices.css('display', 'inline-block');
                                         } else if ($guestTypeField.val() == 'L2') {
                                             $useVpc.hide();
-                                            $supportedServices.hide();
+                                            $supportedServices.css('display', 'inline-block');
                                         }
                                         var $providers = $useVpcCb.closest('form').find('.dynamic-input select[name!="service.Connectivity.provider"]');
                                         var $optionsOfProviders = $providers.find('option');
