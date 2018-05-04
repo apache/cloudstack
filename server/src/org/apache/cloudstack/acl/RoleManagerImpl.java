@@ -277,7 +277,6 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
                 rolesIterator.remove();
             }
         }
-
     }
 
     @Override
