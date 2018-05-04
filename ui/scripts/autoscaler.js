@@ -414,27 +414,20 @@
                     isHidden: true,
                     dependsOn: 'isAdvanced',
                     select: function(args) {
-                        $.ajax({
-                            url: createURL("listDiskOfferings&listAll=true"),
-                            dataType: "json",
-                            async: true,
-                            success: function(json) {
-                                var diskofferings = json.listdiskofferingsresponse.diskoffering;
-                                var items = [];
-                                items.push({
-                                    id: "",
-                                    description: ""
-                                });
-                                $(diskofferings).each(function() {
-                                    items.push({
-                                        id: this.id,
-                                        description: this.name
-                                    });
-                                });
-                                args.response.success({
-                                    data: items
-                                });
-                            }
+                        var diskOfferings = cloudStack.listDiskOfferings({listAll: true});
+                        var items = [];
+                        items.push({
+                            id: "",
+                            description: ""
+                        });
+                        $(diskOfferings).each(function() {
+                            items.push({
+                                id: this.id,
+                                description: this.name
+                            });
+                        });
+                        args.response.success({
+                            data: items
                         });
                     }
                 },

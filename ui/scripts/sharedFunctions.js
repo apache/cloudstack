@@ -2851,3 +2851,34 @@ cloudStack.createArrayOfParametersForCreatePodCommand = function (zoneId, data){
     cloudStack.addParameterToCommandUrlParameterArrayIfValueIsNotEmpty(array, "endIp", data.podEndIp);
     return array;
 }
+
+cloudStack.listDiskOfferings = function(options){
+    var defaultOptions = {
+            listAll: false,
+            isRecursive: false,
+            error: function(data) {
+                args.response.error(data);
+            }
+    };
+    var mergedOptions = $.extend({}, defaultOptions, options);
+    
+    var listDiskOfferingsUrl = "listDiskOfferings";
+    if(mergedOptions.listAll){
+        listDiskOfferingsUrl = listDiskOfferingsUrl + "&listall=true";
+    }
+    if(mergedOptions.isRecursive){
+        listDiskOfferingsUrl = listDiskOfferingsUrl + "&isrecursive=true";
+    }
+    var diskOfferings = undefined;
+    $.ajax({
+        url: createURL(listDiskOfferingsUrl),
+        data: mergedOptions.data,
+        dataType: "json",
+        async: false,
+        success: function(json) {
+            diskOfferings = json.listdiskofferingsresponse.diskoffering;
+        },
+        error: mergedOptions.error
+    });
+    return diskOfferings;
+};

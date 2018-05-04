@@ -1683,19 +1683,16 @@
                     dataProvider: function(args) {
                         var data = {};
                         listViewDataProvider(args, data);
-
-                        $.ajax({
-                            url: createURL('listDiskOfferings&isrecursive=true'),
+                        var listDiskOfferingsOptions = {
+                            isRecursive: true,
                             data: data,
-                            success: function(json) {
-                                var items = json.listdiskofferingsresponse.diskoffering;
-                                args.response.success({
-                                    data: items
-                                });
-                            },
                             error: function(data) {
                                 args.response.error(parseXMLHttpResponse(data));
                             }
+                        };
+                        var diskOfferings = cloudStack.listDiskOfferings(listDiskOfferingsOptions);
+                        args.response.success({
+                            data: diskOfferings
                         });
                     },
 
@@ -2297,16 +2294,14 @@
                                     var data = {
                                         id: args.context.diskOfferings[0].id
                                     };
-                                    $.ajax({
-                                        url: createURL('listDiskOfferings&isrecursive=true'),
-                                        data: data,
-                                        success: function(json) {
-                                            var item = json.listdiskofferingsresponse.diskoffering[0];
-                                            args.response.success({
-                                                actionFilter: diskOfferingActionfilter,
-                                                data: item
-                                            });
-                                        }
+                                    var listDiskOfferingsOptions = {
+                                        isRecursive: true,
+                                        data: data
+                                    };
+                                    var diskOfferings = cloudStack.listDiskOfferings(listDiskOfferingsOptions);
+                                    args.response.success({
+                                        actionFilter: diskOfferingActionfilter,
+                                        data: diskOfferings[0]
                                     });
                                 }
                             }
