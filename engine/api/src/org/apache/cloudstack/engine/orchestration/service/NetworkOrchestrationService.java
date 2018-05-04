@@ -66,6 +66,12 @@ public interface NetworkOrchestrationService {
     String NetworkThrottlingRateCK = "network.throttling.rate";
     String MinVRVersionCK = "minreq.sysvmtemplate.version";
 
+    /**
+     * The redundant router handover time which is defined by VRRP2 spec as:
+     * (3 * advertisement interval + skew_seconds) or 10s with CloudStack default
+     */
+    Long RVRHandoverTime = 10000L;
+
     ConfigKey<String> MinVRVersion = new ConfigKey<String>(String.class, MinVRVersionCK, "Advanced", "4.10.0",
             "What version should the Virtual Routers report", true, ConfigKey.Scope.Zone, null);
 

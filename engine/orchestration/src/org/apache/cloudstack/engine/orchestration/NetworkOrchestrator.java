@@ -1181,7 +1181,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
     }
 
-    protected void implementNetworkElements(final DeployDestination dest, final ReservationContext context, final Network network, final NetworkOffering offering, final List<Provider> providersToImplement)
+    private void implementNetworkElements(final DeployDestination dest, final ReservationContext context, final Network network, final NetworkOffering offering, final List<Provider> providersToImplement)
             throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         for (NetworkElement element : networkElements) {
             if (providersToImplement.contains(element.getProvider())) {
@@ -2913,7 +2913,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         // For redundant network wait for 3*advert_int+skew_seconds for VRRP to kick in
         if (network.isRedundant() || (oldRouters.size() == 1 && oldRouters.get(0).getIsRedundantRouter())) {
             try {
-                Thread.sleep(10000L);
+                Thread.sleep(NetworkOrchestrationService.RVRHandoverTime);
             } catch (final InterruptedException ignored) {}
         }
 

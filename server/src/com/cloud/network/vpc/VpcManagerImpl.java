@@ -2464,7 +2464,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         // For redundant vpc wait for 3*advert_int+skew_seconds for VRRP to kick in
         if (vpc.isRedundant() || (oldRouters.size() == 1 && oldRouters.get(0).getIsRedundantRouter())) {
             try {
-                Thread.sleep(10000L);
+                Thread.sleep(NetworkOrchestrationService.RVRHandoverTime);
             } catch (final InterruptedException ignored) {
             }
         }
