@@ -19,7 +19,7 @@
 set -e
 set -x
 
-CLOUDSTACK_RELEASE=4.11.0
+CLOUDSTACK_RELEASE=4.11.1
 
 function configure_apache2() {
    # Enable ssl, rewrite and auth
@@ -29,6 +29,16 @@ function configure_apache2() {
    cp /etc/apache2/sites-available/000-default.conf /etc/apache2/sites-available/default.orig
    cp /etc/apache2/sites-available/default-ssl.conf /etc/apache2/sites-available/default-ssl.orig
    sed -i 's/SSLProtocol .*$/SSLProtocol TLSv1.2/g' /etc/apache2/mods-available/ssl.conf
+}
+
+function configure_cacerts() {
+  CDIR=$(pwd)
+  cd /tmp
+  # Add LetsEncrypt ca-cert
+  wget https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.der
+  keytool -trustcacerts -keystore /etc/ssl/certs/java/cacerts -storepass changeit -noprompt -importcert -alias letsencryptauthorityx3cross -file lets-encrypt-x3-cross-signed.der
+  rm -f lets-encrypt-x3-cross-signed.der
+  cd $CDIR
 }
 
 function install_cloud_scripts() {
@@ -102,6 +112,7 @@ function configure_services() {
   configure_apache2
   configure_strongswan
   configure_issue
+  configure_cacerts
 }
 
 return 2>/dev/null || configure_services

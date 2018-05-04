@@ -448,7 +448,7 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.services = testClient.getParsedTestDataConfig()
         cls.hypervisor = testClient.getHypervisorInfo()
-
+        cls._cleanup = []
         cls.hypervisorNotSupported = False
         if cls.hypervisor.lower() not in ["kvm"]:
             cls.hypervisorNotSupported = True
@@ -516,7 +516,6 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
             cls.offering,
             cls.account
         ]
-        return
 
     @classmethod
     def tearDownClass(cls):

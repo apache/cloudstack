@@ -64,12 +64,14 @@ public class SAMLUtilsTest extends TestCase {
     public void testX509Helpers() throws Exception {
         KeyPair keyPair = CertUtils.generateRandomKeyPair(4096);
 
-        String privateKeyString = CertUtils.privateKeyToPem(keyPair.getPrivate());
-        String publicKeyString = CertUtils.publicKeyToPem(keyPair.getPublic());
+        String privateKeyString = SAMLUtils.encodePrivateKey(keyPair.getPrivate());
+        String publicKeyString = SAMLUtils.encodePublicKey(keyPair.getPublic());
 
-        PrivateKey privateKey = CertUtils.pemToPrivateKey(privateKeyString);
-        PublicKey publicKey = CertUtils.pemToPublicKey(publicKeyString);
+        PrivateKey privateKey = SAMLUtils.decodePrivateKey(privateKeyString);
+        PublicKey publicKey = SAMLUtils.decodePublicKey(publicKeyString);
 
+        assertNotNull(privateKey);
+        assertNotNull(publicKey);
         assertTrue(privateKey.equals(keyPair.getPrivate()));
         assertTrue(publicKey.equals(keyPair.getPublic()));
     }

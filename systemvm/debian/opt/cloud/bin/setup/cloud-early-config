@@ -71,16 +71,16 @@ config_guest() {
 
 get_boot_params() {
   case $HYPERVISOR in
-     xen-pv)
+     xen-pv|xen-domU)
           cat /proc/cmdline > $CMDLINE
           sed -i "s/%/ /g" $CMDLINE
           ;;
      xen-hvm)
-          if [ ! -f /usr/sbin/xenstore-read ]; then
+          if [ ! -f /usr/bin/xenstore-read ]; then
             log_it "ERROR: xentools not installed, cannot found xenstore-read" && exit 5
           fi
-          /usr/sbin/xenstore-read vm-data/cloudstack/init > /var/cache/cloud/cmdline
-          sed -i "s/%/ /g" /var/cache/cloud/cmdline
+          /usr/bin/xenstore-read vm-data/cloudstack/init > $CMDLINE
+          sed -i "s/%/ /g" $CMDLINE
           ;;
      kvm)
           VPORT=$(find /dev/virtio-ports -type l -name '*.vport' 2>/dev/null|head -1)

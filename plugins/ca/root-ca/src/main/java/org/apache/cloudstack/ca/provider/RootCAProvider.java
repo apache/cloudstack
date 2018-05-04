@@ -20,6 +20,7 @@ package org.apache.cloudstack.ca.provider;
 import java.io.IOException;
 import java.io.StringReader;
 import java.math.BigInteger;
+import java.net.InetAddress;
 import java.security.InvalidKeyException;
 import java.security.KeyManagementException;
 import java.security.KeyPair;
@@ -34,6 +35,7 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +47,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+import javax.xml.bind.DatatypeConverter;
 
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.framework.ca.CAProvider;
@@ -55,9 +58,15 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.utils.security.CertUtils;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.log4j.Logger;
-import org.bouncycastle.jce.PKCS10CertificationRequest;
+import org.bouncycastle.asn1.pkcs.Attribute;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequest;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
 
@@ -137,7 +146,17 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
         return new Certificate(clientCertificate, keyPair.getPrivate(), Collections.singletonList(caCertificate));
     }
 
-    private Certificate generateCertificateUsingCsr(final String csr, final List<String> domainNames, final List<String> ipAddresses, final int validityDays) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, CertificateException, SignatureException, IOException, OperatorCreationException {
+    private Certificate generateCertificateUsingCsr(final String csr, final List<String> names, final List<String> ips, final int validityDays) throws NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, CertificateException, SignatureException, IOException, OperatorCreationException {
+        final List<String> dnsNames = new ArrayList<>();
+        final List<String> ipAddresses = new ArrayList<>();
+
+        if (names != null) {
+            dnsNames.addAll(names);
+        }
+        if (ips != null) {
+            ipAddresses.addAll(ips);
+        }
+
         PemObject pemObject = null;
 
         try {
@@ -151,13 +170,33 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             throw new CloudRuntimeException("Unable to read/process CSR: " + csr);
         }
 
-        final PKCS10CertificationRequest request = new PKCS10CertificationRequest(pemObject.getContent());
+        final JcaPKCS10CertificationRequest request = new JcaPKCS10CertificationRequest(pemObject.getContent());
+        final String subject = request.getSubject().toString();
+        for (final Attribute attribute : request.getAttributes()) {
+            if (attribute == null) {
+                continue;
+            }
+            if (attribute.getAttrType().equals(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest)) {
+                final Extensions extensions = Extensions.getInstance(attribute.getAttrValues().getObjectAt(0));
+                final GeneralNames gns = GeneralNames.fromExtensions(extensions, Extension.subjectAlternativeName);
+                if (gns != null && gns.getNames() != null && gns.getNames().length > 0) {
+                    for (final GeneralName name : gns.getNames()) {
+                        if (name.getTagNo() == GeneralName.dNSName) {
+                            dnsNames.add(name.getName().toString());
+                        }
+                        if (name.getTagNo() == GeneralName.iPAddress) {
+                            final InetAddress address = InetAddress.getByAddress(DatatypeConverter.parseHexBinary(name.getName().toString().substring(1)));
+                            ipAddresses.add(address.toString().replace("/", ""));
+                        }
+                    }
+                }
+            }
+        }
 
-        final String subject = request.getCertificationRequestInfo().getSubject().toString();
         final X509Certificate clientCertificate = CertUtils.generateV3Certificate(
                 caCertificate, caKeyPair, request.getPublicKey(),
                 subject, CAManager.CertSignatureAlgorithm.value(),
-                validityDays, domainNames, ipAddresses);
+                validityDays, dnsNames, ipAddresses);
         return new Certificate(clientCertificate, null, Collections.singletonList(caCertificate));
     }
 

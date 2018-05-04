@@ -32,7 +32,6 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -147,11 +146,11 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
             try {
                 KeyPair keyPair = CertUtils.generateRandomKeyPair(4096);
                 _ksDao.save(SAMLPluginConstants.SAMLSP_KEYPAIR,
-                        CertUtils.privateKeyToPem(keyPair.getPrivate()),
-                        CertUtils.publicKeyToPem(keyPair.getPublic()), "samlsp-keypair");
+                        SAMLUtils.encodePrivateKey(keyPair.getPrivate()),
+                        SAMLUtils.encodePublicKey(keyPair.getPublic()), "samlsp-keypair");
                 keyStoreVO = _ksDao.findByName(SAMLPluginConstants.SAMLSP_KEYPAIR);
                 s_logger.info("No SAML keystore found, created and saved a new Service Provider keypair");
-            } catch (final NoSuchProviderException | NoSuchAlgorithmException | IOException e) {
+            } catch (final NoSuchProviderException | NoSuchAlgorithmException e) {
                 s_logger.error("Unable to create and save SAML keypair, due to: ", e);
             }
         }
@@ -166,19 +165,8 @@ public class SAML2AuthManagerImpl extends AdapterBase implements SAML2AuthManage
         KeyPair spKeyPair = null;
         X509Certificate spX509Key = null;
         if (keyStoreVO != null) {
-
-            PrivateKey privateKey = null;
-            try {
-                privateKey = CertUtils.pemToPrivateKey(keyStoreVO.getCertificate());
-            } catch (final InvalidKeySpecException | IOException e) {
-                s_logger.error("Failed to read private key, due to error: ", e);
-            }
-            PublicKey publicKey = null;
-            try {
-                publicKey = CertUtils.pemToPublicKey(keyStoreVO.getKey());
-            } catch (final InvalidKeySpecException | IOException e) {
-                s_logger.error("Failed to read public key, due to error: ", e);
-            }
+            final PrivateKey privateKey = SAMLUtils.decodePrivateKey(keyStoreVO.getCertificate());
+            final PublicKey publicKey = SAMLUtils.decodePublicKey(keyStoreVO.getKey());
             if (privateKey != null && publicKey != null) {
                 spKeyPair = new KeyPair(publicKey, privateKey);
                 KeystoreVO x509VO = _ksDao.findByName(SAMLPluginConstants.SAMLSP_X509CERT);

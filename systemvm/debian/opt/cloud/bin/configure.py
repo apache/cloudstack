@@ -957,6 +957,7 @@ class IpTablesExecutor:
         acls.process()
 
         acls = CsAcl('firewallrules', self.config)
+        acls.flushAllowAllEgressRules()
         acls.process()
 
         fwd = CsForwardingRules("forwardingrules", self.config)
