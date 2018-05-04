@@ -200,7 +200,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             if (userSpecified.getCidr() != null) {
                 network.setCidr(userSpecified.getCidr());
                 network.setGateway(userSpecified.getGateway());
-            } else if (offering.getGuestType() == GuestType.Shared || !_networkModel.listNetworkOfferingServices(offering.getId()).isEmpty()) {
+            } else if (offering.getGuestType() != GuestType.L2 && (offering.getGuestType() == GuestType.Shared || !_networkModel.listNetworkOfferingServices(offering.getId()).isEmpty())) {
                 final String guestNetworkCidr = dc.getGuestNetworkCidr();
                 if (guestNetworkCidr != null) {
                     final String[] cidrTuple = guestNetworkCidr.split("\\/");
