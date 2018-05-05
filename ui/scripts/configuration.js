@@ -2404,8 +2404,10 @@
                                         var $useVpc = args.$form.find('.form-item[rel=\"useVpc\"]');
                                         var $useVpcCb = $useVpc.find("input[type=checkbox]");
                                         var $supportedServices = args.$form.find('.form-item[rel=\"supportedServices\"]');
+                                        var $userDataL2 = args.$form.find('.form-item[rel=\"userDataL2\"]');
                                         if ($guestTypeField.val() == 'Shared') { //Shared network offering
                                             $useVpc.hide();
+                                            $userDataL2.hide();
                                             $supportedServices.css('display', 'inline-block');
                                             if ($useVpcCb.is(':checked')) { //if useVpc is checked,
                                                 $useVpcCb.removeAttr("checked"); //remove "checked" attribute in useVpc
@@ -2413,9 +2415,11 @@
                                         } else if ($guestTypeField.val() == 'Isolated') { //Isolated network offering
                                             $useVpc.css('display', 'inline-block');
                                             $supportedServices.css('display', 'inline-block');
+                                            $userDataL2.hide();
                                         } else if ($guestTypeField.val() == 'L2') {
                                             $useVpc.hide();
-                                            $supportedServices.css('display', 'inline-block');
+                                            $supportedServices.hide();
+                                            $userDataL2.css('display', 'inline-block');
                                         }
                                         var $providers = $useVpcCb.closest('form').find('.dynamic-input select[name!="service.Connectivity.provider"]');
                                         var $optionsOfProviders = $providers.find('option');
@@ -2801,6 +2805,13 @@
                                         label: 'label.vpc',
                                         docID: 'helpNetworkOfferingVPC',
                                         isBoolean: true
+                                    },
+
+                                    userDataL2: {
+                                        label: 'label.user.data',
+                                        docID: 'helpL2UserData',
+                                        isBoolean: true,
+                                        isHidden: true
                                     },
 
                                     lbType: { //only shown when VPC is checked and LB service is checked
@@ -3405,6 +3416,14 @@
                                     inputData['serviceProviderList[' + serviceProviderIndex + '].provider'] = value;
                                     serviceProviderIndex++;
                                 });
+
+                                if (inputData['userDataL2'] == 'on') {
+                                    inputData['serviceProviderList[0].service'] = 'UserData';
+                                    inputData['serviceProviderList[0].provider'] = 'ConfigDrive';
+                                    inputData['supportedServices'] = 'UserData';
+                                } else {
+                                    delete inputData.serviceProviderList;
+                                }
 
                                 if (args.$form.find('.form-item[rel=egressdefaultpolicy]').is(':visible')) {
                                     if (formData.egressdefaultpolicy === 'ALLOW') {

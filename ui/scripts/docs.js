@@ -1351,5 +1351,9 @@ cloudStack.docs = {
     },
     helpSetReservationSystemVms: {
         desc: 'If enabled, IP range reservation is set for SSVM & CPVM. Global setting "system.vm.public.ip.reservation.mode.strictness" is used to control whether reservation is strict or not (preferred)'
+    },
+    helpL2UserData: {
+        desc: 'Pass user and meta data to VMs (via ConfigDrive)',
+        externalLink: ''
     }
 };
