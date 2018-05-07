@@ -121,7 +121,7 @@ public class LibvirtDomainXMLParser {
                         def.defBlockBasedDisk(diskDev, diskLabel,
                             DiskDef.DiskBus.valueOf(bus.toUpperCase()));
                     }
-                    if (diskCacheMode != null) {
+                    if (StringUtils.isNotBlank(diskCacheMode)) {
                         def.setCacheMode(DiskDef.DiskCacheMode.valueOf(diskCacheMode.toUpperCase()));
                     }
                 }
