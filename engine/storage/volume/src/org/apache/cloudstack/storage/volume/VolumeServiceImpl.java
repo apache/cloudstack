@@ -85,7 +85,6 @@ import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
@@ -1237,17 +1236,15 @@ public class VolumeServiceImpl implements VolumeService {
         return future;
     }
 
-    @Override
     @DB
-    public boolean destroyVolume(long volumeId) throws ConcurrentOperationException {
+    @Override
+    public void destroyVolume(long volumeId) {
         // mark volume entry in volumes table as destroy state
         VolumeInfo vol = volFactory.getVolume(volumeId);
         vol.stateTransit(Volume.Event.DestroyRequested);
         snapshotMgr.deletePoliciesForVolume(volumeId);
 
         vol.stateTransit(Volume.Event.OperationSucceeded);
-
-        return true;
     }
 
     @Override

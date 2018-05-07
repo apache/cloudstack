@@ -1179,10 +1179,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             Host host = _hostDao.findById(ep.getId());
                             if (host != null && host.getManagementServerId() != null) {
                                 if (_serverId == host.getManagementServerId().longValue()) {
-                                    if (!volService.destroyVolume(volume.getId())) {
-                                        s_logger.warn("Unable to destroy uploaded volume " + volume.getUuid());
-                                        continue;
-                                    }
+                                    volService.destroyVolume(volume.getId());
                                     // decrement volume resource count
                                     _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplayVolume());
                                     // expunge volume from secondary if volume is on image store

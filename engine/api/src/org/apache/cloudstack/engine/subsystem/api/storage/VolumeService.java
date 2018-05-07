@@ -26,7 +26,6 @@ import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.command.CommandResult;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering;
@@ -65,7 +64,6 @@ public interface VolumeService {
      *
      * @param volumeId
      * @return
-     * @throws ConcurrentOperationException
      */
     AsyncCallFuture<VolumeApiResult> expungeVolumeAsync(VolumeInfo volume);
 
@@ -93,7 +91,7 @@ public interface VolumeService {
 
     AsyncCallFuture<CommandResult> migrateVolumes(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost);
 
-    boolean destroyVolume(long volumeId) throws ConcurrentOperationException;
+    void destroyVolume(long volumeId);
 
     AsyncCallFuture<VolumeApiResult> registerVolume(VolumeInfo volume, DataStore store);
 

@@ -76,7 +76,7 @@ public interface VolumeApiService {
 
     GetUploadParamsResponse uploadVolume(GetUploadParamsForVolumeCmd cmd) throws ResourceAllocationException, MalformedURLException;
 
-    boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException;
+    boolean deleteVolume(long volumeId, Account caller);
 
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
