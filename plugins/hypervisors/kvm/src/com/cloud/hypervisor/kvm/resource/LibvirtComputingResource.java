@@ -581,7 +581,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
-    @Override public void mount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
+    @Override
+    public void mount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
         s_logger.debug("mount " + uri.toString() + " on " + localRootPath + ((nfsVersion != null) ? " nfsVersion=" + nfsVersion : ""));
         ensureLocalRootPathExists(localRootPath, uri);
 
@@ -598,6 +599,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         Script command = new Script("mount", _timeout, s_logger);
 
         String scheme = uri.getScheme().toLowerCase();
+        if("networkfilesystem".equals(scheme)) {
+            scheme = "nfs";
+        }
         command.add("-t", scheme);
 
         command.add(remoteDevice);
