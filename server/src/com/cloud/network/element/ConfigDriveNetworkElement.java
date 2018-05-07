@@ -22,10 +22,15 @@ import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 
+import com.cloud.exception.CloudException;
 import com.cloud.hypervisor.Hypervisor;
-import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -121,6 +126,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     EndPointSelector _ep;
     @Inject
     VolumeOrchestrationService _volumeMgr;
+    @Inject
+    VolumeDao volumeDao;
+
+    @Inject
+    PrimaryDataStoreDao dataStoreDao;
 
     private final static String CONFIGDRIVEFILENAME = "configdrive.iso";
     private final static String CONFIGDRIVEDIR = "ConfigDrive";
@@ -154,7 +164,17 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             return true;
         }
 
-        DataStore dataStore = getDataStore(network, vm);
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("releasing network for configdrive of vm " + vm.getInstanceName());
+        }
+
+        DataStore dataStore = null;
+        try {
+            dataStore = getDataStore(network, vm, null);
+        } catch (CloudException e) {
+            s_logger.info("no primary storage found, nothing to release for vm "+ vm.getInstanceName());
+            return true;
+        }
 
         String isoFile =  "/" + CONFIGDRIVEDIR + "/" + vm.getInstanceName()+ "/" + CONFIGDRIVEFILENAME;
         HandleConfigDriveIsoCommand deleteCommand = new HandleConfigDriveIsoCommand(vm.getVmData(),
@@ -169,11 +189,26 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return answer.getResult();
     }
 
-    private DataStore getDataStore(Network network, VirtualMachineProfile vm) {
-        DataStore dataStore;
+    private DataStore getDataStore(Network network, VirtualMachineProfile vm, Long hostId) throws CloudException {
+        DataStore dataStore = null;
         if(UsePrimaryStorage.value() && Hypervisor.HypervisorType.KVM.equals(vm.getHypervisorType())) {
-            // get the primary storage foor the vm?????
-            dataStore = getPrimaryDatastoreForVM(vm);
+            List<VolumeVO> volumes = volumeDao.findUsableVolumesForInstance(vm.getId());
+            for(VolumeVO volume: volumes) {
+                Long poolId = volume.getPoolId();
+                if(poolId != null) {
+                    dataStore = _dataStoreMgr.getPrimaryDataStore(poolId);
+                    if (DataStoreRole.Primary.equals(dataStore.getRole())) {
+                        return dataStore;
+                    }
+                }
+            }
+            List<StoragePoolVO> dataStores = dataStoreDao.listAll();
+            if(!dataStores.isEmpty()) {
+                dataStore = _dataStoreMgr.getPrimaryDataStore(dataStores.get(0).getId());
+            }
+            if(dataStore == null) {
+                throw new CloudException("No data store found to put configdrive for vm " + vm.getInstanceName());
+            }
         } else {
             // Remove form secondary storage
             dataStore = _dataStoreMgr.getImageStore(network.getDataCenterId());
@@ -181,10 +216,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return dataStore;
     }
 
-    private DataStore getPrimaryDatastoreForVM(VirtualMachineProfile vm) {
+    private DataStore getPrimaryDatastoreForVM(VirtualMachineProfile vm) throws CloudException {
         List<DiskTO> list = vm.getDisks();
         if (list.isEmpty()) {
-            throw new CloudRuntimeException("no storage known for vm " + vm.getInstanceName() + " (uuid == " + vm.getUuid()+")");
+            throw new CloudException("no storage known for vm " + vm.getInstanceName() + " (uuid == " + vm.getUuid()+")");
         }
         // put it next to the root disk, assyou+meing that is disk number zero ;)
         DataStore store = _dataStoreMgr.getPrimaryDataStore(list.get(0).getData().getDataStore().getUuid());
@@ -341,7 +376,13 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
         if (nic.isDefaultNic() && _networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.ConfigDrive)) {
             s_logger.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
-            DataStore dataStore = getDataStore(network,vm);
+            DataStore dataStore = null;
+            try {
+                dataStore = getDataStore(network,vm, null);
+            } catch (CloudException e) {
+                s_logger.info("no primary storage found, nothing to migrate for vm "+ vm.getInstanceName());
+                return true;
+            }
             configureConfigDriveDisk(vm, dataStore);
             return false;
         }
@@ -363,6 +404,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private boolean updateConfigDriveIso(Network network, VirtualMachineProfile profile, Host host, boolean update) throws ResourceUnavailableException {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("updating configdrive iso for vm " + profile.getInstanceName());
+        }
         Integer deviceKey = null;
         Long hostId;
         if (host == null) {
@@ -371,7 +415,13 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             hostId = host.getId();
         }
 
-        DataStore dataStore = getDataStore(network,profile);
+        DataStore dataStore = null;
+        try {
+            dataStore = getDataStore(network,profile, hostId);
+        } catch (CloudException e) {
+            s_logger.info("no primary storage found, nothing to update for vm "+ profile.getInstanceName());
+            return true;
+        }
         // Detach the existing ISO file if the machine is running
         if (update && profile.getVirtualMachine().getState().equals(VirtualMachine.State.Running)) {
             s_logger.debug("Detach config drive ISO for  vm " + profile.getInstanceName() + " in host " + _hostDao.findById(hostId));
