@@ -107,8 +107,10 @@ public class ConfigDriveFactory {
 
     public Answer executeRequest(HandleConfigDriveIsoCommand cmd) {
 
-        if (cmd.isCreate()) {
+        if(s_logger.isDebugEnabled()) {
             s_logger.debug(String.format("VMdata %s, attach = %s", cmd.getVmData(), cmd.isCreate()));
+        }
+        if (cmd.isCreate()) {
             if(cmd.getVmData() == null) return new Answer(cmd, false, "No Vmdata available");
             String nfsMountPoint = attacher.getRootDir(cmd.getDestStore().getUrl(), nfsVersion);
             File isoFile = new File(nfsMountPoint, cmd.getIsoFile());
