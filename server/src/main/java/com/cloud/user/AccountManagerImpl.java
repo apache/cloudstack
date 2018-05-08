@@ -123,13 +123,13 @@ import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectAccountDao;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.region.ha.GlobalLoadBalancingRulesService;
 import com.cloud.server.auth.UserAuthenticator;
 import com.cloud.server.auth.UserAuthenticator.ActionOnFailedAuthentication;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotManager;
@@ -180,9 +180,7 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private AccountDao _accountDao;
     @Inject
-    private AccountManager _accountMgr;
-    @Inject
-    ConfigurationDao _configDao;
+    private ConfigurationDao _configDao;
     @Inject
     private ResourceCountDao _resourceCountDao;
     @Inject
@@ -203,10 +201,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     private SecurityGroupDao _securityGroupDao;
     @Inject
     private VMInstanceDao _vmDao;
-    @Inject
-    protected SnapshotDao _snapshotDao;
-    @Inject
-    protected VMTemplateDao _vmTemplateDao;
     @Inject
     private SecurityGroupManager _networkGroupMgr;
     @Inject
@@ -250,11 +244,11 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private VpcManager _vpcMgr;
     @Inject
-    Site2SiteVpnManager _vpnMgr;
+    private Site2SiteVpnManager _vpnMgr;
     @Inject
     private AutoScaleManager _autoscaleMgr;
     @Inject
-    VolumeApiService volumeService;
+    private VolumeApiService volumeService;
     @Inject
     private AffinityGroupDao _affinityGroupDao;
     @Inject
@@ -272,29 +266,29 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     @Inject
     private SSHKeyPairDao _sshKeyPairDao;
 
-    List<QuerySelector> _querySelectors;
+    private List<QuerySelector> _querySelectors;
 
     @Inject
-    MessageBus _messageBus;
+    private MessageBus _messageBus;
 
     @Inject
-    public com.cloud.region.ha.GlobalLoadBalancingRulesService _gslbService;
+    private GlobalLoadBalancingRulesService _gslbService;
 
     private List<UserAuthenticator> _userAuthenticators;
-    List<UserAuthenticator> _userPasswordEncoders;
+    protected List<UserAuthenticator> _userPasswordEncoders;
 
     @Inject
-    protected IpAddressManager _ipAddrMgr;
+    private IpAddressManager _ipAddrMgr;
 
     private final ScheduledExecutorService _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("AccountChecker"));
 
-    int _allowedLoginAttempts;
+    private int _allowedLoginAttempts;
 
-    UserVO _systemUser;
-    AccountVO _systemAccount;
+    private UserVO _systemUser;
+    private AccountVO _systemAccount;
 
-    List<SecurityChecker> _securityCheckers;
-    int _cleanupInterval;
+    private List<SecurityChecker> _securityCheckers;
+    private int _cleanupInterval;
 
     public List<UserAuthenticator> getUserAuthenticators() {
         return _userAuthenticators;
@@ -493,8 +487,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 return;
             }
         }
-
-        assert false : "How can all of the security checkers pass on checking this caller?";
         throw new PermissionDeniedException("There's no way to confirm " + caller + " has access to " + domain);
     }
 
@@ -2292,8 +2284,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
             }
 
             // We authenticated successfully by now, let's check if we are allowed to login from the ip address the reqest comes from
-            final Account account = _accountMgr.getAccount(user.getAccountId());
-            final DomainVO domain = (DomainVO)_domainMgr.getDomain(account.getDomainId());
+            final Account account = getAccount(user.getAccountId());
+            final DomainVO domain = (DomainVO) _domainMgr.getDomain(account.getDomainId());
 
             // Get the CIDRs from where this account is allowed to make calls
             final String accessAllowedCidrs = ApiServiceConfiguration.ApiAllowedSourceCidrList.valueIn(account.getId()).replaceAll("\\s", "");
