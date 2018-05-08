@@ -3395,6 +3395,14 @@
                                     } else { //specifyVlan checkbox is unchecked
                                         delete inputData.specifyVlan; //if specifyVlan checkbox is unchecked, do not pass specifyVlan parameter to API call since we need to keep API call's size as small as possible (p.s. specifyVlan is defaulted as false at server-side)
                                     }
+
+                                    if (inputData['userDataL2'] == 'on') {
+                                        inputData['serviceProviderList[0].service'] = 'UserData';
+                                        inputData['serviceProviderList[0].provider'] = 'ConfigDrive';
+                                        inputData['supportedServices'] = 'UserData';
+                                    } else {
+                                        delete inputData.serviceProviderList;
+                                    }
                                 }
 
                                 if (inputData['forvpc'] == 'on') {
@@ -3416,14 +3424,6 @@
                                     inputData['serviceProviderList[' + serviceProviderIndex + '].provider'] = value;
                                     serviceProviderIndex++;
                                 });
-
-                                if (inputData['userDataL2'] == 'on') {
-                                    inputData['serviceProviderList[0].service'] = 'UserData';
-                                    inputData['serviceProviderList[0].provider'] = 'ConfigDrive';
-                                    inputData['supportedServices'] = 'UserData';
-                                } else {
-                                    delete inputData.serviceProviderList;
-                                }
 
                                 if (args.$form.find('.form-item[rel=egressdefaultpolicy]').is(':visible')) {
                                     if (formData.egressdefaultpolicy === 'ALLOW') {
