@@ -16,6 +16,26 @@
 // under the License.
 package com.cloud.upgrade;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ObjectArrays.concat;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Date;
+
+import javax.inject.Inject;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.annotations.VisibleForTesting;
+
+import org.apache.cloudstack.utils.CloudStackVersion;
+
 import com.cloud.upgrade.dao.DbUpgrade;
 import com.cloud.upgrade.dao.Upgrade217to218;
 import com.cloud.upgrade.dao.Upgrade218to22;
@@ -42,7 +62,9 @@ import com.cloud.upgrade.dao.Upgrade306to307;
 import com.cloud.upgrade.dao.Upgrade307to410;
 import com.cloud.upgrade.dao.Upgrade30to301;
 import com.cloud.upgrade.dao.Upgrade40to41;
+import com.cloud.upgrade.dao.Upgrade41000to41100;
 import com.cloud.upgrade.dao.Upgrade410to420;
+import com.cloud.upgrade.dao.Upgrade41100to41110;
 import com.cloud.upgrade.dao.Upgrade41110to41200;
 import com.cloud.upgrade.dao.Upgrade420to421;
 import com.cloud.upgrade.dao.Upgrade421to430;
@@ -68,8 +90,6 @@ import com.cloud.upgrade.dao.Upgrade490to4910;
 import com.cloud.upgrade.dao.Upgrade4910to4920;
 import com.cloud.upgrade.dao.Upgrade4920to4930;
 import com.cloud.upgrade.dao.Upgrade4930to41000;
-import com.cloud.upgrade.dao.Upgrade41000to41100;
-import com.cloud.upgrade.dao.Upgrade41100to41110;
 import com.cloud.upgrade.dao.UpgradeSnapshot217to224;
 import com.cloud.upgrade.dao.UpgradeSnapshot223to224;
 import com.cloud.upgrade.dao.VersionDao;
@@ -81,23 +101,6 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
-
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.cloudstack.utils.CloudStackVersion;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Date;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.collect.ObjectArrays.concat;
 
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     private static final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
