@@ -31,7 +31,6 @@ import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.deploy.DeployDestination;
 import com.cloud.deploy.DeploymentPlan;
@@ -52,9 +51,6 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
     @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
-    @Inject
-    protected ConfigurationDao _configDao;
-
     @Override
     public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
@@ -62,10 +58,7 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
         for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
             if (vmGroupMapping != null) {
                 AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
-
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
-                }
+                s_logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
 
                 List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
                 groupVMIds.remove(vm.getId());
