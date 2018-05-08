@@ -17481,6 +17481,10 @@
                                                 item.powerstate = item.outofbandmanagement.powerstate;
                                             }
 
+                                            if (!item.hypervisorversion && item.details && item.details["Host.OS"]) {
+                                                item.hypervisorversion =  item.details["Host.OS"] + " " +  item.details["Host.OS.Version"];
+                                            }
+
                                             if (item && item.hostha) {
                                                 item.hastate = item.hostha.hastate;
                                                 item.haprovider = item.hostha.haprovider;

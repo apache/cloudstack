@@ -525,6 +525,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
                     if (pdef == null) {
                         throw new CloudRuntimeException("Unable to parse the storage pool definition for storage pool " + poolname);
                     }
+
                     String targetPath = pdef.getTargetPath();
                     if (targetPath != null && targetPath.equals(path)) {
                         s_logger.debug("Storage pool utilizing path '" + path + "' already exists as pool " + poolname +
@@ -663,7 +664,7 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
 
         switch (pool.getType()) {
             case RBD:
-                return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                return createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size);
             case NetworkFilesystem:
             case Filesystem:
                 switch (format) {
