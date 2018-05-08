@@ -516,7 +516,7 @@ public class VolumeApiServiceImplTest {
         Mockito.verify(volumeVOMock, times(0)).getVolumeType();
     }
 
-    @Test(expected = InvalidParameterValueException.class)
+    @Test
     public void validateConditionsToReplaceDiskOfferingOfVolumeTestRootVolume() {
         Mockito.when(volumeVOMock.getVolumeType()).thenReturn(Type.ROOT);
 
@@ -575,7 +575,6 @@ public class VolumeApiServiceImplTest {
         volumeApiServiceImpl.validateConditionsToReplaceDiskOfferingOfVolume(volumeVOMock, newDiskOfferingMock, storagePoolMock);
 
         InOrder inOrder = Mockito.inOrder(volumeVOMock, newDiskOfferingMock, storagePoolMock, volumeApiServiceImpl);
-        inOrder.verify(volumeVOMock).getVolumeType();
         inOrder.verify(storagePoolMock).isShared();
         inOrder.verify(newDiskOfferingMock).getUseLocalStorage();
         inOrder.verify(storagePoolMock).isLocal();
