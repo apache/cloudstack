@@ -20,7 +20,6 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 
 import java.util.Map;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.engine.cloud.entity.api.VolumeEntity;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.storage.command.CommandResult;
@@ -29,6 +28,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.offering.DiskOffering;
+import com.cloud.utils.Pair;
 
 public interface VolumeService {
     class VolumeApiResult extends CommandResult {
@@ -53,37 +53,24 @@ public interface VolumeService {
     /**
      * Creates the volume based on the given criteria
      *
-     * @param cmd
-     *
      * @return the volume object
      */
     AsyncCallFuture<VolumeApiResult> createVolumeAsync(VolumeInfo volume, DataStore store);
 
     /**
      * Delete volume
-     *
-     * @param volumeId
-     * @return
      */
     AsyncCallFuture<VolumeApiResult> expungeVolumeAsync(VolumeInfo volume);
 
-    /**
-     *
-     */
     boolean cloneVolume(long volumeId, long baseVolId);
 
-    /**
-     *
-     */
     AsyncCallFuture<VolumeApiResult> createVolumeFromSnapshot(VolumeInfo volume, DataStore store, SnapshotInfo snapshot);
 
     VolumeEntity getVolumeEntity(long volumeId);
 
-    AsyncCallFuture<VolumeApiResult> createManagedStorageVolumeFromTemplateAsync(VolumeInfo volumeInfo, long destDataStoreId,
-            TemplateInfo srcTemplateInfo, long destHostId);
+    AsyncCallFuture<VolumeApiResult> createManagedStorageVolumeFromTemplateAsync(VolumeInfo volumeInfo, long destDataStoreId, TemplateInfo srcTemplateInfo, long destHostId);
 
-    AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId,
-            TemplateInfo template);
+    AsyncCallFuture<VolumeApiResult> createVolumeFromTemplateAsync(VolumeInfo volume, long dataStoreId, TemplateInfo template);
 
     AsyncCallFuture<VolumeApiResult> copyVolume(VolumeInfo srcVolume, DataStore destStore);
 
@@ -95,7 +82,7 @@ public interface VolumeService {
 
     AsyncCallFuture<VolumeApiResult> registerVolume(VolumeInfo volume, DataStore store);
 
-    public Pair<EndPoint,DataObject> registerVolumeForPostUpload(VolumeInfo volume, DataStore store);
+    public Pair<EndPoint, DataObject> registerVolumeForPostUpload(VolumeInfo volume, DataStore store);
 
     AsyncCallFuture<VolumeApiResult> resize(VolumeInfo volume);
 
@@ -106,5 +93,4 @@ public interface VolumeService {
     SnapshotInfo takeSnapshot(VolumeInfo volume);
 
     VolumeInfo updateHypervisorSnapshotReserveForVolume(DiskOffering diskOffering, long volumeId, HypervisorType hyperType);
-
 }

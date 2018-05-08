@@ -16,35 +16,24 @@
 // under the License.
 package com.cloud.storage;
 
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.org.Grouping;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.snapshot.SnapshotManager;
-import com.cloud.user.Account;
-import com.cloud.user.AccountManager;
-import com.cloud.user.AccountVO;
-import com.cloud.user.User;
-import com.cloud.user.UserVO;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.fsm.NoTransitionException;
-import com.cloud.vm.UserVmManager;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachine.State;
-import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.VMInstanceDao;
-import com.cloud.vm.snapshot.VMSnapshotVO;
-import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.google.gson.Gson;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.user.ResourceLimitService;
-import com.cloud.configuration.Resource;
-import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.host.dao.HostDao;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
@@ -66,38 +55,46 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.junit.Assert;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import javax.inject.Inject;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ExecutionException;
-
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.validateMockitoUsage;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import com.cloud.configuration.Resource;
+import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.org.Grouping;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.AccountVO;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.User;
+import com.cloud.user.UserVO;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.fsm.NoTransitionException;
+import com.cloud.vm.UserVmManager;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachine.State;
+import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.cloud.vm.snapshot.VMSnapshotVO;
+import com.cloud.vm.snapshot.dao.VMSnapshotDao;
 
 @RunWith(MockitoJUnitRunner.class)
 public class VolumeApiServiceImplTest {
@@ -119,35 +116,35 @@ public class VolumeApiServiceImplTest {
     private ResourceLimitService resourceLimitServiceMock;
     @Mock
     private VolumeDataFactory volumeDataFactoryMock;
-    
+
     @Mock
-    UserVmDao _userVmDao;
+    private UserVmDao userVmDaoMock;
     @Mock
-    PrimaryDataStoreDao _storagePoolDao;
+    private PrimaryDataStoreDao primaryDataStoreDaoMock;
     @Mock
-    VMSnapshotDao _vmSnapshotDao;
+    private VMSnapshotDao vmSnapshotDaoMock;
     @Mock
-    AsyncJobManager _jobMgr;
+    private AsyncJobManager asyncJobManagerMock;
     @Mock
-    AsyncJobJoinMapDao _joinMapDao;
+    private AsyncJobJoinMapDao asyncJobJoinMapDaoMock;
     @Mock
-    UserVmManager _userVmMgr;
+    private UserVmManager userVmManagerMock;
     @Mock
-    VMInstanceDao _vmInstanceDao;
+    private VMInstanceDao vMInstanceDaoMock;
     @Mock
-    SnapshotInfo snapshotInfoMock;
+    private SnapshotInfo snapshotInfoMock;
     @Mock
-    CreateVolumeCmd createVol;
+    private CreateVolumeCmd createVolumeCmdMock;
     @Mock
-    DataCenterDao _dcDao;
+    private DataCenterDao dataCenterDaoMock;
     @Mock
-    AccountDao _accountDao;
+    private AccountDao accountDaoMock;
     @Mock
-    HostDao _hostDao;
+    private HostDao hostdaoMock;
 
     DetachVolumeCmd detachCmd = new DetachVolumeCmd();
     Class<?> _detachCmdClass = detachCmd.getClass();
-    
+
     @Mock
     private Account accountMock;
     @Mock
@@ -158,7 +155,7 @@ public class VolumeApiServiceImplTest {
     private AsyncCallFuture<VolumeApiResult> asyncCallFutureVolumeapiResultMock;
     @Mock
     private VolumeInfo volumeInfoMock;
-    
+
     private long accountMockId = 456l;
     private long volumeMockId = 12313l;
     private long vmInstanceMockId = 1123l;
@@ -171,14 +168,14 @@ public class VolumeApiServiceImplTest {
         Mockito.doReturn(accountMockId).when(accountMock).getId();
         Mockito.doReturn(volumeSizeMock).when(volumeVoMock).getSize();
         Mockito.doReturn(Mockito.mock(VolumeApiResult.class)).when(asyncCallFutureVolumeapiResultMock).get();
-        
+
         // mock caller context
         AccountVO account = new AccountVO("admin", 1L, "networkDomain", Account.ACCOUNT_TYPE_NORMAL, "uuid");
         UserVO user = new UserVO(1, "testuser", "password", "firstname", "lastName", "email", "timezone", UUID.randomUUID().toString(), User.Source.UNKNOWN);
         CallContext.register(user, account);
         // mock async context
         AsyncJobExecutionContext context = new AsyncJobExecutionContext();
-        AsyncJobExecutionContext.init(volumeApiServiceImpl._jobMgr, _joinMapDao);
+        AsyncJobExecutionContext.init(volumeApiServiceImpl._jobMgr, asyncJobJoinMapDaoMock);
         AsyncJobVO job = new AsyncJobVO();
         context.setJob(job);
         AsyncJobExecutionContext.setCurrentExecutionContext(context);
@@ -186,38 +183,31 @@ public class VolumeApiServiceImplTest {
         TransactionLegacy txn = TransactionLegacy.open("runVolumeDaoImplTest");
         try {
             // volume of running vm id=1
-            VolumeVO volumeOfRunningVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO volumeOfRunningVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 1L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             when(volumeApiServiceImpl._volsDao.findById(1L)).thenReturn(volumeOfRunningVm);
 
-            UserVmVO runningVm = new UserVmVO(1L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false,
-                    false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO runningVm = new UserVmVO(1L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
             runningVm.setState(State.Running);
             runningVm.setDataCenterId(1L);
             when(volumeApiServiceImpl._userVmDao.findById(1L)).thenReturn(runningVm);
 
             // volume of stopped vm id=2
-            VolumeVO volumeOfStoppedVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO volumeOfStoppedVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             volumeOfStoppedVm.setPoolId(1L);
             when(volumeApiServiceImpl._volsDao.findById(2L)).thenReturn(volumeOfStoppedVm);
 
-            UserVmVO stoppedVm = new UserVmVO(2L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false,
-                    false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO stoppedVm = new UserVmVO(2L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
             stoppedVm.setState(State.Stopped);
             stoppedVm.setDataCenterId(1L);
             when(volumeApiServiceImpl._userVmDao.findById(2L)).thenReturn(stoppedVm);
 
-
             // volume of hyperV vm id=3
-            UserVmVO hyperVVm = new UserVmVO(3L, "vm", "vm", 1, HypervisorType.Hyperv, 1L, false,
-                    false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO hyperVVm = new UserVmVO(3L, "vm", "vm", 1, HypervisorType.Hyperv, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
             hyperVVm.setState(State.Stopped);
             hyperVVm.setDataCenterId(1L);
             when(volumeApiServiceImpl._userVmDao.findById(3L)).thenReturn(hyperVVm);
 
-            VolumeVO volumeOfStoppeHyperVVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 3L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO volumeOfStoppeHyperVVm = new VolumeVO("root", 1L, 1L, 1L, 1L, 3L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             volumeOfStoppeHyperVVm.setPoolId(1L);
             when(volumeApiServiceImpl._volsDao.findById(3L)).thenReturn(volumeOfStoppeHyperVVm);
 
@@ -229,8 +219,7 @@ public class VolumeApiServiceImplTest {
             StoragePoolVO managedPool = new StoragePoolVO();
             managedPool.setManaged(true);
             when(volumeApiServiceImpl._storagePoolDao.findById(2L)).thenReturn(managedPool);
-            VolumeVO managedPoolVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO managedPoolVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             managedPoolVolume.setPoolId(2L);
             when(volumeApiServiceImpl._volsDao.findById(4L)).thenReturn(managedPoolVolume);
 
@@ -251,8 +240,7 @@ public class VolumeApiServiceImplTest {
             when(correctRootVolume.getPoolId()).thenReturn(1L);
             when(volumeApiServiceImpl.volFactory.getVolume(6L)).thenReturn(correctRootVolume);
 
-            VolumeVO correctRootVolumeVO = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO correctRootVolumeVO = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             when(volumeApiServiceImpl._volsDao.findById(6L)).thenReturn(correctRootVolumeVO);
 
             // managed root volume
@@ -264,15 +252,13 @@ public class VolumeApiServiceImplTest {
             when(managedVolume.getPoolId()).thenReturn(2L);
             when(volumeApiServiceImpl.volFactory.getVolume(7L)).thenReturn(managedVolume);
 
-            VolumeVO managedVolume1 = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO managedVolume1 = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             managedVolume1.setPoolId(2L);
             managedVolume1.setDataCenterId(1L);
             when(volumeApiServiceImpl._volsDao.findById(7L)).thenReturn(managedVolume1);
 
             // vm having root volume
-            UserVmVO vmHavingRootVolume = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false,
-                    false, 1L, 1L, 1, 1L, null, "vm", null);
+            UserVmVO vmHavingRootVolume = new UserVmVO(4L, "vm", "vm", 1, HypervisorType.XenServer, 1L, false, false, 1L, 1L, 1, 1L, null, "vm", null);
             vmHavingRootVolume.setState(State.Stopped);
             vmHavingRootVolume.setDataCenterId(1L);
             when(volumeApiServiceImpl._userVmDao.findById(4L)).thenReturn(vmHavingRootVolume);
@@ -290,8 +276,7 @@ public class VolumeApiServiceImplTest {
             when(uploadedVolume.getState()).thenReturn(Volume.State.Uploaded);
             when(volumeApiServiceImpl.volFactory.getVolume(8L)).thenReturn(uploadedVolume);
 
-            VolumeVO upVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null,
-                    null, "root", Volume.Type.ROOT);
+            VolumeVO upVolume = new VolumeVO("root", 1L, 1L, 1L, 1L, 2L, "root", "root", Storage.ProvisioningType.THIN, 1, null, null, "root", Volume.Type.ROOT);
             upVolume.setPoolId(1L);
             upVolume.setDataCenterId(1L);
             upVolume.setState(Volume.State.Uploaded);
@@ -419,46 +404,46 @@ public class VolumeApiServiceImplTest {
         when(volumeInfoMock.getState()).thenReturn(Volume.State.Ready);
         when(volumeInfoMock.getInstanceId()).thenReturn(null);
         when(volumeInfoMock.getPoolId()).thenReturn(1L);
-        when (volumeServiceMock.takeSnapshot(Mockito.any(VolumeInfo.class))).thenReturn(snapshotInfoMock);
+        when(volumeServiceMock.takeSnapshot(Mockito.any(VolumeInfo.class))).thenReturn(snapshotInfoMock);
         volumeApiServiceImpl.takeSnapshot(5L, Snapshot.MANUAL_POLICY_ID, 3L, null, false, null, false);
     }
 
     @Test
     public void testNullGetVolumeNameFromCmd() {
-        when(createVol.getVolumeName()).thenReturn(null);
-        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(createVol));
+        when(createVolumeCmdMock.getVolumeName()).thenReturn(null);
+        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(createVolumeCmdMock));
     }
 
     @Test
     public void testEmptyGetVolumeNameFromCmd() {
-        when(createVol.getVolumeName()).thenReturn("");
-        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(createVol));
+        when(createVolumeCmdMock.getVolumeName()).thenReturn("");
+        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(createVolumeCmdMock));
     }
 
     @Test
     public void testBlankGetVolumeNameFromCmd() {
-        when(createVol.getVolumeName()).thenReturn("   ");
-        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(createVol));
+        when(createVolumeCmdMock.getVolumeName()).thenReturn("   ");
+        Assert.assertNotNull(volumeApiServiceImpl.getVolumeNameFromCommand(createVolumeCmdMock));
     }
 
     @Test
     public void testNonEmptyGetVolumeNameFromCmd() {
-        when(createVol.getVolumeName()).thenReturn("abc");
-        Assert.assertSame(volumeApiServiceImpl.getVolumeNameFromCommand(createVol), "abc");
+        when(createVolumeCmdMock.getVolumeName()).thenReturn("abc");
+        Assert.assertSame(volumeApiServiceImpl.getVolumeNameFromCommand(createVolumeCmdMock), "abc");
     }
 
     @Test
     public void testUpdateMissingRootDiskControllerWithNullChainInfo() {
         volumeApiServiceImpl.updateMissingRootDiskController(null, null);
-        verify(_userVmMgr, times(0)).persistDeviceBusInfo(any(UserVmVO.class), anyString());
+        verify(userVmManagerMock, times(0)).persistDeviceBusInfo(any(UserVmVO.class), anyString());
     }
 
     @Test
     public void testUpdateMissingRootDiskControllerWithValidChainInfo() {
-        UserVmVO vm = _userVmDao.findById(1L);
+        UserVmVO vm = userVmDaoMock.findById(1L);
         assert vm.getType() == VirtualMachine.Type.User;
         volumeApiServiceImpl.updateMissingRootDiskController(vm, "{\"diskDeviceBusName\":\"scsi0:0\",\"diskChain\":[\"[somedatastore] i-3-VM-somePath/ROOT-1.vmdk\"]}");
-        verify(_userVmMgr, times(1)).persistDeviceBusInfo(any(UserVmVO.class), eq("scsi"));
+        verify(userVmManagerMock, times(1)).persistDeviceBusInfo(any(UserVmVO.class), eq("scsi"));
     }
 
     @Test
@@ -486,14 +471,15 @@ public class VolumeApiServiceImplTest {
      */
     @Test
     public void testResourceLimitCheckForUploadedVolume() throws NoSuchFieldException, IllegalAccessException, ResourceAllocationException {
-        doThrow(new ResourceAllocationException("primary storage resource limit check failed", Resource.ResourceType.primary_storage)).when(volumeApiServiceImpl._resourceLimitMgr).checkResourceLimit(any(AccountVO.class), any(Resource.ResourceType.class), any(Long.class));
+        doThrow(new ResourceAllocationException("primary storage resource limit check failed", Resource.ResourceType.primary_storage)).when(volumeApiServiceImpl._resourceLimitMgr)
+        .checkResourceLimit(any(AccountVO.class), any(Resource.ResourceType.class), any(Long.class));
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
         when(volumeToAttach.getId()).thenReturn(9L);
         when(volumeToAttach.getDataCenterId()).thenReturn(34L);
         when(volumeToAttach.getVolumeType()).thenReturn(Volume.Type.DATADISK);
         when(volumeToAttach.getInstanceId()).thenReturn(null);
-        when(_userVmDao.findById(anyLong())).thenReturn(vm);
+        when(userVmDaoMock.findById(anyLong())).thenReturn(vm);
         when(vm.getType()).thenReturn(VirtualMachine.Type.User);
         when(vm.getState()).thenReturn(State.Running);
         when(vm.getDataCenterId()).thenReturn(34L);
@@ -514,124 +500,123 @@ public class VolumeApiServiceImplTest {
     public void tearDown() {
         CallContext.unregister();
     }
-    
+
     @Test(expected = InvalidParameterValueException.class)
     public void retrieveAndValidateVolumeTestVolumeNotFound() {
         Mockito.doReturn(null).when(volumeDaoMock).findById(volumeMockId);
         volumeApiServiceImpl.retrieveAndValidateVolume(volumeMockId, accountMock);
     }
-    
+
     @Test(expected = InvalidParameterValueException.class)
     public void retrieveAndValidateVolumeTestCannotOperateOnVolumeDueToSnapshot() {
         Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);
         Mockito.doReturn(false).when(snapshotManagerMock).canOperateOnVolume(volumeVoMock);
-        
+
         volumeApiServiceImpl.retrieveAndValidateVolume(volumeMockId, accountMock);
     }
-    
+
     @Test(expected = InvalidParameterValueException.class)
     public void retrieveAndValidateVolumeTestVolumePluggedIntoVm() {
         Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);
         Mockito.doReturn(vmInstanceMockId).when(volumeVoMock).getInstanceId();
-        
+
         Mockito.doReturn(true).when(snapshotManagerMock).canOperateOnVolume(volumeVoMock);
-        
+
         volumeApiServiceImpl.retrieveAndValidateVolume(volumeMockId, accountMock);
     }
-    
+
     @Test(expected = InvalidParameterValueException.class)
     public void retrieveAndValidateVolumeTestStateUploadOpAndDownloadInProgress() {
         Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);
         Mockito.doReturn(null).when(volumeVoMock).getInstanceId();
         Mockito.doReturn(Volume.State.UploadOp).when(volumeVoMock).getState();
-        
+
         Mockito.doReturn(true).when(snapshotManagerMock).canOperateOnVolume(volumeVoMock);
         Mockito.doReturn(volumeDataStoreVoMock).when(volumeDataStoreDaoMock).findByVolume(volumeMockId);
         Mockito.doReturn(VMTemplateStorageResourceAssoc.Status.DOWNLOAD_IN_PROGRESS).when(volumeDataStoreVoMock).getDownloadState();
-        
+
         volumeApiServiceImpl.retrieveAndValidateVolume(volumeMockId, accountMock);
     }
-    
+
     @Test(expected = InvalidParameterValueException.class)
     public void retrieveAndValidateVolumeTestStateNotUploaded() {
         Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);
         Mockito.doReturn(null).when(volumeVoMock).getInstanceId();
         Mockito.doReturn(Volume.State.NotUploaded).when(volumeVoMock).getState();
-        
+
         Mockito.doReturn(true).when(snapshotManagerMock).canOperateOnVolume(volumeVoMock);
-        
+
         volumeApiServiceImpl.retrieveAndValidateVolume(volumeMockId, accountMock);
     }
-    
+
     @Test(expected = InvalidParameterValueException.class)
     public void retrieveAndValidateVolumeTestUploadInProgress() {
         Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);
         Mockito.doReturn(null).when(volumeVoMock).getInstanceId();
         Mockito.doReturn(Volume.State.UploadInProgress).when(volumeVoMock).getState();
-        
+
         Mockito.doReturn(true).when(snapshotManagerMock).canOperateOnVolume(volumeVoMock);
-        
+
         volumeApiServiceImpl.retrieveAndValidateVolume(volumeMockId, accountMock);
     }
-    
+
     @Test
     public void retrieveAndValidateVolumeTest() {
         Mockito.doReturn(volumeVoMock).when(volumeDaoMock).findById(volumeMockId);
         Mockito.doReturn(null).when(volumeVoMock).getInstanceId();
         Mockito.doReturn(Volume.State.Ready).when(volumeVoMock).getState();
-        
+
         Mockito.doReturn(true).when(snapshotManagerMock).canOperateOnVolume(volumeVoMock);
         Mockito.doNothing().when(accountManagerMock).checkAccess(accountMock, null, true, volumeVoMock);
         volumeApiServiceImpl.retrieveAndValidateVolume(volumeMockId, accountMock);
-        
+
         Mockito.verify(accountManagerMock).checkAccess(accountMock, null, true, volumeVoMock);
     }
-    
+
     @Test
     public void destroyVolumeIfPossibleTestVolumeStateIsDestroy() {
         Mockito.doReturn(Volume.State.Destroy).when(volumeVoMock).getState();
         configureMocksForTestDestroyVolumeWhenVolume();
-        
+
         volumeApiServiceImpl.destroyVolumeIfPossible(volumeVoMock);
-        
+
         verifyMocksForTestDestroyVolumeWhenVolumeIsNotInRightState();
     }
-    
+
     @Test
     public void destroyVolumeIfPossibleTestVolumeStateIsExpunging() {
         Mockito.doReturn(Volume.State.Expunging).when(volumeVoMock).getState();
         configureMocksForTestDestroyVolumeWhenVolume();
-        
+
         volumeApiServiceImpl.destroyVolumeIfPossible(volumeVoMock);
-        
+
         verifyMocksForTestDestroyVolumeWhenVolumeIsNotInRightState();
     }
-    
+
     @Test
     public void destroyVolumeIfPossibleTestVolumeStateIsExpunged() {
         Mockito.doReturn(Volume.State.Expunged).when(volumeVoMock).getState();
         configureMocksForTestDestroyVolumeWhenVolume();
-        
+
         volumeApiServiceImpl.destroyVolumeIfPossible(volumeVoMock);
-        
+
         verifyMocksForTestDestroyVolumeWhenVolumeIsNotInRightState();
     }
-    
+
     @Test
     public void destroyVolumeIfPossibleTestVolumeStateReady() {
         Mockito.doReturn(Volume.State.Ready).when(volumeVoMock).getState();
         configureMocksForTestDestroyVolumeWhenVolume();
-        
+
         volumeApiServiceImpl.destroyVolumeIfPossible(volumeVoMock);
-        
-        Mockito.verify(volumeServiceMock,  Mockito.times(1)).destroyVolume(volumeMockId);
+
+        Mockito.verify(volumeServiceMock, Mockito.times(1)).destroyVolume(volumeMockId);
         Mockito.verify(resourceLimitServiceMock, Mockito.times(1)).decrementResourceCount(accountMockId, ResourceType.volume, true);
         Mockito.verify(resourceLimitServiceMock, Mockito.times(1)).decrementResourceCount(accountMockId, ResourceType.primary_storage, true, volumeSizeMock);
     }
 
-
     private void verifyMocksForTestDestroyVolumeWhenVolumeIsNotInRightState() {
-        Mockito.verify(volumeServiceMock,  Mockito.times(0)).destroyVolume(volumeMockId);
+        Mockito.verify(volumeServiceMock, Mockito.times(0)).destroyVolume(volumeMockId);
         Mockito.verify(resourceLimitServiceMock, Mockito.times(0)).decrementResourceCount(accountMockId, ResourceType.volume, true);
         Mockito.verify(resourceLimitServiceMock, Mockito.times(0)).decrementResourceCount(accountMockId, ResourceType.primary_storage, true, volumeSizeMock);
     }
@@ -639,52 +624,52 @@ public class VolumeApiServiceImplTest {
     private void configureMocksForTestDestroyVolumeWhenVolume() {
         Mockito.doReturn(accountMockId).when(volumeVoMock).getAccountId();
         Mockito.doReturn(true).when(volumeVoMock).isDisplayVolume();
-        
+
         Mockito.doNothing().when(volumeServiceMock).destroyVolume(volumeMockId);
         Mockito.doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.volume, true);
         Mockito.doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.primary_storage, true, volumeSizeMock);
     }
-    
+
     @Test
     public void expungeVolumesInPrimaryStorageIfNeededTestVolumeNotInPrimaryDataStore() throws InterruptedException, ExecutionException {
         Mockito.doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).expungeVolumeAsync(volumeInfoMock);
         Mockito.doReturn(null).when(volumeDataFactoryMock).getVolume(volumeMockId, DataStoreRole.Primary);
-        
+
         volumeApiServiceImpl.expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
-        
+
         Mockito.verify(volumeServiceMock, Mockito.times(0)).expungeVolumeAsync(volumeInfoMock);
         Mockito.verify(asyncCallFutureVolumeapiResultMock, Mockito.times(0)).get();
     }
-    
+
     @Test
     public void expungeVolumesInPrimaryStorageIfNeededTestVolumeInPrimaryDataStore() throws InterruptedException, ExecutionException {
         Mockito.doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).expungeVolumeAsync(volumeInfoMock);
         Mockito.doReturn(volumeInfoMock).when(volumeDataFactoryMock).getVolume(volumeMockId, DataStoreRole.Primary);
-        
+
         volumeApiServiceImpl.expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
-        
+
         Mockito.verify(volumeServiceMock, Mockito.times(1)).expungeVolumeAsync(volumeInfoMock);
         Mockito.verify(asyncCallFutureVolumeapiResultMock, Mockito.times(1)).get();
     }
-    
+
     @Test(expected = InterruptedException.class)
     public void expungeVolumesInPrimaryStorageIfNeededTestThrowingInterruptedException() throws InterruptedException, ExecutionException {
         Mockito.doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).expungeVolumeAsync(volumeInfoMock);
         Mockito.doReturn(volumeInfoMock).when(volumeDataFactoryMock).getVolume(volumeMockId, DataStoreRole.Primary);
         Mockito.doThrow(InterruptedException.class).when(asyncCallFutureVolumeapiResultMock).get();
-        
+
         volumeApiServiceImpl.expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
     }
-    
+
     @Test(expected = ExecutionException.class)
     public void expungeVolumesInPrimaryStorageIfNeededTestThrowingExecutionException() throws InterruptedException, ExecutionException {
         Mockito.doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).expungeVolumeAsync(volumeInfoMock);
         Mockito.doReturn(volumeInfoMock).when(volumeDataFactoryMock).getVolume(volumeMockId, DataStoreRole.Primary);
         Mockito.doThrow(ExecutionException.class).when(asyncCallFutureVolumeapiResultMock).get();
-        
+
         volumeApiServiceImpl.expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
     }
-    
+
     @Test
     public void expungeVolumesInSecondaryStorageIfNeededTestVolumeNotFoundInSecondaryStorage() throws InterruptedException, ExecutionException {
         Mockito.doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).expungeVolumeAsync(volumeInfoMock);
@@ -692,14 +677,14 @@ public class VolumeApiServiceImplTest {
         Mockito.doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.secondary_storage, volumeSizeMock);
         Mockito.doReturn(accountMockId).when(volumeInfoMock).getAccountId();
         Mockito.doReturn(volumeSizeMock).when(volumeInfoMock).getSize();
-        
+
         volumeApiServiceImpl.expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
-        
+
         Mockito.verify(volumeServiceMock, Mockito.times(0)).expungeVolumeAsync(volumeInfoMock);
         Mockito.verify(asyncCallFutureVolumeapiResultMock, Mockito.times(0)).get();
         Mockito.verify(resourceLimitServiceMock, Mockito.times(0)).decrementResourceCount(accountMockId, ResourceType.secondary_storage, volumeSizeMock);
     }
-    
+
     @Test
     public void expungeVolumesInSecondaryStorageIfNeededTestVolumeFoundInSecondaryStorage() throws InterruptedException, ExecutionException {
         Mockito.doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).expungeVolumeAsync(volumeInfoMock);
@@ -707,14 +692,14 @@ public class VolumeApiServiceImplTest {
         Mockito.doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.secondary_storage, volumeSizeMock);
         Mockito.doReturn(accountMockId).when(volumeInfoMock).getAccountId();
         Mockito.doReturn(volumeSizeMock).when(volumeInfoMock).getSize();
-        
+
         volumeApiServiceImpl.expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
-        
+
         Mockito.verify(volumeServiceMock, Mockito.times(1)).expungeVolumeAsync(volumeInfoMock);
         Mockito.verify(asyncCallFutureVolumeapiResultMock, Mockito.times(1)).get();
         Mockito.verify(resourceLimitServiceMock, Mockito.times(1)).decrementResourceCount(accountMockId, ResourceType.secondary_storage, volumeSizeMock);
     }
-    
+
     @Test(expected = InterruptedException.class)
     public void expungeVolumesInSecondaryStorageIfNeededTestthrowinInterruptedException() throws InterruptedException, ExecutionException {
         Mockito.doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).expungeVolumeAsync(volumeInfoMock);
@@ -722,13 +707,13 @@ public class VolumeApiServiceImplTest {
         Mockito.doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.secondary_storage, volumeSizeMock);
         Mockito.doReturn(accountMockId).when(volumeInfoMock).getAccountId();
         Mockito.doReturn(volumeSizeMock).when(volumeInfoMock).getSize();
-        
+
         Mockito.doThrow(InterruptedException.class).when(asyncCallFutureVolumeapiResultMock).get();
-        
+
         volumeApiServiceImpl.expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
-        
+
     }
-    
+
     @Test(expected = ExecutionException.class)
     public void expungeVolumesInSecondaryStorageIfNeededTestthrowinExecutionException() throws InterruptedException, ExecutionException {
         Mockito.doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).expungeVolumeAsync(volumeInfoMock);
@@ -736,161 +721,161 @@ public class VolumeApiServiceImplTest {
         Mockito.doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.secondary_storage, volumeSizeMock);
         Mockito.doReturn(accountMockId).when(volumeInfoMock).getAccountId();
         Mockito.doReturn(volumeSizeMock).when(volumeInfoMock).getSize();
-        
+
         Mockito.doThrow(ExecutionException.class).when(asyncCallFutureVolumeapiResultMock).get();
-        
+
         volumeApiServiceImpl.expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
-        
+
     }
-    
+
     @Test
     public void cleanVolumesCacheTest() {
         List<VolumeInfo> volumeInfos = new ArrayList<>();
         VolumeInfo volumeInfoMock1 = Mockito.mock(VolumeInfo.class);
         VolumeInfo volumeInfoMock2 = Mockito.mock(VolumeInfo.class);
-        
+
         DataStore dataStoreMock1 = Mockito.mock(DataStore.class);
         DataStore dataStoreMock2 = Mockito.mock(DataStore.class);
         Mockito.doReturn(dataStoreMock1).when(volumeInfoMock1).getDataStore();
         Mockito.doReturn(dataStoreMock2).when(volumeInfoMock2).getDataStore();
-        
+
         volumeInfos.add(volumeInfoMock1);
         volumeInfos.add(volumeInfoMock2);
-        
+
         Mockito.doReturn(volumeInfos).when(volumeDataFactoryMock).listVolumeOnCache(volumeMockId);
-        
+
         volumeApiServiceImpl.cleanVolumesCache(volumeVoMock);
-        
+
         Mockito.verify(dataStoreMock1).getName();
         Mockito.verify(dataStoreMock2).getName();
-        
+
         Mockito.verify(volumeInfoMock1).delete();
         Mockito.verify(volumeInfoMock2).delete();
     }
-    
+
     @Test
     public void deleteVolumeTestVolumeStateAllocated() throws InterruptedException, ExecutionException, NoTransitionException {
         Mockito.doReturn(Volume.State.Allocated).when(volumeVoMock).getState();
-        
+
         Mockito.doReturn(volumeVoMock).when(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
         Mockito.doNothing().when(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
         Mockito.doNothing().when(volumeApiServiceImpl).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
         Mockito.doNothing().when(volumeApiServiceImpl).expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
         Mockito.doNothing().when(volumeApiServiceImpl).cleanVolumesCache(volumeVoMock);
-        
+
         Mockito.doReturn(true).when(volumeDaoMock).remove(volumeMockId);
         Mockito.doReturn(true).when(volumeApiServiceImpl).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
-        
+
         boolean result = volumeApiServiceImpl.deleteVolume(volumeMockId, accountMock);
-        
+
         assertTrue(result);
         Mockito.verify(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
         Mockito.verify(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
         Mockito.verify(volumeDaoMock).remove(volumeMockId);
         Mockito.verify(volumeApiServiceImpl).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
-        
+
         Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
         Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
         Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).cleanVolumesCache(volumeVoMock);
     }
-    
+
     @Test
     public void deleteVolumeTestVolumeStateReady() throws InterruptedException, ExecutionException, NoTransitionException {
         Mockito.doReturn(Volume.State.Ready).when(volumeVoMock).getState();
-        
+
         Mockito.doReturn(volumeVoMock).when(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
         Mockito.doNothing().when(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
         Mockito.doNothing().when(volumeApiServiceImpl).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
         Mockito.doNothing().when(volumeApiServiceImpl).expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
         Mockito.doNothing().when(volumeApiServiceImpl).cleanVolumesCache(volumeVoMock);
-        
+
         Mockito.doReturn(true).when(volumeDaoMock).remove(volumeMockId);
         Mockito.doReturn(true).when(volumeApiServiceImpl).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
-        
+
         boolean result = volumeApiServiceImpl.deleteVolume(volumeMockId, accountMock);
-        
+
         assertTrue(result);
         Mockito.verify(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
         Mockito.verify(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
         Mockito.verify(volumeDaoMock, Mockito.times(0)).remove(volumeMockId);
         Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
-        
+
         Mockito.verify(volumeApiServiceImpl, Mockito.times(1)).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
         Mockito.verify(volumeApiServiceImpl, Mockito.times(1)).expungeVolumesInSecondaryStorageIfNeeded(volumeVoMock);
         Mockito.verify(volumeApiServiceImpl, Mockito.times(1)).cleanVolumesCache(volumeVoMock);
     }
-    
+
     @Test
     public void deleteVolumeTestVolumeStateReadyThrowingInterruptedException() throws InterruptedException, ExecutionException, NoTransitionException {
         Mockito.doReturn(Volume.State.Ready).when(volumeVoMock).getState();
-        
+
         Mockito.doReturn(volumeVoMock).when(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
         Mockito.doNothing().when(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
         Mockito.doThrow(InterruptedException.class).when(volumeApiServiceImpl).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
-        
+
         Mockito.doReturn(true).when(volumeDaoMock).remove(volumeMockId);
         Mockito.doReturn(true).when(volumeApiServiceImpl).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
-        
+
         boolean result = volumeApiServiceImpl.deleteVolume(volumeMockId, accountMock);
-        
+
         assertFalse(result);
         Mockito.verify(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
         Mockito.verify(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
         Mockito.verify(volumeDaoMock, Mockito.times(0)).remove(volumeMockId);
         Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
     }
-    
+
     @Test
     public void deleteVolumeTestVolumeStateReadyThrowingExecutionException() throws InterruptedException, ExecutionException, NoTransitionException {
         Mockito.doReturn(Volume.State.Ready).when(volumeVoMock).getState();
-        
+
         Mockito.doReturn(volumeVoMock).when(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
         Mockito.doNothing().when(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
         Mockito.doThrow(ExecutionException.class).when(volumeApiServiceImpl).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
-        
+
         Mockito.doReturn(true).when(volumeDaoMock).remove(volumeMockId);
         Mockito.doReturn(true).when(volumeApiServiceImpl).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
-        
+
         boolean result = volumeApiServiceImpl.deleteVolume(volumeMockId, accountMock);
-        
+
         assertFalse(result);
         Mockito.verify(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
         Mockito.verify(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
         Mockito.verify(volumeDaoMock, Mockito.times(0)).remove(volumeMockId);
         Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
     }
-    
+
     @Test
     public void deleteVolumeTestVolumeStateReadyThrowingNoTransitionException() throws InterruptedException, ExecutionException, NoTransitionException {
         Mockito.doReturn(Volume.State.Ready).when(volumeVoMock).getState();
-        
+
         Mockito.doReturn(volumeVoMock).when(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
         Mockito.doNothing().when(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
         Mockito.doThrow(NoTransitionException.class).when(volumeApiServiceImpl).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
-        
+
         Mockito.doReturn(true).when(volumeDaoMock).remove(volumeMockId);
         Mockito.doReturn(true).when(volumeApiServiceImpl).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
-        
+
         boolean result = volumeApiServiceImpl.deleteVolume(volumeMockId, accountMock);
-        
+
         assertFalse(result);
         Mockito.verify(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
         Mockito.verify(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
         Mockito.verify(volumeDaoMock, Mockito.times(0)).remove(volumeMockId);
         Mockito.verify(volumeApiServiceImpl, Mockito.times(0)).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
     }
-    
+
     @Test(expected = RuntimeException.class)
     public void deleteVolumeTestVolumeStateReadyThrowingRuntimeException() throws InterruptedException, ExecutionException, NoTransitionException {
         Mockito.doReturn(Volume.State.Ready).when(volumeVoMock).getState();
-        
+
         Mockito.doReturn(volumeVoMock).when(volumeApiServiceImpl).retrieveAndValidateVolume(volumeMockId, accountMock);
         Mockito.doNothing().when(volumeApiServiceImpl).destroyVolumeIfPossible(volumeVoMock);
         Mockito.doThrow(RuntimeException.class).when(volumeApiServiceImpl).expungeVolumesInPrimaryStorageIfNeeded(volumeVoMock);
-        
+
         Mockito.doReturn(true).when(volumeDaoMock).remove(volumeMockId);
         Mockito.doReturn(true).when(volumeApiServiceImpl).stateTransitTo(volumeVoMock, Volume.Event.DestroyRequested);
-        
+
         volumeApiServiceImpl.deleteVolume(volumeMockId, accountMock);
     }
 }
