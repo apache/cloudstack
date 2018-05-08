@@ -162,11 +162,16 @@ function packaging() {
     cp "$PWD/$DISTRO/cloud.spec" "$RPMDIR/SPECS"
 
     (cd "$RPMDIR"; rpmbuild --define "_topdir ${RPMDIR}" "${DEFVER}" "${DEFFULLVER}" "${DEFREL}" ${DEFPRE+"$DEFPRE"} ${DEFOSSNOSS+"$DEFOSSNOSS"} ${DEFSIM+"$DEFSIM"} -bb SPECS/cloud.spec)
-    (cd $PWD/../; git reset --hard)
     if [ $? -ne 0 ]; then
+        if [ "$USE_TIMESTAMP" == "true" ]; then
+            (cd $PWD/../; git reset --hard)
+        fi
         echo "RPM Build Failed "
         exit 3
     else
+        if [ "$USE_TIMESTAMP" == "true" ]; then
+            (cd $PWD/../; git reset --hard)
+        fi
         echo "RPM Build Done"
     fi
     exit
@@ -257,6 +262,17 @@ if [ -n "$unrecognized_flags" ]; then
     echo "         You're advised to fix your build job scripts and prevent using these"
     echo "         flags, as in the future release(s) they will break packaging script."
     echo ""
+fi
+
+# Fail early if working directory is NOT clean and --use-timestamp was provided
+if [ "$USE_TIMESTAMP" == "true" ]; then
+    if [ -n "$(cd $PWD/../; git status -s)" ]; then
+        echo "Erro: You have uncommitted changes and asked for --use-timestamp to be used."
+        echo "      --use-timestamp flag is going to temporarily change  POM versions  and"
+        echo "      revert them at the end of build, and there's no  way we can do partial"
+        echo "      revert. Please commit your changes first or omit --use-timestamp flag."
+        exit 1
+    fi
 fi
 
 echo "Packaging CloudStack..."
