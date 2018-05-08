@@ -920,7 +920,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
     }
 
     @Override
-    public boolean validateNewRouters(final List<? extends VirtualRouter> routers) {
+    public boolean areRoutersRunning(final List<? extends VirtualRouter> routers) {
         return false;
     }
 

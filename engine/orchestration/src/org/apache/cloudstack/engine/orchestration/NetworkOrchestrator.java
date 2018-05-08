@@ -2884,7 +2884,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
     @Override
-    public boolean validateNewRouters(final List<? extends VirtualRouter> routers) {
+    public boolean areRoutersRunning(final List<? extends VirtualRouter> routers) {
         for (final VirtualRouter router : routers) {
             if (router.getState() != VirtualMachine.State.Running) {
                 s_logger.debug("Found new router " + router.getInstanceName() + " to be in non-Running state: " + router.getState() + ". Please try restarting network again.");
@@ -2894,6 +2894,20 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return true;
     }
 
+    /**
+     * rollingRestartRouters performs restart of routers of a network by first
+     * deploying a new VR and then destroying old VRs in rolling fashion. For
+     * non-redundant network, it will re-program the new router as final step
+     * otherwise deploys a backup router for the network.
+     * @param network network to be restarted
+     * @param offering network offering
+     * @param dest deployment destination
+     * @param context reservation context
+     * @return returns true when the rolling restart operation succeeds
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
+     * @throws InsufficientCapacityException
+     */
     private boolean rollingRestartRouters(final NetworkVO network, final NetworkOffering offering, final DeployDestination dest, final ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
         s_logger.debug("Performing rolling restart of routers of network " + network);
         destroyExpendableRouters(_routerDao.findByNetwork(network.getId()), context);
@@ -2930,7 +2944,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             implementNetworkElementsAndResources(dest, context, network, offering);
         }
 
-        return validateNewRouters(_routerDao.findByNetwork(network.getId()));
+        return areRoutersRunning(_routerDao.findByNetwork(network.getId()));
     }
 
     private void setRestartRequired(final NetworkVO network, final boolean restartRequired) {

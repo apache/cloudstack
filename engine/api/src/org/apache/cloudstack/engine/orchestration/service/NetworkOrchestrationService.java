@@ -290,8 +290,20 @@ public interface NetworkOrchestrationService {
 
     List<NetworkGuru> getNetworkGurus();
 
+    /**
+     * destroyExpendableRouters will find and destroy safely destroyable routers
+     * that are in bad states or are backup routers
+     * @param routers list of routers
+     * @param context reservation context
+     * @throws ResourceUnavailableException
+     */
     void destroyExpendableRouters(final List<? extends VirtualRouter> routers, final ReservationContext context) throws ResourceUnavailableException;
 
-    boolean validateNewRouters(final List<? extends VirtualRouter> routers);
+    /**
+     * areRoutersRunning check if the given list of routers are running
+     * @param routers list of routers
+     * @return returns true is all routers are running
+     */
+    boolean areRoutersRunning(final List<? extends VirtualRouter> routers);
 
 }

@@ -2445,6 +2445,18 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         return vpcOffSvcProvidersMap.get(Network.Service.SourceNat).contains(Network.Provider.VPCVirtualRouter);
     }
 
+    /**
+     * rollingRestartVpc performs restart of routers of a VPC by first
+     * deploying a new VR and then destroying old VRs in rolling fashion. For
+     * non-redundant VPC, it will re-program the new router as final step
+     * otherwise deploys a backup router for the VPC.
+     * @param vpc vpc to be restarted
+     * @param context reservation context
+     * @return returns true when the rolling restart succeeds
+     * @throws ResourceUnavailableException
+     * @throws ConcurrentOperationException
+     * @throws InsufficientCapacityException
+     */
     private boolean rollingRestartVpc(final Vpc vpc, final ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
         s_logger.debug("Performing rolling restart of routers of VPC " + vpc);
         _ntwkMgr.destroyExpendableRouters(_routerDao.listByVpcId(vpc.getId()), context);
@@ -2480,7 +2492,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
             return false;
         }
 
-        return _ntwkMgr.validateNewRouters(_routerDao.listByVpcId(vpc.getId()));
+        return _ntwkMgr.areRoutersRunning(_routerDao.listByVpcId(vpc.getId()));
     }
 
 }
