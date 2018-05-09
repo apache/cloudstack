@@ -38,7 +38,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
@@ -78,6 +77,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeAp
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.command.DettachCommand;
@@ -95,31 +95,32 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.log4j.lf5.viewer.configure.ConfigurationManager;
-import org.mockito.stubbing.Answer;
 import org.springframework.stereotype.Component;
 
-import com.amazonaws.services.s3.transfer.Upload;
-import com.amazonaws.util.CapacityManager;
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.manager.Commands;
 import com.cloud.api.ApiDBUtils;
-import com.cloud.api.doc.Command;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManagerListener;
 import com.cloud.cluster.ManagementServerHost;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
+import com.cloud.configuration.Resource.ResourceType;
 import com.cloud.dc.ClusterVO;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
@@ -127,6 +128,7 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.ConnectionException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -138,6 +140,7 @@ import com.cloud.exception.StorageConflictException;
 import com.cloud.exception.StorageUnavailableException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
+import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
@@ -152,6 +155,7 @@ import com.cloud.server.ManagementServer;
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
@@ -172,7 +176,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -193,8 +196,8 @@ import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.DiskProfile;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine.State;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.sun.mail.iap.ConnectionException;
 
 @Component
 public class StorageManagerImpl extends ManagerBase implements StorageManager, ClusterManagerListener, Configurable {
@@ -463,7 +466,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) {
 
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
@@ -521,7 +524,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public String getStoragePoolTags(long poolId) {
-        return StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolTags(poolId));
+        return com.cloud.utils.StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolTags(poolId));
     }
 
     @Override
@@ -1716,7 +1719,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 stats = sc.getStorageStats(pool.getId());
             }
             if (stats != null) {
-                double usedPercentage = ((double)stats.getByteUsed() / totalSize);
+                double usedPercentage = ((double)stats.getByteUsed() / (double)totalSize);
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Checking pool " + pool.getId() + " for storage, totalSize: " + pool.getCapacityBytes() + ", usedBytes: " + stats.getByteUsed() + ", usedPct: " + usedPercentage
                             + ", disable threshold: " + storageUsedThreshold);
