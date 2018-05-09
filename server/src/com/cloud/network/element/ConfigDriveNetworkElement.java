@@ -155,6 +155,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Override
     public boolean prepare(Network network, NicProfile nic, VirtualMachineProfile vmProfile, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException,
             InsufficientCapacityException, ResourceUnavailableException {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("\"preparing\" config drive for vm " + vmProfile.getInstanceName());
+        }
         return true;
     }
 
@@ -192,38 +195,39 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     private DataStore getDataStore(Network network, VirtualMachineProfile vm, Long hostId) throws CloudException {
         DataStore dataStore = null;
         if(UsePrimaryStorage.value() && Hypervisor.HypervisorType.KVM.equals(vm.getHypervisorType())) {
-            List<VolumeVO> volumes = volumeDao.findUsableVolumesForInstance(vm.getId());
-            for(VolumeVO volume: volumes) {
-                Long poolId = volume.getPoolId();
-                if(poolId != null) {
-                    dataStore = _dataStoreMgr.getPrimaryDataStore(poolId);
-                    if (DataStoreRole.Primary.equals(dataStore.getRole())) {
-                        return dataStore;
-                    }
-                }
-            }
-            List<StoragePoolVO> dataStores = dataStoreDao.listAll();
-            if(!dataStores.isEmpty()) {
-                dataStore = _dataStoreMgr.getPrimaryDataStore(dataStores.get(0).getId());
-            }
-            if(dataStore == null) {
-                throw new CloudException("No data store found to put configdrive for vm " + vm.getInstanceName());
-            }
+            dataStore = getPrimaryDatastoreForVM(vm);
         } else {
-            // Remove form secondary storage
             dataStore = _dataStoreMgr.getImageStore(network.getDataCenterId());
         }
         return dataStore;
     }
 
     private DataStore getPrimaryDatastoreForVM(VirtualMachineProfile vm) throws CloudException {
-        List<DiskTO> list = vm.getDisks();
-        if (list.isEmpty()) {
-            throw new CloudException("no storage known for vm " + vm.getInstanceName() + " (uuid == " + vm.getUuid()+")");
+        DataStore dataStore = null;
+        List<VolumeVO> volumes = volumeDao.findUsableVolumesForInstance(vm.getId());
+        for(VolumeVO volume: volumes) {
+            Long poolId = volume.getPoolId();
+            if(poolId != null) {
+                dataStore = _dataStoreMgr.getPrimaryDataStore(poolId);
+                if (DataStoreRole.Primary.equals(dataStore.getRole())) {
+                    return dataStore;
+                }
+            }
         }
-        // put it next to the root disk, assyou+meing that is disk number zero ;)
-        DataStore store = _dataStoreMgr.getPrimaryDataStore(list.get(0).getData().getDataStore().getUuid());
-        return store;
+        List<StoragePoolVO> dataStores = dataStoreDao.listAll();
+        if(!dataStores.isEmpty()) {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("no data stores found for volumes belonging to vm " + vm.getInstanceName());
+            }
+            dataStore = _dataStoreMgr.getPrimaryDataStore(dataStores.get(0).getId());
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("using generic store " + dataStore.getName() + " to create ConfigDrive for vm " + vm.getInstanceName());
+            }
+        }
+        if(dataStore == null) {
+            throw new CloudException("No data store found to put configdrive for vm " + vm.getInstanceName());
+        }
+        return dataStore;
     }
 
     @Override
@@ -329,6 +333,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     @Override
     public boolean preStateTransitionEvent(VirtualMachine.State oldState, VirtualMachine.Event event, VirtualMachine.State newState, VirtualMachine vo, boolean status, Object opaque) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("preparing to transistion state from " + oldState + " on event " + event + " for vm " + vo.getInstanceName());
+        }
         return true;
     }
 

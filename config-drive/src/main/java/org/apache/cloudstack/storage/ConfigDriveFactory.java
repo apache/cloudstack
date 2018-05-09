@@ -93,13 +93,17 @@ public class ConfigDriveFactory {
     }
 
     private String linkUserData(String tempDirName) {
-        //Hard link the user_data.txt file with the user_data file in the OpenStack directory.
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("Hard link the user_data.txt file with the user_data file in the OpenStack directory in " + tempDirName);
+        }
         String userDataFilePath = tempDirName + CLOUD_STACK_CONFIG_DRIVE_NAME + "userdata/user_data.txt";
         if ((new File(userDataFilePath).exists())) {
             Script hardLink = new Script(!inSystemVM, "ln", timeout, s_logger);
             hardLink.add(userDataFilePath);
             hardLink.add(tempDirName + OPEN_STACK_CONFIG_DRIVE_NAME + "user_data");
-            s_logger.debug("execute command: " + hardLink.toString());
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("execute command: " + hardLink.toString());
+            }
             return hardLink.execute();
         }
         return null;
@@ -154,6 +158,9 @@ public class ConfigDriveFactory {
     }
 
     public Answer createConfigDriveIsoForVM(HandleConfigDriveIsoCommand cmd) {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("handling configdrive: " + cmd.getConfigDriveLabel());
+        }
         //create folder for the VM
         if (cmd.getVmData() != null) {
 
@@ -309,6 +316,9 @@ public class ConfigDriveFactory {
         return  recoveredVmData;
     }
     JsonObject constructOpenStackMetaData(JsonObject metaData, String dataType, String fileName, String content) {
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("adding " + content + " to " + fileName);
+        }
         if (dataType.equals(NetworkModel.METATDATA_DIR) &&  StringUtils.isNotEmpty(content)) {
             //keys are a special case in OpenStack format
             if (NetworkModel.PUBLIC_KEYS_FILE.equals(fileName)) {
@@ -353,6 +363,9 @@ public class ConfigDriveFactory {
     }
 
     protected void copyLocalToNfs(File localFile, File isoFile, DataStoreTO destData) throws ConfigurationException, IOException {
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("copyfest: from " + localFile + " to " + isoFile + " on " + destData.getUrl());
+        }
         String scriptsDir = "scripts/storage/secondary";
         String createVolScr = Script.findScript(scriptsDir, "createvolume.sh");
         if (createVolScr == null) {
@@ -371,6 +384,9 @@ public class ConfigDriveFactory {
         scr.add("-t", attacher.getRootDir(destData.getUrl(), nfsVersion) + "/" + isoFile.getParent());
         scr.add("-f", localFile.getAbsolutePath());
         scr.add("-d", "configDrive");
+        if(s_logger.isDebugEnabled()) {
+            s_logger.debug("executing " + scr.toString());
+        }
         String result;
         result = scr.execute();
 
