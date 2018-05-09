@@ -580,7 +580,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         if (network.getTrafficType() != TrafficType.Guest) {
             return false;
         }
-        if (listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
+        if (network.getGuestType() == GuestType.L2 || listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty()) {
             return true; // do not check free IPs if there is no service in the network
         }
         boolean hasFreeIps = true;
