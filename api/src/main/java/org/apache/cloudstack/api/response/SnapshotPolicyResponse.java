@@ -104,7 +104,7 @@ public class SnapshotPolicyResponse extends BaseResponse {
         this.timezone = timezone;
     }
 
-    public Boolean getForDisplay() {
+    public Boolean isForDisplay() {
         return forDisplay;
     }
 

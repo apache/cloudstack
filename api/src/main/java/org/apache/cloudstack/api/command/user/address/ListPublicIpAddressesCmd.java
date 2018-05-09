@@ -133,11 +133,11 @@ public class ListPublicIpAddressesCmd extends BaseListTaggedResourcesCmd {
         return associatedNetworkId;
     }
 
-    public Boolean getIsSourceNat() {
+    public Boolean isSourceNat() {
         return isSourceNat;
     }
 
-    public Boolean getIsStaticNat() {
+    public Boolean isStaticNat() {
         return isStaticNat;
     }
 

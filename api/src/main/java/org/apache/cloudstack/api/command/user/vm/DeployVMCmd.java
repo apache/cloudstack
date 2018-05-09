@@ -256,7 +256,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
         return HypervisorType.getType(hypervisor);
     }
 
-    public Boolean getDisplayVm() {
+    public Boolean isDisplayVm() {
         return displayVm;
     }
 

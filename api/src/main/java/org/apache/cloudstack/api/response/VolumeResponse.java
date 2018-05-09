@@ -276,7 +276,7 @@ public class VolumeResponse extends BaseResponseWithTagInformation implements Co
         return this.getId();
     }
 
-    public Boolean getDestroyed() {
+    public Boolean isDestroyed() {
         return destroyed;
     }
 

@@ -4794,7 +4794,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         String group = cmd.getGroup();
         String userData = cmd.getUserData();
         String sshKeyPairName = cmd.getSSHKeyPairName();
-        Boolean displayVm = cmd.getDisplayVm();
+        Boolean displayVm = cmd.isDisplayVm();
         String keyboard = cmd.getKeyboard();
         Map<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap = cmd.getDataDiskTemplateToDiskOfferingMap();
         if (zone.getNetworkType() == NetworkType.Basic) {

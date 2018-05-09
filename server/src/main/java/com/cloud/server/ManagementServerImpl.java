@@ -1588,7 +1588,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long domainId = cmd.getDomainId();
         Long accountId = null;
         final Long networkId = cmd.getNetworkId();
-        final Boolean forVirtual = cmd.getForVirtualNetwork();
+        final Boolean forVirtual = cmd.isForVirtualNetwork();
         String vlanType = null;
         final Long projectId = cmd.getProjectId();
         final Long physicalNetworkId = cmd.getPhysicalNetworkId();
@@ -1823,8 +1823,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Boolean forVirtualNetwork = cmd.isForVirtualNetwork();
         final Boolean forLoadBalancing = cmd.isForLoadBalancing();
         final Long ipId = cmd.getId();
-        final Boolean sourceNat = cmd.getIsSourceNat();
-        final Boolean staticNat = cmd.getIsStaticNat();
+        final Boolean sourceNat = cmd.isSourceNat();
+        final Boolean staticNat = cmd.isStaticNat();
         final Long vpcId = cmd.getVpcId();
         final Boolean forDisplay = cmd.getDisplay();
         final Map<String, String> tags = cmd.getTags();

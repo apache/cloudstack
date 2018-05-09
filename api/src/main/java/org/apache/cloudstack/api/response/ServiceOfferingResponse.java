@@ -180,7 +180,7 @@ public class ServiceOfferingResponse extends BaseResponse {
         this.isSystem = isSystem;
     }
 
-    public Boolean getDefaultUse() {
+    public Boolean isDefaultUse() {
         return defaultUse;
     }
 

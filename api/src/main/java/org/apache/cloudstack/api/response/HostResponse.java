@@ -630,7 +630,7 @@ public class HostResponse extends BaseResponse {
         return clusterType;
     }
 
-    public Boolean getLocalStorageActive() {
+    public Boolean isLocalStorageActive() {
         return localStorageActive;
     }
 
@@ -646,11 +646,11 @@ public class HostResponse extends BaseResponse {
         return events;
     }
 
-    public Boolean getHasEnoughCapacity() {
+    public Boolean hasEnoughCapacity() {
         return hasEnoughCapacity;
     }
 
-    public Boolean getSuitableForMigration() {
+    public Boolean isSuitableForMigration() {
         return suitableForMigration;
     }
 

@@ -73,7 +73,7 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd {
         return id;
     }
 
-    public Boolean getDisplayVpc() {
+    public Boolean isDisplayVpc() {
         return display;
     }
 
@@ -97,7 +97,7 @@ public class UpdateVPCCmd extends BaseAsyncCustomIdCmd {
 
     @Override
     public void execute() {
-        Vpc result = _vpcService.updateVpc(getId(), getVpcName(), getDisplayText(), getCustomId(), getDisplayVpc());
+        Vpc result = _vpcService.updateVpc(getId(), getVpcName(), getDisplayText(), getCustomId(), isDisplayVpc());
         if (result != null) {
             VpcResponse response = _responseGenerator.createVpcResponse(ResponseView.Restricted, result);
             response.setResponseName(getCommandName());
