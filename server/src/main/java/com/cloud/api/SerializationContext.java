@@ -33,7 +33,7 @@ public class SerializationContext {
         return context;
     }
 
-    public boolean getUuidTranslation() {
+    public boolean isUuidTranslation() {
         return _doUuidTranslation;
     }
 

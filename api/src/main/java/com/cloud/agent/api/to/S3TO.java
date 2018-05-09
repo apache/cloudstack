@@ -201,7 +201,7 @@ public final class S3TO implements ClientOptions, DataStoreTO {
         return DataStoreRole.Image;
     }
 
-    public boolean getEnableRRS() {
+    public boolean isEnableRRS() {
         return enableRRS;
     }
 

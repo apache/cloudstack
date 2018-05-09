@@ -849,7 +849,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long newMinIops;
         Long newMaxIops;
         Integer newHypervisorSnapshotReserve;
-        boolean shrinkOk = cmd.getShrinkOk();
+        boolean shrinkOk = cmd.isShrinkOk();
 
         VolumeVO volume = _volsDao.findById(cmd.getEntityId());
         if (volume == null) {

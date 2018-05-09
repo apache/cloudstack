@@ -2511,7 +2511,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
                 throw new InvalidParameterValueException("Scheme " + scheme + " is not supported by the network offering " + off);
             }
         } else {
-            if (!off.getInternalLb()) {
+            if (!off.isInternalLb()) {
                 throw new InvalidParameterValueException("Scheme " + scheme + " is not supported by the network offering " + off);
             }
         }

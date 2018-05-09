@@ -490,7 +490,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean getInternalLb() {
+    public boolean isInternalLb() {
         return internalLb;
     }
 

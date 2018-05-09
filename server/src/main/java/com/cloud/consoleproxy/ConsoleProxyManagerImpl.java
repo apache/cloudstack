@@ -773,7 +773,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
         ConsoleProxyVO proxy =
             new ConsoleProxyVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
-                systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), 0, serviceOffering.getOfferHA());
+                systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), 0, serviceOffering.isOfferHA());
         proxy.setDynamicallyScalable(template.isDynamicallyScalable());
         proxy = _consoleProxyDao.persist(proxy);
         try {

@@ -284,7 +284,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     @Override
-    public boolean getEnablePassword() {
+    public boolean isEnablePassword() {
         return enablePassword;
     }
 
@@ -573,7 +573,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     }
 
     @Override
-    public boolean getEnableSshKey() {
+    public boolean isEnableSshKey() {
         return enableSshKey;
     }
 

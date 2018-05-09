@@ -179,13 +179,13 @@ public class TemplateEntityImpl implements TemplateEntity {
     }
 
     @Override
-    public boolean getEnablePassword() {
+    public boolean isEnablePassword() {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public boolean getEnableSshKey() {
+    public boolean isEnableSshKey() {
         // TODO Auto-generated method stub
         return false;
     }
