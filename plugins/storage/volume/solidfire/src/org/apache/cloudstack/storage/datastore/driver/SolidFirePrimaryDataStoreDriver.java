@@ -43,6 +43,7 @@ import com.cloud.storage.Snapshot.State;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.Storage.StoragePoolType;
@@ -474,7 +475,9 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
         if (volumes != null) {
             for (VolumeVO volume : volumes) {
-                usedIops += volume.getMinIops() != null ? volume.getMinIops() : 0;
+                if (!Volume.State.Creating.equals(volume.getState())) {
+                    usedIops += volume.getMinIops() != null ? volume.getMinIops() : 0;
+                }
             }
         }
 

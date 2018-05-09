@@ -57,4 +57,16 @@ public interface ResourceCountDao extends GenericDao<ResourceCountVO, Long> {
     Set<Long> listRowsToUpdateForDomain(long domainId, ResourceType type);
 
     long removeEntriesByOwner(long ownerId, ResourceOwnerType ownerType);
+
+    /**
+     * Counts the number of CPU cores allocated for the given account.
+     * Side note: This method is not using the "resource_count" table. It is executing the actual count instead.
+     */
+    long countCpuNumberAllocatedToAccount(long accountId);
+
+    /**
+     * Counts the amount of memory allocated for the given account.
+     * Side note: This method is not using the "resource_count" table. It is executing the actual count instead.
+     */
+    long countMemoryAllocatedToAccount(long accountId);
 }

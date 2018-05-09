@@ -51,6 +51,8 @@ public class TemplateOrVolumePostUploadCommand {
 
     private String defaultMaxAccountSecondaryStorage;
 
+    private long processTimeout;
+
     private long accountId;
 
     private Integer nfsVersion;
@@ -205,5 +207,13 @@ public class TemplateOrVolumePostUploadCommand {
 
     public void setNfsVersion(Integer nfsVersion) {
         this.nfsVersion = nfsVersion;
+    }
+
+    public void setProcessTimeout(long processTimeout) {
+        this.processTimeout = processTimeout;
+    }
+
+    public long getProcessTimeout() {
+        return processTimeout;
     }
 }

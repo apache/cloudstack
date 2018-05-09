@@ -233,18 +233,23 @@ public class Script implements Callable<String> {
             }
 
             while (true) {
+                _logger.debug("Executing while with timeout : " + _timeout);
                 try {
-                    if (_process.waitFor() == 0) {
-                        _logger.debug("Execution is successful.");
-                        if (interpreter != null) {
-                            return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
-                        } else {
-                            // null return exitValue apparently
-                            return String.valueOf(_process.exitValue());
+                    //process execution completed within timeout period
+                    if (_process.waitFor(_timeout, TimeUnit.MILLISECONDS)) {
+                        //process completed successfully
+                        if (_process.exitValue() == 0) {
+                            _logger.debug("Execution is successful.");
+                            if (interpreter != null) {
+                                return interpreter.drain() ? task.getResult() : interpreter.interpret(ir);
+                            } else {
+                                // null return exitValue apparently
+                                return String.valueOf(_process.exitValue());
+                            }
+                        } else { //process failed
+                            break;
                         }
-                    } else {
-                        break;
-                    }
+                    } //timeout
                 } catch (InterruptedException e) {
                     if (!_isTimeOut) {
                         /*
@@ -254,24 +259,25 @@ public class Script implements Callable<String> {
                         _logger.debug("We are interrupted but it's not a timeout, just continue");
                         continue;
                     }
-
-                    TimedOutLogger log = new TimedOutLogger(_process);
-                    Task timedoutTask = new Task(log, ir);
-
-                    timedoutTask.run();
-                    if (!_passwordCommand) {
-                        _logger.warn("Timed out: " + buildCommandLine(command) + ".  Output is: " + timedoutTask.getResult());
-                    } else {
-                        _logger.warn("Timed out: " + buildCommandLine(command));
-                    }
-
-                    return ERR_TIMEOUT;
                 } finally {
                     if (future != null) {
                         future.cancel(false);
                     }
                     Thread.interrupted();
                 }
+
+                //timeout without completing the process
+                TimedOutLogger log = new TimedOutLogger(_process);
+                Task timedoutTask = new Task(log, ir);
+
+                timedoutTask.run();
+                if (!_passwordCommand) {
+                    _logger.warn("Timed out: " + buildCommandLine(command) + ".  Output is: " + timedoutTask.getResult());
+                } else {
+                    _logger.warn("Timed out: " + buildCommandLine(command));
+                }
+
+                return ERR_TIMEOUT;
             }
 
             _logger.debug("Exit value is " + _process.exitValue());
@@ -300,7 +306,7 @@ public class Script implements Callable<String> {
                 IOUtils.closeQuietly(_process.getErrorStream());
                 IOUtils.closeQuietly(_process.getOutputStream());
                 IOUtils.closeQuietly(_process.getInputStream());
-                _process.destroy();
+                _process.destroyForcibly();
             }
         }
     }
