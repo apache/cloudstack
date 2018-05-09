@@ -2291,12 +2291,13 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final boolean cidrRequired = zone.getNetworkType() == NetworkType.Advanced
                 && ntwkOff.getTrafficType() == TrafficType.Guest
                 && (ntwkOff.getGuestType() == GuestType.Shared || (ntwkOff.getGuestType() == GuestType.Isolated
-                && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))
-                || ntwkOff.getGuestType() == GuestType.L2 && !_networkModel.listNetworkOfferingServices(ntwkOff.getId()).isEmpty());
+                && !_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)));
         if (cidr == null && ip6Cidr == null && cidrRequired) {
             throw new InvalidParameterValueException("StartIp/endIp/gateway/netmask are required when create network of" + " type " + Network.GuestType.Shared
                     + " and network of type " + GuestType.Isolated + " with service " + Service.SourceNat.getName() + " disabled");
         }
+
+        checkL2OfferingServices(ntwkOff);
 
         // No cidr can be specified in Basic zone
         if (zone.getNetworkType() == NetworkType.Basic && cidr != null) {
@@ -2394,6 +2395,21 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         CallContext.current().setEventDetails("Network Id: " + network.getId());
         CallContext.current().putContextParameter(Network.class, network.getUuid());
         return network;
+    }
+
+    /**
+     * Checks for L2 network offering services. Only 2 cases allowed:
+     * - No services
+     * - User Data service only, provided by ConfigDrive
+     * @param ntwkOff network offering
+     */
+    protected void checkL2OfferingServices(NetworkOfferingVO ntwkOff) {
+        if (ntwkOff.getGuestType() == GuestType.L2 && !_networkModel.listNetworkOfferingServices(ntwkOff.getId()).isEmpty() &&
+                (!_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.UserData) ||
+                        (_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.UserData) &&
+                                _networkModel.listNetworkOfferingServices(ntwkOff.getId()).size() > 1))) {
+            throw new InvalidParameterValueException("For L2 networks, only UserData service is allowed");
+        }
     }
 
     @Override
