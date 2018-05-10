@@ -332,9 +332,9 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     if ("disk".equals(deviceChildNode.getNodeName())) {
                         Node diskNode = deviceChildNode;
 
-                        String sourceFileDevText = getSourceFileDevText(diskNode);
+                        String sourceText = getSourceText(diskNode);
 
-                        String path = getPathFromSourceFileDevText(migrateStorage.keySet(), sourceFileDevText);
+                        String path = getPathFromSourceText(migrateStorage.keySet(), sourceText);
 
                         if (path != null) {
                             MigrateCommand.MigrateDiskInfo migrateDiskInfo = migrateStorage.remove(path);
@@ -383,10 +383,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return getXml(doc);
     }
 
-    private String getPathFromSourceFileDevText(Set<String> paths, String sourceFileDevText) {
-        if (paths != null && sourceFileDevText != null) {
+    private String getPathFromSourceText(Set<String> paths, String sourceText) {
+        if (paths != null && sourceText != null) {
             for (String path : paths) {
-                if (sourceFileDevText.contains(path)) {
+                if (sourceText.contains(path)) {
                     return path;
                 }
             }
@@ -395,7 +395,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
         return null;
     }
 
-    private String getSourceFileDevText(Node diskNode) {
+    private String getSourceText(Node diskNode) {
         NodeList diskChildNodes = diskNode.getChildNodes();
 
         for (int i = 0; i < diskChildNodes.getLength(); i++) {
@@ -414,6 +414,20 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
 
                 if (diskNodeAttribute != null) {
                     return diskNodeAttribute.getTextContent();
+                }
+
+                diskNodeAttribute = diskNodeAttributes.getNamedItem("protocol");
+
+                if (diskNodeAttribute != null) {
+                    String textContent = diskNodeAttribute.getTextContent();
+
+                    if ("rbd".equalsIgnoreCase(textContent)) {
+                        diskNodeAttribute = diskNodeAttributes.getNamedItem("name");
+
+                        if (diskNodeAttribute != null) {
+                            return diskNodeAttribute.getTextContent();
+                        }
+                    }
                 }
             }
         }
