@@ -245,6 +245,7 @@ class CsRedundant(object):
 
         interfaces = [interface for interface in self.address.get_interfaces() if interface.needs_vrrp()]
         for interface in interfaces:
+            CsPasswdSvc(interface.get_ip()).stop()
             CsPasswdSvc(interface.get_gateway()).stop()
 
         self.cl.set_fault_state()
@@ -281,7 +282,9 @@ class CsRedundant(object):
 
         interfaces = [interface for interface in self.address.get_interfaces() if interface.needs_vrrp()]
         for interface in interfaces:
+            CsPasswdSvc(interface.get_ip()).stop()
             CsPasswdSvc(interface.get_gateway()).stop()
+
         CsHelper.service("dnsmasq", "stop")
 
         self.cl.set_master_state(False)
@@ -335,8 +338,10 @@ class CsRedundant(object):
         CsHelper.execute("%s -B" % cmd)
         CsHelper.service("ipsec", "restart")
         CsHelper.service("xl2tpd", "restart")
+
         interfaces = [interface for interface in self.address.get_interfaces() if interface.needs_vrrp()]
         for interface in interfaces:
+            CsPasswdSvc(interface.get_ip()).restart()
             CsPasswdSvc(interface.get_gateway()).restart()
 
         CsHelper.service("dnsmasq", "restart")
