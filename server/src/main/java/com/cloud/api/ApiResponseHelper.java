@@ -2241,6 +2241,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkSpannedZones(networkSpannedZones);
         }
         response.setExternalId(network.getExternalId());
+        response.setRedundantRouter(network.isRedundant());
         response.setObjectName("network");
         return response;
     }

@@ -56,7 +56,7 @@ public class ApiConstants {
     public static final String CIDR_LIST = "cidrlist";
     public static final String DEST_CIDR_LIST = "destcidrlist";
     public static final String CLEANUP = "cleanup";
-    public static final String MAKEREDUNDANTE = "makeredundant";
+    public static final String MAKEREDUNDANT = "makeredundant";
     public static final String CLUSTER_ID = "clusterid";
     public static final String CLUSTER_NAME = "clustername";
     public static final String CLUSTER_TYPE = "clustertype";
@@ -686,6 +686,7 @@ public class ApiConstants {
     public static final String REMAININGCAPACITY = "remainingcapacity";
     public static final String MAXCAPACITY = "maxcapacity";
     public static final String DISTRIBUTED_VPC_ROUTER = "distributedvpcrouter";
+    public static final String REDUNDANT_ROUTER = "redundantrouter";
     public static final String REDUNDANT_VPC_ROUTER = "redundantvpcrouter";
     public static final String READ_ONLY = "readonly";
     public static final String SUPPORTS_REGION_LEVEL_VPC = "supportsregionLevelvpc";

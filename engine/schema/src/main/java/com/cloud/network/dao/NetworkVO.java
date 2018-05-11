@@ -178,13 +178,8 @@ public class NetworkVO implements Network {
     @Transient
     transient String vlanIdAsUUID;
 
-    public String getVlanIdAsUUID() {
-        return vlanIdAsUUID;
-    }
-
-    public void setVlanIdAsUUID(String vlanIdAsUUID) {
-        this.vlanIdAsUUID = vlanIdAsUUID;
-    }
+    @Transient
+    boolean rollingRestart = false;
 
     public NetworkVO() {
         uuid = UUID.randomUUID().toString();
@@ -649,5 +644,21 @@ public class NetworkVO implements Network {
 
     public void setExternalId(String externalId) {
         this.externalId = externalId;
+    }
+
+    public String getVlanIdAsUUID() {
+        return vlanIdAsUUID;
+    }
+
+    public void setVlanIdAsUUID(String vlanIdAsUUID) {
+        this.vlanIdAsUUID = vlanIdAsUUID;
+    }
+
+    public boolean isRollingRestart() {
+        return rollingRestart;
+    }
+
+    public void setRollingRestart(boolean rollingRestart) {
+        this.rollingRestart = rollingRestart;
     }
 }

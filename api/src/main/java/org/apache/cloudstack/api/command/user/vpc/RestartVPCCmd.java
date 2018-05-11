@@ -49,10 +49,10 @@ public class RestartVPCCmd extends BaseAsyncCmd {
     private Long id;
 
     @Parameter(name = ApiConstants.CLEANUP, type = CommandType.BOOLEAN, required = false, description = "If cleanup old network elements")
-    private Boolean cleanup;
+    private Boolean cleanup = false;
 
-    @Parameter(name = ApiConstants.MAKEREDUNDANTE, type = CommandType.BOOLEAN, required = false, description = "Turn a single VPC into a redundant one.")
-    private Boolean makeredundant;
+    @Parameter(name = ApiConstants.MAKEREDUNDANT, type = CommandType.BOOLEAN, required = false, description = "Turn a single VPC into a redundant one.")
+    private Boolean makeredundant = false;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -63,17 +63,11 @@ public class RestartVPCCmd extends BaseAsyncCmd {
     }
 
     public Boolean getCleanup() {
-        if (cleanup != null) {
-            return cleanup;
-        }
-        return true;
+        return cleanup;
     }
 
     public Boolean getMakeredundant() {
-        if (makeredundant != null) {
-            return makeredundant;
-        }
-        return true;
+        return makeredundant;
     }
 
     /////////////////////////////////////////////////////

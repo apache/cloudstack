@@ -229,6 +229,10 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
     @Param(description = "The external id of the network", since = "4.11")
     private String externalId;
 
+    @SerializedName(ApiConstants.REDUNDANT_ROUTER)
+    @Param(description = "If the network has redundant routers enabled", since = "4.11.1")
+    private Boolean redundantRouter;
+
     public Boolean getDisplayNetwork() {
         return displayNetwork;
     }
@@ -436,5 +440,13 @@ public class NetworkResponse extends BaseResponse implements ControlledEntityRes
 
     public void setExternalId(String externalId) {
         this.externalId = externalId;
+    }
+
+    public Boolean getRedundantRouter() {
+        return redundantRouter;
+    }
+
+    public void setRedundantRouter(Boolean redundantRouter) {
+        this.redundantRouter = redundantRouter;
     }
 }

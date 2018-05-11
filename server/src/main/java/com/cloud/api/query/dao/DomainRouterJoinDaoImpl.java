@@ -77,7 +77,9 @@ public class DomainRouterJoinDaoImpl extends GenericDaoBase<DomainRouterJoinVO, 
         routerResponse.setCreated(router.getCreated());
         routerResponse.setState(router.getState());
         routerResponse.setIsRedundantRouter(router.isRedundantRouter());
-        routerResponse.setRedundantState(router.getRedundantState().toString());
+        if (router.getRedundantState() != null) {
+            routerResponse.setRedundantState(router.getRedundantState().toString());
+        }
         if (router.getTemplateVersion() != null) {
             String routerVersion = CloudStackVersion.trimRouterVersion(router.getTemplateVersion());
             routerResponse.setVersion(routerVersion);

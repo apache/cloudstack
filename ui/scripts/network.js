@@ -1100,10 +1100,22 @@
                                         });
                                         args.$form.find('.form-item[rel=cleanup]').find('input').attr('checked', 'checked'); //checked
                                         args.$form.find('.form-item[rel=cleanup]').css('display', 'inline-block'); //shown
+                                        args.$form.find('.form-item[rel=makeredundant]').find('input').attr('checked', 'checked'); //checked
+                                        args.$form.find('.form-item[rel=makeredundant]').css('display', 'inline-block'); //shown
+
+                                        if (Boolean(args.context.networks[0].redundantrouter)) {
+                                            args.$form.find('.form-item[rel=makeredundant]').hide();
+                                        } else {
+                                            args.$form.find('.form-item[rel=makeredundant]').show();
+                                        }
                                     },
                                     fields: {
                                         cleanup: {
                                             label: 'label.clean.up',
+                                            isBoolean: true
+                                        },
+                                        makeredundant: {
+                                            label: 'label.make.redundant',
                                             isBoolean: true
                                         }
                                     }
@@ -1114,10 +1126,13 @@
                                     }
                                 },
                                 action: function(args) {
-                                    var array1 = [];
-                                    array1.push("&cleanup=" + (args.data.cleanup == "on"));
                                     $.ajax({
-                                        url: createURL("restartNetwork&id=" + args.context.networks[0].id + array1.join("")),
+                                        url: createURL("restartNetwork"),
+                                        data: {
+                                            id: args.context.networks[0].id,
+                                            cleanup: (args.data.cleanup == "on"),
+                                            makeredundant: (args.data.makeredundant == "on")
+                                        },
                                         dataType: "json",
                                         async: true,
                                         success: function(json) {
@@ -1416,10 +1431,20 @@
                                         label: 'label.reserved.ip.range'
                                     },
 
+                                    redundantrouter: {
+                                        label: 'label.redundant.router',
+                                        converter: function(booleanValue) {
+                                            if (booleanValue == true) {
+                                                return "Yes";
+                                            }
+                                            return "No";
+                                        }
+                                    },
 
                                     networkdomaintext: {
                                         label: 'label.network.domain.text'
                                     },
+
                                     networkdomain: {
                                         label: 'label.network.domain',
                                         isEditable: true
