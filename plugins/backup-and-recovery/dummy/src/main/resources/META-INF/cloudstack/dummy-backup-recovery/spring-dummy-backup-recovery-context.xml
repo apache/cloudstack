@@ -21,8 +21,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
                       http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
 >
-
-    <bean id="dummyBackupRecoveryElement" class="org.apache.cloudstack.backuprecovery.element.DummyBackupRecoveryElement">
-        <property name="name" value="DummyBackupRecoveryElement" />
+    <bean id="dummyBackupRecoveryDriver" class="org.apache.cloudstack.br.DummyBRProvider">
+        <property name="name" value="Dummy" />
     </bean>
 </beans>

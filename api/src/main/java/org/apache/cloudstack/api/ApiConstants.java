@@ -720,9 +720,8 @@ public class ApiConstants {
     public static final String LDAP_DOMAIN = "ldapdomain";
 
     // Backup and Recovery
-    public static final String BACKUP_PROVIDER_ID = "backupproviderid";
-    public static final String BACKUP_POLICY_ID = "backuppolicyid";
-    public static final String BACKUP_POLICY_NAME = "backuppolicyname";
+    public static final String BR_PROVIDER_ID = "providerid";
+    public static final String BR_POLICY_ID = "policyid";
 
     public enum HostDetails {
         all, capacity, events, stats, min;

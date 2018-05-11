@@ -36,22 +36,30 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`,
 
 -- Backup and Recovery
 
-CREATE TABLE IF NOT EXISTS `cloud`.`backup_and_recovery_providers` (
-  `id` bigint unsigned NOT NULL AUTO_INCREMENT COMMENT 'id',
+CREATE TABLE IF NOT EXISTS `cloud`.`br_provider` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(40),
   `name` varchar(255) COMMENT 'name for the backup and recovery provider',
   `url` varchar(255) DEFAULT NULL COMMENT 'the url of the backup and recovery provider',
   `zone_id` bigint unsigned NOT NULL COMMENT 'foreign key to zone id',
-  `host_id` bigint(20) unsigned NOT NULL COMMENT 'host id coresponding to the backup and recovery provider',
   `provider` varchar(255) DEFAULT NULL COMMENT 'the backup and recovery provider',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
-  KEY `fk_backup_and_recovery_providers__host_id` (`host_id`),
-  CONSTRAINT `fk_backup_and_recovery_providers__host_id` FOREIGN KEY (`host_id`) REFERENCES `host` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_backup_and_recovery_providers__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `cloud`.`backup_policies` (
+CREATE TABLE IF NOT EXISTS `cloud`.`br_provider_details` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `provider_id` bigint(20) unsigned NOT NULL COMMENT 'backup and recovery provider id',
+  `name` varchar(255) NOT NULL,
+  `value` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_provider_id_name` (`provider_id`,`name`),
+  KEY `fk_br_provider_details__provider_id` (`provider_id`),
+  CONSTRAINT `fk_br_provider_details__provider_id` FOREIGN KEY (`provider_id`) REFERENCES `br_provider` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB AUTO_INCREMENT=496 DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`br_policies` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(40) NOT NULL,
   `provider_id` bigint(20) unsigned NOT NULL COMMENT 'backup and recovery provider id',
@@ -59,5 +67,5 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_policies` (
   `policy_uuid` varchar(40) NOT NULL COMMENT 'backup policy ID on provider side',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
-  CONSTRAINT `fk_backup_polocies__provider_id` FOREIGN KEY (`provider_id`) REFERENCES `backup_and_recovery_providers` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_br_policies__provider_id` FOREIGN KEY (`provider_id`) REFERENCES `br_provider` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
