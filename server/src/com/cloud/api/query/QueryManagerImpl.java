@@ -1743,7 +1743,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         String keyword = cmd.getKeyword();
         String type = cmd.getType();
         Map<String, String> tags = cmd.getTags();
-        Long storageId = cmd.getStorageId();
+        String storageId = cmd.getStorageId();
         Long clusterId = cmd.getClusterId();
         Long diskOffId = cmd.getDiskOfferingId();
         Boolean display = cmd.getDisplay();
@@ -1782,7 +1782,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("instanceId", sb.entity().getVmId(), SearchCriteria.Op.EQ);
         sb.and("dataCenterId", sb.entity().getDataCenterId(), SearchCriteria.Op.EQ);
         sb.and("podId", sb.entity().getPodId(), SearchCriteria.Op.EQ);
-        sb.and("storageId", sb.entity().getPoolId(), SearchCriteria.Op.EQ);
+        sb.and("storageId", sb.entity().getPoolUuid(), SearchCriteria.Op.EQ);
         sb.and("diskOfferingId", sb.entity().getDiskOfferingId(), SearchCriteria.Op.EQ);
         sb.and("display", sb.entity().isDisplayVolume(), SearchCriteria.Op.EQ);
         // Only return volumes that are not destroyed

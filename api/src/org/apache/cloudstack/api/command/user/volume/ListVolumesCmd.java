@@ -77,12 +77,12 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
     private Long zoneId;
 
     @Parameter(name = ApiConstants.STORAGE_ID,
-               type = CommandType.UUID,
+               type = CommandType.STRING,
                entityType = StoragePoolResponse.class,
                description = "the ID of the storage pool, available to ROOT admin only",
                since = "4.3",
                authorized = {RoleType.Admin})
-    private Long storageId;
+    private String  storageId;
 
     @Parameter(name = ApiConstants.DISK_OFFERING_ID,
             type = CommandType.UUID,
@@ -134,7 +134,7 @@ public class ListVolumesCmd extends BaseListTaggedResourcesCmd {
         return zoneId;
     }
 
-    public Long getStorageId() {
+    public String getStorageId() {
         return storageId;
     }
 
