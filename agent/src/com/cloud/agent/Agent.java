@@ -495,19 +495,7 @@ public class Agent implements HandlerFactory, IAgentControl {
 
         _resource.disconnected();
 
-        final String lastConnectedHost = _shell.getConnectedHost();
-
-        int inProgress = 0;
-        do {
-            _shell.getBackoffAlgorithm().waitBeforeRetry();
-
-            s_logger.info("Lost connection to host: " + lastConnectedHost + ". Dealing with the remaining commands...");
-
-            inProgress = _inProgress.get();
-            if (inProgress > 0) {
-                s_logger.info("Cannot connect because we still have " + inProgress + " commands in progress.");
-            }
-        } while (inProgress > 0);
+        s_logger.info("Lost connection to host: " + _shell.getConnectedHost() + ". Attempting reconnection while we still have " + _inProgress.get() + " commands in progress.");
 
         _connection.stop();
 
