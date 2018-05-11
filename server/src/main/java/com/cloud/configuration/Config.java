@@ -1139,14 +1139,6 @@ public enum Config {
             "false",
             "Enable/Disable Nexus/Vmware dvSwitch in VMware environment",
             null),
-    VmwarePortsPerDVPortGroup(
-            "Network",
-            ManagementServer.class,
-            Integer.class,
-            "vmware.ports.per.dvportgroup",
-            "256",
-            "Default number of ports per Vmware dvPortGroup in VMware environment",
-            null),
     VmwareCreateFullClone(
             "Advanced",
             ManagementServer.class,

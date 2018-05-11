@@ -18,3 +18,5 @@
 --;
 -- Schema cleanup after 4.11.0.0 to 4.11.1.0 upgrade
 --;
+
+DELETE FROM `cloud`.`configuration` WHERE `name`='vmware.ports.per.dvportgroup';
