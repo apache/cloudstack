@@ -104,7 +104,7 @@ public class ConfigDriveNetworkElementTest {
     private final String VMUSERDATA = "H4sIABCvw1oAAystTi1KSSxJ5AIAUPllwQkAAAA=";
     private final long SOID = 31L;
     private final long HOSTID = NETWORK_ID;
-    private final String HOSTNAME = "host1";
+    private final String HOSTNAME = "vm-hostname";
 
     @Mock private ConfigurationDao _configDao;
     @Mock private DataCenterDao _dcDao;
@@ -166,7 +166,7 @@ public class ConfigDriveNetworkElementTest {
         when(virtualMachine.getDataCenterId()).thenReturn(DATACENTERID);
         when(virtualMachine.getInstanceName()).thenReturn(VMINSTANCENAME);
         when(virtualMachine.getUserData()).thenReturn(VMUSERDATA);
-        when(virtualMachine.getHostName()).thenReturn("vm-hostname");
+        when(virtualMachine.getHostName()).thenReturn(HOSTNAME);
         when(deployDestination.getHost()).thenReturn(hostVO);
         when(hostVO.getId()).thenReturn(HOSTID);
         when(nic.isDefaultNic()).thenReturn(true);
