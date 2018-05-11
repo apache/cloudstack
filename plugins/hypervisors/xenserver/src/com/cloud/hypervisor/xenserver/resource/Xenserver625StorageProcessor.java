@@ -559,11 +559,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     physicalSize = Long.parseLong(tmp[1]);
                     finalPath = folder + File.separator + snapshotBackupUuid + ".vhd";
                 }
-
-                final String volumeUuid = snapshotTO.getVolume().getPath();
-
-                destroySnapshotOnPrimaryStorageExceptThis(conn, volumeUuid, snapshotUuid);
             }
+
+            // remove every snapshot except this one from primary storage
+            final String volumeUuid = snapshotTO.getVolume().getPath();
+            destroySnapshotOnPrimaryStorageExceptThis(conn, volumeUuid, snapshotUuid);
 
             final SnapshotObjectTO newSnapshot = new SnapshotObjectTO();
             newSnapshot.setPath(finalPath);
@@ -577,12 +577,13 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             s_logger.info("New snapshot physical utilization: "+physicalSize);
 
             return new CopyCmdAnswer(newSnapshot);
-        } catch (final Types.XenAPIException e) {
-            details = "BackupSnapshot Failed due to " + e.toString();
-            s_logger.warn(details, e);
         } catch (final Exception e) {
-            details = "BackupSnapshot Failed due to " + e.getMessage();
+            final String reason = e instanceof Types.XenAPIException ? e.toString() : e.getMessage();
+            details = "BackupSnapshot Failed due to " + reason;
             s_logger.warn(details, e);
+
+            // remove last bad primary snapshot when exception happens
+            destroySnapshotOnPrimaryStorage(conn, snapshotUuid);
         }
 
         return new CopyCmdAnswer(details);
@@ -1079,7 +1080,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         }
     }
 
-    public Answer createTemplateFromSnapshot2(final CopyCommand cmd) {
+    private Answer createTemplateFromSnapshot2(final CopyCommand cmd) {
         final Connection conn = hypervisorResource.getConnection();
 
         final SnapshotObjectTO snapshotObjTO = (SnapshotObjectTO) cmd.getSrcTO();
@@ -1089,13 +1090,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             return null;
         }
 
-        NfsTO destStore = null;
-        PrimaryDataStoreTO srcStore = null;
-        URI destUri = null;
+        NfsTO destStore;
+        URI destUri;
 
         try {
-            srcStore = (PrimaryDataStoreTO) snapshotObjTO.getDataStore();
-            destStore = (NfsTO) templateObjTO.getDataStore();
+            destStore = (NfsTO)templateObjTO.getDataStore();
             destUri = new URI(destStore.getUrl());
         } catch (final Exception ex) {
             s_logger.debug("Invalid URI", ex);
@@ -1118,7 +1117,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final String storageHost = srcDetails.get(DiskTO.STORAGE_HOST);
             final String chapInitiatorUsername = srcDetails.get(DiskTO.CHAP_INITIATOR_USERNAME);
             final String chapInitiatorSecret = srcDetails.get(DiskTO.CHAP_INITIATOR_SECRET);
-            String srType = null;
+            String srType;
 
             srType = CitrixResourceBase.SRType.LVMOISCSI.toString();
 
@@ -1173,13 +1172,6 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             result = true;
 
             return new CopyCmdAnswer(newTemplate);
-            // } catch (Exception ex) {
-            // s_logger.error("Failed to create a template from a snapshot",
-            // ex);
-            //
-            // return new
-            // CopyCmdAnswer("Failed to create a template from a snapshot: " +
-            // ex.toString());
         } catch (final BadServerResponse e) {
             s_logger.error("Failed to create a template from a snapshot due to incomprehensible server response", e);
 

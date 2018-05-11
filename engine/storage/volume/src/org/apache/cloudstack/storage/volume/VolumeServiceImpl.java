@@ -62,6 +62,7 @@ import org.apache.cloudstack.storage.datastore.PrimaryDataStoreProviderManager;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.store.TemplateObject;
@@ -70,7 +71,9 @@ import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.storage.ListVolumeAnswer;
 import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.ResizeVolumeCommand;
@@ -122,6 +125,8 @@ import com.cloud.storage.dao.VolumeDetailsDao;
 @Component
 public class VolumeServiceImpl implements VolumeService {
     private static final Logger s_logger = Logger.getLogger(VolumeServiceImpl.class);
+    @Inject
+    protected AgentManager agentMgr;
     @Inject
     VolumeDao volDao;
     @Inject
@@ -398,9 +403,27 @@ public class VolumeServiceImpl implements VolumeService {
                     s_logger.info("Volume " + vo.getId() + " is not referred anywhere, remove it from volumes table");
                     volDao.remove(vo.getId());
                 }
+
                 SnapshotDataStoreVO snapStoreVo = _snapshotStoreDao.findByVolume(vo.getId(), DataStoreRole.Primary);
-                if(snapStoreVo != null){
-                    _snapshotStoreDao.remove(snapStoreVo.getId());
+
+                if (snapStoreVo != null) {
+                    long storagePoolId = snapStoreVo.getDataStoreId();
+                    StoragePoolVO storagePoolVO = storagePoolDao.findById(storagePoolId);
+
+                    if (storagePoolVO.isManaged()) {
+                        DataStore primaryDataStore = dataStoreMgr.getPrimaryDataStore(storagePoolId);
+                        Map<String, String> mapCapabilities = primaryDataStore.getDriver().getCapabilities();
+
+                        String value = mapCapabilities.get(DataStoreCapabilities.STORAGE_SYSTEM_SNAPSHOT.toString());
+                        Boolean supportsStorageSystemSnapshots = new Boolean(value);
+
+                        if (!supportsStorageSystemSnapshots) {
+                            _snapshotStoreDao.remove(snapStoreVo.getId());
+                        }
+                    }
+                    else {
+                        _snapshotStoreDao.remove(snapStoreVo.getId());
+                    }
                 }
             } else {
                 vo.processEvent(Event.OperationFailed);
@@ -876,12 +899,12 @@ public class VolumeServiceImpl implements VolumeService {
             copyCaller.setCallback(copyCaller.getTarget().copyManagedTemplateCallback(null, null)).setContext(copyContext);
 
             // Populate details which will be later read by the storage subsystem.
-            Map<String, String> details = new HashMap<String, String>();
+            Map<String, String> details = new HashMap<>();
 
             details.put(PrimaryDataStore.MANAGED, Boolean.TRUE.toString());
             details.put(PrimaryDataStore.STORAGE_HOST, destPrimaryDataStore.getHostAddress());
             details.put(PrimaryDataStore.STORAGE_PORT, String.valueOf(destPrimaryDataStore.getPort()));
-            details.put(PrimaryDataStore.MANAGED_STORE_TARGET, ((TemplateObject)templateOnPrimary).getInstallPath());
+            details.put(PrimaryDataStore.MANAGED_STORE_TARGET, templateOnPrimary.getInstallPath());
             details.put(PrimaryDataStore.MANAGED_STORE_TARGET_ROOT_VOLUME, srcTemplateInfo.getUniqueName());
             details.put(PrimaryDataStore.REMOVE_AFTER_COPY, Boolean.TRUE.toString());
             details.put(PrimaryDataStore.VOLUME_SIZE, String.valueOf(templateOnPrimary.getSize()));
@@ -901,7 +924,7 @@ public class VolumeServiceImpl implements VolumeService {
 
             grantAccess(templateOnPrimary, destHost, destPrimaryDataStore);
 
-            VolumeApiResult result = null;
+            VolumeApiResult result;
 
             try {
                 motionSrv.copyAsync(srcTemplateInfo, templateOnPrimary, destHost, copyCaller);
@@ -910,6 +933,16 @@ public class VolumeServiceImpl implements VolumeService {
             }
             finally {
                 revokeAccess(templateOnPrimary, destHost, destPrimaryDataStore);
+
+                if (HypervisorType.VMware.equals(destHost.getHypervisorType())) {
+                    details.put(ModifyTargetsCommand.IQN, templateOnPrimary.getInstallPath());
+
+                    List<Map<String, String>> targets = new ArrayList<>();
+
+                    targets.add(details);
+
+                    removeDynamicTargets(destHost.getId(), targets);
+                }
             }
 
             if (result.isFailed()) {
@@ -929,6 +962,32 @@ public class VolumeServiceImpl implements VolumeService {
         }
         finally {
             _tmpltPoolDao.releaseFromLockTable(templatePoolRefId);
+        }
+    }
+
+    private void removeDynamicTargets(long hostId, List<Map<String, String>> targets) {
+        ModifyTargetsCommand cmd = new ModifyTargetsCommand();
+
+        cmd.setTargets(targets);
+        cmd.setApplyToAllHostsInCluster(true);
+        cmd.setAdd(false);
+        cmd.setTargetTypeToRemove(ModifyTargetsCommand.TargetTypeToRemove.DYNAMIC);
+
+        sendModifyTargetsCommand(cmd, hostId);
+    }
+
+    private void sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {
+        Answer answer = agentMgr.easySend(hostId, cmd);
+
+        if (answer == null) {
+            String msg = "Unable to get an answer to the modify targets command";
+
+            s_logger.warn(msg);
+        }
+        else if (!answer.getResult()) {
+            String msg = "Unable to modify target on the following host: " + hostId;
+
+            s_logger.warn(msg);
         }
     }
 
@@ -1066,12 +1125,12 @@ public class VolumeServiceImpl implements VolumeService {
                 destPrimaryDataStore.getDriver().getCapabilities().get(DataStoreCapabilities.CAN_CREATE_VOLUME_FROM_VOLUME.toString())
         );
 
-        boolean computeZoneSupportsResign = computeZoneSupportsResign(destHost.getDataCenterId(), destHost.getHypervisorType());
+        boolean computeSupportsVolumeClone = computeSupportsVolumeClone(destHost.getDataCenterId(), destHost.getHypervisorType());
 
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<>();
 
-        if (storageCanCloneVolume && computeZoneSupportsResign) {
-            s_logger.debug("Storage " + destDataStoreId + " can support cloning using a cached template and host cluster can perform UUID resigning.");
+        if (storageCanCloneVolume && computeSupportsVolumeClone) {
+            s_logger.debug("Storage " + destDataStoreId + " can support cloning using a cached template and compute side is OK with volume cloning.");
 
             TemplateInfo templateOnPrimary = destPrimaryDataStore.getTemplate(srcTemplateInfo.getId());
 
@@ -1099,16 +1158,22 @@ public class VolumeServiceImpl implements VolumeService {
 
             // We have a template on primary storage. Clone it to new volume.
             s_logger.debug("Creating a clone from template on primary storage " + destDataStoreId);
+
             createManagedVolumeCloneTemplateAsync(volumeInfo, templateOnPrimary, destPrimaryDataStore, future);
         } else {
             s_logger.debug("Primary storage does not support cloning or no support for UUID resigning on the host side; copying the template normally");
+
             createManagedVolumeCopyTemplateAsync(volumeInfo, destPrimaryDataStore, srcTemplateInfo, destHost, future);
         }
 
         return future;
     }
 
-    private boolean computeZoneSupportsResign(long zoneId, HypervisorType hypervisorType) {
+    private boolean computeSupportsVolumeClone(long zoneId, HypervisorType hypervisorType) {
+        if (HypervisorType.VMware.equals(hypervisorType) || HypervisorType.KVM.equals(hypervisorType)) {
+            return true;
+        }
+
         return getHost(zoneId, hypervisorType, true) != null;
     }
 
@@ -1524,6 +1589,7 @@ public class VolumeServiceImpl implements VolumeService {
                 future.complete(res);
             } else {
                 srcVolume.processEvent(Event.OperationSuccessed);
+                snapshotMgr.cleanupSnapshotsByVolume(srcVolume.getId());
                 future.complete(res);
             }
         } catch (Exception e) {
@@ -1605,6 +1671,7 @@ public class VolumeServiceImpl implements VolumeService {
             } else {
                 for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
                     VolumeInfo volume = entry.getKey();
+                    snapshotMgr.cleanupSnapshotsByVolume(volume.getId());
                     volume.processEvent(Event.OperationSuccessed);
                 }
                 future.complete(res);
@@ -1736,7 +1803,17 @@ public class VolumeServiceImpl implements VolumeService {
         CreateVolumeContext<VolumeApiResult> context = new CreateVolumeContext<VolumeApiResult>(null, volume, future);
         AsyncCallbackDispatcher<VolumeServiceImpl, CreateCmdResult> caller = AsyncCallbackDispatcher.create(this);
         caller.setCallback(caller.getTarget().resizeVolumeCallback(caller, context)).setContext(context);
-        volume.getDataStore().getDriver().resize(volume, caller);
+
+        try {
+            volume.getDataStore().getDriver().resize(volume, caller);
+        } catch (Exception e) {
+            s_logger.debug("Failed to change state to resize", e);
+
+            result.setResult(e.toString());
+
+            future.complete(result);
+        }
+
         return future;
     }
 

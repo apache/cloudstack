@@ -23,8 +23,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import javax.ejb.Local;
-
 import org.apache.log4j.Logger;
 import org.apache.xmlrpc.XmlRpcException;
 
@@ -32,7 +30,6 @@ import com.cloud.agent.api.StartCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.agent.api.to.GPUDeviceTO;
-import com.cloud.resource.ServerResource;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.GPUGroup;
 import com.xensource.xenapi.Host;
@@ -43,7 +40,6 @@ import com.xensource.xenapi.VGPUType;
 import com.xensource.xenapi.VGPUType.Record;
 import com.xensource.xenapi.VM;
 
-@Local(value=ServerResource.class)
 public class XenServer620SP1Resource extends XenServer620Resource {
 
     private static final Logger s_logger = Logger.getLogger(XenServer620SP1Resource.class);

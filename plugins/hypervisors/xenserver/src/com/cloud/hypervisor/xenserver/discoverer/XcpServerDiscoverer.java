@@ -422,7 +422,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             }
         } else if (prodBrand.equals("XCP_Kronos")) {
             return new XcpOssResource();
-        } else if (prodBrand.equals("XenServer")) {
+        } else if (prodBrand.equals("XenServer") || prodBrand.equals("XCP-ng")) {
             final String[] items = prodVersion.split("\\.");
             if ((Integer.parseInt(items[0]) > 6) ||
                     (Integer.parseInt(items[0]) == 6 && Integer.parseInt(items[1]) >= 4)) {
@@ -536,7 +536,7 @@ public class XcpServerDiscoverer extends DiscovererBase implements Discoverer, L
             id = _tmpltDao.getNextInSequence(Long.class, "id");
             VMTemplateVO template =
                     VMTemplateVO.createPreHostIso(id, isoName, isoName, ImageFormat.ISO, true, true, TemplateType.PERHOST, null, null, true, 64, Account.ACCOUNT_ID_SYSTEM,
-                            null, "xen-pv-drv-iso", false, 1, false, HypervisorType.XenServer);
+                            null, "XenServer Tools Installer ISO (xen-pv-drv-iso)", false, 1, false, HypervisorType.XenServer);
             _tmpltDao.persist(template);
         } else {
             id = tmplt.getId();

@@ -20,8 +20,7 @@
   interface on VR (eth3, eth4 etc) and iptable
 """
 # Import Local Modules
-from marvin.codes import (FAILED, STATIC_NAT_RULE, LB_RULE,
-                          NAT_RULE, PASS)
+from marvin.codes import (FAILED)
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackException import CloudstackAPIException
 from marvin.cloudstackAPI import rebootRouter
@@ -47,13 +46,7 @@ from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
                                list_hosts,
-                               list_publicIP,
-                               list_nat_rules,
-                               list_routers,
-                               list_virtual_machines,
-                               list_lb_rules,
-                               list_configurations,
-                               verifyGuestTrafficPortGroups)
+                               list_routers)
 from nose.plugins.attrib import attr
 from ddt import ddt, data
 # Import System modules
@@ -312,7 +305,6 @@ class TestStaticNat(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["publiciprange"]
                                )
-
         logger.debug("Dedicating Public IP range to the account");
         dedicate_public_ip_range_response = PublicIpRange.dedicate(
                                                 self.apiclient,
@@ -477,6 +469,7 @@ class TestRouting(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["publiciprange"]
                                )
+        self._cleanup.append(self.public_ip_range)
 
         logger.debug("Dedicating Public IP range to the account");
         dedicate_public_ip_range_response = PublicIpRange.dedicate(
@@ -734,6 +727,7 @@ class TestIptables(cloudstackTestCase):
                                     self.apiclient,
                                     self.services["publiciprange"]
                                )
+        self._cleanup.append(self.public_ip_range)
 
         logger.debug("Dedicating Public IP range to the account");
         dedicate_public_ip_range_response = PublicIpRange.dedicate(
@@ -750,7 +744,6 @@ class TestIptables(cloudstackTestCase):
             self.services["virtual_machine"]
         )
         self.cleanup.append(ip_address)
-        self.cleanup.append(self.public_ip_range)
         # Check if VM is in Running state before creating NAT and firewall rules
         vm_response = VirtualMachine.list(
             self.apiclient,
@@ -783,7 +776,6 @@ class TestIptables(cloudstackTestCase):
             startport=self.services["natrule"]["publicport"],
             endport=self.services["natrule"]["publicport"]
         )
-
         # Get the router details associated with account
         routers = list_routers(
             self.apiclient,
@@ -838,7 +830,7 @@ class TestIptables(cloudstackTestCase):
             1,
             "Check to ensure there is a iptable rule to accept the RELATED,ESTABLISHED traffic"
         )
-
+        firewall_rule.delete(self.apiclient)
 
 class TestVPCPortForwarding(cloudstackTestCase):
 

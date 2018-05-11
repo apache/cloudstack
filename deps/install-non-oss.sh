@@ -38,3 +38,6 @@ mvn install:install-file -Dfile=vim25_55.jar        -DgroupId=com.cloud.com.vmwa
 
 # From https://my.vmware.com VMware-vSphere-SDK-6.0.0-3634981.zip
 mvn install:install-file -Dfile=vim25_60.jar        -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim25    -Dversion=6.0   -Dpackaging=jar
+
+# From https://my.vmware.com/group/vmware/get-download?downloadGroup=VS-MGMT-SDK65
+mvn install:install-file -Dfile=vim25_65.jar        -DgroupId=com.cloud.com.vmware -DartifactId=vmware-vim25    -Dversion=6.5   -Dpackaging=jar

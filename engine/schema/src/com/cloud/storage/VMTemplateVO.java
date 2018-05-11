@@ -146,6 +146,12 @@ public class VMTemplateVO implements VirtualMachineTemplate {
     @Column(name = "dynamically_scalable")
     protected boolean dynamicallyScalable;
 
+    @Column(name = "direct_download")
+    private boolean directDownload;
+
+    @Column(name = "parent_template_id")
+    private Long parentTemplateId;
+
     @Override
     public String getUniqueName() {
         return uniqueName;
@@ -188,7 +194,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
 
     public VMTemplateVO(long id, String name, ImageFormat format, boolean isPublic, boolean featured, boolean isExtractable, TemplateType type, String url,
             boolean requiresHvm, int bits, long accountId, String cksum, String displayText, boolean enablePassword, long guestOSId, boolean bootable,
-            HypervisorType hyperType, String templateTag, Map<String, String> details, boolean sshKeyEnabled, boolean isDynamicallyScalable) {
+            HypervisorType hyperType, String templateTag, Map<String, String> details, boolean sshKeyEnabled, boolean isDynamicallyScalable, boolean directDownload) {
         this(id,
             name,
             format,
@@ -212,6 +218,7 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         enableSshKey = sshKeyEnabled;
         dynamicallyScalable = isDynamicallyScalable;
         state = State.Active;
+        this.directDownload = directDownload;
     }
 
     public static VMTemplateVO createPreHostIso(Long id, String uniqueName, String name, ImageFormat format, boolean isPublic, boolean featured, TemplateType type,
@@ -605,8 +612,22 @@ public class VMTemplateVO implements VirtualMachineTemplate {
         this.updated = updated;
     }
 
+    public boolean isDirectDownload() {
+        return directDownload;
+    }
+
     @Override
     public Class<?> getEntityType() {
         return VirtualMachineTemplate.class;
     }
+
+    @Override
+    public Long getParentTemplateId() {
+        return parentTemplateId;
+    }
+
+    public void setParentTemplateId(Long parentTemplateId) {
+        this.parentTemplateId = parentTemplateId;
+    }
+
 }

@@ -30,13 +30,17 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @ResourceWrapper(handles =  DeleteStoragePoolCommand.class)
 public final class LibvirtDeleteStoragePoolCommandWrapper extends CommandWrapper<DeleteStoragePoolCommand, Answer, LibvirtComputingResource> {
-
     @Override
     public Answer execute(final DeleteStoragePoolCommand command, final LibvirtComputingResource libvirtComputingResource) {
         try {
-            final StorageFilerTO pool = command.getPool();
-            final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
-            storagePoolMgr.deleteStoragePool(pool.getType(), pool.getUuid());
+            // if getRemoveDatastore() is true, then we are dealing with managed storage and can skip the delete logic here
+            if (!command.getRemoveDatastore()) {
+                final StorageFilerTO pool = command.getPool();
+                final KVMStoragePoolManager storagePoolMgr = libvirtComputingResource.getStoragePoolMgr();
+
+                storagePoolMgr.deleteStoragePool(pool.getType(), pool.getUuid());
+            }
+
             return new Answer(command);
         } catch (final CloudRuntimeException e) {
             return new Answer(command, false, e.toString());

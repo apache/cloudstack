@@ -364,6 +364,11 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
         return null;
     }
 
+    @Override
+    public List<HostVO> listAllUpHosts(Type type, Long clusterId, Long podId, long dcId) {
+        return null;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.resource.ResourceManager#listAllHostsInCluster(long)
      */
@@ -605,6 +610,12 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
 
     @Override
     public HashMap<String, HashMap<String, VgpuTypesInfo>> getGPUStatistics(final HostVO host) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public HostVO findOneRandomRunningHostByHypervisor(HypervisorType type) {
         // TODO Auto-generated method stub
         return null;
     }

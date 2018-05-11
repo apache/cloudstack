@@ -16,6 +16,25 @@
 // under the License.
 package com.cloud.hypervisor.kvm.discoverer;
 
+import java.net.InetAddress;
+import java.net.URI;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
+import org.apache.cloudstack.ca.CAManager;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.framework.ca.Certificate;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -42,27 +61,24 @@ import com.cloud.resource.DiscovererBase;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.utils.PasswordGenerator;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.net.InetAddress;
-import java.net.URI;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import com.trilead.ssh2.Connection;
 
 public abstract class LibvirtServerDiscoverer extends DiscovererBase implements Discoverer, Listener, ResourceStateAdapter {
     private static final Logger s_logger = Logger.getLogger(LibvirtServerDiscoverer.class);
-    private String _hostIp;
     private final int _waitTime = 5; /* wait for 5 minutes */
     private String _kvmPrivateNic;
     private String _kvmPublicNic;
     private String _kvmGuestNic;
     @Inject
-    AgentManager _agentMgr;
+    private AgentManager agentMgr;
+    @Inject
+    private CAManager caManager;
+    @Inject
+    private IndirectAgentLB indirectAgentLB;
 
     @Override
     public abstract Hypervisor.HypervisorType getHypervisorType();
@@ -125,6 +141,64 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
         return false;
     }
 
+    private void setupAgentSecurity(final Connection sshConnection, final String agentIp, final String agentHostname) {
+        if (sshConnection == null) {
+            throw new CloudRuntimeException("Cannot secure agent communication because ssh connection is invalid for host ip=" + agentIp);
+        }
+
+        Integer validityPeriod = CAManager.CertValidityPeriod.value();
+        if (validityPeriod < 1) {
+            validityPeriod = 1;
+        }
+
+        final SSHCmdHelper.SSHCmdResult keystoreSetupResult = SSHCmdHelper.sshExecuteCmdWithResult(sshConnection,
+                String.format("sudo /usr/share/cloudstack-common/scripts/util/%s " +
+                                "/etc/cloudstack/agent/agent.properties " +
+                                "/etc/cloudstack/agent/%s " +
+                                "%s %d " +
+                                "/etc/cloudstack/agent/%s",
+                        KeyStoreUtils.KS_SETUP_SCRIPT,
+                        KeyStoreUtils.KS_FILENAME,
+                        PasswordGenerator.generateRandomPassword(16),
+                        validityPeriod,
+                        KeyStoreUtils.CSR_FILENAME));
+
+        if (!keystoreSetupResult.isSuccess()) {
+            throw new CloudRuntimeException("Failed to setup keystore on the KVM host: " + agentIp);
+        }
+
+        final Certificate certificate = caManager.issueCertificate(keystoreSetupResult.getStdOut(), Arrays.asList(agentHostname, agentIp), Collections.singletonList(agentIp), null, null);
+        if (certificate == null || certificate.getClientCertificate() == null) {
+            throw new CloudRuntimeException("Failed to issue certificates for KVM host agent: " + agentIp);
+        }
+
+        final SetupCertificateCommand certificateCommand = new SetupCertificateCommand(certificate);
+        final SSHCmdHelper.SSHCmdResult setupCertResult = SSHCmdHelper.sshExecuteCmdWithResult(sshConnection,
+                    String.format("sudo /usr/share/cloudstack-common/scripts/util/%s " +
+                                    "/etc/cloudstack/agent/agent.properties " +
+                                    "/etc/cloudstack/agent/%s %s " +
+                                    "/etc/cloudstack/agent/%s \"%s\" " +
+                                    "/etc/cloudstack/agent/%s \"%s\" " +
+                                    "/etc/cloudstack/agent/%s \"%s\"",
+                            KeyStoreUtils.KS_IMPORT_SCRIPT,
+                            KeyStoreUtils.KS_FILENAME,
+                            KeyStoreUtils.SSH_MODE,
+                            KeyStoreUtils.CERT_FILENAME,
+                            certificateCommand.getEncodedCertificate(),
+                            KeyStoreUtils.CACERT_FILENAME,
+                            certificateCommand.getEncodedCaCertificates(),
+                            KeyStoreUtils.PKEY_FILENAME,
+                            certificateCommand.getEncodedPrivateKey()));
+
+        if (setupCertResult != null && !setupCertResult.isSuccess()) {
+            throw new CloudRuntimeException("Failed to setup certificate in the KVM agent's keystore file, please see logs and configure manually!");
+        }
+
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Succeeded to import certificate in the keystore for agent on the KVM host: " + agentIp + ". Agent secured and trusted.");
+        }
+    }
+
     @Override
     public Map<? extends ServerResource, Map<String, String>>
         find(long dcId, Long podId, Long clusterId, URI uri, String username, String password, List<String> hostTags) throws DiscoveryException {
@@ -143,7 +217,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             s_logger.debug(msg);
             return null;
         }
-        com.trilead.ssh2.Connection sshConnection = null;
+        Connection sshConnection = null;
         String agentIp = null;
         try {
 
@@ -162,7 +236,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 }
             }
 
-            sshConnection = new com.trilead.ssh2.Connection(agentIp, 22);
+            sshConnection = new Connection(agentIp, 22);
 
             sshConnection.connect(null, 60000, 60000);
             if (!sshConnection.authenticateWithPassword(username, password)) {
@@ -170,7 +244,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 throw new DiscoveredWithErrorException("Authentication error");
             }
 
-            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "lsmod|grep kvm", 3)) {
+            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, "lsmod|grep kvm")) {
                 s_logger.debug("It's not a KVM enabled machine");
                 return null;
             }
@@ -210,7 +284,13 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
                 kvmGuestNic = (kvmPublicNic != null) ? kvmPublicNic : kvmPrivateNic;
             }
 
-            String parameters = " -m " + _hostIp + " -z " + dcId + " -p " + podId + " -c " + clusterId + " -g " + guid + " -a";
+            if (!caManager.canProvisionCertificates()) {
+                throw new CloudRuntimeException("Configured CA plugin cannot provision X509 certificate(s), failing to add host due to security insufficiency.");
+            }
+
+            setupAgentSecurity(sshConnection, agentIp, hostname);
+
+            String parameters = " -m " + StringUtils.toCSVList(indirectAgentLB.getManagementServerList(null, dcId, null)) + " -z " + dcId + " -p " + podId     + " -c " + clusterId + " -g " + guid + " -a -s ";
 
             parameters += " --pubNic=" + kvmPublicNic;
             parameters += " --prvNic=" + kvmPrivateNic;
@@ -221,8 +301,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             if (!username.equals("root")) {
                 setupAgentCommand = "sudo cloudstack-setup-agent ";
             }
-            if (!SSHCmdHelper.sshExecuteCmd(sshConnection,
-                    setupAgentCommand + parameters, 3)) {
+            if (!SSHCmdHelper.sshExecuteCmd(sshConnection, setupAgentCommand + parameters)) {
                 s_logger.info("cloudstack agent setup command failed: "
                         + setupAgentCommand + parameters);
                 return null;
@@ -315,10 +394,6 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
             _kvmGuestNic = _kvmPrivateNic;
         }
 
-        _hostIp = _configDao.getValue("host");
-        if (_hostIp == null) {
-            throw new ConfigurationException("Can't get host IP");
-        }
         _resourceMgr.registerResourceStateAdapter(this.getClass().getSimpleName(), this);
         return true;
     }
@@ -392,7 +467,7 @@ public abstract class LibvirtServerDiscoverer extends DiscovererBase implements 
         _resourceMgr.deleteRoutingHost(host, isForced, isForceDeleteStorage);
         try {
             ShutdownCommand cmd = new ShutdownCommand(ShutdownCommand.DeleteHost, null);
-            _agentMgr.send(host.getId(), cmd);
+            agentMgr.send(host.getId(), cmd);
         } catch (AgentUnavailableException e) {
             s_logger.warn("Sending ShutdownCommand failed: ", e);
         } catch (OperationTimedoutException e) {

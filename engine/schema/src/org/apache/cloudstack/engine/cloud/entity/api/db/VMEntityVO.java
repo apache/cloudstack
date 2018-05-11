@@ -550,4 +550,9 @@ public class VMEntityVO implements VirtualMachine, FiniteStateObject<State, Virt
     public void setDisplay(boolean display) {
         this.display = display;
     }
+
+    @Override
+    public PartitionType partitionType() {
+        return PartitionType.VM;
+    }
 }

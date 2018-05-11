@@ -16,11 +16,6 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
-import javax.ejb.Local;
-
-import com.cloud.resource.ServerResource;
-
-@Local(value = ServerResource.class)
 public class XenServer56SP2Resource extends XenServer56FP1Resource {
 
     public XenServer56SP2Resource() {

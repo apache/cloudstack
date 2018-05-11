@@ -32,7 +32,6 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,7 +39,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.annotation.PostConstruct;
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
@@ -63,6 +61,7 @@ import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.impl.conn.BasicClientConnectionManager;
 import org.apache.http.util.EntityUtils;
 import org.apache.log4j.Logger;
+import org.joda.time.Duration;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
@@ -161,7 +160,6 @@ import com.google.gson.reflect.TypeToken;
 /**
  * Implementation of dummy resource to be returned from discoverer.
  **/
-@Local(value = ServerResource.class)
 public class HypervDirectConnectResource extends ServerResourceBase implements ServerResource, VirtualRouterDeployer {
     public static final int DEFAULT_AGENT_PORT = 8250;
     public static final String HOST_VM_STATE_REPORT_COMMAND = "org.apache.cloudstack.HostVmStateReportCommand";

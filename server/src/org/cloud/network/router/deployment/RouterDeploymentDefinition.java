@@ -148,6 +148,10 @@ public class RouterDeploymentDefinition {
         return guestNetwork.isRedundant();
     }
 
+    public boolean isRollingRestart() {
+        return guestNetwork.isRollingRestart();
+    }
+
     public DeploymentPlan getPlan() {
         return plan;
     }
@@ -316,7 +320,7 @@ public class RouterDeploymentDefinition {
         // If old network is redundant but new is single router, then
         // routers.size() = 2 but routerCount = 1
         int routersExpected = 1;
-        if (isRedundant()) {
+        if (isRedundant() || isRollingRestart()) {
             routersExpected = 2;
         }
         return routersExpected < routers.size() ? 0 : routersExpected - routers.size();
@@ -416,7 +420,7 @@ public class RouterDeploymentDefinition {
             final DomainRouterVO router = nwHelper.deployRouter(this, false);
             //check if the network update is in progress.
             //if update is in progress add the update_pending flag to DomainRouterVO.
-            NetworkDetailVO detail =networkDetailsDao.findDetail(guestNetwork.getId(),Network.updatingInSequence);
+            NetworkDetailVO detail = networkDetailsDao.findDetail(guestNetwork.getId(),Network.updatingInSequence);
             if("true".equalsIgnoreCase(detail!=null ? detail.getValue() : null)) {
                 router.setUpdateState(VirtualRouter.UpdateState.UPDATE_IN_PROGRESS);
                 routerDao.persist(router);

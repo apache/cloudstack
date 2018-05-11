@@ -38,7 +38,6 @@ import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.org.Grouping;
 import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
@@ -247,13 +246,13 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public Pair<String, Long> allocatePrivateIpAddress(long dcId, long podId, long instanceId, String reservationId) {
+    public PrivateAllocationData allocatePrivateIpAddress(long dcId, long podId, long instanceId, String reservationId, boolean forSystemVms) {
         _ipAllocDao.releaseIpAddress(instanceId);
-        DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId);
+        DataCenterIpAddressVO vo = _ipAllocDao.takeIpAddress(dcId, podId, instanceId, reservationId, forSystemVms);
         if (vo == null) {
             return null;
         }
-        return new Pair<String, Long>(vo.getIpAddress(), vo.getMacAddress());
+        return new PrivateAllocationData(vo.getIpAddress(), vo.getMacAddress(), vo.getVlan());
     }
 
     @Override
@@ -287,8 +286,8 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
     }
 
     @Override
-    public void addPrivateIpAddress(long dcId, long podId, String start, String end) {
-        _ipAllocDao.addIpRange(dcId, podId, start, end);
+    public void addPrivateIpAddress(long dcId, long podId, String start, String end, boolean forSystemVms, Integer vlan) {
+        _ipAllocDao.addIpRange(dcId, podId, start, end, forSystemVms, vlan);
     }
 
     @Override

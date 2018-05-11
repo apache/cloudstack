@@ -63,4 +63,8 @@ public abstract class VifDriverBase implements VifDriver {
             return LibvirtVMDef.InterfaceDef.NicModel.E1000;
         }
     }
+
+    public boolean isExistingBridge(String bridgeName) {
+        return false;
+    }
 }

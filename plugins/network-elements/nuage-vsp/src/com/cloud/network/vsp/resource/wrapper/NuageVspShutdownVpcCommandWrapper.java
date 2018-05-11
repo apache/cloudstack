@@ -31,7 +31,7 @@ import com.cloud.resource.ResourceWrapper;
 public final class NuageVspShutdownVpcCommandWrapper extends NuageVspCommandWrapper<ShutDownVpcVspCommand> {
 
     @Override public boolean executeNuageVspCommand(ShutDownVpcVspCommand cmd, NuageVspResource nuageVspResource) throws ConfigurationException, NuageVspException {
-        nuageVspResource.getNuageVspElementClient().shutdownVpc(cmd.getDomainUuid(), cmd.getVpcUuid(), cmd.getDomainTemplateName(), cmd.getDomainRouterUuids());
+        nuageVspResource.getNuageVspElementClient().shutdownVpc(cmd.getDomainUuid(), cmd.getVpcUuid(), cmd.getDomainTemplateName(), cmd.getDomainRouterUuids(), cmd.getRelatedVsdIds());
         return true;
     }
 

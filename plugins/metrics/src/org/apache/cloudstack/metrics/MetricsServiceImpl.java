@@ -316,20 +316,20 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             final Float cpuDisableThreshold = DeploymentClusterPlanner.ClusterCPUCapacityDisableThreshold.valueIn(clusterId);
             final Float memoryDisableThreshold = DeploymentClusterPlanner.ClusterMemoryCapacityDisableThreshold.valueIn(clusterId);
 
-            final Double cpuOvercommitRatio = findRatioValue(ApiDBUtils.findClusterDetails(clusterId, "cpuOvercommitRatio"));
-            final Double memoryOvercommitRatio = findRatioValue(ApiDBUtils.findClusterDetails(clusterId, "memoryOvercommitRatio"));
-
             // CPU and memory capacities
             final CapacityDaoImpl.SummedCapacity cpuCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_CPU, null, clusterId);
             final CapacityDaoImpl.SummedCapacity memoryCapacity = getCapacity((int) Capacity.CAPACITY_TYPE_MEMORY, null, clusterId);
             final Metrics metrics = new Metrics(cpuCapacity, memoryCapacity);
 
-            for (final HostJoinVO host: hostJoinDao.findByClusterId(clusterId, Host.Type.Routing)) {
+            for (final Host host: hostDao.findByClusterId(clusterId)) {
+                if (host == null || host.getType() != Host.Type.Routing) {
+                    continue;
+                }
                 if (host.getStatus() == Status.Up) {
                     metrics.incrUpResources();
                 }
                 metrics.incrTotalResources();
-                updateHostMetrics(metrics, host);
+                updateHostMetrics(metrics, hostJoinDao.findById(host.getId()));
             }
 
             metricsResponse.setState(clusterResponse.getAllocationState(), clusterResponse.getManagedState());
@@ -351,13 +351,13 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             // CPU thresholds
             metricsResponse.setCpuUsageThreshold(metrics.getCpuUsedPercentage(), metrics.getTotalHosts(), cpuThreshold);
             metricsResponse.setCpuUsageDisableThreshold(metrics.getCpuUsedPercentage(), metrics.getTotalHosts(), cpuDisableThreshold);
-            metricsResponse.setCpuAllocatedThreshold(metrics.getCpuAllocated(), metrics.getTotalCpu(), cpuOvercommitRatio, cpuThreshold);
-            metricsResponse.setCpuAllocatedDisableThreshold(metrics.getCpuAllocated(), metrics.getTotalCpu(), cpuOvercommitRatio, cpuDisableThreshold);
+            metricsResponse.setCpuAllocatedThreshold(metrics.getCpuAllocated(), metrics.getTotalCpu(), cpuThreshold);
+            metricsResponse.setCpuAllocatedDisableThreshold(metrics.getCpuAllocated(), metrics.getTotalCpu(), cpuDisableThreshold);
             // Memory thresholds
             metricsResponse.setMemoryUsageThreshold(metrics.getMemoryUsed(), metrics.getTotalMemory(), memoryThreshold);
             metricsResponse.setMemoryUsageDisableThreshold(metrics.getMemoryUsed(), metrics.getTotalMemory(), memoryDisableThreshold);
-            metricsResponse.setMemoryAllocatedThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryOvercommitRatio, memoryThreshold);
-            metricsResponse.setMemoryAllocatedDisableThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryOvercommitRatio, memoryDisableThreshold);
+            metricsResponse.setMemoryAllocatedThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryThreshold);
+            metricsResponse.setMemoryAllocatedDisableThreshold(metrics.getMemoryAllocated(), metrics.getTotalMemory(), memoryDisableThreshold);
 
             metricsResponses.add(metricsResponse);
         }
@@ -394,14 +394,20 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             final Metrics metrics = new Metrics(cpuCapacity, memoryCapacity);
 
             for (final Cluster cluster : clusterDao.listClustersByDcId(zoneId)) {
+                if (cluster == null) {
+                    continue;
+                }
                 metrics.incrTotalResources();
                 if (cluster.getAllocationState() == Grouping.AllocationState.Enabled
                         && cluster.getManagedState() == Managed.ManagedState.Managed) {
                     metrics.incrUpResources();
                 }
 
-                for (final HostJoinVO host: hostJoinDao.findByClusterId(cluster.getId(), Host.Type.Routing)) {
-                    updateHostMetrics(metrics, host);
+                for (final Host host: hostDao.findByClusterId(cluster.getId())) {
+                    if (host == null || host.getType() != Host.Type.Routing) {
+                        continue;
+                    }
+                    updateHostMetrics(metrics, hostJoinDao.findById(host.getId()));
                 }
             }
 

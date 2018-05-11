@@ -1475,8 +1475,9 @@ post [options] [container] [object]
     Updates meta information for the account, container, or object depending on
     the args given. If the container is not found, it will be created
     automatically; but this is not true for accounts and objects. Containers
-    also allow the -r (or --read-acl) and -w (or --write-acl) options. The -m
-    or --meta option is allowed on all and used to define the user meta data
+    also allow the -r (or --read-acl) and -w (or --write-acl) options.
+    The --storage-policy will set a storage policy to the container if the container does not exist.
+    The -m or --meta option is allowed on all and used to define the user meta data
     items to set in the form Name:Value. This option can be repeated. Example:
     post -m Color:Blue -m Size:Large'''.strip('\n')
 
@@ -1495,6 +1496,8 @@ def st_post(options, args, print_queue, error_queue):
     parser.add_option('-m', '--meta', action='append', dest='meta', default=[],
         help='Sets a meta data item with the syntax name:value. This option '
         'may be repeated. Example: -m Color:Blue -m Size:Large')
+    parser.add_option('', '--storage-policy', action='store', dest='storage_policy',
+         help='Sets a storage policy to the container if the container does not exist')
     (options, args) = parse_args(parser, args)
     args = args[1:]
     if (options.read_acl or options.write_acl or options.sync_to or
@@ -1531,6 +1534,8 @@ def st_post(options, args, print_queue, error_queue):
             headers['X-Container-Sync-To'] = options.sync_to
         if options.sync_key is not None:
             headers['X-Container-Sync-Key'] = options.sync_key
+        if options.storage_policy is not None:
+            headers['X-Storage-Policy'] = options.storage_policy
         try:
             conn.post_container(args[0], headers=headers)
         except ClientException, err:
@@ -1560,7 +1565,8 @@ upload [options] container file_or_directory [file_or_directory] [...]
     Uploads to the given container the files and directories specified by the
     remaining args. -c or --changed is an option that will only upload files
     that have changed since the last upload. -S <size> or --segment-size <size>
-    and --leave-segments are options as well (see --help for more).
+    and --leave-segments are options as well (see --help for more). --storage-policy
+     Sets a storage policy to the container if the container does not exist.
 '''.strip('\n')
 
 
@@ -1578,6 +1584,8 @@ def st_upload(options, args, print_queue, error_queue):
         dest='leave_segments', default=False, help='Indicates that you want '
         'the older segments of manifest objects left alone (in the case of '
         'overwrites)')
+    parser.add_option('', '--storage-policy', action='store', dest='storage_policy',
+        help='Sets a storage policy to the container if the container does not exist')
     (options, args) = parse_args(parser, args)
     args = args[1:]
     if len(args) < 2:
@@ -1751,9 +1759,12 @@ def st_upload(options, args, print_queue, error_queue):
     # permissions, so we'll ignore any error. If there's really a problem,
     # it'll surface on the first object PUT.
     try:
-        conn.put_container(args[0])
+        container_headers = {}
+        if options.storage_policy is not None:
+            container_headers['X-Storage-Policy'] = options.storage_policy
+        conn.put_container(args[0],headers=container_headers)
         if options.segment_size is not None:
-            conn.put_container(args[0] + '_segments')
+            conn.put_container(args[0] + '_segments',headers=container_headers)
     except Exception:
         pass
     try:

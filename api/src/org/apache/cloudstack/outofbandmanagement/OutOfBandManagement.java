@@ -39,7 +39,7 @@ public interface OutOfBandManagement extends StateObject<OutOfBandManagement.Pow
 
     String getAddress();
 
-    Integer getPort();
+    String getPort();
 
     String getUsername();
 
@@ -53,7 +53,7 @@ public interface OutOfBandManagement extends StateObject<OutOfBandManagement.Pow
 
     void setAddress(String address);
 
-    void setPort(Integer port);
+    void setPort(String port);
 
     void setUsername(String username);
 

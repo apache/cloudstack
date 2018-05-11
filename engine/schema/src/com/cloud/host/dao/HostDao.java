@@ -24,6 +24,7 @@ import com.cloud.host.Host.Type;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.info.RunningHostCountInfo;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.db.GenericDao;
@@ -72,14 +73,6 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
 
     List<HostVO> findHypervisorHostInCluster(long clusterId);
 
-    /**
-     * @param type
-     * @param clusterId
-     * @param podId
-     * @param dcId
-     * @param haTag TODO
-     * @return
-     */
     List<HostVO> listAllUpAndEnabledNonHAHosts(Type type, Long clusterId, Long podId, long dcId, String haTag);
 
     List<HostVO> findByDataCenterId(Long zoneId);
@@ -101,4 +94,17 @@ public interface HostDao extends GenericDao<HostVO, Long>, StateDao<Status, Stat
     List<Long> listClustersByHostTag(String hostTagOnOffering);
 
     List<HostVO> listByType(Type type);
+
+    HostVO findByIp(String ip);
+
+    /**
+     * This method will look for a host that is of the same hypervisor and zone as indicated in its parameters.
+     * <ul>
+     * <li>We give priority to 'Enabled' hosts, but if no 'Enabled' hosts are found, we use 'Disabled' hosts
+     * <li>If no host is found, we throw a runtime exception
+     * </ul>
+     *
+     * Side note: this method is currently only used in XenServerGuru; therefore, it was designed to meet XenServer deployment scenarios requirements.
+     */
+    HostVO findHostInZoneToExecuteCommand(long zoneId, HypervisorType hypervisorType);
 }

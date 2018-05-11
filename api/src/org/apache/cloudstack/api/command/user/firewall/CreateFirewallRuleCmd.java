@@ -108,7 +108,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
             return cidrlist;
         } else {
             List<String> oneCidrList = new ArrayList<String>();
-            oneCidrList.add(NetUtils.ALL_CIDRS);
+            oneCidrList.add(NetUtils.ALL_IP4_CIDRS);
             return oneCidrList;
         }
 
@@ -242,7 +242,7 @@ public class CreateFirewallRuleCmd extends BaseAsyncCreateCmd implements Firewal
     public void create() {
         if (getSourceCidrList() != null) {
             for (String cidr : getSourceCidrList()) {
-                if (!NetUtils.isValidCIDR(cidr)) {
+                if (!NetUtils.isValidIp4Cidr(cidr) && !NetUtils.isValidIp6Cidr(cidr)) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Source CIDRs formatting error " + cidr);
                 }
             }

@@ -320,4 +320,8 @@ public class StringUtils {
         }
         return listOfChunks;
     }
+
+    public static String toCSVList(final List<String> csvList) {
+        return join(csvList, ",");
+    }
 }

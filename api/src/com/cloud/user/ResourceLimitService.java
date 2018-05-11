@@ -23,8 +23,12 @@ import com.cloud.configuration.ResourceCount;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ResourceAllocationException;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public interface ResourceLimitService {
+
+    static final ConfigKey<Long> ResourceCountCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "resourcecount.check.interval", "300",
+            "Time (in seconds) to wait before running resource recalculation and fixing task. Default is 300 seconds, Setting this to 0 disables execution of the task", false);
 
     /**
      * Updates an existing resource limit with the specified details. If a limit doesn't exist, will create one.
@@ -64,11 +68,11 @@ public interface ResourceLimitService {
      *            TODO
      * @param domainId
      *            TODO
-     * @param type
+     * @param resourceType
      *            TODO
      * @return a list of limits that match the criteria
      */
-    public List<? extends ResourceLimit> searchForLimits(Long id, Long accountId, Long domainId, Integer type, Long startIndex, Long pageSizeVal);
+    public List<? extends ResourceLimit> searchForLimits(Long id, Long accountId, Long domainId, ResourceType resourceType, Long startIndex, Long pageSizeVal);
 
     /**
      * Finds the resource limit for a specified account and type. If the account has an infinite limit, will check
@@ -99,6 +103,14 @@ public interface ResourceLimitService {
      * @return resource limit
      */
     public long findCorrectResourceLimitForDomain(Domain domain, ResourceType type);
+
+    /**
+     * Finds the default resource limit for a specified type.
+     *
+     * @param resourceType
+     * @return resource limit
+     */
+    public long findDefaultResourceLimitForDomain(ResourceType resourceType);
 
     /**
      * Increments the resource count

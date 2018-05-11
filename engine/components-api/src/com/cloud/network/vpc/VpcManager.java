@@ -109,7 +109,7 @@ public interface VpcManager {
     Network
         createVpcGuestNetwork(long ntwkOffId, String name, String displayText, String gateway, String cidr, String vlanId, String networkDomain, Account owner,
             Long domainId, PhysicalNetwork pNtwk, long zoneId, ACLType aclType, Boolean subdomainAccess, long vpcId, Long aclId, Account caller,
-            Boolean displayNetworkEnabled)
+            Boolean displayNetworkEnabled, String externalId)
 
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceAllocationException;
 
@@ -165,4 +165,11 @@ public interface VpcManager {
         validateNtwkOffForNtwkInVpc(Long networkId, long newNtwkOffId, String newCidr, String newNetworkDomain, Vpc vpc, String gateway, Account networkOwner, Long aclId);
 
     List<PrivateGateway> getVpcPrivateGateways(long vpcId);
+
+    /**
+     * Checks if the specified offering needs a public src nat ip or not.
+     * @param vpcOfferingId
+     * @return
+     */
+    boolean isSrcNatIpRequired(long vpcOfferingId);
 }

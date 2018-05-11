@@ -93,6 +93,10 @@ public class NetworkACLVO implements NetworkACL {
         this.display = display;
     }
 
+    public void setVpcId(long vpcId) {
+        this.vpcId = vpcId;
+    }
+
     @Override
     public boolean isDisplay() {
         return display;

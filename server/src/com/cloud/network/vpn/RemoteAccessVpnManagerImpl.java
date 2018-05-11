@@ -194,7 +194,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         if (range.length != 2) {
             throw new InvalidParameterValueException("Invalid ip range");
         }
-        if (!NetUtils.isValidIp(range[0]) || !NetUtils.isValidIp(range[1])) {
+        if (!NetUtils.isValidIp4(range[0]) || !NetUtils.isValidIp4(range[1])) {
             throw new InvalidParameterValueException("Invalid ip in range specification " + ipRange);
         }
         if (!NetUtils.validIpRange(range[0], range[1])) {
@@ -271,7 +271,7 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         if (range.length != 2) {
             throw new ConfigurationException("Remote Access VPN: Invalid ip range " + ipRange);
         }
-        if (!NetUtils.isValidIp(range[0]) || !NetUtils.isValidIp(range[1])) {
+        if (!NetUtils.isValidIp4(range[0]) || !NetUtils.isValidIp4(range[1])) {
             throw new ConfigurationException("Remote Access VPN: Invalid ip in range specification " + ipRange);
         }
         if (!NetUtils.validIpRange(range[0], range[1])) {
@@ -381,8 +381,8 @@ public class RemoteAccessVpnManagerImpl extends ManagerBase implements RemoteAcc
         if (!username.matches("^[a-zA-Z0-9][a-zA-Z0-9@._-]{2,63}$")) {
             throw new InvalidParameterValueException("Username has to be begin with an alphabet have 3-64 characters including alphabets, numbers and the set '@.-_'");
         }
-        if (!password.matches("^[a-zA-Z0-9][a-zA-Z0-9@#+=._-]{2,31}$")) {
-            throw new InvalidParameterValueException("Password has to be 3-32 characters including alphabets, numbers and the set '@#+=.-_'");
+        if (!password.matches("^[a-zA-Z0-9][a-zA-Z0-9@+=._-]{2,31}$")) {
+            throw new InvalidParameterValueException("Password has to be 3-32 characters including alphabets, numbers and the set '@+=.-_'");
         }
 
         return Transaction.execute(new TransactionCallback<VpnUser>() {

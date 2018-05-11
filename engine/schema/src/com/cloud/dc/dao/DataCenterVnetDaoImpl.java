@@ -18,6 +18,7 @@ package com.cloud.dc.dao;
 
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,8 @@ import org.springframework.stereotype.Component;
 import com.cloud.dc.DataCenterVnetVO;
 import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.AccountGuestVlanMapVO;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.UriUtils;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
@@ -100,29 +103,43 @@ public class DataCenterVnetDaoImpl extends GenericDaoBase<DataCenterVnetVO, Long
     }
 
     @Override
-    public List<DataCenterVnetVO> findVnet(long dcId, String vnet) {
-        SearchCriteria<DataCenterVnetVO> sc = VnetDcSearch.create();
-        ;
-        sc.setParameters("dc", dcId);
-        sc.setParameters("vnet", vnet);
-        return listBy(sc);
-    }
-
-    @Override
     public int countZoneVlans(long dcId, boolean onlyCountAllocated) {
         SearchCriteria<Integer> sc = onlyCountAllocated ? countAllocatedZoneVlans.create() : countZoneVlans.create();
         sc.setParameters("dc", dcId);
         return customSearch(sc, null).get(0);
     }
 
-    @Override
-    public List<DataCenterVnetVO> findVnet(long dcId, long physicalNetworkId, String vnet) {
+    private List<DataCenterVnetVO> findOverlappingVnets(final long dcId, final Long physicalNetworkId, final String vnet) {
+        final List<Integer> searchVnets = UriUtils.expandVlanUri(vnet);
+        final List<DataCenterVnetVO> overlappingVnets = new ArrayList<>();
+        if (searchVnets == null || searchVnets.isEmpty()) {
+            return overlappingVnets;
+        }
         SearchCriteria<DataCenterVnetVO> sc = VnetDcSearch.create();
         sc.setParameters("dc", dcId);
-        sc.setParameters("physicalNetworkId", physicalNetworkId);
-        sc.setParameters("vnet", vnet);
+        if (physicalNetworkId != null) {
+            sc.setParameters("physicalNetworkId", physicalNetworkId);
+        }
+        for (final DataCenterVnetVO dcVNet : listBy(sc)) {
+            if (dcVNet == null || dcVNet.getVnet() == null) {
+                continue;
+            }
+            final Integer vnetValue = NumbersUtil.parseInt(dcVNet.getVnet(), -1);
+            if (vnetValue != -1 && searchVnets.contains(vnetValue)) {
+                overlappingVnets.add(dcVNet);
+            }
+        }
+        return overlappingVnets;
+    }
 
-        return listBy(sc);
+    @Override
+    public List<DataCenterVnetVO> findVnet(long dcId, String vnet) {
+        return findOverlappingVnets(dcId, null, vnet);
+    }
+
+    @Override
+    public List<DataCenterVnetVO> findVnet(long dcId, long physicalNetworkId, String vnet) {
+        return findOverlappingVnets(dcId, physicalNetworkId, vnet);
     }
 
     @Override

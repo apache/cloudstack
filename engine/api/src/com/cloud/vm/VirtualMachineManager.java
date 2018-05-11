@@ -36,6 +36,7 @@ import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
+import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.storage.StoragePool;
@@ -51,7 +52,7 @@ public interface VirtualMachineManager extends Manager {
     static final ConfigKey<Boolean> ExecuteInSequence = new ConfigKey<Boolean>("Advanced", Boolean.class, "execute.in.sequence.hypervisor.commands", "false",
             "If set to true, start, stop, reboot, copy and migrate commands will be serialized on the agent side. If set to false the commands are executed in parallel. Default value is false.", false);
 
-    static final ConfigKey<String> VmConfigDriveLabel = new ConfigKey<String>("Hidden", String.class, "vm.configdrive.label", "config",
+    static final ConfigKey<String> VmConfigDriveLabel = new ConfigKey<String>("Hidden", String.class, "vm.configdrive.label", "config-2",
             "The default label name for the config drive", false);
 
     public interface Topics {
@@ -74,11 +75,12 @@ public interface VirtualMachineManager extends Manager {
      * @param auxiliaryNetworks additional networks to attach the VMs to.
      * @param plan How to deploy the VM.
      * @param hyperType Hypervisor type
+     * @param datadiskTemplateToDiskOfferingMap data disks to be created from datadisk templates and attached to the VM
      * @throws InsufficientCapacityException If there are insufficient capacity to deploy this vm.
      */
     void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering, DiskOfferingInfo rootDiskOfferingInfo,
         List<DiskOfferingInfo> dataDiskOfferings, LinkedHashMap<? extends Network, List<? extends NicProfile>> auxiliaryNetworks, DeploymentPlan plan,
-        HypervisorType hyperType) throws InsufficientCapacityException;
+        HypervisorType hyperType, Map<String, Map<Integer, String>> extraDhcpOptions, Map<Long, DiskOffering> datadiskTemplateToDiskOfferingMap) throws InsufficientCapacityException;
 
     void allocate(String vmInstanceName, VirtualMachineTemplate template, ServiceOffering serviceOffering,
         LinkedHashMap<? extends Network, List<? extends NicProfile>> networkProfiles, DeploymentPlan plan, HypervisorType hyperType) throws InsufficientCapacityException;
@@ -192,6 +194,9 @@ public interface VirtualMachineManager extends Manager {
      * @return
      */
     VirtualMachineTO toVmTO(VirtualMachineProfile profile);
+
+    boolean replugNic(Network network, NicTO nic, VirtualMachineTO vm, ReservationContext context, DeployDestination dest) throws ConcurrentOperationException,
+            ResourceUnavailableException, InsufficientCapacityException;
 
     VirtualMachine reConfigureVm(String vmUuid, ServiceOffering newServiceOffering, boolean sameHost) throws ResourceUnavailableException, ConcurrentOperationException,
             InsufficientServerCapacityException;

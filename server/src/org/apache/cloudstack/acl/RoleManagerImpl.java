@@ -16,19 +16,13 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
-import com.cloud.event.ActionEvent;
-import com.cloud.event.EventTypes;
-import com.cloud.exception.PermissionDeniedException;
-import com.cloud.user.Account;
-import com.cloud.user.dao.AccountDao;
-import com.cloud.utils.ListUtils;
-import com.cloud.utils.PropertiesUtil;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.component.PluggableService;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallback;
-import com.cloud.utils.db.TransactionStatus;
-import com.google.common.base.Strings;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.dao.RoleDao;
 import org.apache.cloudstack.acl.dao.RolePermissionsDao;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -44,28 +38,42 @@ import org.apache.cloudstack.api.command.admin.acl.UpdateRolePermissionCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.utils.ListUtils;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.component.PluggableService;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionStatus;
+import com.google.common.base.Strings;
 
-@Local(value = {RoleService.class})
 public class RoleManagerImpl extends ManagerBase implements RoleService, Configurable, PluggableService {
+
+    private Logger logger = Logger.getLogger(getClass());
+
     @Inject
     private AccountDao accountDao;
     @Inject
     private RoleDao roleDao;
     @Inject
     private RolePermissionsDao rolePermissionsDao;
+    @Inject
+    private AccountManager accountManager;
 
     private void checkCallerAccess() {
         if (!isEnabled()) {
             throw new PermissionDeniedException("Dynamic api checker is not enabled, aborting role operation");
         }
-        Account caller = CallContext.current().getCallingAccount();
+        Account caller = getCurrentAccount();
         if (caller == null || caller.getRoleId() == null) {
             throw new PermissionDeniedException("Restricted API called by an invalid user account");
         }
@@ -77,16 +85,34 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public boolean isEnabled() {
-        File apiCmdFile = PropertiesUtil.findConfigFile(PropertiesUtil.getDefaultApiCommandsFileName());
-        return RoleService.EnableDynamicApiChecker.value() && (apiCmdFile == null || !apiCmdFile.exists());
+        return RoleService.EnableDynamicApiChecker.value();
     }
 
     @Override
-    public Role findRole(final Long id) {
+    public Role findRole(Long id) {
         if (id == null || id < 1L) {
+            logger.trace(String.format("Role ID is invalid [%s]", id));
             return null;
         }
-        return roleDao.findById(id);
+        RoleVO role = roleDao.findById(id);
+        if (role == null) {
+            logger.trace(String.format("Role not found [id=%s]", id));
+            return null;
+        }
+        Account account = getCurrentAccount();
+        if (!accountManager.isRootAdmin(account.getId()) && RoleType.Admin == role.getRoleType()) {
+            logger.debug(String.format("Role [id=%s, name=%s] is of 'Admin' type and is only visible to 'Root admins'.", id, role.getName()));
+            return null;
+        }
+        return role;
+    }
+
+    /**
+     * Simple call to {@link CallContext#current()} to retrieve the current calling account.
+     * This method facilitates unit testing, it avoids mocking static methods.
+     */
+    protected Account getCurrentAccount() {
+        return CallContext.current().getCallingAccount();
     }
 
     @Override
@@ -122,15 +148,13 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_UPDATE, eventDescription = "updating Role")
-    public boolean updateRole(final Role role, final String name, final RoleType roleType, final String description) {
+    public Role updateRole(final Role role, final String name, final RoleType roleType, final String description) {
         checkCallerAccess();
-        if (role == null) {
-            return false;
-        }
+
         if (roleType != null && roleType == RoleType.Unknown) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Unknown is not a valid role type");
         }
-        RoleVO roleVO = (RoleVO) role;
+        RoleVO roleVO = (RoleVO)role;
         if (!Strings.isNullOrEmpty(name)) {
             roleVO.setName(name);
         }
@@ -148,7 +172,9 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         if (!Strings.isNullOrEmpty(description)) {
             roleVO.setDescription(description);
         }
-        return roleDao.update(role.getId(), roleVO);
+
+        roleDao.update(role.getId(), roleVO);
+        return role;
     }
 
     @Override
@@ -172,7 +198,12 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
                             rolePermissionsDao.remove(rolePermission.getId());
                         }
                     }
-                    return roleDao.remove(role.getId());
+                    if (roleDao.remove(role.getId())) {
+                        RoleVO roleVO = roleDao.findByIdIncludingRemoved(role.getId());
+                        roleVO.setName(null);
+                        return roleDao.update(role.getId(), roleVO);
+                    }
+                    return false;
                 }
             });
         }
@@ -199,6 +230,12 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
+    public boolean updateRolePermission(Role role, RolePermission rolePermission, RolePermission.Permission permission) {
+        checkCallerAccess();
+        return role != null && rolePermissionsDao.update(role, rolePermission, permission);
+    }
+
+    @Override
     @ActionEvent(eventType = EventTypes.EVENT_ROLE_PERMISSION_DELETE, eventDescription = "deleting Role Permission")
     public boolean deleteRolePermission(final RolePermission rolePermission) {
         checkCallerAccess();
@@ -206,26 +243,55 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
     }
 
     @Override
-    public List<Role> findRolesByName(final String name) {
+    public List<Role> findRolesByName(String name) {
         List<? extends Role> roles = null;
-        if (!Strings.isNullOrEmpty(name)) {
+        if (StringUtils.isNotBlank(name)) {
             roles = roleDao.findAllByName(name);
         }
+        removeRootAdminRolesIfNeeded(roles);
         return ListUtils.toListOfInterface(roles);
     }
 
-    @Override
-    public List<Role> findRolesByType(final RoleType roleType) {
-        List<? extends Role> roles = null;
-        if (roleType != null) {
-            roles = roleDao.findAllByRoleType(roleType);
+    /**
+     *  Removes roles of the given list that have the type '{@link RoleType#Admin}' if the user calling the method is not a 'root admin'.
+     *  The actual removal is executed via {@link #removeRootAdminRoles(List)}. Therefore, if the method is called by a 'root admin', we do nothing here.
+     */
+    protected void removeRootAdminRolesIfNeeded(List<? extends Role> roles) {
+        Account account = getCurrentAccount();
+        if (!accountManager.isRootAdmin(account.getId())) {
+            removeRootAdminRoles(roles);
         }
+    }
+
+    /**
+     * Remove all roles that have the {@link RoleType#Admin}.
+     */
+    protected void removeRootAdminRoles(List<? extends Role> roles) {
+        if (CollectionUtils.isEmpty(roles)) {
+            return;
+        }
+        Iterator<? extends Role> rolesIterator = roles.iterator();
+        while (rolesIterator.hasNext()) {
+            Role role = rolesIterator.next();
+            if (RoleType.Admin == role.getRoleType()) {
+                rolesIterator.remove();
+            }
+        }
+    }
+
+    @Override
+    public List<Role> findRolesByType(RoleType roleType) {
+        if (roleType == null || RoleType.Admin == roleType && !accountManager.isRootAdmin(getCurrentAccount().getId())) {
+            return Collections.emptyList();
+        }
+        List<? extends Role> roles = roleDao.findAllByRoleType(roleType);
         return ListUtils.toListOfInterface(roles);
     }
 
     @Override
     public List<Role> listRoles() {
         List<? extends Role> roles = roleDao.listAll();
+        removeRootAdminRolesIfNeeded(roles);
         return ListUtils.toListOfInterface(roles);
     }
 
@@ -245,7 +311,7 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[]{RoleService.EnableDynamicApiChecker};
+        return new ConfigKey<?>[] {RoleService.EnableDynamicApiChecker};
     }
 
     @Override
@@ -261,4 +327,4 @@ public class RoleManagerImpl extends ManagerBase implements RoleService, Configu
         cmdList.add(DeleteRolePermissionCmd.class);
         return cmdList;
     }
- }
+}

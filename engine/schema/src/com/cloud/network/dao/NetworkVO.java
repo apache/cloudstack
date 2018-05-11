@@ -67,7 +67,7 @@ public class NetworkVO implements Network {
     String name;
 
     @Column(name = "display_text")
-    String displayText;;
+    String displayText;
 
     @Column(name = "broadcast_uri")
     URI broadcastUri;
@@ -172,16 +172,14 @@ public class NetworkVO implements Network {
     @Column(name = "streched_l2")
     boolean strechedL2Network = false;
 
+    @Column(name = "external_id")
+    String externalId;
+
     @Transient
     transient String vlanIdAsUUID;
 
-    public String getVlanIdAsUUID() {
-        return vlanIdAsUUID;
-    }
-
-    public void setVlanIdAsUUID(String vlanIdAsUUID) {
-        this.vlanIdAsUUID = vlanIdAsUUID;
-    }
+    @Transient
+    boolean rollingRestart = false;
 
     public NetworkVO() {
         uuid = UUID.randomUUID().toString();
@@ -216,7 +214,7 @@ public class NetworkVO implements Network {
     }
 
     public NetworkVO(long id, Network that, long offeringId, String guruName, long domainId, long accountId, long related, String name, String displayText,
-            String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges, Long vpcId, final boolean isRedundant) {
+            String networkDomain, GuestType guestType, long dcId, Long physicalNetworkId, ACLType aclType, boolean specifyIpRanges, Long vpcId, final boolean isRedundant, String externalId) {
         this(id,
             that.getTrafficType(),
             that.getMode(),
@@ -248,6 +246,7 @@ public class NetworkVO implements Network {
         uuid = UUID.randomUUID().toString();
         ip6Gateway = that.getIp6Gateway();
         ip6Cidr = that.getIp6Cidr();
+        this.externalId = externalId;
     }
 
     /**
@@ -299,19 +298,27 @@ public class NetworkVO implements Network {
         return state;
     }
 
-    @Override
-    public boolean isRedundant() {
-        return this.redundant;
-    }
-
     // don't use this directly when possible, use Network state machine instead
     public void setState(State state) {
         this.state = state;
     }
 
     @Override
+    public boolean isRedundant() {
+        return this.redundant;
+    }
+
+    public void setRedundant(boolean redundant) {
+        this.redundant = redundant;
+    }
+
+    @Override
     public long getRelated() {
         return related;
+    }
+
+    public void setRelated(long related) {
+        this.related = related;
     }
 
     @Override
@@ -631,8 +638,27 @@ public class NetworkVO implements Network {
         this.vpcId = vpcId;
     }
 
-    public void setIsReduntant(boolean reduntant) {
-        this.redundant = reduntant;
+    public String getExternalId() {
+        return externalId;
     }
 
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
+    }
+
+    public String getVlanIdAsUUID() {
+        return vlanIdAsUUID;
+    }
+
+    public void setVlanIdAsUUID(String vlanIdAsUUID) {
+        this.vlanIdAsUUID = vlanIdAsUUID;
+    }
+
+    public boolean isRollingRestart() {
+        return rollingRestart;
+    }
+
+    public void setRollingRestart(boolean rollingRestart) {
+        this.rollingRestart = rollingRestart;
+    }
 }

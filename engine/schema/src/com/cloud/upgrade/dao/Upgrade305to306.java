@@ -18,6 +18,7 @@
 package com.cloud.upgrade.dao;
 
 import java.io.File;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +30,6 @@ import java.util.UUID;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade305to306 extends Upgrade30xBase {
     final static Logger s_logger = Logger.getLogger(Upgrade305to306.class);
@@ -50,13 +50,14 @@ public class Upgrade305to306 extends Upgrade30xBase {
     }
 
     @Override
-    public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-305to306.sql");
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-305to306.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-305to306.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(script)};
+        return new InputStream[] {script};
     }
 
     @Override
@@ -248,13 +249,14 @@ public class Upgrade305to306 extends Upgrade30xBase {
     }
 
     @Override
-    public File[] getCleanupScripts() {
-        String script = Script.findScript("", "db/schema-305to306-cleanup.sql");
+    public InputStream[] getCleanupScripts() {
+        final String scriptFile = "META-INF/db/schema-305to306-cleanup.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-305to306-cleanup.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(script)};
+        return new InputStream[] {script};
     }
 
 }

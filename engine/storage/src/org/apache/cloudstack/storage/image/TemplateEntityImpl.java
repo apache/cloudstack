@@ -304,7 +304,11 @@ public class TemplateEntityImpl implements TemplateEntity {
 
     @Override
     public Date getUpdated() {
-        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Long getParentTemplateId() {
         return null;
     }
 }

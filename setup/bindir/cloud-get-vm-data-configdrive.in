@@ -31,7 +31,7 @@ public_key=$filepath/metadata/public_keys.txt
 vm_password=$filepath/password/vm_password.txt
 
 # If lable name is other than config, please change the below line as required
-DefaultDisk=/dev/disk/by-label/config
+DefaultDisk=/dev/disk/by-label/config-2
 
 function usage
 {

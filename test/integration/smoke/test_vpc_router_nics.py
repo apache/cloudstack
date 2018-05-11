@@ -35,7 +35,7 @@ from marvin.lib.base import (stopRouter,
                              LoadBalancerRule)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_test_template,
                                list_routers)
 from marvin.lib.utils import cleanup_resources
 import socket
@@ -186,10 +186,11 @@ class TestVPCNics(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.api_client)
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
-        cls.template = get_template(
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.template = get_test_template(
             cls.api_client,
             cls.zone.id,
-            cls.services["ostype"])
+            cls.hypervisor)
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
         cls.services["virtual_machine"]["template"] = cls.template.id
 
@@ -450,10 +451,10 @@ class TestVPCNics(cloudstackTestCase):
     def do_default_routes_test(self):
         for o in self.networks:
             for vmObj in o.get_vms():
-                ssh_command = "ping -c 3 8.8.8.8"
+                ssh_command = "ping -c 5 8.8.8.8"
 
                 # Should be able to SSH VM
-                result = 'failed'
+                packet_loss = 100
                 try:
                     vm = vmObj.get_vm()
                     public_ip = vmObj.get_ip()
@@ -462,19 +463,22 @@ class TestVPCNics(cloudstackTestCase):
                     ssh = vm.get_ssh_client(ipaddress=public_ip.ipaddress.ipaddress)
         
                     self.logger.debug("Ping to google.com from VM")
-                    result = str(ssh.execute(ssh_command))
+                    result = ssh.execute(ssh_command)
 
-                    self.logger.debug("SSH result: %s; COUNT is ==> %s" % (result, result.count(" 0% packet loss")))
+                    for line in result:
+                        if "packet loss" in line:
+                            packet_loss = int(line.split("% packet loss")[0].split(" ")[-1])
+                            break
+
+                    self.logger.debug("SSH result: %s; packet loss is ==> %s" % (result, packet_loss))
                 except Exception as e:
                     self.fail("SSH Access failed for %s: %s" % \
                               (vmObj.get_ip(), e)
                               )
-        
-                self.assertEqual(
-                                 result.count(" 0% packet loss"),
-                                 1,
-                                 "Ping to outside world from VM should be successful"
-                                 )
+
+                # Most pings should be successful
+                self.assertTrue(packet_loss < 50,
+                                 "Ping to outside world from VM should be successful")
 
 
 class networkO(object):

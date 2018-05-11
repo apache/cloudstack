@@ -19,16 +19,24 @@
 
 package org.apache.cloudstack.api.agent.test;
 
+import org.junit.Assert;
+import org.junit.Test;
+
+import com.google.gson.Gson;
+
+import com.cloud.agent.api.AttachIsoCommand;
+import com.cloud.agent.api.Command;
+import com.cloud.serializer.GsonHelper;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
-
-import com.cloud.agent.api.AttachIsoCommand;
-
 public class AttachIsoCommandTest {
-    AttachIsoCommand aic = new AttachIsoCommand("vmname", "isopath", false);
+
+    private static final Gson s_gson = GsonHelper.getGson();
+
+    AttachIsoCommand aic = new AttachIsoCommand("vmname", "isopath", false, 1, true);
 
     @Test
     public void testGetVmName() {
@@ -80,4 +88,17 @@ public class AttachIsoCommandTest {
         b = aic.getWait();
         assertEquals(b, 0);
     }
+
+    @Test
+    public void testSerialization() {
+        AttachIsoCommand after = serializeAndDeserialize(aic);
+        Assert.assertEquals(aic, after);
+    }
+
+    private <T extends Command> T serializeAndDeserialize(T command) {
+        final String json = s_gson.toJson(new Command[] {command});
+        Command[] forwardedCommands = s_gson.fromJson(json, Command[].class);
+        return (T) forwardedCommands[0];
+    }
+
 }

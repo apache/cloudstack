@@ -58,4 +58,5 @@ public interface NicIpAliasDao extends GenericDao<NicIpAliasVO, Long> {
 
     List<NicIpAliasVO> listByNetworkIdAndState(long networkId, NicIpAlias.State state);
 
+    int moveIpAliases(long fromNicId, long toNicId);
 }

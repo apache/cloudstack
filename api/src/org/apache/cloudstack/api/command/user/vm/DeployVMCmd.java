@@ -24,6 +24,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.api.ACL;
@@ -46,7 +48,7 @@ import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
+import org.apache.commons.collections.MapUtils;
 
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
@@ -58,7 +60,10 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network;
 import com.cloud.network.Network.IpAddresses;
+import com.cloud.offering.DiskOffering;
+import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 
@@ -147,7 +152,7 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     private List<String> securityGroupNameList;
 
     @Parameter(name = ApiConstants.IP_NETWORK_LIST, type = CommandType.MAP, description = "ip to network mapping. Can't be specified with networkIds parameter."
-            + " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].ipv6=fc00:1234:5678::abcd&iptonetworklist[0].networkid=uuid - requests to use ip 10.10.10.11 in network id=uuid")
+            + " Example: iptonetworklist[0].ip=10.10.10.11&iptonetworklist[0].ipv6=fc00:1234:5678::abcd&iptonetworklist[0].networkid=uuid&iptonetworklist[0].mac=aa:bb:cc:dd:ee::ff - requests to use ip 10.10.10.11 in network id=uuid")
     private Map ipToNetworkList;
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "the ip address for default vm's network")
@@ -155,6 +160,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     @Parameter(name = ApiConstants.IP6_ADDRESS, type = CommandType.STRING, description = "the ipv6 address for default vm's network")
     private String ip6Address;
+
+    @Parameter(name = ApiConstants.MAC_ADDRESS, type = CommandType.STRING, description = "the mac address for default vm's network")
+    private String macAddress;
 
     @Parameter(name = ApiConstants.KEYBOARD, type = CommandType.STRING, description = "an optional keyboard device type for the virtual machine. valid value can be one of de,de-ch,es,fi,fr,fr-be,fr-ch,is,it,jp,nl-be,no,pt,uk,us")
     private String keyboard;
@@ -183,6 +191,14 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
 
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER, type = CommandType.STRING, description = "Deployment planner to use for vm allocation. Available to ROOT admin only", since = "4.4", authorized = { RoleType.Admin })
     private String deploymentPlanner;
+
+    @Parameter(name = ApiConstants.DHCP_OPTIONS_NETWORK_LIST, type = CommandType.MAP, description = "DHCP options which are passed to the VM on start up"
+            + " Example: dhcpoptionsnetworklist[0].dhcp:114=url&dhcpoptionsetworklist[0].networkid=networkid&dhcpoptionsetworklist[0].dhcp:66=www.test.com")
+    private Map dhcpOptionsNetworkList;
+
+    @Parameter(name = ApiConstants.DATADISK_OFFERING_LIST, type = CommandType.MAP, since = "4.11", description = "datadisk template to disk-offering mapping;" +
+            " an optional parameter used to create additional data disks from datadisk templates; can't be specified with diskOfferingId parameter")
+    private Map dataDiskTemplateToDiskOfferingList;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -333,10 +349,19 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
                 }
                 String requestedIp = ips.get("ip");
                 String requestedIpv6 = ips.get("ipv6");
+                String requestedMac = ips.get("mac");
                 if (requestedIpv6 != null) {
                     requestedIpv6 = NetUtils.standardizeIp6Address(requestedIpv6);
                 }
-                IpAddresses addrs = new IpAddresses(requestedIp, requestedIpv6);
+                if (requestedMac != null) {
+                    if(!NetUtils.isValidMac(requestedMac)) {
+                        throw new InvalidParameterValueException("Mac address is not valid: " + requestedMac);
+                    } else if(!NetUtils.isUnicastMac(requestedMac)) {
+                        throw new InvalidParameterValueException("Mac address is not unicast: " + requestedMac);
+                    }
+                    requestedMac = NetUtils.standardizeMacAddress(requestedMac);
+                }
+                IpAddresses addrs = new IpAddresses(requestedIp, requestedIpv6, requestedMac);
                 ipToNetworkMap.put(networkId, addrs);
             }
         }
@@ -353,6 +378,19 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             return null;
         }
         return NetUtils.standardizeIp6Address(ip6Address);
+    }
+
+
+    public String getMacAddress() {
+        if (macAddress == null) {
+            return null;
+        }
+        if(!NetUtils.isValidMac(macAddress)) {
+            throw new InvalidParameterValueException("Mac address is not valid: " + macAddress);
+        } else if(!NetUtils.isUnicastMac(macAddress)) {
+            throw new InvalidParameterValueException("Mac address is not unicast: " + macAddress);
+        }
+        return NetUtils.standardizeMacAddress(macAddress);
     }
 
     public List<Long> getAffinityGroupIdList() {
@@ -380,6 +418,68 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
     public String getKeyboard() {
         // TODO Auto-generated method stub
         return keyboard;
+    }
+
+    public Map<String, Map<Integer, String>> getDhcpOptionsMap() {
+        Map<String, Map<Integer, String>> dhcpOptionsMap = new HashMap<>();
+        if (dhcpOptionsNetworkList != null && !dhcpOptionsNetworkList.isEmpty()) {
+
+            Collection<Map<String, String>> paramsCollection = this.dhcpOptionsNetworkList.values();
+            for (Map<String, String> dhcpNetworkOptions : paramsCollection) {
+                String networkId = dhcpNetworkOptions.get(ApiConstants.NETWORK_ID);
+
+                if (networkId == null) {
+                    throw new IllegalArgumentException("No networkid specified when providing extra dhcp options.");
+                }
+
+                Map<Integer, String> dhcpOptionsForNetwork = new HashMap<>();
+                dhcpOptionsMap.put(networkId, dhcpOptionsForNetwork);
+
+                for (String key : dhcpNetworkOptions.keySet()) {
+                    if (key.startsWith(ApiConstants.DHCP_PREFIX)) {
+                        int dhcpOptionValue = Integer.parseInt(key.replaceFirst(ApiConstants.DHCP_PREFIX, ""));
+                        dhcpOptionsForNetwork.put(dhcpOptionValue, dhcpNetworkOptions.get(key));
+                    } else if (!key.equals(ApiConstants.NETWORK_ID)) {
+                        Dhcp.DhcpOptionCode dhcpOptionEnum = Dhcp.DhcpOptionCode.valueOfString(key);
+                        dhcpOptionsForNetwork.put(dhcpOptionEnum.getCode(), dhcpNetworkOptions.get(key));
+                    }
+                }
+
+            }
+        }
+
+        return dhcpOptionsMap;
+    }
+
+    public Map<Long, DiskOffering> getDataDiskTemplateToDiskOfferingMap() {
+        if (diskOfferingId != null && dataDiskTemplateToDiskOfferingList != null) {
+            throw new InvalidParameterValueException("diskofferingid paramter can't be specified along with datadisktemplatetodiskofferinglist parameter");
+        }
+        if (MapUtils.isEmpty(dataDiskTemplateToDiskOfferingList)) {
+            return new HashMap<Long, DiskOffering>();
+        }
+
+        HashMap<Long, DiskOffering> dataDiskTemplateToDiskOfferingMap = new HashMap<Long, DiskOffering>();
+        for (Object objDataDiskTemplates : dataDiskTemplateToDiskOfferingList.values()) {
+            HashMap<String, String> dataDiskTemplates = (HashMap<String, String>) objDataDiskTemplates;
+            Long dataDiskTemplateId;
+            DiskOffering dataDiskOffering = null;
+            VirtualMachineTemplate dataDiskTemplate= _entityMgr.findByUuid(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
+            if (dataDiskTemplate == null) {
+                dataDiskTemplate = _entityMgr.findById(VirtualMachineTemplate.class, dataDiskTemplates.get("datadisktemplateid"));
+                if (dataDiskTemplate == null)
+                    throw new InvalidParameterValueException("Unable to translate and find entity with datadisktemplateid " + dataDiskTemplates.get("datadisktemplateid"));
+            }
+            dataDiskTemplateId = dataDiskTemplate.getId();
+            dataDiskOffering = _entityMgr.findByUuid(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
+            if (dataDiskOffering == null) {
+                dataDiskOffering = _entityMgr.findById(DiskOffering.class, dataDiskTemplates.get("diskofferingid"));
+                if (dataDiskOffering == null)
+                    throw new InvalidParameterValueException("Unable to translate and find entity with diskofferingId " + dataDiskTemplates.get("diskofferingid"));
+            }
+            dataDiskTemplateToDiskOfferingMap.put(dataDiskTemplateId, dataDiskOffering);
+        }
+        return dataDiskTemplateToDiskOfferingMap;
     }
 
     /////////////////////////////////////////////////////

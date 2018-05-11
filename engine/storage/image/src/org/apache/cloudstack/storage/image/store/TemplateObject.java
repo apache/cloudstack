@@ -34,6 +34,7 @@ import org.apache.cloudstack.storage.datastore.ObjectInDataStoreManager;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import com.cloud.agent.api.storage.CreateDatadiskTemplateAnswer;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
@@ -230,6 +231,16 @@ public class TemplateObject implements TemplateInfo {
                         templateVO.setSize(newTemplate.getSize());
                         imageDao.update(templateVO.getId(), templateVO);
                     }
+                } else if (answer instanceof CreateDatadiskTemplateAnswer) {
+                    CreateDatadiskTemplateAnswer createAnswer = (CreateDatadiskTemplateAnswer)answer;
+                    TemplateObjectTO dataDiskTemplate = createAnswer.getDataDiskTemplate();
+                    TemplateDataStoreVO templateStoreRef = templateStoreDao.findByStoreTemplate(getDataStore().getId(), dataDiskTemplate.getId());
+                    templateStoreRef.setInstallPath(dataDiskTemplate.getPath());
+                    templateStoreRef.setDownloadPercent(100);
+                    templateStoreRef.setDownloadState(Status.DOWNLOADED);
+                    templateStoreRef.setSize(dataDiskTemplate.getSize());
+                    templateStoreRef.setPhysicalSize(dataDiskTemplate.getPhysicalSize());
+                    templateStoreDao.update(templateStoreRef.getId(), templateStoreRef);
                 }
             }
             objectInStoreMgr.update(this, event);
@@ -344,6 +355,14 @@ public class TemplateObject implements TemplateInfo {
         return obj != null ? obj.getInstallPath() : null;
     }
 
+    @Override
+    public boolean isDirectDownload() {
+        if (this.imageVO == null) {
+            return false;
+        }
+        return this.imageVO.isDirectDownload();
+    }
+
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
     }
@@ -448,6 +467,11 @@ public class TemplateObject implements TemplateInfo {
     @Override
     public Long getSourceTemplateId() {
         return imageVO.getSourceTemplateId();
+    }
+
+    @Override
+    public Long getParentTemplateId() {
+        return imageVO.getParentTemplateId();
     }
 
     @Override

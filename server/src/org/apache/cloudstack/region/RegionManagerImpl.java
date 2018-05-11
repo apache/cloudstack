@@ -24,6 +24,7 @@ import java.util.Properties;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -222,6 +223,14 @@ public class RegionManagerImpl extends ManagerBase implements RegionManager, Man
     @Override
     public boolean deleteUser(DeleteUserCmd cmd) {
         return _accountMgr.deleteUser(cmd);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean moveUser(MoveUserCmd cmd) {
+        return _accountMgr.moveUser(cmd);
     }
 
     /**

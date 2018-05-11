@@ -34,6 +34,7 @@ import org.apache.cloudstack.api.InternalIdentity;
 import com.cloud.user.Account.State;
 import com.cloud.utils.db.Encrypt;
 import com.cloud.utils.db.GenericDao;
+import com.google.common.base.Strings;
 
 /**
  * A bean representing a user
@@ -126,7 +127,25 @@ public class UserVO implements User, Identity, InternalIdentity {
         this.source = source;
     }
 
-    @Override
+    public UserVO(UserVO user) {
+        this.setAccountId(user.getAccountId());
+        this.setUsername(user.getUsername());
+        this.setPassword(user.getPassword());
+        this.setFirstname(user.getFirstname());
+        this.setLastname(user.getLastname());
+        this.setEmail(user.getEmail());
+        this.setTimezone(user.getTimezone());
+        this.setUuid(user.getUuid());
+        this.setSource(user.getSource());
+        this.setApiKey(user.getApiKey());
+        this.setSecretKey(user.getSecretKey());
+        this.setExternalEntity(user.getExternalEntity());
+        this.setRegistered(user.isRegistered());
+        this.setRegistrationToken(user.getRegistrationToken());
+        this.setState(user.getState());
+    }
+
+        @Override
     public long getId() {
         return id;
     }
@@ -233,6 +252,9 @@ public class UserVO implements User, Identity, InternalIdentity {
 
     @Override
     public String getTimezone() {
+        if (Strings.isNullOrEmpty(timezone)) {
+            return "UTC";
+        }
         return timezone;
     }
 

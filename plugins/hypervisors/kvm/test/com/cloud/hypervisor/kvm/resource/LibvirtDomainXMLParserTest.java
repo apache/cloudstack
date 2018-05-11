@@ -19,14 +19,16 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import junit.framework.TestCase;
-
 import java.io.File;
 import java.util.List;
+
+import junit.framework.TestCase;
+
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.RngDef;
-import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.WatchDogDef;
 
 public class LibvirtDomainXMLParserTest extends TestCase {
 
@@ -185,6 +187,7 @@ public class LibvirtDomainXMLParserTest extends TestCase {
                      "<alias name='channel0'/>" +
                      "<address type='virtio-serial' controller='0' bus='0' port='1'/>" +
                      "</channel>" +
+                     "<watchdog model='i6300esb' action='reset'/>" +
                      "</devices>" +
                      "<seclabel type='none'/>" +
                      "</domain>";
@@ -225,6 +228,8 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         for (int i = 0; i < ifs.size(); i++) {
             assertEquals(ifModel, ifs.get(i).getModel());
             assertEquals(ifType, ifs.get(i).getNetType());
+            assertEquals(Integer.valueOf(i + 3), ifs.get(i).getSlot());
+            assertEquals("vnet" + i, ifs.get(i).getDevName());
         }
 
         List<RngDef> rngs = parser.getRngs();
@@ -232,5 +237,9 @@ public class LibvirtDomainXMLParserTest extends TestCase {
         assertEquals(RngDef.RngBackendModel.RANDOM, rngs.get(0).getRngBackendModel());
         assertEquals(4096, rngs.get(0).getRngRateBytes());
         assertEquals(5000, rngs.get(0).getRngRatePeriod());
+
+        List<WatchDogDef> watchDogs = parser.getWatchDogs();
+        assertEquals(WatchDogDef.WatchDogModel.I6300ESB, watchDogs.get(0).getModel());
+        assertEquals(WatchDogDef.WatchDogAction.RESET, watchDogs.get(0).getAction());
     }
 }

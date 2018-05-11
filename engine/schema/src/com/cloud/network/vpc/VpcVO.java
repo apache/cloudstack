@@ -25,6 +25,7 @@ import javax.persistence.EnumType;
 import javax.persistence.Enumerated;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Transient;
 
 import com.cloud.utils.db.GenericDao;
 
@@ -87,6 +88,9 @@ public class VpcVO implements Vpc {
 
     @Column(name = "region_level_vpc")
     boolean regionLevelVpc = false;
+
+    @Transient
+    boolean rollingRestart = false;
 
     public VpcVO() {
         uuid = UUID.randomUUID().toString();
@@ -226,6 +230,15 @@ public class VpcVO implements Vpc {
 
     public void setRedundant(final boolean isRedundant) {
         redundant = isRedundant;
+    }
+
+    @Override
+    public boolean isRollingRestart() {
+        return rollingRestart;
+    }
+
+    public void setRollingRestart(boolean rollingRestart) {
+        this.rollingRestart = rollingRestart;
     }
 
     @Override

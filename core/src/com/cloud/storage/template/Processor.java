@@ -44,6 +44,8 @@ public interface Processor extends Adapter {
      */
     FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException;
 
+    FormatInfo process(String templatePath, ImageFormat format, String templateName, long processTimeout) throws InternalErrorException;
+
     public static class FormatInfo {
         public ImageFormat format;
         public long size;

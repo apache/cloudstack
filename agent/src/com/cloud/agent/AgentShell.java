@@ -50,6 +50,7 @@ import com.cloud.utils.PropertiesUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.backoff.impl.ConstantTimeBackoff;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.base.Strings;
 
 public class AgentShell implements IAgentShell, Daemon {
     private static final Logger s_logger = Logger.getLogger(AgentShell.class.getName());
@@ -67,10 +68,14 @@ public class AgentShell implements IAgentShell, Daemon {
     private int _proxyPort;
     private int _workers;
     private String _guid;
+    private int _hostCounter = 0;
     private int _nextAgentId = 1;
     private volatile boolean _exit = false;
     private int _pingRetries;
     private final List<Agent> _agents = new ArrayList<Agent>();
+    private String hostToConnect;
+    private String connectedHost;
+    private Long preferredHostCheckInterval;
 
     public AgentShell() {
     }
@@ -106,8 +111,54 @@ public class AgentShell implements IAgentShell, Daemon {
     }
 
     @Override
-    public String getHost() {
-        return _host;
+    public String getNextHost() {
+        final String[] hosts = getHosts();
+        if (_hostCounter >= hosts.length) {
+            _hostCounter = 0;
+        }
+        hostToConnect = hosts[_hostCounter % hosts.length];
+        _hostCounter++;
+        return hostToConnect;
+    }
+
+    @Override
+    public String getConnectedHost() {
+        return connectedHost;
+    }
+
+    @Override
+    public long getLbCheckerInterval(final Long receivedLbInterval) {
+        if (preferredHostCheckInterval != null) {
+            return preferredHostCheckInterval * 1000L;
+        }
+        if (receivedLbInterval != null) {
+            return receivedLbInterval * 1000L;
+        }
+        return 0L;
+    }
+
+    @Override
+    public void updateConnectedHost() {
+        connectedHost = hostToConnect;
+    }
+
+
+    @Override
+    public void resetHostCounter() {
+        _hostCounter = 0;
+    }
+
+    @Override
+    public String[] getHosts() {
+        return _host.split(",");
+    }
+
+    @Override
+    public void setHosts(final String host) {
+        if (!Strings.isNullOrEmpty(host)) {
+            _host = host.split(hostLbAlgorithmSeparator)[0];
+            resetHostCounter();
+        }
     }
 
     @Override
@@ -240,7 +291,8 @@ public class AgentShell implements IAgentShell, Daemon {
         if (host == null) {
             host = "localhost";
         }
-        _host = host;
+
+        setHosts(host);
 
         if (zone != null)
             _zone = zone;
@@ -279,6 +331,9 @@ public class AgentShell implements IAgentShell, Daemon {
             _guid = UUID.randomUUID().toString();
             _properties.setProperty("guid", _guid);
         }
+
+        String val = getProperty(null, preferredHostIntervalKey);
+        preferredHostCheckInterval = (Strings.isNullOrEmpty(val) ? null : Long.valueOf(val));
 
         return true;
     }
@@ -364,7 +419,7 @@ public class AgentShell implements IAgentShell, Daemon {
                 final Constructor<?> constructor = impl.getDeclaredConstructor();
                 constructor.setAccessible(true);
                 ServerResource resource = (ServerResource)constructor.newInstance();
-                launchAgent(getNextAgentId(), resource);
+                launchNewAgent(resource);
             } catch (final ClassNotFoundException e) {
                 throw new ConfigurationException("Resource class not found: " + name + " due to: " + e.toString());
             } catch (final SecurityException e) {
@@ -392,9 +447,10 @@ public class AgentShell implements IAgentShell, Daemon {
         s_logger.trace("Launching agent based on type=" + typeInfo);
     }
 
-    private void launchAgent(int localAgentId, ServerResource resource) throws ConfigurationException {
+    public void launchNewAgent(ServerResource resource) throws ConfigurationException {
         // we don't track agent after it is launched for now
-        Agent agent = new Agent(this, localAgentId, resource);
+        _agents.clear();
+        Agent agent = new Agent(this, getNextAgentId(), resource);
         _agents.add(agent);
         agent.start();
     }

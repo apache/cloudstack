@@ -17,6 +17,7 @@
 package com.cloud.storage.snapshot;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.DeleteSnapshotsDirCommand;
 import com.cloud.alert.AlertManager;
@@ -76,6 +77,7 @@ import com.cloud.utils.DateUtil.IntervalType;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
@@ -114,6 +116,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
@@ -128,6 +131,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implements SnapshotManager, SnapshotApiService, Configurable {
@@ -189,6 +195,19 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     private int _totalRetries;
     private int _pauseInterval;
+    private int snapshotBackupRetries, snapshotBackupRetryInterval;
+
+    private ScheduledExecutorService backupSnapshotExecutor;
+
+    @Override
+    public String getConfigComponentName() {
+        return SnapshotManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection};
+    }
 
     @Override
     public Answer sendToPool(Volume vol, Command cmd) {
@@ -272,7 +291,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
         }
 
-        SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
+        DataStoreRole dataStoreRole = getDataStoreRole(snapshot, _snapshotStoreDao, dataStoreMgr);
+
+        SnapshotInfo snapshotInfo = snapshotFactory.getSnapshot(snapshotId, dataStoreRole);
         if (snapshotInfo == null) {
             throw new CloudRuntimeException("snapshot:" + snapshotId + " not exist in data store");
         }
@@ -287,8 +308,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         boolean result = snapshotStrategy.revertSnapshot(snapshotInfo);
         if (result) {
             // update volume size and primary storage count
-            _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage,
-                    new Long(volume.getSize() - snapshot.getSize()));
+            _resourceLimitMgr.decrementResourceCount(snapshot.getAccountId(), ResourceType.primary_storage, new Long(volume.getSize() - snapshot.getSize()));
             volume.setSize(snapshot.getSize());
             _volsDao.update(volume.getId(), volume);
             return snapshotInfo;
@@ -530,6 +550,10 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             return false;
         }
 
+        DataStoreRole dataStoreRole = getDataStoreRole(snapshotCheck, _snapshotStoreDao, dataStoreMgr);
+
+        SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, dataStoreRole);
+
         try {
             boolean result = snapshotStrategy.deleteSnapshot(snapshotId);
 
@@ -544,8 +568,6 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 }
 
                 if (snapshotCheck.getState() == Snapshot.State.BackedUp) {
-                    SnapshotDataStoreVO snapshotStoreRef = _snapshotStoreDao.findBySnapshot(snapshotId, DataStoreRole.Image);
-
                     if (snapshotStoreRef != null) {
                         _resourceLimitMgr.decrementResourceCount(snapshotCheck.getAccountId(), ResourceType.secondary_storage, new Long(snapshotStoreRef.getPhysicalSize()));
                     }
@@ -767,6 +789,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     public SnapshotPolicyVO createPolicy(CreateSnapshotPolicyCmd cmd, Account policyOwner) {
         Long volumeId = cmd.getVolumeId();
         boolean display = cmd.isDisplay();
+        SnapshotPolicyVO policy = null;
         VolumeVO volume = _volsDao.findById(cmd.getVolumeId());
         if (volume == null) {
             throw new InvalidParameterValueException("Failed to create snapshot policy, unable to find a volume with id " + volumeId);
@@ -836,33 +859,39 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 throw new InvalidParameterValueException("Max number of snapshots shouldn't exceed the " + message + " level snapshot limit");
             }
         }
-        SnapshotPolicyVO policy = _snapshotPolicyDao.findOneByVolumeInterval(volumeId, intvType);
-        if (policy == null) {
-            policy = new SnapshotPolicyVO(volumeId, cmd.getSchedule(), timezoneId, intvType, cmd.getMaxSnaps(), display);
-            policy = _snapshotPolicyDao.persist(policy);
-            _snapSchedMgr.scheduleNextSnapshotJob(policy);
-        } else {
+
+        final GlobalLock createSnapshotPolicyLock = GlobalLock.getInternLock("createSnapshotPolicy_" + volumeId);
+        boolean isLockAcquired = createSnapshotPolicyLock.lock(5);
+        if (isLockAcquired) {
+            s_logger.debug("Acquired lock for creating snapshot policy of volume : " + volume.getName());
             try {
-                boolean previousDisplay = policy.isDisplay();
-                policy = _snapshotPolicyDao.acquireInLockTable(policy.getId());
-                policy.setSchedule(cmd.getSchedule());
-                policy.setTimezone(timezoneId);
-                policy.setInterval((short)intvType.ordinal());
-                policy.setMaxSnaps(cmd.getMaxSnaps());
-                policy.setActive(true);
-                policy.setDisplay(display);
-                _snapshotPolicyDao.update(policy.getId(), policy);
-                _snapSchedMgr.scheduleOrCancelNextSnapshotJobOnDisplayChange(policy, previousDisplay);
-            } finally {
-                if (policy != null) {
-                    _snapshotPolicyDao.releaseFromLockTable(policy.getId());
+                policy = _snapshotPolicyDao.findOneByVolumeInterval(volumeId, intvType);
+                if (policy == null) {
+                    policy = new SnapshotPolicyVO(volumeId, cmd.getSchedule(), timezoneId, intvType, cmd.getMaxSnaps(), display);
+                    policy = _snapshotPolicyDao.persist(policy);
+                    _snapSchedMgr.scheduleNextSnapshotJob(policy);
+                } else {
+                    boolean previousDisplay = policy.isDisplay();
+                    policy.setSchedule(cmd.getSchedule());
+                    policy.setTimezone(timezoneId);
+                    policy.setInterval((short)intvType.ordinal());
+                    policy.setMaxSnaps(cmd.getMaxSnaps());
+                    policy.setActive(true);
+                    policy.setDisplay(display);
+                    _snapshotPolicyDao.update(policy.getId(), policy);
+                    _snapSchedMgr.scheduleOrCancelNextSnapshotJobOnDisplayChange(policy, previousDisplay);
                 }
+            } finally {
+                createSnapshotPolicyLock.unlock();
             }
 
+            // TODO - Make createSnapshotPolicy - BaseAsyncCreate and remove this.
+            CallContext.current().putContextParameter(SnapshotPolicy.class, policy.getUuid());
+            return policy;
+        } else {
+            s_logger.warn("Unable to acquire lock for creating snapshot policy of volume : " + volume.getName());
+            return null;
         }
-        // TODO - Make createSnapshotPolicy - BaseAsyncCreate and remove this.
-        CallContext.current().putContextParameter(SnapshotPolicy.class, policy.getUuid());
-        return policy;
     }
 
     protected boolean deletePolicy(long userId, Long policyId) {
@@ -1093,7 +1122,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
                 throw new CloudRuntimeException("Can't find snapshot strategy to deal with snapshot:" + snapshotId);
             }
 
-            snapshotStrategy.takeSnapshot(snapshot);
+            SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
+            if (payload.getAsyncBackup()) {
+                backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshotOnPrimary, snapshotBackupRetries - 1, snapshotStrategy), 0, TimeUnit.SECONDS);
+            } else {
+                SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
+                if (backupedSnapshot != null) {
+                    snapshotStrategy.postSnapshotCreation(snapshotOnPrimary);
+                }
+            }
 
             try {
                 postCreateSnapshot(volume.getId(), snapshotId, payload.getSnapshotPolicyId());
@@ -1132,6 +1169,39 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new CloudRuntimeException("Failed to create snapshot", e);
         }
         return snapshot;
+    }
+
+    protected class BackupSnapshotTask extends ManagedContextRunnable {
+        SnapshotInfo snapshot;
+        int attempts;
+        SnapshotStrategy snapshotStrategy;
+
+        public BackupSnapshotTask(SnapshotInfo snap, int maxRetries, SnapshotStrategy strategy) {
+            snapshot = snap;
+            attempts = maxRetries;
+            snapshotStrategy = strategy;
+        }
+
+        @Override
+        protected void runInContext() {
+            try {
+                s_logger.debug("Value of attempts is " + (snapshotBackupRetries-attempts));
+
+                SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshot);
+
+                if (backupedSnapshot != null) {
+                    snapshotStrategy.postSnapshotCreation(snapshot);
+                }
+            } catch (final Exception e) {
+                if (attempts >= 0) {
+                    s_logger.debug("Backing up of snapshot failed, for snapshot with ID "+snapshot.getSnapshotId()+", left with "+attempts+" more attempts");
+                    backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshot, --attempts, snapshotStrategy), snapshotBackupRetryInterval, TimeUnit.SECONDS);
+                } else {
+                    s_logger.debug("Done with "+snapshotBackupRetries+" attempts in  backing up of snapshot with ID "+snapshot.getSnapshotId());
+                    snapshotSrv.cleanupOnSnapshotBackupFailure(snapshot);
+                }
+            }
+        }
     }
 
     private void updateSnapshotPayload(long storagePoolId, CreateSnapshotPayload payload) {
@@ -1185,6 +1255,9 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         _totalRetries = NumbersUtil.parseInt(_configDao.getValue("total.retries"), 4);
         _pauseInterval = 2 * NumbersUtil.parseInt(_configDao.getValue("ping.interval"), 60);
 
+        snapshotBackupRetries = BackupRetryAttempts.value();
+        snapshotBackupRetryInterval = BackupRetryInterval.value();
+        backupSnapshotExecutor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("BackupSnapshotTask"));
         s_logger.info("Snapshot Manager is configured.");
 
         return true;
@@ -1208,6 +1281,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Override
     public boolean stop() {
+        backupSnapshotExecutor.shutdown();
         return true;
     }
 
@@ -1269,6 +1343,21 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
+    public void cleanupSnapshotsByVolume(Long volumeId) {
+        List<SnapshotInfo> infos = snapshotFactory.getSnapshots(volumeId, DataStoreRole.Primary);
+        for(SnapshotInfo info: infos) {
+            try {
+               if(info != null) {
+                   snapshotSrv.deleteSnapshot(info);
+               }
+            } catch(CloudRuntimeException e) {
+                String msg = "Cleanup of Snapshot with uuid " + info.getUuid() + " in primary storage is failed. Ignoring";
+                s_logger.warn(msg);
+            }
+        }
+    }
+
+    @Override
     public Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType) throws ResourceAllocationException {
         Account caller = CallContext.current().getCallingAccount();
         VolumeInfo volume = volFactory.getVolume(volumeId);
@@ -1311,8 +1400,16 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             hypervisorType = storagePool.getHypervisor();
 
             // at the time being, managed storage only supports XenServer, ESX(i), and KVM (i.e. not Hyper-V), so the VHD file type can be mapped to XenServer
-            if (storagePool.isManaged() && HypervisorType.Any.equals(hypervisorType) && ImageFormat.VHD.equals(volume.getFormat())) {
-                hypervisorType = HypervisorType.XenServer;
+            if (storagePool.isManaged() && HypervisorType.Any.equals(hypervisorType)) {
+                if (ImageFormat.VHD.equals(volume.getFormat())) {
+                    hypervisorType = HypervisorType.XenServer;
+                }
+                else if (ImageFormat.OVA.equals(volume.getFormat())) {
+                    hypervisorType = HypervisorType.VMware;
+                }
+                else if (ImageFormat.QCOW2.equals(volume.getFormat())) {
+                    hypervisorType = HypervisorType.KVM;
+                }
             }
         } else {
             hypervisorType = volume.getHypervisorType();
@@ -1330,14 +1427,4 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
         _resourceLimitMgr.incrementResourceCount(volume.getAccountId(), ResourceType.secondary_storage, new Long(volume.getSize()));
         return snapshot;
     }
-
-
-    @Override
-    public String getConfigComponentName() {
-        return SnapshotManager.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection}; }
 }

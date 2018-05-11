@@ -45,6 +45,9 @@ public class LdapTrustMapVO implements InternalIdentity {
     @Column(name = "domain_id")
     private long domainId;
 
+    @Column(name = "account_id")
+    private long accountId;
+
     @Column(name = "account_type")
     private short accountType;
 
@@ -52,11 +55,12 @@ public class LdapTrustMapVO implements InternalIdentity {
     public LdapTrustMapVO() {
     }
 
-    public LdapTrustMapVO(long domainId, LdapManager.LinkType type, String name, short accountType) {
+    public LdapTrustMapVO(long domainId, LdapManager.LinkType type, String name, short accountType, long accountId) {
         this.domainId = domainId;
         this.type = type;
         this.name = name;
         this.accountType = accountType;
+        this.accountId = accountId;
     }
 
     @Override
@@ -80,6 +84,10 @@ public class LdapTrustMapVO implements InternalIdentity {
         return accountType;
     }
 
+    public long getAccountId() {
+        return accountId;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -92,6 +100,9 @@ public class LdapTrustMapVO implements InternalIdentity {
         LdapTrustMapVO that = (LdapTrustMapVO) o;
 
         if (domainId != that.domainId) {
+            return false;
+        }
+        if (accountId != that.accountId) {
             return false;
         }
         if (accountType != that.accountType) {
@@ -109,6 +120,7 @@ public class LdapTrustMapVO implements InternalIdentity {
         int result = type.hashCode();
         result = 31 * result + name.hashCode();
         result = 31 * result + (int) (domainId ^ (domainId >>> 32));
+        result = 31 * result + (int) (accountId ^ (accountId >>> 32));
         result = 31 * result + (int) accountType;
         return result;
     }

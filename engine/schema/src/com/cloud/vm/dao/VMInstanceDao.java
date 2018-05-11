@@ -54,6 +54,14 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> listByPodId(long podId);
 
     /**
+     * Lists non-expunged VMs by  templateId
+     * @param templateId
+     * @return list of VMInstanceVO deployed from the specified template, that are not expunged
+     */
+    public List<VMInstanceVO> listNonExpungedByTemplate(long templateId);
+
+
+    /**
      * Lists non-expunged VMs by zone ID and templateId
      * @param zoneId
      * @return list of VMInstanceVO in the specified zone, deployed from the specified template, that are not expunged
@@ -115,6 +123,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<Long> listHostIdsByVmCount(long dcId, Long podId, Long clusterId, long accountId);
 
     Long countRunningByAccount(long accountId);
+
+    Long countByZoneAndState(long zoneId, State state);
 
     List<VMInstanceVO> listNonRemovedVmsByTypeAndNetwork(long networkId, VirtualMachine.Type... types);
 

@@ -71,11 +71,11 @@ public interface TemplateAdapter extends Adapter {
 
     public TemplateProfile prepare(boolean isIso, Long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
         Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String accountName,
-        Long domainId, String chksum, Boolean bootable, Map details) throws ResourceAllocationException;
+        Long domainId, String chksum, Boolean bootable, Map details, boolean directDownload) throws ResourceAllocationException;
 
     public TemplateProfile prepare(boolean isIso, long userId, String name, String displayText, Integer bits, Boolean passwordEnabled, Boolean requiresHVM, String url,
         Boolean isPublic, Boolean featured, Boolean isExtractable, String format, Long guestOSId, List<Long> zoneId, HypervisorType hypervisorType, String chksum,
         Boolean bootable, String templateTag, Account templateOwner, Map details, Boolean sshKeyEnabled, String imageStoreUuid, Boolean isDynamicallyScalable,
-        TemplateType templateType) throws ResourceAllocationException;
+        TemplateType templateType, boolean directDownload) throws ResourceAllocationException;
 
 }

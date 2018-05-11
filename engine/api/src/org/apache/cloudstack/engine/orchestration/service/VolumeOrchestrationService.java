@@ -57,20 +57,22 @@ import com.cloud.vm.VirtualMachineProfile;
  */
 public interface VolumeOrchestrationService {
 
-    static final ConfigKey<Long> CustomDiskOfferingMinSize = new ConfigKey<Long>("Advanced",
+    ConfigKey<Long> CustomDiskOfferingMinSize = new ConfigKey<Long>("Advanced",
         Long.class,
         "custom.diskoffering.size.min",
         "1",
         "Minimum size in GB for custom disk offering.",
         true
     );
-    static final ConfigKey<Long> CustomDiskOfferingMaxSize = new ConfigKey<Long>("Advanced",
+
+    ConfigKey<Long> CustomDiskOfferingMaxSize = new ConfigKey<Long>("Advanced",
         Long.class,
         "custom.diskoffering.size.max",
         "1024",
         "Maximum size in GB for custom disk offering.",
         true
     );
+
     VolumeInfo moveVolume(VolumeInfo volume, long destPoolDcId, Long destPoolPodId, Long destPoolClusterId, HypervisorType dataDiskHyperType)
         throws ConcurrentOperationException, StorageUnavailableException;
 
@@ -90,7 +92,8 @@ public interface VolumeOrchestrationService {
 
     void destroyVolume(Volume volume);
 
-    DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner);
+    DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template,
+            Account owner, Long deviceId);
 
     VolumeInfo createVolumeOnPrimaryStorage(VirtualMachine vm, VolumeInfo volume, HypervisorType rootDiskHyperType, StoragePool storagePool) throws NoTransitionException;
 

@@ -20,5 +20,10 @@ public interface VolumeStats {
     /**
      * @return bytes used by the volume
      */
-    public long getBytesUsed();
+    long getVirtualSize();
+
+    /**
+     * @return bytes allocated
+     */
+    long getPhysicalSize();
 }

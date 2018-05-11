@@ -93,6 +93,7 @@ class TestAllocationState(cloudstackTestCase):
         # Get Zone, Domain and templates
 
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
         cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
@@ -268,12 +269,19 @@ class TestAllocationState(cloudstackTestCase):
         # 1. List secondary storage
         # 2. Check state is "Up" or not
 
+        if self.hypervisor.lower() == 'simulator':
+            self.skipTest("Hypervisor is simulator skipping")
+
         sec_storages = Host.list(
                           self.apiclient,
                           zoneid=self.zone.id,
                           type='SecondaryStorageVM',
-              listall=True
+                          listall=True
                           )
+
+        if sec_storages is None:
+            self.skipTest("SSVM is not provisioned yet, skipping")
+
         self.assertEqual(
                          isinstance(sec_storages, list),
                          True,

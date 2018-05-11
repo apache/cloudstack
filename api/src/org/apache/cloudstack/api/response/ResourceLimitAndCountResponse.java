@@ -54,7 +54,7 @@ public interface ResourceLimitAndCountResponse {
 
     public void setSecondaryStorageLimit(String secondaryStorageLimit);
 
-    public void setSecondaryStorageTotal(Long secondaryStorageTotal);
+    public void setSecondaryStorageTotal(float secondaryStorageTotal);
 
     public void setSecondaryStorageAvailable(String secondaryStorageAvailable);
 

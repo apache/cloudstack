@@ -19,8 +19,9 @@
 
 package com.cloud.hypervisor.kvm.resource.wrapper;
 
-import java.util.List;
 import java.io.File;
+import java.util.List;
+import java.util.Map;
 
 import com.cloud.utils.Pair;
 import com.cloud.utils.ssh.SshHelper;
@@ -70,7 +71,7 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
                 //move the command line file to backup.
                 s_logger.debug("backing up the cmdline");
                 try{
-                    Pair<Boolean, String> ret = SshHelper.sshExecute(command.getControlIp(), 3922, "root", pemFile, null,"mv -f "+CMDLINE_PATH+" "+CMDLINE_BACKUP_PATH);
+                    Pair<Boolean, String> ret = SshHelper.sshExecute(command.getControlIp(), 3922, "root", pemFile, null,"cp -f "+CMDLINE_PATH+" "+CMDLINE_BACKUP_PATH);
                     if(!ret.first()){
                         s_logger.debug("Failed to backup cmdline file due to "+ret.second());
                     }
@@ -88,9 +89,23 @@ public final class LibvirtStopCommandWrapper extends CommandWrapper<StopCommand,
             final String result = libvirtComputingResource.stopVM(conn, vmName, command.isForceStop());
 
             if (result == null) {
-                for (final DiskDef disk : disks) {
-                    libvirtComputingResource.cleanupDisk(disk);
+                if (disks != null && disks.size() > 0) {
+                    for (final DiskDef disk : disks) {
+                        libvirtComputingResource.cleanupDisk(disk);
+                    }
                 }
+                else {
+                    // When using iSCSI-based managed storage, if the user shuts a VM down from the guest OS (as opposed to doing so from CloudStack),
+                    // info needs to be passed to the KVM agent to have it disconnect KVM from the applicable iSCSI volumes.
+                    List<Map<String, String>> volumesToDisconnect = command.getVolumesToDisconnect();
+
+                    if (volumesToDisconnect != null) {
+                        for (Map<String, String> volumeToDisconnect : volumesToDisconnect) {
+                            libvirtComputingResource.cleanupDisk(volumeToDisconnect);
+                        }
+                    }
+                }
+
                 for (final InterfaceDef iface : ifaces) {
                     // We don't know which "traffic type" is associated with
                     // each interface at this point, so inform all vif drivers

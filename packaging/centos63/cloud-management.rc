@@ -1,4 +1,15 @@
 #!/bin/bash
+
+### BEGIN INIT INFO
+# Provides:          cloudstack-management
+# Required-Start:    $network $local_fs
+# Required-Stop:     $network $local_fs
+# Default-Start:     3 4 5
+# Default-Stop:      0 1 2 6
+# Short-Description: Start/stop Apache CloudStack Usage Monitor
+# Description: This scripts Starts/Stops the Apache CloudStack Management Server
+### END INIT INFO
+
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -6,111 +17,131 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-#
-# cloudstack-management      This shell script takes care of starting and stopping Tomcat
-#
-# chkconfig: - 80 20
-#
-### BEGIN INIT INFO
-# Provides: tomcat6
-# Required-Start: $network $syslog
-# Required-Stop: $network $syslog
-# Default-Start:
-# Default-Stop:
-# Description: Release implementation for Servlet 2.5 and JSP 2.1
-# Short-Description: start and stop tomcat
-### END INIT INFO
-#
-# - originally written by Henri Gomez, Keith Irwin, and Nicolas Mailhot
-# - heavily rewritten by Deepak Bhole and Jason Corley
-#
 
-if [ -r /etc/rc.d/init.d/functions ]; then
-    . /etc/rc.d/init.d/functions
-fi
-if [ -r /lib/lsb/init-functions ]; then
-    . /lib/lsb/init-functions
-fi
+. /etc/rc.d/init.d/functions
 
+SHORTNAME="cloudstack-management"
+PIDFILE=/var/run/"$SHORTNAME".pid
+LOCKFILE=/var/lock/subsys/"$SHORTNAME"
+LOGDIR=/var/log/cloudstack/management
+PROGNAME="CloudStack Management Server"
+CLASS="org.apache.cloudstack.ServerDaemon"
+PROG="jsvc"
+DAEMON="/usr/bin/jsvc"
+USER=cloud
 
-NAME="$(basename $(readlink -f $0))"
-export SERVICE_NAME="$NAME"
-stop() {
-	SHUTDOWN_WAIT="30"
-	count="0"
-	if [ -f /var/run/${NAME}.pid ]; then
-		pid=`cat /var/run/${NAME}.pid`
-		kill $pid &>/dev/null
-		until [ "$(ps --pid $pid | grep -c $pid)" -eq "0" ] || \
-			[ "$count" -gt "$SHUTDOWN_WAIT" ]
-		do
-			sleep 1
-			let count="${count}+1"
-		done
-		if [ "$(ps --pid $pid | grep -c $pid)" -eq "0" ]; then
-			log_success_msg "Stopping ${NAME}:"
-			rm -f /var/run/${NAME}.pid
-			rm -f /var/lock/subsys/${NAME}
-		else
-			log_failure_msg "Stopping ${NAME}:"
-		fi
-	else
-		echo "Cannot find PID file of ${NAME}"
-		log_failure_msg "Stopping ${NAME}:"
-	fi
+export HOME="/var/cloudstack/management"
+
+unset OPTIONS
+[ -r /etc/default/"$SHORTNAME" ] && source /etc/default/"$SHORTNAME"
+
+setJavaHome() {
+  # use $JAVA_HOME if defined
+  if [ -n "$JAVA_HOME" ] ; then
+    return
+  fi
+
+  # try java first
+  java=$(which java 2>/dev/null || :)
+
+  # try javac if java is not found
+  if [ -z "$java" ] ; then
+    java=$(which javac 2>/dev/null || :)
+  fi
+
+  if [ -n "$java" ] ; then
+    JAVA_HOME=$(dirname $(dirname $(readlink -e $java)))
+    export JAVA_HOME
+    return
+  fi
+
+  # didnt find java home. exiting with error
+  exit 1
 }
 
-set_ulimit() {
-    fd_limit=`ulimit -n`
-    if [ "$fd_limit" != "4096" ]; then
-        user=`whoami`
-        if [ $user == "root" ]; then
-            ulimit -n 4096
-        fi
-    fi
-}
+setJavaHome
 
-handle_pid_file() {
-     if [ "$1" -ne 0 ] && [ "$1" -ne 3 ]; then
-        echo "The pid file locates at /var/run/${NAME}.pid and lock file at /var/lock/subsys/${NAME}.
-        Starting ${NAME} will take care of them or you can manually clean up."
-    fi
-}
+JARS=$(ls /usr/share/cloudstack-management/lib/*.jar | tr '\n' ':' | sed s'/.$//')
+CLASSPATH="$JARS:$CLASSPATH"
 
 start() {
-    umask 0022
-    readpath=$(readlink -f $0)
-    source `dirname $readpath`/tomcat.sh
+    if [ -s "$PIDFILE" ] && kill -0 $(cat "$PIDFILE") >/dev/null 2>&1; then
+        echo "$PROGNAME apparently already running"
+        exit 0
+    fi
+
+    if hostname --fqdn >/dev/null 2>&1 ; then
+        true
+    else
+        echo "The host name does not resolve properly to an IP address. Cannot start $PROGNAME"
+        exit 1
+    fi
+
+    echo -n "Starting $PROGNAME" "$SHORTNAME"
+
+    if daemon --pidfile $PIDFILE $DAEMON -home "$JAVA_HOME" -cp "$CLASSPATH" -pidfile "$PIDFILE" -user "$USER" \
+      -errfile $LOGDIR/cloudstack-management.err $JAVA_OPTS $CLASS
+        RETVAL=$?
+    then
+        rc=0
+        sleep 1
+        if ! kill -0 $(cat "$PIDFILE") >/dev/null 2>&1; then
+            failure
+            rc=1
+        fi
+    else
+        rc=1
+    fi
+
+    if [ $rc -eq 0 ]; then
+        success
+    else
+        failure
+        rm -f "$PIDFILE"
+    fi
+    echo
 }
 
-# See how we were called.
+stop() {
+    echo -n "Stopping $PROGNAME" "$SHORTNAME"
+    killproc -p $PIDFILE $DAEMON
+    if [ "$?" -eq 0 ]; then
+        success
+    else
+        failure
+    fi
+    rm -f "$PIDFILE"
+    echo
+}
+
 case "$1" in
-    status)
-		status ${NAME}
-		RETVAL=$?
-        handle_pid_file $RETVAL
-		;;
+    start)
+        start
+        ;;
     stop)
-		stop
-		;;
-    restart)
-		stop
-		set start
-        set_ulimit
-	        start
-		;;
-	*)
-        set_ulimit
-                start
+        stop
+        ;;
+    status)
+        status -p $PIDFILE $SHORTNAME
+        RETVAL=$?
+        ;;
+    restart | force-reload)
+        stop
+        sleep 3
+        start
+        ;;
+    *)
+    echo "Usage: $0 {start|stop|restart|force-reload|status}"
+    RETVAL=3
 esac
 
 exit $RETVAL

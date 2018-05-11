@@ -113,31 +113,35 @@ public class Storage {
         SYSTEM, /* routing, system vm template */
         BUILTIN, /* buildin template */
         PERHOST, /* every host has this template, don't need to install it in secondary storage */
-        USER /* User supplied template/iso */
+        USER, /* User supplied template/iso */
+        DATADISK, /* Template corresponding to a datadisk(non root disk) present in an OVA */
+        ISODISK /* Template corresponding to a iso (non root disk) present in an OVA */
     }
 
     public static enum StoragePoolType {
-        Filesystem(false), // local directory
-        NetworkFilesystem(true), // NFS
-        IscsiLUN(true), // shared LUN, with a clusterfs overlay
-        Iscsi(true), // for e.g., ZFS Comstar
-        ISO(false), // for iso image
-        LVM(false), // XenServer local LVM SR
-        CLVM(true),
-        RBD(true), // http://libvirt.org/storage.html#StorageBackendRBD
-        SharedMountPoint(true),
-        VMFS(true), // VMware VMFS storage
-        PreSetup(true), // for XenServer, Storage Pool is set up by customers.
-        EXT(false), // XenServer local EXT SR
-        OCFS2(true),
-        SMB(true),
-        Gluster(true),
-        ManagedNFS(true);
+        Filesystem(false, true), // local directory
+        NetworkFilesystem(true, true), // NFS
+        IscsiLUN(true, false), // shared LUN, with a clusterfs overlay
+        Iscsi(true, false), // for e.g., ZFS Comstar
+        ISO(false, false), // for iso image
+        LVM(false, false), // XenServer local LVM SR
+        CLVM(true, false),
+        RBD(true, true), // http://libvirt.org/storage.html#StorageBackendRBD
+        SharedMountPoint(true, false),
+        VMFS(true, true), // VMware VMFS storage
+        PreSetup(true, true), // for XenServer, Storage Pool is set up by customers.
+        EXT(false, true), // XenServer local EXT SR
+        OCFS2(true, false),
+        SMB(true, false),
+        Gluster(true, false),
+        ManagedNFS(true, false);
 
-        boolean shared;
+        private final boolean shared;
+        private final boolean overprovisioning;
 
-        StoragePoolType(boolean shared) {
+        StoragePoolType(boolean shared, boolean overprovisioning) {
             this.shared = shared;
+            this.overprovisioning = overprovisioning;
         }
 
         public boolean isShared() {
@@ -145,7 +149,7 @@ public class Storage {
         }
 
         public boolean supportsOverProvisioning() {
-            return this == StoragePoolType.NetworkFilesystem || this == StoragePoolType.VMFS || this == StoragePoolType.PreSetup;
+            return overprovisioning;
         }
     }
 

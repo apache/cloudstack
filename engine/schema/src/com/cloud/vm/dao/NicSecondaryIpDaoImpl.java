@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+import com.cloud.utils.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
@@ -106,7 +107,13 @@ public class NicSecondaryIpDaoImpl extends GenericDaoBase<NicSecondaryIpVO, Long
         List<NicSecondaryIpVO> results = search(sc, null);
         List<String> ips = new ArrayList<String>(results.size());
         for (NicSecondaryIpVO result : results) {
-            ips.add(result.getIp4Address());
+            if (StringUtils.isNotBlank(result.getIp4Address())) {
+                ips.add(result.getIp4Address());
+            }
+
+            if (StringUtils.isNotBlank(result.getIp6Address())) {
+                ips.add(result.getIp6Address());
+            }
         }
         return ips;
     }
@@ -119,8 +126,10 @@ public class NicSecondaryIpDaoImpl extends GenericDaoBase<NicSecondaryIpVO, Long
 
     @Override
     public NicSecondaryIpVO findByIp4AddressAndNetworkId(String ip4Address, long networkId) {
-        // TODO Auto-generated method stub
-        return null;
+        SearchCriteria<NicSecondaryIpVO> sc = AllFieldsSearch.create();
+        sc.setParameters("network", networkId);
+        sc.setParameters("address", ip4Address);
+        return findOneBy(sc);
     }
 
     @Override
@@ -128,6 +137,14 @@ public class NicSecondaryIpDaoImpl extends GenericDaoBase<NicSecondaryIpVO, Long
         SearchCriteria<NicSecondaryIpVO> sc = AllFieldsSearch.create();
         sc.setParameters("address", ip4Address);
         sc.setParameters("nicId", nicId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public NicSecondaryIpVO findByIp4AddressAndInstanceId(Long vmId, String vmIp) {
+        SearchCriteria<NicSecondaryIpVO> sc = AllFieldsSearch.create();
+        sc.setParameters("instanceId", vmId);
+        sc.setParameters("address", vmIp);
         return findOneBy(sc);
     }
 
@@ -154,5 +171,16 @@ public class NicSecondaryIpDaoImpl extends GenericDaoBase<NicSecondaryIpVO, Long
         sc.setParameters("nicId", nicId);
         sc.setParameters("address", "%" + keyword + "%");
         return listBy(sc);
+    }
+
+    @Override
+    public int moveSecondaryIps(long fromNicId, long toNicId) {
+        NicSecondaryIpVO update = createForUpdate();
+        update.setNicId(toNicId);
+
+        SearchCriteria<NicSecondaryIpVO> sc = AllFieldsSearch.create();
+        sc.setParameters("nicId", fromNicId);
+
+        return update(update, sc);
     }
 }

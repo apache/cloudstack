@@ -58,7 +58,10 @@ import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -84,6 +87,8 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
     private VolumeDetailsDao volumeDetailsDao;
     @Inject
     VMInstanceDao instanceDao;
+    @Inject
+    SnapshotDao snapshotDao;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -135,6 +140,21 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
         return volumeDetail.getValue();
     }
 
+    private void verifyNoSnapshotsOnManagedStorageVolumes(Map<VolumeInfo, DataStore> volumeToPool) {
+        for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
+            VolumeInfo volumeInfo = entry.getKey();
+            StoragePool storagePool = storagePoolDao.findById(volumeInfo.getPoolId());
+
+            if (storagePool.isManaged()) {
+                List<SnapshotVO> snapshots = getNonDestroyedSnapshots(volumeInfo.getId());
+
+                if (snapshots != null && snapshots.size() > 0) {
+                    throw new CloudRuntimeException("Cannot perform this action on a volume with one or more snapshots");
+                }
+            }
+        }
+    }
+
     /**
      * Tell the underlying storage plug-in to create a new volume, put it in the VAG of the destination cluster, and
      * send a command to the destination cluster to create an SR and to attach to the SR from all hosts in the cluster.
@@ -183,6 +203,24 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
         }
 
         return iqn;
+    }
+
+    private List<SnapshotVO> getNonDestroyedSnapshots(long csVolumeId) {
+        List<SnapshotVO> lstSnapshots = snapshotDao.listByVolumeId(csVolumeId);
+
+        if (lstSnapshots == null) {
+            lstSnapshots = new ArrayList<>();
+        }
+
+        List<SnapshotVO> lstSnapshots2 = new ArrayList<>();
+
+        for (SnapshotVO snapshot : lstSnapshots) {
+            if (!Snapshot.State.Destroyed.equals(snapshot.getState())) {
+                lstSnapshots2.add(snapshot);
+            }
+        }
+
+        return lstSnapshots2;
     }
 
     private void handleManagedVolumePostMigration(VolumeInfo volumeInfo, Host srcHost, VolumeObjectTO volumeTO) {
@@ -273,6 +311,8 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
         // Initiate migration of a virtual machine with its volumes.
 
         try {
+            verifyNoSnapshotsOnManagedStorageVolumes(volumeToPool);
+
             List<Pair<VolumeTO, String>> volumeToStorageUuid = new ArrayList<>();
 
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {

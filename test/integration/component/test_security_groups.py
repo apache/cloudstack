@@ -767,13 +767,13 @@ class TestDhcpOnlyRouter(cloudstackTestCase):
             self.testdata['configurableData']['host']["username"],
             self.testdata['configurableData']['host']["password"],
             router.linklocalip,
-            "service dnsmasq status"
+            "systemctl is-active dnsmasq"
         )
         res = str(result)
         self.debug("Dnsmasq process status: %s" % res)
 
         self.assertEqual(
-            res.count("running"),
+            res.count("active"),
             1,
             "Check dnsmasq service is running or not"
         )

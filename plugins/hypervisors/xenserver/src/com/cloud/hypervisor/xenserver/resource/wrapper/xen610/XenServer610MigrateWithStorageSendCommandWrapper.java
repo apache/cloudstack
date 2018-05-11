@@ -20,11 +20,10 @@
 package com.cloud.hypervisor.xenserver.resource.wrapper.xen610;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.List;
 
-import com.google.gson.Gson;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -36,8 +35,8 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.xenserver.resource.XenServer610Resource;
 import com.cloud.resource.CommandWrapper;
 import com.cloud.resource.ResourceWrapper;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Network;
 import com.xensource.xenapi.SR;
@@ -73,7 +72,6 @@ public final class XenServer610MigrateWithStorageSendCommandWrapper extends Comm
             // agent attache. Seriliaze the SR and Network objects here to a string and pass in
             // the answer object. It'll be deserialzed and object created in migrate with
             // storage send command execution.
-            Gson gson = new Gson();
             final Map<String, String> other = new HashMap<String, String>();
             other.put("live", "true");
 

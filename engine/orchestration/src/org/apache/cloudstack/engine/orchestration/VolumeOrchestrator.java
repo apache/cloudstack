@@ -610,16 +610,23 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     @Override
     public boolean volumeInactive(Volume volume) {
         Long vmId = volume.getInstanceId();
-        if (vmId != null) {
-            UserVm vm = _entityMgr.findById(UserVm.class, vmId);
-            if (vm == null) {
-                return true;
-            }
-            State state = vm.getState();
-            if (state.equals(State.Stopped) || state.equals(State.Destroyed)) {
-                return true;
-            }
+
+        if (vmId == null) {
+            return true;
         }
+
+        UserVm vm = _entityMgr.findById(UserVm.class, vmId);
+
+        if (vm == null) {
+            return true;
+        }
+
+        State state = vm.getState();
+
+        if (state.equals(State.Stopped) || state.equals(State.Destroyed)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -654,7 +661,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     }
 
     @Override
-    public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner) {
+    public DiskProfile allocateRawVolume(Type type, String name, DiskOffering offering, Long size, Long minIops, Long maxIops, VirtualMachine vm, VirtualMachineTemplate template, Account owner, Long deviceId) {
         if (size == null) {
             size = offering.getDiskSize();
         } else {
@@ -679,13 +686,17 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             vol.setInstanceId(vm.getId());
         }
 
-        if (type.equals(Type.ROOT)) {
+        if (deviceId != null) {
+            vol.setDeviceId(deviceId);
+        } else if (type.equals(Type.ROOT)) {
             vol.setDeviceId(0l);
         } else {
             vol.setDeviceId(1l);
         }
         if (template.getFormat() == ImageFormat.ISO) {
             vol.setIsoId(template.getId());
+        } else if (template.getTemplateType().equals(Storage.TemplateType.DATADISK)) {
+            vol.setTemplateId(template.getId());
         }
         // display flag matters only for the User vms
         if (vm.getType() == VirtualMachine.Type.User) {
@@ -1108,7 +1119,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
 
         //if (vm.getType() == VirtualMachine.Type.User && vm.getTemplate().getFormat() == ImageFormat.ISO) {
         if (vm.getType() == VirtualMachine.Type.User) {
-            _tmpltMgr.prepareIsoForVmProfile(vm);
+            _tmpltMgr.prepareIsoForVmProfile(vm, dest);
             //DataTO dataTO = tmplFactory.getTemplate(vm.getTemplate().getId(), DataStoreRole.Image, vm.getVirtualMachine().getDataCenterId()).getTO();
             //DiskTO iso = new DiskTO(dataTO, 3L, null, Volume.Type.ISO);
             //vm.addDisk(iso);
@@ -1252,7 +1263,6 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             StoragePool pool = dest.getStorageForDisks().get(vol);
             destPool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
         }
-
         if (vol.getState() == Volume.State.Allocated || vol.getState() == Volume.State.Creating) {
             newVol = vol;
         } else {
@@ -1271,8 +1281,9 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         VolumeInfo volume = volFactory.getVolume(newVol.getId(), destPool);
         Long templateId = newVol.getTemplateId();
         for (int i = 0; i < 2; i++) {
-            // retry one more time in case of template reload is required for Vmware case
-            AsyncCallFuture<VolumeApiResult> future = null;
+            // retry one more time in case of template reload is required for VMware case
+            AsyncCallFuture<VolumeApiResult> future;
+
             if (templateId == null) {
                 DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, volume.getDiskOfferingId());
                 HypervisorType hyperType = vm.getVirtualMachine().getHypervisorType();
@@ -1287,9 +1298,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 TemplateInfo templ = tmplFactory.getReadyTemplateOnImageStore(templateId, dest.getDataCenter().getId());
 
                 if (templ == null) {
-                    s_logger.debug("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
-
-                    throw new CloudRuntimeException("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
+                    if (tmplFactory.isTemplateMarkedForDirectDownload(templateId)) {
+                        // Template is marked for direct download bypassing Secondary Storage
+                        templ = tmplFactory.getReadyBypassedTemplateOnPrimaryStore(templateId, destPool.getId(), dest.getHost().getId());
+                    } else {
+                        s_logger.debug("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
+                        throw new CloudRuntimeException("can't find ready template: " + templateId + " for data center " + dest.getDataCenter().getId());
+                    }
                 }
 
                 PrimaryDataStore primaryDataStore = (PrimaryDataStore)destPool;
@@ -1358,17 +1373,39 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
 
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking if we need to prepare " + vols.size() + " volumes for " + vm);
-        }
 
         List<VolumeTask> tasks = getTasks(vols, dest.getStorageForDisks(), vm);
         Volume vol = null;
-        StoragePool pool = null;
+        StoragePool pool;
         for (VolumeTask task : tasks) {
             if (task.type == VolumeTaskType.NOP) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
+
+                if (task.pool != null && task.pool.isManaged()) {
+                    long hostId = vm.getVirtualMachine().getHostId();
+                    Host host = _hostDao.findById(hostId);
+
+                    volService.grantAccess(volFactory.getVolume(task.volume.getId()), host, (DataStore)pool);
+                }
+
                 vol = task.volume;
+
+                // For a zone-wide managed storage, it is possible that the VM can be started in another
+                // cluster. In that case, make sure that the volume is in the right access group.
+                if (pool.isManaged()) {
+                    long oldHostId = vm.getVirtualMachine().getLastHostId();
+                    long hostId = vm.getVirtualMachine().getHostId();
+
+                    if (oldHostId != hostId) {
+                        Host oldHost = _hostDao.findById(oldHostId);
+                        Host host = _hostDao.findById(hostId);
+                        DataStore storagePool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+
+                        storageMgr.removeStoragePoolFromCluster(oldHostId, vol.get_iScsiName(), pool);
+
+                        volService.revokeAccess(volFactory.getVolume(vol.getId()), oldHost, storagePool);
+                    }
+                }
             } else if (task.type == VolumeTaskType.MIGRATE) {
                 pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
                 vol = migrateVolume(task.volume, pool);
@@ -1377,6 +1414,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 pool = (StoragePool)dataStoreMgr.getDataStore(result.second().getId(), DataStoreRole.Primary);
                 vol = result.first();
             }
+
             VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
             DataTO volTO = volumeInfo.getTO();
             DiskTO disk = storageMgr.getDiskWithThrottling(volTO, vol.getVolumeType(), vol.getDeviceId(), vol.getPath(),
@@ -1395,21 +1433,16 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 if (value != null && value) {
                     cloneType = UserVmCloneType.full;
                 }
-                try {
-                    UserVmCloneSettingVO cloneSettingVO = _vmCloneSettingDao.findByVmId(vm.getId());
-                    if (cloneSettingVO != null){
-                        if (! cloneSettingVO.getCloneType().equals(cloneType.toString())){
-                            cloneSettingVO.setCloneType(cloneType.toString());
-                            _vmCloneSettingDao.update(cloneSettingVO.getVmId(), cloneSettingVO);
-                        }
-                    }
-                    else {
-                        UserVmCloneSettingVO vmCloneSettingVO = new UserVmCloneSettingVO(vm.getId(), cloneType.toString());
-                        _vmCloneSettingDao.persist(vmCloneSettingVO);
+                UserVmCloneSettingVO cloneSettingVO = _vmCloneSettingDao.findByVmId(vm.getId());
+                if (cloneSettingVO != null){
+                    if (! cloneSettingVO.getCloneType().equals(cloneType.toString())){
+                        cloneSettingVO.setCloneType(cloneType.toString());
+                        _vmCloneSettingDao.update(cloneSettingVO.getVmId(), cloneSettingVO);
                     }
                 }
-                catch (Throwable e){
-                    s_logger.debug("[NSX_PLUGIN_LOG] ERROR: " + e.getMessage());
+                else {
+                    UserVmCloneSettingVO vmCloneSettingVO = new UserVmCloneSettingVO(vm.getId(), cloneType.toString());
+                    _vmCloneSettingDao.persist(vmCloneSettingVO);
                 }
             }
 
@@ -1444,9 +1477,13 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
     public static final ConfigKey<Boolean> StorageMigrationEnabled = new ConfigKey<Boolean>(Boolean.class, "enable.storage.migration", "Storage", "true",
             "Enable/disable storage migration across primary storage", true);
 
+    static final ConfigKey<Boolean> VolumeUrlCheck = new ConfigKey<Boolean>("Advanced", Boolean.class, "volume.url.check", "true",
+            "Check the url for a volume before downloading it from the management server. Set to flase when you managment has no internet access.",
+            true);
+
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {RecreatableSystemVmEnabled, MaxVolumeSize, StorageHAMigrationEnabled, StorageMigrationEnabled, CustomDiskOfferingMaxSize, CustomDiskOfferingMinSize};
+        return new ConfigKey<?>[] {RecreatableSystemVmEnabled, MaxVolumeSize, StorageHAMigrationEnabled, StorageMigrationEnabled, CustomDiskOfferingMaxSize, CustomDiskOfferingMinSize, VolumeUrlCheck};
     }
 
     @Override
@@ -1558,8 +1595,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VOLUME_DELETE, volume.getAccountId(), volume.getDataCenterId(), volume.getId(), volume.getName(),
                     Volume.class.getName(), volume.getUuid(), volume.isDisplayVolume());
             _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplay());
-            //FIXME - why recalculate and not decrement
-            _resourceLimitMgr.recalculateResourceCount(volume.getAccountId(), volume.getDomainId(), ResourceType.primary_storage.getOrdinal());
+            _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.primary_storage, volume.isDisplay(), new Long(volume.getSize()));
         } catch (Exception e) {
             s_logger.debug("Failed to destroy volume" + volume.getId(), e);
             throw new CloudRuntimeException("Failed to destroy volume" + volume.getId(), e);

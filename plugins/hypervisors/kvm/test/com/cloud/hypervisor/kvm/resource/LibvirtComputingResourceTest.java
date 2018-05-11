@@ -19,16 +19,6 @@
 
 package com.cloud.hypervisor.kvm.resource;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -48,11 +38,7 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
-import org.apache.cloudstack.storage.command.AttachAnswer;
-import org.apache.cloudstack.storage.command.AttachCommand;
-import org.apache.cloudstack.utils.linux.CPUStat;
-import org.apache.cloudstack.utils.linux.MemStat;
-import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.CpuTuneDef;
 import org.apache.commons.lang.SystemUtils;
 import org.joda.time.Duration;
 import org.junit.Assert;
@@ -77,6 +63,12 @@ import org.mockito.invocation.InvocationOnMock;
 import org.mockito.runners.MockitoJUnitRunner;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
+
+import org.apache.cloudstack.storage.command.AttachAnswer;
+import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.utils.linux.CPUStat;
+import org.apache.cloudstack.utils.linux.MemStat;
+import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -178,11 +170,23 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.PowerState;
 import com.cloud.vm.VirtualMachine.Type;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 @RunWith(MockitoJUnitRunner.class)
 public class LibvirtComputingResourceTest {
 
     @Mock
     private LibvirtComputingResource libvirtComputingResource;
+    @Mock
+    VirtualMachineTO vmTO;
 
     String hyperVisorType = "kvm";
     Random random = new Random();
@@ -366,6 +370,9 @@ public class LibvirtComputingResourceTest {
         assertXpath(domainDoc, "/domain/on_reboot/text()", "restart");
         assertXpath(domainDoc, "/domain/on_poweroff/text()", "destroy");
         assertXpath(domainDoc, "/domain/on_crash/text()", "destroy");
+
+        assertXpath(domainDoc, "/domain/devices/watchdog/@model", "i6300esb");
+        assertXpath(domainDoc, "/domain/devices/watchdog/@action", "none");
     }
 
     static Document parse(final String input) {
@@ -1018,7 +1025,7 @@ public class LibvirtComputingResourceTest {
         when(nicTO.getType()).thenReturn(TrafficType.Guest);
         when(diskTO.getType()).thenReturn(Volume.Type.ISO);
 
-        when(libvirtComputingResource.getVifDriver(nicTO.getType())).thenReturn(vifDriver);
+        when(libvirtComputingResource.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
@@ -1066,7 +1073,7 @@ public class LibvirtComputingResourceTest {
         when(nicTO.getType()).thenReturn(TrafficType.Guest);
         when(diskTO.getType()).thenReturn(Volume.Type.ISO);
 
-        when(libvirtComputingResource.getVifDriver(nicTO.getType())).thenReturn(vifDriver);
+        when(libvirtComputingResource.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
         when(storagePoolManager.connectPhysicalDisksViaVmSpec(vm)).thenReturn(true);
 
@@ -1158,7 +1165,7 @@ public class LibvirtComputingResourceTest {
         when(nicTO.getType()).thenReturn(TrafficType.Guest);
         when(volume.getType()).thenReturn(Volume.Type.ISO);
 
-        when(libvirtComputingResource.getVifDriver(nicTO.getType())).thenReturn(vifDriver);
+        when(libvirtComputingResource.getVifDriver(nicTO.getType(), nicTO.getName())).thenReturn(vifDriver);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
         try {
             when(libvirtComputingResource.getVolumePath(conn, volume)).thenThrow(URISyntaxException.class);
@@ -1210,7 +1217,7 @@ public class LibvirtComputingResourceTest {
         when(vm.getNics()).thenReturn(new NicTO[]{nicTO});
         when(nicTO.getType()).thenReturn(TrafficType.Guest);
 
-        when(libvirtComputingResource.getVifDriver(nicTO.getType())).thenThrow(InternalErrorException.class);
+        when(libvirtComputingResource.getVifDriver(nicTO.getType(), nicTO.getName())).thenThrow(InternalErrorException.class);
         when(libvirtComputingResource.getStoragePoolMgr()).thenReturn(storagePoolManager);
         try {
             when(libvirtComputingResource.getVolumePath(conn, volume)).thenReturn("/path");
@@ -2547,9 +2554,9 @@ public class LibvirtComputingResourceTest {
 
         final CheckNetworkCommand command = new CheckNetworkCommand(networkInfoList);
 
-        when(libvirtComputingResource.checkNetwork(nic.getGuestNetworkName())).thenReturn(true);
-        when(libvirtComputingResource.checkNetwork(nic.getPrivateNetworkName())).thenReturn(true);
-        when(libvirtComputingResource.checkNetwork(nic.getPublicNetworkName())).thenReturn(true);
+        when(libvirtComputingResource.checkNetwork(TrafficType.Guest, nic.getGuestNetworkName())).thenReturn(true);
+        when(libvirtComputingResource.checkNetwork(TrafficType.Management, nic.getPrivateNetworkName())).thenReturn(true);
+        when(libvirtComputingResource.checkNetwork(TrafficType.Public, nic.getPublicNetworkName())).thenReturn(true);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -2557,9 +2564,9 @@ public class LibvirtComputingResourceTest {
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertTrue(answer.getResult());
 
-        verify(libvirtComputingResource, times(3)).checkNetwork(nic.getGuestNetworkName());
-        verify(libvirtComputingResource, times(3)).checkNetwork(nic.getPrivateNetworkName());
-        verify(libvirtComputingResource, times(3)).checkNetwork(nic.getPublicNetworkName());
+        verify(libvirtComputingResource, times(1)).checkNetwork(TrafficType.Guest, nic.getGuestNetworkName());
+        verify(libvirtComputingResource, times(1)).checkNetwork(TrafficType.Management, nic.getPrivateNetworkName());
+        verify(libvirtComputingResource, times(1)).checkNetwork(TrafficType.Public, nic.getPublicNetworkName());
     }
 
     @Test
@@ -2571,7 +2578,7 @@ public class LibvirtComputingResourceTest {
 
         final CheckNetworkCommand command = new CheckNetworkCommand(networkInfoList);
 
-        when(libvirtComputingResource.checkNetwork(networkSetupInfo.getGuestNetworkName())).thenReturn(false);
+        when(libvirtComputingResource.checkNetwork(TrafficType.Guest, networkSetupInfo.getGuestNetworkName())).thenReturn(false);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -2579,7 +2586,7 @@ public class LibvirtComputingResourceTest {
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertFalse(answer.getResult());
 
-        verify(libvirtComputingResource, times(1)).checkNetwork(networkSetupInfo.getGuestNetworkName());
+        verify(libvirtComputingResource, times(1)).checkNetwork(TrafficType.Guest, networkSetupInfo.getGuestNetworkName());
     }
 
     @Test
@@ -2591,8 +2598,8 @@ public class LibvirtComputingResourceTest {
 
         final CheckNetworkCommand command = new CheckNetworkCommand(networkInfoList);
 
-        when(libvirtComputingResource.checkNetwork(networkSetupInfo.getGuestNetworkName())).thenReturn(true);
-        when(libvirtComputingResource.checkNetwork(networkSetupInfo.getPrivateNetworkName())).thenReturn(false);
+        when(libvirtComputingResource.checkNetwork(TrafficType.Guest, networkSetupInfo.getGuestNetworkName())).thenReturn(true);
+        when(libvirtComputingResource.checkNetwork(TrafficType.Management, networkSetupInfo.getPrivateNetworkName())).thenReturn(false);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -2600,8 +2607,8 @@ public class LibvirtComputingResourceTest {
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertFalse(answer.getResult());
 
-        verify(libvirtComputingResource, times(1)).checkNetwork(networkSetupInfo.getGuestNetworkName());
-        verify(libvirtComputingResource, times(1)).checkNetwork(networkSetupInfo.getPrivateNetworkName());
+        verify(libvirtComputingResource, times(1)).checkNetwork(TrafficType.Guest, networkSetupInfo.getGuestNetworkName());
+        verify(libvirtComputingResource, times(1)).checkNetwork(TrafficType.Management, networkSetupInfo.getPrivateNetworkName());
     }
 
     @Test
@@ -2613,9 +2620,9 @@ public class LibvirtComputingResourceTest {
 
         final CheckNetworkCommand command = new CheckNetworkCommand(networkInfoList);
 
-        when(libvirtComputingResource.checkNetwork(networkSetupInfo.getGuestNetworkName())).thenReturn(true);
-        when(libvirtComputingResource.checkNetwork(networkSetupInfo.getPrivateNetworkName())).thenReturn(true);
-        when(libvirtComputingResource.checkNetwork(networkSetupInfo.getPublicNetworkName())).thenReturn(false);
+        when(libvirtComputingResource.checkNetwork(TrafficType.Guest, networkSetupInfo.getGuestNetworkName())).thenReturn(true);
+        when(libvirtComputingResource.checkNetwork(TrafficType.Management, networkSetupInfo.getPrivateNetworkName())).thenReturn(true);
+        when(libvirtComputingResource.checkNetwork(TrafficType.Public, networkSetupInfo.getPublicNetworkName())).thenReturn(false);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -2623,8 +2630,8 @@ public class LibvirtComputingResourceTest {
         final Answer answer = wrapper.execute(command, libvirtComputingResource);
         assertFalse(answer.getResult());
 
-        verify(libvirtComputingResource, times(1)).checkNetwork(networkSetupInfo.getGuestNetworkName());
-        verify(libvirtComputingResource, times(1)).checkNetwork(networkSetupInfo.getPrivateNetworkName());
+        verify(libvirtComputingResource, times(1)).checkNetwork(TrafficType.Guest, networkSetupInfo.getGuestNetworkName());
+        verify(libvirtComputingResource, times(1)).checkNetwork(TrafficType.Management, networkSetupInfo.getPrivateNetworkName());
     }
 
     @Test
@@ -3148,12 +3155,13 @@ public class LibvirtComputingResourceTest {
         when(intDef.getMacAddress()).thenReturn("00:00:00:00");
 
         when(nic.getMac()).thenReturn("00:00:00:01");
+        when(nic.getName()).thenReturn("br0");
 
         try {
             when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
             when(libvirtComputingResource.getDomain(conn, instanceName)).thenReturn(vm);
 
-            when(libvirtComputingResource.getVifDriver(nic.getType())).thenReturn(vifDriver);
+            when(libvirtComputingResource.getVifDriver(nic.getType(), nic.getName())).thenReturn(vifDriver);
 
             when(vifDriver.plug(nic, "Other PV", "")).thenReturn(interfaceDef);
             when(interfaceDef.toString()).thenReturn("Interface");
@@ -3177,7 +3185,7 @@ public class LibvirtComputingResourceTest {
         try {
             verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(command.getVmName());
             verify(libvirtComputingResource, times(1)).getDomain(conn, instanceName);
-            verify(libvirtComputingResource, times(1)).getVifDriver(nic.getType());
+            verify(libvirtComputingResource, times(1)).getVifDriver(nic.getType(), nic.getName());
             verify(vifDriver, times(1)).plug(nic, "Other PV", "");
         } catch (final LibvirtException e) {
             fail(e.getMessage());
@@ -3250,7 +3258,7 @@ public class LibvirtComputingResourceTest {
             when(libvirtUtilitiesHelper.getConnectionByVmName(command.getVmName())).thenReturn(conn);
             when(libvirtComputingResource.getDomain(conn, instanceName)).thenReturn(vm);
 
-            when(libvirtComputingResource.getVifDriver(nic.getType())).thenReturn(vifDriver);
+            when(libvirtComputingResource.getVifDriver(nic.getType(), nic.getName())).thenReturn(vifDriver);
 
             when(vifDriver.plug(nic, "Other PV", "")).thenThrow(InternalErrorException.class);
 
@@ -3270,7 +3278,7 @@ public class LibvirtComputingResourceTest {
         try {
             verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(command.getVmName());
             verify(libvirtComputingResource, times(1)).getDomain(conn, instanceName);
-            verify(libvirtComputingResource, times(1)).getVifDriver(nic.getType());
+            verify(libvirtComputingResource, times(1)).getVifDriver(nic.getType(), nic.getName());
             verify(vifDriver, times(1)).plug(nic, "Other PV", "");
         } catch (final LibvirtException e) {
             fail(e.getMessage());
@@ -5146,5 +5154,41 @@ public class LibvirtComputingResourceTest {
         Domain domainMock = Mockito.mock(Domain.class);
         when(domainMock.memoryStats(2)).thenReturn(mem);
         return domainMock;
+    }
+
+    @Test
+    public void testSetQuotaAndPeriod() {
+        double pct = 0.33d;
+        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(true);
+        Mockito.when(vmTO.getCpuQuotaPercentage()).thenReturn(pct);
+        CpuTuneDef cpuTuneDef = new CpuTuneDef();
+        final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        lcr.setQuotaAndPeriod(vmTO, cpuTuneDef);
+        Assert.assertEquals((int) (CpuTuneDef.DEFAULT_PERIOD * pct), cpuTuneDef.getQuota());
+        Assert.assertEquals(CpuTuneDef.DEFAULT_PERIOD, cpuTuneDef.getPeriod());
+    }
+
+    @Test
+    public void testSetQuotaAndPeriodNoCpuLimitUse() {
+        double pct = 0.33d;
+        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(false);
+        Mockito.when(vmTO.getCpuQuotaPercentage()).thenReturn(pct);
+        CpuTuneDef cpuTuneDef = new CpuTuneDef();
+        final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        lcr.setQuotaAndPeriod(vmTO, cpuTuneDef);
+        Assert.assertEquals(0, cpuTuneDef.getQuota());
+        Assert.assertEquals(0, cpuTuneDef.getPeriod());
+    }
+
+    @Test
+    public void testSetQuotaAndPeriodMinQuota() {
+        double pct = 0.01d;
+        Mockito.when(vmTO.getLimitCpuUse()).thenReturn(true);
+        Mockito.when(vmTO.getCpuQuotaPercentage()).thenReturn(pct);
+        CpuTuneDef cpuTuneDef = new CpuTuneDef();
+        final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        lcr.setQuotaAndPeriod(vmTO, cpuTuneDef);
+        Assert.assertEquals(CpuTuneDef.MIN_QUOTA, cpuTuneDef.getQuota());
+        Assert.assertEquals((int) (CpuTuneDef.MIN_QUOTA / pct), cpuTuneDef.getPeriod());
     }
 }

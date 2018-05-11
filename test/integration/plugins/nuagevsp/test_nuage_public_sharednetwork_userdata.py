@@ -409,8 +409,8 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
         except Exception as e:
             self.debug("Deploy vm fails as expected with exception %s" % e)
             self.debug("Going to verify the exception message")
-            excetionmsg = "it is reserved for the VR in network"
-            if excetionmsg in str(e):
+            exceptionmsg = "Unable to start a VM due to insufficient capacity"
+            if exceptionmsg in str(e):
                 self.debug("correct exception is raised")
             else:
                 self.fail("correct exception is not raised")
@@ -705,8 +705,8 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
                        "fails as expected with exception %s" % e)
             self.debug("Going to verify the exception message")
             self.delete_subnet_verify(self.shared_network_all, subnet2)
-            excetionmsg = "Failed to deploy VM"
-            if excetionmsg in str(e):
+            exceptionmsg = "Unable to start VM instance"
+            if exceptionmsg in str(e):
                 self.debug("correct exception is raised")
             else:
                 self.fail("correct exception is not raised")
@@ -739,8 +739,8 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
             self.debug("Going to verify the exception message")
             self.delete_subnet_verify(
                 self.shared_network_domain_with_subdomain_d11, subnet2)
-            excetionmsg = "Failed to deploy VM"
-            if excetionmsg in str(e):
+            exceptionmsg = "Unable to start VM instance"
+            if exceptionmsg in str(e):
                 self.debug("correct exception is raised")
             else:
                 self.fail("correct exception is not raised")
@@ -772,8 +772,8 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
             self.debug("Going to verify the exception message")
             self.delete_subnet_verify(
                 self.shared_network_domain_d11, subnet2)
-            excetionmsg = "Failed to deploy VM"
-            if excetionmsg in str(e):
+            exceptionmsg = "Unable to start VM instance"
+            if exceptionmsg in str(e):
                 self.debug("correct exception is raised")
             else:
                 self.fail("correct exception is not raised")
@@ -805,8 +805,8 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
             self.debug("Going to verify the exception message")
             self.delete_subnet_verify(
                 self.shared_network_account_d111a, subnet2)
-            excetionmsg = "Failed to deploy VM"
-            if excetionmsg in str(e):
+            exceptionmsg = "Unable to start VM instance"
+            if exceptionmsg in str(e):
                 self.debug("correct exception is raised")
             else:
                 self.fail("correct exception is not raised")
@@ -819,8 +819,7 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
         """
         self.updateTemplate(True)
         self.debug("Deploy VM to shared Network scope as all")
-        self.test_data["virtual_machine"]["ipaddress"] = \
-            self.nuagenetworkdata["network_all"]["endip"]
+        self.test_data["virtual_machine"]["ipaddress"] = None
         vm_1 = self.create_VM(
             self.shared_network_all, account=self.account_d11a)
 
@@ -847,8 +846,7 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
         """
         self.updateTemplate(True)
         self.debug("Deploy VM to shared Network scope as all")
-        self.test_data["virtual_machine"]["ipaddress"] = \
-            self.nuagenetworkdata["network_all"]["endip"]
+        self.test_data["virtual_machine"]["ipaddress"] = None
         vm_1 = self.create_VM(
             self.shared_network_domain_with_subdomain_d11,
             account=self.account_d11a)
@@ -876,8 +874,7 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
         """
         self.updateTemplate(True)
         self.debug("Deploy VM to shared Network scope as all")
-        self.test_data["virtual_machine"]["ipaddress"] = \
-            self.nuagenetworkdata["network_all"]["endip"]
+        self.test_data["virtual_machine"]["ipaddress"] = None
         vm_1 = self.create_VM(
             self.shared_network_account_d111a, account=self.account_d11a)
 
@@ -901,8 +898,6 @@ class TestNuageSharedNetworkUserdata(nuageTestCase):
         """
 
         try:
-            self.test_data["virtual_machine"]["ipaddress"] = \
-                self.nuagenetworkdata["network_all"]["endip"]
             vm_1 = self.create_VM(
                 self.shared_network_domain_with_subdomain_d11,
                 account=self.account_d11a)

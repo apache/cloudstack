@@ -184,7 +184,7 @@ public class CreateAccountCmd extends BaseCmd {
     @Override
     public void execute() {
         validateParams();
-        CallContext.current().setEventDetails("Account Name: " + getAccountName() + ", Domain Id:" + getDomainId());
+        CallContext.current().setEventDetails("Account Name: " + getUsername() + ", Domain Id:" + getDomainId());
         UserAccount userAccount =
             _accountService.createUserAccount(getUsername(), getPassword(), getFirstName(), getLastName(), getEmail(), getTimeZone(), getAccountName(), getAccountType(), getRoleId(),
                 getDomainId(), getNetworkDomain(), getDetails(), getAccountUUID(), getUserUUID());

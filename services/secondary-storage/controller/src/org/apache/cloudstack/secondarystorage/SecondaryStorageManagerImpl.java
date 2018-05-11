@@ -30,7 +30,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -89,12 +89,12 @@ import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.StorageNetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
-import com.cloud.network.StorageNetworkManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -123,6 +123,7 @@ import com.cloud.user.AccountService;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
@@ -245,6 +246,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     VolumeDataStoreDao _volumeStoreDao;
     @Inject
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
+    @Inject
+    private IndirectAgentLB indirectAgentLB;
+
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
     private int _secStorageVmMtuSize;
 
@@ -387,7 +391,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             List<String> allowedCidrs = new ArrayList<String>();
             String[] cidrs = _allowedInternalSites.split(",");
             for (String cidr : cidrs) {
-                if (NetUtils.isValidCIDR(cidr) || NetUtils.isValidIp(cidr) || !cidr.startsWith("0.0.0.0")) {
+                if (NetUtils.isValidIp4Cidr(cidr) || NetUtils.isValidIp4(cidr) || !cidr.startsWith("0.0.0.0")) {
                     allowedCidrs.add(cidr);
                 }
             }
@@ -1118,7 +1122,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=secstorage");
-        buf.append(" host=").append(ApiServiceConfiguration.ManagementHostIPAdr.value());
+        buf.append(" host=").append(StringUtils.toCSVList(indirectAgentLB.getManagementServerList(dest.getHost().getId(), dest.getDataCenter().getId(), null)));
         buf.append(" port=").append(_mgmtPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
 
@@ -1169,7 +1173,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             }
             if (nic.getTrafficType() == TrafficType.Management) {
                 String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
-                if (NetUtils.isValidCIDR(mgmt_cidr)) {
+                if (NetUtils.isValidIp4Cidr(mgmt_cidr)) {
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
                 }
                 buf.append(" localgw=").append(dest.getPod().getGateway());

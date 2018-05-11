@@ -17,6 +17,8 @@
 
 package com.cloud.network;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,7 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Capability;
+import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.TrafficType;
@@ -47,6 +50,31 @@ import org.apache.cloudstack.framework.config.ConfigKey;
  * participants in the orchestration can use this interface to query the data.
  */
 public interface NetworkModel {
+    String METATDATA_DIR = "metadata";
+    String USERDATA_DIR = "userdata";
+    String USERDATA_FILE = "user_data";
+    String PASSWORD_DIR = "password";
+    String PASSWORD_FILE = "vm_password";
+    String PASSWORD_CHECKSUM_FILE = "vm-password-md5checksum";
+    String SERVICE_OFFERING_FILE = "service-offering";
+    String AVAILABILITY_ZONE_FILE = "availability-zone";
+    String LOCAL_HOSTNAME_FILE = "local-hostname";
+    String LOCAL_IPV4_FILE = "local-ipv4";
+    String PUBLIC_HOSTNAME_FILE = "public-hostname";
+    String PUBLIC_IPV4_FILE = "public-ipv4";
+    String INSTANCE_ID_FILE = "instance-id";
+    String VM_ID_FILE = "vm-id";
+    String PUBLIC_KEYS_FILE = "public-keys";
+    String CLOUD_IDENTIFIER_FILE = "cloud-identifier";
+    int CONFIGDATA_DIR = 0;
+    int CONFIGDATA_FILE = 1;
+    int CONFIGDATA_CONTENT = 2;
+    ImmutableMap<String, String> openStackFileMapping = ImmutableMap.of(
+            AVAILABILITY_ZONE_FILE, "availability_zone",
+            LOCAL_HOSTNAME_FILE, "hostname",
+            VM_ID_FILE, "uuid",
+            INSTANCE_ID_FILE, "name"
+    );
 
     static final ConfigKey<Integer> MACIdentifier = new ConfigKey<Integer>("Advanced",Integer.class, "mac.identifier", "0",
             "This value will be used while generating the mac addresses for isolated and shared networks. The hexadecimal equivalent value will be present at the 2nd octet of the mac address. Default value is null which means this feature is disabled.Its scope is global.", true, ConfigKey.Scope.Global);
@@ -260,7 +288,7 @@ public interface NetworkModel {
 
     void checkIp6Parameters(String startIPv6, String endIPv6, String ip6Gateway, String ip6Cidr) throws InvalidParameterValueException;
 
-    void checkRequestedIpAddresses(long networkId, String ip4, String ip6) throws InvalidParameterValueException;
+    void checkRequestedIpAddresses(long networkId, IpAddresses ips) throws InvalidParameterValueException;
 
     String getStartIpv6Address(long id);
 
@@ -284,7 +312,9 @@ public interface NetworkModel {
 
     boolean getNetworkEgressDefaultPolicy(Long networkId);
 
-    List<String[]> generateVmData(String userData, String serviceOffering, String zoneName,
-                                  String vmName, long vmId, String publicKey, String password, Boolean isWindows);
+    List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId,
+                                  String vmName, long vmId, String vmUuid, String guestIpAddress, String publicKey, String password, Boolean isWindows);
+
+    String getValidNetworkCidr(Network guestNetwork);
 
 }

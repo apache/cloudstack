@@ -21,6 +21,7 @@ package com.cloud.utils;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -249,5 +250,12 @@ public class StringUtilsTest {
     public void listToCsvTags() {
         assertEquals("a,b,c", StringUtils.listToCsvTags(Arrays.asList("a","b", "c")));
         assertEquals("", StringUtils.listToCsvTags(new ArrayList<String>()));
+    }
+
+    @Test
+    public void testToCSVList() {
+        String input = "one,two,three,four,five,six,seven,eight,nine,ten";
+        String output = StringUtils.toCSVList(Arrays.asList(input.split(",")));
+        assertTrue(input.equals(output));
     }
 }

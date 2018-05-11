@@ -72,6 +72,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> IdStatesSearch;
     protected SearchBuilder<VMInstanceVO> AllFieldsSearch;
     protected SearchBuilder<VMInstanceVO> ZoneTemplateNonExpungedSearch;
+    protected SearchBuilder<VMInstanceVO> TemplateNonExpungedSearch;
     protected SearchBuilder<VMInstanceVO> NameLikeSearch;
     protected SearchBuilder<VMInstanceVO> StateChangeSearch;
     protected SearchBuilder<VMInstanceVO> TransitionSearch;
@@ -87,6 +88,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected GenericSearchBuilder<VMInstanceVO, Long> FindIdsOfVirtualRoutersByAccount;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountActiveByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
+    protected GenericSearchBuilder<VMInstanceVO, Long> CountByZoneAndState;
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
     protected GenericSearchBuilder<VMInstanceVO, String> DistinctHostNameSearch;
     protected SearchBuilder<VMInstanceVO> HostAndStateSearch;
@@ -163,6 +165,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         ZoneTemplateNonExpungedSearch.and("template", ZoneTemplateNonExpungedSearch.entity().getTemplateId(), Op.EQ);
         ZoneTemplateNonExpungedSearch.and("state", ZoneTemplateNonExpungedSearch.entity().getState(), Op.NEQ);
         ZoneTemplateNonExpungedSearch.done();
+
+
+        TemplateNonExpungedSearch = createSearchBuilder();
+        TemplateNonExpungedSearch.and("template", TemplateNonExpungedSearch.entity().getTemplateId(), Op.EQ);
+        TemplateNonExpungedSearch.and("state", TemplateNonExpungedSearch.entity().getState(), Op.NEQ);
+        TemplateNonExpungedSearch.done();
 
         NameLikeSearch = createSearchBuilder();
         NameLikeSearch.and("name", NameLikeSearch.entity().getHostName(), Op.LIKE);
@@ -241,6 +249,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         CountRunningByAccount.and("account", CountRunningByAccount.entity().getAccountId(), SearchCriteria.Op.EQ);
         CountRunningByAccount.and("state", CountRunningByAccount.entity().getState(), SearchCriteria.Op.EQ);
         CountRunningByAccount.done();
+
+        CountByZoneAndState = createSearchBuilder(Long.class);
+        CountByZoneAndState.select(null, Func.COUNT, null);
+        CountByZoneAndState.and("zone", CountByZoneAndState.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        CountByZoneAndState.and("state", CountByZoneAndState.entity().getState(), SearchCriteria.Op.EQ);
+        CountByZoneAndState.done();
 
         HostAndStateSearch = createSearchBuilder();
         HostAndStateSearch.and("host", HostAndStateSearch.entity().getHostId(), Op.EQ);
@@ -324,6 +338,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
         sc.setParameters("zone", zoneId);
         sc.setParameters("type", type.toString());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMInstanceVO> listNonExpungedByTemplate(long templateId) {
+        SearchCriteria<VMInstanceVO> sc = TemplateNonExpungedSearch.create();
+
+        sc.setParameters("template", templateId);
+        sc.setParameters("state", State.Expunging);
         return listBy(sc);
     }
 
@@ -715,6 +738,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<Long> sc = CountRunningByAccount.create();
         sc.setParameters("account", accountId);
         sc.setParameters("state", State.Running);
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public Long countByZoneAndState(long zoneId, State state) {
+        SearchCriteria<Long> sc = CountByZoneAndState.create();
+        sc.setParameters("zone", zoneId);
+        sc.setParameters("state", state);
         return customSearch(sc, null).get(0);
     }
 

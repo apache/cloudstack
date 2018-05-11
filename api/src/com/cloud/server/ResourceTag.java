@@ -38,6 +38,7 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         SecurityGroupRule(true, false),
         PublicIpAddress(true, true),
         Project(true, false),
+        Account(true, false),
         Vpc(true, true),
         NetworkACL(true, true),
         StaticRoute(true, false),
@@ -58,7 +59,9 @@ public interface ResourceTag extends ControlledEntity, Identity, InternalIdentit
         LBStickinessPolicy(false, true),
         LBHealthCheckPolicy(false, true),
         SnapshotPolicy(false, true),
-        GuestOs(false, true);
+        GuestOs(false, true),
+        NetworkOffering(false, true),
+        VpcOffering(true, false);
 
 
         ResourceObjectType(boolean resourceTagsSupport, boolean resourceMetadataSupport) {

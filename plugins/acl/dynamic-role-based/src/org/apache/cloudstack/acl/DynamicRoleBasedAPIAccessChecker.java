@@ -16,6 +16,18 @@
 // under the License.
 package org.apache.cloudstack.acl;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import com.cloud.exception.UnavailableCommandException;
+import org.apache.cloudstack.api.APICommand;
+
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
@@ -23,18 +35,7 @@ import com.cloud.user.User;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
 import com.google.common.base.Strings;
-import org.apache.cloudstack.api.APICommand;
 
-import javax.ejb.Local;
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-@Local(value = APIChecker.class)
 public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
 
     @Inject
@@ -53,8 +54,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
     }
 
     private void denyApiAccess(final String commandName) throws PermissionDeniedException {
-        throw new PermissionDeniedException("The API does not exist or is blacklisted for the account's role. " +
-                "The account with is not allowed to request the api: " + commandName);
+        throw new PermissionDeniedException("The API " + commandName + " is blacklisted for the account's role.");
     }
 
     public boolean isDisabled() {
@@ -99,8 +99,7 @@ public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements API
         }
 
         // Default deny all
-        denyApiAccess(commandName);
-        return false;
+        throw new UnavailableCommandException("The API " + commandName + " does not exist or is not available for this account.");
     }
 
     public void addApiToRoleBasedAnnotationsMap(final RoleType roleType, final String commandName) {

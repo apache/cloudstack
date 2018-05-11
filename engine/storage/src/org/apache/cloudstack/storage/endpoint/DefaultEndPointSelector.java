@@ -71,6 +71,9 @@ public class DefaultEndPointSelector implements EndPointSelector {
                             + "left join cluster_details cd on c.id=cd.cluster_id and cd.name='" + CapacityManager.StorageOperationsExcludeCluster.key() + "' "
                             + "where h.status = 'Up' and h.type = 'Routing' and h.resource_state = 'Enabled' and s.pool_id = ? ";
 
+    private String findOneHypervisorHostInScopeByType = "select h.id from host h where h.status = 'Up' and h.hypervisor_type = ? ";
+    private String findOneHypervisorHostInScope = "select h.id from host h where h.status = 'Up' and h.hypervisor_type is not null ";
+
     protected boolean moveBetweenPrimaryImage(DataStore srcStore, DataStore destStore) {
         DataStoreRole srcRole = srcStore.getRole();
         DataStoreRole destRole = destStore.getRole();
@@ -106,30 +109,33 @@ public class DefaultEndPointSelector implements EndPointSelector {
         StringBuilder sbuilder = new StringBuilder();
         sbuilder.append(sqlBase);
 
-        if (scope.getScopeType() == ScopeType.HOST) {
-            sbuilder.append(" and h.id = ");
-            sbuilder.append(scope.getScopeId());
-        } else if (scope.getScopeType() == ScopeType.CLUSTER) {
-            sbuilder.append(" and h.cluster_id = ");
-            sbuilder.append(scope.getScopeId());
-        } else if (scope.getScopeType() == ScopeType.ZONE) {
-            sbuilder.append(" and h.data_center_id = ");
-            sbuilder.append(scope.getScopeId());
+        if (scope != null) {
+            if (scope.getScopeType() == ScopeType.HOST) {
+                sbuilder.append(" and h.id = ");
+                sbuilder.append(scope.getScopeId());
+            } else if (scope.getScopeType() == ScopeType.CLUSTER) {
+                sbuilder.append(" and h.cluster_id = ");
+                sbuilder.append(scope.getScopeId());
+            } else if (scope.getScopeType() == ScopeType.ZONE) {
+                sbuilder.append(" and h.data_center_id = ");
+                sbuilder.append(scope.getScopeId());
+            }
         }
+
         // TODO: order by rand() is slow if there are lot of hosts
         sbuilder.append(") t where t.value<>'true' or t.value is null");    //Added for exclude cluster's subquery
         sbuilder.append(" ORDER by rand() limit 1");
         String sql = sbuilder.toString();
         HostVO host = null;
         TransactionLegacy txn = TransactionLegacy.currentTxn();
-        try(PreparedStatement pstmt = txn.prepareStatement(sql);) {
+        try (PreparedStatement pstmt = txn.prepareStatement(sql)) {
             pstmt.setLong(1, poolId);
             try(ResultSet rs = pstmt.executeQuery();) {
                 while (rs.next()) {
                     long id = rs.getLong(1);
                     host = hostDao.findById(id);
                 }
-            }catch (SQLException e) {
+            } catch (SQLException e) {
                 s_logger.warn("can't find endpoint", e);
             }
         } catch (SQLException e) {
@@ -206,6 +212,7 @@ public class DefaultEndPointSelector implements EndPointSelector {
 
     @Override
     public EndPoint select(DataObject srcData, DataObject destData, StorageAction action) {
+        s_logger.error("IR24 select BACKUPSNAPSHOT from primary to secondary " + srcData.getId() + " dest=" + destData.getId());
         if (action == StorageAction.BACKUPSNAPSHOT && srcData.getDataStore().getRole() == DataStoreRole.Primary) {
             SnapshotInfo srcSnapshot = (SnapshotInfo)srcData;
             VolumeInfo volumeInfo = srcSnapshot.getBaseVolume();

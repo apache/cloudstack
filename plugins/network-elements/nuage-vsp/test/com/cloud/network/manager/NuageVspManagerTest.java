@@ -19,6 +19,25 @@
 
 package com.cloud.network.manager;
 
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+
+import javax.naming.ConfigurationException;
+
+import org.junit.Test;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.resourcedetail.VpcDetailVO;
+import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
+
 import com.cloud.NuageTest;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
@@ -30,6 +49,8 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.dao.NetworkDao;
+import com.cloud.network.dao.NetworkDetailVO;
+import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NuageVspDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
@@ -37,51 +58,68 @@ import com.cloud.network.dao.PhysicalNetworkServiceProviderDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.resource.ResourceManager;
 import com.cloud.util.NuageVspEntityBuilder;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
-import org.junit.Before;
-import org.junit.Test;
-
-import javax.naming.ConfigurationException;
-import java.util.ArrayList;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 public class NuageVspManagerTest extends NuageTest {
     private static final long NETWORK_ID = 42L;
+    private static final long VPC_ID = 1L;
+    private static final long VPC_ID2 = 2L;
 
-    private PhysicalNetworkDao _physicalNetworkDao = mock(PhysicalNetworkDao.class);
-    private PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao = mock(PhysicalNetworkServiceProviderDao.class);
-    private ResourceManager _resourceManager = mock(ResourceManager.class);
-    private HostDetailsDao _hostDetailsDao = mock(HostDetailsDao.class);
-    private NuageVspDao _nuageVspDao = mock(NuageVspDao.class);
-    private NetworkDao _networkDao = mock(NetworkDao.class);
-    private HostDao _hostDao = mock(HostDao.class);
-    private AgentManager _agentManager = mock(AgentManager.class);
-    private ConfigurationDao _configurationDao = mock(ConfigurationDao.class);
-    private NuageVspEntityBuilder _nuageVspEntityBuilder = mock(NuageVspEntityBuilder.class);
-    private NuageVspManagerImpl _nuageVspManager;
+    @Mock private PhysicalNetworkDao _physicalNetworkDao ;
+    @Mock private PhysicalNetworkServiceProviderDao _physicalNetworkServiceProviderDao;
+    @Mock private ResourceManager _resourceManager;
+    @Mock private HostDetailsDao _hostDetailsDao;
+    @Mock private NuageVspDao _nuageVspDao;
+    @Mock private NetworkDao _networkDao;
+    @Mock private HostDao _hostDao;
+    @Mock private AgentManager _agentManager;
+    @Mock private NuageVspEntityBuilder _nuageVspEntityBuilder;
+    @Mock private NetworkDetailsDao _networkDetailsDao;
+    @Mock private VpcDetailsDao _vpcDetailsDao;
 
-    @Before
-    public void setUp() throws Exception {
-        super.setUp();
+    @InjectMocks
+    private NuageVspManagerImpl _nuageVspManager = new NuageVspManagerImpl();
 
-        _nuageVspManager = new NuageVspManagerImpl();
+    private NetworkVO setUpMockedNetwork(Long vpcId, String domainTemplateName) {
+        NetworkVO networkToMock = mock(NetworkVO.class);
+        when(networkToMock.getId()).thenReturn(NETWORK_ID);
 
-        _nuageVspManager._physicalNetworkServiceProviderDao = _physicalNetworkServiceProviderDao;
-        _nuageVspManager._physicalNetworkDao = _physicalNetworkDao;
-        _nuageVspManager._resourceMgr = _resourceManager;
-        _nuageVspManager._hostDetailsDao = _hostDetailsDao;
-        _nuageVspManager._nuageVspDao = _nuageVspDao;
-        _nuageVspManager._networkDao = _networkDao;
-        _nuageVspManager._hostDao = _hostDao;
-        _nuageVspManager._agentMgr = _agentManager;
-        _nuageVspManager._configDao = _configurationDao;
-        _nuageVspManager._nuageVspEntityBuilder = _nuageVspEntityBuilder;
+        reset(_vpcDetailsDao, _networkDetailsDao);
+
+        when(networkToMock.getVpcId()).thenReturn(vpcId);
+
+        if (domainTemplateName != null) {
+            if (vpcId != null) {
+                VpcDetailVO detail = new VpcDetailVO(vpcId, NuageVspManager.nuageDomainTemplateDetailName, domainTemplateName, false);
+                when(_vpcDetailsDao.findDetail(vpcId, NuageVspManager.nuageDomainTemplateDetailName)).thenReturn(detail);
+            } else {
+                NetworkDetailVO detail = new NetworkDetailVO(NETWORK_ID, NuageVspManager.nuageDomainTemplateDetailName, domainTemplateName, false);
+                when(_networkDetailsDao.findDetail(NETWORK_ID, NuageVspManager.nuageDomainTemplateDetailName)).thenReturn(detail);
+            }
+        }
+
+        return networkToMock;
     }
+
+    @Test
+    public void testNuagePreConfiguredDomainTemplates() {
+        NetworkVO _mockedL2Network = setUpMockedNetwork(VPC_ID, "VpcDomainTemplate2");
+        String checkDomainTemplate =_nuageVspManager.getPreConfiguredDomainTemplateName(_mockedL2Network);
+        assertEquals("VpcDomainTemplate2", checkDomainTemplate);
+
+        _mockedL2Network = setUpMockedNetwork(VPC_ID2, null);
+        checkDomainTemplate =_nuageVspManager.getPreConfiguredDomainTemplateName(_mockedL2Network);
+        assertEquals("VpcDomainTemplate", checkDomainTemplate);
+
+        _mockedL2Network = setUpMockedNetwork(null, "IsolatedDomainTemplate2");
+        checkDomainTemplate =_nuageVspManager.getPreConfiguredDomainTemplateName(_mockedL2Network);
+        assertEquals("IsolatedDomainTemplate2", checkDomainTemplate);
+
+        _mockedL2Network = setUpMockedNetwork(null, null);
+        checkDomainTemplate =_nuageVspManager.getPreConfiguredDomainTemplateName(_mockedL2Network);
+        assertEquals("IsolatedDomainTemplate", checkDomainTemplate);
+
+    }
+
 
     @Test
     public void testDeleteNuageVspDevice() throws ConfigurationException {
@@ -107,7 +145,7 @@ public class NuageVspManagerTest extends NuageTest {
 
         ConfigurationVO cmsIdConfig = mock(ConfigurationVO.class);
         when(cmsIdConfig.getValue()).thenReturn("1:1");
-        when(_configurationDao.findByName("nuagevsp.cms.id")).thenReturn(cmsIdConfig);
+        when(_configDao.findByName("nuagevsp.cms.id")).thenReturn(cmsIdConfig);
 
         final SyncNuageVspCmsIdAnswer answer = mock(SyncNuageVspCmsIdAnswer.class);
         when(answer.getResult()).thenReturn(true);

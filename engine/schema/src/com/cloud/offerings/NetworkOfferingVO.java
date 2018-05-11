@@ -130,6 +130,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "is_persistent")
     boolean isPersistent;
 
+    @Column(name = "for_vpc")
+    boolean forVpc;
+
     @Column(name = "egress_default_policy")
     boolean egressdefaultpolicy;
 
@@ -156,6 +159,9 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Column(name = "public_lb")
     boolean publicLb;
 
+    @Column(name="service_package_id")
+    String servicePackageUuid = null;
+
     @Override
     public boolean isKeepAliveEnabled() {
         return keepAliveEnabled;
@@ -163,6 +169,15 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     public void setKeepAliveEnabled(boolean keepAliveEnabled) {
         this.keepAliveEnabled = keepAliveEnabled;
+    }
+
+    @Override
+    public boolean getForVpc() {
+        return forVpc;
+    }
+
+    public void setForVpc(boolean isForVpc) {
+        this.forVpc = isForVpc;
     }
 
     @Override
@@ -206,6 +221,10 @@ public class NetworkOfferingVO implements NetworkOffering {
     @Override
     public String getTags() {
         return tags;
+    }
+
+    public void setTags(String tags) {
+        this.tags = tags;
     }
 
     public void setName(String name) {
@@ -306,7 +325,7 @@ public class NetworkOfferingVO implements NetworkOffering {
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps,
             Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode,
-            boolean specifyIpRanges, boolean isPersistent, boolean internalLb, boolean publicLb) {
+            boolean specifyIpRanges, boolean isPersistent, boolean internalLb, boolean publicLb, boolean isForVpc) {
         this.name = name;
         this.displayText = displayText;
         this.rateMbps = rateMbps;
@@ -332,12 +351,13 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.isPersistent = isPersistent;
         this.publicLb = publicLb;
         this.internalLb = internalLb;
+        this.forVpc = isForVpc;
     }
 
     public NetworkOfferingVO(String name, String displayText, TrafficType trafficType, boolean systemOnly, boolean specifyVlan, Integer rateMbps,
             Integer multicastRateMbps, boolean isDefault, Availability availability, String tags, Network.GuestType guestType, boolean conserveMode, boolean dedicatedLb,
             boolean sharedSourceNat, boolean redundantRouter, boolean elasticIp, boolean elasticLb, boolean specifyIpRanges, boolean inline, boolean isPersistent,
-            boolean associatePublicIP, boolean publicLb, boolean internalLb, boolean egressdefaultpolicy, boolean supportsStrechedL2, boolean supportsPublicAccess) {
+            boolean associatePublicIP, boolean publicLb, boolean internalLb, boolean isForVpc, boolean egressdefaultpolicy, boolean supportsStrechedL2, boolean supportsPublicAccess) {
         this(name,
             displayText,
             trafficType,
@@ -353,7 +373,7 @@ public class NetworkOfferingVO implements NetworkOffering {
             specifyIpRanges,
             isPersistent,
             internalLb,
-            publicLb);
+            publicLb, isForVpc);
         this.dedicatedLB = dedicatedLb;
         this.sharedSourceNat = sharedSourceNat;
         this.redundantRouter = redundantRouter;
@@ -378,7 +398,7 @@ public class NetworkOfferingVO implements NetworkOffering {
      *            TODO
      */
     public NetworkOfferingVO(String name, TrafficType trafficType, boolean specifyIpRanges) {
-        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null, true, specifyIpRanges, false, false, false);
+        this(name, "System Offering for " + name, trafficType, true, false, 0, 0, true, Availability.Required, null, null, true, specifyIpRanges, false, false, false, false);
         this.state = State.Enabled;
     }
 
@@ -395,6 +415,7 @@ public class NetworkOfferingVO implements NetworkOffering {
             null,
             Network.GuestType.Isolated,
             true,
+            false,
             false,
             false,
             false,
@@ -500,8 +521,17 @@ public class NetworkOfferingVO implements NetworkOffering {
         return supportsStrechedL2;
     }
 
+    public void  setServicePackage(String servicePackageUuid) {
+        this.servicePackageUuid = servicePackageUuid;
+    }
+
     @Override
     public boolean getSupportsPublicAccess() {
         return supportsPublicAccess;
+    }
+
+    @Override
+    public String getServicePackage() {
+        return servicePackageUuid;
     }
 }

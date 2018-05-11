@@ -33,6 +33,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -259,6 +260,7 @@ import com.cloud.storage.UploadVO;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeStats;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -865,6 +867,15 @@ public class ApiDBUtils {
         return s_resourceLimitMgr.findCorrectResourceLimitForAccount(accountId, limit, type);
     }
 
+    public static long findCorrectResourceLimitForDomain(Long limit, ResourceType resourceType, long domainId) {
+        //-- No limits for Root domain
+        if (domainId == Domain.ROOT_DOMAIN) {
+            return Resource.RESOURCE_UNLIMITED;
+        }
+        //--If limit doesn't have a value then fetch default limit from the configs
+        return (limit == null) ? s_resourceLimitMgr.findDefaultResourceLimitForDomain(resourceType) : limit;
+    }
+
     public static long getResourceCount(ResourceType type, long accountId) {
         AccountVO account = s_accountDao.findById(accountId);
 
@@ -922,6 +933,10 @@ public class ApiDBUtils {
         return s_statsCollector.getVmStats(hostId);
     }
 
+    public static VolumeStats getVolumeStatistics(String volumeUuid) {
+        return s_statsCollector.getVolumeStats(volumeUuid);
+    }
+
     public static StorageStats getSecondaryStorageStatistics(long id) {
         return s_statsCollector.getStorageStats(id);
     }
@@ -973,6 +988,10 @@ public class ApiDBUtils {
 
     public static DomainVO findDomainById(Long domainId) {
         return s_domainDao.findByIdIncludingRemoved(domainId);
+    }
+
+    public static DomainJoinVO findDomainJoinVOById(Long domainId) {
+        return s_domainJoinDao.findByIdIncludingRemoved(domainId);
     }
 
     public static DomainVO findDomainByIdIncludingRemoved(Long domainId) {
@@ -1852,8 +1871,8 @@ public class ApiDBUtils {
         return s_imageStoreJoinDao.newImageStoreView(vr);
     }
 
-    public static DomainResponse newDomainResponse(ResponseView view, DomainJoinVO ve) {
-        return s_domainJoinDao.newDomainResponse(view, ve);
+    public static DomainResponse newDomainResponse(ResponseView view, EnumSet<DomainDetails> details, DomainJoinVO ve) {
+        return s_domainJoinDao.newDomainResponse(view, details, ve);
     }
 
     public static AccountResponse newAccountResponse(ResponseView view, AccountJoinVO ve) {

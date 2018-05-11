@@ -19,38 +19,48 @@
 
 package com.cloud.network.manager;
 
+import java.net.URI;
+import java.util.List;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+
+import com.cloud.agent.api.manager.EntityExistsCommand;
 import com.cloud.api.commands.AddNuageVspDeviceCmd;
+import com.cloud.api.commands.AssociateNuageVspDomainTemplateCmd;
 import com.cloud.api.commands.DeleteNuageVspDeviceCmd;
 import com.cloud.api.commands.ListNuageVspDevicesCmd;
+import com.cloud.api.commands.ListNuageVspDomainTemplatesCmd;
 import com.cloud.api.commands.UpdateNuageVspDeviceCmd;
 import com.cloud.api.response.NuageVlanIpRangeResponse;
 import com.cloud.api.response.NuageVspDeviceResponse;
 import com.cloud.dc.Vlan;
+import com.cloud.api.response.NuageVspDomainTemplateResponse;
+import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.host.HostVO;
+import com.cloud.network.Network;
 import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.utils.component.PluggableService;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigKey.Scope;
 
-import java.util.List;
+
 
 public interface NuageVspManager extends PluggableService {
 
-    static final String nuageVspSharedNetworkOfferingWithSGServiceName = "DefaultNuageVspSharedNetworkOfferingWithSGService";
+    String nuageVspSharedNetworkOfferingWithSGServiceName = "DefaultNuageVspSharedNetworkOfferingWithSGService";
 
-    static final String nuageVPCOfferingName = "Nuage VSP VPC Offering";
+    String nuageVPCOfferingName = "Nuage VSP VPC Offering";
 
-    static final String nuageVPCOfferingDisplayText = "Nuage VSP VPC Offering";
+    String nuageVPCOfferingDisplayText = "Nuage VSP VPC Offering";
 
-    static final String nuageDomainTemplateDetailName = "domainTemplateName";
+    String nuageDomainTemplateDetailName = "domainTemplateName";
 
-    static final String nuageUnderlayVlanIpRangeDetailKey = "nuage.underlay";
+    String nuageUnderlayVlanIpRangeDetailKey = "nuage.underlay";
 
-    static final ConfigKey<Boolean> NuageVspConfigDns = new ConfigKey<Boolean>(Boolean.class, "nuagevsp.configure.dns", "Advanced", "true",
+    ConfigKey<Boolean> NuageVspConfigDns = new ConfigKey<Boolean>(Boolean.class, "nuagevsp.configure.dns", "Advanced", "true",
             "Defines if NuageVsp plugin needs to configure DNS setting for a VM or not. True will configure the DNS and false will not configure the DNS settings", true,
             Scope.Global, null);
 
-    static final ConfigKey<Boolean> NuageVspDnsExternal = new ConfigKey<Boolean>(
+    ConfigKey<Boolean> NuageVspDnsExternal = new ConfigKey<Boolean>(
             Boolean.class,
             "nuagevsp.dns.external",
             "Advanced",
@@ -61,17 +71,29 @@ public interface NuageVspManager extends PluggableService {
                     + "If nuagevsp.configure.dns is false, DNS server will not be configured in the VM. Default value for this flag is true",
             true, Scope.Global, null);
 
-    static final ConfigKey<String> NuageVspConfigGateway = new ConfigKey<String>(String.class, "nuagevsp.configure.gateway.systemid", "Advanced", "",
+    ConfigKey<String> NuageVspConfigGateway = new ConfigKey<String>(String.class, "nuagevsp.configure.gateway.systemid", "Advanced", "",
             "Defines the systemID of the gateway configured in VSP", true, Scope.Global, null);
 
-    static final ConfigKey<String> NuageVspSharedNetworkDomainTemplateName = new ConfigKey<String>(String.class, "nuagevsp.sharedntwk.domaintemplate.name",
+    ConfigKey<String> NuageVspSharedNetworkDomainTemplateName = new ConfigKey<String>(String.class, "nuagevsp.sharedntwk.domaintemplate.name",
             "Advanced", "", "Defines if NuageVsp plugin needs to use pre created Domain Template configured in VSP for shared networks", true, Scope.Global, null);
 
-    static final ConfigKey<String> NuageVspVpcDomainTemplateName = new ConfigKey<String>(String.class, "nuagevsp.vpc.domaintemplate.name",
+    ConfigKey<String> NuageVspVpcDomainTemplateName = new ConfigKey<String>(String.class, "nuagevsp.vpc.domaintemplate.name",
             "Advanced", "", "Defines if NuageVsp plugin needs to use pre created Domain Template configured in VSP for VPCs", true, Scope.Global, null);
 
-    static final ConfigKey<String> NuageVspIsolatedNetworkDomainTemplateName = new ConfigKey<String>(String.class, "nuagevsp.isolatedntwk.domaintemplate.name",
+    ConfigKey<String> NuageVspIsolatedNetworkDomainTemplateName = new ConfigKey<String>(String.class, "nuagevsp.isolatedntwk.domaintemplate.name",
             "Advanced", "", "Defines if NuageVsp plugin needs to use pre created Domain Template configured in VSP for isolated networks", true, Scope.Global, null);
+
+    String NETWORK_METADATA_VSD_DOMAIN_ID = "vsdDomainId";
+
+    String NETWORK_METADATA_VSD_ZONE_ID = "vsdZoneId";
+
+    String NETWORK_METADATA_VSD_SUBNET_ID = "vsdSubnetId";
+
+    String NETWORK_METADATA_VSD_MANAGED = "isVsdManaged";
+
+    String CMSID_CONFIG_KEY = "nuagevsp.cms.id";
+
+    String NUAGE_VSP_ISOLATION = "VSP";
 
     NuageVspDeviceVO addNuageVspDevice(AddNuageVspDeviceCmd cmd);
 
@@ -92,5 +114,62 @@ public interface NuageVspManager extends PluggableService {
     boolean updateNuageUnderlayVlanIpRange(long vlanIpRangeId, boolean enabled);
 
     List<NuageVlanIpRangeResponse> filterNuageVlanIpRanges(List<? extends Vlan> vlanIpRanges, Boolean underlay);
+
+    List<NuageVspDomainTemplateResponse> listNuageVspDomainTemplates(ListNuageVspDomainTemplatesCmd cmd);
+
+    List<NuageVspDomainTemplateResponse> listNuageVspDomainTemplates(long domainId, String keyword, Long zoneId, Long physicalNetworkId);
+
+    /**
+     * Associates a Nuage Vsp domain template with a
+     * @param cmd Associate cmd which contains all the data
+     */
+    void associateNuageVspDomainTemplate(AssociateNuageVspDomainTemplateCmd cmd);
+
+    /**
+     * Queries the VSD to check if the entity provided in the entityCmd exists on the VSD
+     * @param cmd entityCommand which contains the ACS class of the entity and the UUID
+     * @param hostId the hostId of the VSD
+     * @return true if an entity exists with the UUI on the VSD, otherwise false.
+     */
+    boolean entityExist(EntityExistsCommand cmd, Long hostId);
+
+    /**
+     * Sets the preconfigured domain template for a given network
+     * @param network the network for which we want to set the domain template
+     * @param domainTemplateName the domain template name we want to use
+     */
+    void setPreConfiguredDomainTemplateName(Network network, String domainTemplateName);
+
+    /**
+     * Returns the current pre configured domain template for a given network
+     * @param network the network for which we want the domain template name
+     * @return the domain template name
+     */
+    String getPreConfiguredDomainTemplateName(Network network);
+
+    /**
+     * Checks if a given domain template exists or not on the VSD.
+     * @param domainId Id of the domain to search in.
+     * @param domainTemplate The name of the domain template for which we need to query the VSD.
+     * @param zoneId zoneId OR PhysicalNetworkId needs to be provided.
+     * @param physicalNetworkId zoneId OR PhysicalNetworkId needs to be provided.
+     * @return true if the domain template exists on the VSD else false if it does not exist on the VSD
+     */
+    boolean checkIfDomainTemplateExist(Long domainId, String domainTemplate, Long zoneId, Long physicalNetworkId);
+
+    /**
+     * calculates the new broadcast uri of a network and persists it in the database
+     * @param network the network for which you want to calculate the broadcast uri
+     * @throws InsufficientVirtualNetworkCapacityException in case there is no free ip that can be used as the VR ip.
+     */
+    void updateBroadcastUri(Network network) throws InsufficientVirtualNetworkCapacityException;
+
+    /**
+     * Calculates the broadcast uri based on the network and the offering of the given network
+     * @param network the network for which you want to calculate the broadcast uri
+     * @return the calculated broadcast uri
+     * @throws InsufficientVirtualNetworkCapacityException in case there is no free ip that can be used as the VR ip.
+     */
+    URI calculateBroadcastUri(Network network) throws InsufficientVirtualNetworkCapacityException;
 
 }

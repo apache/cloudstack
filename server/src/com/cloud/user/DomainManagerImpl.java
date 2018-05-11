@@ -23,9 +23,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainsCmd;
 import org.apache.cloudstack.api.command.admin.domain.UpdateDomainCmd;
@@ -36,7 +33,10 @@ import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.region.RegionManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -108,6 +108,8 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     private NetworkOrchestrationService _networkMgr;
     @Inject
     private NetworkDomainDao _networkDomainDao;
+    @Inject
+    private ConfigurationManager _configMgr;
 
     @Inject
     MessageBus _messageBus;
@@ -307,6 +309,14 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
                     tryCleanupDomain(domain, ownerId);
                 } else {
                     removeDomainWithNoAccountsForCleanupNetworksOrDedicatedResources(domain);
+                }
+
+                if (!_configMgr.releaseDomainSpecificVirtualRanges(domain.getId())) {
+                    CloudRuntimeException e = new CloudRuntimeException("Can't delete the domain yet because failed to release domain specific virtual ip ranges");
+                    e.addProxyObject(domain.getUuid(), "domainId");
+                    throw e;
+                } else {
+                    s_logger.debug("Domain specific Virtual IP ranges " + " are successfully released as a part of domain id=" + domain.getId() + " cleanup.");
                 }
 
                 cleanupDomainOfferings(domain.getId());

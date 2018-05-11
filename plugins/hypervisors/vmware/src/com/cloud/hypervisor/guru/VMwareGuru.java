@@ -32,6 +32,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
@@ -94,6 +95,7 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
@@ -101,6 +103,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
+import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
@@ -127,6 +130,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private NetworkModel _networkMgr;
     @Inject
     private NicDao _nicDao;
+    @Inject
+    private DomainRouterDao _domainRouterDao;
     @Inject
     private PhysicalNetworkTrafficTypeDao _physicalNetworkTrafficTypeDao;
     @Inject
@@ -216,6 +221,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             }
         }
 
+        if (vm.getType() == VirtualMachine.Type.NetScalerVm) {
+            details.put(VmDetailConstants.ROOT_DISK_CONTROLLER, "scsi");
+        }
+
         List<NicProfile> nicProfiles = vm.getNics();
 
         for (NicProfile nicProfile : nicProfiles) {
@@ -292,6 +301,19 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 }
 
                 to.setNics(expandedNics);
+
+                VirtualMachine router = vm.getVirtualMachine();
+                DomainRouterVO routerVO = _domainRouterDao.findById(router.getId());
+                if (routerVO != null && routerVO.getIsRedundantRouter()) {
+                    Long peerRouterId = _nicDao.getPeerRouterId(publicNicProfile.getMacAddress(), router.getId());
+                    DomainRouterVO peerRouterVO = null;
+                    if (peerRouterId != null) {
+                        peerRouterVO = _domainRouterDao.findById(peerRouterId);
+                        if (peerRouterVO != null) {
+                            details.put("PeerRouterInstanceName", peerRouterVO.getInstanceName());
+                        }
+                    }
+                }
             }
 
             StringBuffer sbMacSequence = new StringBuffer();
@@ -413,13 +435,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @DB
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
         boolean needDelegation = false;
-
         if (cmd instanceof StorageSubSystemCommand) {
             Boolean fullCloneEnabled = VmwareFullClone.value();
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
             c.setExecuteInSequence(fullCloneEnabled);
         }
-
+        if (cmd instanceof DownloadCommand) {
+          cmd.setContextParam(VmwareManager.s_vmwareOVAPackageTimeout.key(), String.valueOf(VmwareManager.s_vmwareOVAPackageTimeout.value()));
+        }
         //NOTE: the hostid can be a hypervisor host, or a ssvm agent. For copycommand, if it's for volume upload, the hypervisor
         //type is empty, so we need to check the format of volume at first.
         if (cmd instanceof CopyCommand) {
@@ -493,11 +516,11 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             cmd.setContextParam("execid", String.valueOf(execLog.getId()));
             cmd.setContextParam("noderuninfo", String.format("%d-%d", _clusterMgr.getManagementNodeId(), _clusterMgr.getCurrentRunId()));
             cmd.setContextParam("vCenterSessionTimeout", String.valueOf(_vmwareMgr.getVcenterSessionTimeout()));
+            cmd.setContextParam(VmwareManager.s_vmwareOVAPackageTimeout.key(), String.valueOf(VmwareManager.s_vmwareOVAPackageTimeout.value()));
 
             if (cmd instanceof BackupSnapshotCommand || cmd instanceof CreatePrivateTemplateFromVolumeCommand ||
                 cmd instanceof CreatePrivateTemplateFromSnapshotCommand || cmd instanceof CopyVolumeCommand || cmd instanceof CopyCommand ||
                 cmd instanceof CreateVolumeOVACommand || cmd instanceof PrepareOVAPackingCommand || cmd instanceof CreateVolumeFromSnapshotCommand) {
-
                 String workerName = _vmwareMgr.composeWorkerName();
                 long checkPointId = 1;
                 // FIXME: Fix                    long checkPointId = _checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(hostDetails.get("guid"), workerName));
@@ -510,6 +533,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
                 // FIXME: Fix                    long checkPointId2 = _checkPointMgr.pushCheckPoint(new VmwareCleanupMaid(hostDetails.get("guid"), workerName2));
                 cmd.setContextParam("worker2", workerName2);
                 cmd.setContextParam("checkpoint2", String.valueOf(checkPointId2));
+                cmd.setContextParam("searchexludefolders", _vmwareMgr.s_vmwareSearchExcludeFolder.value());
             }
 
             return new Pair<Boolean, Long>(Boolean.TRUE, cmdTarget.first().getId());

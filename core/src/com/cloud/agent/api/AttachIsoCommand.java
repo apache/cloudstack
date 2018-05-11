@@ -25,14 +25,22 @@ public class AttachIsoCommand extends Command {
     private String storeUrl;
     private String isoPath;
     private boolean attach;
+    private Integer deviceKey;
+    private boolean force;
 
     protected AttachIsoCommand() {
     }
 
-    public AttachIsoCommand(String vmName, String isoPath, boolean attach) {
+    public AttachIsoCommand(String vmName, String isoPath, boolean attach, Integer deviceKey, boolean force) {
         this.vmName = vmName;
         this.isoPath = isoPath;
         this.attach = attach;
+        this.deviceKey = deviceKey;
+        this.force = force;
+    }
+
+    public AttachIsoCommand(String vmName, String isoPath, boolean attach) {
+        this(vmName, isoPath, attach, null, false);
     }
 
     @Override
@@ -52,11 +60,27 @@ public class AttachIsoCommand extends Command {
         return attach;
     }
 
+    public void setAttach(boolean attach) {
+        this.attach = attach;
+    }
+
     public String getStoreUrl() {
         return storeUrl;
     }
 
     public void setStoreUrl(String url) {
         storeUrl = url;
+    }
+
+    public void setDeviceKey(Integer deviceKey) {
+        this.deviceKey = deviceKey;
+    }
+
+    public Integer getDeviceKey() {
+        return deviceKey;
+    }
+
+    public boolean isForce() {
+        return force;
     }
 }

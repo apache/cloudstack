@@ -59,7 +59,7 @@ public class OutOfBandManagementVO implements OutOfBandManagement {
     private String address;
 
     @Column(name = "port")
-    private Integer port;
+    private String port;
 
     @Column(name = "username")
     private String username;
@@ -121,7 +121,7 @@ public class OutOfBandManagementVO implements OutOfBandManagement {
     }
 
     @Override
-    public Integer getPort() {
+    public String getPort() {
         return port;
     }
 
@@ -173,7 +173,7 @@ public class OutOfBandManagementVO implements OutOfBandManagement {
     }
 
     @Override
-    public void setPort(Integer port) {
+    public void setPort(String port) {
         this.port = port;
     }
 

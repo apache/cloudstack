@@ -37,7 +37,9 @@ public interface Resource {
         private String name;
         private ResourceOwnerType[] supportedOwners;
         private int ordinal;
-        public static final long bytesToGiB = 1024 * 1024 * 1024;
+        public static final long bytesToKiB = 1024;
+        public static final long bytesToMiB = bytesToKiB * 1024;
+        public static final long bytesToGiB = bytesToMiB * 1024;
 
         ResourceType(String name, int ordinal, ResourceOwnerType... supportedOwners) {
             this.name = name;
@@ -70,6 +72,15 @@ public interface Resource {
 
         public int getOrdinal() {
             return ordinal;
+        }
+
+        public static ResourceType fromOrdinal(int ordinal) {
+            for (ResourceType r : ResourceType.values()) {
+                if (r.ordinal == ordinal) {
+                    return r;
+                }
+            }
+            return null;
         }
     }
 

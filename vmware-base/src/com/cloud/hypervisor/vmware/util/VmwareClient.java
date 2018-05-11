@@ -37,6 +37,7 @@ import com.vmware.vim25.InvalidCollectorVersionFaultMsg;
 import com.vmware.vim25.InvalidPropertyFaultMsg;
 import com.vmware.vim25.LocalizedMethodFault;
 import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.MethodFault;
 import com.vmware.vim25.ObjectContent;
 import com.vmware.vim25.ObjectSpec;
 import com.vmware.vim25.ObjectUpdate;
@@ -46,9 +47,11 @@ import com.vmware.vim25.PropertyChangeOp;
 import com.vmware.vim25.PropertyFilterSpec;
 import com.vmware.vim25.PropertyFilterUpdate;
 import com.vmware.vim25.PropertySpec;
+import com.vmware.vim25.RequestCanceled;
 import com.vmware.vim25.RuntimeFaultFaultMsg;
 import com.vmware.vim25.SelectionSpec;
 import com.vmware.vim25.ServiceContent;
+import com.vmware.vim25.TaskInfo;
 import com.vmware.vim25.TaskInfoState;
 import com.vmware.vim25.TraversalSpec;
 import com.vmware.vim25.UpdateSet;
@@ -347,16 +350,46 @@ public class VmwareClient {
             Object[] result = waitForValues(task, new String[] { "info.state", "info.error" }, new String[] { "state" }, new Object[][] { new Object[] {
                     TaskInfoState.SUCCESS, TaskInfoState.ERROR } });
 
-            if (result[0].equals(TaskInfoState.SUCCESS)) {
-                retVal = true;
+            if (result != null && result.length == 2) { //result for 2 properties: info.state, info.error
+                if (result[0].equals(TaskInfoState.SUCCESS)) {
+                    retVal = true;
+                }
+                if (result[1] instanceof LocalizedMethodFault) {
+                    throw new RuntimeException(((LocalizedMethodFault)result[1]).getLocalizedMessage());
+                }
             }
-            if (result[1] instanceof LocalizedMethodFault) {
-                throw new RuntimeException(((LocalizedMethodFault) result[1]).getLocalizedMessage());
+        } catch (WebServiceException we) {
+            s_logger.warn("Session to vCenter failed with: " + we.getLocalizedMessage());
+
+            TaskInfo taskInfo = (TaskInfo)getDynamicProperty(task, "info");
+            if (!taskInfo.isCancelable()) {
+                s_logger.warn("vCenter task: " + taskInfo.getName() + "(" + taskInfo.getKey() + ")" + " will continue to run on vCenter because the task cannot be cancelled");
+                throw new RuntimeException(we.getLocalizedMessage());
             }
-        } catch(WebServiceException we) {
-            s_logger.debug("Cancelling vCenter task because task failed with " + we.getLocalizedMessage());
+
+            s_logger.debug("Cancelling vCenter task: " + taskInfo.getName() + "(" + taskInfo.getKey() + ")");
             getService().cancelTask(task);
-            throw new RuntimeException("vCenter task failed due to " + we.getLocalizedMessage());
+
+            // Since task cancellation is asynchronous, wait for the task to be cancelled
+            Object[] result = waitForValues(task, new String[] {"info.state", "info.error"}, new String[] {"state"},
+                    new Object[][] {new Object[] {TaskInfoState.SUCCESS, TaskInfoState.ERROR}});
+
+            if (result != null && result.length == 2) { //result for 2 properties: info.state, info.error
+                if (result[0].equals(TaskInfoState.SUCCESS)) {
+                    s_logger.warn("Failed to cancel vCenter task: " + taskInfo.getName() + "(" + taskInfo.getKey() + ")" + " and the task successfully completed");
+                    retVal = true;
+                }
+
+                if (result[1] instanceof LocalizedMethodFault) {
+                    MethodFault fault = ((LocalizedMethodFault)result[1]).getFault();
+                    if (fault instanceof RequestCanceled) {
+                        s_logger.debug("vCenter task " + taskInfo.getName() + "(" + taskInfo.getKey() + ")" + " was successfully cancelled");
+                        throw new RuntimeException(we.getLocalizedMessage());
+                    }
+                } else {
+                    throw new RuntimeException(((LocalizedMethodFault)result[1]).getLocalizedMessage());
+                }
+            }
         }
         return retVal;
     }

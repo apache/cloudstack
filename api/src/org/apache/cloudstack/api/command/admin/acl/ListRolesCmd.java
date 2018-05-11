@@ -17,31 +17,25 @@
 
 package org.apache.cloudstack.api.command.admin.acl;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
-import com.google.common.base.Strings;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.RoleResponse;
+import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import com.cloud.user.Account;
+import com.google.common.base.Strings;
 
-@APICommand(name = ListRolesCmd.APINAME, description = "Lists dynamic roles in CloudStack", responseObject = RoleResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
-        since = "4.9.0",
-        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin})
+@APICommand(name = ListRolesCmd.APINAME, description = "Lists dynamic roles in CloudStack", responseObject = RoleResponse.class, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false, since = "4.9.0", authorized = {
+        RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin})
 public class ListRolesCmd extends BaseCmd {
     public static final String APINAME = "listRoles";
 
@@ -112,13 +106,13 @@ public class ListRolesCmd extends BaseCmd {
     }
 
     @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        final List<Role> roles;
+    public void execute() {
+        List<Role> roles;
         if (getId() != null && getId() > 0L) {
             roles = Collections.singletonList(roleService.findRole(getId()));
-        } else if (!Strings.isNullOrEmpty(getName())) {
+        } else if (StringUtils.isNotBlank(getName())) {
             roles = roleService.findRolesByName(getName());
-        } else if (getRoleType() != null){
+        } else if (getRoleType() != null) {
             roles = roleService.findRolesByType(getRoleType());
         } else {
             roles = roleService.listRoles();

@@ -16,18 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.Date;
-import java.util.Map;
-
+import com.cloud.serializer.Param;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.StoragePoolStatus;
 import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.serializer.Param;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.StoragePoolStatus;
+import java.util.Date;
+import java.util.Map;
 
 @EntityReference(value = StoragePool.class)
 public class StoragePoolResponse extends BaseResponse {
@@ -95,6 +93,10 @@ public class StoragePoolResponse extends BaseResponse {
     @Param(description = "IOPS CloudStack can provision from this storage pool")
     private Long capacityIops;
 
+    @SerializedName("allocatediops")
+    @Param(description = "total min IOPS currently in use by volumes")
+    private Long allocatedIops;
+
     @SerializedName("tags")
     @Param(description = "the tags for the storage pool")
     private String tags;
@@ -118,6 +120,10 @@ public class StoragePoolResponse extends BaseResponse {
     @SerializedName("suitableformigration")
     @Param(description = "true if this pool is suitable to migrate a volume," + " false otherwise")
     private Boolean suitableForMigration;
+
+    @SerializedName("provider")
+    @Param(description = "Storage provider for this pool")
+    private String provider;
 
     @SerializedName(ApiConstants.STORAGE_CAPABILITIES)
     @Param(description = "the storage pool capabilities")
@@ -286,6 +292,10 @@ public class StoragePoolResponse extends BaseResponse {
         this.capacityIops = capacityIops;
     }
 
+    public void setAllocatedIops(Long allocatedIops) {
+       this.allocatedIops = allocatedIops;
+    }
+
     public String getTags() {
         return tags;
     }
@@ -316,5 +326,13 @@ public class StoragePoolResponse extends BaseResponse {
 
     public Boolean getSuitableForMigration() {
         return suitableForMigration;
+    }
+
+    public String getProvider() {
+        return provider;
+    }
+
+    public void setProvider(String provider) {
+        this.provider = provider;
     }
 }

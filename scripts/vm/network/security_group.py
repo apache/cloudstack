@@ -485,7 +485,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
 
     #add secodnary nic ips to ipset
     secIpSet = "1"
-    ips = sec_ips.split(':')
+    ips = sec_ips.split(';')
     ips.pop()
     if ips[0] == "0":
         secIpSet = "0";
@@ -951,16 +951,15 @@ def parse_network_rules(rules):
   if rules is None or len(rules) == 0:
     return ret
 
-  lines = rules.split(';')[:-1]
+  lines = rules.split('NEXT;')[:-1]
   for line in lines:
-    tokens = line.split(':', 4)
-    if len(tokens) != 5:
+    tokens = line.split(';', 3)
+    if len(tokens) != 4:
       continue
 
-    ruletype = tokens[0]
-    protocol = tokens[1]
-    start = int(tokens[2])
-    end = int(tokens[3])
+    ruletype, protocol = tokens[0].split(':')
+    start = int(tokens[1])
+    end = int(tokens[2])
     cidrs = tokens.pop();
 
     ipv4 = []
@@ -1052,7 +1051,11 @@ def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, ru
             elif 'icmp' != protocol:
                 execute('ip6tables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
             else:
-                execute('ip6tables -I ' + vmchain + ' -p icmpv6 --icmpv6-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
+                # ip6tables does not allow '--icmpv6-type any', allowing all ICMPv6 is done by not allowing a specific type
+                if range == 'any':
+                    execute('ip6tables -I ' + vmchain + ' -p icmpv6 ' + direction + ' ' + ip + ' -j ' + action)
+                else:
+                    execute('ip6tables -I ' + vmchain + ' -p icmpv6 --icmpv6-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
 
     egress_vmchain = egress_chain_name(vm_name)
     if egressrule_v4 == 0 :
@@ -1151,8 +1154,7 @@ def addFWFramework(brname):
         execute("sysctl -w net.bridge.bridge-nf-call-iptables=1")
         execute("sysctl -w net.bridge.bridge-nf-call-ip6tables=1")
     except:
-        logging.debug("failed to turn on bridge netfilter")
-        return False
+        logging.warn("failed to turn on bridge netfilter")
 
     brfw = getBrfw(brname)
     try:

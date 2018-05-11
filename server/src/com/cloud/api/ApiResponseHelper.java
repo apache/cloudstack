@@ -17,6 +17,7 @@
 package com.cloud.api;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -97,6 +98,7 @@ import com.cloud.network.as.AutoScaleVmProfileVO;
 import com.cloud.network.as.Condition;
 import com.cloud.network.as.ConditionVO;
 import com.cloud.network.as.Counter;
+import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerVO;
 import com.cloud.network.dao.NetworkVO;
@@ -161,18 +163,23 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.net.Dhcp;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
 import com.cloud.vm.InstanceGroup;
 import com.cloud.vm.Nic;
+import com.cloud.vm.NicExtraDhcpOptionVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
+import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
 import org.apache.cloudstack.acl.ControlledEntity;
@@ -232,6 +239,7 @@ import org.apache.cloudstack.api.response.NetworkACLItemResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
 import org.apache.cloudstack.api.response.NicResponse;
 import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
 import org.apache.cloudstack.api.response.OvsProviderResponse;
@@ -316,6 +324,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.stream.Collectors;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -346,6 +355,12 @@ public class ApiResponseHelper implements ResponseGenerator {
     private PrimaryDataStoreDao _storagePoolDao;
     @Inject
     private ClusterDetailsDao _clusterDetailsDao;
+    @Inject
+    private ResourceTagDao _resourceTagDao;
+    @Inject
+    private NicExtraDhcpOptionDao _nicExtraDhcpOptionDao;
+    @Inject
+    private IPAddressDao userIpAddressDao;
 
     @Override
     public UserResponse createUserResponse(User user) {
@@ -412,7 +427,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             populateAccount(resourceLimitResponse, limit.getOwnerId());
             populateDomain(resourceLimitResponse, accountTemp.getDomainId());
         }
-        resourceLimitResponse.setResourceType(Integer.toString(limit.getType().getOrdinal()));
+        resourceLimitResponse.setResourceType(limit.getType());
 
         if ((limit.getType() == ResourceType.primary_storage || limit.getType() == ResourceType.secondary_storage) && limit.getMax() >= 0) {
             resourceLimitResponse.setMax((long)Math.ceil((double)limit.getMax() / ResourceType.bytesToGiB));
@@ -438,7 +453,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             populateDomain(resourceCountResponse, resourceCount.getOwnerId());
         }
 
-        resourceCountResponse.setResourceType(Integer.toString(resourceCount.getType().getOrdinal()));
+        resourceCountResponse.setResourceType(resourceCount.getType());
         resourceCountResponse.setResourceCount(resourceCount.getCount());
         resourceCountResponse.setObjectName("resourcecount");
         return resourceCountResponse;
@@ -480,6 +495,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             snapshotResponse.setVolumeId(volume.getUuid());
             snapshotResponse.setVolumeName(volume.getName());
             snapshotResponse.setVolumeType(volume.getVolumeType().name());
+            snapshotResponse.setVirtualSize(volume.getSize());
             DataCenter zone = ApiDBUtils.findZoneById(volume.getDataCenterId());
             if (zone != null) {
                 snapshotResponse.setZoneId(zone.getUuid());
@@ -734,11 +750,26 @@ public class ApiResponseHelper implements ResponseGenerator {
                     vlanResponse.setPhysicalNetworkId(pnw.getUuid());
                 }
             }
+            vlanResponse.setForSystemVms(isForSystemVms(vlan.getId()));
             vlanResponse.setObjectName("vlan");
             return vlanResponse;
         } catch (InstantiationException | IllegalAccessException e) {
             throw new CloudRuntimeException("Failed to create Vlan IP Range response", e);
         }
+    }
+
+    /**
+     * Return true if vlan IP range is dedicated for system vms (SSVM and CPVM), false if not
+     * @param vlanId vlan id
+     * @return true if VLAN IP range is dedicated to system vms
+     */
+    private boolean isForSystemVms(long vlanId){
+        SearchBuilder<IPAddressVO> sb = userIpAddressDao.createSearchBuilder();
+        sb.and("vlanId", sb.entity().getVlanId(), SearchCriteria.Op.EQ);
+        SearchCriteria<IPAddressVO> sc = sb.create();
+        sc.setParameters("vlanId", vlanId);
+        IPAddressVO userIpAddresVO = userIpAddressDao.findOneBy(sc);
+        return userIpAddresVO.isForSystemVms();
     }
 
     @Override
@@ -888,6 +919,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         DataCenter zone = ApiDBUtils.findZoneById(publicIp.getDataCenterId());
         if (zone != null) {
             lbResponse.setZoneId(zone.getUuid());
+            lbResponse.setZoneName(zone.getName());
         }
 
         //set tag information
@@ -933,10 +965,25 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public PodResponse createPodResponse(Pod pod, Boolean showCapacities) {
         String[] ipRange = new String[2];
+        List<String> startIp = new ArrayList<String>();
+        List<String> endIp = new ArrayList<String>();
+        List<String> forSystemVms = new ArrayList<String>();
+        List<String> vlanIds = new ArrayList<String>();
+
         if (pod.getDescription() != null && pod.getDescription().length() > 0) {
-            ipRange = pod.getDescription().split("-");
-        } else {
-            ipRange[0] = pod.getDescription();
+            final String[] existingPodIpRanges = pod.getDescription().split(",");
+
+            for(String podIpRange: existingPodIpRanges) {
+                final String[] existingPodIpRange = podIpRange.split("-");
+
+                startIp.add(((existingPodIpRange.length > 0) && (existingPodIpRange[0] != null)) ? existingPodIpRange[0] : "");
+                endIp.add(((existingPodIpRange.length > 1) && (existingPodIpRange[1] != null)) ? existingPodIpRange[1] : "");
+                forSystemVms.add((existingPodIpRange.length > 2) && (existingPodIpRange[2] != null) ? existingPodIpRange[2] : "0");
+                vlanIds.add((existingPodIpRange.length > 3) &&
+                        (existingPodIpRange[3] != null && !existingPodIpRange.equals("untagged")) ?
+                        BroadcastDomainType.Vlan.toUri(existingPodIpRange[3]).toString() :
+                        BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString());
+            }
         }
 
         PodResponse podResponse = new PodResponse();
@@ -948,8 +995,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             podResponse.setZoneName(zone.getName());
         }
         podResponse.setNetmask(NetUtils.getCidrNetmask(pod.getCidrSize()));
-        podResponse.setStartIp(ipRange[0]);
-        podResponse.setEndIp(((ipRange.length > 1) && (ipRange[1] != null)) ? ipRange[1] : "");
+        podResponse.setStartIp(startIp);
+        podResponse.setEndIp(endIp);
+        podResponse.setForSystemVms(forSystemVms);
+        podResponse.setVlanId(vlanIds);
         podResponse.setGateway(pod.getGateway());
         podResponse.setAllocationState(pod.getAllocationState().toString());
         if (showCapacities != null && showCapacities) {
@@ -958,6 +1007,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             for (SummedCapacity capacity : capacities) {
                 CapacityResponse capacityResponse = new CapacityResponse();
                 capacityResponse.setCapacityType(capacity.getCapacityType());
+                capacityResponse.setCapacityName(CapacityVO.getCapacityName(capacity.getCapacityType()));
                 capacityResponse.setCapacityUsed(capacity.getUsedCapacity() + capacity.getReservedCapacity());
                 if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
                     List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(null, pod.getId(), null);
@@ -994,6 +1044,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (SummedCapacity capacity : capacities) {
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityType(capacity.getCapacityType());
+            capacityResponse.setCapacityName(CapacityVO.getCapacityName(capacity.getCapacityType()));
             capacityResponse.setCapacityUsed(capacity.getUsedCapacity() + capacity.getReservedCapacity());
             if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
                 List<SummedCapacity> c = ApiDBUtils.findNonSharedStorageForClusterPodZone(zoneId, null, null);
@@ -1026,6 +1077,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (CapacityVO capacity : capacities) {
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityType(capacity.getCapacityType());
+            capacityResponse.setCapacityName(CapacityVO.getCapacityName(capacity.getCapacityType()));
             capacityResponse.setCapacityUsed(capacity.getUsedCapacity());
             capacityResponse.setCapacityTotal(capacity.getTotalCapacity());
             if (capacityResponse.getCapacityTotal() != 0) {
@@ -1110,6 +1162,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             for (SummedCapacity capacity : capacities) {
                 CapacityResponse capacityResponse = new CapacityResponse();
                 capacityResponse.setCapacityType(capacity.getCapacityType());
+                capacityResponse.setCapacityName(CapacityVO.getCapacityName(capacity.getCapacityType()));
                 capacityResponse.setCapacityUsed(capacity.getUsedCapacity() + capacity.getReservedCapacity());
 
                 if (capacity.getCapacityType() == Capacity.CAPACITY_TYPE_STORAGE_ALLOCATED) {
@@ -1267,13 +1320,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public SystemVmResponse createSystemVmResponse(VirtualMachine vm) {
         SystemVmResponse vmResponse = new SystemVmResponse();
-        if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy || vm.getType() == Type.DomainRouter) {
-            // SystemVm vm = (SystemVm) systemVM;
+        if (vm.getType() == Type.SecondaryStorageVm || vm.getType() == Type.ConsoleProxy || vm.getType() == Type.DomainRouter || vm.getType() == Type.NetScalerVm) {
             vmResponse.setId(vm.getUuid());
-            // vmResponse.setObjectId(vm.getId());
             vmResponse.setSystemVmType(vm.getType().toString().toLowerCase());
-
             vmResponse.setName(vm.getHostName());
+
             if (vm.getPodIdToDeployIn() != null) {
                 HostPodVO pod = ApiDBUtils.findPodById(vm.getPodIdToDeployIn());
                 if (pod != null) {
@@ -1392,6 +1443,11 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public VirtualMachineTemplate findTemplateById(Long templateId) {
         return ApiDBUtils.findTemplateById(templateId);
+    }
+
+    @Override
+    public DiskOfferingVO findDiskOfferingById(Long diskOfferingId) {
+        return ApiDBUtils.findDiskOfferingById(diskOfferingId);
     }
 
     @Override
@@ -1608,7 +1664,11 @@ public class ApiResponseHelper implements ResponseGenerator {
         for (Capacity summedCapacity : result) {
             CapacityResponse capacityResponse = new CapacityResponse();
             capacityResponse.setCapacityTotal(summedCapacity.getTotalCapacity());
+            if (summedCapacity.getAllocatedCapacity() != null) {
+                capacityResponse.setCapacityAllocated(summedCapacity.getAllocatedCapacity());
+            }
             capacityResponse.setCapacityType(summedCapacity.getCapacityType());
+            capacityResponse.setCapacityName(CapacityVO.getCapacityName(summedCapacity.getCapacityType()));
             capacityResponse.setCapacityUsed(summedCapacity.getUsedCapacity());
             if (summedCapacity.getPodId() != null) {
                 capacityResponse.setPodId(ApiDBUtils.findPodById(summedCapacity.getPodId()).getUuid());
@@ -1679,6 +1739,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 capacityResponse.setClusterName(cluster.getName());
             }
             capacityResponse.setCapacityType(Capacity.CAPACITY_TYPE_GPU);
+            capacityResponse.setCapacityName(CapacityVO.getCapacityName(Capacity.CAPACITY_TYPE_GPU));
             capacityResponse.setCapacityUsed((long)Math.ceil(capacityUsed));
             capacityResponse.setCapacityTotal(capacityMax);
             if (capacityMax > 0) {
@@ -1986,7 +2047,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
         // FIXME - either set netmask or cidr
         response.setCidr(network.getCidr());
-        response.setNetworkCidr((network.getNetworkCidr()));
+        if (network.getNetworkCidr() != null) {
+            response.setNetworkCidr((network.getNetworkCidr()));
+        }
         // If network has reservation its entire network cidr is defined by
         // getNetworkCidr()
         // if no reservation is present then getCidr() will define the entire
@@ -2177,6 +2240,8 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
             response.setNetworkSpannedZones(networkSpannedZones);
         }
+        response.setExternalId(network.getExternalId());
+        response.setRedundantRouter(network.isRedundant());
         response.setObjectName("network");
         return response;
     }
@@ -2353,12 +2418,18 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     private void populateAccount(ControlledEntityResponse response, long accountId) {
         Account account = ApiDBUtils.findAccountById(accountId);
-        if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
+        if (account == null) {
+            s_logger.debug("Unable to find account with id: " + accountId);
+        } else if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             // find the project
             Project project = ApiDBUtils.findProjectByProjectAccountId(account.getId());
-            response.setProjectId(project.getUuid());
-            response.setProjectName(project.getName());
-            response.setAccountName(account.getAccountName());
+            if (project != null) {
+                response.setProjectId(project.getUuid());
+                response.setProjectName(project.getName());
+                response.setAccountName(account.getAccountName());
+            } else {
+                s_logger.debug("Unable to find project with id: " + account.getId());
+            }
         } else {
             response.setAccountName(account.getAccountName());
         }
@@ -3133,7 +3204,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         GuestOSResponse response = new GuestOSResponse();
         response.setDescription(guestOS.getDisplayName());
         response.setId(guestOS.getUuid());
-        response.setIsUserDefined(Boolean.valueOf(guestOS.getIsUserDefined()).toString());
+        response.setIsUserDefined(guestOS.getIsUserDefined());
         GuestOSCategoryVO category = ApiDBUtils.findGuestOsCategoryById(guestOS.getCategoryId());
         if (category != null) {
             response.setOsCategoryId(category.getUuid());
@@ -3184,9 +3255,24 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public UsageRecordResponse createUsageResponse(Usage usageRecord) {
-        UsageRecordResponse usageRecResponse = new UsageRecordResponse();
+    public Map<String, Set<ResourceTagResponse>> getUsageResourceTags()
+    {
+        try {
+            return _resourceTagDao.listTags();
+        } catch(Exception ex) {
+            s_logger.warn("Failed to get resource details for Usage data due to exception : ", ex);
+        }
+        return null;
+    }
 
+    @Override
+    public UsageRecordResponse createUsageResponse(Usage usageRecord) {
+        return createUsageResponse(usageRecord, null);
+    }
+
+    @Override
+    public UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap) {
+        UsageRecordResponse usageRecResponse = new UsageRecordResponse();
         Account account = ApiDBUtils.findAccountById(usageRecord.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
             //find the project
@@ -3229,21 +3315,39 @@ public class ApiResponseHelper implements ResponseGenerator {
             }
         }
 
+        ResourceTag.ResourceObjectType resourceType = null;
+        Long resourceId = null;
         if (usageRecord.getUsageType() == UsageTypes.RUNNING_VM || usageRecord.getUsageType() == UsageTypes.ALLOCATED_VM) {
             ServiceOfferingVO svcOffering = _entityMgr.findByIdIncludingRemoved(ServiceOfferingVO.class, usageRecord.getOfferingId().toString());
             //Service Offering Id
-            usageRecResponse.setOfferingId(svcOffering.getUuid());
+            if(svcOffering != null) {
+                usageRecResponse.setOfferingId(svcOffering.getUuid());
+            }
             //VM Instance ID
             VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
             if (vm != null) {
+                resourceType = ResourceTag.ResourceObjectType.UserVm;
                 usageRecResponse.setUsageId(vm.getUuid());
+                resourceId = vm.getId();
             }
             //Hypervisor Type
             usageRecResponse.setType(usageRecord.getType());
             //Dynamic compute offerings details
-            usageRecResponse.setCpuNumber(usageRecord.getCpuCores());
-            usageRecResponse.setCpuSpeed(usageRecord.getCpuSpeed());
-            usageRecResponse.setMemory(usageRecord.getMemory());
+            if(usageRecord.getCpuCores() != null) {
+                usageRecResponse.setCpuNumber(usageRecord.getCpuCores());
+            } else if (svcOffering.getCpu() != null){
+                usageRecResponse.setCpuNumber(svcOffering.getCpu().longValue());
+            }
+            if(usageRecord.getCpuSpeed() != null) {
+                usageRecResponse.setCpuSpeed(usageRecord.getCpuSpeed());
+            } else if(svcOffering.getSpeed() != null){
+                usageRecResponse.setCpuSpeed(svcOffering.getSpeed().longValue());
+            }
+            if(usageRecord.getMemory() != null) {
+                usageRecResponse.setMemory(usageRecord.getMemory());
+            } else if(svcOffering.getRamSize() != null) {
+                usageRecResponse.setMemory(svcOffering.getRamSize().longValue());
+            }
 
         } else if (usageRecord.getUsageType() == UsageTypes.IP_ADDRESS) {
             //isSourceNAT
@@ -3253,16 +3357,20 @@ public class ApiResponseHelper implements ResponseGenerator {
             //IP Address ID
             IPAddressVO ip = _entityMgr.findByIdIncludingRemoved(IPAddressVO.class, usageRecord.getUsageId().toString());
             if (ip != null) {
+                resourceType = ResourceObjectType.PublicIpAddress;
+                resourceId = ip.getId();
                 usageRecResponse.setUsageId(ip.getUuid());
             }
 
         } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_SENT || usageRecord.getUsageType() == UsageTypes.NETWORK_BYTES_RECEIVED) {
             //Device Type
+            resourceType = ResourceObjectType.UserVm;
             usageRecResponse.setType(usageRecord.getType());
-            if (usageRecord.getType().equals("DomainRouter")) {
+            if (usageRecord.getType().equals("DomainRouter") || usageRecord.getType().equals("UserVm")) {
                 //Domain Router Id
                 VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getUsageId().toString());
                 if (vm != null) {
+                    resourceId = vm.getId();
                     usageRecResponse.setUsageId(vm.getUuid());
                 }
             } else {
@@ -3276,14 +3384,16 @@ public class ApiResponseHelper implements ResponseGenerator {
             if((usageRecord.getNetworkId() != null) && (usageRecord.getNetworkId() != 0)) {
                 NetworkVO network = _entityMgr.findByIdIncludingRemoved(NetworkVO.class, usageRecord.getNetworkId().toString());
                 if (network != null) {
+                    resourceType = ResourceObjectType.Network;
+                    resourceId = network.getId();
                     usageRecResponse.setNetworkId(network.getUuid());
                 }
             }
-
         } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE
                 || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_BYTES_WRITE) {
             //Device Type
             usageRecResponse.setType(usageRecord.getType());
+            resourceType = ResourceObjectType.Volume;
             //VM Instance Id
             VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
             if (vm != null) {
@@ -3293,13 +3403,16 @@ public class ApiResponseHelper implements ResponseGenerator {
             VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
             if (volume != null) {
                 usageRecResponse.setUsageId(volume.getUuid());
+                resourceId = volume.getId();
             }
 
         } else if (usageRecord.getUsageType() == UsageTypes.VOLUME) {
             //Volume ID
             VolumeVO volume = _entityMgr.findByIdIncludingRemoved(VolumeVO.class, usageRecord.getUsageId().toString());
+            resourceType = ResourceObjectType.Volume;
             if (volume != null) {
                 usageRecResponse.setUsageId(volume.getUuid());
+                resourceId = volume.getId();
             }
             //Volume Size
             usageRecResponse.setSize(usageRecord.getSize());
@@ -3314,20 +3427,25 @@ public class ApiResponseHelper implements ResponseGenerator {
             VMTemplateVO tmpl = _entityMgr.findByIdIncludingRemoved(VMTemplateVO.class, usageRecord.getUsageId().toString());
             if (tmpl != null) {
                 usageRecResponse.setUsageId(tmpl.getUuid());
+                resourceId = tmpl.getId();
             }
             //Template/ISO Size
             usageRecResponse.setSize(usageRecord.getSize());
             if (usageRecord.getUsageType() == UsageTypes.ISO) {
                 usageRecResponse.setVirtualSize(usageRecord.getSize());
+                resourceType = ResourceObjectType.ISO;
             } else {
                 usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
+                resourceType = ResourceObjectType.Template;
             }
 
         } else if (usageRecord.getUsageType() == UsageTypes.SNAPSHOT) {
             //Snapshot ID
             SnapshotVO snap = _entityMgr.findByIdIncludingRemoved(SnapshotVO.class, usageRecord.getUsageId().toString());
+            resourceType = ResourceObjectType.Snapshot;
             if (snap != null) {
                 usageRecResponse.setUsageId(snap.getUuid());
+                resourceId = snap.getId();
             }
             //Snapshot Size
             usageRecResponse.setSize(usageRecord.getSize());
@@ -3335,14 +3453,18 @@ public class ApiResponseHelper implements ResponseGenerator {
         } else if (usageRecord.getUsageType() == UsageTypes.LOAD_BALANCER_POLICY) {
             //Load Balancer Policy ID
             LoadBalancerVO lb = _entityMgr.findByIdIncludingRemoved(LoadBalancerVO.class, usageRecord.getUsageId().toString());
+            resourceType = ResourceObjectType.LoadBalancer;
             if (lb != null) {
                 usageRecResponse.setUsageId(lb.getUuid());
+                resourceId = lb.getId();
             }
         } else if (usageRecord.getUsageType() == UsageTypes.PORT_FORWARDING_RULE) {
             //Port Forwarding Rule ID
             PortForwardingRuleVO pf = _entityMgr.findByIdIncludingRemoved(PortForwardingRuleVO.class, usageRecord.getUsageId().toString());
+            resourceType = ResourceObjectType.PortForwardingRule;
             if (pf != null) {
                 usageRecResponse.setUsageId(pf.getUuid());
+                resourceId = pf.getId();
             }
 
         } else if (usageRecord.getUsageType() == UsageTypes.NETWORK_OFFERING) {
@@ -3358,16 +3480,19 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (vpnUser != null) {
                 usageRecResponse.setUsageId(vpnUser.getUuid());
             }
-
         } else if (usageRecord.getUsageType() == UsageTypes.SECURITY_GROUP) {
             //Security Group Id
             SecurityGroupVO sg = _entityMgr.findByIdIncludingRemoved(SecurityGroupVO.class, usageRecord.getUsageId().toString());
+            resourceType = ResourceObjectType.SecurityGroup;
             if (sg != null) {
+                resourceId = sg.getId();
                 usageRecResponse.setUsageId(sg.getUuid());
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
             VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
+            resourceType = ResourceObjectType.UserVm;
             if (vm != null) {
+                resourceId = vm.getId();
                 usageRecResponse.setVmName(vm.getInstanceName());
                 usageRecResponse.setUsageId(vm.getUuid());
             }
@@ -3375,6 +3500,10 @@ public class ApiResponseHelper implements ResponseGenerator {
             if (usageRecord.getOfferingId() != null) {
                 usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
             }
+        }
+
+        if(resourceTagResponseMap != null && resourceTagResponseMap.get(resourceId + ":" + resourceType) != null) {
+             usageRecResponse.setTags(resourceTagResponseMap.get(resourceId + ":" + resourceType));
         }
 
         if (usageRecord.getRawUsage() != null) {
@@ -3501,30 +3630,75 @@ public class ApiResponseHelper implements ResponseGenerator {
         return response;
     }
 
+    /**
+     * The resulting Response attempts to be in line with what is returned from
+     * @see com.cloud.api.query.dao.UserVmJoinDaoImpl#setUserVmResponse(ResponseView, UserVmResponse, UserVmJoinVO)
+     */
     @Override
     public NicResponse createNicResponse(Nic result) {
         NicResponse response = new NicResponse();
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
         VMInstanceVO vm = _entityMgr.findById(VMInstanceVO.class, result.getInstanceId());
         UserVmJoinVO userVm = _entityMgr.findById(UserVmJoinVO.class, result.getInstanceId());
+        List<NicExtraDhcpOptionVO> nicExtraDhcpOptionVOs = _nicExtraDhcpOptionDao.listByNicId(result.getId());
 
+        // The numbered comments are to keep track of the data returned from here and UserVmJoinDaoImpl.setUserVmResponse()
+        // the data can't be identical but some tidying up/unifying might be possible
+        /*1: nicUuid*/
         response.setId(result.getUuid());
+        /*2: networkUuid*/
         response.setNetworkid(network.getUuid());
-
+        /*3: vmId*/
         if (vm != null) {
             response.setVmId(vm.getUuid());
         }
 
         if (userVm != null){
             if (userVm.getTrafficType() != null) {
+                /*4: trafficType*/
                 response.setTrafficType(userVm.getTrafficType().toString());
             }
             if (userVm.getGuestType() != null) {
+                /*5: guestType*/
                 response.setType(userVm.getGuestType().toString());
             }
         }
+        /*6: ipAddress*/
         response.setIpaddress(result.getIPv4Address());
-
+        /*7: gateway*/
+        response.setGateway(result.getIPv4Gateway());
+        /*8: netmask*/
+        response.setNetmask(result.getIPv4Netmask());
+        /*9: networkName*/
+        if(userVm != null && userVm.getNetworkName() != null) {
+            response.setNetworkName(userVm.getNetworkName());
+        }
+        /*10: macAddress*/
+        response.setMacAddress(result.getMacAddress());
+        /*11: IPv6Address*/
+        if (result.getIPv6Address() != null) {
+            response.setIp6Address(result.getIPv6Address());
+        }
+        /*12: IPv6Gateway*/
+        if (result.getIPv6Gateway() != null) {
+            response.setIp6Gateway(result.getIPv6Gateway());
+        }
+        /*13: IPv6Cidr*/
+        if (result.getIPv6Cidr() != null) {
+            response.setIp6Cidr(result.getIPv6Cidr());
+        }
+        /*14: deviceId*/
+        response.setDeviceId(String.valueOf(result.getDeviceId()));
+        /*15: broadcastURI*/
+        if (result.getBroadcastUri() != null) {
+            response.setBroadcastUri(result.getBroadcastUri().toString());
+        }
+        /*16: isolationURI*/
+        if (result.getIsolationUri() != null) {
+            response.setIsolationUri(result.getIsolationUri().toString());
+        }
+        /*17: default*/
+        response.setIsDefault(result.isDefaultNic());
         if (result.getSecondaryIp()) {
             List<NicSecondaryIpVO> secondaryIps = ApiDBUtils.findNicSecondaryIps(result.getId());
             if (secondaryIps != null) {
@@ -3538,22 +3712,13 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setSecondaryIps(ipList);
             }
         }
+        /*18: extra dhcp options */
+        List<NicExtraDhcpOptionResponse> nicExtraDhcpOptionResponses = nicExtraDhcpOptionVOs
+                .stream()
+                .map(vo -> new NicExtraDhcpOptionResponse(Dhcp.DhcpOptionCode.valueOfInt(vo.getCode()).getName(), vo.getCode(), vo.getValue()))
+                .collect(Collectors.toList());
 
-        response.setGateway(result.getIPv4Gateway());
-        response.setNetmask(result.getIPv4Netmask());
-        response.setMacAddress(result.getMacAddress());
-
-        if (result.getIPv6Address() != null) {
-            response.setIp6Address(result.getIPv6Address());
-        }
-
-        if (result.getIPv6Cidr() != null) {
-            response.setIp6Cidr(result.getIPv6Cidr());
-        }
-
-        response.setDeviceId(String.valueOf(result.getDeviceId()));
-
-        response.setIsDefault(result.isDefaultNic());
+        response.setExtraDhcpOptions(nicExtraDhcpOptionResponses);
 
         if (result instanceof NicVO){
             if (((NicVO)result).getNsxLogicalSwitchUuid() != null){

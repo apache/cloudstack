@@ -26,10 +26,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Arrays;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.offerings.NetworkOfferingVO;
 import org.apache.log4j.Logger;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 import org.mockito.Matchers;
 
 import com.cloud.network.Network;
@@ -56,6 +61,7 @@ import junit.framework.TestCase;
 /**
  * NetworkManagerImpl implements NetworkManager.
  */
+@RunWith(JUnit4.class)
 public class NetworkOrchestratorTest extends TestCase {
     static final Logger s_logger = Logger.getLogger(NetworkOrchestratorTest.class);
 
@@ -64,6 +70,10 @@ public class NetworkOrchestratorTest extends TestCase {
     String guruName = "GuestNetworkGuru";
     String dhcpProvider = "VirtualRouter";
     NetworkGuru guru = mock(NetworkGuru.class);
+
+    NetworkOfferingVO networkOffering = mock(NetworkOfferingVO.class);
+
+    private static final long networkOfferingId = 1l;
 
     @Override
     @Before
@@ -90,6 +100,9 @@ public class NetworkOrchestratorTest extends TestCase {
         List<NetworkGuru> networkGurus = new ArrayList<NetworkGuru>();
         networkGurus.add(guru);
         testOrchastrator.networkGurus = networkGurus;
+
+        when(networkOffering.getGuestType()).thenReturn(GuestType.L2);
+        when(networkOffering.getId()).thenReturn(networkOfferingId);
     }
 
     @Test
@@ -158,5 +171,33 @@ public class NetworkOrchestratorTest extends TestCase {
         verify(testOrchastrator._networkModel, never()).getElementImplementingProvider(dhcpProvider);
         verify(testOrchastrator._ntwkSrvcDao, never()).getProviderForServiceInNetwork(network.getId(), Service.Dhcp);
         verify(testOrchastrator._networksDao, times(1)).findById(nic.getNetworkId());
+    }
+
+    @Test
+    public void testCheckL2OfferingServicesEmptyServices() {
+        when(testOrchastrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(new ArrayList<>());
+        when(testOrchastrator._networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.UserData)).thenReturn(false);
+        testOrchastrator.checkL2OfferingServices(networkOffering);
+    }
+
+    @Test
+    public void testCheckL2OfferingServicesUserDataOnly() {
+        when(testOrchastrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.UserData));
+        when(testOrchastrator._networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.UserData)).thenReturn(true);
+        testOrchastrator.checkL2OfferingServices(networkOffering);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckL2OfferingServicesMultipleServicesIncludingUserData() {
+        when(testOrchastrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.UserData, Service.Dhcp));
+        when(testOrchastrator._networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.UserData)).thenReturn(true);
+        testOrchastrator.checkL2OfferingServices(networkOffering);
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void testCheckL2OfferingServicesMultipleServicesNotIncludingUserData() {
+        when(testOrchastrator._networkModel.listNetworkOfferingServices(networkOfferingId)).thenReturn(Arrays.asList(Service.Dns, Service.Dhcp));
+        when(testOrchastrator._networkModel.areServicesSupportedByNetworkOffering(networkOfferingId, Service.UserData)).thenReturn(false);
+        testOrchastrator.checkL2OfferingServices(networkOffering);
     }
 }

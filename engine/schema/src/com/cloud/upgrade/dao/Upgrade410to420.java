@@ -18,6 +18,7 @@
 package com.cloud.upgrade.dao;
 
 import java.io.File;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.Date;
@@ -42,7 +43,6 @@ import com.cloud.network.vpc.NetworkACL;
 import com.cloud.utils.Pair;
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade410to420 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade410to420.class);
@@ -63,13 +63,14 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     @Override
-    public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-410to420.sql");
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-410to420.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-410to420.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(script)};
+        return new InputStream[] {script};
     }
 
     @Override
@@ -607,13 +608,14 @@ public class Upgrade410to420 implements DbUpgrade {
     }
 
     @Override
-    public File[] getCleanupScripts() {
-        String script = Script.findScript("", "db/schema-410to420-cleanup.sql");
+    public InputStream[] getCleanupScripts() {
+        final String scriptFile = "META-INF/db/schema-410to420-cleanup.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-410to420-cleanup.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(script)};
+        return new InputStream[] {script};
     }
 
     private String getNewLabel(ResultSet rs, String oldParamValue) {

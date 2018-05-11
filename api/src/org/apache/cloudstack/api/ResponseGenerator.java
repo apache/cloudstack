@@ -20,6 +20,7 @@ import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -285,6 +286,8 @@ public interface ResponseGenerator {
 
     Host findHostById(Long hostId);
 
+    DiskOffering findDiskOfferingById(Long diskOfferingId);
+
     VpnUsersResponse createVpnUserResponse(VpnUser user);
 
     RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);
@@ -429,6 +432,10 @@ public interface ResponseGenerator {
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
 
     UsageRecordResponse createUsageResponse(Usage usageRecord);
+
+    UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap);
+
+    public Map<String, Set<ResourceTagResponse>> getUsageResourceTags();
 
     TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
 

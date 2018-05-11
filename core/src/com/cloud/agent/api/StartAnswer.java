@@ -24,9 +24,16 @@ import java.util.Map;
 import com.cloud.agent.api.to.VirtualMachineTO;
 
 public class StartAnswer extends Answer {
+    public static final String PATH = "path";
+    public static final String IMAGE_FORMAT = "imageFormat";
+
     VirtualMachineTO vm;
     String hostGuid;
-    Map<String, String> _iqnToPath;
+    // key = an applicable IQN (ex. iqn.1998-01.com.vmware.iscsi:name1)
+    // value = a Map with the following data:
+    //   key = PATH or IMAGE_FORMAT (defined above)
+    //   value = Example if PATH is key: UUID of VDI; Example if IMAGE_FORMAT is key: DiskTO.VHD
+    private Map<String, Map<String, String>> _iqnToData;
 
     protected StartAnswer() {
     }
@@ -61,11 +68,11 @@ public class StartAnswer extends Answer {
         return hostGuid;
     }
 
-    public void setIqnToPath(Map<String, String> iqnToPath) {
-        _iqnToPath = iqnToPath;
+    public void setIqnToData(Map<String, Map<String, String>> iqnToData) {
+        _iqnToData = iqnToData;
     }
 
-    public Map<String, String> getIqnToPath() {
-        return _iqnToPath;
+    public Map<String, Map<String, String>> getIqnToData() {
+        return _iqnToData;
     }
 }

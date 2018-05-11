@@ -19,18 +19,22 @@
 
 package com.cloud.agent.api.storage;
 
+import java.util.Map;
+
+import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.StorageFilerTO;
 import com.cloud.storage.StoragePool;
 
 public class CopyVolumeCommand extends StorageNfsVersionCommand {
-
-    long volumeId;
-    String volumePath;
-    StorageFilerTO pool;
-    String secondaryStorageURL;
-    boolean toSecondaryStorage;
-    String vmName;
-    boolean executeInSequence = false;
+    private long volumeId;
+    private String volumePath;
+    private StorageFilerTO pool;
+    private String secondaryStorageURL;
+    private boolean toSecondaryStorage;
+    private String vmName;
+    private DataTO srcData;
+    private Map<String, String> srcDetails;
+    private boolean executeInSequence;
 
     public CopyVolumeCommand() {
     }
@@ -75,4 +79,19 @@ public class CopyVolumeCommand extends StorageNfsVersionCommand {
         return vmName;
     }
 
+    public void setSrcData(DataTO srcData) {
+        this.srcData = srcData;
+    }
+
+    public DataTO getSrcData() {
+        return srcData;
+    }
+
+    public void setSrcDetails(Map<String, String> srcDetails) {
+        this.srcDetails = srcDetails;
+    }
+
+    public Map<String, String> getSrcDetails() {
+        return srcDetails;
+    }
 }

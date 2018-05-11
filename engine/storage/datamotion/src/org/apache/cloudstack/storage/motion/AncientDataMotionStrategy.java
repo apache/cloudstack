@@ -444,7 +444,6 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
         String errMsg = null;
         try {
             s_logger.debug("copyAsync inspecting src type " + srcData.getType().toString() + " copyAsync inspecting dest type " + destData.getType().toString());
-
             if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.VOLUME) {
                 answer = copyVolumeFromSnapshot(srcData, destData);
             } else if (srcData.getType() == DataObjectType.SNAPSHOT && destData.getType() == DataObjectType.TEMPLATE) {
@@ -520,10 +519,10 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
 
         DataObject cacheData = null;
         SnapshotInfo snapshotInfo = (SnapshotInfo)srcData;
-        Object payload = snapshotInfo.getPayload();
+        Boolean snapshotFullBackup = snapshotInfo.getFullBackup();
         Boolean fullSnapshot = true;
-        if (payload != null) {
-            fullSnapshot = (Boolean)payload;
+        if (snapshotFullBackup != null) {
+            fullSnapshot = snapshotFullBackup;
         }
         Map<String, String> options = new HashMap<String, String>();
         options.put("fullSnapshot", fullSnapshot.toString());

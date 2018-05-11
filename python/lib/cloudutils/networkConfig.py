@@ -154,7 +154,7 @@ class networkConfig:
 
         if networkConfig.isBridgePort(dev):
             type = "brport"
-        elif networkConfig.isBridge(dev):
+        elif networkConfig.isBridge(dev) or networkConfig.isOvsBridge(dev):
             type = "bridge"
         else:
             type = "dev"

@@ -41,7 +41,7 @@
     <bean id="ConfigurationManager" class="com.cloud.configuration.ConfigurationManagerImpl">
         <property name="name" value="ConfigurationManager"/>
     </bean>
-
+    <bean id="managementServiceConfigurationImpl" class="com.cloud.configuration.ManagementServiceConfigurationImpl" />
     <bean class="org.apache.cloudstack.networkoffering.ChildTestConfiguration" />
     <bean id="UservmDetailsDaoImpl" class="com.cloud.vm.dao.UserVmDetailsDaoImpl" />
     <bean id="hostGpuGroupsDaoImpl" class="com.cloud.gpu.dao.HostGpuGroupsDaoImpl" />
@@ -54,4 +54,5 @@
     <bean id="userIpAddressDetailsDao" class="org.apache.cloudstack.resourcedetail.dao.UserIpAddressDetailsDaoImpl" />
     <bean id="loadBalancerVMMapDaoImpl" class="com.cloud.network.dao.LoadBalancerVMMapDaoImpl" />
     <bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl" />
+    <bean id="messageBus" class="org.apache.cloudstack.framework.messagebus.MessageBusBase" />
 </beans>

@@ -16,6 +16,15 @@
 // under the License.
 package com.cloud.configuration;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.StringTokenizer;
+
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
+import org.apache.cloudstack.framework.config.ConfigKey;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.consoleproxy.ConsoleProxyManager;
 import com.cloud.ha.HighAvailabilityManager;
@@ -29,15 +38,11 @@ import com.cloud.storage.snapshot.SnapshotManager;
 import com.cloud.template.TemplateManager;
 import com.cloud.vm.UserVmManager;
 import com.cloud.vm.snapshot.VMSnapshotManager;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
-import org.apache.cloudstack.framework.config.ConfigKey;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.StringTokenizer;
-
+/**
+ * @deprecated use the more dynamic ConfigKey
+ */
+@Deprecated
 public enum Config {
 
     // Alert
@@ -181,14 +186,6 @@ public enum Config {
             "storage.pool.max.waitseconds",
             "3600",
             "Timeout (in seconds) to synchronize storage pool operations.",
-            null),
-    StorageTemplateCleanupEnabled(
-            "Storage",
-            ManagementServer.class,
-            Boolean.class,
-            "storage.template.cleanup.enabled",
-            "true",
-            "Enable/disable template cleanup activity, only take effect when overall storage cleanup is enabled",
             null),
     PrimaryStorageDownloadWait(
             "Storage",
@@ -499,14 +496,6 @@ public enum Config {
             "The time interval in seconds when the management server polls for snapshots to be scheduled.",
             null),
     SnapshotDeltaMax("Snapshots", SnapshotManager.class, Integer.class, "snapshot.delta.max", "16", "max delta snapshots between two full snapshots.", null),
-    BackupSnapshotAfterTakingSnapshot(
-            "Snapshots",
-            SnapshotManager.class,
-            Boolean.class,
-            "snapshot.backup.rightafter",
-            "true",
-            "backup snapshot right after snapshot is taken",
-            null),
     KVMSnapshotEnabled("Hidden", SnapshotManager.class, Boolean.class, "kvm.snapshot.enabled", "false", "whether snapshot is enabled for KVM hosts", null),
 
     // Advanced
@@ -577,7 +566,7 @@ public enum Config {
             "The interval (in milliseconds) when host stats are retrieved from agents.",
             null),
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
-    IntegrationAPIPort("Advanced", ManagementServer.class, Integer.class, "integration.api.port", null, "Default API port", null),
+    IntegrationAPIPort("Advanced", ManagementServer.class, Integer.class, "integration.api.port", null, "Default API port. To disable set it to 0 or negative.", null),
     InvestigateRetryInterval(
             "Advanced",
             HighAvailabilityManager.class,
@@ -811,7 +800,14 @@ public enum Config {
             "600",
             "Time Interval to fetch the LB health check states (in sec)",
             null),
-
+    NCCCmdTimeOut(
+            "Advanced",
+            ManagementServer.class,
+            Long.class,
+            "ncc.command.timeout",
+            "600000", // 10 minutes
+            "Command Timeout Interval (in millisec)",
+            null),
     DirectAttachNetworkEnabled(
             "Advanced",
             ManagementServer.class,
@@ -862,6 +858,7 @@ public enum Config {
             "The interval (in milliseconds) when vm stats are retrieved from agents.",
             null),
     VmDiskStatsInterval("Advanced", ManagementServer.class, Integer.class, "vm.disk.stats.interval", "0", "Interval (in seconds) to report vm disk statistics.", null),
+    VolumeStatsInterval("Advanced", ManagementServer.class, Integer.class, "volume.stats.interval", "60000", "Interval (in seconds) to report volume statistics.", null),
     VmTransitionWaitInterval(
             "Advanced",
             ManagementServer.class,
@@ -902,7 +899,14 @@ public enum Config {
             "0",
             "Default disk I/O writerate in bytes per second allowed in User vm's disk.",
             null),
-
+    KvmAutoConvergence(
+            "Advanced",
+            ManagementServer.class,
+            Boolean.class,
+            "kvm.auto.convergence",
+            "false",
+            "Setting this to 'true' allows KVM to use auto convergence to complete VM migration (libvirt version 1.2.3+ and QEMU version 1.6+)",
+            null),
     ControlCidr(
             "Advanced",
             ManagementServer.class,
@@ -1211,24 +1215,6 @@ public enum Config {
     VmwareHungWorkerTimeout("Advanced", ManagementServer.class, Long.class, "vmware.hung.wokervm.timeout", "7200", "Worker VM timeout in seconds", null),
     VmwareVcenterSessionTimeout("Advanced", ManagementServer.class, Long.class, "vmware.vcenter.session.timeout", "1200", "VMware client timeout in seconds", null),
 
-    // Midonet
-    MidoNetAPIServerAddress(
-            "Network",
-            ManagementServer.class,
-            String.class,
-            "midonet.apiserver.address",
-            "http://localhost:8081",
-            "Specify the address at which the Midonet API server can be contacted (if using Midonet)",
-            null),
-    MidoNetProviderRouterId(
-            "Network",
-            ManagementServer.class,
-            String.class,
-            "midonet.providerrouter.id",
-            "d7c5e6a3-e2f4-426b-b728-b7ce6a0448e5",
-            "Specifies the UUID of the Midonet provider router (if using Midonet)",
-            null),
-
     // KVM
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
     KvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
@@ -1301,7 +1287,7 @@ public enum Config {
             Integer.class,
             "usage.sanity.check.interval",
             null,
-            "Interval (in days) to check sanity of usage data",
+            "Interval (in days) to check sanity of usage data. To disable set it to 0 or negative.",
             null),
     UsageAggregationTimezone("Usage", ManagementServer.class, String.class, "usage.aggregation.timezone", "GMT", "The timezone to use for usage stats aggregation", null),
     TrafficSentinelIncludeZones(
@@ -1451,15 +1437,6 @@ public enum Config {
             "400",
             "The default maximum secondary storage space (in GiB) that can be used for an account",
             null),
-
-    ResourceCountCheckInterval(
-            "Advanced",
-            ManagementServer.class,
-            Long.class,
-            "resourcecount.check.interval",
-            "0",
-            "Time (in seconds) to wait before retrying resource count check task. Default is 0 which is to never run the task",
-            "Seconds"),
 
     //disabling lb as cluster sync does not work with distributed cluster
     SubDomainNetworkAccess(
@@ -1848,42 +1825,6 @@ public enum Config {
                 + "If it is set to -1, then it means always use single-part upload to upload object to S3. ",
             null),
 
-    // Ldap
-    LdapBasedn("Advanced", ManagementServer.class, String.class, "ldap.basedn", null, "Sets the basedn for LDAP", null),
-    LdapBindPassword("Advanced", ManagementServer.class, String.class, "ldap.bind.password", null, "Sets the bind password for LDAP", null),
-    LdapBindPrincipal("Advanced", ManagementServer.class, String.class, "ldap.bind.principal", null, "Sets the bind principal for LDAP", null),
-    LdapEmailAttribute("Advanced", ManagementServer.class, String.class, "ldap.email.attribute", "mail", "Sets the email attribute used within LDAP", null),
-    LdapFirstnameAttribute(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "ldap.firstname.attribute",
-            "givenname",
-            "Sets the firstname attribute used within LDAP",
-            null),
-    LdapLastnameAttribute("Advanced", ManagementServer.class, String.class, "ldap.lastname.attribute", "sn", "Sets the lastname attribute used within LDAP", null),
-    LdapUsernameAttribute("Advanced", ManagementServer.class, String.class, "ldap.username.attribute", "uid", "Sets the username attribute used within LDAP", null),
-    LdapUserObject("Advanced", ManagementServer.class, String.class, "ldap.user.object", "inetOrgPerson", "Sets the object type of users within LDAP", null),
-    LdapSearchGroupPrinciple(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "ldap.search.group.principle",
-            null,
-            "Sets the principle of the group that users must be a member of",
-            null),
-    LdapTrustStore("Advanced", ManagementServer.class, String.class, "ldap.truststore", null, "Sets the path to the truststore to use for SSL", null),
-    LdapTrustStorePassword("Advanced", ManagementServer.class, String.class, "ldap.truststore.password", null, "Sets the password for the truststore", null),
-    LdapGroupObject("Advanced", ManagementServer.class, String.class, "ldap.group.object", "groupOfUniqueNames", "Sets the object type of groups within LDAP", null),
-    LdapGroupUniqueMemberAttribute(
-            "Advanced",
-            ManagementServer.class,
-            String.class,
-            "ldap.group.user.uniquemember",
-            "uniquemember",
-            "Sets the attribute for uniquemembers within a group",
-            null),
-
     // VMSnapshots
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
     VMSnapshotCreateWait("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.create.wait", "1800", "In second, timeout for create vm snapshot", null),
@@ -1930,7 +1871,7 @@ public enum Config {
             NetworkOrchestrationService.class,
             Integer.class,
             "router.aggregation.command.each.timeout",
-            "3",
+            "600",
             "timeout in seconds for each Virtual Router command being aggregated. The final aggregation command timeout would be determined by this timeout * commands counts ",
             null),
 
@@ -2013,17 +1954,6 @@ public enum Config {
         _scope = ConfigKey.Scope.Global.toString();
     }
 
-    private Config(String category, Class<?> componentClass, Class<?> type, String name, String defaultValue, String description, String range, String scope) {
-        _category = category;
-        _componentClass = componentClass;
-        _type = type;
-        _name = name;
-        _defaultValue = defaultValue;
-        _description = description;
-        _range = range;
-        _scope = scope;
-    }
-
     public String getCategory() {
         return _category;
     }
@@ -2042,10 +1972,6 @@ public enum Config {
 
     public Class<?> getType() {
         return _type;
-    }
-
-    public Class<?> getComponentClass() {
-        return _componentClass;
     }
 
     public String getScope() {
@@ -2114,9 +2040,5 @@ public enum Config {
             categories.add((String)key);
         }
         return categories;
-    }
-
-    public static List<Config> getConfigListByScope(String scope) {
-        return s_scopeLevelConfigsMap.get(scope);
     }
 }

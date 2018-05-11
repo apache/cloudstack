@@ -48,8 +48,10 @@ import org.apache.cloudstack.api.command.admin.account.EnableAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.account.LockAccountCmd;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
+import org.apache.cloudstack.api.command.admin.address.AcquirePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.address.AssociateIPAddrCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.address.ListPublicIpAddressesCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.affinitygroup.UpdateVMAffinityGroupCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.alert.GenerateAlertCmd;
 import org.apache.cloudstack.api.command.admin.autoscale.CreateCounterCmd;
@@ -63,6 +65,7 @@ import org.apache.cloudstack.api.command.admin.config.ListDeploymentPlannersCmd;
 import org.apache.cloudstack.api.command.admin.config.ListHypervisorCapabilitiesCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.config.UpdateHypervisorCapabilitiesCmd;
+import org.apache.cloudstack.api.command.admin.direct.download.UploadTemplateDirectDownloadCertificate;
 import org.apache.cloudstack.api.command.admin.domain.CreateDomainCmd;
 import org.apache.cloudstack.api.command.admin.domain.DeleteDomainCmd;
 import org.apache.cloudstack.api.command.admin.domain.ListDomainChildrenCmd;
@@ -103,11 +106,13 @@ import org.apache.cloudstack.api.command.admin.iso.RegisterIsoCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.loadbalancer.ListLoadBalancerRuleInstancesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
+import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.CreatePhysicalNetworkCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
+import org.apache.cloudstack.api.command.admin.network.DeleteManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkOfferingCmd;
 import org.apache.cloudstack.api.command.admin.network.DeleteNetworkServiceProviderCmd;
@@ -121,6 +126,8 @@ import org.apache.cloudstack.api.command.admin.network.ListNetworksCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.ListPhysicalNetworksCmd;
 import org.apache.cloudstack.api.command.admin.network.ListStorageNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListSupportedNetworkServicesCmd;
+import org.apache.cloudstack.api.command.admin.network.MigrateNetworkCmd;
+import org.apache.cloudstack.api.command.admin.network.MigrateVPCCmd;
 import org.apache.cloudstack.api.command.admin.network.ReleaseDedicatedGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.UpdateNetworkOfferingCmd;
@@ -223,6 +230,7 @@ import org.apache.cloudstack.api.command.admin.user.GetUserCmd;
 import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.user.LockUserCmd;
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 import org.apache.cloudstack.api.command.admin.vlan.CreateVlanIpRangeCmd;
@@ -687,8 +695,10 @@ import com.cloud.vm.dao.VMInstanceDao;
 public class ManagementServerImpl extends ManagerBase implements ManagementServer, Configurable {
     public static final Logger s_logger = Logger.getLogger(ManagementServerImpl.class.getName());
 
-    static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "10",
+    static final ConfigKey<Integer> vmPasswordLength = new ConfigKey<Integer>("Advanced", Integer.class, "vm.password.length", "6",
                                                                                       "Specifies the length of a randomly generated password", false);
+    static final ConfigKey<Integer> sshKeyLength = new ConfigKey<Integer>("Advanced", Integer.class, "ssh.key.length",
+            "2048", "Specifies custom SSH key length (bit)", true, ConfigKey.Scope.Global);
     @Inject
     public AccountManager _accountMgr;
     @Inject
@@ -1222,16 +1232,29 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
                     if (volClusterId != null) {
                         if (!host.getClusterId().equals(volClusterId) || usesLocal) {
-                            if (hasSuitablePoolsForVolume(volume, host, vmProfile)) {
-                                requiresStorageMotion.put(host, true);
-                            } else {
+                            if (storagePool.isManaged()) {
+                                // At the time being, we do not support storage migration of a volume from managed storage unless the managed storage
+                                // is at the zone level and the source and target storage pool is the same.
+                                // If the source and target storage pool is the same and it is managed, then we still have to perform a storage migration
+                                // because we need to create a new target volume and copy the contents of the source volume into it before deleting the
+                                // source volume.
                                 iterator.remove();
+                            }
+                            else {
+                                if (hasSuitablePoolsForVolume(volume, host, vmProfile)) {
+                                    requiresStorageMotion.put(host, true);
+                                } else {
+                                    iterator.remove();
+                                }
                             }
                         }
                     }
                     else {
                         if (storagePool.isManaged()) {
                             if (srcHost.getClusterId() != host.getClusterId()) {
+                                // If the volume's storage pool is managed and at the zone level, then we still have to perform a storage migration
+                                // because we need to create a new target volume and copy the contents of the source volume into it before deleting
+                                // the source volume.
                                 requiresStorageMotion.put(host, true);
                             }
                         }
@@ -1378,12 +1401,19 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final StoragePoolVO srcVolumePool = _poolDao.findById(volume.getPoolId());
         // Get all the pools available. Only shared pools are considered because only a volume on a shared pools
         // can be live migrated while the virtual machine stays on the same host.
-        List<StoragePoolVO> storagePools = null;
-        if (srcVolumePool.getClusterId() == null) {
-            storagePools = _poolDao.findZoneWideStoragePoolsByTags(volume.getDataCenterId(), null);
-        } else {
+
+        List<StoragePoolVO> storagePools;
+
+        if (srcVolumePool.getClusterId() != null) {
             storagePools = _poolDao.findPoolsByTags(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null);
         }
+        else {
+            storagePools = new ArrayList<>();
+        }
+
+        List<StoragePoolVO> zoneWideStoragePools = _poolDao.findZoneWideStoragePoolsByTags(volume.getDataCenterId(), null);
+
+        storagePools.addAll(zoneWideStoragePools);
 
         storagePools.remove(srcVolumePool);
         for (final StoragePoolVO pool : storagePools) {
@@ -1430,7 +1460,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         sb.and("clusterId", sb.entity().getClusterId(), SearchCriteria.Op.EQ);
         sb.and("resourceState", sb.entity().getResourceState(), SearchCriteria.Op.EQ);
         sb.and("hypervisorType", sb.entity().getHypervisorType(), SearchCriteria.Op.EQ);
-        sb.and("hypervisorVersion", sb.entity().getHypervisorVersion(), SearchCriteria.Op.EQ);
+        sb.and("hypervisorVersion", sb.entity().getHypervisorVersion(), SearchCriteria.Op.GTEQ);
 
         final String haTag = _haMgr.getHaTag();
         SearchBuilder<HostTagVO> hostTagSearch = null;
@@ -1679,6 +1709,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long clusterId = cmd.getClusterId();
         final Long storagepoolId = cmd.getStoragepoolId();
         final Long accountId = cmd.getAccountId();
+        final Long domainId = cmd.getDomainId();
         final Long imageStoreId = cmd.getImageStoreId();
         String scope = null;
         Long id = null;
@@ -1697,6 +1728,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         if (accountId != null) {
             scope = ConfigKey.Scope.Account.toString();
             id = accountId;
+            paramCountCheck++;
+        }
+        if (domainId != null) {
+            scope = ConfigKey.Scope.Domain.toString();
+            id = domainId;
             paramCountCheck++;
         }
         if (storagepoolId != null) {
@@ -1752,7 +1788,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
                 if (configVo != null) {
                     final ConfigKey<?> key = _configDepot.get(param.getName());
                     if (key != null) {
-                        configVo.setValue(key.valueIn(id).toString());
+                        configVo.setValue(key.valueIn(id) == null ? null : key.valueIn(id).toString());
                         configVOList.add(configVo);
                     } else {
                         s_logger.warn("ConfigDepot could not find parameter " + param.getName() + " for scope " + scope);
@@ -2503,6 +2539,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         for (final SummedCapacity summedCapacity : summedCapacities) {
             final CapacityVO capacity = new CapacityVO(null, summedCapacity.getDataCenterId(),summedCapacity.getPodId(), summedCapacity.getClusterId(), summedCapacity.getUsedCapacity()
                     + summedCapacity.getReservedCapacity(), summedCapacity.getTotalCapacity(), summedCapacity.getCapacityType());
+            capacity.setAllocatedCapacity(summedCapacity.getAllocatedCapacity());
             capacities.add(capacity);
         }
 
@@ -2665,6 +2702,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(GetUserCmd.class);
         cmdList.add(ListUsersCmd.class);
         cmdList.add(LockUserCmd.class);
+        cmdList.add(MoveUserCmd.class);
         cmdList.add(RegisterCmd.class);
         cmdList.add(UpdateUserCmd.class);
         cmdList.add(CreateVlanIpRangeCmd.class);
@@ -3007,6 +3045,14 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(UpdateLBHealthCheckPolicyCmd.class);
         cmdList.add(GetUploadParamsForTemplateCmd.class);
         cmdList.add(GetUploadParamsForVolumeCmd.class);
+        cmdList.add(MigrateNetworkCmd.class);
+        cmdList.add(MigrateVPCCmd.class);
+        cmdList.add(AcquirePodIpCmdByAdmin.class);
+        cmdList.add(ReleasePodIpCmdByAdmin.class);
+        cmdList.add(CreateManagementNetworkIpRangeCmd.class);
+        cmdList.add(DeleteManagementNetworkIpRangeCmd.class);
+        cmdList.add(UploadTemplateDirectDownloadCertificate.class);
+
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
         cmdList.add(DisableOutOfBandManagementForHostCmd.class);
@@ -3018,7 +3064,6 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(IssueOutOfBandManagementPowerActionCmd.class);
         cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
         cmdList.add(GetUserKeysCmd.class);
-
         return cmdList;
     }
 
@@ -3029,7 +3074,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {vmPasswordLength};
+        return new ConfigKey<?>[] {vmPasswordLength, sshKeyLength};
     }
 
     protected class EventPurgeTask extends ManagedContextRunnable {
@@ -3561,7 +3606,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("A key pair with name '" + cmd.getName() + "' already exists.");
         }
 
-        final SSHKeysHelper keys = new SSHKeysHelper();
+        final SSHKeysHelper keys = new SSHKeysHelper(sshKeyLength.value());
 
         final String name = cmd.getName();
         final String publicKey = keys.getPublicKey();
@@ -3578,7 +3623,17 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final Long domainId = cmd.getDomainId();
         final Long projectId = cmd.getProjectId();
 
-        final Account owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
+        Account owner = null;
+        try {
+            owner = _accountMgr.finalizeOwner(caller, accountName, domainId, projectId);
+        } catch (InvalidParameterValueException ex) {
+            if (caller.getType() == Account.ACCOUNT_TYPE_ADMIN && accountName != null && domainId != null) {
+                owner = _accountDao.findAccountIncludingRemoved(accountName, domainId);
+            }
+            if (owner == null) {
+                throw ex;
+            }
+        }
 
         final SSHKeyPairVO s = _sshKeyPairDao.findByName(owner.getAccountId(), owner.getDomainId(), cmd.getName());
         if (s == null) {

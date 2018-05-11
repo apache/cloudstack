@@ -58,7 +58,6 @@ class DBDeployer(object):
     isDebug = False
     mgmtsecretkey = None
     dbsecretkey = None
-    keyStorePassphrase = "vmops.com"
     encryptiontype = None
     dbConfPath = r"@MSCONF@"
     dbDotProperties = {}
@@ -198,9 +197,6 @@ for example:
         def encryptDBSecretKey():
             self.putDbProperty('db.cloud.encrypt.secret', formatEncryptResult(encrypt(self.dbsecretkey)))
 
-        def encryptKeyStorePassphrase():
-            self.putDbProperty('db.cloud.keyStorePassphrase', formatEncryptResult(encrypt(self.keyStorePassphrase)))
-        
         def encryptDBPassword():
             dbPassword = self.getDbProperty('db.cloud.password')       
             if dbPassword == '': return # Don't encrypt empty password
@@ -216,7 +212,6 @@ for example:
         self.putDbProperty("db.cloud.encryption.type", self.encryptiontype)
         saveMgmtServerSecretKey()
         encryptDBSecretKey()
-	encryptKeyStorePassphrase()
         encryptDBPassword()
         self.info(None, True)
         
@@ -225,7 +220,6 @@ for example:
             self.encryptiontype = self.options.encryptiontype
             self.mgmtsecretkey = self.options.mgmtsecretkey
             self.dbsecretkey = self.options.dbsecretkey
-	    self.keyStorePassphrase = self.options.keyStorePassphrase
             self.isDebug = self.options.debug
             
             
@@ -248,9 +242,7 @@ for example:
                           help="Secret key used to encrypt confidential parameters in db.properties. A string, default is password")
         self.parser.add_option("-k", "--database-secretkey", action="store", type="string", dest="dbsecretkey", default="password",
                           help="Secret key used to encrypt sensitive database values. A string, default is password")
-        self.parser.add_option("-p", "--keystore-passphrase", action="store", type="string", dest="keyStorePassphrase", default="vmops.com",
-                          help="Passphrase used while generating jks file for ssl communication. A string, default is vmops.com")
-        
+
         (self.options, self.args) = self.parser.parse_args()
         parseOtherOptions()
         validateParameters()

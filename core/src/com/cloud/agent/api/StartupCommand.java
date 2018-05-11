@@ -46,6 +46,7 @@ public class StartupCommand extends Command {
     String agentTag;
     String resourceName;
     String gatewayIpAddress;
+    String msHostList;
 
     public StartupCommand(Host.Type type) {
         this.type = type;
@@ -279,6 +280,14 @@ public class StartupCommand extends Command {
 
     public void setGatewayIpAddress(String gatewayIpAddress) {
         this.gatewayIpAddress = gatewayIpAddress;
+    }
+
+    public String getMsHostList() {
+        return msHostList;
+    }
+
+    public void setMSHostList(String msHostList) {
+        this.msHostList = msHostList;
     }
 
     @Override

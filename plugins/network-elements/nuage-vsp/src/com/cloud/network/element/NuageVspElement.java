@@ -29,25 +29,26 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableSet;
 import net.nuage.vsp.acs.client.api.model.VspAclRule;
 import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
 import net.nuage.vsp.acs.client.api.model.VspNetwork;
 import net.nuage.vsp.acs.client.api.model.VspStaticNat;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import org.apache.cloudstack.api.InternalIdentity;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.network.ExternalNetworkDeviceManager;
-import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.resourcedetail.VpcDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 
@@ -57,12 +58,12 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupVspCommand;
 import com.cloud.agent.api.element.ApplyAclRuleVspCommand;
 import com.cloud.agent.api.element.ApplyStaticNatVspCommand;
+import com.cloud.agent.api.element.ExtraDhcpOptionsVspCommand;
 import com.cloud.agent.api.element.ImplementVspCommand;
 import com.cloud.agent.api.element.ShutDownVpcVspCommand;
 import com.cloud.agent.api.element.ShutDownVspCommand;
 import com.cloud.dc.Vlan;
 import com.cloud.dc.VlanVO;
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.dc.dao.VlanDetailsDao;
 import com.cloud.deploy.DeployDestination;
@@ -74,14 +75,13 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
+import com.cloud.network.NetworkMigrationManager;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks;
-import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.PhysicalNetworkServiceProvider;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
@@ -90,12 +90,10 @@ import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
-import com.cloud.network.dao.NuageVspDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.manager.NuageVspManager;
 import com.cloud.network.manager.NuageVspManagerImpl;
-import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
 import com.cloud.network.rules.FirewallRule;
 import com.cloud.network.rules.FirewallRule.FirewallRuleType;
 import com.cloud.network.rules.FirewallRuleVO;
@@ -107,20 +105,21 @@ import com.cloud.network.vpc.PrivateGateway;
 import com.cloud.network.vpc.StaticRouteProfile;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcOfferingServiceMapVO;
-import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcOfferingServiceMapDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
-import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
 import com.cloud.resource.ResourceStateAdapter;
 import com.cloud.resource.ServerResource;
 import com.cloud.resource.UnableDeleteHostException;
+import com.cloud.server.ResourceTag;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.util.NuageVspEntityBuilder;
 import com.cloud.util.NuageVspUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
@@ -162,19 +161,13 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     @Inject
     ResourceManager _resourceMgr;
     @Inject
-    HostDao _hostDao;
-    @Inject
     NetworkModel _networkModel;
     @Inject
     NetworkServiceMapDao _ntwkSrvcDao;
     @Inject
-    NuageVspDao _nuageVspDao;
-    @Inject
     NetworkDao _networkDao;
     @Inject
     DomainDao _domainDao;
-    @Inject
-    DataCenterDao _dcDao;
     @Inject
     IPAddressDao _ipAddressDao;
     @Inject
@@ -184,11 +177,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     @Inject
     NicDao _nicDao;
     @Inject
-    VpcDao _vpcDao;
-    @Inject
     VpcOfferingServiceMapDao _vpcOfferingSrvcDao;
-    @Inject
-    NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
     AgentManager _agentMgr;
     @Inject
@@ -209,15 +198,10 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     NuageVspEntityBuilder _nuageVspEntityBuilder;
     @Inject
     VpcDetailsDao _vpcDetailsDao;
-
-    @Inject
-    NetworkModel _networkMgr;
-    @Inject
-    NetworkTopologyContext networkTopologyContext;
     @Inject
     DomainRouterDao _routerDao;
     @Inject
-    VpcVirtualNetworkApplianceManager _routerMgr;
+    ResourceTagDao _resourceTagDao;
 
     @Override
     public boolean applyIps(Network network, List<? extends PublicIpAddress> ipAddress, Set<Service> service) throws ResourceUnavailableException {
@@ -250,7 +234,8 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
                     Capability.MultipleIps, "true"
             ))
             .put(Service.Dhcp, ImmutableMap.of(
-                    Capability.DhcpAccrossMultipleSubnets, "true"
+                    Capability.DhcpAccrossMultipleSubnets, "true",
+                    Capability.ExtraDhcpOptions, "true"
             ))
             .put(Service.NetworkACL, ImmutableMap.of(
                     Capability.SupportedProtocols, "tcp,udp,icmp"
@@ -290,7 +275,8 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             return false;
         }
 
-
+        _nuageVspManager.updateBroadcastUri(network);
+        network = _networkDao.findById(network.getId());
         VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
         List<VspAclRule> ingressFirewallRules = getFirewallRulesToApply(network, FirewallRule.TrafficType.Ingress);
         List<VspAclRule> egressFirewallRules = getFirewallRulesToApply(network, FirewallRule.TrafficType.Egress);
@@ -513,6 +499,22 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         return true;
     }
 
+    @Override
+    public boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions) {
+        VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
+        HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
+        NicVO nic = _nicDao.findById(nicId);
+
+        ExtraDhcpOptionsVspCommand extraDhcpOptionsVspCommand = new ExtraDhcpOptionsVspCommand(vspNetwork, nic.getUuid(), dhcpOptions);
+        Answer answer = _agentMgr.easySend(nuageVspHost.getId(), extraDhcpOptionsVspCommand);
+
+        if (answer == null || !answer.getResult()) {
+            s_logger.error("[setExtraDhcpOptions] setting extra DHCP options for nic " + nic.getUuid() + " failed.");
+            return false;
+        }
+
+        return true;
+    }
 
     @Override
     public boolean applyStaticNats(Network config, List<? extends StaticNat> rules) throws ResourceUnavailableException {
@@ -522,9 +524,18 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             VlanVO sourceNatVlan = _vlanDao.findById(sourceNatIp.getVlanId());
             checkVlanUnderlayCompatibility(sourceNatVlan);
 
+            if (!staticNat.isForRevoke()) {
+                final List<FirewallRuleVO> firewallRules = _firewallRulesDao.listByIpAndNotRevoked(staticNat.getSourceIpAddressId());
+                for (FirewallRuleVO firewallRule : firewallRules) {
+                    _nuageVspEntityBuilder.buildVspAclRule(firewallRule, config, sourceNatIp);
+                }
+            }
+
             NicVO nicVO = _nicDao.findByIp4AddressAndNetworkId(staticNat.getDestIpAddress(), staticNat.getNetworkId());
             VspStaticNat vspStaticNat = _nuageVspEntityBuilder.buildVspStaticNat(staticNat.isForRevoke(), sourceNatIp, sourceNatVlan, nicVO);
             vspStaticNatDetails.add(vspStaticNat);
+
+
         }
 
         VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(config);
@@ -545,10 +556,11 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         List<VlanVO> vlans = _vlanDao.listByZone(newVlan.getDataCenterId());
         if (CollectionUtils.isNotEmpty(vlans)) {
             boolean newVlanUnderlay = NuageVspUtil.isUnderlayEnabledForVlan(_vlanDetailsDao, newVlan);
+            final String newCidr = NetUtils.getCidrFromGatewayAndNetmask(newVlan.getVlanGateway(), newVlan.getVlanNetmask());
+
             for (VlanVO vlan : vlans) {
                 if (vlan.getId() == newVlan.getId()) continue;
 
-                final String newCidr = NetUtils.getCidrFromGatewayAndNetmask(newVlan.getVlanGateway(), newVlan.getVlanNetmask());
                 final String existingCidr = NetUtils.getCidrFromGatewayAndNetmask(vlan.getVlanGateway(), vlan.getVlanNetmask());
 
                 NetUtils.SupersetOrSubset supersetOrSubset = NetUtils.isNetowrkASubsetOrSupersetOfNetworkB(newCidr, existingCidr);
@@ -633,7 +645,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
     @Override
     public boolean implementVpc(Vpc vpc, DeployDestination dest, ReservationContext context) throws ConcurrentOperationException, ResourceUnavailableException, InsufficientCapacityException {
         List<VpcOfferingServiceMapVO> vpcOfferingServices = _vpcOfferingSrvcDao.listByVpcOffId(vpc.getVpcOfferingId());
-        Map<Network.Service, Set<Network.Provider>> supportedVpcServices = NuageVspManagerImpl.NUAGE_VSP_VPC_SERVICE_MAP;
+        Multimap<Service, Provider> supportedVpcServices = NuageVspManagerImpl.SUPPORTED_NUAGE_VSP_VPC_SERVICE_MAP;
         for (VpcOfferingServiceMapVO vpcOfferingService : vpcOfferingServices) {
             Network.Service service = Network.Service.getService(vpcOfferingService.getService());
             if (!supportedVpcServices.containsKey(service)) {
@@ -642,10 +654,16 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             }
 
             Network.Provider provider = Network.Provider.getProvider(vpcOfferingService.getProvider());
-            if (!supportedVpcServices.get(service).contains(provider)) {
+            if (!supportedVpcServices.containsEntry(service, provider)) {
                 s_logger.warn(String.format("NuageVsp doesn't support provider %s for service %s for VPCs", provider.getName(), service.getName()));
                 return false;
             }
+        }
+
+        String globalDomainTemplate = _nuageVspManager.NuageVspVpcDomainTemplateName.value();
+        if (StringUtils.isNotBlank(globalDomainTemplate) && !_nuageVspManager.checkIfDomainTemplateExist(vpc.getDomainId(),globalDomainTemplate,vpc.getZoneId(),null)) {
+            s_logger.warn("The global pre configured domain template does not exist on the VSD.");
+            throw new CloudRuntimeException("The global pre configured domain template does not exist on the VSD.");
         }
 
         return true;
@@ -678,23 +696,42 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
                 preConfiguredDomainTemplateName = _configDao.getValue(NuageVspManager.NuageVspVpcDomainTemplateName.key());
             }
 
-            ShutDownVpcVspCommand cmd = new ShutDownVpcVspCommand(vpcDomain.getUuid(), vpc.getUuid(), preConfiguredDomainTemplateName, domainRouterUuids);
+            Map<String, String> vpcDetails = _vpcDetailsDao.listDetailsKeyPairs(vpc.getId(), false);
+
+            cleanUpVpcCaching(vpc.getId());
+            //related to migration caching
+            List<? extends ResourceTag> vpcResourceDetails = _resourceTagDao.listByResourceUuid(vpc.getUuid());
+            if (vpcResourceDetails != null) {
+                vpcResourceDetails.stream()
+                                  .filter(item -> item.getKey().equals(NetworkMigrationManager.MIGRATION))
+                                  .findFirst()
+                                  .map(ResourceTag::getResourceId)
+                                  .ifPresent(this::cleanUpVpcCaching);
+            }
+
+            ShutDownVpcVspCommand cmd = new ShutDownVpcVspCommand(vpcDomain.getUuid(), vpc.getUuid(), preConfiguredDomainTemplateName, domainRouterUuids, vpcDetails);
             Answer answer =  _agentMgr.easySend(nuageVspHost.getId(), cmd);
             if (answer == null || !answer.getResult()) {
                 s_logger.error("ShutDownVpcVspCommand for VPC " + vpc.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
                 if ((null != answer) && (null != answer.getDetails())) {
                     throw new ResourceUnavailableException(answer.getDetails(), Vpc.class, vpc.getId());
                 }
+                return false;
             }
         }
         return true;
+    }
+
+    private void cleanUpVpcCaching(long vpcId) {
+        _vpcDetailsDao.removeDetail(vpcId, NuageVspManager.NETWORK_METADATA_VSD_DOMAIN_ID);
+        _vpcDetailsDao.removeDetail(vpcId, NuageVspManager.NETWORK_METADATA_VSD_ZONE_ID);
     }
 
     private Long getPhysicalNetworkId(Long zoneId) {
         Long guestPhysicalNetworkId = 0L;
         List<PhysicalNetworkVO> physicalNetworkList = _physicalNetworkDao.listByZone(zoneId);
         for (PhysicalNetworkVO phyNtwk : physicalNetworkList) {
-            if (phyNtwk.getIsolationMethods().contains(PhysicalNetwork.IsolationMethod.VSP.name())) {
+            if (phyNtwk.getIsolationMethods().contains("VSP")) {
                 guestPhysicalNetworkId = phyNtwk.getId();
                 break;
             }

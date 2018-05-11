@@ -25,9 +25,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -44,9 +49,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -2272,7 +2275,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
 
                 try {
-                    SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart");
+                    SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart");
+                    s_logger.debug("cloudstack-agent restart result: " + result.toString());
                 } catch (final SshException e) {
                     return false;
                 }
@@ -2517,6 +2521,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public List<HostVO> listAllUpHosts(Type type, Long clusterId, Long podId, long dcId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        if (type != null) {
+            sc.and(sc.entity().getType(), Op.EQ, type);
+        }
+        if (clusterId != null) {
+            sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
+        }
+        if (podId != null) {
+            sc.and(sc.entity().getPodId(), Op.EQ, podId);
+        }
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        return sc.list();
+    }
+
+    @Override
     public List<HostVO> listAllUpAndEnabledNonHAHosts(final Type type, final Long clusterId, final Long podId, final long dcId) {
         final String haTag = _haMgr.getHaTag();
         return _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, haTag);
@@ -2737,8 +2758,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public GPUDeviceTO getGPUDevice(final long hostId, final String groupName, final String vgpuType) {
-        final HostGpuGroupsVO gpuDevice = listAvailableGPUDevice(hostId, groupName, vgpuType).get(0);
-        return new GPUDeviceTO(gpuDevice.getGroupName(), vgpuType, null);
+        final List<HostGpuGroupsVO> gpuDeviceList = listAvailableGPUDevice(hostId, groupName, vgpuType);
+
+        if (CollectionUtils.isEmpty(gpuDeviceList)) {
+            final String errorMsg = "Host " + hostId + " does not have required GPU device or out of capacity. GPU group: " + groupName + ", vGPU Type: " + vgpuType;
+            s_logger.error(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
+        }
+
+        return new GPUDeviceTO(gpuDeviceList.get(0).getGroupName(), vgpuType, null);
     }
 
     @Override
@@ -2768,6 +2796,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
         return null;
+    }
+
+    @Override
+    public HostVO findOneRandomRunningHostByHypervisor(HypervisorType type) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.EQ, type);
+        sc.and(sc.entity().getType(),Op.EQ, Type.Routing);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        sc.and(sc.entity().getRemoved(), Op.NULL);
+        List<HostVO> hosts = sc.list();
+        if (CollectionUtils.isEmpty(hosts)) {
+            return null;
+        } else {
+            Collections.shuffle(hosts, new Random(System.currentTimeMillis()));
+            return hosts.get(0);
+        }
     }
 
     @Override

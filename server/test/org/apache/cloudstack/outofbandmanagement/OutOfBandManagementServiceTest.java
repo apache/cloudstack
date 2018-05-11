@@ -101,7 +101,7 @@ public class OutOfBandManagementServiceTest {
         OutOfBandManagement config = new OutOfBandManagementVO(123L);
         config.setAddress("localhost");
         config.setDriver("ipmitool");
-        config.setPort(1234);
+        config.setPort("1234");
         ImmutableMap<OutOfBandManagement.Option, String> options = oobmService.getOptions(config);
         Assert.assertEquals(options.get(OutOfBandManagement.Option.ADDRESS), "localhost");
         Assert.assertEquals(options.get(OutOfBandManagement.Option.DRIVER), "ipmitool");

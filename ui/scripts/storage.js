@@ -36,8 +36,10 @@
                     label: 'label.volumes',
                     preFilter: function(args) {
                         var hiddenFields = [];
-                        if (isAdmin() != true)
+                        if (isAdmin() != true) {
                             hiddenFields.push('hypervisor');
+                            hiddenFields.push('account');
+                        }
                         return hiddenFields;
                     },
                     fields: {
@@ -47,11 +49,33 @@
                         type: {
                             label: 'label.type'
                         },
+                        vmdisplayname: {
+                            label: 'label.vm.display.name'
+                        },
                         hypervisor: {
                             label: 'label.hypervisor'
                         },
-                        vmdisplayname: {
-                            label: 'label.vm.display.name'
+                        account: {
+                            label: 'label.account'
+                        },
+                        zonename: {
+                            label: 'label.zone'
+                        },
+                        state: {
+                            label: 'label.metrics.state',
+                            converter: function (str) {
+                                // For localization
+                                return str;
+                            },
+                            indicator: {
+                                'Allocated': 'on',
+                                'Ready': 'on',
+                                'Destroy': 'off',
+                                'Expunging': 'off',
+                                'Migrating': 'warning',
+                                'UploadOp': 'warning',
+                                'Snapshotting': 'warning',
+                            }
                         }
                     },
 
@@ -813,13 +837,18 @@
                                         },
                                         name: {
                                             label: 'label.name'
+                                        },
+                                        asyncBackup: {
+						label: 'label.async.backup',
+						isBoolean: true
                                         }
                                     }
                                 },
                                 action: function(args) {
                                     var data = {
                                         volumeId: args.context.volumes[0].id,
-                                        quiescevm: (args.data.quiescevm == 'on' ? true: false)
+                                        quiescevm: (args.data.quiescevm == 'on' ? true: false),
+                                        asyncBackup: (args.data.asyncBackup == 'on' ? true: false)
                                     };
                                     if (args.data.name != null && args.data.name.length > 0) {
                                         $.extend(data, {
@@ -1706,6 +1735,11 @@
                                             array1.push("&maxiops=" + todb(maxIops));
                                         }
                                     }
+                                    //if original disk size  > new disk size
+                                    if ((args.context.volumes[0].type == "ROOT")
+                                    && (args.context.volumes[0].size > (newSize * (1024 * 1024 * 1024)))) {
+                                        return args.response.error('message.volume.root.shrink.disk.size');
+                                    }
 
 
                                     $.ajax({
@@ -1742,7 +1776,7 @@
                                     if (isAdmin()) {
                                         hiddenFields = [];
                                     } else {
-                                        hiddenFields = ['storage', 'hypervisor'];
+                                        hiddenFields = ['storage', 'hypervisor', 'virtualsize', 'physicalsize', 'utilization', 'clusterid', 'clustername'];
                                     }
                                     return hiddenFields;
                                 },
@@ -1800,6 +1834,33 @@
                                     },
                                     size: {
                                         label: 'label.size',
+                                        converter: function(args) {
+                                            if (args == null || args == 0)
+                                                return "";
+                                            else
+                                                return cloudStack.converters.convertBytes(args);
+                                        }
+                                    },
+                                    clusterid: {
+					label: 'label.cluster'
+                                    },
+                                    clustername: {
+					label: 'label.cluster.name'
+                                    },
+                                    physicalsize: {
+                                        label: 'label.disk.physicalsize',
+                                        converter: function(args) {
+                                            if (args == null || args == 0)
+                                                return "";
+                                            else
+                                                return cloudStack.converters.convertBytes(args);
+                                        }
+                                    },
+                                    utilization: {
+                                        label: 'label.disk.utilisation'
+                                    },
+                                    virtualsize: {
+                                        label: 'label.disk.virtualsize',
                                         converter: function(args) {
                                             if (args == null || args == 0)
                                                 return "";
@@ -2798,7 +2859,10 @@
         if (jsonObj.state == "Ready") {
             allowedActions.push("remove");
             allowedActions.push("revertToVMSnapshot");
-            allowedActions.push("takeSnapshot");
+
+            if (args && args.context && args.context.instances && args.context.instances[0].hypervisor && args.context.instances[0].hypervisor === "KVM") {
+                allowedActions.push("takeSnapshot");
+            }
         }
 
         return allowedActions;

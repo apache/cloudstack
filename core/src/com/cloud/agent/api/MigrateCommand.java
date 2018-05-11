@@ -19,15 +19,20 @@
 
 package com.cloud.agent.api;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.cloud.agent.api.to.VirtualMachineTO;
 
 public class MigrateCommand extends Command {
-    String vmName;
-    String destIp;
-    String hostGuid;
-    boolean isWindows;
-    VirtualMachineTO vmTO;
-    boolean executeInSequence = false;
+    private String vmName;
+    private String destIp;
+    private Map<String, MigrateDiskInfo> migrateStorage;
+    private boolean autoConvergence;
+    private String hostGuid;
+    private boolean isWindows;
+    private VirtualMachineTO vmTO;
+    private boolean executeInSequence = false;
 
     protected MigrateCommand() {
     }
@@ -38,6 +43,22 @@ public class MigrateCommand extends Command {
         this.isWindows = isWindows;
         this.vmTO = vmTO;
         this.executeInSequence = executeInSequence;
+    }
+
+    public void setMigrateStorage(Map<String, MigrateDiskInfo> migrateStorage) {
+        this.migrateStorage = migrateStorage;
+    }
+
+    public Map<String, MigrateDiskInfo> getMigrateStorage() {
+        return migrateStorage != null ? new HashMap<>(migrateStorage) : new HashMap<String, MigrateDiskInfo>();
+    }
+
+    public void setAutoConvergence(boolean autoConvergence) {
+        this.autoConvergence = autoConvergence;
+    }
+
+    public boolean isAutoConvergence() {
+        return autoConvergence;
     }
 
     public boolean isWindows() {
@@ -67,5 +88,68 @@ public class MigrateCommand extends Command {
     @Override
     public boolean executeInSequence() {
         return executeInSequence;
+    }
+
+    public static class MigrateDiskInfo {
+        public enum DiskType {
+            FILE, BLOCK;
+
+            @Override
+            public String toString() {
+                return name().toLowerCase();
+            }
+        }
+
+        public enum DriverType {
+            QCOW2, RAW;
+
+            @Override
+            public String toString() {
+                return name().toLowerCase();
+            }
+        }
+
+        public enum Source {
+            FILE, DEV;
+
+            @Override
+            public String toString() {
+                return name().toLowerCase();
+            }
+        }
+
+        private final String serialNumber;
+        private final DiskType diskType;
+        private final DriverType driverType;
+        private final Source source;
+        private final String sourceText;
+
+        public MigrateDiskInfo(final String serialNumber, final DiskType diskType, final DriverType driverType, final Source source, final String sourceText) {
+            this.serialNumber = serialNumber;
+            this.diskType = diskType;
+            this.driverType = driverType;
+            this.source = source;
+            this.sourceText = sourceText;
+        }
+
+        public String getSerialNumber() {
+            return serialNumber;
+        }
+
+        public DiskType getDiskType() {
+            return diskType;
+        }
+
+        public DriverType getDriverType() {
+            return driverType;
+        }
+
+        public Source getSource() {
+            return source;
+        }
+
+        public String getSourceText() {
+            return sourceText;
+        }
     }
 }

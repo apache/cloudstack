@@ -20,7 +20,9 @@ package org.apache.cloudstack.storage.image;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
@@ -34,6 +36,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.framework.async.AsyncCallbackDispatcher;
 import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import org.apache.cloudstack.framework.async.AsyncRpcContext;
@@ -44,9 +47,13 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
+import org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.storage.CreateDatadiskTemplateCommand;
 import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.agent.api.storage.GetDatadisksAnswer;
+import com.cloud.agent.api.storage.GetDatadisksCommand;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.alert.AlertManager;
@@ -54,10 +61,15 @@ import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.user.ResourceLimitService;
+import com.cloud.user.dao.AccountDao;
+import com.cloud.agent.api.to.DatadiskTO;
 import com.cloud.utils.net.Proxy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     private static final Logger s_logger = Logger.getLogger(BaseImageStoreDriverImpl.class);
@@ -79,6 +91,14 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     VMTemplateZoneDao _vmTemplateZoneDao;
     @Inject
     AlertManager _alertMgr;
+    @Inject
+    VMTemplateDetailsDao _templateDetailsDao;
+    @Inject
+    DefaultEndPointSelector _defaultEpSelector;
+    @Inject
+    AccountDao _accountDao;
+    @Inject
+    ResourceLimitService _resourceLimitMgr;
 
     protected String _proxy = null;
 
@@ -288,6 +308,58 @@ public abstract class BaseImageStoreDriverImpl implements ImageStoreDriver {
     }
 
     @Override
-    public void deleteEntityExtractUrl(DataStore store, String installPath, String url, Upload.Type entityType){
+    public void deleteEntityExtractUrl(DataStore store, String installPath, String url, Upload.Type entityType) {
+    }
+
+    @Override
+    public List<DatadiskTO> getDataDiskTemplates(DataObject obj) {
+        List<DatadiskTO> dataDiskDetails = new ArrayList<DatadiskTO>();
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Get the data disks present in the OVA template");
+        }
+        DataStore store = obj.getDataStore();
+        GetDatadisksCommand cmd = new GetDatadisksCommand(obj.getTO());
+        EndPoint ep = _defaultEpSelector.select(store);
+        Answer answer = null;
+        if (ep == null) {
+            String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
+        if (answer != null && answer.getResult()) {
+            GetDatadisksAnswer getDatadisksAnswer = (GetDatadisksAnswer)answer;
+            dataDiskDetails = getDatadisksAnswer.getDataDiskDetails(); // Details - Disk path, virtual size
+        }
+        else {
+            throw new CloudRuntimeException("Get Data disk command failed " + answer.getDetails());
+        }
+        return dataDiskDetails;
+    }
+
+    @Override
+    public Void createDataDiskTemplateAsync(TemplateInfo dataDiskTemplate, String path, String diskId, boolean bootable, long fileSize, AsyncCompletionCallback<CreateCmdResult> callback) {
+        Answer answer = null;
+        String errMsg = null;
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Create Datadisk template: " + dataDiskTemplate.getId());
+        }
+        CreateDatadiskTemplateCommand cmd = new CreateDatadiskTemplateCommand(dataDiskTemplate.getTO(), path, diskId, fileSize, bootable);
+        EndPoint ep = _defaultEpSelector.select(dataDiskTemplate.getDataStore());
+        if (ep == null) {
+            errMsg = "No remote endpoint to send command, check if host or ssvm is down?";
+            s_logger.error(errMsg);
+            answer = new Answer(cmd, false, errMsg);
+        } else {
+            answer = ep.sendMessage(cmd);
+        }
+        if (answer != null && !answer.getResult()) {
+            errMsg = answer.getDetails();
+        }
+        CreateCmdResult result = new CreateCmdResult(null, answer);
+        result.setResult(errMsg);
+        callback.complete(result);
+        return null;
     }
 }

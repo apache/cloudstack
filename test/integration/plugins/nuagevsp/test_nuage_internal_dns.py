@@ -23,6 +23,13 @@ from marvin.cloudstackAPI import updateZone
 from marvin.lib.base import Account, Network
 # Import System Modules
 from nose.plugins.attrib import attr
+import time
+
+UPDATED_DOMAIN_NAME = "update.com"
+
+ISOLATED_DOMAIN_NAME = "isolated.com"
+
+VPC_DOMAIN_NAME = "vpc.com"
 
 
 class TestNuageInternalDns(nuageTestCase):
@@ -97,6 +104,33 @@ class TestNuageInternalDns(nuageTestCase):
         self.debug("Successfully verified the creation and value of DHCP "
                    "option type - %s in VSD" % dhcp_type)
 
+    def vm_verify_ping(self, src_vm, public_ip, dst_vm, domain_name):
+        if self.isSimulator:
+            self.debug("Simulator Environment: not verifying ping.")
+            return
+
+        src_vm.ssh_ip = public_ip
+        src_vm.ssh_port = self.test_data["virtual_machine"]["ssh_port"]
+        src_vm.username = self.test_data["virtual_machine"]["username"]
+        src_vm.password = self.test_data["virtual_machine"]["password"]
+        self.debug("SSHing into VM: %s with %s" %
+                   (src_vm.ssh_ip, src_vm.password))
+
+        ssh = self.ssh_into_VM(src_vm, public_ip)
+
+        cmd = 'ping -c 2 ' + dst_vm.name
+        self.debug("ping vm2 by hostname with command: " + cmd)
+        outputlist = ssh.execute(cmd)
+        self.debug("command is executed properly " + cmd)
+        completeoutput = str(outputlist).strip('[]')
+        self.debug("complete output is " + completeoutput)
+        expectedlist = ['2 received', dst_vm.name + '.' + domain_name, dst_vm.ipaddress]
+        for item in expectedlist:
+            if item in completeoutput:
+                self.debug("excepted value found in vm: " + item)
+            else:
+                self.fail("excepted value not found in vm: " + item)
+
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_01_Isolated_Network_with_zone(self):
         """ Verify InternalDns on Isolated Network
@@ -112,7 +146,7 @@ class TestNuageInternalDns(nuageTestCase):
         # update Network Domain at zone level
         cmd = updateZone.updateZoneCmd()
         cmd.id = self.zone.id
-        cmd.domain = "isolated.com"
+        cmd.domain = ISOLATED_DOMAIN_NAME
         self.apiclient.updateZone(cmd)
         self.debug("Creating and enabling Nuage Vsp Isolated Network "
                    "offering...")
@@ -129,11 +163,11 @@ class TestNuageInternalDns(nuageTestCase):
 
         # Internal DNS check point on VSD
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
-        self.verify_vsd_dhcp_option(self.DOMAINNAME, "isolated.com", network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, ISOLATED_DOMAIN_NAME, network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
-                self.DOMAINNAME, "isolated.com", nic, True)
+                self.DOMAINNAME, ISOLATED_DOMAIN_NAME, nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
@@ -152,7 +186,7 @@ class TestNuageInternalDns(nuageTestCase):
 
         cmd = updateZone.updateZoneCmd()
         cmd.id = self.zone.id
-        cmd.domain = "isolated.com"
+        cmd.domain = ISOLATED_DOMAIN_NAME
         self.apiclient.updateZone(cmd)
 
         self.debug("Creating and enabling Nuage Vsp Isolated Network "
@@ -170,11 +204,11 @@ class TestNuageInternalDns(nuageTestCase):
 
         # Internal DNS check point on VSD
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
-        self.verify_vsd_dhcp_option(self.DOMAINNAME, "isolated.com", network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, ISOLATED_DOMAIN_NAME, network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
-                self.DOMAINNAME, "isolated.com", nic, True)
+                self.DOMAINNAME, ISOLATED_DOMAIN_NAME, nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
 
         self.test_data["virtual_machine"]["displayname"] = "vm2"
@@ -186,42 +220,111 @@ class TestNuageInternalDns(nuageTestCase):
         for nic in vm_2.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
-                self.DOMAINNAME, "isolated.com", nic, True)
+                self.DOMAINNAME, ISOLATED_DOMAIN_NAME, nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm2", nic, True)
 
         public_ip_1 = self.acquire_PublicIPAddress(network_1)
         self.create_and_verify_fw(vm_1, public_ip_1, network_1)
 
-        vm_public_ip = public_ip_1.ipaddress.ipaddress
+        self.vm_verify_ping(vm_1, public_ip_1, vm_2, ISOLATED_DOMAIN_NAME)
 
-        try:
-            vm_1.ssh_ip = vm_public_ip
-            vm_1.ssh_port = self.test_data["virtual_machine"]["ssh_port"]
-            vm_1.username = self.test_data["virtual_machine"]["username"]
-            vm_1.password = self.test_data["virtual_machine"]["password"]
-            self.debug("SSHing into VM: %s with %s" %
-                       (vm_1.ssh_ip, vm_1.password))
+    @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
+    def test_03_Isolated_Network_restarts(self):
+        """ Verify InternalDns on Isolated Network with restart networks and
+        ping by hostname
+        """
 
-            ssh = vm_1.get_ssh_client(ipaddress=vm_public_ip)
+        # Validate the following
+        # 1. Create an Isolated network - network1 (10.1.1.1/24) by using DNS
+        #    network offering.
+        # 2. Deploy vm1 in network1.
+        # 3. Verify dhcp option 06 and 0f for subnet
+        # 4. Verify dhcp option 06,15 and 0f for vm Interface.
+        # 5. Deploy VM2 in network1.
+        # 6. Verify end to end by pinging with hostname while restarting
+        #    network1 without and with cleanup.
 
-        except Exception as e:
-            self.fail("SSH into VM failed with exception %s" % e)
+        cmd = updateZone.updateZoneCmd()
+        cmd.id = self.zone.id
+        cmd.domain = ISOLATED_DOMAIN_NAME
+        self.apiclient.updateZone(cmd)
 
-        cmd = 'ping -c 2 vm2'
-        self.debug("ping vm2 by hostname with command: " + cmd)
-        outputlist = ssh.execute(cmd)
-        self.debug("command is executed properly " + cmd)
-        completeoutput = str(outputlist).strip('[]')
-        self.debug("complete output is " + completeoutput)
-        expectedlist = ['2 received', 'vm2.isolated.com', vm_2.ipaddress]
-        for item in expectedlist:
-            if item in completeoutput:
-                self.debug("excepted value found in vm: " + item)
-            else:
-                self.fail("excepted value not found in vm: " + item)
+        self.debug("Creating and enabling Nuage Vsp Isolated Network "
+                   "offering...")
+        network_offering = self.create_NetworkOffering(
+            self.dnsdata["isolated_network_offering"])
+        self.validate_NetworkOffering(network_offering, state="Enabled")
+
+        network_1 = self.create_Network(network_offering)
+        vm_1 = self.create_VM(network_1)
+
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_1)
+        self.verify_vsd_vm(vm_1)
+
+        # Internal DNS check point on VSD
+        self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, ISOLATED_DOMAIN_NAME, network_1)
+        for nic in vm_1.nic:
+            self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
+            self.verify_vsd_dhcp_option(
+                self.DOMAINNAME, ISOLATED_DOMAIN_NAME, nic, True)
+            self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
+
+        self.test_data["virtual_machine"]["displayname"] = "vm2"
+        self.test_data["virtual_machine"]["name"] = "vm2"
+        vm_2 = self.create_VM(network_1)
+        self.test_data["virtual_machine"]["displayname"] = "vm1"
+        self.test_data["virtual_machine"]["name"] = "vm1"
+        self.verify_vsd_vm(vm_2)
+        for nic in vm_2.nic:
+            self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
+            self.verify_vsd_dhcp_option(
+                self.DOMAINNAME, ISOLATED_DOMAIN_NAME, nic, True)
+            self.verify_vsd_dhcp_option(self.HOSTNAME, "vm2", nic, True)
+
+        public_ip_1 = self.acquire_PublicIPAddress(network_1)
+        self.create_and_verify_fw(vm_1, public_ip_1, network_1)
+
+        self.vm_verify_ping(vm_1, public_ip_1, vm_2, ISOLATED_DOMAIN_NAME)
+
+        # Restarting Isolated network (cleanup = false)
+        self.debug("Restarting the created Isolated network without "
+                   "cleanup...")
+        Network.restart(network_1, self.api_client, cleanup=False)
+        self.validate_Network(network_1, state="Implemented")
+        vr = self.get_Router(network_1)
+        self.check_Router_state(vr, state="Running")
+        self.check_VM_state(vm_1, state="Running")
+        self.check_VM_state(vm_2, state="Running")
+
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_1)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(vm_1)
+        self.verify_vsd_vm(vm_2)
+
+        self.vm_verify_ping(vm_1, public_ip_1, vm_2, ISOLATED_DOMAIN_NAME)
+
+        # Restarting Isolated network (cleanup = true)
+        self.debug("Restarting the created Isolated network with cleanup...")
+        Network.restart(network_1, self.api_client, cleanup=True)
+        self.validate_Network(network_1, state="Implemented")
+        vr = self.get_Router(network_1)
+        self.check_Router_state(vr, state="Running")
+        self.check_VM_state(vm_1, state="Running")
+        self.check_VM_state(vm_2, state="Running")
+
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_1)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(vm_1)
+        self.verify_vsd_vm(vm_2)
+
+        self.vm_verify_ping(vm_1, public_ip_1, vm_2, ISOLATED_DOMAIN_NAME)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
-    def test_03_Update_Network_with_Domain(self):
+    def test_04_Update_Network_with_Domain(self):
         """ Verify update NetworkDomain for InternalDns on Isolated Network
         """
 
@@ -236,7 +339,7 @@ class TestNuageInternalDns(nuageTestCase):
         # update Network Domain at zone level
         cmd = updateZone.updateZoneCmd()
         cmd.id = self.zone.id
-        cmd.domain = "isolated.com"
+        cmd.domain = ISOLATED_DOMAIN_NAME
         self.apiclient.updateZone(cmd)
 
         self.debug("Creating and enabling Nuage Vsp Isolated Network "
@@ -258,27 +361,27 @@ class TestNuageInternalDns(nuageTestCase):
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
-                self.DOMAINNAME, "isolated.com", nic, True)
+                self.DOMAINNAME, ISOLATED_DOMAIN_NAME, nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
 
         update_response = Network.update(
             network_1, self.apiclient, id=network_1.id,
-            networkdomain="update.com", changecidr=False)
+            networkdomain=UPDATED_DOMAIN_NAME, changecidr=False)
         completeoutput = str(update_response).strip('[]')
         self.debug("network update response is " + completeoutput)
-        self.assertEqual("update.com", update_response.networkdomain,
+        self.assertEqual(UPDATED_DOMAIN_NAME, update_response.networkdomain,
                          "Network Domain is not updated as expected"
                          )
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
-        self.verify_vsd_dhcp_option(self.DOMAINNAME, "update.com", network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, UPDATED_DOMAIN_NAME, network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
-                self.DOMAINNAME, "update.com", nic, True)
+                self.DOMAINNAME, UPDATED_DOMAIN_NAME, nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
-    def test_04_Update_Network_with_Domain(self):
+    def test_05_Update_Network_with_Domain(self):
         """ Verify update NetworkDomain for InternalDns on Isolated Network
         with ping VM
         """
@@ -294,7 +397,7 @@ class TestNuageInternalDns(nuageTestCase):
         # update Network Domain at zone level
         cmd = updateZone.updateZoneCmd()
         cmd.id = self.zone.id
-        cmd.domain = "isolated.com"
+        cmd.domain = ISOLATED_DOMAIN_NAME
         self.apiclient.updateZone(cmd)
 
         self.debug("Creating and enabling Nuage Vsp Isolated Network "
@@ -313,27 +416,27 @@ class TestNuageInternalDns(nuageTestCase):
         # Internal DNS check point on VSD
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
         self.verify_vsd_dhcp_option(
-            self.DOMAINNAME, "isolated.com", network_1)
+            self.DOMAINNAME, ISOLATED_DOMAIN_NAME, network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
-                self.DOMAINNAME, "isolated.com", nic, True)
+                self.DOMAINNAME, ISOLATED_DOMAIN_NAME, nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
 
         update_response = Network.update(
             network_1, self.apiclient, id=network_1.id,
-            networkdomain="update.com", changecidr=False)
+            networkdomain=UPDATED_DOMAIN_NAME, changecidr=False)
         completeoutput = str(update_response).strip('[]')
         self.debug("network update response is " + completeoutput)
-        self.assertEqual("update.com", update_response.networkdomain,
+        self.assertEqual(UPDATED_DOMAIN_NAME, update_response.networkdomain,
                          "Network Domain is not updated as expected"
                          )
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
-        self.verify_vsd_dhcp_option(self.DOMAINNAME, "update.com", network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, UPDATED_DOMAIN_NAME, network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
-                self.DOMAINNAME, "update.com", nic, True)
+                self.DOMAINNAME, UPDATED_DOMAIN_NAME, nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
 
         # stop and start VM to get new DHCP option
@@ -351,7 +454,7 @@ class TestNuageInternalDns(nuageTestCase):
         for nic in vm_2.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
-                self.DOMAINNAME, "update.com", nic, True)
+                self.DOMAINNAME, UPDATED_DOMAIN_NAME, nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm2", nic, True)
 
         try:
@@ -362,36 +465,10 @@ class TestNuageInternalDns(nuageTestCase):
         public_ip_1 = self.acquire_PublicIPAddress(network_1)
         self.create_and_verify_fw(vm_1, public_ip_1, network_1)
 
-        vm_public_ip = public_ip_1.ipaddress.ipaddress
-
-        try:
-            vm_1.ssh_ip = vm_public_ip
-            vm_1.ssh_port = self.test_data["virtual_machine"]["ssh_port"]
-            vm_1.username = self.test_data["virtual_machine"]["username"]
-            vm_1.password = self.test_data["virtual_machine"]["password"]
-            self.debug("SSHing into VM: %s with %s" %
-                       (vm_1.ssh_ip, vm_1.password))
-
-            ssh = vm_1.get_ssh_client(ipaddress=vm_public_ip)
-
-        except Exception as e:
-            self.fail("SSH into VM failed with exception: %s " % e)
-
-        cmd = 'ping -c 2 vm2'
-        self.debug("ping vm2 by hostname with command: " + cmd)
-        outputlist = ssh.execute(cmd)
-        self.debug("command is executed properly " + cmd)
-        completeoutput = str(outputlist).strip('[]')
-        self.debug("complete output is " + completeoutput)
-        expectedlist = ['2 received', 'vm2.update.com', vm_2.ipaddress]
-        for item in expectedlist:
-            if item in completeoutput:
-                self.debug("excepted value found in vm: " + item)
-            else:
-                self.fail("excepted value not found in vm: " + item)
+        self.vm_verify_ping(vm_1,  public_ip_1, vm_2, UPDATED_DOMAIN_NAME)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
-    def test_05_VPC_Network_With_InternalDns(self):
+    def test_06_VPC_Network_With_InternalDns(self):
         """ Verify InternalDns on VPC Network
         """
 
@@ -400,10 +477,9 @@ class TestNuageInternalDns(nuageTestCase):
         # 2. Deploy vm1 in tier network.
         # 3. Verify dhcp option 06 and 0f for subnet
         # 4. Verify dhcp option 06,15 and 0f for vm Interface.
-
         cmd = updateZone.updateZoneCmd()
         cmd.id = self.zone.id
-        cmd.domain = "vpc.com"
+        cmd.domain = VPC_DOMAIN_NAME
         self.apiclient.updateZone(cmd)
         vpc_off = self.create_VpcOffering(self.dnsdata["vpc_offering"])
         self.validate_VpcOffering(vpc_off, state="Enabled")
@@ -425,14 +501,14 @@ class TestNuageInternalDns(nuageTestCase):
 
         # Internal DNS check point on VSD
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
-        self.verify_vsd_dhcp_option(self.DOMAINNAME, "vpc.com", network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
-            self.verify_vsd_dhcp_option(self.DOMAINNAME, "vpc.com", nic, True)
+            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
-    def test_06_VPC_Network_With_InternalDns(self):
+    def test_07_VPC_Network_With_InternalDns(self):
         """ Verify InternalDns on VPC Network by ping with hostname
         """
 
@@ -446,7 +522,7 @@ class TestNuageInternalDns(nuageTestCase):
 
         cmd = updateZone.updateZoneCmd()
         cmd.id = self.zone.id
-        cmd.domain = "vpc.com"
+        cmd.domain = VPC_DOMAIN_NAME
         self.apiclient.updateZone(cmd)
 
         vpc_off = self.create_VpcOffering(self.dnsdata["vpc_offering"])
@@ -470,7 +546,7 @@ class TestNuageInternalDns(nuageTestCase):
         self.verify_vsd_dhcp_option(self.DOMAINNAME, "vpc.com", network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
-            self.verify_vsd_dhcp_option(self.DOMAINNAME, "vpc.com", nic, True)
+            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
 
         self.test_data["virtual_machine"]["displayname"] = "vm2"
@@ -481,7 +557,7 @@ class TestNuageInternalDns(nuageTestCase):
         self.verify_vsd_vm(vm_2)
         for nic in vm_2.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
-            self.verify_vsd_dhcp_option(self.DOMAINNAME, "vpc.com", nic, True)
+            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm2", nic, True)
 
         public_ip_1 = self.acquire_PublicIPAddress(network_1, vpc)
@@ -494,30 +570,198 @@ class TestNuageInternalDns(nuageTestCase):
 
         # VSD verification
         self.verify_vsd_firewall_rule(public_ssh_rule)
-        vm_public_ip = public_ip_1.ipaddress.ipaddress
+        self.vm_verify_ping(vm_1, public_ip_1, vm_2, VPC_DOMAIN_NAME)
 
-        try:
-            vm_1.ssh_ip = vm_public_ip
-            vm_1.ssh_port = self.test_data["virtual_machine"]["ssh_port"]
-            vm_1.username = self.test_data["virtual_machine"]["username"]
-            vm_1.password = self.test_data["virtual_machine"]["password"]
-            self.debug("SSHing into VM: %s with %s" %
-                       (vm_1.ssh_ip, vm_1.password))
+    @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
+    def test_08_VPC_Network_Restarts_With_InternalDns(self):
+        """ Verify InternalDns on VPC Network with restarts and ping by
+        hostname
+        """
 
-            ssh = vm_1.get_ssh_client(ipaddress=vm_public_ip)
+        # Validate the following
+        # 1. Create a VPC and Tier network by using DNS network offering.
+        # 2. Deploy vm1 in Tier network network1.
+        # 3. Verify dhcp option 06 and 0f for subnet
+        # 4. Verify dhcp option 06,15 and 0f for vm Interface.
+        # 5. Deploy Vm2.
+        # 6. Verify end to end by pinging with hostname while restarting
+        #    VPC and Tier without and with cleanup.
 
-        except Exception as e:
-            self.fail("SSH into VM failed with exception %s" % e)
+        cmd = updateZone.updateZoneCmd()
+        cmd.id = self.zone.id
+        cmd.domain = VPC_DOMAIN_NAME
+        self.apiclient.updateZone(cmd)
 
-        cmd = 'ping -c 2 vm2'
-        self.debug("ping vm2 by hostname with command: " + cmd)
-        outputlist = ssh.execute(cmd)
-        self.debug("command is executed properly " + cmd)
-        completeoutput = str(outputlist).strip('[]')
-        self.debug("complete output is " + completeoutput)
-        expectedlist = ['2 received', 'vm2.vpc.com', vm_2.ipaddress]
-        for item in expectedlist:
-            if item in completeoutput:
-                self.debug("excepted value found in vm: " + item)
-            else:
-                self.fail("excepted value not found in vm: " + item)
+        vpc_off = self.create_VpcOffering(self.dnsdata["vpc_offering"])
+        self.validate_VpcOffering(vpc_off, state="Enabled")
+        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16', cleanup=False)
+
+        self.debug("Creating Nuage Vsp VPC Network offering...")
+        network_offering = self.create_NetworkOffering(
+            self.dnsdata["vpc_network_offering"])
+        self.validate_NetworkOffering(network_offering, state="Enabled")
+        network_1 = self.create_Network(
+            network_offering, gateway='10.1.1.1', vpc=vpc)
+
+        vm_1 = self.create_VM(network_1)
+
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_1, vpc)
+        self.verify_vsd_vm(vm_1)
+        # Internal DNS check point on VSD
+        self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, network_1)
+        for nic in vm_1.nic:
+            self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
+            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, nic, True)
+            self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
+
+        self.test_data["virtual_machine"]["displayname"] = "vm2"
+        self.test_data["virtual_machine"]["name"] = "vm2"
+        vm_2 = self.create_VM(network_1)
+        self.test_data["virtual_machine"]["displayname"] = "vm1"
+        self.test_data["virtual_machine"]["name"] = "vm1"
+        self.verify_vsd_vm(vm_2)
+        for nic in vm_2.nic:
+            self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
+            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, nic, True)
+            self.verify_vsd_dhcp_option(self.HOSTNAME, "vm2", nic, True)
+
+        public_ip_1 = self.acquire_PublicIPAddress(network_1, vpc)
+        self.create_StaticNatRule_For_VM(vm_1, public_ip_1, network_1)
+        # Adding Network ACL rule in the Public tier
+        self.debug("Adding Network ACL rule to make the created NAT rule "
+                   "(SSH) accessible...")
+        public_ssh_rule = self.create_NetworkAclRule(
+            self.test_data["ingress_rule"], network=network_1)
+
+        # VSD verification
+        self.verify_vsd_firewall_rule(public_ssh_rule)
+
+        self.vm_verify_ping(vm_1, public_ip_1, vm_2, VPC_DOMAIN_NAME)
+
+        # Restarting VPC network (cleanup = false)
+        self.debug("Restarting the created VPC network without cleanup...")
+        Network.restart(network_1, self.api_client, cleanup=False)
+        self.validate_Network(network_1, state="Implemented")
+        vr = self.get_Router(network_1)
+        self.check_Router_state(vr, state="Running")
+        self.check_VM_state(vm_1, state="Running")
+        self.check_VM_state(vm_2, state="Running")
+
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_1, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(vm_1)
+        self.verify_vsd_vm(vm_2)
+
+        self.vm_verify_ping(vm_1, public_ip_1, vm_2, VPC_DOMAIN_NAME)
+
+        # Restarting VPC network (cleanup = true)
+        self.debug("Restarting the created VPC network with cleanup...")
+        Network.restart(network_1, self.api_client, cleanup=True)
+        self.validate_Network(network_1, state="Implemented")
+        vr = self.get_Router(network_1)
+        self.check_Router_state(vr, state="Running")
+        self.check_VM_state(vm_1, state="Running")
+        self.check_VM_state(vm_2, state="Running")
+
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_1, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(vm_1)
+        self.verify_vsd_vm(vm_2)
+
+        self.vm_verify_ping(vm_1, public_ip_1, vm_2, VPC_DOMAIN_NAME)
+
+        # Restarting VPC (cleanup = false)
+        self.debug("Restarting the VPC without cleanup...")
+        self.restart_Vpc(vpc, cleanup=False)
+        self.validate_Network(network_1, state="Implemented")
+        vr = self.get_Router(network_1)
+        self.check_Router_state(vr, state="Running")
+        self.check_VM_state(vm_1, state="Running")
+        self.check_VM_state(vm_2, state="Running")
+
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_1, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(vm_1)
+
+        self.vm_verify_ping(vm_1, public_ip_1, vm_2, VPC_DOMAIN_NAME)
+
+        # Restarting VPC (cleanup = true)
+        self.debug("Restarting the VPC with cleanup...")
+        self.restart_Vpc(vpc, cleanup=True)
+        self.validate_Network(network_1, state="Implemented")
+        vr = self.get_Router(network_1)
+        self.check_Router_state(vr, state="Running")
+        self.check_VM_state(vm_1, state="Running")
+        self.check_VM_state(vm_2, state="Running")
+
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_1, vpc)
+        self.verify_vsd_router(vr)
+        self.verify_vsd_vm(vm_1)
+
+        self.vm_verify_ping(vm_1, public_ip_1, vm_2, VPC_DOMAIN_NAME)
+
+    @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
+    def test_09_update_network_offering_isolated_network(self):
+        """Test Update network offering for isolated Networks
+           with Nuage VSP SDN plugin
+        """
+        #    Create an Isolated Network with Nuage VSP Isolated Network
+        #    offering specifying Services which don't need a VR.
+        #    Update the network offering of this network to one that
+        #    needs a VR, check that a VR is spawn
+        #    After that update network to previous offering
+        #    Check that VR is destroyed and removed.
+
+        self.debug("+++Create an Isolated network with a network "
+                   "offering which has only services without VR")
+        cmd = updateZone.updateZoneCmd()
+        cmd.id = self.zone.id
+        cmd.domain = "isolated.com"
+        self.apiclient.updateZone(cmd)
+        self.debug("Creating and enabling Nuage Vsp Isolated Network "
+                   "offering which has only service without VR...")
+        network_offering = self.create_NetworkOffering(
+                self.test_data["nuagevsp"]
+                ["isolated_network_offering_without_vr"])
+        self.validate_NetworkOffering(network_offering, state="Enabled")
+
+        network_1 = self.create_Network(network_offering)
+        self.validate_Network(network_1, state="Allocated")
+
+        self.debug("+++Deploy VM in the created Isolated network "
+                   "with only services without VR")
+        vm_1 = self.create_VM(network_1)
+
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_1)
+        self.verify_vsd_vm(vm_1)
+
+        with self.assertRaises(Exception):
+            self.get_Router(network_1)
+        self.debug("+++Verified no VR is spawned for this network ")
+
+        self.debug("+++ Upgrade offering of created Isolated network with "
+                   "a dns offering which spins a VR")
+        self.upgrade_Network(self.test_data["nuagevsp"][
+                            "isolated_network_offering"],
+                            network_1)
+        vr = self.get_Router(network_1)
+        self.check_Router_state(vr, state="Running")
+        # VSD verification
+        self.verify_vsd_network(self.domain.id, network_1)
+        self.verify_vsd_router(vr)
+
+        self.debug("+++ Upgrade offering of created Isolated network with "
+                   "an offering which removes the VR...")
+        self.upgrade_Network(self.test_data["nuagevsp"][
+                    "isolated_network_offering_without_vr"],
+                    network_1)
+        with self.assertRaises(Exception):
+            self.get_Router(network_1)
+        self.debug("+++Verified no VR is spawned for this network ")
