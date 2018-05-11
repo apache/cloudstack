@@ -2227,8 +2227,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return true;
         }
         String storagePoolTags = getStoragePoolTags(destPool);
-        boolean isStorageTagsBlank = org.apache.commons.lang.StringUtils.isBlank(storagePoolTags);
-        if (isStorageTagsBlank) {
+        if (org.apache.commons.lang.StringUtils.isBlank(storagePoolTags)) {
             return false;
         }
         String[] storageTagsAsStringArray = org.apache.commons.lang.StringUtils.split(storagePoolTags, ",");

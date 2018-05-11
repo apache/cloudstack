@@ -1073,4 +1073,17 @@ public class VolumeApiServiceImplTest {
 
         Assert.assertFalse(result);
     }
+
+    @Test
+    public void doesTargetStorageSupportNewDiskOfferingTestDiskOfferingTagsEqualsStorageTags() {
+        DiskOfferingVO diskOfferingVoMock = Mockito.mock(DiskOfferingVO.class);
+        Mockito.doReturn("A").when(diskOfferingVoMock).getTags();
+
+        StoragePool storagePoolMock = Mockito.mock(StoragePool.class);
+        Mockito.doReturn("A").when(volumeApiServiceImpl).getStoragePoolTags(storagePoolMock);
+
+        boolean result = volumeApiServiceImpl.doesTargetStorageSupportNewDiskOffering(storagePoolMock, diskOfferingVoMock);
+
+        Assert.assertTrue(result);
+    }
 }
