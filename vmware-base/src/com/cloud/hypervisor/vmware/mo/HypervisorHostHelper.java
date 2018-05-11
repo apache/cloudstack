@@ -755,9 +755,8 @@ public class HypervisorHostHelper {
             dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, pvlanSpec);
         }
 
-        newDvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, numPorts, autoExpandSupported);
-        if (portGroupPolicy != null)
-        {
+        newDvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, autoExpandSupported);
+        if (portGroupPolicy != null) {
             newDvPortGroupSpec.setPolicy(portGroupPolicy);
         }
 
@@ -765,6 +764,7 @@ public class HypervisorHostHelper {
             s_logger.info("Distributed Virtual Port group " + networkName + " not found.");
             // TODO(sateesh): Handle Exceptions
             try {
+                newDvPortGroupSpec.setNumPorts(numPorts);
                 dvSwitchMo.createDVPortGroup(newDvPortGroupSpec);
             } catch (Exception e) {
                 String msg = "Failed to create distributed virtual port group " + networkName + " on dvSwitch " + physicalNetwork;
@@ -994,13 +994,12 @@ public class HypervisorHostHelper {
         return true;
     }
 
-    public static DVPortgroupConfigSpec createDvPortGroupSpec(String dvPortGroupName, DVPortSetting portSetting, int numPorts, boolean autoExpandSupported) {
+    public static DVPortgroupConfigSpec createDvPortGroupSpec(String dvPortGroupName, DVPortSetting portSetting, boolean autoExpandSupported) {
         DVPortgroupConfigSpec spec = new DVPortgroupConfigSpec();
         spec.setName(dvPortGroupName);
         spec.setDefaultPortConfig(portSetting);
         spec.setPortNameFormat("vnic<portIndex>");
         spec.setType("earlyBinding");
-        spec.setNumPorts(numPorts);
         spec.setAutoExpand(autoExpandSupported);
         return spec;
     }
