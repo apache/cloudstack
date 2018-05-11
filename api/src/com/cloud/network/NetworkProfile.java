@@ -156,6 +156,11 @@ public class NetworkProfile implements Network {
     }
 
     @Override
+    public boolean isRollingRestart() {
+        return false;
+    }
+
+    @Override
     public String getName() {
         return name;
     }

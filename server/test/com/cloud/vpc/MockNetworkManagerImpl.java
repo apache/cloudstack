@@ -68,6 +68,7 @@ import com.cloud.network.element.NetworkElement;
 import com.cloud.network.element.StaticNatServiceProvider;
 import com.cloud.network.element.UserDataServiceProvider;
 import com.cloud.network.guru.NetworkGuru;
+import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.rules.LoadBalancerContainer.Scheme;
 import com.cloud.network.vpc.Vpc;
 import com.cloud.offering.NetworkOffering;
@@ -215,7 +216,7 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
      * @see com.cloud.network.NetworkService#restartNetwork(com.cloud.api.commands.RestartNetworkCmd, boolean)
      */
     @Override
-    public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup) throws ConcurrentOperationException, ResourceUnavailableException,
+    public boolean restartNetwork(RestartNetworkCmd cmd, boolean cleanup, boolean makeRedundant) throws ConcurrentOperationException, ResourceUnavailableException,
         InsufficientCapacityException {
         // TODO Auto-generated method stub
         return false;
@@ -912,6 +913,15 @@ public class MockNetworkManagerImpl extends ManagerBase implements NetworkOrches
 
     @Override public List<NetworkGuru> getNetworkGurus() {
         return null;
+    }
+
+    @Override
+    public void destroyExpendableRouters(final List<? extends VirtualRouter> routers, final ReservationContext context) throws ResourceUnavailableException {
+    }
+
+    @Override
+    public boolean areRoutersRunning(final List<? extends VirtualRouter> routers) {
+        return false;
     }
 
     @Override

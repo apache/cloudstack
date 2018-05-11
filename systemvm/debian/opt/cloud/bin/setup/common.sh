@@ -333,13 +333,13 @@ setup_common() {
   fi
 
   # Workaround to activate vSwitch under VMware
-  timeout 3 ping -n -c 3 $GW || true
+  timeout 3 ping -n -c 3 $GW &
   if [ -n "$MGMTNET"  -a -n "$LOCAL_GW" ]
   then
-      timeout 3 ping -n -c 3 $LOCAL_GW || true
+      timeout 3 ping -n -c 3 $LOCAL_GW &
       #This code is added to address ARP issue by pinging MGMT_GW
       MGMT_GW=$(echo $MGMTNET | awk -F "." '{print $1"."$2"."$3".1"}')
-      timeout 3 ping -n -c 3 $MGMT_GW || true
+      timeout 3 ping -n -c 3 $MGMT_GW &
   fi
 
   if [ "$HYPERVISOR" == "vmware" ]; then

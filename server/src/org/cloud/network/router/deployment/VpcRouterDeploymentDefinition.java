@@ -194,4 +194,9 @@ public class VpcRouterDeploymentDefinition extends RouterDeploymentDefinition {
     public boolean isRedundant() {
         return vpc.isRedundant();
     }
+
+    @Override
+    public boolean isRollingRestart() {
+        return vpc.isRollingRestart();
+    }
 }
