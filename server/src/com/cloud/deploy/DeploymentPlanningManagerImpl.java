@@ -1223,7 +1223,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         boolean hostCanAccessPool = false;
         boolean haveEnoughSpace = false;
-        boolean hostAffinity = true;
+        boolean hostAffinityCheck = false;
 
         if (readyAndReusedVolumes == null) {
             readyAndReusedVolumes = new ArrayList<Volume>();
@@ -1247,10 +1247,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 s_logger.debug("Checking if host: " + potentialHost.getId() + " can access any suitable storage pool for volume: " + vol.getVolumeType());
                 List<StoragePool> volumePoolList = suitableVolumeStoragePools.get(vol);
                 hostCanAccessPool = false;
-                hostAffinity = true;
-                if (CollectionUtils.isNotEmpty(preferredHosts) && !preferredHosts.contains(potentialHost.getId())) {
-                    hostAffinity = false;
-                }
+                hostAffinityCheck = checkAffinity(potentialHost, preferredHosts);
                 for (StoragePool potentialSPool : volumePoolList) {
                     if (hostCanAccessSPool(potentialHost, potentialSPool)) {
                         hostCanAccessPool = true;
@@ -1279,8 +1276,12 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     s_logger.warn("insufficient capacity to allocate all volumes");
                     break;
                 }
+                if (!hostAffinityCheck) {
+                    s_logger.debug("Host affinity check failed");
+                    break;
+                }
             }
-            if (hostCanAccessPool && haveEnoughSpace && hostAffinity && checkIfHostFitsPlannerUsage(potentialHost.getId(), resourceUsageRequired)) {
+            if (hostCanAccessPool && haveEnoughSpace && hostAffinityCheck && checkIfHostFitsPlannerUsage(potentialHost.getId(), resourceUsageRequired)) {
                 s_logger.debug("Found a potential host " + "id: " + potentialHost.getId() + " name: " + potentialHost.getName() +
                         " and associated storage pools for this VM");
                 return new Pair<Host, Map<Volume, StoragePool>>(potentialHost, storage);
@@ -1290,6 +1291,20 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
         s_logger.debug("Could not find a potential host that has associated storage pools from the suitable host/pool lists for this VM");
         return null;
+    }
+
+    /**
+     * True if:
+     * - Affinity is not enabled (preferred host is empty)
+     * - Affinity is enabled and potential host is on the preferred hosts list
+     *
+     * False if not
+     */
+    @DB
+    public boolean checkAffinity(Host potentialHost, List<Long> preferredHosts) {
+        boolean hostAffinityEnabled = CollectionUtils.isNotEmpty(preferredHosts);
+        boolean hostAffinityMatches = hostAffinityEnabled && preferredHosts.contains(potentialHost.getId());
+        return !hostAffinityEnabled || hostAffinityMatches;
     }
 
     protected boolean hostCanAccessSPool(Host host, StoragePool pool) {
