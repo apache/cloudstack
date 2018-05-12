@@ -53,8 +53,10 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
     public void process(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws AffinityConflictException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
-        for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
-            processAffinityGroup(vmGroupMapping, plan, vm);
+        if (CollectionUtils.isNotEmpty(vmGroupMappings)) {
+            for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
+                processAffinityGroup(vmGroupMapping, plan, vm);
+            }
         }
     }
 
@@ -62,16 +64,14 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
      * Process Affinity Group for VM deployment
      */
     protected void processAffinityGroup(AffinityGroupVMMapVO vmGroupMapping, DeploymentPlan plan, VirtualMachine vm) {
-        if (vmGroupMapping != null) {
-            AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
-            s_logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
+        AffinityGroupVO group = _affinityGroupDao.findById(vmGroupMapping.getAffinityGroupId());
+        s_logger.debug("Processing affinity group " + group.getName() + " for VM Id: " + vm.getId());
 
-            List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
-            groupVMIds.remove(vm.getId());
+        List<Long> groupVMIds = _affinityGroupVMMapDao.listVmIdsByAffinityGroup(group.getId());
+        groupVMIds.remove(vm.getId());
 
-            List<Long> preferredHosts = getPreferredHostsFromGroupVMIds(groupVMIds);
-            plan.setPreferredHosts(preferredHosts);
-        }
+        List<Long> preferredHosts = getPreferredHostsFromGroupVMIds(groupVMIds);
+        plan.setPreferredHosts(preferredHosts);
     }
 
     /**
@@ -102,11 +102,14 @@ public class HostAffinityProcessor extends AffinityProcessorBase implements Affi
         VirtualMachine vm = vmProfile.getVirtualMachine();
         List<AffinityGroupVMMapVO> vmGroupMappings = _affinityGroupVMMapDao.findByVmIdType(vm.getId(), getType());
 
-        for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
-            if (!checkAffinityGroup(vmGroupMapping, vm, plannedHostId)) {
-                return false;
+        if (CollectionUtils.isNotEmpty(vmGroupMappings)) {
+            for (AffinityGroupVMMapVO vmGroupMapping : vmGroupMappings) {
+                if (!checkAffinityGroup(vmGroupMapping, vm, plannedHostId)) {
+                    return false;
+                }
             }
         }
+
         return true;
     }
 
