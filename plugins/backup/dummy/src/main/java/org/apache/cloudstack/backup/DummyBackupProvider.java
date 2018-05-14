@@ -29,6 +29,6 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public String getDescription() {
-        return "Dummy B&R Provider";
+        return "Dummy B&R Plugin";
     }
 }

@@ -43,7 +43,6 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             "",
             "The backup and recovery provider plugin.", true, ConfigKey.Scope.Zone);
 
-
     /**
      * Generate a response from the Backup Policy VO
      */

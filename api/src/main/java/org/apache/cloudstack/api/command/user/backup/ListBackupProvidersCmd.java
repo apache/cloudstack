@@ -83,7 +83,7 @@ public class ListBackupProvidersCmd extends BaseListCmd {
             final BackupProviderResponse backupProviderResponse = new BackupProviderResponse();
             backupProviderResponse.setName(provider.getName());
             backupProviderResponse.setDescription(provider.getDescription());
-            backupProviderResponse.setObjectName("provider");
+            backupProviderResponse.setObjectName("providers");
             responses.add(backupProviderResponse);
         }
         response.setResponses(responses);
