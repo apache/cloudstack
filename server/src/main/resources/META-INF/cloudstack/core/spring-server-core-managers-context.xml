@@ -299,7 +299,7 @@
 
     <bean id="directDownloadManager" class="org.apache.cloudstack.direct.download.DirectDownloadManagerImpl" />
 
-    <bean id="backupRecoveryManagerImpl" class="org.apache.cloudstack.br.BRManagerImpl" >
-        <property name="backupRecoveryProviders" value="#{backupRecoveryRegistry.registered}" />
+    <bean id="backupManager" class="org.apache.cloudstack.backup.BackupManagerImpl">
+        <property name="backupProviders" value="#{backupProvidersRegistry.registered}" />
     </bean>
 </beans>

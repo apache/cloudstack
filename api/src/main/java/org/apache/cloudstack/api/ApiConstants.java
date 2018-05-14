@@ -719,10 +719,6 @@ public class ApiConstants {
     public static final String LAST_ANNOTATED = "lastannotated";
     public static final String LDAP_DOMAIN = "ldapdomain";
 
-    // Backup and Recovery
-    public static final String BR_PROVIDER_ID = "providerid";
-    public static final String BR_POLICY_ID = "policyid";
-
     public enum HostDetails {
         all, capacity, events, stats, min;
     }

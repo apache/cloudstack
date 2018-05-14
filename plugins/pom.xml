@@ -110,7 +110,8 @@
     <module>database/quota</module>
     <module>integrations/cloudian</module>
     <module>integrations/prometheus</module>
-      <module>backup-and-recovery/dummy</module>
+    <module>backup/dummy</module>
+    <module>backup/veeam</module>
   </modules>
 
   <dependencies>

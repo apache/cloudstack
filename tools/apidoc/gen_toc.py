@@ -191,7 +191,7 @@ known_categories = {
     'listElastistorInterface': 'Misc',
     'cloudian': 'Cloudian',
     'Sioc' : 'Sioc',
-    'BR' : 'BackupRecovery'
+    'Backup' : 'Backup'
     }
 
 

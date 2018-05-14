@@ -58,6 +58,6 @@
     <module>security</module>
     <module>agent-lb</module>
     <module>direct-download</module>
-    <module>backup-and-recovery</module>
+    <module>backup</module>
   </modules>
 </project>
