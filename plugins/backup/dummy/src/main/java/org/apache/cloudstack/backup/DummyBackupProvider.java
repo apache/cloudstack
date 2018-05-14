@@ -16,11 +16,18 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import org.apache.cloudstack.framework.backup.BackupPolicy;
 import org.apache.cloudstack.framework.backup.BackupProvider;
 
 import com.cloud.utils.component.AdapterBase;
+import org.apache.log4j.Logger;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class DummyBackupProvider extends AdapterBase implements BackupProvider {
+
+    private static final Logger s_logger = Logger.getLogger(DummyBackupProvider.class);
 
     @Override
     public String getName() {
@@ -30,5 +37,25 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public String getDescription() {
         return "Dummy B&R Plugin";
+    }
+
+    @Override
+    public boolean assignVMToBackupPolicy(String vmUuid, String policyUuid) {
+        s_logger.debug("Assigning VM " + vmUuid + " to backup policy " + policyUuid);
+        return true;
+    }
+
+    @Override
+    public List<BackupPolicy> listBackupPolicies() {
+        s_logger.debug("Listing backup policies on Dummy B&R Plugin");
+        BackupPolicy policy1 = new BackupPolicyTO("Golden Policy", "aaaa-aaaa");
+        BackupPolicy policy2 = new BackupPolicyTO("Silver Policy", "bbbb-bbbb");
+        return Arrays.asList(policy1, policy2);
+    }
+
+    @Override
+    public boolean isBackupPolicy(String uuid) {
+        s_logger.debug("Checking if backup policy exists on the Dummy Backup Provider");
+        return true;
     }
 }

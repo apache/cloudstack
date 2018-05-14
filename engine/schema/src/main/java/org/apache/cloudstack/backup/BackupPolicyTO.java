@@ -21,17 +21,23 @@ package org.apache.cloudstack.backup;
 
 import org.apache.cloudstack.framework.backup.BackupPolicy;
 
+import java.util.UUID;
+
 public class BackupPolicyTO implements BackupPolicy {
 
-    private long id;
     private String uuid;
+    private long id;
     private String name;
     private String policyUuid;
+    private boolean external = true;
 
-    public BackupPolicyTO(final long id, final String uuid, final String name, final String policyUuid) {
+    public BackupPolicyTO() {
+        this.uuid = UUID.randomUUID().toString();
+    }
+
+    public BackupPolicyTO(final String name, final String policyUuid) {
+        this();
         this.name = name;
-        this.uuid = uuid;
-        this.id = id;
         this.policyUuid = policyUuid;
     }
 
@@ -52,5 +58,10 @@ public class BackupPolicyTO implements BackupPolicy {
     @Override
     public long getId() {
         return id;
+    }
+
+    @Override
+    public boolean isExternal() {
+        return external;
     }
 }

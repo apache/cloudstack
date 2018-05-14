@@ -17,8 +17,11 @@
 package org.apache.cloudstack.framework.backup;
 
 public interface BackupPolicy {
+
     long getId();
     String getUuid();
     String getPolicyUuid();
     String getName();
+    boolean isExternal();
+
 }

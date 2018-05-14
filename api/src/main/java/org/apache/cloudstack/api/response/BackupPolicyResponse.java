@@ -31,10 +31,6 @@ public class BackupPolicyResponse extends BaseResponse {
     @Param(description = "internal id of the backup policy")
     private String id;
 
-    @SerializedName(ApiConstants.UUID)
-    @Param(description = "internal uuid of the backup policy")
-    private String uuid;
-
     @SerializedName(ApiConstants.NAME)
     @Param(description = "internal name for the backup policy")
     private String name;
@@ -42,10 +38,6 @@ public class BackupPolicyResponse extends BaseResponse {
     @SerializedName(ApiConstants.POLICY_ID)
     @Param(description = "policy id on the provider side")
     private String policyId;
-
-    @SerializedName(ApiConstants.PROVIDER)
-    @Param(description = "id of the backup and Recovery provider")
-    private String providerId;
 
     public void setId(String id) {
         this.id = id;
@@ -55,15 +47,7 @@ public class BackupPolicyResponse extends BaseResponse {
         this.policyId = policyId;
     }
 
-    public void setProviderId(String providerId) {
-        this.providerId = providerId;
-    }
-
     public void setName(String name) {
         this.name = name;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 }

@@ -29,11 +29,9 @@ public interface BackupService {
     List<BackupProvider> listBackupProviders();
 
     /**
-     * Find backup provider by name and zone ID
-     * When null is provided as name, the configured provider is returned
-     * @param providerName
-     * @param zoneId
+     * Find backup provider by zone ID
+     * @param zoneId zone id
      * @return backup provider
      */
-    BackupProvider getBackupProvider(final String providerName, final Long zoneId);
+    BackupProvider getBackupProvider(final Long zoneId);
 }

@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.backup;
 
+import org.apache.cloudstack.framework.backup.BackupPolicy;
+
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -25,8 +27,6 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
-
-import org.apache.cloudstack.framework.backup.BackupPolicy;
 
 @Entity
 @Table(name = "backup_policy")
@@ -85,5 +85,9 @@ public class BackupPolicyVO implements BackupPolicy {
 
     public void setPolicyUuid(String policyUuid) {
         this.policyUuid = policyUuid;
+    }
+
+    public boolean isExternal() {
+        return false;
     }
 }

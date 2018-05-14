@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.backup;
 
+import org.apache.cloudstack.framework.backup.BackupPolicy;
 import org.apache.cloudstack.framework.backup.BackupProvider;
 import org.apache.cloudstack.framework.backup.BackupService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -24,6 +25,8 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.AdapterBase;
+
+import java.util.List;
 
 public class VeeamBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = Logger.getLogger(VeeamBackupProvider.class);
@@ -66,5 +69,20 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Override
     public String getDescription() {
         return "Veeam B&R Plugin";
+    }
+
+    @Override
+    public boolean assignVMToBackupPolicy(String vmUuid, String policyUuid) {
+        return false;
+    }
+
+    @Override
+    public List<BackupPolicy> listBackupPolicies() {
+        return null;
+    }
+
+    @Override
+    public boolean isBackupPolicy(String uuid) {
+        return false;
     }
 }

@@ -14,7 +14,7 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.user.backup;
+package org.apache.cloudstack.api.command.admin.backup;
 
 import javax.inject.Inject;
 
@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.backup.BackupPolicy;
@@ -39,7 +40,7 @@ import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = CreateBackupPolicyCmd.APINAME,
-        description = "Creates a backup policy",
+        description = "Creates a backup policy by mapping it to an existing policy on the provider",
         responseObject = BackupPolicyResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin})
 public class CreateBackupPolicyCmd extends BaseCmd {
@@ -48,20 +49,27 @@ public class CreateBackupPolicyCmd extends BaseCmd {
     @Inject
     BackupManager backupManager;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "the name of the policy")
+    /////////////////////////////////////////////////////
+    //////////////// API parameters /////////////////////
+    ////////////////////////////////////////////////////
+
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
+            description = "the name of the backup policy")
     private String policyName;
 
     @Parameter(name = ApiConstants.POLICY_ID,
             type = CommandType.STRING,
             required = true,
-            description = "Backup Recovery Provider ID")
+            description = "The backup policy ID (on backup provider side)")
     private String policyId;
 
-    @Parameter(name = ApiConstants.PROVIDER,
-            type = CommandType.STRING,
-            required = true,
-            description = "Backup Recovery Provider ID")
-    private String providerId;
+    @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
+            description = "The zone ID")
+    private Long zoneId;
+
+    /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
 
     public String getPolicyName() {
         return policyName;
@@ -71,30 +79,8 @@ public class CreateBackupPolicyCmd extends BaseCmd {
         return policyId;
     }
 
-    public String getProviderId() {
-        return providerId;
-    }
-
-    @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        try {
-            BackupPolicy policy = backupManager.addBackupPolicy(policyId, policyName, providerId);
-            if (policy != null) {
-                BackupPolicyResponse response = new BackupPolicyResponse();
-                response.setId(policy.getUuid());
-                response.setPolicyId(policy.getPolicyUuid());
-                response.setName(policy.getName());
-                response.setObjectName("policy");
-                response.setResponseName(getCommandName());
-                setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add a Backup policy");
-            }
-        } catch (InvalidParameterValueException e) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
-        } catch (CloudRuntimeException e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-        }
+    public Long getZoneId() {
+        return zoneId;
     }
 
     @Override
@@ -105,5 +91,35 @@ public class CreateBackupPolicyCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    private void setupResponse(BackupPolicy policy) {
+        BackupPolicyResponse response = new BackupPolicyResponse();
+        response.setId(policy.getUuid());
+        response.setPolicyId(policy.getPolicyUuid());
+        response.setName(policy.getName());
+        response.setObjectName("policy");
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
+    }
+
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+        try {
+            BackupPolicy policy = backupManager.addBackupPolicy(policyId, policyName, zoneId);
+            if (policy != null) {
+                setupResponse(policy);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add a Backup policy");
+            }
+        } catch (InvalidParameterValueException e) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
+        } catch (CloudRuntimeException e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
     }
 }

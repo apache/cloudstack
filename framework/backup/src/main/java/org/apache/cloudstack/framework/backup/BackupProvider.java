@@ -16,6 +16,8 @@
 //under the License.
 package org.apache.cloudstack.framework.backup;
 
+import java.util.List;
+
 public interface BackupProvider {
 
     /**
@@ -29,4 +31,21 @@ public interface BackupProvider {
      * @return returns description
      */
     String getDescription();
+
+    /**
+     * Assign VM to backup policy
+     * @return true if VM is successfully assigned, false if not
+     */
+    boolean assignVMToBackupPolicy(String vmUuid, String policyUuid);
+
+    /**
+     * Returns the list of existing backup policies on the provider
+     * @return backup policies list
+     */
+    List<BackupPolicy> listBackupPolicies();
+
+    /**
+     * True if policy with id uuid exists on the backup provider
+     */
+    boolean isBackupPolicy(String uuid);
 }

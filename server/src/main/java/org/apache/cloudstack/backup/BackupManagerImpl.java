@@ -24,9 +24,14 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.api.command.user.backup.CreateBackupPolicyCmd;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.command.admin.backup.DeleteBackupPolicyCmd;
+import org.apache.cloudstack.api.command.admin.backup.ListBackupProviderPoliciesCmd;
+import org.apache.cloudstack.api.command.user.backup.AssignBackupPolicyCmd;
+import org.apache.cloudstack.api.command.admin.backup.CreateBackupPolicyCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupPoliciesCmd;
-import org.apache.cloudstack.api.command.user.backup.ListBackupProvidersCmd;
+import org.apache.cloudstack.api.command.admin.backup.ListBackupProvidersCmd;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.backup.dao.BackupPolicyDao;
 import org.apache.cloudstack.framework.backup.BackupPolicy;
@@ -39,7 +44,6 @@ import org.springframework.stereotype.Component;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.base.Strings;
 
 @Component
 public class BackupManagerImpl extends ManagerBase implements BackupManager {
@@ -49,31 +53,62 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     BackupPolicyDao backupPolicyDao;
 
     @Inject
+    VMInstanceDao vmInstanceDao;
+
+    @Inject
     DataCenterDao dataCenterDao;
 
     private static Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
     private List<BackupProvider> backupProviders;
 
     @Override
-    public BackupPolicy addBackupPolicy(String policyId, String policyName, String providerId) {
-        BackupProvider provider = getBackupProvider(null, null);
-        boolean exists = false; //provider.policyExists(policyId, policyName);
-        if (!exists) {
+    public BackupPolicy addBackupPolicy(String policyId, String policyName, Long zoneId) {
+        BackupProvider provider = getBackupProvider(zoneId);
+        if (!provider.isBackupPolicy(policyId)) {
             throw new CloudRuntimeException("Policy " + policyId + " does not exist on provider " + provider.getName());
         }
 
         BackupPolicyVO policy = new BackupPolicyVO(policyName, policyId);
-        return backupPolicyDao.persist(policy);
+        BackupPolicyVO vo = backupPolicyDao.persist(policy);
+        if (vo == null) {
+            throw new CloudRuntimeException("Unable to create backup policy: " + policyId + ", name: " + policyName);
+        }
+        LOG.debug("Successfully created backup policy " + policyName + " mapped to backup provider policy " + policyId);
+        return vo;
     }
 
     @Override
-    public boolean assignVMToBackupPolicy() {
-        return false;
+    public boolean assignVMToBackupPolicy(String policyUuid, Long virtualMachineId, Long zoneId) {
+        VMInstanceVO vmInstanceVO = vmInstanceDao.findById(virtualMachineId);
+        if (vmInstanceVO == null) {
+            throw new CloudRuntimeException("VM " + virtualMachineId + " does not exist");
+        }
+        String vmUuid = vmInstanceVO.getUuid();
+        BackupProvider backupProvider = getBackupProvider(zoneId);
+        if (backupProvider == null) {
+            throw new CloudRuntimeException("Could not find a backup provider on zone " + zoneId);
+        }
+        return backupProvider.assignVMToBackupPolicy(vmUuid, policyUuid);
     }
 
     @Override
     public List<BackupPolicy> listBackupPolicies() {
-        return null;
+        return new ArrayList<>(backupPolicyDao.listAll());
+    }
+
+    @Override
+    public List<BackupPolicy> listBackupProviderPolicies(Long zoneId) {
+        BackupProvider backupProvider = getBackupProvider(zoneId);
+        return backupProvider.listBackupPolicies();
+    }
+
+    @Override
+    public boolean deleteBackupPolicy(String policyId) {
+        BackupPolicyVO policy = backupPolicyDao.findByUuid(policyId);
+        if (policy == null) {
+            throw new CloudRuntimeException("Could not find a backup policy with id: " + policyId);
+        }
+        return backupPolicyDao.expunge(policy.getId());
     }
 
     @Override
@@ -97,12 +132,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public BackupProvider getBackupProvider(final String providerName, final Long zoneId) {
-        String name = providerName;
-        if (Strings.isNullOrEmpty(name)) {
-            name = BackupProviderPlugin.valueIn(zoneId);
+    public BackupProvider getBackupProvider(final Long zoneId) {
+        String name = BackupProviderPlugin.valueIn(zoneId);
+        if (!backupProvidersMap.containsKey(name)) {
+            throw new CloudRuntimeException("Could not find a backup provider on zone " + zoneId);
         }
-        return backupProvidersMap.getOrDefault(name, null);
+        return backupProvidersMap.get(name);
     }
 
     @Override
@@ -111,6 +146,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(ListBackupProvidersCmd.class);
         cmdList.add(ListBackupPoliciesCmd.class);
         cmdList.add(CreateBackupPolicyCmd.class);
+        cmdList.add(AssignBackupPolicyCmd.class);
+        cmdList.add(ListBackupProviderPoliciesCmd.class);
+        cmdList.add(DeleteBackupPolicyCmd.class);
         return cmdList;
     }
 
@@ -126,11 +164,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     public void setBackupProviders(final List<BackupProvider> backupProviders) {
         this.backupProviders = backupProviders;
+    }
+
+    @Override
+    public boolean start() {
         initializeBackupProviderMap();
+        return true;
     }
 
     private void initializeBackupProviderMap() {
-        if (backupProviders != null && backupProviders.size() != backupProviders.size()) {
+        if (backupProviders != null) {
             for (final BackupProvider backupProvider : backupProviders) {
                 backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
             }

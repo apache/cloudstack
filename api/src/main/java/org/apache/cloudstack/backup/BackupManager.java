@@ -51,9 +51,25 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     /**
      * Add a new Backup and Recovery policy
      */
-    BackupPolicy addBackupPolicy(String policyId, String policyName, String providerId);
+    BackupPolicy addBackupPolicy(String policyId, String policyName, Long zoneId);
 
-    boolean assignVMToBackupPolicy();
+    /**
+     * Assign VM to existing backup policy
+     */
+    boolean assignVMToBackupPolicy(String policyUuid, Long virtualMachineId, Long zoneId);
 
+    /**
+     * List existing backup policies
+     */
     List<BackupPolicy> listBackupPolicies();
+
+    /**
+     * List backup policies existing on the backup provider
+     */
+    List<BackupPolicy> listBackupProviderPolicies(Long zoneId);
+
+    /**
+     * Deletes a backup policy
+     */
+    boolean deleteBackupPolicy(String policyId);
 }
