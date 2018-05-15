@@ -22,6 +22,9 @@ package com.cloud.agent.resource.virtualnetwork;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
+
+import org.apache.cloudstack.diagnosis.ExecuteDiagnosisAnswer;
+import org.apache.cloudstack.diagnosis.ExecuteDiagnosisCommand;
 import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -191,7 +194,9 @@ public class VirtualRoutingResource {
         } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
             return execute((CheckS2SVpnConnectionsCommand) cmd);
         } else if (cmd instanceof GetRouterAlertsCommand) {
-            return execute((GetRouterAlertsCommand)cmd);
+            return execute((GetRouterAlertsCommand) cmd);
+        } else if (cmd instanceof ExecuteDiagnosisCommand){
+            return execute((ExecuteDiagnosisCommand) cmd);
         } else {
             s_logger.error("Unknown query command in VirtualRoutingResource!");
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -290,6 +295,14 @@ public class VirtualRoutingResource {
             return new CheckRouterAnswer(cmd, result.getDetails());
         }
         return new CheckRouterAnswer(cmd, result.getDetails(), true);
+    }
+
+    private ExecuteDiagnosisAnswer execute(ExecuteDiagnosisCommand cmd){
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.PING_REMOTELY, cmd.getArgs());
+        if (!result.isSuccess()){
+            return new ExecuteDiagnosisAnswer(cmd, result.getDetails());
+        }
+        return new ExecuteDiagnosisAnswer(cmd, result.getDetails());
     }
 
     private Answer execute(GetDomRVersionCmd cmd) {
