@@ -17,6 +17,12 @@
 
 package org.apache.cloudstack.backup;
 
+import java.net.URISyntaxException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+
+import org.apache.cloudstack.backup.veeam.VeeamClient;
 import org.apache.cloudstack.framework.backup.BackupPolicy;
 import org.apache.cloudstack.framework.backup.BackupProvider;
 import org.apache.cloudstack.framework.backup.BackupService;
@@ -25,50 +31,43 @@ import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.component.AdapterBase;
-
-import java.util.List;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 public class VeeamBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = Logger.getLogger(VeeamBackupProvider.class);
 
     private ConfigKey<String> VeeamUrl = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.veeam.url",
-            "",
+            "http://localhost:9399/api/",
             "The Veeam backup and recovery URL.", true, ConfigKey.Scope.Zone);
 
     private ConfigKey<String> VeeamUsername = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.veeam.username",
-            "",
+            "administrator",
             "The Veeam backup and recovery username.", true, ConfigKey.Scope.Zone);
 
     private ConfigKey<String> VeeamPassword = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.veeam.password",
-            "",
+            "P@ssword123",
             "The Veeam backup and recovery password.", true, ConfigKey.Scope.Zone);
 
+    private ConfigKey<Boolean> VeeamValidateSSLSecurity = new ConfigKey<>("Advanced", Boolean.class, "backup.plugin.veeam.validate.ssl", "true",
+            "When set to true, this will validate the SSL certificate when connecting to https/ssl enabled Veeam API service.", true, ConfigKey.Scope.Zone);
 
-    @Override
-    public String getConfigComponentName() {
-        return BackupService.class.getSimpleName();
-    }
 
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[]{
-                VeeamUrl,
-                VeeamUsername,
-                VeeamPassword
-        };
-    }
+    private ConfigKey<Integer> VeeamApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.request.timeout", "300",
+            "The Veeam B&R API request timeout in seconds.", true, ConfigKey.Scope.Zone);
 
-    @Override
-    public String getName() {
-        return "veeam";
-    }
-
-    @Override
-    public String getDescription() {
-        return "Veeam B&R Plugin";
+    private VeeamClient getClient(final Long zoneId) {
+        try {
+            return new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
+                    VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId));
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException("Failed to parse Veeam API URL: " + e.getMessage());
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
+            LOG.error("Failed to build Veeam API client due to: ", e);
+        }
+        throw new CloudRuntimeException("Failed to build Veeam API client");
     }
 
     @Override
@@ -84,5 +83,31 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Override
     public boolean isBackupPolicy(String uuid) {
         return false;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return BackupService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[]{
+                VeeamUrl,
+                VeeamUsername,
+                VeeamPassword,
+                VeeamValidateSSLSecurity,
+                VeeamApiRequestTimeout
+        };
+    }
+
+    @Override
+    public String getName() {
+        return "veeam";
+    }
+
+    @Override
+    public String getDescription() {
+        return "Veeam B&R Plugin";
     }
 }
