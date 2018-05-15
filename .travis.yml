@@ -17,17 +17,21 @@
 sudo: required
 dist: trusty
 group: edge
+
 language: java
 jdk:
-- oraclejdk8
+  - oraclejdk8
 python:
   - "2.7"
+
 cache:
   directories:
-  - $HOME/.m2
+    - $HOME/.m2
   timeout: 500
+
 notifications:
   email: false
+
 env:
   global:
      - PATH=$HOME/.local/bin:$PATH
@@ -171,3 +175,46 @@ script:
 after_success: ./tools/travis/after_success.sh
 after_failure: ./tools/travis/after_failure.sh
 after_script: ./tools/travis/after_script.sh
+
+# Packaging job definition, will be reused
+.package_job: &package_job
+  before_install: docker pull ${IMAGE}
+  install: true
+  before_script: true
+  script: |
+    docker run \
+     --volume ${TRAVIS_BUILD_DIR}:/mnt/build/cloudstack \
+     --volume $HOME/.m2:/root/.m2 \
+     --rm \
+     ${IMAGE} ${PARAMS}
+  after_script: true
+  after_success: true
+  after_failure: true
+
+jobs:
+  include:
+    - stage: package
+      services: docker
+      env: IMAGE=khos2ow/cloudstack-rpm-builder:centos7 PARAMS="--distribution centos7 --pack oss"
+      <<: *package_job
+
+    - stage: package
+      services: docker
+      env: IMAGE=khos2ow/cloudstack-rpm-builder:centos6 PARAMS="--distribution centos63 --pack oss"
+      <<: *package_job
+
+    - stage: package
+      services: docker
+      env: IMAGE=khos2ow/cloudstack-deb-builder:ubuntu1804 PARAMS=""
+      <<: *package_job
+
+    - stage: package
+      services: docker
+      env: IMAGE=khos2ow/cloudstack-deb-builder:ubuntu1604 PARAMS=""
+      <<: *package_job
+
+    - stage: package
+      services: docker
+      env: IMAGE=khos2ow/cloudstack-deb-builder:ubuntu1404 PARAMS=""
+      <<: *package_job
+
