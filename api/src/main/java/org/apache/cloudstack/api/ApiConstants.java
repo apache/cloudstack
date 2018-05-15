@@ -719,6 +719,11 @@ public class ApiConstants {
     public static final String LAST_ANNOTATED = "lastannotated";
     public static final String LDAP_DOMAIN = "ldapdomain";
 
+    public static final String STDOUT = "stdout";
+    public static final String STDERR = "stderr";
+    public static final String EXITCODE = "exitcode";
+    public static final String TARGET_ID = "targetid";
+
     public enum HostDetails {
         all, capacity, events, stats, min;
     }

@@ -190,7 +190,8 @@ known_categories = {
     'CA': 'Certificate',
     'listElastistorInterface': 'Misc',
     'cloudian': 'Cloudian',
-    'Sioc' : 'Sioc'
+    'Sioc' : 'Sioc',
+    'Diagnostics': 'Diagnostics'
     }
 
 
