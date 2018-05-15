@@ -53,20 +53,20 @@ public class LocalNfsSecondaryStorageResource extends NfsSecondaryStorageResourc
     }
 
     @Override
-    synchronized public String getRootDir(String secUrl, Integer nfsVersion) {
+    synchronized public String getRootDir(String url, Integer nfsVersion) {
         try {
-            URI uri = new URI(secUrl);
+            URI uri = new URI(url);
             String dir = mountUri(uri, nfsVersion);
             return _parent + "/" + dir;
         } catch (Exception e) {
-            String msg = "GetRootDir for " + secUrl + " failed due to " + e.toString();
+            String msg = "GetRootDir for " + url + " failed due to " + e.toString();
             s_logger.error(msg, e);
             throw new CloudRuntimeException(msg);
         }
     }
 
     @Override
-    protected void mount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
+    public void mount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
         ensureLocalRootPathExists(localRootPath, uri);
 
         if (mountExists(localRootPath, uri)) {
