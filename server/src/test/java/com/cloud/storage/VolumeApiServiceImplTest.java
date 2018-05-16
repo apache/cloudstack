@@ -172,7 +172,15 @@ public class VolumeApiServiceImplTest {
     private long volumeSizeMock = 456789921939l;
 
     @Before
-    public void before() throws Exception {
+    public void setup() throws InterruptedException, ExecutionException {
+        Mockito.doReturn(volumeMockId).when(volumeDataStoreVoMock).getVolumeId();
+        Mockito.doReturn(volumeMockId).when(volumeVoMock).getId();
+        Mockito.doReturn(accountMockId).when(accountMock).getId();
+        Mockito.doReturn(volumeSizeMock).when(volumeVoMock).getSize();
+        Mockito.doReturn(volumeSizeMock).when(newDiskOfferingMock).getDiskSize();
+
+        Mockito.doReturn(Mockito.mock(VolumeApiResult.class)).when(asyncCallFutureVolumeapiResultMock).get();
+
         Mockito.when(storagePoolMock.getId()).thenReturn(storagePoolMockId);
 
         volumeApiServiceImpl._gson = GsonHelper.getGsonLogger();
@@ -476,8 +484,8 @@ public class VolumeApiServiceImplTest {
      */
     @Test
     public void testResourceLimitCheckForUploadedVolume() throws NoSuchFieldException, IllegalAccessException, ResourceAllocationException {
-        doThrow(new ResourceAllocationException("primary storage resource limit check failed", Resource.ResourceType.primary_storage)).when(resourceLimitServiceMock).checkResourceLimit(any(AccountVO.class),
-                any(Resource.ResourceType.class), any(Long.class));
+        doThrow(new ResourceAllocationException("primary storage resource limit check failed", Resource.ResourceType.primary_storage)).when(resourceLimitServiceMock)
+        .checkResourceLimit(any(AccountVO.class), any(Resource.ResourceType.class), any(Long.class));
         UserVmVO vm = Mockito.mock(UserVmVO.class);
         VolumeInfo volumeToAttach = Mockito.mock(VolumeInfo.class);
         when(volumeToAttach.getId()).thenReturn(9L);
@@ -811,7 +819,7 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test(expected = InterruptedException.class)
-    public void expungeVolumesInSecondaryStorageIfNeededTestthrowinInterruptedException() throws InterruptedException, ExecutionException {
+    public void expungeVolumesInSecondaryStorageIfNeededTestThrowinInterruptedException() throws InterruptedException, ExecutionException {
         Mockito.doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).expungeVolumeAsync(volumeInfoMock);
         Mockito.doReturn(volumeInfoMock).when(volumeDataFactoryMock).getVolume(volumeMockId, DataStoreRole.Image);
         Mockito.doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.secondary_storage, volumeSizeMock);
@@ -825,7 +833,7 @@ public class VolumeApiServiceImplTest {
     }
 
     @Test(expected = ExecutionException.class)
-    public void expungeVolumesInSecondaryStorageIfNeededTestthrowinExecutionException() throws InterruptedException, ExecutionException {
+    public void expungeVolumesInSecondaryStorageIfNeededTestThrowingExecutionException() throws InterruptedException, ExecutionException {
         Mockito.doReturn(asyncCallFutureVolumeapiResultMock).when(volumeServiceMock).expungeVolumeAsync(volumeInfoMock);
         Mockito.doReturn(volumeInfoMock).when(volumeDataFactoryMock).getVolume(volumeMockId, DataStoreRole.Image);
         Mockito.doNothing().when(resourceLimitServiceMock).decrementResourceCount(accountMockId, ResourceType.secondary_storage, volumeSizeMock);
