@@ -2346,7 +2346,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
     @Override
     public List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId,
-                                         String vmName, long vmId, String vmUuid,
+                                         String vmName, String vmHostName, long vmId, String vmUuid,
                                          String guestIpAddress, String publicKey, String password, Boolean isWindows) {
 
         DataCenterVO dcVo = _dcDao.findById(datacenterId);
@@ -2361,11 +2361,11 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
         }
         vmData.add(new String[]{METATDATA_DIR, SERVICE_OFFERING_FILE, StringUtils.unicodeEscape(serviceOffering)});
         vmData.add(new String[]{METATDATA_DIR, AVAILABILITY_ZONE_FILE, StringUtils.unicodeEscape(zoneName)});
-        vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, StringUtils.unicodeEscape(vmName)});
+        vmData.add(new String[]{METATDATA_DIR, LOCAL_HOSTNAME_FILE, StringUtils.unicodeEscape(vmHostName)});
         vmData.add(new String[]{METATDATA_DIR, LOCAL_IPV4_FILE, guestIpAddress});
 
         String publicIpAddress = guestIpAddress;
-        String publicHostName = StringUtils.unicodeEscape(vmName);
+        String publicHostName = StringUtils.unicodeEscape(vmHostName);
 
         if (dcVo.getNetworkType() != DataCenter.NetworkType.Basic) {
             if (publicIp != null) {
