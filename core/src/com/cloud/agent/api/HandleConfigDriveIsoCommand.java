@@ -39,7 +39,6 @@ public class HandleConfigDriveIsoCommand extends Command {
         this.update = update;
         this.destStore = destStore;
 
-
         this.isoFile = isoFile;
     }
 

@@ -106,6 +106,7 @@ import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer;
 import org.apache.cloudstack.storage.command.UploadStatusAnswer.UploadStatus;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.cloudstack.storage.template.DownloadManager;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl;
 import org.apache.cloudstack.storage.template.DownloadManagerImpl.ZfsPathParser;
@@ -200,8 +201,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
     private static final String TEMPLATE_ROOT_DIR = "template/tmpl";
     private static final String VOLUME_ROOT_DIR = "volumes";
     private static final String POST_UPLOAD_KEY_LOCATION = "/etc/cloudstack/agent/ms-psk";
-    private static final String cloudStackConfigDriveName = "/cloudstack/";
-    private static final String openStackConfigDriveName = "/openstack/latest/";
 
     private static final Map<String, String> updatableConfigData = Maps.newHashMap();
     static {
@@ -456,7 +455,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
                 //create OpenStack files
                 //create folder with empty files
-                File openStackFolder = new File(tempDirName + openStackConfigDriveName);
+                File openStackFolder = new File(tempDirName + ConfigDrive.openStackConfigDriveName);
                 if (openStackFolder.exists() || openStackFolder.mkdirs()) {
                     File vendorDataFile = new File(openStackFolder,"vendor_data.json");
                     try (FileWriter fw = new FileWriter(vendorDataFile); BufferedWriter bw = new BufferedWriter(fw)) {
@@ -488,7 +487,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
                     // create file with content in folder
                     if (dataType != null && !dataType.isEmpty()) {
                         //create folder
-                        File typeFolder = new File(tempDirName + cloudStackConfigDriveName + dataType);
+                        File typeFolder = new File(tempDirName + ConfigDrive.cloudStackConfigDriveName + dataType);
                         if (typeFolder.exists() || typeFolder.mkdirs()) {
                             if (StringUtils.isNotEmpty(content)) {
                                 File file = new File(typeFolder, fileName + ".txt");
@@ -603,11 +602,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
     private String linkUserData(String tempDirName) {
         //Hard link the user_data.txt file with the user_data file in the OpenStack directory.
-        String userDataFilePath = tempDirName + cloudStackConfigDriveName + "userdata/user_data.txt";
+        String userDataFilePath = tempDirName + ConfigDrive.cloudStackConfigDriveName + "userdata/user_data.txt";
         if ((new File(userDataFilePath).exists())) {
             Script hardLink = new Script(!_inSystemVM, "ln", _timeout, s_logger);
             hardLink.add(userDataFilePath);
-            hardLink.add(tempDirName + openStackConfigDriveName + "user_data");
+            hardLink.add(tempDirName + ConfigDrive.openStackConfigDriveName + "user_data");
             s_logger.debug("execute command: " + hardLink.toString());
             return hardLink.execute();
         }

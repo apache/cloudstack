@@ -21,4 +21,7 @@ public class ConfigDrive {
 
     public final static String CONFIGDRIVEFILENAME = "configdrive.iso";
     public final static String CONFIGDRIVEDIR = "configdrive";
+
+    public static final String cloudStackConfigDriveName = "/cloudstack/";
+    public static final String openStackConfigDriveName = "/openstack/latest/";
 }
