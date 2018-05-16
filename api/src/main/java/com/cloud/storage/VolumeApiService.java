@@ -18,6 +18,8 @@
  */
 package com.cloud.storage;
 
+import java.net.MalformedURLException;
+
 import org.apache.cloudstack.api.command.user.volume.AttachVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.CreateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.DetachVolumeCmd;
@@ -26,13 +28,10 @@ import org.apache.cloudstack.api.command.user.volume.GetUploadParamsForVolumeCmd
 import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.ResizeVolumeCmd;
 import org.apache.cloudstack.api.command.user.volume.UploadVolumeCmd;
-
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.user.Account;
 import org.apache.cloudstack.api.response.GetUploadParamsResponse;
 
-import java.net.MalformedURLException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.user.Account;
 
 public interface VolumeApiService {
     /**
@@ -72,17 +71,18 @@ public interface VolumeApiService {
      *
      * @return Volume object
      */
-    Volume uploadVolume(UploadVolumeCmd cmd)    throws ResourceAllocationException;
+    Volume uploadVolume(UploadVolumeCmd cmd) throws ResourceAllocationException;
 
     GetUploadParamsResponse uploadVolume(GetUploadParamsForVolumeCmd cmd) throws ResourceAllocationException, MalformedURLException;
 
-    boolean deleteVolume(long volumeId, Account caller) throws ConcurrentOperationException;
+    boolean deleteVolume(long volumeId, Account caller);
 
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
     Volume detachVolumeFromVM(DetachVolumeCmd cmd);
 
-    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup) throws ResourceAllocationException;
+    Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup)
+            throws ResourceAllocationException;
 
     Snapshot allocSnapshot(Long volumeId, Long policyId, String snapshotName, Snapshot.LocationType locationType) throws ResourceAllocationException;
 
@@ -92,10 +92,8 @@ public interface VolumeApiService {
      * Extracts the volume to a particular location.
      *
      * @param cmd
-     *            the command specifying url (where the volume needs to be extracted to), zoneId (zone where the volume
-     *            exists),
+     *            the command specifying url (where the volume needs to be extracted to), zoneId (zone where the volume exists),
      *            id (the id of the volume)
-     *
      */
     String extractVolume(ExtractVolumeCmd cmd);
 

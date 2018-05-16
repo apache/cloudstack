@@ -38,7 +38,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
@@ -466,8 +465,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
-
+    public boolean configure(String name, Map<String, Object> params) {
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
         _storagePoolAcquisitionWaitSeconds = NumbersUtil.parseInt(configs.get("pool.acquisition.wait.seconds"), 1800);
@@ -524,7 +522,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public String getStoragePoolTags(long poolId) {
-        return StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolTags(poolId));
+        return com.cloud.utils.StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolTags(poolId));
     }
 
     @Override
@@ -1176,10 +1174,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             Host host = _hostDao.findById(ep.getId());
                             if (host != null && host.getManagementServerId() != null) {
                                 if (_serverId == host.getManagementServerId().longValue()) {
-                                    if (!volService.destroyVolume(volume.getId())) {
-                                        s_logger.warn("Unable to destroy uploaded volume " + volume.getUuid());
-                                        continue;
-                                    }
+                                    volService.destroyVolume(volume.getId());
                                     // decrement volume resource count
                                     _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplayVolume());
                                     // expunge volume from secondary if volume is on image store
@@ -1844,8 +1839,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
 
-            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with over-provisioning factor " +
-                    overProvFactor.toString());
+            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with over-provisioning factor " + overProvFactor.toString());
             s_logger.debug("Total over-provisioned capacity calculated is " + overProvFactor + " * " + pool.getCapacityBytes());
         } else {
             totalOverProvCapacity = pool.getCapacityBytes();
@@ -1858,18 +1852,16 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
 
         if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking pool with ID " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize: " +
-                    totalOverProvCapacity + ", totalAllocatedSize: " + allocatedSizeWithTemplate + ", askingSize: " + totalAskingSize +
-                    ", allocated disable threshold: " + storageAllocatedThreshold);
+            s_logger.debug("Checking pool with ID " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize: " + totalOverProvCapacity + ", totalAllocatedSize: "
+                    + allocatedSizeWithTemplate + ", askingSize: " + totalAskingSize + ", allocated disable threshold: " + storageAllocatedThreshold);
         }
 
         double usedPercentage = (allocatedSizeWithTemplate + totalAskingSize) / (double)(totalOverProvCapacity);
 
         if (usedPercentage > storageAllocatedThreshold) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Insufficient un-allocated capacity on the pool with ID " + pool.getId() + " for volume allocation: " + volumes.toString() +
-                        " since its allocated percentage " + usedPercentage + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold " +
-                        storageAllocatedThreshold + ", skipping this pool");
+                s_logger.debug("Insufficient un-allocated capacity on the pool with ID " + pool.getId() + " for volume allocation: " + volumes.toString() + " since its allocated percentage "
+                        + usedPercentage + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold " + storageAllocatedThreshold + ", skipping this pool");
             }
 
             return false;
@@ -1877,9 +1869,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         if (totalOverProvCapacity < (allocatedSizeWithTemplate + totalAskingSize)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Insufficient un-allocated capacity on the pool with ID " + pool.getId() + " for volume allocation: " + volumes.toString() +
-                        "; not enough storage, maxSize: " + totalOverProvCapacity + ", totalAllocatedSize: " + allocatedSizeWithTemplate + ", askingSize: " +
-                        totalAskingSize);
+                s_logger.debug("Insufficient un-allocated capacity on the pool with ID " + pool.getId() + " for volume allocation: " + volumes.toString() + "; not enough storage, maxSize: "
+                        + totalOverProvCapacity + ", totalAllocatedSize: " + allocatedSizeWithTemplate + ", askingSize: " + totalAskingSize);
             }
 
             return false;
