@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.inject.Inject;
 
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -118,8 +119,6 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Inject
     VolumeOrchestrationService _volumeMgr;
 
-    private final static String CONFIGDRIVEFILENAME = "configdrive.iso";
-    private final static String CONFIGDRIVEDIR = "ConfigDrive";
     private final static Integer CONFIGDRIVEDISKSEQ = 4;
 
     private boolean canHandle(TrafficType trafficType) {
@@ -152,7 +151,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         // Remove form secondary storage
         DataStore secondaryStore = _dataStoreMgr.getImageStore(network.getDataCenterId());
 
-        String isoFile =  "/" + CONFIGDRIVEDIR + "/" + vm.getInstanceName()+ "/" + CONFIGDRIVEFILENAME;
+        String isoFile =  "/" + ConfigDrive.CONFIGDRIVEDIR + "/" + vm.getInstanceName()+ "/" + ConfigDrive.CONFIGDRIVEFILENAME;
         HandleConfigDriveIsoCommand deleteCommand = new HandleConfigDriveIsoCommand(vm.getVmData(),
                 vm.getConfigDriveLabel(), secondaryStore.getTO(), isoFile, false, false);
         // Delete the ISO on the secondary store
@@ -262,7 +261,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     if (provider.equals(Provider.ConfigDrive)) {
                         // Delete config drive ISO on destroy
                         DataStore secondaryStore = _dataStoreMgr.getImageStore(vo.getDataCenterId());
-                        String isoFile = "/" + CONFIGDRIVEDIR + "/" + vo.getInstanceName() + "/" + CONFIGDRIVEFILENAME;
+                        String isoFile = "/" + ConfigDrive.CONFIGDRIVEDIR + "/" + vo.getInstanceName() + "/" + ConfigDrive.CONFIGDRIVEFILENAME;
                         HandleConfigDriveIsoCommand deleteCommand = new HandleConfigDriveIsoCommand(null,
                                 null, secondaryStore.getTO(), isoFile, false, false);
                         EndPoint endpoint = _ep.select(secondaryStore);
@@ -331,7 +330,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             throw new ResourceUnavailableException(String.format("%s failed, secondary store not available", (update ? "Update" : "Create")), secondaryStore.getClass(),
                                                    secondaryStore.getId());
         }
-        String isoPath = CONFIGDRIVEDIR + "/" + profile.getInstanceName() + "/"  + CONFIGDRIVEFILENAME;
+        String isoPath = ConfigDrive.CONFIGDRIVEDIR + "/" + profile.getInstanceName() + "/"  + ConfigDrive.CONFIGDRIVEFILENAME;
         HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(profile.getVmData(),
                 profile.getConfigDriveLabel(), secondaryStore.getTO(), isoPath, true, update);
         Answer createIsoAnswer = endpoint.sendMessage(configDriveIsoCommand);
@@ -352,7 +351,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     private void configureConfigDriveDisk(VirtualMachineProfile profile, DataStore secondaryStore) {
         boolean isoAvailable = false;
-        String isoPath = CONFIGDRIVEDIR + "/" + profile.getInstanceName() + "/"  + CONFIGDRIVEFILENAME;
+        String isoPath = ConfigDrive.CONFIGDRIVEDIR + "/" + profile.getInstanceName() + "/"  + ConfigDrive.CONFIGDRIVEFILENAME;
         for (DiskTO dataTo : profile.getDisks()) {
             if (dataTo.getPath().equals(isoPath)) {
                 isoAvailable = true;
@@ -390,7 +389,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private Integer detachIso (DataStore secondaryStore, String instanceName, Long hostId) throws ResourceUnavailableException {
-        String isoPath = CONFIGDRIVEDIR + "/" + instanceName + "/"  + CONFIGDRIVEFILENAME;
+        String isoPath = ConfigDrive.CONFIGDRIVEDIR + "/" + instanceName + "/"  + ConfigDrive.CONFIGDRIVEFILENAME;
         AttachIsoCommand isoCommand = new AttachIsoCommand(instanceName, secondaryStore.getUri() + "/" + isoPath, false, CONFIGDRIVEDISKSEQ, true);
         isoCommand.setStoreUrl(secondaryStore.getUri());
         Answer attachIsoAnswer = null;
@@ -413,7 +412,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private void attachIso (DataStore secondaryStore, String instanceName, Long hostId, Integer deviceKey) throws ResourceUnavailableException {
-        String isoPath = CONFIGDRIVEDIR + "/" + instanceName + "/"  + CONFIGDRIVEFILENAME;
+        String isoPath = ConfigDrive.CONFIGDRIVEDIR + "/" + instanceName + "/"  + ConfigDrive.CONFIGDRIVEFILENAME;
         AttachIsoCommand isoCommand = new AttachIsoCommand(instanceName, secondaryStore.getUri() + "/" + isoPath, true);
         isoCommand.setStoreUrl(secondaryStore.getUri());
         isoCommand.setDeviceKey(deviceKey);
