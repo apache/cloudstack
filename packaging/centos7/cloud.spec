@@ -75,7 +75,7 @@ Requires: sudo
 Requires: /sbin/service
 Requires: /sbin/chkconfig
 Requires: /usr/bin/ssh-keygen
-Requires: mkisofs
+Requires: genisoimage
 Requires: mysql-connector-python
 Requires: ipmitool
 Requires: %{name}-common = %{_ver}
@@ -111,7 +111,6 @@ Requires: perl
 Requires: libvirt-python
 Requires: qemu-img
 Requires: qemu-kvm
-Requires: genisoimage
 Provides: cloud-agent
 Group: System Environment/Libraries
 %description agent
