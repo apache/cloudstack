@@ -24,4 +24,5 @@ public class ConfigDrive {
 
     public static final String cloudStackConfigDriveName = "/cloudstack/";
     public static final String openStackConfigDriveName = "/openstack/latest/";
+
 }

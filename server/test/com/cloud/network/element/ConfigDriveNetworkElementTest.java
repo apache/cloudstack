@@ -36,20 +36,17 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
-
-import com.google.common.collect.Maps;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
-import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.HandleConfigDriveIsoCommand;
@@ -89,6 +86,7 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.collect.Maps;
 
 public class ConfigDriveNetworkElementTest {
 
@@ -220,8 +218,6 @@ public class ConfigDriveNetworkElementTest {
         HandleConfigDriveIsoCommand deleteCommand = commandCaptor.getValue();
 
         assertThat(deleteCommand.isCreate(), is(false));
-        assertThat(deleteCommand.isUpdate(), is(false));
-
 
     }
 

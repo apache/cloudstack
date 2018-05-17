@@ -22,7 +22,7 @@
   <name>Apache CloudStack Framework - Storage Config Drive Component</name>
   <parent>
     <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloudstack-framework</artifactId>
+    <artifactId>cloud-engine</artifactId>
     <version>4.11.1.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>

@@ -26,17 +26,23 @@ import com.cloud.agent.api.to.DataStoreTO;
 public class HandleConfigDriveIsoCommand extends Command {
 
     String isoFile;
+    String isoData;
     List<String[]> vmData;
     String configDriveLabel;
     boolean create = false;
-    private boolean update = false;
     private DataStoreTO destStore;
 
-    public HandleConfigDriveIsoCommand(List<String[]> vmData, String label, DataStoreTO destStore, String isoFile, boolean create, boolean update) {
+    public HandleConfigDriveIsoCommand(String isoFile, String isoData, DataStoreTO destStore, boolean create) {
+        this.isoFile = isoFile;
+        this.isoData = isoData;
+        this.destStore = destStore;
+        this.create = create;
+    }
+
+    public HandleConfigDriveIsoCommand(List<String[]> vmData, String label, DataStoreTO destStore, String isoFile, boolean create) {
         this.vmData = vmData;
         this.configDriveLabel = label;
         this.create = create;
-        this.update = update;
         this.destStore = destStore;
 
         this.isoFile = isoFile;
@@ -45,6 +51,10 @@ public class HandleConfigDriveIsoCommand extends Command {
     @Override
     public boolean executeInSequence() {
         return false;
+    }
+
+    public String getIsoData() {
+        return isoData;
     }
 
     public List<String[]> getVmData() {
@@ -71,7 +81,4 @@ public class HandleConfigDriveIsoCommand extends Command {
         return isoFile;
     }
 
-    public boolean isUpdate() {
-        return update;
-    }
 }
