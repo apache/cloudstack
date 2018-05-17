@@ -44,6 +44,7 @@ public class BackupPolicyVO implements BackupPolicy {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private long id;
 
     @Column(name = "uuid")
@@ -54,6 +55,9 @@ public class BackupPolicyVO implements BackupPolicy {
 
     @Column(name = "policy_uuid")
     private String policyUuid;
+
+    @Column(name = "imported")
+    private boolean imported = true;
 
     public String getUuid() {
         return uuid;
@@ -87,7 +91,8 @@ public class BackupPolicyVO implements BackupPolicy {
         this.policyUuid = policyUuid;
     }
 
-    public boolean isExternal() {
-        return false;
+    @Override
+    public boolean isImported() {
+        return imported;
     }
 }

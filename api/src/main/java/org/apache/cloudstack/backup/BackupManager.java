@@ -20,6 +20,7 @@ package org.apache.cloudstack.backup;
 import java.util.List;
 
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.framework.backup.Backup;
 import org.apache.cloudstack.framework.backup.BackupPolicy;
 import org.apache.cloudstack.framework.backup.BackupService;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -59,14 +60,24 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     boolean assignVMToBackupPolicy(String policyUuid, Long virtualMachineId, Long zoneId);
 
     /**
-     * List existing backup policies
+     * List existing backups for a VM
      */
-    List<BackupPolicy> listBackupPolicies();
+    List<Backup> listBackups(Long vmId);
 
     /**
-     * List backup policies existing on the backup provider
+     * List backup policies
+     * @param zoneId zone id
+     * @param external if true, only external backup policies are listed
      */
-    List<BackupPolicy> listBackupProviderPolicies(Long zoneId);
+    List<BackupPolicy> listBackupPolicies(Long zoneId, Boolean external);
+
+    /**
+     * Restore a full backed up VM
+     */
+    boolean restoreBackup(Long vmId, String backupId, Long zoneId);
+
+    //TODO
+    boolean restoreBackupVolume(Long volumeId, Long vmId, String backupId, Long zoneId);
 
     /**
      * Deletes a backup policy

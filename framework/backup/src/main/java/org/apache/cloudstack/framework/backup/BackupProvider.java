@@ -48,4 +48,9 @@ public interface BackupProvider {
      * True if policy with id uuid exists on the backup provider
      */
     boolean isBackupPolicy(String uuid);
+
+    /**
+     * Restore VM from backup
+     */
+    boolean restoreVMFromBackup(String vmUuid, String backupUuid);
 }

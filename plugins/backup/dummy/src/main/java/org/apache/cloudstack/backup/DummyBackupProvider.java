@@ -58,4 +58,10 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         s_logger.debug("Checking if backup policy exists on the Dummy Backup Provider");
         return true;
     }
+
+    @Override
+    public boolean restoreVMFromBackup(String vmUuid, String backupUuid) {
+        s_logger.debug("Restoring vm " + vmUuid + "from backup " + backupUuid + " on the Dummy Backup Provider");
+        return true;
+    }
 }

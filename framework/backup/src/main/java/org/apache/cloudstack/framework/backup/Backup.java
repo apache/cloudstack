@@ -14,14 +14,27 @@
 //KIND, either express or implied.  See the License for the
 //specific language governing permissions and limitations
 //under the License.
+
 package org.apache.cloudstack.framework.backup;
 
-public interface BackupPolicy {
+import java.util.Date;
+import java.util.List;
 
-    long getId();
+public interface Backup {
+
+    enum Status {
+        BackingUp, BackedUp, Failed, Queued, Restoring
+    }
+
+    Long getId();
     String getUuid();
-    String getPolicyUuid();
+    Long getAccountId();
+    Long getUserId();
     String getName();
-    boolean isImported();
-
+    String getDescription();
+    Long getParentId();
+    Long getVMId();
+    List<Long> getVolumeIds();
+    Status getStatus();
+    Date getStartTime();
 }

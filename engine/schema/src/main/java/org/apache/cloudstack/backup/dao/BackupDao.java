@@ -17,25 +17,17 @@
 
 package org.apache.cloudstack.backup.dao;
 
-import javax.annotation.PostConstruct;
+import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.backup.BackupVO;
+import org.apache.cloudstack.framework.backup.Backup;
 
-import org.apache.cloudstack.backup.BackupPolicyVO;
-import org.springframework.stereotype.Component;
+import java.util.List;
 
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
+public interface BackupDao extends GenericDao<BackupVO, Long> {
 
-@Component
-public class BackupPolicyDaoImpl extends GenericDaoBase<BackupPolicyVO, Long> implements BackupPolicyDao {
+    List<Backup> listByVmId(Long vmId);
+    List<Backup> listByUserId(Long userId);
 
-    private SearchBuilder<BackupPolicyVO> backupPoliciesSearch;
-
-    public BackupPolicyDaoImpl() {
-    }
-
-    @PostConstruct
-    protected void init() {
-        backupPoliciesSearch = createSearchBuilder();
-        backupPoliciesSearch.done();
-    }
+    BackupResponse newBackupResponse(Backup backup);
 }

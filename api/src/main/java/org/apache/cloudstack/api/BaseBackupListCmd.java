@@ -18,16 +18,18 @@
 package org.apache.cloudstack.api;
 
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.backup.Backup;
 import org.apache.cloudstack.framework.backup.BackupPolicy;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class BaseBackupPolicyListCmd extends BaseListCmd {
+public abstract class BaseBackupListCmd extends BaseListCmd {
 
-    protected void setupResponse(final List<BackupPolicy> policies) {
+    protected void setupResponseBackupPolicyList(final List<BackupPolicy> policies) {
         final ListResponse<BackupPolicyResponse> response = new ListResponse<>();
         final List<BackupPolicyResponse> responses = new ArrayList<>();
         for (final BackupPolicy policy : policies) {
@@ -35,13 +37,28 @@ public abstract class BaseBackupPolicyListCmd extends BaseListCmd {
                 continue;
             }
             final BackupPolicyResponse backupPolicyResponse = new BackupPolicyResponse();
-            if (!policy.isExternal()) {
+            if (!policy.isImported()) {
                 backupPolicyResponse.setId(policy.getUuid());
             }
             backupPolicyResponse.setName(policy.getName());
             backupPolicyResponse.setPolicyId(policy.getPolicyUuid());
             backupPolicyResponse.setObjectName("policy");
             responses.add(backupPolicyResponse);
+        }
+        response.setResponses(responses);
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
+    }
+
+    protected void setupResponseBackupList(final List<Backup> backups) {
+        final ListResponse<BackupResponse> response = new ListResponse<>();
+        final List<BackupResponse> responses = new ArrayList<>();
+        for (Backup backup : backups) {
+            if (backup == null) {
+                continue;
+            }
+            BackupResponse backupResponse = _responseGenerator.createBackupResponse(backup);
+            responses.add(backupResponse);
         }
         response.setResponses(responses);
         response.setResponseName(getCommandName());

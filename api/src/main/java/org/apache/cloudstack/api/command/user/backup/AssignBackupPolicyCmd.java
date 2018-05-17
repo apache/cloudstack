@@ -111,7 +111,7 @@ public class AssignBackupPolicyCmd extends BaseCmd {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to assign VM to backup policy");
             }
         } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
 }

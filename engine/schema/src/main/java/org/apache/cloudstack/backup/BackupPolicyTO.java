@@ -29,7 +29,7 @@ public class BackupPolicyTO implements BackupPolicy {
     private long id;
     private String name;
     private String policyUuid;
-    private boolean external = true;
+    private boolean imported = false;
 
     public BackupPolicyTO() {
         this.uuid = UUID.randomUUID().toString();
@@ -61,7 +61,7 @@ public class BackupPolicyTO implements BackupPolicy {
     }
 
     @Override
-    public boolean isExternal() {
-        return external;
+    public boolean isImported() {
+        return imported;
     }
 }

@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -61,9 +62,11 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.framework.backup.Backup;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -434,6 +437,7 @@ public class ApiDBUtils {
     static ResourceMetaDataService s_resourceDetailsService;
     static HostGpuGroupsDao s_hostGpuGroupsDao;
     static VGPUTypesDao s_vgpuTypesDao;
+    static BackupDao s_backupDao;
 
     @Inject
     private ManagementServer ms;
@@ -666,6 +670,8 @@ public class ApiDBUtils {
     private HostGpuGroupsDao hostGpuGroupsDao;
     @Inject
     private VGPUTypesDao vgpuTypesDao;
+    @Inject
+    private BackupDao backupDao;
 
     @PostConstruct
     void init() {
@@ -785,6 +791,7 @@ public class ApiDBUtils {
         s_resourceDetailsService = resourceDetailsService;
         s_hostGpuGroupsDao = hostGpuGroupsDao;
         s_vgpuTypesDao = vgpuTypesDao;
+        s_backupDao = backupDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -1999,5 +2006,9 @@ public class ApiDBUtils {
 
     public static List<ResourceTagJoinVO> listResourceTagViewByResourceUUID(String resourceUUID, ResourceObjectType resourceType) {
         return s_tagJoinDao.listBy(resourceUUID, resourceType);
+    }
+
+    public static BackupResponse newBackupResponse(Backup backup) {
+        return s_backupDao.newBackupResponse(backup);
     }
 }

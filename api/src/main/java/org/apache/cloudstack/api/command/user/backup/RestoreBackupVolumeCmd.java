@@ -15,40 +15,35 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.api.command.admin.backup;
+package org.apache.cloudstack.api.command.user.backup;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseBackupPolicyListCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.command.user.backup.AssignBackupPolicyCmd;
-import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.backup.BackupPolicy;
 
 import javax.inject.Inject;
-import java.util.List;
 
-@APICommand(name = ListBackupProviderPoliciesCmd.APINAME,
-        description = "Lists backup policies existing on the Backup and Recovery provider side",
-        responseObject = BackupPolicyResponse.class, since = "4.12.0",
-        authorized = {RoleType.Admin})
-public class ListBackupProviderPoliciesCmd extends BaseBackupPolicyListCmd {
+@APICommand(name = RestoreBackupVolumeCmd.APINAME,
+        description = "Restore and attach a backed up volume to VM",
+        responseObject = SuccessResponse.class, since = "4.12.0")
+public class RestoreBackupVolumeCmd extends BaseCmd {
 
-    public static final String APINAME = "listBackupProviderPolicies";
+    public static final String APINAME = "restoreBackupVolume";
 
     @Inject
     BackupManager backupManager;
@@ -56,6 +51,26 @@ public class ListBackupProviderPoliciesCmd extends BaseBackupPolicyListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+
+    @Parameter(name = ApiConstants.VOLUME_ID,
+            type = CommandType.UUID,
+            entityType = VolumeResponse.class,
+            required = true,
+            description = "id of the volume")
+    private Long volumeId;
+
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+            type = CommandType.UUID,
+            entityType = UserVmResponse.class,
+            required = true,
+            description = "id of the VM")
+    private Long virtualMachineId;
+
+    @Parameter(name = ApiConstants.BACKUP_ID,
+            type = CommandType.STRING,
+            required = true,
+            description = "id of the backup")
+    private String backupId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
             description = "The zone ID")
@@ -65,13 +80,25 @@ public class ListBackupProviderPoliciesCmd extends BaseBackupPolicyListCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+    public Long getVolumeId() {
+        return volumeId;
+    }
+
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
+    }
+
+    public String getBackupId() {
+        return backupId;
+    }
+
     public Long getZoneId() {
         return zoneId;
     }
 
     @Override
     public String getCommandName() {
-        return AssignBackupPolicyCmd.APINAME + RESPONSE_SUFFIX;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override
@@ -86,11 +113,15 @@ public class ListBackupProviderPoliciesCmd extends BaseBackupPolicyListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            List<BackupPolicy> policies = backupManager.listBackupProviderPolicies(zoneId);
-            setupResponse(policies);
-        } catch (InvalidParameterValueException e) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
-        } catch (CloudRuntimeException e) {
+            boolean result = backupManager.restoreBackupVolume(volumeId, virtualMachineId, backupId, zoneId);
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new CloudRuntimeException("Error restoring volume and attaching to VM");
+            }
+        } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }
