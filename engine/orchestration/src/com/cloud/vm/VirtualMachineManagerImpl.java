@@ -1105,10 +1105,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 }
 
                 try {
-                    _networkMgr.prepare(vmProfile, new DeployDestination(dest.getDataCenter(), dest.getPod(), null, null), ctx);
+                    _networkMgr.prepare(vmProfile, new DeployDestination(dest.getDataCenter(), dest.getPod(), null, null, dest.getStorageForDisks()), ctx);
                     if (vm.getHypervisorType() != HypervisorType.BareMetal) {
                         volumeMgr.prepare(vmProfile, dest);
                     }
+
                     //since StorageMgr succeeded in volume creation, reuse Volume for further tries until current cluster has capacity
                     if (!reuseVolume) {
                         reuseVolume = true;
@@ -4015,7 +4016,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
                 VmOpLockStateRetry,
-                VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel};
+                VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel, VmConfigDriveOnPrimaryPool};
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {

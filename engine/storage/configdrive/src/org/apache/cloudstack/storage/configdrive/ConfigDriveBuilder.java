@@ -155,7 +155,12 @@ public class ConfigDriveBuilder {
                 LOG.warn(errMsg);
                 throw new CloudRuntimeException(errMsg);
             }
-            return fileToBase64String(new File(tmpIsoStore.getAbsolutePath()));
+            File tmpIsoFile = new File(tmpIsoStore.getAbsolutePath());
+            // Max allowed file size of config drive is 64MB: https://docs.openstack.org/project-install-guide/baremetal/draft/configdrive.html
+            if (tmpIsoFile.length() > (64L * 1024L * 1024L)) {
+                throw new CloudRuntimeException("Config drive file exceeds maximum allowed size of 64MB");
+            }
+            return fileToBase64String(tmpIsoFile);
         } catch (IOException e) {
             throw new CloudRuntimeException("Failed due to", e);
         } finally {

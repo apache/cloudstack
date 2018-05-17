@@ -25,4 +25,12 @@ public class ConfigDrive {
     public static final String cloudStackConfigDriveName = "/cloudstack/";
     public static final String openStackConfigDriveName = "/openstack/latest/";
 
+    /**
+     * This is the path to iso file relative to mount point
+     * @return config drive iso file path
+     */
+    public static String createConfigDrivePath(final String instanceName) {
+        return ConfigDrive.CONFIGDRIVEDIR + "/" + instanceName + "/"  + ConfigDrive.CONFIGDRIVEFILENAME;
+    }
+
 }
