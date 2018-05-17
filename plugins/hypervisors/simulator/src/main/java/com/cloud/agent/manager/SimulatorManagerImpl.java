@@ -16,30 +16,6 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-
-import org.apache.cloudstack.ca.SetupCertificateCommand;
-import org.apache.cloudstack.ca.SetupKeyStoreCommand;
-import org.apache.cloudstack.storage.command.DeleteCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand;
-import org.apache.cloudstack.storage.command.DownloadProgressCommand;
-import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
-import org.apache.cloudstack.storage.command.UploadStatusCommand;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -138,6 +114,27 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.PowerState;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.ca.SetupKeyStoreCommand;
+import org.apache.cloudstack.diagnosis.ExecuteDiagnosisCommand;
+import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
+import org.apache.cloudstack.storage.command.DownloadProgressCommand;
+import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.cloudstack.storage.command.UploadStatusCommand;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.io.StringReader;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager, PluggableService {
@@ -363,7 +360,7 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 } else if (cmd instanceof DownloadProgressCommand) {
                     answer = _mockStorageMgr.DownloadProcess((DownloadProgressCommand)cmd);
                 } else if (cmd instanceof DownloadCommand) {
-                    answer = _mockStorageMgr.Download((DownloadCommand)cmd);
+                    answer = _mockStorageMgr.Download((DownloadCommand) cmd);
                 } else if (cmd instanceof GetStorageStatsCommand) {
                     answer = _mockStorageMgr.GetStorageStats((GetStorageStatsCommand)cmd);
                 } else if (cmd instanceof GetVolumeStatsCommand) {
@@ -391,7 +388,9 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 } else if (cmd instanceof GetVmStatsCommand) {
                     answer = _mockVmMgr.getVmStats((GetVmStatsCommand)cmd);
                 } else if (cmd instanceof CheckRouterCommand) {
-                    answer = _mockVmMgr.checkRouter((CheckRouterCommand)cmd);
+                    answer = _mockVmMgr.checkRouter((CheckRouterCommand) cmd);
+                }else if (cmd instanceof ExecuteDiagnosisCommand) {
+                    answer = _mockVmMgr.executeDiagnosis((ExecuteDiagnosisCommand)cmd);
                 } else if (cmd instanceof GetDomRVersionCmd) {
                     answer = _mockVmMgr.getDomRVersion((GetDomRVersionCmd)cmd);
                 } else if (cmd instanceof CopyVolumeCommand) {

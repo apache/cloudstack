@@ -17,4 +17,4 @@
 # specific language governing permissions and limitations
 # under the License.
 
-$1 $2 $3
+$1 $2 -c 5

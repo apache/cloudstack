@@ -297,7 +297,7 @@ public class VirtualRoutingResource {
         return new CheckRouterAnswer(cmd, result.getDetails(), true);
     }
 
-    private ExecuteDiagnosisAnswer execute(ExecuteDiagnosisCommand cmd){
+    private Answer execute(ExecuteDiagnosisCommand cmd){
         final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.PING_REMOTELY, cmd.getArgs());
         if (!result.isSuccess()){
             return new ExecuteDiagnosisAnswer(cmd, result.getDetails());

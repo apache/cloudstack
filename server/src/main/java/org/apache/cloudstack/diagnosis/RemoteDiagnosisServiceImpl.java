@@ -24,9 +24,6 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
 import com.cloud.network.router.RouterControlHelper;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
@@ -47,9 +44,7 @@ public class RemoteDiagnosisServiceImpl extends ManagerBase implements Pluggable
     @Inject
     private DomainRouterDao domainRouterDao;
     @Inject
-    private HostDao hostDao;
-    @Inject
-    RouterControlHelper routerControlHelper;
+    private RouterControlHelper routerControlHelper;
     @Inject
     private AgentManager agentManager;
 
@@ -57,8 +52,7 @@ public class RemoteDiagnosisServiceImpl extends ManagerBase implements Pluggable
     public RemoteDiagnosisResponse pingAddress(final RemoteDiagnosisCmd cmd) throws AgentUnavailableException {
         final Long routerId = cmd.getId();
         final DomainRouterVO router = domainRouterDao.findById(routerId);
-        final HostVO host = hostDao.findById(router.getHostId());
-        final Long hostId = host.getId();
+        final Long hostId = router.getHostId();
 
         // Verify parameter
         if (router == null) {
@@ -68,40 +62,32 @@ public class RemoteDiagnosisServiceImpl extends ManagerBase implements Pluggable
         final ExecuteDiagnosisCommand command = new ExecuteDiagnosisCommand(routerId,
                 cmd.getIpaddress(), cmd.getDiagnosisType());
         command.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
+        command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
-        Answer origAnswer;
-        try{
-            origAnswer = agentManager.send(hostId, command);
-        } catch (final OperationTimedoutException e) {
-            s_logger.warn("Timed Out", e);
-            throw new AgentUnavailableException("Unable to send commands to virtual router ", hostId, e);
-        }
+        Answer origAnswer = agentManager.easySend(hostId, command);
+//        try{
+//            origAnswer = agentManager.easy(hostId,command);
+//        } catch (final OperationTimedoutException e) {
+//            s_logger.warn("Timed Out", e);
+//            throw new AgentUnavailableException("Unable to send commands to virtual router ", hostId, e);
+//        }
+//
+//        ExecuteDiagnosisAnswer answer = null;
+//        if (origAnswer instanceof ExecuteDiagnosisAnswer) {
+//            answer = (ExecuteDiagnosisAnswer) origAnswer;
+//        } else {
+//            s_logger.warn("Unable to update router " + router.getHostName() + "status");
+//        }
 
-        ExecuteDiagnosisAnswer answer = null;
-        if (origAnswer instanceof ExecuteDiagnosisAnswer) {
-            answer = (ExecuteDiagnosisAnswer) origAnswer;
-        } else {
-            s_logger.warn("Unable to update router " + router.getHostName() + "'s status");
-        }
-
-        return createRemoteDiagnosisResponse(answer);
+        return createRemoteDiagnosisResponse((ExecuteDiagnosisAnswer) origAnswer);
     }
 
-    public static RemoteDiagnosisResponse createRemoteDiagnosisResponse(ExecuteDiagnosisAnswer answer){
+    private static RemoteDiagnosisResponse createRemoteDiagnosisResponse(ExecuteDiagnosisAnswer answer){
         RemoteDiagnosisResponse response = new RemoteDiagnosisResponse();
         response.setResult(answer.getResult());
         response.setDetails(answer.getDetails());
         return response;
     }
-
-
-
-
-
-
-
-
-
 
     @Override
     public List<Class<?>> getCommands() {

@@ -33,7 +33,7 @@ public class ExecuteDiagnosisCommand extends NetworkElementCommand {
     }
 
     public String getArgs(){
-        return ssvmId + " " + pingDestination + " " + diagnosisType;
+        return diagnosisType + " " + pingDestination;
     }
 
     @Override

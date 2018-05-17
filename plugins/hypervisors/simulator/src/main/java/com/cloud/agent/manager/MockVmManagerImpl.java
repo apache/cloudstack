@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.diagnosis.ExecuteDiagnosisAnswer;
+import org.apache.cloudstack.diagnosis.ExecuteDiagnosisCommand;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -271,6 +273,16 @@ public class MockVmManagerImpl extends ManagerBase implements MockVmManager {
             ans.setState(VirtualRouter.RedundantState.BACKUP);
             return ans;
         }
+    }
+
+    @Override
+    public ExecuteDiagnosisAnswer executeDiagnosis(ExecuteDiagnosisCommand cmd) {
+        final String router_name = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        final MockVm vm = _mockVmDao.findByVmName(router_name);
+
+        ExecuteDiagnosisAnswer answer = new ExecuteDiagnosisAnswer(cmd,null);
+
+        return answer;
     }
 
     @Override
