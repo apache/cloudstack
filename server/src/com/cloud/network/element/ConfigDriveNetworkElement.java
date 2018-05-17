@@ -58,6 +58,7 @@ import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -276,7 +277,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             LOG.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
             DataStore dataStore = _dataStoreMgr.getImageStore(network.getDataCenterId());
             if (VirtualMachineManager.VmConfigDriveOnPrimaryPool.value()) {
-                dataStore = findDataStore(dest);
+                dataStore = findDataStore(vm, dest);
             }
             addConfigDriveDisk(vm, dataStore);
             return false;
@@ -292,7 +293,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     public void commitMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
     }
 
-    private DataStore findDataStore(DeployDestination dest) {
+    private DataStore findDataStore(VirtualMachineProfile profile, DeployDestination dest) {
         DataStore dataStore = null;
         if (VirtualMachineManager.VmConfigDriveOnPrimaryPool.value()) {
             for (final Volume volume : dest.getStorageForDisks().keySet()) {
@@ -300,6 +301,12 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                     StoragePool primaryPool = dest.getStorageForDisks().get(volume);
                     dataStore = _dataStoreMgr.getDataStore(primaryPool.getId(), DataStoreRole.Primary);
                     break;
+                }
+            }
+            if (dataStore == null) {
+                final List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(profile.getVirtualMachine().getId(), Volume.Type.ROOT);
+                if (volumes != null && volumes.size() > 0) {
+                    dataStore = _dataStoreMgr.getDataStore(volumes.get(0).getPoolId(), DataStoreRole.Primary);
                 }
             }
         } else {
@@ -331,7 +338,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private boolean createConfigDriveIso(VirtualMachineProfile profile, DeployDestination dest) throws ResourceUnavailableException {
-        final DataStore dataStore = findDataStore(dest);
+        final DataStore dataStore = findDataStore(profile, dest);
         final Long agentId = findAgentId(profile, dest, dataStore);
         if (agentId == null || dataStore == null) {
             throw new ResourceUnavailableException("Config drive iso creation failed, agent or datastore not available",
@@ -358,9 +365,11 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         Long agentId = findAgentIdForImageStore(dataStore);
 
         if (VirtualMachineManager.VmConfigDriveOnPrimaryPool.value()) {
-            final Volume volume = _volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT).get(0);
-            dataStore = _dataStoreMgr.getDataStore(volume.getPoolId(), DataStoreRole.Primary);
-            agentId = vm.getHostId();
+            List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
+            if (volumes != null && volumes.size() > 0) {
+                dataStore = _dataStoreMgr.getDataStore(volumes.get(0).getPoolId(), DataStoreRole.Primary);
+            }
+            agentId = (vm.getHostId() != null) ? vm.getHostId() : vm.getLastHostId();
         }
 
         if (agentId == null || dataStore == null) {

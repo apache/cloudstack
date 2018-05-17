@@ -24,9 +24,10 @@ import com.cloud.agent.api.to.DataStoreTO;
 public class HandleConfigDriveIsoCommand extends Command {
 
     @LogLevel(LogLevel.Log4jLevel.Off)
-    String isoData;
-    String isoFile;
-    boolean create = false;
+    private String isoData;
+
+    private String isoFile;
+    private boolean create = false;
     private DataStoreTO destStore;
 
     public HandleConfigDriveIsoCommand(String isoFile, String isoData, DataStoreTO destStore, boolean create) {

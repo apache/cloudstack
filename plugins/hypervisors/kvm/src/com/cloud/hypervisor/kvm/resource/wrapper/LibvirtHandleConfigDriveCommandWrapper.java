@@ -56,7 +56,7 @@ public final class LibvirtHandleConfigDriveCommandWrapper extends CommandWrapper
             if (command.getIsoData() == null) {
                 return new Answer(command, false, "Invalid config drive ISO data received");
             }
-            if(isoFile.exists()) {
+            if (isoFile.exists()) {
                 LOG.debug("An old config drive iso already exists");
             }
             try {
@@ -74,6 +74,6 @@ public final class LibvirtHandleConfigDriveCommandWrapper extends CommandWrapper
             }
         }
 
-        return new Answer(command, true, "Successfully saved config drive at primary storage");
+        return new Answer(command);
     }
 }
