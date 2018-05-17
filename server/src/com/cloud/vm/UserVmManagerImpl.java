@@ -677,6 +677,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Vm with id " + vmId + " is not in the right state");
         }
 
+        if (userVm.getState() != State.Stopped) {
+            s_logger.error("vm is not in the right state: " + vmId);
+            throw new InvalidParameterValueException("Vm " + userVm + " should be stopped to do password reset");
+        }
+
         _accountMgr.checkAccess(caller, null, true, userVm);
 
         boolean result = resetVMPasswordInternal(vmId, password);
@@ -4104,8 +4109,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 profile.setConfigDriveIsoFile(isoFile);
             }
         }
-
-
 
         _templateMgr.prepareIsoForVmProfile(profile, dest);
         return true;
