@@ -275,10 +275,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) {
         if (nic.isDefaultNic() && _networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.ConfigDrive)) {
             LOG.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
-            DataStore dataStore = _dataStoreMgr.getImageStore(network.getDataCenterId());
-            if (VirtualMachineManager.VmConfigDriveOnPrimaryPool.value()) {
-                dataStore = findDataStore(vm, dest);
-            }
+            final DataStore dataStore = findDataStore(vm, dest);
             addConfigDriveDisk(vm, dataStore);
             return false;
         }
@@ -296,11 +293,13 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     private DataStore findDataStore(VirtualMachineProfile profile, DeployDestination dest) {
         DataStore dataStore = null;
         if (VirtualMachineManager.VmConfigDriveOnPrimaryPool.value()) {
-            for (final Volume volume : dest.getStorageForDisks().keySet()) {
-                if (volume.getVolumeType() == Volume.Type.ROOT) {
-                    StoragePool primaryPool = dest.getStorageForDisks().get(volume);
-                    dataStore = _dataStoreMgr.getDataStore(primaryPool.getId(), DataStoreRole.Primary);
-                    break;
+            if (dest.getStorageForDisks() != null) {
+                for (final Volume volume : dest.getStorageForDisks().keySet()) {
+                    if (volume.getVolumeType() == Volume.Type.ROOT) {
+                        final StoragePool primaryPool = dest.getStorageForDisks().get(volume);
+                        dataStore = _dataStoreMgr.getDataStore(primaryPool.getId(), DataStoreRole.Primary);
+                        break;
+                    }
                 }
             }
             if (dataStore == null) {
@@ -392,7 +391,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     private void addConfigDriveDisk(final VirtualMachineProfile profile, final DataStore dataStore) {
         boolean isoAvailable = false;
-        String isoPath = ConfigDrive.CONFIGDRIVEDIR + "/" + profile.getInstanceName() + "/"  + ConfigDrive.CONFIGDRIVEFILENAME;
+        final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
         for (DiskTO dataTo : profile.getDisks()) {
             if (dataTo.getPath().equals(isoPath)) {
                 isoAvailable = true;
