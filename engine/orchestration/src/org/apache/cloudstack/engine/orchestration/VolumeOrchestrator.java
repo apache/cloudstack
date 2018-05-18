@@ -1344,30 +1344,29 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         StoragePool pool;
         for (VolumeTask task : tasks) {
             if (task.type == VolumeTaskType.NOP) {
-                pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
-
-                if (task.pool != null && task.pool.isManaged()) {
-                    long hostId = vm.getVirtualMachine().getHostId();
-                    Host host = _hostDao.findById(hostId);
-
-                    volService.grantAccess(volFactory.getVolume(task.volume.getId()), host, (DataStore)pool);
-                }
-
                 vol = task.volume;
 
-                // For a zone-wide managed storage, it is possible that the VM can be started in another
+                pool = (StoragePool)dataStoreMgr.getDataStore(task.pool.getId(), DataStoreRole.Primary);
+
+                // For zone-wide managed storage, it is possible that the VM can be started in another
                 // cluster. In that case, make sure that the volume is in the right access group.
                 if (pool.isManaged()) {
-                    long oldHostId = vm.getVirtualMachine().getLastHostId();
-                    long hostId = vm.getVirtualMachine().getHostId();
+                    Host lastHost = _hostDao.findById(vm.getVirtualMachine().getLastHostId());
+                    Host host = _hostDao.findById(vm.getVirtualMachine().getHostId());
 
-                    if (oldHostId != hostId) {
-                        Host oldHost = _hostDao.findById(oldHostId);
-                        DataStore storagePool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+                    long lastClusterId = lastHost == null || lastHost.getClusterId() == null ? -1 : lastHost.getClusterId();
+                    long clusterId = host == null || host.getClusterId() == null ? -1 : host.getClusterId();
 
-                        storageMgr.removeStoragePoolFromCluster(oldHostId, vol.get_iScsiName(), pool);
+                    if (lastClusterId != clusterId) {
+                        if (lastHost != null) {
+                            storageMgr.removeStoragePoolFromCluster(lastHost.getId(), vol.get_iScsiName(), pool);
 
-                        volService.revokeAccess(volFactory.getVolume(vol.getId()), oldHost, storagePool);
+                            DataStore storagePool = dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+
+                            volService.revokeAccess(volFactory.getVolume(vol.getId()), lastHost, storagePool);
+                        }
+
+                        volService.grantAccess(volFactory.getVolume(vol.getId()), host, (DataStore)pool);
                     }
                 }
             } else if (task.type == VolumeTaskType.MIGRATE) {
