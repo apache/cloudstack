@@ -15,19 +15,20 @@
 //specific language governing permissions and limitations
 //under the License.
 
-package org.apache.cloudstack.framework.backup;
+package org.apache.cloudstack.backup;
+
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.api.InternalIdentity;
 
 import java.util.Date;
 import java.util.List;
 
-public interface Backup {
+public interface Backup extends InternalIdentity, Identity {
 
     enum Status {
         BackingUp, BackedUp, Failed, Queued, Restoring
     }
 
-    Long getId();
-    String getUuid();
     Long getAccountId();
     Long getUserId();
     String getName();

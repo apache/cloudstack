@@ -26,11 +26,4 @@
         <version>4.12.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-framework-backup</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-    </dependencies>
 </project>

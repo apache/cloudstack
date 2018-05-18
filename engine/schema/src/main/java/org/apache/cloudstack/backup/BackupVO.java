@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.backup;
 
-import org.apache.cloudstack.framework.backup.Backup;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 
@@ -80,7 +79,7 @@ public class BackupVO implements Backup {
     private List<Long> volumeIds;
 
     @Override
-    public Long getId() {
+    public long getId() {
         return id;
     }
 

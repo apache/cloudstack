@@ -30,7 +30,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.BackupVO;
-import org.apache.cloudstack.framework.backup.Backup;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.commons.collections.CollectionUtils;
 
 import javax.annotation.PostConstruct;

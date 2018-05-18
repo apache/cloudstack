@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
@@ -67,10 +68,11 @@ public class RestoreBackupVolumeCmd extends BaseCmd {
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.BACKUP_ID,
-            type = CommandType.STRING,
+            type = CommandType.UUID,
+            entityType = BackupResponse.class,
             required = true,
             description = "id of the backup")
-    private String backupId;
+    private Long backupId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
             description = "The zone ID")
@@ -88,7 +90,7 @@ public class RestoreBackupVolumeCmd extends BaseCmd {
         return virtualMachineId;
     }
 
-    public String getBackupId() {
+    public Long getBackupId() {
         return backupId;
     }
 

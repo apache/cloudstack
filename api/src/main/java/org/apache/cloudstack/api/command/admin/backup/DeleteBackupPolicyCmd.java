@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
@@ -50,17 +51,18 @@ public class DeleteBackupPolicyCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     ////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID,
-            type = CommandType.STRING,
+    @Parameter(name = ApiConstants.BACKUP_POLICY_ID,
+            type = CommandType.UUID,
+            entityType = BackupPolicyResponse.class,
             required = true,
             description = "The backup policy internal ID")
-    private String id;
+    private Long id;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getId() {
+    public Long getId() {
         return id;
     }
 

@@ -19,8 +19,6 @@
 
 package org.apache.cloudstack.backup;
 
-import org.apache.cloudstack.framework.backup.BackupPolicy;
-
 import java.util.UUID;
 
 public class BackupPolicyTO implements BackupPolicy {

@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
-import org.apache.cloudstack.framework.backup.BackupPolicy;
+import org.apache.cloudstack.backup.BackupPolicy;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
@@ -56,7 +56,7 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
     private Long zoneId;
 
     @Parameter(name = ApiConstants.EXTERNAL, type = CommandType.BOOLEAN,
-            description = "True if list external backup policies")
+            description = "True if list external backup policies (provider policies)")
     private Boolean external;
 
     /////////////////////////////////////////////////////

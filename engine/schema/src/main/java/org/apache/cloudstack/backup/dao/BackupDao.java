@@ -20,7 +20,7 @@ package org.apache.cloudstack.backup.dao;
 import com.cloud.utils.db.GenericDao;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.backup.BackupVO;
-import org.apache.cloudstack.framework.backup.Backup;
+import org.apache.cloudstack.backup.Backup;
 
 import java.util.List;
 

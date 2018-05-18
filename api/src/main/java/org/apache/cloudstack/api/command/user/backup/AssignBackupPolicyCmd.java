@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -53,14 +54,15 @@ public class AssignBackupPolicyCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "id of the VM to be moved")
+            description = "id of the VM to be assigned to the backup policy")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.POLICY_ID,
-            type = CommandType.STRING,
+    @Parameter(name = ApiConstants.BACKUP_POLICY_ID,
+            type = CommandType.UUID,
+            entityType = BackupPolicyResponse.class,
             required = true,
             description = "id of the backup policy")
-    private String policyId;
+    private Long policyId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
             description = "the zone ID", required = true)
@@ -74,7 +76,7 @@ public class AssignBackupPolicyCmd extends BaseCmd {
         return virtualMachineId;
     }
 
-    public String getPolicyId() {
+    public Long getPolicyId() {
         return policyId;
     }
 
@@ -100,9 +102,9 @@ public class AssignBackupPolicyCmd extends BaseCmd {
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
             Long virtualMachineId = getVirtualMachineId();
-            String policyUuid = getPolicyId();
+            Long policyId = getPolicyId();
             Long zoneId = getZoneId();
-            boolean result = backupManager.assignVMToBackupPolicy(policyUuid, virtualMachineId, zoneId);
+            boolean result = backupManager.assignVMToBackupPolicy(policyId, virtualMachineId, zoneId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

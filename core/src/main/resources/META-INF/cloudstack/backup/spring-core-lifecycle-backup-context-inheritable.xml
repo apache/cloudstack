@@ -26,7 +26,7 @@
 
     <bean class="org.apache.cloudstack.spring.lifecycle.registry.RegistryLifecycle">
         <property name="registry" ref="backupProvidersRegistry" />
-        <property name="typeClass" value="org.apache.cloudstack.framework.backup.BackupProvider" />
+        <property name="typeClass" value="org.apache.cloudstack.backup.BackupProvider" />
     </bean>
 
 </beans>

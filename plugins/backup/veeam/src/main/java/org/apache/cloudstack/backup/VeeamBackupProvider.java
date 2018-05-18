@@ -23,9 +23,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
 import org.apache.cloudstack.backup.veeam.VeeamClient;
-import org.apache.cloudstack.framework.backup.BackupPolicy;
-import org.apache.cloudstack.framework.backup.BackupProvider;
-import org.apache.cloudstack.framework.backup.BackupService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.log4j.Logger;

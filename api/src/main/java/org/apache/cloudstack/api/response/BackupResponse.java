@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.framework.backup.Backup;
+import org.apache.cloudstack.backup.Backup;
 
 import java.util.List;
 

@@ -20,7 +20,7 @@ package org.apache.cloudstack.api.response;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.framework.backup.BackupProvider;
+import org.apache.cloudstack.backup.BackupProvider;
 
 import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;

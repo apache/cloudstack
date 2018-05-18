@@ -30,7 +30,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.BackupProviderResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.backup.BackupManager;
-import org.apache.cloudstack.framework.backup.BackupProvider;
+import org.apache.cloudstack.backup.BackupProvider;
 
 import com.cloud.user.Account;
 
@@ -48,7 +48,7 @@ public class ListBackupProvidersCmd extends BaseListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List CA service provider by name")
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, description = "List Backup and Recovery provider by name")
     private String name;
 
     /////////////////////////////////////////////////////

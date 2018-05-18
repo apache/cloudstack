@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
-import org.apache.cloudstack.framework.backup.BackupPolicy;
-import org.apache.cloudstack.framework.backup.BackupProvider;
-
 import com.cloud.utils.component.AdapterBase;
 import org.apache.log4j.Logger;
 

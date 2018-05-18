@@ -29,7 +29,7 @@ import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.backup.BackupPolicy;
+import org.apache.cloudstack.backup.BackupPolicy;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
@@ -39,12 +39,12 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = CreateBackupPolicyCmd.APINAME,
-        description = "Creates a backup policy by mapping it to an existing policy on the provider",
+@APICommand(name = ImportBackupPolicyCmd.APINAME,
+        description = "Imports a backup policy from the backup provider",
         responseObject = BackupPolicyResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin})
-public class CreateBackupPolicyCmd extends BaseCmd {
-    public static final String APINAME = "createBackupPolicy";
+public class ImportBackupPolicyCmd extends BaseCmd {
+    public static final String APINAME = "importBackupPolicy";
 
     @Inject
     BackupManager backupManager;
@@ -57,11 +57,11 @@ public class CreateBackupPolicyCmd extends BaseCmd {
             description = "the name of the backup policy")
     private String policyName;
 
-    @Parameter(name = ApiConstants.POLICY_ID,
+    @Parameter(name = ApiConstants.BACKUP_EXTERNAL_POLICY_ID,
             type = CommandType.STRING,
             required = true,
             description = "The backup policy ID (on backup provider side)")
-    private String policyId;
+    private String policyExternalId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
             description = "The zone ID")
@@ -75,8 +75,8 @@ public class CreateBackupPolicyCmd extends BaseCmd {
         return policyName;
     }
 
-    public String getPolicyId() {
-        return policyId;
+    public String getPolicyExternalId() {
+        return policyExternalId;
     }
 
     public Long getZoneId() {
@@ -110,7 +110,7 @@ public class CreateBackupPolicyCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            BackupPolicy policy = backupManager.addBackupPolicy(policyId, policyName, zoneId);
+            BackupPolicy policy = backupManager.addBackupPolicy(policyExternalId, policyName, zoneId);
             if (policy != null) {
                 setupResponse(policy);
             } else {

@@ -21,8 +21,8 @@ import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.backup.Backup;
-import org.apache.cloudstack.framework.backup.BackupPolicy;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupPolicy;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +37,7 @@ public abstract class BaseBackupListCmd extends BaseListCmd {
                 continue;
             }
             final BackupPolicyResponse backupPolicyResponse = new BackupPolicyResponse();
-            if (!policy.isImported()) {
+            if (policy.isImported()) {
                 backupPolicyResponse.setId(policy.getUuid());
             }
             backupPolicyResponse.setName(policy.getName());

@@ -17,8 +17,6 @@
 
 package org.apache.cloudstack.backup;
 
-import org.apache.cloudstack.framework.backup.BackupPolicy;
-
 import java.util.UUID;
 
 import javax.persistence.Column;

@@ -28,7 +28,7 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.command.admin.backup.DeleteBackupPolicyCmd;
 import org.apache.cloudstack.api.command.user.backup.AssignBackupPolicyCmd;
-import org.apache.cloudstack.api.command.admin.backup.CreateBackupPolicyCmd;
+import org.apache.cloudstack.api.command.admin.backup.ImportBackupPolicyCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupPoliciesCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListBackupProvidersCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
@@ -38,10 +38,6 @@ import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupPolicyDao;
 import org.apache.cloudstack.backup.dao.BackupPolicyVMMapDao;
-import org.apache.cloudstack.framework.backup.Backup;
-import org.apache.cloudstack.framework.backup.BackupPolicy;
-import org.apache.cloudstack.framework.backup.BackupProvider;
-import org.apache.cloudstack.framework.backup.BackupService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
@@ -74,34 +70,34 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private List<BackupProvider> backupProviders;
 
     @Override
-    public BackupPolicy addBackupPolicy(String policyId, String policyName, Long zoneId) {
+    public BackupPolicy addBackupPolicy(String policyExternalId, String policyName, Long zoneId) {
         BackupProvider provider = getBackupProvider(zoneId);
-        if (!provider.isBackupPolicy(policyId)) {
-            throw new CloudRuntimeException("Policy " + policyId + " does not exist on provider " + provider.getName());
+        if (!provider.isBackupPolicy(policyExternalId)) {
+            throw new CloudRuntimeException("Policy " + policyExternalId + " does not exist on provider " + provider.getName());
         }
 
-        BackupPolicyVO policy = new BackupPolicyVO(policyName, policyId);
+        BackupPolicyVO policy = new BackupPolicyVO(policyName, policyExternalId);
         BackupPolicyVO vo = backupPolicyDao.persist(policy);
         if (vo == null) {
-            throw new CloudRuntimeException("Unable to create backup policy: " + policyId + ", name: " + policyName);
+            throw new CloudRuntimeException("Unable to create backup policy: " + policyExternalId + ", name: " + policyName);
         }
-        LOG.debug("Successfully created backup policy " + policyName + " mapped to backup provider policy " + policyId);
+        LOG.debug("Successfully created backup policy " + policyName + " mapped to backup provider policy " + policyExternalId);
         return vo;
     }
 
     @Override
-    public boolean assignVMToBackupPolicy(String policyUuid, Long virtualMachineId, Long zoneId) {
+    public boolean assignVMToBackupPolicy(Long policyId, Long virtualMachineId, Long zoneId) {
         VMInstanceVO vmInstanceVO = vmInstanceDao.findById(virtualMachineId);
         if (vmInstanceVO == null) {
             throw new CloudRuntimeException("VM " + virtualMachineId + " does not exist");
         }
-        BackupPolicyVO policy = backupPolicyDao.findByUuid(policyUuid);
+        BackupPolicyVO policy = backupPolicyDao.findById(policyId);
         if (policy == null) {
-            throw new CloudRuntimeException("Policy " + policyUuid + " does not exist");
+            throw new CloudRuntimeException("Policy " + policy + " does not exist");
         }
         String vmUuid = vmInstanceVO.getUuid();
         BackupProvider backupProvider = getBackupProvider(zoneId);
-        boolean result = backupProvider.assignVMToBackupPolicy(vmUuid, policyUuid);
+        boolean result = backupProvider.assignVMToBackupPolicy(vmUuid, policy.getUuid());
         if (result) {
             BackupPolicyVMMapVO map = backupPolicyVMMapDao.findByVMId(virtualMachineId);
             if (map != null) {
@@ -111,7 +107,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             backupPolicyVMMapDao.persist(map);
             LOG.debug("Successfully assigned VM " + virtualMachineId + " to backup policy " + policy.getName());
         } else {
-            LOG.debug("Could not assign VM " + virtualMachineId + " to backup policy " + policyUuid);
+            LOG.debug("Could not assign VM " + virtualMachineId + " to backup policy " + policyId);
         }
         return result;
     }
@@ -131,24 +127,28 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public boolean restoreBackup(Long vmId, String backupId, Long zoneId) {
+    public boolean restoreBackup(Long vmId, Long backupId, Long zoneId) {
         BackupProvider backupProvider = getBackupProvider(zoneId);
         VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }
-        return backupProvider.restoreVMFromBackup(vm.getUuid(), backupId);
+        BackupVO backup = backupDao.findById(backupId);
+        if (backup == null) {
+            throw new CloudRuntimeException("Backup " + backupId + " does not exist");
+        }
+        return backupProvider.restoreVMFromBackup(vm.getUuid(), backup.getUuid());
     }
 
     @Override
-    public boolean restoreBackupVolume(Long volumeId, Long vmId, String backupId, Long zoneId) {
+    public boolean restoreBackupVolume(Long volumeId, Long vmId, Long backupId, Long zoneId) {
         //TODO
         return false;
     }
 
     @Override
-    public boolean deleteBackupPolicy(String policyId) {
-        BackupPolicyVO policy = backupPolicyDao.findByUuid(policyId);
+    public boolean deleteBackupPolicy(Long policyId) {
+        BackupPolicyVO policy = backupPolicyDao.findById(policyId);
         if (policy == null) {
             throw new CloudRuntimeException("Could not find a backup policy with id: " + policyId);
         }
@@ -189,7 +189,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(ListBackupProvidersCmd.class);
         cmdList.add(ListBackupPoliciesCmd.class);
-        cmdList.add(CreateBackupPolicyCmd.class);
+        cmdList.add(ImportBackupPolicyCmd.class);
         cmdList.add(AssignBackupPolicyCmd.class);
         cmdList.add(DeleteBackupPolicyCmd.class);
         cmdList.add(ListBackupsCmd.class);
