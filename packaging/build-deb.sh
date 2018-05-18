@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-#set -e
+set -e
 
 #
 # This script builds Debian packages for CloudStack and does
@@ -100,8 +100,7 @@ while [ -n "$1" ]; do
     esac
 done
 
-DCH=$(which dch)
-if [ -z "$DCH" ] ; then
+if [ -z "$(which dch)" ] ; then
     echo -e "dch not found, please install devscripts at first. \nDEB Build Failed"
     exit 1
 fi
@@ -109,6 +108,17 @@ fi
 NOW="$(date +%s)"
 PWD=$(cd $(dirname "$0") && pwd -P)
 cd $PWD/../
+
+# Fail early if working directory is NOT clean and --use-timestamp was provided
+if [ "$USE_TIMESTAMP" == "true" ]; then
+    if [ -n "$(cd $PWD; git status -s)" ]; then
+        echo "Erro: You have uncommitted changes and asked for --use-timestamp to be used."
+        echo "      --use-timestamp flag is going to temporarily change  POM versions  and"
+        echo "      revert them at the end of build, and there's no  way we can do partial"
+        echo "      revert. Please commit your changes first or omit --use-timestamp flag."
+        exit 1
+    fi
+fi
 
 VERSION=$(head -n1 debian/changelog  |awk -F [\(\)] '{print $2}')
 DISTCODE=$(lsb_release -sc)
@@ -148,4 +158,6 @@ dpkg-buildpackage -uc -us -b
 
 /bin/mv /tmp/changelog.orig debian/changelog
 
-(cd $PWD; git reset --hard)
+if [ "$USE_TIMESTAMP" == "true" ]; then
+    (cd $PWD; git reset --hard)
+fi
