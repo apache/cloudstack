@@ -43,7 +43,7 @@ public class BackupVOTest {
     @Test
     public void testVolumeIdsEmptyList() {
         vo.setVolumeIds(new ArrayList<>());
-        Assert.assertEquals("[]", vo.getVolumes());
+        Assert.assertEquals(null, vo.getVolumes());
         Assert.assertEquals(new ArrayList<>(), vo.getVolumeIds());
     }
 
@@ -54,8 +54,25 @@ public class BackupVOTest {
     }
 
     @Test
-    public void testDecodeVolumesString() {
+    public void testDecodeVolumesStringNotEmptyList() {
         vo.setVolumes("[1,2,3,4]");
         Assert.assertEquals(ids, vo.getVolumeIds());
+    }
+
+    @Test
+    public void testDecodeVolumesStringEmptyList() {
+        vo.setVolumes(null);
+        Assert.assertEquals(new ArrayList<>(), vo.getVolumeIds());
+    }
+
+    @Test
+    public void testSetVolumeIdsMultipleTimes() {
+        List<Long> list = Arrays.asList(1L, 2L);
+        vo.setVolumeIds(list);
+        Assert.assertEquals("[1,2]", vo.getVolumes());
+        vo.setVolumeIds(new ArrayList<>());
+        Assert.assertEquals(null, vo.getVolumes());
+        vo.setVolumeIds(ids);
+        Assert.assertEquals("[1,2,3,4]", vo.getVolumes());
     }
 }

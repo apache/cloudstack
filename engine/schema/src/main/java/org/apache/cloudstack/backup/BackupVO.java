@@ -173,7 +173,9 @@ public class BackupVO implements Backup {
         if (StringUtils.isNotBlank(volumes)) {
             String[] strIds = StringUtils.substringBetween(volumes,"[", "]").split(",");
             for (String strId: strIds) {
-                volumeIds.add(Long.valueOf(strId));
+                if (StringUtils.isNotBlank(strId)) {
+                    volumeIds.add(Long.valueOf(strId));
+                }
             }
         }
     }
@@ -186,21 +188,23 @@ public class BackupVO implements Backup {
 
     public void setVolumeIds(List<Long> volumes) {
         if (CollectionUtils.isEmpty(volumes)) {
-            this.volumeIds = new ArrayList<>();
+            volumeIds = new ArrayList<>();
         } else {
-            this.volumeIds = new ArrayList<>(volumes);
+            volumeIds = new ArrayList<>(volumes);
         }
         convertVolumeIdsToString();
     }
 
     private void convertVolumeIdsToString() {
         StringJoiner stringJoiner = new StringJoiner(",", "[", "]");
-        if (CollectionUtils.isNotEmpty(this.volumeIds)) {
-            for (Long volId : this.volumeIds) {
+        if (CollectionUtils.isNotEmpty(volumeIds)) {
+            for (Long volId : volumeIds) {
                 stringJoiner.add(String.valueOf(volId));
             }
+            volumes = stringJoiner.toString();
+        } else {
+            volumes = null;
         }
-        this.volumes = stringJoiner.toString();
     }
 
     protected String getVolumes() {
