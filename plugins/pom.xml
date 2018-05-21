@@ -109,6 +109,7 @@
     <module>database/quota</module>
     <module>integrations/cloudian</module>
     <module>integrations/prometheus</module>
+    <module>affinity-group-processors/host-affinity</module>
   </modules>
 
   <dependencies>

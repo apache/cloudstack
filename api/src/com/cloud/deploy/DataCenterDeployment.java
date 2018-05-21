@@ -19,6 +19,9 @@ package com.cloud.deploy;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.vm.ReservationContext;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class DataCenterDeployment implements DeploymentPlan {
     long _dcId;
     Long _podId;
@@ -29,6 +32,7 @@ public class DataCenterDeployment implements DeploymentPlan {
     ExcludeList _avoids = null;
     boolean _recreateDisks;
     ReservationContext _context;
+    List<Long> preferredHostIds = new ArrayList<>();
 
     public DataCenterDeployment(long dataCenterId) {
         this(dataCenterId, null, null, null, null, null);
@@ -91,6 +95,16 @@ public class DataCenterDeployment implements DeploymentPlan {
     @Override
     public ReservationContext getReservationContext() {
         return _context;
+    }
+
+    @Override
+    public void setPreferredHosts(List<Long> hostIds) {
+        this.preferredHostIds = new ArrayList<>(hostIds);
+    }
+
+    @Override
+    public List<Long> getPreferredHosts() {
+        return this.preferredHostIds;
     }
 
 }
