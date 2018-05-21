@@ -22,6 +22,7 @@ import java.util.HashMap;
 import org.apache.cloudstack.api.BaseCmd.HTTPMethod;
 import org.apache.cloudstack.api.command.user.vm.UpdateVMCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,9 +35,11 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.network.NetworkModel;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.user.Account;
@@ -69,6 +72,9 @@ public class UserVmManagerImplTest {
 
     @Mock
     private UserVmVO userVmVoMock;
+
+    @Mock
+    private NetworkModel networkModel;
 
     private long vmId = 1l;
 
@@ -220,5 +226,54 @@ public class UserVmManagerImplTest {
                 Mockito.anyBoolean(), Mockito.anyLong(),
                 Mockito.anyString(), Mockito.anyBoolean(), Mockito.any(HTTPMethod.class), Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.anyListOf(Long.class),
                 Mockito.anyMap());
+    }
+
+    @Test
+    public void validateOrReplaceMacAddressTestMacAddressValid() throws InsufficientAddressCapacityException {
+        configureValidateOrReplaceMacAddressTest(0, "01:23:45:67:89:ab", "01:23:45:67:89:ab");
+    }
+
+    @Test
+    public void validateOrReplaceMacAddressTestMacAddressNull() throws InsufficientAddressCapacityException {
+        configureValidateOrReplaceMacAddressTest(1, null, "01:23:45:67:89:ab");
+    }
+
+    @Test
+    public void validateOrReplaceMacAddressTestMacAddressBlank() throws InsufficientAddressCapacityException {
+        configureValidateOrReplaceMacAddressTest(1, " ", "01:23:45:67:89:ab");
+    }
+
+    @Test
+    public void validateOrReplaceMacAddressTestMacAddressEmpty() throws InsufficientAddressCapacityException {
+        configureValidateOrReplaceMacAddressTest(1, "", "01:23:45:67:89:ab");
+    }
+
+    @Test
+    public void validateOrReplaceMacAddressTestMacAddressNotValidOption1() throws InsufficientAddressCapacityException {
+        configureValidateOrReplaceMacAddressTest(1, "abcdef:gh:ij:kl", "01:23:45:67:89:ab");
+    }
+
+    @Test
+    public void validateOrReplaceMacAddressTestMacAddressNotValidOption2() throws InsufficientAddressCapacityException {
+        configureValidateOrReplaceMacAddressTest(1, "01:23:45:67:89:", "01:23:45:67:89:ab");
+    }
+
+    @Test
+    public void validateOrReplaceMacAddressTestMacAddressNotValidOption3() throws InsufficientAddressCapacityException {
+        configureValidateOrReplaceMacAddressTest(1, "01:23:45:67:89:az", "01:23:45:67:89:ab");
+    }
+
+    @Test
+    public void validateOrReplaceMacAddressTestMacAddressNotValidOption4() throws InsufficientAddressCapacityException {
+        configureValidateOrReplaceMacAddressTest(1, "@1:23:45:67:89:ab", "01:23:45:67:89:ab");
+    }
+
+    private void configureValidateOrReplaceMacAddressTest(int times, String macAddress, String expectedMacAddress) throws InsufficientAddressCapacityException {
+        Mockito.when(networkModel.getNextAvailableMacAddressInNetwork(Mockito.anyLong())).thenReturn(expectedMacAddress);
+
+        String returnedMacAddress = userVmManagerImpl.validateOrReplaceMacAddress(macAddress, 1l);
+
+        Mockito.verify(networkModel, Mockito.times(times)).getNextAvailableMacAddressInNetwork(Mockito.anyLong());
+        Assert.assertEquals(expectedMacAddress, returnedMacAddress);
     }
 }

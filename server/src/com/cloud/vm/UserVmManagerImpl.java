@@ -1169,6 +1169,8 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        macAddress = validateOrReplaceMacAddress(macAddress, network.getId());
+
         if(_nicDao.findByNetworkIdAndMacAddress(networkId, macAddress) != null) {
             throw new CloudRuntimeException("A NIC with this MAC address exists for network: " + network.getUuid());
         }
@@ -1239,6 +1241,19 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return _vmDao.findById(vmInstance.getId());
     }
 
+    /**
+     * If the given MAC address is invalid it replaces the given MAC with the next available MAC address
+     */
+    protected String validateOrReplaceMacAddress(String macAddress, long networkId) {
+        if (!NetUtils.isValidMac(macAddress)) {
+            try {
+                macAddress = _networkModel.getNextAvailableMacAddressInNetwork(networkId);
+            } catch (InsufficientAddressCapacityException e) {
+                throw new CloudRuntimeException(String.format("A MAC address cannot be generated for this NIC in the network [id=%s] ", networkId));
+            }
+        }
+        return macAddress;
+    }
 
     private void saveExtraDhcpOptions(long nicId, Map<Integer, String> dhcpOptions) {
         List<NicExtraDhcpOptionVO> nicExtraDhcpOptionVOList = dhcpOptions
