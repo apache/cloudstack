@@ -5375,3 +5375,54 @@ class ResourceDetails:
         cmd.resourceid = resourceid
         cmd.resourcetype = resourcetype
         return (apiclient.removeResourceDetail(cmd))
+
+# Backup and Recovery
+
+class BackupPolicy:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def importExisting(self, apiclient, zoneid, externalid, name):
+        """Import existing backup policy from the provider"""
+
+        cmd = importBackupPolicy.importBackupPolicyCmd()
+        cmd.zoneid = zoneid
+        cmd.externalid = externalid
+        cmd.name = name
+        return (apiclient.importBackupPolicy(cmd))
+
+    @classmethod
+    def listInternal(self, apiclient, zoneid):
+        """List imported backup policies"""
+
+        cmd = listBackupPolicies.listBackupPoliciesCmd()
+        cmd.zoneid = zoneid
+        return (apiclient.listBackupPolicies(cmd))
+
+    @classmethod
+    def listExternal(self, apiclient, zoneid):
+        """List external backup policies"""
+
+        cmd = listBackupPolicies.listBackupPoliciesCmd()
+        cmd.zoneid = zoneid
+        cmd.external = True
+        return (apiclient.listBackupPolicies(cmd))
+
+    @classmethod
+    def delete(self, apiclient, policyid):
+        """Delete an imported backup policy"""
+
+        cmd = deleteBackupPolicy.deleteBackupPolicyCmd()
+        cmd.backuppolicyid = policyid
+        return (apiclient.deleteBackupPolicy(cmd))
+
+    @classmethod
+    def assignVM(self, apiclient, policyid, vmid):
+        """Assign a VM to a backup policy"""
+
+        cmd = assignBackupPolicy.assignBackupPolicyCmd()
+        cmd.backuppolicyid = policyid
+        cmd.virtualmachineid = vmid
+        return (apiclient.assignBackupPolicy(cmd))
