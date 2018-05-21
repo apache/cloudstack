@@ -45,6 +45,7 @@ import javax.xml.transform.stream.StreamResult;
 
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.Domain;
@@ -384,7 +385,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     }
 
     private String getPathFromSourceText(Set<String> paths, String sourceText) {
-        if (paths != null && sourceText != null) {
+        if (paths != null && !StringUtils.isBlank(sourceText)) {
             for (String path : paths) {
                 if (sourceText.contains(path)) {
                     return path;
