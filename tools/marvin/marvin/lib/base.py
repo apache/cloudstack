@@ -5391,7 +5391,7 @@ class BackupPolicy:
         cmd.zoneid = zoneid
         cmd.externalid = externalid
         cmd.name = name
-        return (apiclient.importBackupPolicy(cmd))
+        return BackupPolicy(apiclient.importBackupPolicy(cmd).__dict__)
 
     @classmethod
     def listInternal(self, apiclient, zoneid):
@@ -5410,19 +5410,18 @@ class BackupPolicy:
         cmd.external = True
         return (apiclient.listBackupPolicies(cmd))
 
-    @classmethod
-    def delete(self, apiclient, policyid):
+    def delete(self, apiclient):
         """Delete an imported backup policy"""
 
         cmd = deleteBackupPolicy.deleteBackupPolicyCmd()
-        cmd.backuppolicyid = policyid
+        cmd.backuppolicyid = self.id
         return (apiclient.deleteBackupPolicy(cmd))
 
-    @classmethod
-    def assignVM(self, apiclient, policyid, vmid):
+    def assignVM(self, apiclient, vmid, zoneid):
         """Assign a VM to a backup policy"""
 
         cmd = assignBackupPolicy.assignBackupPolicyCmd()
-        cmd.backuppolicyid = policyid
+        cmd.backuppolicyid = self.id
         cmd.virtualmachineid = vmid
+        cmd.zoneid = zoneid
         return (apiclient.assignBackupPolicy(cmd))
