@@ -33,7 +33,7 @@ public class RemoteDiagnosisResponse extends BaseResponse {
 
     @SerializedName("success")
     @Param(description = "true if operation is executed successfully")
-    private Boolean success = true;
+    private Boolean success;
 
     public String getDetails() {
         return details;

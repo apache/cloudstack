@@ -20,11 +20,13 @@
 package org.apache.cloudstack.diagnosis;
 
 import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
+import com.cloud.agent.resource.virtualnetwork.VRScripts;
+import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.router.RouterControlHelper;
+import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.DomainRouterVO;
@@ -47,6 +49,8 @@ public class RemoteDiagnosisServiceImpl extends ManagerBase implements Pluggable
     private RouterControlHelper routerControlHelper;
     @Inject
     private AgentManager agentManager;
+    @Inject
+    private VirtualRouterDeployer vrDeployer;
 
     @Override
     public RemoteDiagnosisResponse pingAddress(final RemoteDiagnosisCmd cmd) throws AgentUnavailableException {
@@ -64,7 +68,16 @@ public class RemoteDiagnosisServiceImpl extends ManagerBase implements Pluggable
         command.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
-        Answer origAnswer = agentManager.easySend(hostId, command);
+        String routerAccessIP = command.getRouterAccessIp();
+        String routerIp = command.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+
+        final ExecutionResult result = vrDeployer.executeInVR(routerIp, VRScripts.PING_REMOTELY, command.getArgs());
+        ExecuteDiagnosisAnswer answer = new ExecuteDiagnosisAnswer(command, result.isSuccess(), result.getDetails());
+
+
+//        Answer origAnswer = agentManager.easySend(hostId, command);
+//        ExecuteDiagnosisAnswer answer = ((ExecuteDiagnosisAnswer) origAnswer);
+
 //        try{
 //            origAnswer = agentManager.easy(hostId,command);
 //        } catch (final OperationTimedoutException e) {
@@ -79,7 +92,7 @@ public class RemoteDiagnosisServiceImpl extends ManagerBase implements Pluggable
 //            s_logger.warn("Unable to update router " + router.getHostName() + "status");
 //        }
 
-        return createRemoteDiagnosisResponse((ExecuteDiagnosisAnswer) origAnswer);
+        return createRemoteDiagnosisResponse(answer);
     }
 
     private static RemoteDiagnosisResponse createRemoteDiagnosisResponse(ExecuteDiagnosisAnswer answer){

@@ -22,10 +22,8 @@ package org.apache.cloudstack.diagnosis;
 import com.cloud.agent.api.Answer;
 
 public class ExecuteDiagnosisAnswer extends Answer {
-
-
-
-    public ExecuteDiagnosisAnswer(ExecuteDiagnosisCommand cmd, String details) {
-        super(cmd, true, details);
+    public ExecuteDiagnosisAnswer(ExecuteDiagnosisCommand cmd, boolean result, String details){
+        super(cmd, result, details);
     }
+
 }
