@@ -20,20 +20,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
-
-import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.storage.configdrive.ConfigDrive;
+import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.AttachIsoAnswer;
-import com.cloud.agent.api.AttachIsoCommand;
 import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.configuration.ConfigurationManager;
@@ -41,10 +41,8 @@ import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.deploy.DeployDestination;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnsupportedServiceException;
-import com.cloud.host.Host;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
 import com.cloud.network.Network.Capability;
@@ -54,53 +52,47 @@ import com.cloud.network.NetworkMigrationResponder;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.PhysicalNetworkServiceProvider;
-import com.cloud.network.dao.NetworkDao;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Storage;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.UserVmDetailVO;
-import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineManager;
 import com.cloud.vm.VirtualMachineProfile;
-import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 
 public class ConfigDriveNetworkElement extends AdapterBase implements NetworkElement, UserDataServiceProvider,
         StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualMachine>, NetworkMigrationResponder {
-    private static final Logger s_logger = Logger.getLogger(ConfigDriveNetworkElement.class);
+    private static final Logger LOG = Logger.getLogger(ConfigDriveNetworkElement.class);
 
     private static final Map<Service, Map<Capability, String>> capabilities = setCapabilities();
 
     @Inject
-    NetworkDao _networkConfigDao;
-    @Inject
     NetworkModel _networkMgr;
-    @Inject
-    UserVmManager _userVmMgr;
     @Inject
     UserVmDao _userVmDao;
     @Inject
     UserVmDetailsDao _userVmDetailsDao;
     @Inject
-    DomainRouterDao _routerDao;
-    @Inject
     ConfigurationManager _configMgr;
     @Inject
     DataCenterDao _dcDao;
-    @Inject
-    AgentManager _agentManager;
     @Inject
     ServiceOfferingDao _serviceOfferingDao;
     @Inject
@@ -110,16 +102,16 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Inject
     GuestOSDao _guestOSDao;
     @Inject
+    VolumeDao _volumeDao;
+    @Inject
     HostDao _hostDao;
+    @Inject
+    AgentManager agentManager;
     @Inject
     DataStoreManager _dataStoreMgr;
     @Inject
     EndPointSelector _ep;
-    @Inject
-    VolumeOrchestrationService _volumeMgr;
 
-    private final static String CONFIGDRIVEFILENAME = "configdrive.iso";
-    private final static String CONFIGDRIVEDIR = "ConfigDrive";
     private final static Integer CONFIGDRIVEDISKSEQ = 4;
 
     private boolean canHandle(TrafficType trafficType) {
@@ -149,20 +141,13 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         if (!nic.isDefaultNic()) {
             return true;
         }
-        // Remove form secondary storage
-        DataStore secondaryStore = _dataStoreMgr.getImageStore(network.getDataCenterId());
 
-        String isoFile =  "/" + CONFIGDRIVEDIR + "/" + vm.getInstanceName()+ "/" + CONFIGDRIVEFILENAME;
-        HandleConfigDriveIsoCommand deleteCommand = new HandleConfigDriveIsoCommand(vm.getVmData(),
-                vm.getConfigDriveLabel(), secondaryStore.getTO(), isoFile, false, false);
-        // Delete the ISO on the secondary store
-        EndPoint endpoint = _ep.select(secondaryStore);
-        if (endpoint == null) {
-            s_logger.error(String.format("Secondary store: %s not available", secondaryStore.getName()));
+        try {
+            return deleteConfigDriveIso(vm.getVirtualMachine());
+        } catch (ResourceUnavailableException e) {
+            LOG.error("Failed to delete config drive due to: ", e);
             return false;
         }
-        Answer answer = endpoint.sendMessage(deleteCommand);
-        return answer.getResult();
     }
 
     @Override
@@ -207,37 +192,49 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     private String getSshKey(VirtualMachineProfile profile) {
-        UserVmDetailVO vmDetailSshKey = _userVmDetailsDao.findDetail(profile.getId(), "SSH.PublicKey");
+        final UserVmDetailVO vmDetailSshKey = _userVmDetailsDao.findDetail(profile.getId(), "SSH.PublicKey");
         return (vmDetailSshKey!=null ? vmDetailSshKey.getValue() : null);
     }
 
     @Override
     public boolean addPasswordAndUserdata(Network network, NicProfile nic, VirtualMachineProfile profile, DeployDestination dest, ReservationContext context)
             throws ConcurrentOperationException, InsufficientCapacityException, ResourceUnavailableException {
-        String sshPublicKey = getSshKey(profile);
         return (canHandle(network.getTrafficType())
-                && updateConfigDrive(profile, sshPublicKey, nic))
-                && updateConfigDriveIso(network, profile, dest.getHost(), false);
+                && configureConfigDriveData(profile, nic))
+                && createConfigDriveIso(profile, dest);
     }
 
     @Override
-    public boolean savePassword(Network network, NicProfile nic, VirtualMachineProfile profile) throws ResourceUnavailableException {
-        String sshPublicKey = getSshKey(profile);
-        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(profile, sshPublicKey, nic))) return false;
-        return updateConfigDriveIso(network, profile, true);
+    public boolean savePassword(final Network network, final NicProfile nic, final VirtualMachineProfile vm) throws ResourceUnavailableException {
+        // savePassword is called by resetPasswordForVirtualMachine API which requires VM to be shutdown
+        // Upper layers should save password in db, we do not need to update/create config drive iso at this point
+        // Config drive will be created with updated password when VM starts in future
+        if (vm != null && vm.getVirtualMachine().getState().equals(VirtualMachine.State.Running)) {
+            throw new CloudRuntimeException("VM should to stopped to reset password");
+        }
+        return canHandle(network.getTrafficType());
     }
 
     @Override
-    public boolean saveSSHKey(Network network, NicProfile nic, VirtualMachineProfile vm, String sshPublicKey) throws ResourceUnavailableException {
-        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(vm, sshPublicKey, nic))) return false;
-        return updateConfigDriveIso(network, vm, true);
+    public boolean saveSSHKey(final Network network, final NicProfile nic, final VirtualMachineProfile vm, final String sshPublicKey) throws ResourceUnavailableException {
+        // saveSSHKey is called by resetSSHKeyForVirtualMachine API which requires VM to be shutdown
+        // Upper layers should save ssh public key in db, we do not need to update/create config drive iso at this point
+        // Config drive will be created with updated password when VM starts in future
+        if (vm != null && vm.getVirtualMachine().getState().equals(VirtualMachine.State.Running)) {
+            throw new CloudRuntimeException("VM should to stopped to reset password");
+        }
+        return canHandle(network.getTrafficType());
     }
 
     @Override
-    public boolean saveUserData(Network network, NicProfile nic, VirtualMachineProfile profile) throws ResourceUnavailableException {
-        String sshPublicKey = getSshKey(profile);
-        if (!(canHandle(network.getTrafficType()) && updateConfigDrive(profile, sshPublicKey, nic))) return false;
-        return updateConfigDriveIso(network, profile, true);
+    public boolean saveUserData(final Network network, final NicProfile nic, final VirtualMachineProfile vm) throws ResourceUnavailableException {
+        // saveUserData is called by updateVirtualMachine API which requires VM to be shutdown
+        // Upper layers should save userdata in db, we do not need to update/create config drive iso at this point
+        // Config drive will be created with updated password when VM starts in future
+        if (vm != null && vm.getVirtualMachine().getState().equals(VirtualMachine.State.Running)) {
+            throw new CloudRuntimeException("VM should to stopped to reset password");
+        }
+        return canHandle(network.getTrafficType());
     }
 
     @Override
@@ -251,30 +248,22 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     }
 
     @Override
-    public boolean postStateTransitionEvent(StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition, VirtualMachine vo, boolean status, Object opaque) {
+    public boolean postStateTransitionEvent(StateMachine2.Transition<VirtualMachine.State, VirtualMachine.Event> transition, VirtualMachine vm, boolean status, Object opaque) {
         if (transition.getToState().equals(VirtualMachine.State.Expunging) && transition.getEvent().equals(VirtualMachine.Event.ExpungeOperation)) {
-            Nic nic = _networkModel.getDefaultNic(vo.getId());
+            Nic nic = _networkModel.getDefaultNic(vm.getId());
+            if (nic == null) {
+                return true;
+            }
             try {
-                if (nic != null) {
-                    final Network network = _networkMgr.getNetwork(nic.getNetworkId());
-                    final UserDataServiceProvider userDataUpdateProvider = _networkModel.getUserDataUpdateProvider(network);
-                    final Provider provider = userDataUpdateProvider.getProvider();
-                    if (provider.equals(Provider.ConfigDrive)) {
-                        // Delete config drive ISO on destroy
-                        DataStore secondaryStore = _dataStoreMgr.getImageStore(vo.getDataCenterId());
-                        String isoFile = "/" + CONFIGDRIVEDIR + "/" + vo.getInstanceName() + "/" + CONFIGDRIVEFILENAME;
-                        HandleConfigDriveIsoCommand deleteCommand = new HandleConfigDriveIsoCommand(null,
-                                null, secondaryStore.getTO(), isoFile, false, false);
-                        EndPoint endpoint = _ep.select(secondaryStore);
-                        if (endpoint == null) {
-                            s_logger.error(String.format("Secondary store: %s not available", secondaryStore.getName()));
-                            return false;
-                        }
-                        Answer answer = endpoint.sendMessage(deleteCommand);
-                        if (!answer.getResult()) {
-                            s_logger.error(String.format("Update ISO failed, details: %s", answer.getDetails()));
-                            return false;
-                        }
+                final Network network = _networkMgr.getNetwork(nic.getNetworkId());
+                final UserDataServiceProvider userDataUpdateProvider = _networkModel.getUserDataUpdateProvider(network);
+                final Provider provider = userDataUpdateProvider.getProvider();
+                if (provider.equals(Provider.ConfigDrive)) {
+                    try {
+                        return deleteConfigDriveIso(vm);
+                    } catch (ResourceUnavailableException e) {
+                        LOG.error("Failed to delete config drive due to: ", e);
+                        return false;
                     }
                 }
             } catch (UnsupportedServiceException usse) {}
@@ -285,9 +274,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Override
     public boolean prepareMigration(NicProfile nic, Network network, VirtualMachineProfile vm, DeployDestination dest, ReservationContext context) {
         if (nic.isDefaultNic() && _networkModel.getUserDataUpdateProvider(network).getProvider().equals(Provider.ConfigDrive)) {
-            s_logger.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
-            DataStore secondaryStore = _dataStoreMgr.getImageStore(network.getDataCenterId());
-            configureConfigDriveDisk(vm, secondaryStore);
+            LOG.trace(String.format("[prepareMigration] for vm: %s", vm.getInstanceName()));
+            final DataStore dataStore = findDataStore(vm, dest);
+            addConfigDriveDisk(vm, dataStore);
             return false;
         }
         else return  true;
@@ -295,64 +284,114 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     @Override
     public void rollbackMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
-
     }
 
     @Override
     public void commitMigration(NicProfile nic, Network network, VirtualMachineProfile vm, ReservationContext src, ReservationContext dst) {
-
     }
 
-    private boolean updateConfigDriveIso(Network network, VirtualMachineProfile profile, boolean update) throws ResourceUnavailableException {
-        return updateConfigDriveIso(network, profile, null, update);
-    }
-
-    private boolean updateConfigDriveIso(Network network, VirtualMachineProfile profile, Host host, boolean update) throws ResourceUnavailableException {
-        Integer deviceKey = null;
-        Long hostId;
-        if (host == null) {
-            hostId = (profile.getVirtualMachine().getHostId() == null ? profile.getVirtualMachine().getLastHostId(): profile.getVirtualMachine().getHostId());
+    private DataStore findDataStore(VirtualMachineProfile profile, DeployDestination dest) {
+        DataStore dataStore = null;
+        if (VirtualMachineManager.VmConfigDriveOnPrimaryPool.value()) {
+            if (dest.getStorageForDisks() != null) {
+                for (final Volume volume : dest.getStorageForDisks().keySet()) {
+                    if (volume.getVolumeType() == Volume.Type.ROOT) {
+                        final StoragePool primaryPool = dest.getStorageForDisks().get(volume);
+                        dataStore = _dataStoreMgr.getDataStore(primaryPool.getId(), DataStoreRole.Primary);
+                        break;
+                    }
+                }
+            }
+            if (dataStore == null) {
+                final List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(profile.getVirtualMachine().getId(), Volume.Type.ROOT);
+                if (volumes != null && volumes.size() > 0) {
+                    dataStore = _dataStoreMgr.getDataStore(volumes.get(0).getPoolId(), DataStoreRole.Primary);
+                }
+            }
         } else {
-            hostId = host.getId();
+            dataStore = _dataStoreMgr.getImageStore(dest.getDataCenter().getId());
         }
+        return dataStore;
+    }
 
-        DataStore secondaryStore = _dataStoreMgr.getImageStore(network.getDataCenterId());
-        // Detach the existing ISO file if the machine is running
-        if (update && profile.getVirtualMachine().getState().equals(VirtualMachine.State.Running)) {
-            s_logger.debug("Detach config drive ISO for  vm " + profile.getInstanceName() + " in host " + _hostDao.findById(hostId));
-            deviceKey = detachIso(secondaryStore, profile.getInstanceName(), hostId);
-        }
-
-        // Create/Update the iso on the secondary store
-        s_logger.debug(String.format("%s config drive ISO for  vm %s in host %s",
-                (update?"update":"create"), profile.getInstanceName(), _hostDao.findById(hostId).getName()));
-        EndPoint endpoint = _ep.select(secondaryStore);
+    private Long findAgentIdForImageStore(final DataStore dataStore) throws ResourceUnavailableException {
+        EndPoint endpoint = _ep.select(dataStore);
         if (endpoint == null) {
-            throw new ResourceUnavailableException(String.format("%s failed, secondary store not available", (update ? "Update" : "Create")), secondaryStore.getClass(),
-                                                   secondaryStore.getId());
+            throw new ResourceUnavailableException("Config drive creation failed, secondary store not available",
+                    dataStore.getClass(), dataStore.getId());
         }
-        String isoPath = CONFIGDRIVEDIR + "/" + profile.getInstanceName() + "/"  + CONFIGDRIVEFILENAME;
-        HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(profile.getVmData(),
-                profile.getConfigDriveLabel(), secondaryStore.getTO(), isoPath, true, update);
-        Answer createIsoAnswer = endpoint.sendMessage(configDriveIsoCommand);
-        if (!createIsoAnswer.getResult()) {
-            throw new ResourceUnavailableException(String.format("%s ISO failed, details: %s",
-                    (update?"Update":"Create"), createIsoAnswer.getDetails()), ConfigDriveNetworkElement.class, 0L);
-        }
-        configureConfigDriveDisk(profile, secondaryStore);
+        return endpoint.getId();
+    }
 
-        // Re-attach the ISO if the machine is running
-        if (update && profile.getVirtualMachine().getState().equals(VirtualMachine.State.Running)) {
-            s_logger.debug("Re-attach config drive ISO for  vm " + profile.getInstanceName() + " in host " + _hostDao.findById(hostId));
-            attachIso(secondaryStore, profile.getInstanceName(), hostId, deviceKey);
+    private Long findAgentId(VirtualMachineProfile profile, DeployDestination dest, DataStore dataStore) throws ResourceUnavailableException {
+        Long agentId;
+        if (dest.getHost() == null) {
+            agentId = (profile.getVirtualMachine().getHostId() == null ? profile.getVirtualMachine().getLastHostId() : profile.getVirtualMachine().getHostId());
+        } else {
+            agentId = dest.getHost().getId();
+        }
+        if (!VirtualMachineManager.VmConfigDriveOnPrimaryPool.value()) {
+            agentId = findAgentIdForImageStore(dataStore);
+        }
+        return agentId;
+    }
+
+    private boolean createConfigDriveIso(VirtualMachineProfile profile, DeployDestination dest) throws ResourceUnavailableException {
+        final DataStore dataStore = findDataStore(profile, dest);
+        final Long agentId = findAgentId(profile, dest, dataStore);
+        if (agentId == null || dataStore == null) {
+            throw new ResourceUnavailableException("Config drive iso creation failed, agent or datastore not available",
+                    ConfigDriveNetworkElement.class, 0L);
+        }
+
+        LOG.debug("Creating config drive ISO for vm: " + profile.getInstanceName());
+
+        final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), ConfigDrive.CONFIGDRIVEFILENAME, profile.getConfigDriveLabel());
+        final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, dataStore.getTO(), true);
+
+        final Answer answer = agentManager.easySend(agentId, configDriveIsoCommand);
+        if (!answer.getResult()) {
+            throw new ResourceUnavailableException(String.format("Config drive iso creation failed, details: %s",
+                    answer.getDetails()), ConfigDriveNetworkElement.class, 0L);
+        }
+        addConfigDriveDisk(profile, dataStore);
+        return true;
+    }
+
+    private boolean deleteConfigDriveIso(final VirtualMachine vm) throws ResourceUnavailableException {
+        DataStore dataStore = _dataStoreMgr.getImageStore(vm.getDataCenterId());
+        Long agentId = findAgentIdForImageStore(dataStore);
+
+        if (VirtualMachineManager.VmConfigDriveOnPrimaryPool.value()) {
+            List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
+            if (volumes != null && volumes.size() > 0) {
+                dataStore = _dataStoreMgr.getDataStore(volumes.get(0).getPoolId(), DataStoreRole.Primary);
+            }
+            agentId = (vm.getHostId() != null) ? vm.getHostId() : vm.getLastHostId();
+        }
+
+        if (agentId == null || dataStore == null) {
+            throw new ResourceUnavailableException("Config drive iso creation failed, agent or datastore not available",
+                    ConfigDriveNetworkElement.class, 0L);
+        }
+
+        LOG.debug("Deleting config drive ISO for vm: " + vm.getInstanceName());
+
+        final String isoPath = ConfigDrive.createConfigDrivePath(vm.getInstanceName());
+        final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, null, dataStore.getTO(), false);
+
+        final Answer answer = agentManager.easySend(agentId, configDriveIsoCommand);
+        if (!answer.getResult()) {
+            LOG.error("Failed to remove config drive for instance: " + vm.getInstanceName());
+            return false;
         }
         return true;
-
     }
 
-    private void configureConfigDriveDisk(VirtualMachineProfile profile, DataStore secondaryStore) {
+    private void addConfigDriveDisk(final VirtualMachineProfile profile, final DataStore dataStore) {
         boolean isoAvailable = false;
-        String isoPath = CONFIGDRIVEDIR + "/" + profile.getInstanceName() + "/"  + CONFIGDRIVEFILENAME;
+        final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
         for (DiskTO dataTo : profile.getDisks()) {
             if (dataTo.getPath().equals(isoPath)) {
                 isoAvailable = true;
@@ -361,71 +400,34 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
         if (!isoAvailable) {
             TemplateObjectTO dataTO = new TemplateObjectTO();
-            dataTO.setDataStore(secondaryStore.getTO());
+            dataTO.setDataStore(dataStore.getTO());
             dataTO.setUuid(profile.getUuid());
             dataTO.setPath(isoPath);
             dataTO.setFormat(Storage.ImageFormat.ISO);
 
             profile.addDisk(new DiskTO(dataTO, CONFIGDRIVEDISKSEQ.longValue(), isoPath, Volume.Type.ISO));
+        } else {
+            LOG.warn("Config drive iso already is in VM profile.");
         }
     }
 
-    private boolean updateConfigDrive(VirtualMachineProfile profile, String publicKey, NicProfile nic) {
-        UserVmVO vm = _userVmDao.findById(profile.getId());
+    private boolean configureConfigDriveData(final VirtualMachineProfile profile, final NicProfile nic) {
+        final UserVmVO vm = _userVmDao.findById(profile.getId());
         if (vm.getType() != VirtualMachine.Type.User) {
             return false;
         }
-        // add/update userdata and/or password info into vm profile
-        Nic defaultNic = _networkModel.getDefaultNic(vm.getId());
+        final Nic defaultNic = _networkModel.getDefaultNic(vm.getId());
         if (defaultNic != null) {
+            final String sshPublicKey = getSshKey(profile);
             final String serviceOffering = _serviceOfferingDao.findByIdIncludingRemoved(vm.getId(), vm.getServiceOfferingId()).getDisplayText();
             boolean isWindows = _guestOSCategoryDao.findById(_guestOSDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
-            List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
-                    vm.getUuid(), nic.getIPv4Address(), publicKey, (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
+            final List<String[]> vmData = _networkModel.generateVmData(vm.getUserData(), serviceOffering, vm.getDataCenterId(), vm.getInstanceName(), vm.getHostName(), vm.getId(),
+                    vm.getUuid(), nic.getIPv4Address(), sshPublicKey, (String) profile.getParameter(VirtualMachineProfile.Param.VmPassword), isWindows);
             profile.setVmData(vmData);
             profile.setConfigDriveLabel(VirtualMachineManager.VmConfigDriveLabel.value());
         }
         return true;
-    }
-
-    private Integer detachIso (DataStore secondaryStore, String instanceName, Long hostId) throws ResourceUnavailableException {
-        String isoPath = CONFIGDRIVEDIR + "/" + instanceName + "/"  + CONFIGDRIVEFILENAME;
-        AttachIsoCommand isoCommand = new AttachIsoCommand(instanceName, secondaryStore.getUri() + "/" + isoPath, false, CONFIGDRIVEDISKSEQ, true);
-        isoCommand.setStoreUrl(secondaryStore.getUri());
-        Answer attachIsoAnswer = null;
-
-        try {
-            attachIsoAnswer = _agentManager.send(hostId, isoCommand);
-        } catch (OperationTimedoutException e) {
-            throw new ResourceUnavailableException("Detach ISO failed: " + e.getMessage(), ConfigDriveNetworkElement.class, 0L);
-        }
-
-        if (!attachIsoAnswer.getResult()) {
-            throw new ResourceUnavailableException("Detach ISO failed: " + attachIsoAnswer.getDetails(), ConfigDriveNetworkElement.class, 0L);
-        }
-
-        if (attachIsoAnswer instanceof  AttachIsoAnswer) {
-            return ((AttachIsoAnswer)attachIsoAnswer).getDeviceKey();
-        } else {
-            return CONFIGDRIVEDISKSEQ;
-        }
-    }
-
-    private void attachIso (DataStore secondaryStore, String instanceName, Long hostId, Integer deviceKey) throws ResourceUnavailableException {
-        String isoPath = CONFIGDRIVEDIR + "/" + instanceName + "/"  + CONFIGDRIVEFILENAME;
-        AttachIsoCommand isoCommand = new AttachIsoCommand(instanceName, secondaryStore.getUri() + "/" + isoPath, true);
-        isoCommand.setStoreUrl(secondaryStore.getUri());
-        isoCommand.setDeviceKey(deviceKey);
-        Answer attachIsoAnswer = null;
-        try {
-            attachIsoAnswer = _agentManager.send(hostId, isoCommand);
-        } catch (OperationTimedoutException e) {
-            throw new ResourceUnavailableException("Attach ISO failed: " + e.getMessage() ,ConfigDriveNetworkElement.class,0L);
-        }
-        if (!attachIsoAnswer.getResult()) {
-            throw new ResourceUnavailableException("Attach ISO failed: " + attachIsoAnswer.getDetails(),ConfigDriveNetworkElement.class,0L);
-        }
     }
 
 }

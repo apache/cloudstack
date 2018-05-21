@@ -53,6 +53,7 @@
     <module>storage/datamotion</module>
     <module>storage/cache</module>
     <module>storage/snapshot</module>
+    <module>storage/configdrive</module>
     <module>components-api</module>
     <module>network</module>
     <module>service</module>

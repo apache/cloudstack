@@ -2200,9 +2200,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final DataTO data = volume.getData();
         final DataStoreTO store = data.getDataStore();
 
-        if (volume.getType() == Volume.Type.ISO && data.getPath() != null) {
-            final NfsTO nfsStore = (NfsTO)store;
-            final String isoPath = nfsStore.getUrl() + File.separator + data.getPath();
+        if (volume.getType() == Volume.Type.ISO && data.getPath() != null && (store instanceof NfsTO || store instanceof PrimaryDataStoreTO)) {
+            final String isoPath = store.getUrl().split("\\?")[0] + File.separator + data.getPath();
             final int index = isoPath.lastIndexOf("/");
             final String path = isoPath.substring(0, index);
             final String name = isoPath.substring(index + 1);
