@@ -653,10 +653,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
     }
 
-
-
-
-
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_RESETPASSWORD, eventDescription = "resetting Vm password", async = true)
     public UserVm resetVMPassword(ResetVMPasswordCmd cmd, String password) throws ResourceUnavailableException, InsufficientCapacityException {
@@ -679,6 +675,11 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (userVm.getState() == State.Error || userVm.getState() == State.Expunging) {
             s_logger.error("vm is not in the right state: " + vmId);
             throw new InvalidParameterValueException("Vm with id " + vmId + " is not in the right state");
+        }
+
+        if (userVm.getState() != State.Stopped) {
+            s_logger.error("vm is not in the right state: " + vmId);
+            throw new InvalidParameterValueException("Vm " + userVm + " should be stopped to do password reset");
         }
 
         _accountMgr.checkAccess(caller, null, true, userVm);
@@ -733,6 +734,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 s_logger.debug("Failed to reset password for the virtual machine; no need to reboot the vm");
                 return false;
             } else {
+                final UserVmVO userVm = _vmDao.findById(vmId);
+                _vmDao.loadDetails(userVm);
+                userVm.setPassword(password);
+                // update the password in vm_details table too
+                // Check if an SSH key pair was selected for the instance and if so
+                // use it to encrypt & save the vm password
+                encryptAndStorePassword(userVm, password);
+
                 if (vmInstance.getState() == State.Stopped) {
                     s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of password reset");
                     return true;
@@ -796,15 +805,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         boolean result = resetVMSSHKeyInternal(vmId, sshPublicKey, password);
 
-        if (result) {
-            userVm.setDetail("SSH.PublicKey", sshPublicKey);
-            if (template != null && template.getEnablePassword()) {
-                userVm.setPassword(password);
-                //update the encrypted password in vm_details table too
-                encryptAndStorePassword(userVm, password);
-            }
-            _vmDao.saveDetails(userVm);
-        } else {
+        if (!result) {
             throw new CloudRuntimeException("Failed to reset SSH Key for the virtual machine ");
         }
         return userVm;
@@ -842,6 +843,16 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             s_logger.debug("Failed to reset SSH Key for the virtual machine; no need to reboot the vm");
             return false;
         } else {
+            final UserVmVO userVm = _vmDao.findById(vmId);
+            _vmDao.loadDetails(userVm);
+            userVm.setDetail("SSH.PublicKey", sshPublicKey);
+            if (template.getEnablePassword()) {
+                userVm.setPassword(password);
+                //update the encrypted password in vm_details table too
+                encryptAndStorePassword(userVm, password);
+            }
+            _vmDao.saveDetails(userVm);
+
             if (vmInstance.getState() == State.Stopped) {
                 s_logger.debug("Vm " + vmInstance + " is stopped, not rebooting it as a part of SSH Key reset");
                 return true;
@@ -4099,8 +4110,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
-
-
         _templateMgr.prepareIsoForVmProfile(profile, dest);
         return true;
     }
@@ -6135,14 +6144,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             if (template.getEnablePassword()) {
                 password = _mgr.generateRandomPassword();
                 boolean result = resetVMPasswordInternal(vmId, password);
-                if (result) {
-                    vm.setPassword(password);
-                    _vmDao.loadDetails(vm);
-                    // update the password in vm_details table too
-                    // Check if an SSH key pair was selected for the instance and if so
-                    // use it to encrypt & save the vm password
-                    encryptAndStorePassword(vm, password);
-                } else {
+                if (!result) {
                     throw new CloudRuntimeException("VM reset is completed but failed to reset password for the virtual machine ");
                 }
             }
