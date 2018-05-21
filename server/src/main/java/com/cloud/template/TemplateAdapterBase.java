@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -325,7 +326,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Long zoneId = cmd.getZoneId();
         // ignore passed zoneId if we are using region wide image store
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
-        if (!(stores != null && stores.size() > 0)) {
+        if (CollectionUtils.isEmpty(stores) && zoneId != null && zoneId > 0L) {
             zoneList = new ArrayList<>();
             zoneList.add(zoneId);
         }
