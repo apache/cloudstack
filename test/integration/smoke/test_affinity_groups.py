@@ -21,8 +21,10 @@ from marvin.cloudstackTestCase import *
 from marvin.cloudstackAPI import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
-from marvin.lib.common import *
-from marvin.sshClient import SshClient
+from marvin.lib.common import (get_domain,
+                               get_zone,
+                               get_template,
+                               list_virtual_machines)
 from nose.plugins.attrib import attr
 
 class TestDeployVmWithAffinityGroup(cloudstackTestCase):
@@ -42,14 +44,14 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, cls.testClient.getZoneForTests())
         cls.hypervisor = cls.testClient.getHypervisorInfo()
 
-        cls.template = get_test_template(
+        cls.template = get_template(
             cls.apiclient,
             cls.zone.id,
             cls.hypervisor
         )
         
         if cls.template == FAILED:
-            assert False, "get_test_template() failed to return template"
+            assert False, "get_template() failed to return template"
             
         cls.services["virtual_machine"]["zoneid"] = cls.zone.id
 
@@ -69,6 +71,16 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         cls.ag = AffinityGroup.create(cls.apiclient, cls.services["virtual_machine"]["affinity"],
             account=cls.account.name, domainid=cls.domain.id)
 
+        host_affinity = {
+            "name": "marvin-host-affinity",
+            "type": "host affinity",
+        }
+        cls.affinity = AffinityGroup.create(
+            cls.apiclient,
+            host_affinity,
+            account=cls.account.name,
+            domainid=cls.domain.id
+        )
         cls._cleanup = [
             cls.service_offering,
             cls.ag,
@@ -152,6 +164,81 @@ class TestDeployVmWithAffinityGroup(cloudstackTestCase):
         self.assertNotEqual(host_of_vm1, host_of_vm2,
             msg="Both VMs of affinity group %s are on the same host" % self.ag.name)
 
+    @attr(tags=["basic", "advanced", "multihost"], required_hardware="false")
+    def test_DeployVmAffinityGroup(self):
+        """
+        test DeployVM in affinity groups
+
+        deploy VM1 and VM2 in the same host-affinity groups
+        Verify that the vms are deployed on the same host
+        """
+        #deploy VM1 in affinity group created in setUp
+        vm1 = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            affinitygroupnames=[self.affinity.name]
+        )
+
+        list_vm1 = list_virtual_machines(
+            self.apiclient,
+            id=vm1.id
+        )
+        self.assertEqual(
+            isinstance(list_vm1, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vm1),
+            0,
+            "Check VM available in List Virtual Machines"
+        )
+        vm1_response = list_vm1[0]
+        self.assertEqual(
+            vm1_response.state,
+            'Running',
+            msg="VM is not in Running state"
+        )
+        host_of_vm1 = vm1_response.hostid
+
+        #deploy VM2 in affinity group created in setUp
+        vm2 = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            affinitygroupnames=[self.affinity.name]
+        )
+        list_vm2 = list_virtual_machines(
+            self.apiclient,
+            id=vm2.id
+        )
+        self.assertEqual(
+            isinstance(list_vm2, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(list_vm2),
+            0,
+            "Check VM available in List Virtual Machines"
+        )
+        vm2_response = list_vm2[0]
+        self.assertEqual(
+            vm2_response.state,
+            'Running',
+            msg="VM is not in Running state"
+        )
+        host_of_vm2 = vm2_response.hostid
+
+        self.assertEqual(host_of_vm1, host_of_vm2,
+            msg="Both VMs of affinity group %s are on different hosts" % self.affinity.name)
 
     @classmethod
     def tearDownClass(cls):
