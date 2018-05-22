@@ -242,13 +242,6 @@ public class MacAddress {
         return null;
     }
 
-    public static void main(String[] args) {
-        MacAddress addr = MacAddress.getMacAddress();
-        System.out.println("addr in integer is " + addr.toLong());
-        System.out.println("addr in bytes is " + NumbersUtil.bytesToString(addr.toByteArray(), 0, addr.toByteArray().length));
-        System.out.println("addr in char is " + addr.toString(":"));
-    }
-
     /**
      * Parses a <code>long</code> from a hex encoded number. This method will skip
      * all characters that are not 0-9 and a-f (the String is lower cased first).
