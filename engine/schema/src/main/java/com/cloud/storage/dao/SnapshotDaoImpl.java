@@ -63,8 +63,6 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     private SearchBuilder<SnapshotVO> VolumeIdSearch;
     private SearchBuilder<SnapshotVO> VolumeIdTypeSearch;
     private SearchBuilder<SnapshotVO> VolumeIdTypeNotDestroyedSearch;
-    private SearchBuilder<SnapshotVO> ParentIdSearch;
-    private SearchBuilder<SnapshotVO> backupUuidSearch;
     private SearchBuilder<SnapshotVO> VolumeIdVersionSearch;
     private SearchBuilder<SnapshotVO> AccountIdSearch;
     private SearchBuilder<SnapshotVO> InstanceIdSearch;
@@ -77,25 +75,6 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     protected VMInstanceDao _instanceDao;
     @Inject
     protected VolumeDao _volumeDao;
-
-    @Override
-    public SnapshotVO findNextSnapshot(long snapshotId) {
-        SearchCriteria<SnapshotVO> sc = ParentIdSearch.create();
-        sc.setParameters("prevSnapshotId", snapshotId);
-        return findOneIncludingRemovedBy(sc);
-    }
-
-    @Override
-    public List<SnapshotVO> listByBackupUuid(long volumeId, String backupUuid) {
-        SearchCriteria<SnapshotVO> sc = backupUuidSearch.create();
-        sc.setParameters("backupUuid", backupUuid);
-        return listBy(sc, null);
-    }
-
-    @Override
-    public List<SnapshotVO> listByVolumeIdType(long volumeId, Type type) {
-        return listByVolumeIdType(null, volumeId, type);
-    }
 
     @Override
     public List<SnapshotVO> listByVolumeIdTypeNotDestroyed(long volumeId, Type type) {
@@ -168,17 +147,7 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
         VolumeIdVersionSearch.and("volumeId", VolumeIdVersionSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         VolumeIdVersionSearch.and("version", VolumeIdVersionSearch.entity().getVersion(), SearchCriteria.Op.EQ);
         VolumeIdVersionSearch.done();
-        /*
-         * ParentIdSearch = createSearchBuilder();
-         * ParentIdSearch.and("prevSnapshotId",
-         * ParentIdSearch.entity().getPrevSnapshotId(), SearchCriteria.Op.EQ);
-         * ParentIdSearch.done();
-         *
-         * backupUuidSearch = createSearchBuilder();
-         * backupUuidSearch.and("backupUuid",
-         * backupUuidSearch.entity().getBackupSnapshotId(),
-         * SearchCriteria.Op.EQ); backupUuidSearch.done();
-         */
+
         AccountIdSearch = createSearchBuilder();
         AccountIdSearch.and("accountId", AccountIdSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         AccountIdSearch.done();
@@ -215,26 +184,6 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
     }
 
     @Override
-    public Long getSecHostId(long volumeId) {
-
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        String sql = GET_SECHOST_ID;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, volumeId);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) {
-                return rs.getLong(1);
-            }
-        } catch (Exception ex) {
-            s_logger.info("[ignored]"
-                    + "caught something while getting sec. host id: " + ex.getLocalizedMessage());
-        }
-        return null;
-    }
-
-    @Override
     public long getLastSnapshot(long volumeId, DataStoreRole role) {
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         PreparedStatement pstmt = null;
@@ -249,41 +198,6 @@ public class SnapshotDaoImpl extends GenericDaoBase<SnapshotVO, Long> implements
             }
         } catch (Exception ex) {
             s_logger.error("error getting last snapshot", ex);
-        }
-        return 0;
-    }
-
-    @Override
-    public long updateSnapshotVersion(long volumeId, String from, String to) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        String sql = UPDATE_SNAPSHOT_VERSION;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setString(1, to);
-            pstmt.setLong(2, volumeId);
-            pstmt.setString(3, from);
-            pstmt.executeUpdate();
-            return 1;
-        } catch (Exception ex) {
-            s_logger.error("error getting last snapshot", ex);
-        }
-        return 0;
-    }
-
-    @Override
-    public long updateSnapshotSecHost(long dcId, long secHostId) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        PreparedStatement pstmt = null;
-        String sql = UPDATE_SECHOST_ID;
-        try {
-            pstmt = txn.prepareAutoCloseStatement(sql);
-            pstmt.setLong(1, secHostId);
-            pstmt.setLong(2, dcId);
-            pstmt.executeUpdate();
-            return 1;
-        } catch (Exception ex) {
-            s_logger.error("error set secondary storage host id", ex);
         }
         return 0;
     }
