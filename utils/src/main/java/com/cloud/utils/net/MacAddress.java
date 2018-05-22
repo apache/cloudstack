@@ -34,6 +34,8 @@ import org.apache.log4j.Logger;
 import com.cloud.utils.NumbersUtil;
 
 /**
+ * This class retrieves the (first) MAC address for the machine is it is loaded on and stores it statically for retrieval.
+ * It can also be used for formatting MAC addresses.
  * copied from the public domain utility from John Burkard.
  * @author <a href="mailto:jb@eaio.com">Johann Burkard</a>
  * @version 2.1.3
