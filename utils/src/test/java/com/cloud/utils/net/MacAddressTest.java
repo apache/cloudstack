@@ -21,7 +21,7 @@ package com.cloud.utils.net;
 
 import static org.junit.Assert.assertEquals;
 
-import com.cloud.utils.*;
+import com.cloud.utils.NumbersUtil;
 import org.junit.Test;
 
 public class MacAddressTest {

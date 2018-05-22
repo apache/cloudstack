@@ -31,8 +31,6 @@ import java.util.Formatter;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.utils.NumbersUtil;
-
 /**
  * This class retrieves the (first) MAC address for the machine is it is loaded on and stores it statically for retrieval.
  * It can also be used for formatting MAC addresses.
