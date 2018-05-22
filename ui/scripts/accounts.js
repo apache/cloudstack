@@ -1015,6 +1015,7 @@
 
                                                 $.ajax({
                                                     url: createURL('uploadSslCert'),
+                                                    type: "POST",
                                                     data: data,
                                                     success: function(json) {
                                                         var item = json.uploadsslcertresponse.sslcert;
