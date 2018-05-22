@@ -258,41 +258,12 @@ public class MacAddress {
      * @return a <code>long</code>
      * @throws NullPointerException if the String is <code>null</code>
      */
-    public static long parseLong(String s) throws NullPointerException {
+    private static long parseLong(String s) throws NullPointerException {
         s = s.toLowerCase();
         long out = 0;
         byte shifts = 0;
         char c;
         for (int i = 0; i < s.length() && shifts < 16; i++) {
-            c = s.charAt(i);
-            if ((c > 47) && (c < 58)) {
-                out <<= 4;
-                ++shifts;
-                out |= c - 48;
-            } else if ((c > 96) && (c < 103)) {
-                ++shifts;
-                out <<= 4;
-                out |= c - 87;
-            }
-        }
-        return out;
-    }
-
-    /**
-     * Parses an <code>int</code> from a hex encoded number. This method will skip
-     * all characters that are not 0-9 and a-f (the String is lower cased first).
-     * Returns 0 if the String does not contain any interesting characters.
-     *
-     * @param s the String to extract an <code>int</code> from, may not be <code>null</code>
-     * @return an <code>int</code>
-     * @throws NullPointerException if the String is <code>null</code>
-     */
-    public static int parseInt(String s) throws NullPointerException {
-        s = s.toLowerCase();
-        int out = 0;
-        byte shifts = 0;
-        char c;
-        for (int i = 0; i < s.length() && shifts < 8; i++) {
             c = s.charAt(i);
             if ((c > 47) && (c < 58)) {
                 out <<= 4;
@@ -316,41 +287,12 @@ public class MacAddress {
      * @return a <code>short</code>
      * @throws NullPointerException if the String is <code>null</code>
      */
-    public static short parseShort(String s) throws NullPointerException {
+    private static short parseShort(String s) throws NullPointerException {
         s = s.toLowerCase();
         short out = 0;
         byte shifts = 0;
         char c;
         for (int i = 0; i < s.length() && shifts < 4; i++) {
-            c = s.charAt(i);
-            if ((c > 47) && (c < 58)) {
-                out <<= 4;
-                ++shifts;
-                out |= c - 48;
-            } else if ((c > 96) && (c < 103)) {
-                ++shifts;
-                out <<= 4;
-                out |= c - 87;
-            }
-        }
-        return out;
-    }
-
-    /**
-     * Parses a <code>byte</code> from a hex encoded number. This method will skip
-     * all characters that are not 0-9 and a-f (the String is lower cased first).
-     * Returns 0 if the String does not contain any interesting characters.
-     *
-     * @param s the String to extract a <code>byte</code> from, may not be <code>null</code>
-     * @return a <code>byte</code>
-     * @throws NullPointerException if the String is <code>null</code>
-     */
-    public static byte parseByte(String s) throws NullPointerException {
-        s = s.toLowerCase();
-        byte out = 0;
-        byte shifts = 0;
-        char c;
-        for (int i = 0; i < s.length() && shifts < 2; i++) {
             c = s.charAt(i);
             if ((c > 47) && (c < 58)) {
                 out <<= 4;
