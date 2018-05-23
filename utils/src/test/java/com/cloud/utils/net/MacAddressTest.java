@@ -52,11 +52,4 @@ public class MacAddressTest {
     // TODO    public final void testToString() throws Exception {
     // TODO    public final void testGetMacAddress() throws Exception {
     // TODO    public final void testParse() throws Exception {
-
-    public static void main(String[] args) {
-        MacAddress addr = MacAddress.getMacAddress();
-        System.out.println("addr in integer is " + addr.toLong());
-        System.out.println("addr in bytes is " + NumbersUtil.bytesToString(addr.toByteArray(), 0, addr.toByteArray().length));
-        System.out.println("addr in char is " + addr.toString(":"));
-    }
 }
