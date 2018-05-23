@@ -1908,7 +1908,7 @@
                                     } else {
                                         /*
                                         UI no longer gets providers from "listStorageProviders&type=image" because:
-                                        (1) Not all of returned values are handled by UI (e.g. Provider "NetApp" is not handled by UI).
+                                        (1) Not all of returned values are handled by UI.
                                         (2) Provider "SMB" which is handled by UI is not returned from "listStorageProviders&type=image"
                                         */
                                         storageproviders.push({ id: 'NFS', description: 'NFS'});
