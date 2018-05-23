@@ -37,6 +37,11 @@ public class ConfigDriveBuilderTest {
 
     @Test
     public void testConfigDriveBuild() throws IOException {
+
+        if (!System.getProperty("os.name").equals("Linux")) {
+            return;
+        }
+
         List<String[]> actualVmData = Arrays.asList(
                 new String[]{"userdata", "user_data", "c29tZSB1c2VyIGRhdGE="},
                 new String[]{"metadata", "service-offering", "offering"},
