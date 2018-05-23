@@ -29,6 +29,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.dc.DomainVlanMapVO;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -726,6 +727,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                         if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
                             dedicatedVlanDbIds.add(map.getVlanDbId());
                     }
+                }
+                List<DomainVlanMapVO> domainMaps = _domainVlanMapDao.listDomainVlanMapsByDomain(owner.getDomainId());
+                for (DomainVlanMapVO map : domainMaps) {
+                    if (vlanDbIds == null || vlanDbIds.contains(map.getVlanDbId()))
+                        dedicatedVlanDbIds.add(map.getVlanDbId());
                 }
                 List<VlanVO> nonDedicatedVlans = _vlanDao.listZoneWideNonDedicatedVlans(dcId);
                 for (VlanVO nonDedicatedVlan : nonDedicatedVlans) {

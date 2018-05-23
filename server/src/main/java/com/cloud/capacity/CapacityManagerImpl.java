@@ -596,9 +596,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         ClusterDetailsVO clusterDetailRam = _clusterDetailsDao.findDetail(cluster.getId(), "memoryOvercommitRatio");
         Float clusterCpuOvercommitRatio = Float.parseFloat(clusterDetailCpu.getValue());
         Float clusterRamOvercommitRatio = Float.parseFloat(clusterDetailRam.getValue());
-        Float cpuOvercommitRatio = 1f;
-        Float ramOvercommitRatio = 1f;
         for (VMInstanceVO vm : vms) {
+            Float cpuOvercommitRatio = 1.0f;
+            Float ramOvercommitRatio = 1.0f;
             Map<String, String> vmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
             String vmDetailCpu = vmDetails.get("cpuOvercommitRatio");
             String vmDetailRam = vmDetails.get("memoryOvercommitRatio");
@@ -628,6 +628,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             s_logger.debug("Found " + vmsByLastHostId.size() + " VM, not running on host " + host.getId());
         }
         for (VMInstanceVO vm : vmsByLastHostId) {
+            Float cpuOvercommitRatio = 1.0f;
+            Float ramOvercommitRatio = 1.0f;
             long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime()) / 1000;
             if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
                 UserVmDetailVO vmDetailCpu = _userVmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio");
