@@ -57,14 +57,18 @@ public class ImportBackupPolicyCmd extends BaseCmd {
             description = "the name of the backup policy")
     private String policyName;
 
-    @Parameter(name = ApiConstants.BACKUP_EXTERNAL_POLICY_ID,
+    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true,
+            description = "the description of the backup policy")
+    private String description;
+
+    @Parameter(name = ApiConstants.EXTERNAL_ID,
             type = CommandType.STRING,
             required = true,
             description = "The backup policy ID (on backup provider side)")
     private String policyExternalId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
-            description = "The zone ID")
+            description = "The zone ID", required = true)
     private Long zoneId;
 
     /////////////////////////////////////////////////////
@@ -81,6 +85,10 @@ public class ImportBackupPolicyCmd extends BaseCmd {
 
     public Long getZoneId() {
         return zoneId;
+    }
+
+    public String getDescription() {
+        return description;
     }
 
     @Override
@@ -100,8 +108,9 @@ public class ImportBackupPolicyCmd extends BaseCmd {
     private void setupResponse(BackupPolicy policy) {
         BackupPolicyResponse response = new BackupPolicyResponse();
         response.setId(policy.getUuid());
-        response.setPolicyId(policy.getPolicyUuid());
+        response.setExternalId(policy.getExternalId());
         response.setName(policy.getName());
+        response.setDescription(policy.getDescription());
         response.setObjectName("policy");
         response.setResponseName(getCommandName());
         setResponseObject(response);
@@ -110,7 +119,7 @@ public class ImportBackupPolicyCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            BackupPolicy policy = backupManager.addBackupPolicy(policyExternalId, policyName, zoneId);
+            BackupPolicy policy = backupManager.addBackupPolicy(zoneId, policyExternalId, policyName, description);
             if (policy != null) {
                 setupResponse(policy);
             } else {

@@ -115,8 +115,9 @@ class TestBackupAndRecovery(cloudstackTestCase):
 
         if cls.backup_available:
             cls.external_policies = BackupPolicy.listExternal(cls.api_client, cls.zone.id)
-            cls.logger.debug("Importing backup policy %s - %s" % (cls.external_policies[0].policyid, cls.external_policies[0].name))
-            cls.policy = BackupPolicy.importExisting(cls.api_client, cls.zone.id, cls.external_policies[0].policyid, cls.external_policies[0].name)
+            cls.logger.debug("Importing backup policy %s - %s" % (cls.external_policies[0].externalid, cls.external_policies[0].name))
+            cls.policy = BackupPolicy.importExisting(cls.api_client, cls.zone.id, cls.external_policies[0].externalid,
+                                                     cls.external_policies[0].name, cls.external_policies[0].description)
             cls._cleanup.append(cls.policy)
 
         return
@@ -153,8 +154,8 @@ class TestBackupAndRecovery(cloudstackTestCase):
             self.skipTest("This test is only available when backup is enabled and dummy provider selected")
 
         ext_policy = self.external_policies[1]
-        self.logger.debug("Importing backup policy %s - %s" % (ext_policy.policyid, ext_policy.name))
-        policy = BackupPolicy.importExisting(self.apiclient, self.zone.id, ext_policy.policyid, ext_policy.name)
+        self.logger.debug("Importing backup policy %s - %s" % (ext_policy.externalid, ext_policy.name))
+        policy = BackupPolicy.importExisting(self.apiclient, self.zone.id, ext_policy.externalid, ext_policy.name, ext_policy.description)
 
         imported_policies = BackupPolicy.listInternal(self.apiclient, self.zone.id)
         self.assertIsInstance(

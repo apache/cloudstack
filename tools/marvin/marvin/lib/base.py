@@ -5384,13 +5384,14 @@ class BackupPolicy:
         self.__dict__.update(items)
 
     @classmethod
-    def importExisting(self, apiclient, zoneid, externalid, name):
+    def importExisting(self, apiclient, zoneid, externalid, name, description):
         """Import existing backup policy from the provider"""
 
         cmd = importBackupPolicy.importBackupPolicyCmd()
         cmd.zoneid = zoneid
         cmd.externalid = externalid
         cmd.name = name
+        cmd.description = description
         return BackupPolicy(apiclient.importBackupPolicy(cmd).__dict__)
 
     @classmethod

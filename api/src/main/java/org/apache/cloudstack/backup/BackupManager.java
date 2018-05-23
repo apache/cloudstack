@@ -19,7 +19,6 @@ package org.apache.cloudstack.backup;
 
 import java.util.List;
 
-import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -42,19 +41,18 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             "The backup and recovery provider plugin.", true, ConfigKey.Scope.Zone);
 
     /**
-     * Generate a response from the Backup Policy VO
+     * Add a new Backup and Recovery policy to CloudStack by mapping an existing external backup policy to a name and description
+     * @param zoneId zone id
+     * @param policyExternalId backup policy external id
+     * @param policyName internal name for the backup policy
+     * @param policyDescription internal description for the backup policy
      */
-    BackupPolicyResponse createBackupPolicyResponse(BackupPolicy policyVO);
-
-    /**
-     * Add a new Backup and Recovery policy
-     */
-    BackupPolicy addBackupPolicy(String policyExternalId, String policyName, Long zoneId);
+    BackupPolicy addBackupPolicy(Long zoneId, String policyExternalId, String policyName, String policyDescription);
 
     /**
      * Assign VM to existing backup policy
      */
-    boolean assignVMToBackupPolicy(Long policyId, Long virtualMachineId, Long zoneId);
+    boolean assignVMToBackupPolicy(Long zoneId, Long policyId, Long virtualMachineId);
 
     /**
      * List existing backups for a VM
@@ -71,10 +69,10 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     /**
      * Restore a full backed up VM
      */
-    boolean restoreBackup(Long vmId, Long backupId, Long zoneId);
+    boolean restoreBackup(Long zoneId, Long vmId, Long backupId);
 
     //TODO
-    boolean restoreBackupVolume(Long volumeId, Long vmId, Long backupId, Long zoneId);
+    boolean restoreBackupVolume(Long zoneId, Long volumeId, Long vmId, Long backupId);
 
     /**
      * Deletes a backup policy

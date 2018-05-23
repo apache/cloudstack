@@ -23,6 +23,7 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -41,7 +42,8 @@ import javax.inject.Inject;
 
 @APICommand(name = RestoreBackupVolumeCmd.APINAME,
         description = "Restore and attach a backed up volume to VM",
-        responseObject = SuccessResponse.class, since = "4.12.0")
+        responseObject = SuccessResponse.class, since = "4.12.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RestoreBackupVolumeCmd extends BaseCmd {
 
     public static final String APINAME = "restoreBackupVolume";
@@ -115,7 +117,7 @@ public class RestoreBackupVolumeCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreBackupVolume(volumeId, virtualMachineId, backupId, zoneId);
+            boolean result = backupManager.restoreBackupVolume(zoneId, volumeId, virtualMachineId, backupId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

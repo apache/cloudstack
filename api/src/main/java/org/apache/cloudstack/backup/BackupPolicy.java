@@ -21,8 +21,9 @@ import org.apache.cloudstack.api.InternalIdentity;
 
 public interface BackupPolicy extends InternalIdentity, Identity {
 
-    String getPolicyUuid();
+    String getExternalId();
     String getName();
+    String getDescription();
     boolean isImported();
 
 }

@@ -20,6 +20,7 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -36,10 +37,12 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.commons.lang.BooleanUtils;
 
 @APICommand(name = ListBackupPoliciesCmd.APINAME,
         description = "Lists backup policies",
-        responseObject = BackupPolicyResponse.class, since = "4.12.0")
+        responseObject = BackupPolicyResponse.class, since = "4.12.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListBackupPoliciesCmd extends BaseBackupListCmd {
 
     public static final String APINAME = "listBackupPolicies";
@@ -56,7 +59,7 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
     private Long zoneId;
 
     @Parameter(name = ApiConstants.EXTERNAL, type = CommandType.BOOLEAN,
-            description = "True if list external backup policies (provider policies)")
+            description = "True if list external backup policies (provider policies)", authorized = {RoleType.Admin})
     private Boolean external;
 
     /////////////////////////////////////////////////////
@@ -67,8 +70,8 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
         return zoneId;
     }
 
-    public Boolean isExternal() {
-        return external;
+    public boolean isExternal() {
+        return BooleanUtils.isTrue(external);
     }
 
     @Override

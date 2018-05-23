@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.user.backup;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -39,7 +40,8 @@ import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = AssignBackupPolicyCmd.APINAME,
         description = "Assigns a VM to an existing backup policy",
-        responseObject = SuccessResponse.class, since = "4.12.0")
+        responseObject = SuccessResponse.class, since = "4.12.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class AssignBackupPolicyCmd extends BaseCmd {
     public static final String APINAME = "assignBackupPolicy";
 
@@ -104,7 +106,7 @@ public class AssignBackupPolicyCmd extends BaseCmd {
             Long virtualMachineId = getVirtualMachineId();
             Long policyId = getPolicyId();
             Long zoneId = getZoneId();
-            boolean result = backupManager.assignVMToBackupPolicy(policyId, virtualMachineId, zoneId);
+            boolean result = backupManager.assignVMToBackupPolicy(zoneId, policyId, virtualMachineId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

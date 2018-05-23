@@ -35,19 +35,27 @@ public class BackupPolicyResponse extends BaseResponse {
     @Param(description = "internal name for the backup policy")
     private String name;
 
-    @SerializedName(ApiConstants.POLICY_ID)
+    @SerializedName(ApiConstants.DESCRIPTION)
+    @Param(description = "internal description for the backup policy")
+    private String description;
+
+    @SerializedName(ApiConstants.EXTERNAL_ID)
     @Param(description = "policy id on the provider side")
-    private String policyId;
+    private String externalId;
 
     public void setId(String id) {
         this.id = id;
     }
 
-    public void setPolicyId(String policyId) {
-        this.policyId = policyId;
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
     }
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

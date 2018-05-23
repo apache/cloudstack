@@ -26,26 +26,33 @@ public class BackupPolicyTO implements BackupPolicy {
     private String uuid;
     private long id;
     private String name;
-    private String policyUuid;
+    private String description;
+    private String externalId;
     private boolean imported = false;
 
     public BackupPolicyTO() {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public BackupPolicyTO(final String name, final String policyUuid) {
+    public BackupPolicyTO(final String externalId, final String name, final String description) {
         this();
         this.name = name;
-        this.policyUuid = policyUuid;
+        this.description = description;
+        this.externalId = externalId;
     }
 
     @Override
-    public String getPolicyUuid() {
-        return policyUuid;
+    public String getExternalId() {
+        return externalId;
     }
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String getDescription() {
+        return description;
     }
 
     @Override

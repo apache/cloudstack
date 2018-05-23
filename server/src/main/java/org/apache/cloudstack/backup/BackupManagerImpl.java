@@ -24,6 +24,9 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.exception.PermissionDeniedException;
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.command.admin.backup.DeleteBackupPolicyCmd;
@@ -34,16 +37,15 @@ import org.apache.cloudstack.api.command.admin.backup.ListBackupProvidersCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreBackupVolumeCmd;
-import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.cloudstack.backup.dao.BackupPolicyDao;
 import org.apache.cloudstack.backup.dao.BackupPolicyVMMapDao;
+import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -58,7 +60,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     VMInstanceDao vmInstanceDao;
 
     @Inject
-    DataCenterDao dataCenterDao;
+    private AccountService accountService;
 
     @Inject
     BackupPolicyVMMapDao backupPolicyVMMapDao;
@@ -70,13 +72,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private List<BackupProvider> backupProviders;
 
     @Override
-    public BackupPolicy addBackupPolicy(String policyExternalId, String policyName, Long zoneId) {
+    public BackupPolicy addBackupPolicy(Long zoneId, String policyExternalId, String policyName, String policyDescription) {
         BackupProvider provider = getBackupProvider(zoneId);
         if (!provider.isBackupPolicy(policyExternalId)) {
             throw new CloudRuntimeException("Policy " + policyExternalId + " does not exist on provider " + provider.getName());
         }
 
-        BackupPolicyVO policy = new BackupPolicyVO(policyName, policyExternalId);
+        BackupPolicyVO policy = new BackupPolicyVO(policyExternalId, policyName, policyDescription);
         BackupPolicyVO vo = backupPolicyDao.persist(policy);
         if (vo == null) {
             throw new CloudRuntimeException("Unable to create backup policy: " + policyExternalId + ", name: " + policyName);
@@ -86,7 +88,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public boolean assignVMToBackupPolicy(Long policyId, Long virtualMachineId, Long zoneId) {
+    public boolean assignVMToBackupPolicy(Long zoneId, Long policyId, Long virtualMachineId) {
         VMInstanceVO vmInstanceVO = vmInstanceDao.findById(virtualMachineId);
         if (vmInstanceVO == null) {
             throw new CloudRuntimeException("VM " + virtualMachineId + " does not exist");
@@ -119,7 +121,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     public List<BackupPolicy> listBackupPolicies(Long zoneId, Boolean external) {
+        Account account = CallContext.current().getCallingAccount();
         if (BooleanUtils.isTrue(external)) {
+            if (!accountService.isRootAdmin(account.getId())) {
+                throw new PermissionDeniedException("Parameter external can only be specified by a Root Admin, permission denied");
+            }
             BackupProvider backupProvider = getBackupProvider(zoneId);
             return backupProvider.listBackupPolicies();
         }
@@ -127,7 +133,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public boolean restoreBackup(Long vmId, Long backupId, Long zoneId) {
+    public boolean restoreBackup(Long zoneId, Long vmId, Long backupId) {
         BackupProvider backupProvider = getBackupProvider(zoneId);
         VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {
@@ -141,7 +147,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public boolean restoreBackupVolume(Long volumeId, Long vmId, Long backupId, Long zoneId) {
+    public boolean restoreBackupVolume(Long zoneId, Long volumeId, Long vmId, Long backupId) {
         //TODO
         return false;
     }
@@ -153,11 +159,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Could not find a backup policy with id: " + policyId);
         }
         return backupPolicyDao.expunge(policy.getId());
-    }
-
-    @Override
-    public BackupPolicyResponse createBackupPolicyResponse(BackupPolicy policyVO) {
-        return null;
     }
 
     @Override

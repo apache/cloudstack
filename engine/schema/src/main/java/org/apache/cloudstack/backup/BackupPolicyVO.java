@@ -34,9 +34,10 @@ public class BackupPolicyVO implements BackupPolicy {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public BackupPolicyVO(final String name, final String policyUuid) {
+    public BackupPolicyVO(final String policyUuid, final String name, final String description) {
         this();
         this.name = name;
+        this.description = description;
         this.policyUuid = policyUuid;
     }
 
@@ -51,7 +52,10 @@ public class BackupPolicyVO implements BackupPolicy {
     @Column(name = "name")
     private String name;
 
-    @Column(name = "policy_uuid")
+    @Column(name = "description")
+    private String description;
+
+    @Column(name = "external_id")
     private String policyUuid;
 
     @Column(name = "imported")
@@ -81,7 +85,7 @@ public class BackupPolicyVO implements BackupPolicy {
         this.name = name;
     }
 
-    public String getPolicyUuid() {
+    public String getExternalId() {
         return policyUuid;
     }
 
@@ -92,5 +96,13 @@ public class BackupPolicyVO implements BackupPolicy {
     @Override
     public boolean isImported() {
         return imported;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

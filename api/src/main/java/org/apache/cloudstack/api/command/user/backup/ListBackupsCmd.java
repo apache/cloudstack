@@ -22,6 +22,7 @@ import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -40,7 +41,8 @@ import java.util.List;
 
 @APICommand(name = ListBackupsCmd.APINAME,
         description = "Lists backups",
-        responseObject = BackupResponse.class, since = "4.12.0")
+        responseObject = BackupResponse.class, since = "4.12.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListBackupsCmd extends BaseBackupListCmd {
     public static final String APINAME = "listBackups";
 
