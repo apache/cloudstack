@@ -377,6 +377,10 @@
             // Step 4: Data disk offering
             function(args) {
                 var isRequired = (args.currentData["select-template"] == "select-iso" ? true : false);
+                var templateFilter = 'executable'
+                if (isAdmin()) {
+                    templateFilter = 'all'
+                }
                 $.ajax({
                     url: createURL("listDiskOfferings"),
                     dataType: "json",
@@ -389,7 +393,7 @@
                                 url: createURL("listTemplates"),
                                 data: {
                                     id: args.currentData.templateid,
-                                    templatefilter: 'all'
+                                    templatefilter: templateFilter
                                 },
                                 dataType: "json",
                                 async: false,
