@@ -23,7 +23,6 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -33,14 +32,12 @@ import static org.mockito.Mockito.when;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.configdrive.ConfigDrive;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -77,10 +74,8 @@ import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.utils.fsm.NoTransitionException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
-import com.cloud.utils.net.Ip;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
-import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
@@ -88,7 +83,6 @@ import com.cloud.vm.VirtualMachineProfileImpl;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
-import com.google.common.collect.Maps;
 
 public class ConfigDriveNetworkElementTest {
 
