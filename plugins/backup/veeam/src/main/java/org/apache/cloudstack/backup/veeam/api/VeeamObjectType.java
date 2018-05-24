@@ -15,13 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.backup.veeam;
+package org.apache.cloudstack.backup.veeam.api;
 
 public enum VeeamObjectType {
+    Job,
+    JobReference,
+
     Backup,
     BackupReference,
+    BackupJobSessionReferenceList,
     BackupServerReference,
-    RestorePointReferenceList,
     BackupFileReferenceList,
+
+    RestorePointReferenceList,
     RepositoryReference,
 }

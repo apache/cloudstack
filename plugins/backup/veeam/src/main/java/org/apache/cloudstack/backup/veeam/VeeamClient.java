@@ -17,7 +17,6 @@
 
 package org.apache.cloudstack.backup.veeam;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
@@ -33,6 +32,10 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.BackupPolicy;
+import org.apache.cloudstack.backup.veeam.api.EntityReferences;
+import org.apache.cloudstack.backup.veeam.api.Ref;
 import org.apache.cloudstack.utils.security.SSLUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
@@ -60,6 +63,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.TrustAllManager;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
 public class VeeamClient {
     private static final Logger LOG = Logger.getLogger(VeeamClient.class);
@@ -162,14 +167,13 @@ public class VeeamClient {
         try {
             final HttpResponse response = get("/backups");
             checkResponseOK(response);
-            // FIXME: parse XML to object
-            ByteArrayOutputStream outstream = new ByteArrayOutputStream();
-            response.getEntity().writeTo(outstream);
-            byte [] responseBody = outstream.toByteArray();
-
-            System.out.println(new String(responseBody));
-            LOG.debug("Response received = " + response.getEntity().getContent());
-            return null;
+            final ObjectMapper objectMapper = new XmlMapper();
+            final EntityReferences entityReferences = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
+            final List<VeeamBackup> backups = new ArrayList<>();
+            for (final Ref ref : entityReferences.getRefs()) {
+                backups.add(new VeeamBackup(ref.getName(), ref.getUid()));
+            }
+            return backups;
         } catch (final IOException e) {
             LOG.error("Failed to list Veeam backups due to:", e);
             checkResponseTimeOut(e);
@@ -177,15 +181,19 @@ public class VeeamClient {
         return new ArrayList<>();
     }
 
-    public List<VeeamBackup> listJobs() {
-        LOG.debug("Trying to list Veeam jobs");
+
+    public List<BackupPolicy> listBackupPolicies() {
+        LOG.debug("Trying to list Veeam jobs that are backup policies");
         try {
             final HttpResponse response = get("/jobs");
             checkResponseOK(response);
-
-            // FIXME: parse XML to object
-
-            return null;
+            final ObjectMapper objectMapper = new XmlMapper();
+            final EntityReferences entityReferences = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
+            final List<BackupPolicy> policies = new ArrayList<>();
+            for (final Ref ref : entityReferences.getRefs()) {
+                policies.add(new VeeamBackupPolicy(ref.getName(), ref.getUid()));
+            }
+            return policies;
         } catch (final IOException e) {
             LOG.error("Failed to list Veeam jobs due to:", e);
             checkResponseTimeOut(e);

@@ -15,27 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.backup.veeam;
+package org.apache.cloudstack.backup.veeam.api;
 
-import org.junit.Before;
-import org.junit.Test;
+import java.util.List;
 
-public class VeeamClientTest {
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
-    private VeeamClient client;
+@JacksonXmlRootElement(localName = "EntityReferences")
+public class EntityReferences {
+    @JacksonXmlProperty(localName = "Ref")
+    @JacksonXmlElementWrapper(localName = "Ref", useWrapping = false)
+    private List<Ref> refs;
 
-    @Before
-    public void setUp() throws Exception {
-        client = new VeeamClient("http://10.2.2.89:9399/api/", "administrator", "P@ssword123", true, 60);
+    public List<Ref> getRefs() {
+        return refs;
     }
 
-    @Test
-    public void testBackups() {
-        client.listAllBackups();
-    }
-
-    @Test
-    public void testPolicies() {
-        client.listBackupPolicies();
+    public void setRefs(List<Ref> refs) {
+        this.refs = refs;
     }
 }

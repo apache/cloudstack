@@ -17,29 +17,21 @@
 
 package org.apache.cloudstack.backup.veeam;
 
-import java.util.Date;
-import java.util.List;
+import org.apache.cloudstack.backup.BackupPolicy;
 
-import org.apache.cloudstack.backup.Backup;
-
-public class VeeamBackup implements Backup {
+public class VeeamBackupPolicy implements BackupPolicy {
 
     private String name;
     private String uid;
 
-    public VeeamBackup(String name, String uid) {
+    public VeeamBackupPolicy(String name, String uid) {
         this.name = name;
         this.uid = uid;
     }
 
     @Override
-    public Long getAccountId() {
-        return null;
-    }
-
-    @Override
-    public Long getUserId() {
-        return null;
+    public String getExternalId() {
+        return uid;
     }
 
     @Override
@@ -49,32 +41,17 @@ public class VeeamBackup implements Backup {
 
     @Override
     public String getDescription() {
-        return "Veeam Backup";
+        return "Veeam Backup Policy (Job)";
     }
 
     @Override
-    public Long getParentId() {
-        return null;
+    public boolean isImported() {
+        return false;
     }
 
     @Override
-    public Long getVMId() {
-        return null;
-    }
-
-    @Override
-    public List<Long> getVolumeIds() {
-        return null;
-    }
-
-    @Override
-    public Status getStatus() {
-        return null;
-    }
-
-    @Override
-    public Date getStartTime() {
-        return null;
+    public long getZoneId() {
+        return -1;
     }
 
     @Override
