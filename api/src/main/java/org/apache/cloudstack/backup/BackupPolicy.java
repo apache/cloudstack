@@ -25,5 +25,6 @@ public interface BackupPolicy extends InternalIdentity, Identity {
     String getName();
     String getDescription();
     boolean isImported();
+    long getZoneId();
 
 }

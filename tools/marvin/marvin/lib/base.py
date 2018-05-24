@@ -5415,7 +5415,7 @@ class BackupPolicy:
         """Delete an imported backup policy"""
 
         cmd = deleteBackupPolicy.deleteBackupPolicyCmd()
-        cmd.backuppolicyid = self.id
+        cmd.id = self.id
         return (apiclient.deleteBackupPolicy(cmd))
 
     def assignVM(self, apiclient, vmid, zoneid):

@@ -55,7 +55,7 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
-            description = "The zone ID")
+            description = "The zone ID", required = true)
     private Long zoneId;
 
     @Parameter(name = ApiConstants.EXTERNAL, type = CommandType.BOOLEAN,

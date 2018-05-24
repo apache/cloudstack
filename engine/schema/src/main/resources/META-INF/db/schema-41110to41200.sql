@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_policy` (
   `name` varchar(255) NOT NULL COMMENT 'backup policy name',
   `description` varchar(255) NOT NULL COMMENT 'backup policy description',
   `external_id` varchar(40) NOT NULL COMMENT 'backup policy ID on provider side',
-  `imported` tinyint(1) unsigned NOT NULL DEFAULT '0' COMMENT 'true if policy has been imported from the backup provider',
+  `zone_id` bigint(20) unsigned NOT NULL COMMENT 'zone id',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;

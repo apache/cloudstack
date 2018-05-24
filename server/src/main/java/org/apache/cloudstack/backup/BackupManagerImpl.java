@@ -78,7 +78,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Policy " + policyExternalId + " does not exist on provider " + provider.getName());
         }
 
-        BackupPolicyVO policy = new BackupPolicyVO(policyExternalId, policyName, policyDescription);
+        BackupPolicyVO policy = new BackupPolicyVO(zoneId, policyExternalId, policyName, policyDescription);
         BackupPolicyVO vo = backupPolicyDao.persist(policy);
         if (vo == null) {
             throw new CloudRuntimeException("Unable to create backup policy: " + policyExternalId + ", name: " + policyName);
@@ -119,17 +119,30 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         return backupDao.listByVmId(vmId);
     }
 
+    /**
+     * List external backup policies for the Backup and Recovery provider registered in the zone zoneId
+     */
+    private List<BackupPolicy> listExternalPolicies(Long zoneId) {
+        Account account = CallContext.current().getCallingAccount();
+        if (!accountService.isRootAdmin(account.getId())) {
+            throw new PermissionDeniedException("Parameter external can only be specified by a Root Admin, permission denied");
+        }
+        BackupProvider backupProvider = getBackupProvider(zoneId);
+        LOG.debug("Listing external backup policies for the backup provider registered in zone " + zoneId);
+        return backupProvider.listBackupPolicies();
+    }
+
+    /**
+     * List imported backup policies in the zone zoneId
+     */
+    private List<BackupPolicy> listInternalPolicies(Long zoneId) {
+        LOG.debug("Listing imported backup policies on zone " + zoneId);
+        return backupPolicyDao.listByZone(zoneId);
+    }
+
     @Override
     public List<BackupPolicy> listBackupPolicies(Long zoneId, Boolean external) {
-        Account account = CallContext.current().getCallingAccount();
-        if (BooleanUtils.isTrue(external)) {
-            if (!accountService.isRootAdmin(account.getId())) {
-                throw new PermissionDeniedException("Parameter external can only be specified by a Root Admin, permission denied");
-            }
-            BackupProvider backupProvider = getBackupProvider(zoneId);
-            return backupProvider.listBackupPolicies();
-        }
-        return new ArrayList<>(backupPolicyDao.listAll());
+        return BooleanUtils.isTrue(external) ? listExternalPolicies(zoneId) : listInternalPolicies(zoneId);
     }
 
     @Override

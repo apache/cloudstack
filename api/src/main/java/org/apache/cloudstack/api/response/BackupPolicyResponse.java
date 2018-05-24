@@ -43,6 +43,10 @@ public class BackupPolicyResponse extends BaseResponse {
     @Param(description = "policy id on the provider side")
     private String externalId;
 
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "zone id")
+    private String zoneId;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -57,5 +61,9 @@ public class BackupPolicyResponse extends BaseResponse {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
     }
 }

@@ -105,23 +105,14 @@ public class ImportBackupPolicyCmd extends BaseCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    private void setupResponse(BackupPolicy policy) {
-        BackupPolicyResponse response = new BackupPolicyResponse();
-        response.setId(policy.getUuid());
-        response.setExternalId(policy.getExternalId());
-        response.setName(policy.getName());
-        response.setDescription(policy.getDescription());
-        response.setObjectName("policy");
-        response.setResponseName(getCommandName());
-        setResponseObject(response);
-    }
-
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
             BackupPolicy policy = backupManager.addBackupPolicy(zoneId, policyExternalId, policyName, description);
             if (policy != null) {
-                setupResponse(policy);
+                BackupPolicyResponse response = _responseGenerator.createBackupPolicyResponse(policy);
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
             } else {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add a Backup policy");
             }

@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
@@ -62,7 +63,9 @@ import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.BackupPolicy;
 import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.dao.BackupPolicyDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -438,6 +441,7 @@ public class ApiDBUtils {
     static HostGpuGroupsDao s_hostGpuGroupsDao;
     static VGPUTypesDao s_vgpuTypesDao;
     static BackupDao s_backupDao;
+    static BackupPolicyDao s_backupPolicyDao;
 
     @Inject
     private ManagementServer ms;
@@ -672,6 +676,8 @@ public class ApiDBUtils {
     private VGPUTypesDao vgpuTypesDao;
     @Inject
     private BackupDao backupDao;
+    @Inject
+    private BackupPolicyDao backupPolicyDao;
 
     @PostConstruct
     void init() {
@@ -792,6 +798,7 @@ public class ApiDBUtils {
         s_hostGpuGroupsDao = hostGpuGroupsDao;
         s_vgpuTypesDao = vgpuTypesDao;
         s_backupDao = backupDao;
+        s_backupPolicyDao = backupPolicyDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -2010,5 +2017,9 @@ public class ApiDBUtils {
 
     public static BackupResponse newBackupResponse(Backup backup) {
         return s_backupDao.newBackupResponse(backup);
+    }
+
+    public static BackupPolicyResponse newBackupPolicyResponse(BackupPolicy policy) {
+        return s_backupPolicyDao.newBackupPolicyResponse(policy);
     }
 }

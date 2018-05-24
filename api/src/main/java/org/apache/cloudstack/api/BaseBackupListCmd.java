@@ -36,14 +36,7 @@ public abstract class BaseBackupListCmd extends BaseListCmd {
             if (policy == null) {
                 continue;
             }
-            final BackupPolicyResponse backupPolicyResponse = new BackupPolicyResponse();
-            if (policy.isImported()) {
-                backupPolicyResponse.setId(policy.getUuid());
-            }
-            backupPolicyResponse.setName(policy.getName());
-            backupPolicyResponse.setDescription(policy.getDescription());
-            backupPolicyResponse.setExternalId(policy.getExternalId());
-            backupPolicyResponse.setObjectName("policy");
+            BackupPolicyResponse backupPolicyResponse = _responseGenerator.createBackupPolicyResponse(policy);
             responses.add(backupPolicyResponse);
         }
         response.setResponses(responses);

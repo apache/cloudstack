@@ -34,11 +34,12 @@ public class BackupPolicyVO implements BackupPolicy {
         this.uuid = UUID.randomUUID().toString();
     }
 
-    public BackupPolicyVO(final String policyUuid, final String name, final String description) {
+    public BackupPolicyVO(final long zoneId, final String externalId, final String name, final String description) {
         this();
+        this.zoneId = zoneId;
         this.name = name;
         this.description = description;
-        this.policyUuid = policyUuid;
+        this.externalId = externalId;
     }
 
     @Id
@@ -56,10 +57,10 @@ public class BackupPolicyVO implements BackupPolicy {
     private String description;
 
     @Column(name = "external_id")
-    private String policyUuid;
+    private String externalId;
 
-    @Column(name = "imported")
-    private boolean imported = true;
+    @Column(name = "zone_id")
+    private long zoneId;
 
     public String getUuid() {
         return uuid;
@@ -69,40 +70,25 @@ public class BackupPolicyVO implements BackupPolicy {
         return id;
     }
 
-    public void setId(long id) {
-        this.id = id;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
-    }
-
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getExternalId() {
-        return policyUuid;
-    }
-
-    public void setPolicyUuid(String policyUuid) {
-        this.policyUuid = policyUuid;
+        return externalId;
     }
 
     @Override
     public boolean isImported() {
-        return imported;
+        return true;
+    }
+
+    @Override
+    public long getZoneId() {
+        return zoneId;
     }
 
     public String getDescription() {
         return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
     }
 }

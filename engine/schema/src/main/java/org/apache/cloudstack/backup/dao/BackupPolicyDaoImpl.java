@@ -18,15 +18,27 @@
 package org.apache.cloudstack.backup.dao;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.backup.BackupPolicy;
 import org.apache.cloudstack.backup.BackupPolicyVO;
 import org.springframework.stereotype.Component;
 
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Component
 public class BackupPolicyDaoImpl extends GenericDaoBase<BackupPolicyVO, Long> implements BackupPolicyDao {
+
+    @Inject
+    DataCenterDao dataCenterDao;
 
     private SearchBuilder<BackupPolicyVO> backupPoliciesSearch;
 
@@ -36,6 +48,30 @@ public class BackupPolicyDaoImpl extends GenericDaoBase<BackupPolicyVO, Long> im
     @PostConstruct
     protected void init() {
         backupPoliciesSearch = createSearchBuilder();
+        backupPoliciesSearch.and("zone_id", backupPoliciesSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         backupPoliciesSearch.done();
+    }
+
+    @Override
+    public BackupPolicyResponse newBackupPolicyResponse(BackupPolicy policy) {
+        DataCenterVO zone = dataCenterDao.findById(policy.getZoneId());
+
+        BackupPolicyResponse response = new BackupPolicyResponse();
+        if (policy.isImported()) {
+            response.setId(policy.getUuid());
+            response.setZoneId(zone.getUuid());
+        }
+        response.setName(policy.getName());
+        response.setDescription(policy.getDescription());
+        response.setExternalId(policy.getExternalId());
+        response.setObjectName("backuppolicy");
+        return response;
+    }
+
+    @Override
+    public List<BackupPolicy> listByZone(Long zoneId) {
+        SearchCriteria<BackupPolicyVO> sc = backupPoliciesSearch.create();
+        sc.setParameters("zone_id", zoneId);
+        return new ArrayList<>(listBy(sc));
     }
 }
