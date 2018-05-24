@@ -123,14 +123,13 @@ public class ConfigDriveBuilder {
 
     /**
      *  Generates the ISO file that has the tempDir content.
-     *  We will use '/usr/bin/genisoimage' to create an ISO file based on tempDir content.
      *
      *  Max allowed file size of config drive is 64MB [1]. Therefore, if the ISO is bigger than that, we throw a {@link CloudRuntimeException}.
      *  [1] https://docs.openstack.org/project-install-guide/baremetal/draft/configdrive.html
      */
     static String generateAndRetrieveIsoAsBase64Iso(String isoFileName, String driveLabel, String tempDirName) throws IOException {
         File tmpIsoStore = new File(tempDirName, isoFileName);
-        Script command = new Script("/usr/bin/genisoimage", Duration.standardSeconds(300), LOG);
+        Script command = new Script(getProgramToGenerateIso(), Duration.standardSeconds(300), LOG);
         command.add("-o", tmpIsoStore.getAbsolutePath());
         command.add("-ldots");
         command.add("-allow-lowercase");
@@ -145,7 +144,7 @@ public class ConfigDriveBuilder {
         LOG.debug("Executing config drive creation command: " + command.toString());
         String result = command.execute();
         if (StringUtils.isNotBlank(result)) {
-            String errMsg = "Unable to create iso file: " + isoFileName + " due to " + result;
+            String errMsg = "Unable to create iso file: " + isoFileName + " due to ge" + result;
             LOG.warn(errMsg);
             throw new CloudRuntimeException(errMsg);
         }
@@ -154,6 +153,31 @@ public class ConfigDriveBuilder {
             throw new CloudRuntimeException("Config drive file exceeds maximum allowed size of 64MB");
         }
         return fileToBase64String(tmpIsoFile);
+    }
+
+    /**
+     *  Checks if the 'genisoimage' or 'mkisofs' is available and return the full qualified path for the program.
+     *  The path checked are the following:
+     *  <ul>
+     *  <li> /usr/bin/genisoimage
+     *  <li> /usr/bin/mkisofs
+     * </ul> /usr/local/bin/mkisofs
+     */
+    static String getProgramToGenerateIso() throws IOException {
+        File isoCreator = new File("/usr/bin/genisoimage");
+        if (!isoCreator.exists()) {
+            isoCreator = new File("/usr/bin/mkisofs");
+            if (!isoCreator.exists()) {
+                isoCreator = new File("/usr/local/bin/mkisofs");
+            }
+        }
+        if (!isoCreator.exists()) {
+            throw new CloudRuntimeException("Cannot create iso for config drive using any know tool. Known paths [/usr/bin/genisoimage, /usr/bin/mkisofs, /usr/local/bin/mkisofs]");
+        }
+        if (!isoCreator.canExecute()) {
+            throw new CloudRuntimeException("Cannot create iso for config drive using: " + isoCreator.getCanonicalPath());
+        }
+        return isoCreator.getCanonicalPath();
     }
 
     /**

@@ -294,23 +294,31 @@ public class ConfigDriveBuilderTest {
         Mockito.verify(scriptMock).execute();
     }
 
+    @SuppressWarnings("unchecked")
     @Test(expected = CloudRuntimeException.class)
     @PrepareForTest({Script.class, ConfigDriveBuilder.class})
     public void generateAndRetrieveIsoAsBase64IsoTestGenIsoFailure() throws Exception {
-        PowerMockito.mockStatic(Script.class);
+        PowerMockito.mockStatic(Script.class, ConfigDriveBuilder.class);
 
         Script scriptMock = Mockito.mock(Script.class);
         PowerMockito.whenNew(Script.class).withAnyArguments().thenReturn(scriptMock);
 
         Mockito.doReturn("scriptMessage").when(scriptMock).execute();
 
+        Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("generateAndRetrieveIsoAsBase64Iso")).iterator().next();
+        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(Mockito.any(File.class), Mockito.any(File.class), Mockito.any(File.class)).thenCallRealMethod();
+
+        Method getProgramToGenerateIsoMethod = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("getProgramToGenerateIso")).iterator().next();
+        PowerMockito.when(ConfigDriveBuilder.class, getProgramToGenerateIsoMethod).withNoArguments().thenReturn("/usr/bin/genisoimage");
+
         ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso("isoFileName", "driveLabel", "tempDirName");
     }
 
+    @SuppressWarnings("unchecked")
     @Test(expected = CloudRuntimeException.class)
     @PrepareForTest({File.class, Script.class, ConfigDriveBuilder.class})
     public void generateAndRetrieveIsoAsBase64IsoTestIsoTooBig() throws Exception {
-        PowerMockito.mockStatic(File.class, Script.class);
+        PowerMockito.mockStatic(File.class, Script.class, ConfigDriveBuilder.class);
 
         File fileMock = Mockito.mock(File.class);
         PowerMockito.whenNew(File.class).withAnyArguments().thenReturn(fileMock);
@@ -320,6 +328,12 @@ public class ConfigDriveBuilderTest {
 
         Mockito.doReturn(StringUtils.EMPTY).when(scriptMock).execute();
         Mockito.doReturn(64L * 1024L * 1024L + 1l).when(fileMock).length();
+
+        Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("generateAndRetrieveIsoAsBase64Iso")).iterator().next();
+        PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(Mockito.any(File.class), Mockito.any(File.class), Mockito.any(File.class)).thenCallRealMethod();
+
+        Method getProgramToGenerateIsoMethod = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("getProgramToGenerateIso")).iterator().next();
+        PowerMockito.when(ConfigDriveBuilder.class, getProgramToGenerateIsoMethod).withNoArguments().thenReturn("/usr/bin/genisoimage");
 
         ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso("isoFileName", "driveLabel", "tempDirName");
     }
@@ -342,6 +356,9 @@ public class ConfigDriveBuilderTest {
 
         Method method = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("generateAndRetrieveIsoAsBase64Iso")).iterator().next();
         PowerMockito.when(ConfigDriveBuilder.class, method).withArguments(Mockito.any(File.class), Mockito.any(File.class), Mockito.any(File.class)).thenCallRealMethod();
+
+        Method getProgramToGenerateIsoMethod = ReflectionUtils.getMethods(ConfigDriveBuilder.class, ReflectionUtils.withName("getProgramToGenerateIso")).iterator().next();
+        PowerMockito.when(ConfigDriveBuilder.class, getProgramToGenerateIsoMethod).withNoArguments().thenReturn("/usr/bin/genisoimage");
 
         ConfigDriveBuilder.generateAndRetrieveIsoAsBase64Iso("isoFileName", "driveLabel", "tempDirName");
 
@@ -386,4 +403,95 @@ public class ConfigDriveBuilderTest {
                 Mockito.eq("content2"));
     }
 
+    @Test
+    @PrepareForTest({File.class, ConfigDriveBuilder.class})
+    public void getProgramToGenerateIsoTestGenIsoExistsAndIsExecutable() throws Exception {
+        PowerMockito.mockStatic(File.class);
+
+        File genIsoFileMock = Mockito.mock(File.class);
+        Mockito.doReturn(true).when(genIsoFileMock).exists();
+        Mockito.doReturn(true).when(genIsoFileMock).canExecute();
+
+        PowerMockito.whenNew(File.class).withArguments("/usr/bin/genisoimage").thenReturn(genIsoFileMock);
+
+        ConfigDriveBuilder.getProgramToGenerateIso();
+
+        Mockito.verify(genIsoFileMock, Mockito.times(2)).exists();
+        Mockito.verify(genIsoFileMock).canExecute();
+        Mockito.verify(genIsoFileMock).getCanonicalPath();
+    }
+
+    @Test(expected = CloudRuntimeException.class)
+    @PrepareForTest({File.class, ConfigDriveBuilder.class})
+    public void getProgramToGenerateIsoTestGenIsoExistsbutNotExecutable() throws Exception {
+        PowerMockito.mockStatic(File.class);
+
+        File genIsoFileMock = Mockito.mock(File.class);
+        Mockito.doReturn(true).when(genIsoFileMock).exists();
+        Mockito.doReturn(false).when(genIsoFileMock).canExecute();
+
+        PowerMockito.whenNew(File.class).withArguments("/usr/bin/genisoimage").thenReturn(genIsoFileMock);
+
+        ConfigDriveBuilder.getProgramToGenerateIso();
+    }
+
+    @Test
+    @PrepareForTest({File.class, ConfigDriveBuilder.class})
+    public void getProgramToGenerateIsoTestNotGenIsoMkIsoInLinux() throws Exception {
+        PowerMockito.mockStatic(File.class);
+
+        File genIsoFileMock = Mockito.mock(File.class);
+        Mockito.doReturn(false).when(genIsoFileMock).exists();
+
+        File mkIsoProgramInLinuxFileMock = Mockito.mock(File.class);
+        Mockito.doReturn(true).when(mkIsoProgramInLinuxFileMock).exists();
+        Mockito.doReturn(true).when(mkIsoProgramInLinuxFileMock).canExecute();
+
+        PowerMockito.whenNew(File.class).withArguments("/usr/bin/genisoimage").thenReturn(genIsoFileMock);
+        PowerMockito.whenNew(File.class).withArguments("/usr/bin/mkisofs").thenReturn(mkIsoProgramInLinuxFileMock);
+
+        ConfigDriveBuilder.getProgramToGenerateIso();
+
+        Mockito.verify(genIsoFileMock, Mockito.times(1)).exists();
+        Mockito.verify(genIsoFileMock, Mockito.times(0)).canExecute();
+        Mockito.verify(genIsoFileMock, Mockito.times(0)).getCanonicalPath();
+
+        Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(2)).exists();
+        Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).canExecute();
+        Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).getCanonicalPath();
+    }
+
+    @Test
+    @PrepareForTest({File.class, ConfigDriveBuilder.class})
+    public void getProgramToGenerateIsoTestMkIsoMac() throws Exception {
+        PowerMockito.mockStatic(File.class);
+
+        File genIsoFileMock = Mockito.mock(File.class);
+        Mockito.doReturn(false).when(genIsoFileMock).exists();
+
+        File mkIsoProgramInLinuxFileMock = Mockito.mock(File.class);
+        Mockito.doReturn(false).when(mkIsoProgramInLinuxFileMock).exists();
+
+        File mkIsoProgramInMacOsFileMock = Mockito.mock(File.class);
+        Mockito.doReturn(true).when(mkIsoProgramInMacOsFileMock).exists();
+        Mockito.doReturn(true).when(mkIsoProgramInMacOsFileMock).canExecute();
+
+        PowerMockito.whenNew(File.class).withArguments("/usr/bin/genisoimage").thenReturn(genIsoFileMock);
+        PowerMockito.whenNew(File.class).withArguments("/usr/bin/mkisofs").thenReturn(mkIsoProgramInLinuxFileMock);
+        PowerMockito.whenNew(File.class).withArguments("/usr/local/bin/mkisofs").thenReturn(mkIsoProgramInMacOsFileMock);
+
+        ConfigDriveBuilder.getProgramToGenerateIso();
+
+        Mockito.verify(genIsoFileMock, Mockito.times(1)).exists();
+        Mockito.verify(genIsoFileMock, Mockito.times(0)).canExecute();
+        Mockito.verify(genIsoFileMock, Mockito.times(0)).getCanonicalPath();
+
+        Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(1)).exists();
+        Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(0)).canExecute();
+        Mockito.verify(mkIsoProgramInLinuxFileMock, Mockito.times(0)).getCanonicalPath();
+
+        Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).exists();
+        Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).canExecute();
+        Mockito.verify(mkIsoProgramInMacOsFileMock, Mockito.times(1)).getCanonicalPath();
+    }
 }
