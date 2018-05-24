@@ -584,16 +584,19 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
 
         StringBuffer sb = new StringBuffer();
         sb.append(secStorageMountPoint);
-        if (!secStorageMountPoint.endsWith("/"))
+        if (!secStorageMountPoint.endsWith("/")) {
             sb.append("/");
+        }
 
         sb.append(templateRelativeFolderPath);
-        if (!secStorageMountPoint.endsWith("/"))
+        if (!secStorageMountPoint.endsWith("/")) {
             sb.append("/");
+        }
 
         sb.append(templateName);
-        if (!fileExtension.startsWith("."))
+        if (!fileExtension.startsWith(".")) {
             sb.append(".");
+        }
         sb.append(fileExtension);
 
         return sb.toString();
@@ -904,7 +907,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             try {
                 _storage.create(destFile.getAbsolutePath(), _tmpltpp);
                 try ( // generate template.properties file
-                    FileWriter writer = new FileWriter(metaFile); BufferedWriter bufferWriter = new BufferedWriter(writer);) {
+                        FileWriter writer = new FileWriter(metaFile); BufferedWriter bufferWriter = new BufferedWriter(writer);) {
                     // KVM didn't change template unique name, just used the template name passed from orchestration layer, so no need
                     // to send template name back.
                     bufferWriter.write("uniquename=" + destData.getName());
@@ -1450,7 +1453,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
         command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
-                + " -K " + swift.getKey() + " download " + container + " " + rfilename + " -o " + lFullPath);
+        + " -K " + swift.getKey() + " download " + container + " " + rfilename + " -o " + lFullPath);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -1554,7 +1557,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
         command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
-                + " -K " + swift.getKey() + " list " + container + " " + rFilename);
+        + " -K " + swift.getKey() + " list " + container + " " + rFilename);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result == null && parser.getLines() != null) {
@@ -1576,7 +1579,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         Script command = new Script("/bin/bash", s_logger);
         command.add("-c");
         command.add("/usr/bin/python /usr/local/cloud/systemvm/scripts/storage/secondary/swift -A " + swift.getUrl() + " -U " + swift.getAccount() + ":" + swift.getUserName()
-                + " -K " + swift.getKey() + " delete " + container + " " + object);
+        + " -K " + swift.getKey() + " delete " + container + " " + object);
         OutputInterpreter.AllLinesParser parser = new OutputInterpreter.AllLinesParser();
         String result = command.execute(parser);
         if (result != null) {
@@ -3316,7 +3319,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         for (Processor processor : processors.values()) {
             FormatInfo info = null;
             try {
-                 info = processor.process(resourcePath, null, templateName, processTimeout * 1000);
+                info = processor.process(resourcePath, null, templateName, processTimeout * 1000);
             } catch (InternalErrorException e) {
                 s_logger.error("Template process exception ", e);
                 return e.toString();
