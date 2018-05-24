@@ -300,7 +300,6 @@ public class VirtualRoutingResource {
             return new ExecuteDiagnosisAnswer(cmd, false, "ExecuteDiagnosisCommand failed");
         }
         return new ExecuteDiagnosisAnswer(cmd, result.isSuccess(), result.getDetails());
-
     }
 
     private Answer execute(GetDomRVersionCmd cmd) {

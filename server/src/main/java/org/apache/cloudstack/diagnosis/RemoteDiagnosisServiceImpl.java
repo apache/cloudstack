@@ -20,13 +20,13 @@
 package org.apache.cloudstack.diagnosis;
 
 import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
-import com.cloud.agent.resource.virtualnetwork.VRScripts;
 import com.cloud.agent.resource.virtualnetwork.VirtualRouterDeployer;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.OperationTimedoutException;
 import com.cloud.network.router.RouterControlHelper;
-import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.vm.DomainRouterVO;
@@ -56,6 +56,7 @@ public class RemoteDiagnosisServiceImpl extends ManagerBase implements Pluggable
     public RemoteDiagnosisResponse pingAddress(final RemoteDiagnosisCmd cmd) throws AgentUnavailableException {
         final Long routerId = cmd.getId();
         final DomainRouterVO router = domainRouterDao.findById(routerId);
+
         final Long hostId = router.getHostId();
 
         // Verify parameter
@@ -68,29 +69,30 @@ public class RemoteDiagnosisServiceImpl extends ManagerBase implements Pluggable
         command.setAccessDetail(NetworkElementCommand.ROUTER_IP, routerControlHelper.getRouterControlIp(router.getId()));
         command.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
 
-        String routerAccessIP = command.getRouterAccessIp();
-        String routerIp = command.getAccessDetail(NetworkElementCommand.ROUTER_IP);
-
-        final ExecutionResult result = vrDeployer.executeInVR(routerIp, VRScripts.PING_REMOTELY, command.getArgs());
-        ExecuteDiagnosisAnswer answer = new ExecuteDiagnosisAnswer(command, result.isSuccess(), result.getDetails());
+//        String routerAccessIP = command.getRouterAccessIp();
+//        String routerIp = command.getAccessDetail(NetworkElementCommand.ROUTER_IP);
+//
+//        final ExecutionResult result = vrDeployer.executeInVR(routerIp, VRScripts.PING_REMOTELY, command.getArgs());
+//        ExecuteDiagnosisAnswer answer = new ExecuteDiagnosisAnswer(command, result.isSuccess(), result.getDetails());
 
 
 //        Answer origAnswer = agentManager.easySend(hostId, command);
 //        ExecuteDiagnosisAnswer answer = ((ExecuteDiagnosisAnswer) origAnswer);
+        Answer origAnswer;
 
-//        try{
-//            origAnswer = agentManager.easy(hostId,command);
-//        } catch (final OperationTimedoutException e) {
-//            s_logger.warn("Timed Out", e);
-//            throw new AgentUnavailableException("Unable to send commands to virtual router ", hostId, e);
-//        }
-//
-//        ExecuteDiagnosisAnswer answer = null;
-//        if (origAnswer instanceof ExecuteDiagnosisAnswer) {
-//            answer = (ExecuteDiagnosisAnswer) origAnswer;
-//        } else {
-//            s_logger.warn("Unable to update router " + router.getHostName() + "status");
-//        }
+        try{
+            origAnswer = agentManager.send(hostId,command);
+        } catch (final OperationTimedoutException e) {
+            s_logger.warn("Timed Out", e);
+            throw new AgentUnavailableException("Unable to send commands to virtual router ", hostId, e);
+        }
+
+        ExecuteDiagnosisAnswer answer = null;
+        if (origAnswer instanceof ExecuteDiagnosisAnswer) {
+            answer = (ExecuteDiagnosisAnswer) origAnswer;
+        } else {
+            s_logger.warn("Unable to update router " + router.getHostName() + "status");
+        }
 
         return createRemoteDiagnosisResponse(answer);
     }
