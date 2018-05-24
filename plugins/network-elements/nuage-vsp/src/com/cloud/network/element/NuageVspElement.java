@@ -501,6 +501,10 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
 
     @Override
     public boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions) {
+        if (network.isRollingRestart()) {
+            return true;
+        }
+
         VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
         HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
         NicVO nic = _nicDao.findById(nicId);
