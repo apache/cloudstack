@@ -242,4 +242,34 @@ public class ConfigDriveNetworkElementTest {
         assertThat(_configDrivesNetworkElement.getCapabilities(), hasEntry(Network.Service.UserData, null));
     }
 
+    @Test
+    public void testAddPasswordAndUserData() throws Exception {
+        final Answer answer = mock(Answer.class);
+        final UserVmDetailVO userVmDetailVO = mock(UserVmDetailVO.class);
+        when(agentManager.easySend(anyLong(), any(HandleConfigDriveIsoCommand.class))).thenReturn(answer);
+        when(answer.getResult()).thenReturn(true);
+        when(network.getTrafficType()).thenReturn(Networks.TrafficType.Guest);
+        when(virtualMachine.getState()).thenReturn(VirtualMachine.State.Stopped);
+        when(virtualMachine.getUuid()).thenReturn("vm-uuid");
+        when(userVmDetailVO.getValue()).thenReturn(PUBLIC_KEY);
+        when(nicp.getIPv4Address()).thenReturn("192.168.111.111");
+        when(_userVmDetailsDao.findDetail(anyLong(), anyString())).thenReturn(userVmDetailVO);
+        when(_ipAddressDao.findByAssociatedVmId(VMID)).thenReturn(publicIp);
+        when(publicIp.getAddress()).thenReturn(new Ip("7.7.7.7"));
+
+        Map<VirtualMachineProfile.Param, Object> parms = Maps.newHashMap();
+        parms.put(VirtualMachineProfile.Param.VmPassword, PASSWORD);
+        parms.put(VirtualMachineProfile.Param.VmSshPubKey, PUBLIC_KEY);
+        VirtualMachineProfile profile = new VirtualMachineProfileImpl(virtualMachine, null, serviceOfferingVO, null, parms);
+        assertTrue(_configDrivesNetworkElement.addPasswordAndUserdata(
+                network, nicp, profile, deployDestination, null));
+
+        ArgumentCaptor<HandleConfigDriveIsoCommand> commandCaptor = ArgumentCaptor.forClass(HandleConfigDriveIsoCommand.class);
+        verify(agentManager, times(1)).easySend(anyLong(), commandCaptor.capture());
+        HandleConfigDriveIsoCommand createCommand = commandCaptor.getValue();
+
+        assertTrue(createCommand.isCreate());
+        assertTrue(createCommand.getIsoData().length() > 0);
+        assertTrue(createCommand.getIsoFile().equals(ConfigDrive.createConfigDrivePath(profile.getInstanceName())));
+    }
 }
