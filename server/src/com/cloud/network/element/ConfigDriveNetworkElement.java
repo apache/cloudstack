@@ -114,6 +114,12 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
     private final static Integer CONFIGDRIVEDISKSEQ = 4;
 
+    ConfigDriveBuilder configDriveBuilder;
+
+    void setConfigDriveBuilder(ConfigDriveBuilder configDriveBuilder) {
+        this.configDriveBuilder = configDriveBuilder;
+    }
+
     private boolean canHandle(TrafficType trafficType) {
         return trafficType.equals(TrafficType.Guest);
     }
@@ -121,6 +127,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
     @Override
     public boolean start() {
         VirtualMachine.State.getStateMachine().registerListener(this);
+        setConfigDriveBuilder(new ConfigDriveBuilder());
         return super.start();
     }
 
@@ -347,7 +354,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         LOG.debug("Creating config drive ISO for vm: " + profile.getInstanceName());
 
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), ConfigDrive.CONFIGDRIVEFILENAME, profile.getConfigDriveLabel());
+        final String isoData = getConfigDriveAsString(profile.getVmData(), profile.getConfigDriveLabel());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, dataStore.getTO(), true);
 
         final Answer answer = agentManager.easySend(agentId, configDriveIsoCommand);
@@ -357,6 +364,10 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         }
         addConfigDriveDisk(profile, dataStore);
         return true;
+    }
+
+    String getConfigDriveAsString(List<String[]> profileData,String label) {
+        return configDriveBuilder.build(profileData, label);
     }
 
     private boolean deleteConfigDriveIso(final VirtualMachine vm) throws ResourceUnavailableException {

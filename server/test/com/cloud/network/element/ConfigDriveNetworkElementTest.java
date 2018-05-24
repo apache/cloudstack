@@ -41,6 +41,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.configdrive.ConfigDrive;
+import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
@@ -137,6 +138,8 @@ public class ConfigDriveNetworkElementTest {
     @Mock private IPAddressVO publicIp;
     @Mock private AgentManager agentManager;
 
+    @Mock private ConfigDriveBuilder configDriveBuilder;
+
     @InjectMocks private final ConfigDriveNetworkElement _configDrivesNetworkElement = new ConfigDriveNetworkElement();
     @InjectMocks @Spy private NetworkModelImpl _networkModel = new NetworkModelImpl();
 
@@ -145,6 +148,7 @@ public class ConfigDriveNetworkElementTest {
         MockitoAnnotations.initMocks(this);
 
         _configDrivesNetworkElement._networkModel = _networkModel;
+        _configDrivesNetworkElement.setConfigDriveBuilder(configDriveBuilder);
 
         when(_dataStoreMgr.getImageStore(DATACENTERID)).thenReturn(dataStore);
 
@@ -257,6 +261,7 @@ public class ConfigDriveNetworkElementTest {
         when(_ipAddressDao.findByAssociatedVmId(VMID)).thenReturn(publicIp);
         when(publicIp.getAddress()).thenReturn(new Ip("7.7.7.7"));
 
+        when(configDriveBuilder.build(any(), anyString())).thenReturn("an iso file");
         Map<VirtualMachineProfile.Param, Object> parms = Maps.newHashMap();
         parms.put(VirtualMachineProfile.Param.VmPassword, PASSWORD);
         parms.put(VirtualMachineProfile.Param.VmSshPubKey, PUBLIC_KEY);

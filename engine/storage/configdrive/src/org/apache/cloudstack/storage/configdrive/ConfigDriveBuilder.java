@@ -51,6 +51,10 @@ public class ConfigDriveBuilder {
 
     public static final Logger LOG = Logger.getLogger(ConfigDriveBuilder.class);
 
+    public ConfigDriveBuilder() {
+
+    }
+
     private static void writeFile(final File folder, final String file, final String content) {
         if (folder == null || Strings.isNullOrEmpty(file)) {
             return;
@@ -219,4 +223,7 @@ public class ConfigDriveBuilder {
         return metaData;
     }
 
+    public String build(final List<String[]> vmData, final String driveLabel) {
+        return ConfigDriveBuilder.buildConfigDrive(vmData, ConfigDrive.CONFIGDRIVEFILENAME, driveLabel);
+    }
 }
