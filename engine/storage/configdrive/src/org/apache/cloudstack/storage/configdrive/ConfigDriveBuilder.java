@@ -25,6 +25,7 @@ import static com.cloud.network.NetworkModel.USERDATA_FILE;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -63,20 +64,20 @@ public class ConfigDriveBuilder {
 
     /**
      *  Read the content of a {@link File} and convert it to a String in base 64.
-     *  We expect the content of the file to be encoded using {@link com.cloud.utils.StringUtils#getPreferredCharset()}
+     *  We expect the content of the file to be encoded using {@link StandardCharsets#US_ASC}
      */
     public static String fileToBase64String(File isoFile) throws IOException {
         byte[] encoded = Base64.encodeBase64(FileUtils.readFileToByteArray(isoFile));
-        return new String(encoded, com.cloud.utils.StringUtils.getPreferredCharset());
+        return new String(encoded, StandardCharsets.US_ASCII);
     }
 
     /**
      * Writes a String encoded in base 64 to a file in the given folder.
      * The content will be decoded and then written to the file. Be aware that we will overwrite the content of the file if it already exists.
-     * Moreover, the content will must be encoded in {@link com.cloud.utils.StringUtils#getPreferredCharset()} before it is encoded in base 64.
+     * Moreover, the content will must be encoded in {@link  StandardCharsets#US_ASCII} before it is encoded in base 64.
      */
     public static File base64StringToFile(String encodedIsoData, String folder, String fileName) throws IOException {
-        byte[] decoded = Base64.decodeBase64(encodedIsoData.getBytes(com.cloud.utils.StringUtils.getPreferredCharset()));
+        byte[] decoded = Base64.decodeBase64(encodedIsoData.getBytes(StandardCharsets.US_ASCII));
         Path destPath = Paths.get(folder, fileName);
         return Files.write(destPath, decoded).toFile();
     }
