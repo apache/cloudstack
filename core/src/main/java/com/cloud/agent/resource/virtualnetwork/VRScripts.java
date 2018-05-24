@@ -69,4 +69,7 @@ public class VRScripts {
 
     public static final String VR_CFG = "vr_cfg.sh";
 
+    // New script for use by remoteDiagnosis API
+    public static final String PING_REMOTELY = "ping_remotely.sh";
+
 }

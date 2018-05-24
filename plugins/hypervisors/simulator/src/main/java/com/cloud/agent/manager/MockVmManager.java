@@ -16,9 +16,6 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
@@ -56,6 +53,11 @@ import com.cloud.simulator.MockVMVO;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.Manager;
 import com.cloud.vm.VirtualMachine.PowerState;
+import org.apache.cloudstack.diagnosis.ExecuteDiagnosisAnswer;
+import org.apache.cloudstack.diagnosis.ExecuteDiagnosisCommand;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public interface MockVmManager extends Manager {
 
@@ -96,6 +98,8 @@ public interface MockVmManager extends Manager {
     GetDomRVersionAnswer getDomRVersion(GetDomRVersionCmd cmd);
 
     CheckRouterAnswer checkRouter(CheckRouterCommand cmd);
+
+    ExecuteDiagnosisAnswer executeDiagnosis(ExecuteDiagnosisCommand cmd);
 
     Answer cleanupNetworkRules(CleanupNetworkRulesCmd cmd, SimulatorInfo info);
 

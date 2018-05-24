@@ -19,29 +19,6 @@
 
 package com.cloud.agent.resource.virtualnetwork;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.nio.channels.SocketChannel;
-import org.joda.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.UUID;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.ca.SetupCertificateAnswer;
-import org.apache.cloudstack.ca.SetupCertificateCommand;
-import org.apache.cloudstack.ca.SetupKeyStoreCommand;
-import org.apache.cloudstack.ca.SetupKeystoreAnswer;
-import org.apache.cloudstack.utils.security.KeyStoreUtils;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckRouterAnswer;
 import com.cloud.agent.api.CheckRouterCommand;
@@ -59,6 +36,29 @@ import com.cloud.agent.resource.virtualnetwork.facade.AbstractConfigItemFacade;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.ca.SetupCertificateAnswer;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.ca.SetupKeyStoreCommand;
+import org.apache.cloudstack.ca.SetupKeystoreAnswer;
+import org.apache.cloudstack.diagnosis.ExecuteDiagnosisAnswer;
+import org.apache.cloudstack.diagnosis.ExecuteDiagnosisCommand;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.Duration;
+
+import javax.naming.ConfigurationException;
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.nio.channels.SocketChannel;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.UUID;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * VirtualNetworkResource controls and configures virtual networking
@@ -191,7 +191,9 @@ public class VirtualRoutingResource {
         } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
             return execute((CheckS2SVpnConnectionsCommand) cmd);
         } else if (cmd instanceof GetRouterAlertsCommand) {
-            return execute((GetRouterAlertsCommand)cmd);
+            return execute((GetRouterAlertsCommand) cmd);
+        } else if (cmd instanceof ExecuteDiagnosisCommand){
+            return execute((ExecuteDiagnosisCommand) cmd);
         } else {
             s_logger.error("Unknown query command in VirtualRoutingResource!");
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -290,6 +292,14 @@ public class VirtualRoutingResource {
             return new CheckRouterAnswer(cmd, result.getDetails());
         }
         return new CheckRouterAnswer(cmd, result.getDetails(), true);
+    }
+
+    private Answer execute(ExecuteDiagnosisCommand cmd){
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.PING_REMOTELY, cmd.getArgs());
+        if (!result.isSuccess()){
+            return new ExecuteDiagnosisAnswer(cmd, false, "ExecuteDiagnosisCommand failed");
+        }
+        return new ExecuteDiagnosisAnswer(cmd, result.isSuccess(), result.getDetails());
     }
 
     private Answer execute(GetDomRVersionCmd cmd) {
