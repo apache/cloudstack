@@ -75,7 +75,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     public BackupPolicy addBackupPolicy(Long zoneId, String policyExternalId, String policyName, String policyDescription) {
         BackupProvider provider = getBackupProvider(zoneId);
         if (!provider.isBackupPolicy(policyExternalId)) {
-            throw new CloudRuntimeException("Policy " + policyExternalId + " does not exist on provider " + provider.getName());
+            throw new CloudRuntimeException("Policy " + policyExternalId + " does not exist on provider " + provider.getName() + " on zone " + zoneId);
         }
 
         BackupPolicyVO policy = new BackupPolicyVO(zoneId, policyExternalId, policyName, policyDescription);
@@ -129,7 +129,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         BackupProvider backupProvider = getBackupProvider(zoneId);
         LOG.debug("Listing external backup policies for the backup provider registered in zone " + zoneId);
-        return backupProvider.listBackupPolicies();
+        return backupProvider.listBackupPolicies(zoneId);
     }
 
     /**

@@ -32,7 +32,6 @@ import javax.net.ssl.X509TrustManager;
 
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupPolicy;
 import org.apache.cloudstack.backup.veeam.api.EntityReferences;
 import org.apache.cloudstack.backup.veeam.api.Ref;

@@ -20,7 +20,9 @@ package org.apache.cloudstack.backup;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.backup.veeam.VeeamClient;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -32,6 +34,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class VeeamBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = Logger.getLogger(VeeamBackupProvider.class);
+
+    private Map<Long, VeeamClient> zoneClientMap = new HashMap<Long, VeeamClient>();
 
     private ConfigKey<String> VeeamUrl = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.veeam.url",
@@ -57,8 +61,14 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     private VeeamClient getClient(final Long zoneId) {
         try {
-            return new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
-                    VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId));
+            if (zoneClientMap.containsKey(zoneId)) {
+                return zoneClientMap.get(zoneId);
+            } else {
+                VeeamClient client = new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
+                        VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId));
+                zoneClientMap.put(zoneId, client);
+                return client;
+            }
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException("Failed to parse Veeam API URL: " + e.getMessage());
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -73,8 +83,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public List<BackupPolicy> listBackupPolicies() {
-        return null;
+    public List<BackupPolicy> listBackupPolicies(Long zoneId) {
+        return getClient(zoneId).listBackupPolicies();
     }
 
     @Override

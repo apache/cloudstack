@@ -42,7 +42,7 @@ public interface BackupProvider {
      * Returns the list of existing backup policies on the provider
      * @return backup policies list
      */
-    List<BackupPolicy> listBackupPolicies();
+    List<BackupPolicy> listBackupPolicies(Long zoneId);
 
     /**
      * True if policy with id uuid exists on the backup provider
