@@ -26,12 +26,12 @@ public class ConfigDrive {
     public static final String openStackConfigDriveName = "/openstack/latest/";
 
     /**
-     * Created the path to ISO file relative to mount point.
-     * The config driver path will have the following formatt: {@link #CONFIGDRIVEDIR} + / + instanceName + / + {@link #CONFIGDRIVEFILENAME}
+     * Creates the path to ISO file relative to mount point.
+     * The config driver path will have the following formated: {@link #CONFIGDRIVEDIR} + / + instanceName + / + {@link #CONFIGDRIVEFILENAME}
+     *
      * @return config drive ISO file path
      */
     public static String createConfigDrivePath(String instanceName) {
         return ConfigDrive.CONFIGDRIVEDIR + "/" + instanceName + "/"  + ConfigDrive.CONFIGDRIVEFILENAME;
     }
-
 }
