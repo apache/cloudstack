@@ -992,7 +992,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - getHyperHostNetworkSummary() done(failed)");
-        throw new Exception("Uanble to find management port group " + managementPortGroup);
+        throw new Exception("Unable to find management port group " + managementPortGroup);
     }
 
     @Override
