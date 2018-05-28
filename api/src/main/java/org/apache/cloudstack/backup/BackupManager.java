@@ -37,7 +37,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
 
     ConfigKey<String> BackupProviderPlugin = new ConfigKey<>("Advanced", String.class,
             "backup.framework.provider.plugin",
-            "",
+            "dummy",
             "The backup and recovery provider plugin.", true, ConfigKey.Scope.Zone);
 
     /**
@@ -71,8 +71,10 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      */
     boolean restoreBackup(Long zoneId, Long vmId, Long backupId);
 
-    //TODO
-    boolean restoreBackupVolume(Long zoneId, Long volumeId, Long vmId, Long backupId);
+    /**
+     * Restore a backed up volume and attach it to a VM
+     */
+    boolean restoreBackupVolumeAndAttachToVM(Long zoneId, Long volumeId, Long vmId, Long backupId);
 
     /**
      * Deletes a backup policy

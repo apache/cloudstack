@@ -16,6 +16,9 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Volume;
 import com.cloud.utils.component.AdapterBase;
 import org.apache.log4j.Logger;
 
@@ -60,5 +63,12 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     public boolean restoreVMFromBackup(String vmUuid, String backupUuid) {
         s_logger.debug("Restoring vm " + vmUuid + "from backup " + backupUuid + " on the Dummy Backup Provider");
         return true;
+    }
+
+    @Override
+    public VolumeTO restoreVolumeFromBackup(String volumeUuid, String backupUuid) {
+        s_logger.debug("Restoring volume " + volumeUuid + "from backup " + backupUuid + " on the Dummy Backup Provider");
+        return new VolumeTO(0L, Volume.Type.DATADISK, Storage.StoragePoolType.NetworkFilesystem, "pool-aaaa", "volumeTest",
+                "/test", "volTest", 1024L, "", "");
     }
 }

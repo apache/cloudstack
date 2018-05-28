@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.agent.api.to.VolumeTO;
 import org.apache.cloudstack.backup.veeam.VeeamClient;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -95,6 +96,11 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Override
     public boolean restoreVMFromBackup(String vmUuid, String backupUuid) {
         return false;
+    }
+
+    @Override
+    public VolumeTO restoreVolumeFromBackup(String volumeUuid, String backupUuid) {
+        return null;
     }
 
     @Override

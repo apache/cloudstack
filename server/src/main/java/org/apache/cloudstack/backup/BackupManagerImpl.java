@@ -24,7 +24,11 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.exception.PermissionDeniedException;
+import com.cloud.storage.VolumeApiService;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.vm.VMInstanceVO;
@@ -54,19 +58,25 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private static final Logger LOG = Logger.getLogger(BackupManagerImpl.class);
 
     @Inject
-    BackupPolicyDao backupPolicyDao;
+    private BackupPolicyDao backupPolicyDao;
 
     @Inject
-    VMInstanceDao vmInstanceDao;
+    private VMInstanceDao vmInstanceDao;
 
     @Inject
     private AccountService accountService;
 
     @Inject
-    BackupPolicyVMMapDao backupPolicyVMMapDao;
+    private BackupPolicyVMMapDao backupPolicyVMMapDao;
 
     @Inject
-    BackupDao backupDao;
+    private BackupDao backupDao;
+
+    @Inject
+    private VolumeDao volumeDao;
+
+    @Inject
+    private VolumeApiService volumeApiService;
 
     private static Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
     private List<BackupProvider> backupProviders;
@@ -160,9 +170,32 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public boolean restoreBackupVolume(Long zoneId, Long volumeId, Long vmId, Long backupId) {
-        //TODO
+    public boolean restoreBackupVolumeAndAttachToVM(Long zoneId, Long volumeId, Long vmId, Long backupId) {
+        BackupProvider backupProvider = getBackupProvider(zoneId);
+        BackupVO backup = backupDao.findById(backupId);
+        if (backup == null) {
+            throw new CloudRuntimeException("Backup " + backupId + " does not exist");
+        }
+        VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            throw new CloudRuntimeException("VM " + vmId + " does not exist");
+        }
+        VolumeVO volume = volumeDao.findByIdIncludingRemoved(volumeId);
+        if (volume == null) {
+            throw new CloudRuntimeException("Volume " + volumeId + " could not be found");
+        }
+        LOG.debug("Asking provider to restore volume " + volumeId + " from backup " + backupId);
+        VolumeTO restoredVolume = backupProvider.restoreVolumeFromBackup(backup.getUuid(), volume.getUuid());
+        attachVolumeToVM(restoredVolume, vm);
         return false;
+    }
+
+    /**
+     * Attach volume to VM
+     */
+    private void attachVolumeToVM(VolumeTO restoredVolume, VMInstanceVO vm) {
+        LOG.debug("Attaching the restored volume to VM " + vm.getId());
+        volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), restoredVolume.getDeviceId());
     }
 
     @Override

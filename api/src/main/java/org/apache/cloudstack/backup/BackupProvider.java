@@ -16,6 +16,8 @@
 //under the License.
 package org.apache.cloudstack.backup;
 
+import com.cloud.agent.api.to.VolumeTO;
+
 import java.util.List;
 
 public interface BackupProvider {
@@ -53,4 +55,9 @@ public interface BackupProvider {
      * Restore VM from backup
      */
     boolean restoreVMFromBackup(String vmUuid, String backupUuid);
+
+    /**
+     * Restore a volume from a backup
+     */
+    VolumeTO restoreVolumeFromBackup(String volumeUuid, String backupUuid);
 }

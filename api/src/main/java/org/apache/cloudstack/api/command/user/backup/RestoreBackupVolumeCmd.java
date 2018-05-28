@@ -46,7 +46,7 @@ import javax.inject.Inject;
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RestoreBackupVolumeCmd extends BaseCmd {
 
-    public static final String APINAME = "restoreBackupVolume";
+    public static final String APINAME = "restoreBackupVolumeAndAttachToVM";
 
     @Inject
     BackupManager backupManager;
@@ -59,14 +59,14 @@ public class RestoreBackupVolumeCmd extends BaseCmd {
             type = CommandType.UUID,
             entityType = VolumeResponse.class,
             required = true,
-            description = "id of the volume")
+            description = "id of the volume to restore and to be attached to the vm")
     private Long volumeId;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
-            description = "id of the VM")
+            description = "id of the VM where to attach the restored volume")
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.BACKUP_ID,
@@ -117,7 +117,7 @@ public class RestoreBackupVolumeCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreBackupVolume(zoneId, volumeId, virtualMachineId, backupId);
+            boolean result = backupManager.restoreBackupVolumeAndAttachToVM(zoneId, volumeId, virtualMachineId, backupId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
