@@ -33,9 +33,12 @@ import javax.net.ssl.X509TrustManager;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.backup.BackupPolicy;
+import org.apache.cloudstack.backup.veeam.api.CreateObjectInJobSpec;
 import org.apache.cloudstack.backup.veeam.api.EntityReferences;
 import org.apache.cloudstack.backup.veeam.api.Ref;
+import org.apache.cloudstack.backup.veeam.api.Task;
 import org.apache.cloudstack.utils.security.SSLUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -47,12 +50,14 @@ import org.apache.http.client.CookieStore;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
 import org.apache.http.impl.client.BasicCookieStore;
@@ -64,6 +69,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.TrustAllManager;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
 
 public class VeeamClient {
     private static final Logger LOG = Logger.getLogger(VeeamClient.class);
@@ -132,8 +138,8 @@ public class VeeamClient {
             LOG.debug("Requested Veeam resource does not exist");
             return;
         }
-        if (response.getStatusLine().getStatusCode() != HttpStatus.SC_OK && response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to find the requested resource and get valid response from Veeam B&R API call, please ask your administrator to diagnose and fix issues.");
+        if (!(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK || response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) && response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to get valid response from Veeam B&R API call, please ask your administrator to diagnose and fix issues.");
         }
     }
 
@@ -150,9 +156,30 @@ public class VeeamClient {
         return response;
     }
 
-    private HttpResponse post(final String path, final Object item) throws IOException {
+    private HttpResponse post(final String path, final Object obj) throws IOException {
+        String xml = null;
+        if (obj != null) {
+            XmlMapper xmlMapper = new XmlMapper();
+            xml = xmlMapper.writer()
+                    .with(ToXmlGenerator.Feature.WRITE_XML_DECLARATION)
+                    .writeValueAsString(obj);
+            // Remove invalid/empty xmlns
+            xml = xml.replace(" xmlns=\"\"", "");
+        }
+
         final HttpPost request = new HttpPost(apiURI.toString() + path);
+        request.setHeader("Content-type", "application/xml");
+        if (StringUtils.isNotBlank(xml)) {
+            request.setEntity(new StringEntity(xml));
+        }
+
         final HttpResponse response = httpClient.execute(request, httpContext);
+        checkAuthFailure(response);
+        return response;
+    }
+
+    private HttpResponse delete(final String path) throws IOException {
+        final HttpResponse response = httpClient.execute(new HttpDelete(apiURI.toString() + path), httpContext);
         checkAuthFailure(response);
         return response;
     }
@@ -180,7 +207,6 @@ public class VeeamClient {
         return new ArrayList<>();
     }
 
-
     public List<BackupPolicy> listBackupPolicies() {
         LOG.debug("Trying to list Veeam jobs that are backup policies");
         try {
@@ -198,6 +224,49 @@ public class VeeamClient {
             checkResponseTimeOut(e);
         }
         return new ArrayList<>();
+    }
+
+    private Task parseTaskResponse(HttpResponse response) throws IOException {
+        checkResponseOK(response);
+        final ObjectMapper objectMapper = new XmlMapper();
+        return objectMapper.readValue(response.getEntity().getContent(), Task.class);
+    }
+
+    // FIXME: pass an object that implement a common interface across backup plugins
+    public boolean assignBackupPolicyToVM(final String jobId, final String vmwareInstanceName, final String vcIpOrName) {
+        LOG.debug("Trying to assign VM to backup policy that is a veeam job");
+        try {
+            //FIXME: add logic to find hierarical root based on vCenter details this is useful in env with multiple VCs
+            final String heirarchyId = "dec37163-39df-4c4b-9690-899cf5543bf6";
+            final CreateObjectInJobSpec vmToBackupJob = new CreateObjectInJobSpec();
+            vmToBackupJob.setObjName(vmwareInstanceName);
+            vmToBackupJob.setObjRef(String.format("urn:VMware:VM:%s.%s", heirarchyId, vmwareInstanceName));
+            final HttpResponse response = post(String.format("/jobs/%s/includes", jobId), vmToBackupJob);
+            final Task task = parseTaskResponse(response);
+            for (int i = 0; i < 5; i++) {
+                final HttpResponse taskResponse = get("/tasks/" + task.getTaskId());
+                final Task polledTask = parseTaskResponse(taskResponse);
+                if (polledTask.getState().equals("Finished")) {
+                    final HttpResponse taskDeleteResponse = delete("/tasks/" + task.getTaskId());
+                    if (taskDeleteResponse.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
+                        LOG.warn("Failed to cleanup VM assign task on veeam job for task id=" + task.getTaskId());
+                    }
+                    if (polledTask.getResult().getSuccess().equals("true")) {
+                        return true;
+                    }
+                    throw new CloudRuntimeException("Failed to assign VM to backup policy due to: " + polledTask.getResult().getMessage());
+                }
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    LOG.debug("Failed to sleep while polling for task status due to: ", e);
+                }
+            }
+        } catch (final IOException e) {
+            LOG.error("Failed to list Veeam jobs due to:", e);
+            checkResponseTimeOut(e);
+        }
+        throw new CloudRuntimeException("Failed to assign VM to backup policy likely due to timeout, please check veeam tasks");
     }
 
 }

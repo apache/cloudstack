@@ -15,33 +15,32 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.backup.veeam;
+package org.apache.cloudstack.backup.veeam.api;
 
-import org.junit.Before;
-import org.junit.Test;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
-public class VeeamClientTest {
+@JacksonXmlRootElement(localName = "CreateObjectInJobSpec", namespace = "http://www.veeam.com/ent/v1.0")
+public class CreateObjectInJobSpec {
+    @JacksonXmlProperty(localName = "HierarchyObjRef")
+    String objRef;
 
-    private VeeamClient client;
+    @JacksonXmlProperty(localName = "HierarchyObjName")
+    String objName;
 
-    @Before
-    public void setUp() throws Exception {
-        client = new VeeamClient("http://10.2.2.89:9399/api/", "administrator", "P@ssword123", true, 60);
+    public String getObjRef() {
+        return objRef;
     }
 
-    @Test
-    public void testBackups() {
-        client.listAllBackups();
+    public void setObjRef(String objRef) {
+        this.objRef = objRef;
     }
 
-    @Test
-    public void testPolicies() {
-        client.listBackupPolicies();
+    public String getObjName() {
+        return objName;
     }
 
-    @Test
-    public void testAssignVMToPolicy() {
-        client.assignBackupPolicyToVM("8acac50d-3711-4c99-bf7b-76fe9c7e39c3", "i-2-9-VM", "10.2.2.52");
+    public void setObjName(String objName) {
+        this.objName = objName;
     }
-
 }

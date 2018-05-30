@@ -15,33 +15,33 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.backup.veeam;
+package org.apache.cloudstack.backup.veeam.api;
 
-import org.junit.Before;
-import org.junit.Test;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
-public class VeeamClientTest {
+@JacksonXmlRootElement(localName = "Result")
+public class Result {
 
-    private VeeamClient client;
+    @JacksonXmlProperty(localName = "Success", isAttribute = true)
+    private String success;
 
-    @Before
-    public void setUp() throws Exception {
-        client = new VeeamClient("http://10.2.2.89:9399/api/", "administrator", "P@ssword123", true, 60);
+    @JacksonXmlProperty(localName = "Message")
+    private String message;
+
+    public String getSuccess() {
+        return success;
     }
 
-    @Test
-    public void testBackups() {
-        client.listAllBackups();
+    public void setSuccess(String success) {
+        this.success = success;
     }
 
-    @Test
-    public void testPolicies() {
-        client.listBackupPolicies();
+    public String getMessage() {
+        return message;
     }
 
-    @Test
-    public void testAssignVMToPolicy() {
-        client.assignBackupPolicyToVM("8acac50d-3711-4c99-bf7b-76fe9c7e39c3", "i-2-9-VM", "10.2.2.52");
+    public void setMessage(String message) {
+        this.message = message;
     }
-
 }
