@@ -14,10 +14,14 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.backup;
 
-import javax.inject.Inject;
+package org.apache.cloudstack.api.command.user.backup;
 
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -26,69 +30,63 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.backup.BackupPolicy;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.inject.Inject;
 
-@APICommand(name = ImportBackupPolicyCmd.APINAME,
-        description = "Imports a backup policy from the backup provider",
-        responseObject = BackupPolicyResponse.class, since = "4.12.0",
-        authorized = {RoleType.Admin})
-public class ImportBackupPolicyCmd extends BaseCmd {
-    public static final String APINAME = "importBackupPolicy";
+@APICommand(name = RemoveVMFromBackupPolicy.APINAME,
+        description = "Removes a VM from an existing backup policy",
+        responseObject = SuccessResponse.class, since = "4.12.0",
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+public class RemoveVMFromBackupPolicy extends BaseCmd {
+
+    public static final String APINAME = "removeVirtualMachineFromBackupPolicy";
 
     @Inject
     BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
-    ////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true,
-            description = "the name of the backup policy")
-    private String policyName;
-
-    @Parameter(name = ApiConstants.DESCRIPTION, type = CommandType.STRING, required = true,
-            description = "the description of the backup policy")
-    private String description;
-
-    @Parameter(name = ApiConstants.EXTERNAL_ID,
-            type = CommandType.STRING,
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+            type = CommandType.UUID,
+            entityType = UserVmResponse.class,
             required = true,
-            description = "The backup policy ID (on backup provider side)")
-    private String policyExternalId;
+            description = "id of the VM to be removed from the backup policy")
+    private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
-            description = "The zone ID", required = true)
+    @Parameter(name = ApiConstants.BACKUP_POLICY_ID,
+            type = CommandType.UUID,
+            entityType = BackupPolicyResponse.class,
+            required = true,
+            description = "id of the backup policy")
+    private Long policyId;
+
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "the zone ID", required = true)
     private Long zoneId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public String getPolicyName() {
-        return policyName;
+    public Long getVirtualMachineId() {
+        return virtualMachineId;
     }
 
-    public String getPolicyExternalId() {
-        return policyExternalId;
+    public Long getPolicyId() {
+        return policyId;
     }
 
     public Long getZoneId() {
         return zoneId;
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     @Override
@@ -108,17 +106,15 @@ public class ImportBackupPolicyCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            BackupPolicy policy = backupManager.importBackupPolicy(zoneId, policyExternalId, policyName, description);
-            if (policy != null) {
-                BackupPolicyResponse response = _responseGenerator.createBackupPolicyResponse(policy);
+            boolean result = backupManager.removeVMFromBackupPolicy(zoneId, policyId, virtualMachineId);
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to add a Backup policy");
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove VM from backup policy");
             }
-        } catch (InvalidParameterValueException e) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
-        } catch (CloudRuntimeException e) {
+        } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
     }

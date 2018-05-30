@@ -5395,6 +5395,14 @@ class BackupPolicy:
         return BackupPolicy(apiclient.importBackupPolicy(cmd).__dict__)
 
     @classmethod
+    def listInternalById(self, apiclient, id):
+        """List imported backup policies by id"""
+
+        cmd = listBackupPolicies.listBackupPoliciesCmd()
+        cmd.id = id
+        return (apiclient.listBackupPolicies(cmd))
+
+    @classmethod
     def listInternal(self, apiclient, zoneid):
         """List imported backup policies"""
 
@@ -5418,11 +5426,20 @@ class BackupPolicy:
         cmd.id = self.id
         return (apiclient.deleteBackupPolicy(cmd))
 
-    def assignVM(self, apiclient, vmid, zoneid):
-        """Assign a VM to a backup policy"""
+    def addVM(self, apiclient, vmid, zoneid):
+        """Add a VM to a backup policy"""
 
-        cmd = assignBackupPolicy.assignBackupPolicyCmd()
+        cmd = addVirtualMachineToBackupPolicy.addVirtualMachineToBackupPolicyCmd()
         cmd.backuppolicyid = self.id
         cmd.virtualmachineid = vmid
         cmd.zoneid = zoneid
-        return (apiclient.assignBackupPolicy(cmd))
+        return (apiclient.addVirtualMachineToBackupPolicy(cmd))
+
+    def removeVM(self, apiclient, vmid, zoneid):
+        """Remove a VM from a backup policy"""
+
+        cmd = removeVirtualMachineFromBackupPolicy.removeVirtualMachineFromBackupPolicyCmd()
+        cmd.backuppolicyid = self.id
+        cmd.virtualmachineid = vmid
+        cmd.zoneid = zoneid
+        return (apiclient.removeVirtualMachineFromBackupPolicy(cmd))

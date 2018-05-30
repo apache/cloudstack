@@ -47,12 +47,12 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @param policyName internal name for the backup policy
      * @param policyDescription internal description for the backup policy
      */
-    BackupPolicy addBackupPolicy(Long zoneId, String policyExternalId, String policyName, String policyDescription);
+    BackupPolicy importBackupPolicy(Long zoneId, String policyExternalId, String policyName, String policyDescription);
 
     /**
      * Assign VM to existing backup policy
      */
-    boolean assignVMToBackupPolicy(Long zoneId, Long policyId, Long virtualMachineId);
+    boolean addVMToBackupPolicy(Long zoneId, Long policyId, Long virtualMachineId);
 
     /**
      * List existing backups for a VM
@@ -63,8 +63,9 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * List backup policies
      * @param zoneId zone id
      * @param external if true, only external backup policies are listed
+     * @param policyId if not null, only the policy with this id is listed
      */
-    List<BackupPolicy> listBackupPolicies(Long zoneId, Boolean external);
+    List<BackupPolicy> listBackupPolicies(Long zoneId, Boolean external, Long policyId);
 
     /**
      * Restore a full backed up VM
@@ -80,4 +81,9 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * Deletes a backup policy
      */
     boolean deleteBackupPolicy(Long policyId);
+
+    /**
+     * Remove a VM from a backup policy
+     */
+    boolean removeVMFromBackupPolicy(Long zoneId, Long policyId, Long vmId);
 }

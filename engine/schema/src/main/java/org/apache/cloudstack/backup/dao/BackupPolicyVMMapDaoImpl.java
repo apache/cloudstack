@@ -66,4 +66,12 @@ public class BackupPolicyVMMapDaoImpl extends GenericDaoBase<BackupPolicyVMMapVO
         sc.setParameters("policy_id", policyId);
         return listBy(sc);
     }
+
+    @Override
+    public BackupPolicyVMMapVO findByPolicyIdAndVMId(long policyId, long vmId) {
+        SearchCriteria<BackupPolicyVMMapVO> sc = mapSearch.create();
+        sc.setParameters("policy_id", policyId);
+        sc.setParameters("vm_id", vmId);
+        return findOneBy(sc);
+    }
 }

@@ -38,7 +38,12 @@ public interface BackupProvider {
      * Assign VM to backup policy
      * @return true if VM is successfully assigned, false if not
      */
-    boolean assignVMToBackupPolicy(String vmUuid, String policyUuid);
+    boolean addVMToBackupPolicy(String vmUuid, String policyUuid);
+
+    /**
+     * Remove a VM form a backup policy
+     */
+    boolean removeVMFromBackupPolicy(String vmUuid, String policyUuid);
 
     /**
      * Returns the list of existing backup policies on the provider

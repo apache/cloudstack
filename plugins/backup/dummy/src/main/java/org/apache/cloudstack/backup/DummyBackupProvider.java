@@ -40,8 +40,14 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean assignVMToBackupPolicy(String vmUuid, String policyUuid) {
+    public boolean addVMToBackupPolicy(String vmUuid, String policyUuid) {
         s_logger.debug("Assigning VM " + vmUuid + " to backup policy " + policyUuid);
+        return true;
+    }
+
+    @Override
+    public boolean removeVMFromBackupPolicy(String vmUuid, String policyUuid) {
+        s_logger.debug("Removing VM " + vmUuid + " to backup policy " + policyUuid);
         return true;
     }
 

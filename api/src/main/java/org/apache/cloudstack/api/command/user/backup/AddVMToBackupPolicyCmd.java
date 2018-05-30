@@ -38,12 +38,12 @@ import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 
-@APICommand(name = AssignBackupPolicyCmd.APINAME,
+@APICommand(name = AddVMToBackupPolicyCmd.APINAME,
         description = "Assigns a VM to an existing backup policy",
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class AssignBackupPolicyCmd extends BaseCmd {
-    public static final String APINAME = "assignBackupPolicy";
+public class AddVMToBackupPolicyCmd extends BaseCmd {
+    public static final String APINAME = "addVirtualMachineToBackupPolicy";
 
     @Inject
     BackupManager backupManager;
@@ -88,7 +88,7 @@ public class AssignBackupPolicyCmd extends BaseCmd {
 
     @Override
     public String getCommandName() {
-        return AssignBackupPolicyCmd.APINAME + RESPONSE_SUFFIX;
+        return AddVMToBackupPolicyCmd.APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 
     @Override
@@ -103,10 +103,7 @@ public class AssignBackupPolicyCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            Long virtualMachineId = getVirtualMachineId();
-            Long policyId = getPolicyId();
-            Long zoneId = getZoneId();
-            boolean result = backupManager.assignVMToBackupPolicy(zoneId, policyId, virtualMachineId);
+            boolean result = backupManager.addVMToBackupPolicy(zoneId, policyId, virtualMachineId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

@@ -54,8 +54,12 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = BackupPolicyResponse.class,
+            description = "The backup policy ID")
+    private Long policyId;
+
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
-            description = "The zone ID", required = true)
+            description = "The zone ID")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.EXTERNAL, type = CommandType.BOOLEAN,
@@ -74,6 +78,10 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
         return BooleanUtils.isTrue(external);
     }
 
+    public Long getPolicyId() {
+        return policyId;
+    }
+
     @Override
     public String getCommandName() {
         return APINAME.toLowerCase() + RESPONSE_SUFFIX;
@@ -86,7 +94,7 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, ServerApiException, ConcurrentOperationException {
         try {
-            List<BackupPolicy> backupPolicies = backupManager.listBackupPolicies(zoneId, external);
+            List<BackupPolicy> backupPolicies = backupManager.listBackupPolicies(zoneId, external, policyId);
             setupResponseBackupPolicyList(backupPolicies);
         } catch (InvalidParameterValueException e) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());

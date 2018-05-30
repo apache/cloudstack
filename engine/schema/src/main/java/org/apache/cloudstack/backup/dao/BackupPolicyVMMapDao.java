@@ -28,4 +28,5 @@ public interface BackupPolicyVMMapDao extends GenericDao<BackupPolicyVMMapVO, Lo
 
     BackupPolicyVMMapVO findByVMId(long vmId);
     List<BackupPolicyVMMapVO> listByPolicyId(long policyId);
+    BackupPolicyVMMapVO findByPolicyIdAndVMId(long policyId, long vmId);
 }

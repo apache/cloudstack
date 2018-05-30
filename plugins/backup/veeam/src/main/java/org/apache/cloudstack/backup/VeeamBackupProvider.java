@@ -79,7 +79,12 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean assignVMToBackupPolicy(String vmUuid, String policyUuid) {
+    public boolean addVMToBackupPolicy(String vmUuid, String policyUuid) {
+        return false;
+    }
+
+    @Override
+    public boolean removeVMFromBackupPolicy(String vmUuid, String policyUuid) {
         return false;
     }
 
