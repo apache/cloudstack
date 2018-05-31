@@ -204,6 +204,15 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
     def validate_StaticNat_rule_For_VM(self, public_ip, network, vm):
         self.verify_vsd_floating_ip(network, vm, public_ip.ipaddress)
 
+    def _get_test_data(self, key):
+        return self.test_data["nuagevsp"][key]
+
+    def get_configdrive_provider(self):
+        return NetworkServiceProvider.list(
+            self.api_client,
+            name="ConfigDrive",
+            physicalnetworkid=self.vsp_physical_network.id)[0]
+
     def create_guest_vm(self, networks, acl_item=None,
                         vpc=None, keypair=None):
         vm = self.create_VM(
