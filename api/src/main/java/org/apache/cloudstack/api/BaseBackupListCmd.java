@@ -18,8 +18,10 @@
 package org.apache.cloudstack.api;
 
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.api.response.BackupPolicyVMMapResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.backup.BackupPolicyVMMap;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupPolicy;
@@ -53,6 +55,21 @@ public abstract class BaseBackupListCmd extends BaseListCmd {
             }
             BackupResponse backupResponse = _responseGenerator.createBackupResponse(backup);
             responses.add(backupResponse);
+        }
+        response.setResponses(responses);
+        response.setResponseName(getCommandName());
+        setResponseObject(response);
+    }
+
+    protected void setupResponseBackupPolicyVMMappings(final List<BackupPolicyVMMap> mappings) {
+        final ListResponse<BackupPolicyVMMapResponse> response = new ListResponse<>();
+        final List<BackupPolicyVMMapResponse> responses = new ArrayList<>();
+        for (BackupPolicyVMMap map : mappings) {
+            if (map == null) {
+                continue;
+            }
+            BackupPolicyVMMapResponse resp = _responseGenerator.createBackupPolicyVMMappingResponse(map);
+            responses.add(resp);
         }
         response.setResponses(responses);
         response.setResponseName(getCommandName());

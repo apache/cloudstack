@@ -51,7 +51,7 @@ public class DeleteBackupPolicyCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     ////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID,
+    @Parameter(name = ApiConstants.BACKUP_POLICY_ID,
             type = CommandType.UUID,
             entityType = BackupPolicyResponse.class,
             required = true,

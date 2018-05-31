@@ -39,8 +39,9 @@ import org.apache.cloudstack.api.command.user.backup.AddVMToBackupPolicyCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupPolicyCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupPoliciesCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListBackupProvidersCmd;
+import org.apache.cloudstack.api.command.user.backup.ListBackupPoliciesVMsMappingsCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupsCmd;
-import org.apache.cloudstack.api.command.user.backup.RemoveVMFromBackupPolicy;
+import org.apache.cloudstack.api.command.user.backup.RemoveVMFromBackupPolicyCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreBackupVolumeCmd;
 import org.apache.cloudstack.backup.dao.BackupDao;
@@ -109,15 +110,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (policy == null) {
             throw new CloudRuntimeException("Policy " + policy + " does not exist");
         }
-        String vmUuid = vmInstanceVO.getUuid();
         BackupProvider backupProvider = getBackupProvider(zoneId);
-        boolean result = backupProvider.addVMToBackupPolicy(vmUuid, policy.getExternalId());
+        boolean result = backupProvider.addVMToBackupPolicy(zoneId, policy.getExternalId(), vmInstanceVO);
         if (result) {
             BackupPolicyVMMapVO map = backupPolicyVMMapDao.findByVMId(virtualMachineId);
             if (map != null) {
                 backupPolicyVMMapDao.expunge(map.getId());
             }
-            map = new BackupPolicyVMMapVO(policy.getId(), virtualMachineId);
+            map = new BackupPolicyVMMapVO(zoneId, policy.getId(), virtualMachineId);
             backupPolicyVMMapDao.persist(map);
             LOG.debug("Successfully assigned VM " + virtualMachineId + " to backup policy " + policy.getName());
         } else {
@@ -137,15 +137,25 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }
         BackupProvider backupProvider = getBackupProvider(zoneId);
-        boolean result = backupProvider.removeVMFromBackupPolicy(vm.getUuid(), policy.getExternalId());
+        boolean result = backupProvider.removeVMFromBackupPolicy(zoneId, policy.getExternalId(), vm);
         if (result) {
-            BackupPolicyVMMapVO map = backupPolicyVMMapDao.findByPolicyIdAndVMId(policyId, vmId);
-            backupPolicyVMMapDao.expunge(map.getId());
+            List<BackupPolicyVMMapVO> map = backupPolicyVMMapDao.listByPolicyIdAndVMId(policyId, vmId);
+            if (map.size() > 1) {
+                throw new CloudRuntimeException("More than one mapping between VM " + vmId + " and policy " + policyId);
+            }
+            backupPolicyVMMapDao.expunge(map.get(0).getId());
             LOG.debug("Successfully removed VM " + vmId + " from backup policy " + policy.getName());
         } else {
             LOG.debug("Could not remove VM " + vmId + " from backup policy " + policyId);
         }
         return result;
+    }
+
+    @Override
+    public List<BackupPolicyVMMap> listBackupPolicyVMMappings(Long zoneId, Long policyId) {
+        return policyId == null ?
+                new ArrayList<>(backupPolicyVMMapDao.listByZoneId(zoneId)) :
+                new ArrayList<>(backupPolicyVMMapDao.listByPolicyId(policyId));
     }
 
     @Override
@@ -278,11 +288,12 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(ListBackupPoliciesCmd.class);
         cmdList.add(ImportBackupPolicyCmd.class);
         cmdList.add(AddVMToBackupPolicyCmd.class);
-        cmdList.add(RemoveVMFromBackupPolicy.class);
+        cmdList.add(RemoveVMFromBackupPolicyCmd.class);
         cmdList.add(DeleteBackupPolicyCmd.class);
         cmdList.add(ListBackupsCmd.class);
         cmdList.add(RestoreBackupCmd.class);
         cmdList.add(RestoreBackupVolumeCmd.class);
+        cmdList.add(ListBackupPoliciesVMsMappingsCmd.class);
         return cmdList;
     }
 

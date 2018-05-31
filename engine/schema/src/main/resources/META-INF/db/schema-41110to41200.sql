@@ -44,16 +44,19 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_policy` (
   `external_id` varchar(40) NOT NULL COMMENT 'backup policy ID on provider side',
   `zone_id` bigint(20) unsigned NOT NULL COMMENT 'zone id',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `uuid` (`uuid`)
+  UNIQUE KEY `uuid` (`uuid`),
+  CONSTRAINT `fk_backup_policy__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `cloud`.`backup_policy_vm_map` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `zone_id` bigint(20) unsigned NOT NULL,
   `policy_id` bigint(20) unsigned NOT NULL,
   `vm_id` bigint(20) unsigned NOT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_backup_policy_vm_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `backup_policy` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_backup_policy_vm_map__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
+  CONSTRAINT `fk_backup_policy_vm_map__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_backup_policy_vm_map__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `cloud`.`backup` (

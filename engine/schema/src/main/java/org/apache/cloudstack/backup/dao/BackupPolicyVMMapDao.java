@@ -20,6 +20,8 @@
 package org.apache.cloudstack.backup.dao;
 
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.response.BackupPolicyVMMapResponse;
+import org.apache.cloudstack.backup.BackupPolicyVMMap;
 import org.apache.cloudstack.backup.BackupPolicyVMMapVO;
 
 import java.util.List;
@@ -28,5 +30,7 @@ public interface BackupPolicyVMMapDao extends GenericDao<BackupPolicyVMMapVO, Lo
 
     BackupPolicyVMMapVO findByVMId(long vmId);
     List<BackupPolicyVMMapVO> listByPolicyId(long policyId);
-    BackupPolicyVMMapVO findByPolicyIdAndVMId(long policyId, long vmId);
+    List<BackupPolicyVMMapVO> listByPolicyIdAndVMId(long policyId, long vmId);
+    List<BackupPolicyVMMapVO> listByZoneId(long zoneId);
+    BackupPolicyVMMapResponse newBackupPolicyVMMappingResponse(BackupPolicyVMMap map);
 }

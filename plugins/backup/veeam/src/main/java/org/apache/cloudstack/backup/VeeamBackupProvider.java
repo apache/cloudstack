@@ -20,11 +20,10 @@ package org.apache.cloudstack.backup;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.backup.veeam.VeeamClient;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -35,8 +34,6 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class VeeamBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = Logger.getLogger(VeeamBackupProvider.class);
-
-    private Map<Long, VeeamClient> zoneClientMap = new HashMap<Long, VeeamClient>();
 
     private ConfigKey<String> VeeamUrl = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.veeam.url",
@@ -62,14 +59,8 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     private VeeamClient getClient(final Long zoneId) {
         try {
-            if (zoneClientMap.containsKey(zoneId)) {
-                return zoneClientMap.get(zoneId);
-            } else {
-                VeeamClient client = new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
-                        VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId));
-                zoneClientMap.put(zoneId, client);
-                return client;
-            }
+            return new VeeamClient(VeeamUrl.valueIn(zoneId), VeeamUsername.valueIn(zoneId), VeeamPassword.valueIn(zoneId),
+                VeeamValidateSSLSecurity.valueIn(zoneId), VeeamApiRequestTimeout.valueIn(zoneId));
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException("Failed to parse Veeam API URL: " + e.getMessage());
         } catch (NoSuchAlgorithmException | KeyManagementException e) {
@@ -79,12 +70,15 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean addVMToBackupPolicy(String vmUuid, String policyUuid) {
-        return false;
+    public boolean addVMToBackupPolicy(Long zoneId, String policyId, VirtualMachine vm) {
+        String instanceName = vm.getInstanceName();
+        //TODO: Get vcenter ip
+        return getClient(zoneId).assignBackupPolicyToVM(policyId, instanceName, "");
     }
 
     @Override
-    public boolean removeVMFromBackupPolicy(String vmUuid, String policyUuid) {
+    public boolean removeVMFromBackupPolicy(Long zoneId, String policyId, VirtualMachine vm) {
+        //TODO: Remove VM from backup policy on the client
         return false;
     }
 
@@ -95,7 +89,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     @Override
     public boolean isBackupPolicy(String uuid) {
-        return false;
+        return true;
     }
 
     @Override

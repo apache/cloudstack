@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.api.response.BackupPolicyVMMapResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
@@ -119,6 +120,7 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupPolicy;
+import org.apache.cloudstack.backup.BackupPolicyVMMap;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
@@ -470,4 +472,6 @@ public interface ResponseGenerator {
     BackupResponse createBackupResponse(Backup backup);
 
     BackupPolicyResponse createBackupPolicyResponse(BackupPolicy policy);
+
+    BackupPolicyVMMapResponse createBackupPolicyVMMappingResponse(BackupPolicyVMMap map);
 }

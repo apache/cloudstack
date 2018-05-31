@@ -200,6 +200,7 @@ import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.api.response.BackupPolicyVMMapResponse;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.CapabilityResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
@@ -292,6 +293,7 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupPolicy;
+import org.apache.cloudstack.backup.BackupPolicyVMMap;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -3977,5 +3979,10 @@ public class ApiResponseHelper implements ResponseGenerator {
     @Override
     public BackupPolicyResponse createBackupPolicyResponse(BackupPolicy policy) {
         return ApiDBUtils.newBackupPolicyResponse(policy);
+    }
+
+    @Override
+    public BackupPolicyVMMapResponse createBackupPolicyVMMappingResponse(BackupPolicyVMMap map) {
+        return ApiDBUtils.newBackupPolicyVMMappingResponse(map);
     }
 }

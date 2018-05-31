@@ -86,4 +86,9 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * Remove a VM from a backup policy
      */
     boolean removeVMFromBackupPolicy(Long zoneId, Long policyId, Long vmId);
+
+    /**
+     * Return mappings between backup policy and VMs
+     */
+    List<BackupPolicyVMMap> listBackupPolicyVMMappings(Long zoneId, Long policyId);
 }

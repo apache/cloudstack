@@ -19,8 +19,6 @@
 
 package org.apache.cloudstack.backup;
 
-import org.apache.cloudstack.api.InternalIdentity;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -30,7 +28,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "backup_policy_vm_map")
-public class BackupPolicyVMMapVO implements InternalIdentity {
+public class BackupPolicyVMMapVO implements BackupPolicyVMMap {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -43,12 +41,16 @@ public class BackupPolicyVMMapVO implements InternalIdentity {
     @Column(name = "vm_id")
     private long vmId;
 
+    @Column(name = "zone_id")
+    private long zoneId;
+
     public BackupPolicyVMMapVO() {
     }
 
-    public BackupPolicyVMMapVO(long policyId, long vmId) {
+    public BackupPolicyVMMapVO(long zoneId, long policyId, long vmId) {
         this.policyId = policyId;
         this.vmId = vmId;
+        this.zoneId = zoneId;
     }
 
     public long getId() {
@@ -73,5 +75,13 @@ public class BackupPolicyVMMapVO implements InternalIdentity {
 
     public void setVmId(long vmId) {
         this.vmId = vmId;
+    }
+
+    public long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(long zoneId) {
+        this.zoneId = zoneId;
     }
 }

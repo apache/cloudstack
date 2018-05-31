@@ -20,6 +20,7 @@ import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.VirtualMachine;
 import org.apache.log4j.Logger;
 
 import java.util.Arrays;
@@ -40,14 +41,14 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean addVMToBackupPolicy(String vmUuid, String policyUuid) {
-        s_logger.debug("Assigning VM " + vmUuid + " to backup policy " + policyUuid);
+    public boolean addVMToBackupPolicy(Long zoneId, String policyId, VirtualMachine vm) {
+        s_logger.debug("Assigning VM " + vm.getInstanceName() + " to backup policy " + policyId);
         return true;
     }
 
     @Override
-    public boolean removeVMFromBackupPolicy(String vmUuid, String policyUuid) {
-        s_logger.debug("Removing VM " + vmUuid + " to backup policy " + policyUuid);
+    public boolean removeVMFromBackupPolicy(Long zoneId, String policyId, VirtualMachine vm) {
+        s_logger.debug("Removing VM " + vm.getInstanceName() + " from backup policy " + policyId);
         return true;
     }
 

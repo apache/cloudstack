@@ -38,11 +38,11 @@ import org.apache.cloudstack.context.CallContext;
 
 import javax.inject.Inject;
 
-@APICommand(name = RemoveVMFromBackupPolicy.APINAME,
+@APICommand(name = RemoveVMFromBackupPolicyCmd.APINAME,
         description = "Removes a VM from an existing backup policy",
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class RemoveVMFromBackupPolicy extends BaseCmd {
+public class RemoveVMFromBackupPolicyCmd extends BaseCmd {
 
     public static final String APINAME = "removeVirtualMachineFromBackupPolicy";
 

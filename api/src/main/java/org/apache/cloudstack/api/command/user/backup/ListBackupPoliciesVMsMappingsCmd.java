@@ -16,10 +16,12 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.backup;
 
-import java.util.List;
-
-import javax.inject.Inject;
-
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -31,21 +33,17 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
-import org.apache.cloudstack.backup.BackupPolicy;
+import org.apache.cloudstack.backup.BackupPolicyVMMap;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.lang.BooleanUtils;
+import javax.inject.Inject;
+import java.util.List;
 
-@APICommand(name = ListBackupPoliciesCmd.APINAME,
-        description = "Lists backup policies",
+@APICommand(name = ListBackupPoliciesVMsMappingsCmd.APINAME,
+        description = "Lists VMs mapped to a backup policy",
         responseObject = BackupPolicyResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListBackupPoliciesCmd extends BaseBackupListCmd {
-
-    public static final String APINAME = "listBackupPolicies";
+public class ListBackupPoliciesVMsMappingsCmd extends BaseBackupListCmd {
+    public static final String APINAME = "listBackupPoliciesVirtualMachineMappings";
 
     @Inject
     BackupManager backupManager;
@@ -62,43 +60,15 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
             description = "The zone ID")
     private Long zoneId;
 
-    @Parameter(name = ApiConstants.EXTERNAL, type = CommandType.BOOLEAN,
-            description = "True if list external backup policies (provider policies)", authorized = {RoleType.Admin})
-    private Boolean external;
-
-    /////////////////////////////////////////////////////
-    /////////////////// Accessors ///////////////////////
-    /////////////////////////////////////////////////////
-
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-    public boolean isExternal() {
-        return BooleanUtils.isTrue(external);
-    }
-
-    public Long getPolicyId() {
-        return policyId;
-    }
-
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
-    public void execute() throws ResourceUnavailableException, ServerApiException, ConcurrentOperationException {
-        validateParameters();
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            List<BackupPolicy> backupPolicies = backupManager.listBackupPolicies(zoneId, external, policyId);
-            setupResponseBackupPolicyList(backupPolicies);
-        } catch (InvalidParameterValueException e) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
+            List<BackupPolicyVMMap> mappings = backupManager.listBackupPolicyVMMappings(zoneId, policyId);
+            setupResponseBackupPolicyVMMappings(mappings);
         } catch (CloudRuntimeException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -108,5 +78,10 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
         if (zoneId == null && policyId == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide a zone id or a policy id");
         }
+    }
+
+    @Override
+    public String getCommandName() {
+        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 }

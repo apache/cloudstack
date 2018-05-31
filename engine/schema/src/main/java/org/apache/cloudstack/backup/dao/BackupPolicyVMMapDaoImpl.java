@@ -19,19 +19,36 @@
 
 package org.apache.cloudstack.backup.dao;
 
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.api.response.BackupPolicyVMMapResponse;
+import org.apache.cloudstack.backup.BackupPolicyVMMap;
 import org.apache.cloudstack.backup.BackupPolicyVMMapVO;
+import org.apache.cloudstack.backup.BackupPolicyVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import java.util.List;
 
 @Component
 public class BackupPolicyVMMapDaoImpl extends GenericDaoBase<BackupPolicyVMMapVO, Long> implements BackupPolicyVMMapDao {
+
+    @Inject
+    private VMInstanceDao vmInstanceDao;
+
+    @Inject
+    private BackupPolicyDao backupPolicyDao;
+
+    @Inject
+    private DataCenterDao dataCenterDao;
 
     private SearchBuilder<BackupPolicyVMMapVO> mapSearch;
 
@@ -43,6 +60,7 @@ public class BackupPolicyVMMapDaoImpl extends GenericDaoBase<BackupPolicyVMMapVO
         mapSearch = createSearchBuilder();
         mapSearch.and("vm_id", mapSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         mapSearch.and("policy_id", mapSearch.entity().getPolicyId(), SearchCriteria.Op.EQ);
+        mapSearch.and("zone_id", mapSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         mapSearch.done();
     }
 
@@ -68,10 +86,38 @@ public class BackupPolicyVMMapDaoImpl extends GenericDaoBase<BackupPolicyVMMapVO
     }
 
     @Override
-    public BackupPolicyVMMapVO findByPolicyIdAndVMId(long policyId, long vmId) {
+    public List<BackupPolicyVMMapVO> listByPolicyIdAndVMId(long policyId, long vmId) {
         SearchCriteria<BackupPolicyVMMapVO> sc = mapSearch.create();
         sc.setParameters("policy_id", policyId);
         sc.setParameters("vm_id", vmId);
-        return findOneBy(sc);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<BackupPolicyVMMapVO> listByZoneId(long zoneId) {
+        SearchCriteria<BackupPolicyVMMapVO> sc = mapSearch.create();
+        sc.setParameters("zone_id", zoneId);
+        return listBy(sc);
+    }
+
+    @Override
+    public BackupPolicyVMMapResponse newBackupPolicyVMMappingResponse(BackupPolicyVMMap map) {
+        BackupPolicyVO policy = backupPolicyDao.findById(map.getPolicyId());
+        if (policy == null) {
+            throw new CloudRuntimeException("Policy " + map.getPolicyId() + " does not exist");
+        }
+        VMInstanceVO vm = vmInstanceDao.findById(map.getVmId());
+        if (vm == null) {
+            throw new CloudRuntimeException("VM " + map.getVmId() + " does not exist");
+        }
+        DataCenterVO zone = dataCenterDao.findById(map.getZoneId());
+        if (zone == null) {
+            throw new CloudRuntimeException("Zone " + map.getZoneId() + " does not exist");
+        }
+        BackupPolicyVMMapResponse response = new BackupPolicyVMMapResponse();
+        response.setBackupPolicyId(policy.getUuid());
+        response.setVmId(vm.getUuid());
+        response.setZoneId(zone.getUuid());
+        return response;
     }
 }

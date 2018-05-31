@@ -17,6 +17,7 @@
 package org.apache.cloudstack.backup;
 
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.vm.VirtualMachine;
 
 import java.util.List;
 
@@ -38,12 +39,12 @@ public interface BackupProvider {
      * Assign VM to backup policy
      * @return true if VM is successfully assigned, false if not
      */
-    boolean addVMToBackupPolicy(String vmUuid, String policyUuid);
+    boolean addVMToBackupPolicy(Long zoneId, String policyId, VirtualMachine vm);
 
     /**
      * Remove a VM form a backup policy
      */
-    boolean removeVMFromBackupPolicy(String vmUuid, String policyUuid);
+    boolean removeVMFromBackupPolicy(Long zoneId, String policyId, VirtualMachine vm);
 
     /**
      * Returns the list of existing backup policies on the provider
