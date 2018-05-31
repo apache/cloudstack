@@ -174,4 +174,6 @@ public interface VirtualMachineProfile {
 
     Float getMemoryOvercommitRatio();
 
+    boolean isRollingRestart();
+
 }

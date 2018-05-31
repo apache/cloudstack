@@ -535,8 +535,9 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru implements Networ
 
             VspVm vspVm = _nuageVspEntityBuilder.buildVspVm(vm.getVirtualMachine(), network);
 
-            if (!Boolean.TRUE.equals(vm.getParameter(VirtualMachineProfile.Param.RollingRestart))) {
-
+            if (vm.isRollingRestart()) {
+                ((NetworkVO)network).setRollingRestart(true);
+            } else {
                 //NicProfile does not contain the NIC UUID. We need this information to set it in the VMInterface and VPort
                 //that we create in VSP
                 NicVO nicFromDb = _nicDao.findById(nic.getId());
@@ -560,8 +561,6 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru implements Networ
                     }
                     throw new InsufficientVirtualNetworkCapacityException("Failed to reserve VM in Nuage VSP.", Network.class, network.getId());
                 }
-            } else {
-                ((NetworkVO)network).setRollingRestart(true);
             }
 
             if (vspVm.getDomainRouter() == Boolean.TRUE) {
@@ -712,8 +711,6 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru implements Networ
                         + nic.getIPv4Address() + " from a VM " + vm.getInstanceName() + " with state " + virtualMachine
                                                                                                            .getState());
             }
-
-
 
             NicVO nicFromDb = _nicDao.findById(nic.getId());
 

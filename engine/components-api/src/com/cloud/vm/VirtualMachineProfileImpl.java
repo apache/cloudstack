@@ -264,6 +264,11 @@ public class VirtualMachineProfileImpl implements VirtualMachineProfile {
     }
 
     @Override
+    public boolean isRollingRestart() {
+        return Boolean.TRUE.equals(getParameter(VirtualMachineProfile.Param.RollingRestart));
+    }
+
+    @Override
     public List<String[]> getVmData() {
         return vmData;
     }
