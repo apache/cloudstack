@@ -51,6 +51,10 @@ public class ConfigDriveBuilder {
 
     public static final Logger LOG = Logger.getLogger(ConfigDriveBuilder.class);
 
+    public ConfigDriveBuilder() {
+
+    }
+
     private static void writeFile(final File folder, final String file, final String content) {
         if (folder == null || Strings.isNullOrEmpty(file)) {
             return;
@@ -136,7 +140,18 @@ public class ConfigDriveBuilder {
             }
 
             File tmpIsoStore = new File(tempDirName, new File(isoFileName).getName());
-            Script command = new Script("/usr/bin/genisoimage", Duration.standardSeconds(300), LOG);
+            File isoCreator = new File("/usr/bin/genisoimage");
+            if (!isoCreator.exists()) {
+                isoCreator = new File("/usr/local/bin/mkisofs"); // are these all the paths we search?
+                if(!isoCreator.exists()) {
+                    throw new CloudRuntimeException("cannot create iso for config drive using any know tool.");
+                }
+            }
+            if(!isoCreator.canExecute()) {
+                throw new CloudRuntimeException("cannot create iso for config drive using " + isoCreator.getCanonicalPath());
+            }
+
+            Script command = new Script(isoCreator.getCanonicalPath(), Duration.standardSeconds(300), LOG);
             command.add("-o", tmpIsoStore.getAbsolutePath());
             command.add("-ldots");
             command.add("-allow-lowercase");
@@ -219,4 +234,7 @@ public class ConfigDriveBuilder {
         return metaData;
     }
 
+    public String build(final List<String[]> vmData, final String driveLabel) {
+        return ConfigDriveBuilder.buildConfigDrive(vmData, ConfigDrive.CONFIGDRIVEFILENAME, driveLabel);
+    }
 }
