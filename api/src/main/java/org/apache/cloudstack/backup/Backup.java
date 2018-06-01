@@ -29,12 +29,13 @@ public interface Backup extends InternalIdentity, Identity {
         BackingUp, BackedUp, Failed, Queued, Restoring
     }
 
+    Long getZoneId();
     Long getAccountId();
-    Long getUserId();
+    String getExternalId();
     String getName();
     String getDescription();
     Long getParentId();
-    Long getVMId();
+    Long getVmId();
     List<Long> getVolumeIds();
     Status getStatus();
     Date getStartTime();

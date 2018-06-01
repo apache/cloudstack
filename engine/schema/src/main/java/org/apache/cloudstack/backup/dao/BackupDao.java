@@ -26,8 +26,8 @@ import java.util.List;
 
 public interface BackupDao extends GenericDao<BackupVO, Long> {
 
-    List<Backup> listByVmId(Long vmId);
-    List<Backup> listByUserId(Long userId);
+    List<Backup> listByVmId(Long zoneId, Long vmId);
+    List<Backup> syncVMBackups(Long zoneId, Long vmId, List<Backup> externalBackups);
 
     BackupResponse newBackupResponse(Backup backup);
 }

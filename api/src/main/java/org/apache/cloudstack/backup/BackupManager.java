@@ -57,7 +57,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     /**
      * List existing backups for a VM
      */
-    List<Backup> listBackups(Long vmId);
+    List<Backup> listVMBackups(Long zoneId, Long vmId);
 
     /**
      * List backup policies

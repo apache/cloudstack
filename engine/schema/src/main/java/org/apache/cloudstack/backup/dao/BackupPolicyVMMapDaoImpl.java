@@ -118,6 +118,7 @@ public class BackupPolicyVMMapDaoImpl extends GenericDaoBase<BackupPolicyVMMapVO
         response.setBackupPolicyId(policy.getUuid());
         response.setVmId(vm.getUuid());
         response.setZoneId(zone.getUuid());
+        response.setObjectName("backuppolicyvmmap");
         return response;
     }
 }

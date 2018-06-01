@@ -159,8 +159,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public List<Backup> listBackups(Long vmId) {
-        return backupDao.listByVmId(vmId);
+    public List<Backup> listVMBackups(Long zoneId, Long vmId) {
+        BackupProvider backupProvider = getBackupProvider(zoneId);
+        VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            throw new CloudRuntimeException("VM " + vmId + " does not exist");
+        }
+        List<Backup> externalBackups = backupProvider.listVMBackups(zoneId, vm);
+        return backupDao.syncVMBackups(zoneId, vmId, externalBackups);
     }
 
     /**

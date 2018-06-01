@@ -26,6 +26,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.Transient;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -52,8 +55,11 @@ public class BackupVO implements Backup {
     @Column(name = "account_id")
     private long accountId;
 
-    @Column(name = "user_id")
-    private long userId;
+    @Column(name = "zone_id")
+    private Long zoneId;
+
+    @Column(name = "external_id")
+    private String externalId;
 
     @Column(name = "name")
     private String name;
@@ -74,8 +80,10 @@ public class BackupVO implements Backup {
     private Status status;
 
     @Column(name = "start")
-    private Date start;
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date startTime;
 
+    @Transient
     private List<Long> volumeIds;
 
     @Override
@@ -89,13 +97,26 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public Long getAccountId() {
-        return accountId;
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(Long zoneId) {
+        this.zoneId = zoneId;
     }
 
     @Override
-    public Long getUserId() {
-        return userId;
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
+    }
+
+    @Override
+    public Long getAccountId() {
+        return accountId;
     }
 
     @Override
@@ -114,7 +135,7 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public Long getVMId() {
+    public Long getVmId() {
         return vmId;
     }
 
@@ -125,7 +146,7 @@ public class BackupVO implements Backup {
 
     @Override
     public Date getStartTime() {
-        return start;
+        return startTime;
     }
 
     public void setId(long id) {
@@ -138,10 +159,6 @@ public class BackupVO implements Backup {
 
     public void setAccountId(long accountId) {
         this.accountId = accountId;
-    }
-
-    public void setUserId(long userId) {
-        this.userId = userId;
     }
 
     public void setName(String name) {
@@ -164,8 +181,8 @@ public class BackupVO implements Backup {
         this.status = status;
     }
 
-    public void setStart(Date start) {
-        this.start = start;
+    public void setStartTime(Date start) {
+        this.startTime = start;
     }
 
     protected void convertVolumeStringToList() {

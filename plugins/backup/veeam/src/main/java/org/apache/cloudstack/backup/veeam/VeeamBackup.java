@@ -33,12 +33,17 @@ public class VeeamBackup implements Backup {
     }
 
     @Override
+    public Long getZoneId() {
+        return null;
+    }
+
+    @Override
     public Long getAccountId() {
         return null;
     }
 
     @Override
-    public Long getUserId() {
+    public String getExternalId() {
         return null;
     }
 
@@ -58,7 +63,7 @@ public class VeeamBackup implements Backup {
     }
 
     @Override
-    public Long getVMId() {
+    public Long getVmId() {
         return null;
     }
 

@@ -32,6 +32,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.backup.Backup;
@@ -44,7 +45,7 @@ import java.util.List;
         responseObject = BackupResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListBackupsCmd extends BaseBackupListCmd {
-    public static final String APINAME = "listBackups";
+    public static final String APINAME = "listVMBackups";
 
     @Inject
     BackupManager backupManager;
@@ -60,12 +61,20 @@ public class ListBackupsCmd extends BaseBackupListCmd {
             description = "id of the VM")
     private Long virtualMachineId;
 
+    @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
+            description = "The zone ID")
+    private Long zoneId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getVirtualMachineId() {
         return virtualMachineId;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
     }
 
     @Override
@@ -82,14 +91,10 @@ public class ListBackupsCmd extends BaseBackupListCmd {
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
-    private void setupResponse(List<Backup> backups) {
-
-    }
-
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try{
-            List<Backup> backups = backupManager.listBackups(virtualMachineId);
+            List<Backup> backups = backupManager.listVMBackups(zoneId, virtualMachineId);
             setupResponseBackupList(backups);
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());

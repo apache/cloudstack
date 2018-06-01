@@ -24,6 +24,7 @@ import com.cloud.vm.VirtualMachine;
 import org.apache.log4j.Logger;
 
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public class DummyBackupProvider extends AdapterBase implements BackupProvider {
@@ -77,5 +78,20 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
         s_logger.debug("Restoring volume " + volumeUuid + "from backup " + backupUuid + " on the Dummy Backup Provider");
         return new VolumeTO(0L, Volume.Type.DATADISK, Storage.StoragePoolType.NetworkFilesystem, "pool-aaaa", "volumeTest",
                 "/test", "volTest", 1024L, "", "");
+    }
+
+    @Override
+    public List<Backup> listVMBackups(Long zoneId, VirtualMachine vm) {
+        s_logger.debug("Listing VM " + vm.getInstanceName() + "backups on the Dummy Backup Provider");
+
+        BackupTO backup1 = new BackupTO(zoneId, vm.getAccountId(),
+                "xxxx-xxxx", "Backup-1", "VM-" + vm.getInstanceName() + "-backup-1",
+                null, vm.getId(), null, Backup.Status.BackedUp, new Date());
+
+        BackupTO backup2 = new BackupTO(zoneId, vm.getAccountId(), "yyyy-yyyy",
+                "Backup-2", "VM-" + vm.getInstanceName() + "-backup-2",
+                backup1.getExternalId(), vm.getId(), null, Backup.Status.BackedUp, new Date());
+
+        return Arrays.asList(backup1, backup2);
     }
 }

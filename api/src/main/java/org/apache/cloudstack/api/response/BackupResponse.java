@@ -33,13 +33,17 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "internal id of the backup")
     private String id;
 
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "zone id")
+    private String zoneId;
+
     @SerializedName(ApiConstants.ACCOUNT_ID)
     @Param(description = "account id")
     private String accountId;
 
-    @SerializedName(ApiConstants.USER_ID)
-    @Param(description = "user id")
-    private String userId;
+    @SerializedName(ApiConstants.EXTERNAL_ID)
+    @Param(description = "external backup id")
+    private String externalId;
 
     @SerializedName(ApiConstants.NAME)
     @Param(description = "backup name")
@@ -81,12 +85,20 @@ public class BackupResponse extends BaseResponse {
         this.accountId = accountId;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getZoneId() {
+        return zoneId;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(String externalId) {
+        this.externalId = externalId;
     }
 
     public String getName() {

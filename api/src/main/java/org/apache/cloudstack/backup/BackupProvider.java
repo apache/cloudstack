@@ -66,4 +66,9 @@ public interface BackupProvider {
      * Restore a volume from a backup
      */
     VolumeTO restoreVolumeFromBackup(String volumeUuid, String backupUuid);
+
+    /**
+     * List VM Backups
+     */
+    List<Backup> listVMBackups(Long zoneId, VirtualMachine vm);
 }

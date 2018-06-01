@@ -63,7 +63,8 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(40) NOT NULL,
   `account_id` bigint(20) unsigned NOT NULL,
-  `user_id` bigint(20) unsigned NOT NULL,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `external_id` varchar(40) NOT NULL COMMENT 'backup ID on provider side',
   `name` varchar(255) NOT NULL COMMENT 'backup name',
   `description` varchar(255) COMMENT 'backup description',
   `parent_id` bigint(20) unsigned COMMENT 'backup parent id',
@@ -73,7 +74,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup` (
   `start` timestamp,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_backup__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_backup__user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_backup__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_backup__parent_id` FOREIGN KEY (`parent_id`) REFERENCES `backup` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_backup__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
