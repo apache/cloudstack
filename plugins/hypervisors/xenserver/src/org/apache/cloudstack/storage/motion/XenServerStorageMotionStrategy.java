@@ -326,7 +326,7 @@ public class XenServerStorageMotionStrategy implements DataMotionStrategy {
                     volumeToStorageUuid.add(new Pair<>(volumeTo, iqn));
                 }
                 else {
-                    volumeToStorageUuid.add(new Pair<>(volumeTo, ((StoragePool)entry.getValue()).getPath()));
+                    volumeToStorageUuid.add(new Pair<>(volumeTo, ((StoragePool)entry.getValue()).getUuid()));
                 }
             }
 
