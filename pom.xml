@@ -92,7 +92,7 @@
     <cs.mockito.version>1.10.19</cs.mockito.version>
     <cs.powermock.version>1.6.4</cs.powermock.version>
     <cs.aws.sdk.version>1.11.213</cs.aws.sdk.version>
-    <cs.jackson.version>2.9.2</cs.jackson.version>
+    <cs.jackson.version>2.9.5</cs.jackson.version>
     <cs.lang.version>2.6</cs.lang.version>
     <cs.commons-lang3.version>3.6</cs.commons-lang3.version>
     <cs.commons-io.version>2.6</cs.commons-io.version>

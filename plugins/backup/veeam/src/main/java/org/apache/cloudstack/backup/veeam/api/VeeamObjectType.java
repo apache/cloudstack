@@ -18,6 +18,9 @@
 package org.apache.cloudstack.backup.veeam.api;
 
 public enum VeeamObjectType {
+    HierarchyRoot,
+    HierarchyRootReference,
+
     Job,
     JobReference,
 

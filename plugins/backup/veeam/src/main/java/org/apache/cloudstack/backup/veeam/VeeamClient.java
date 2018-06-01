@@ -17,6 +17,8 @@
 
 package org.apache.cloudstack.backup.veeam;
 
+import static org.apache.cloudstack.backup.veeam.api.VeeamObjectType.HierarchyRootReference;
+
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.URI;
@@ -35,6 +37,10 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.backup.BackupPolicy;
 import org.apache.cloudstack.backup.veeam.api.CreateObjectInJobSpec;
 import org.apache.cloudstack.backup.veeam.api.EntityReferences;
+import org.apache.cloudstack.backup.veeam.api.HierarchyItem;
+import org.apache.cloudstack.backup.veeam.api.HierarchyItems;
+import org.apache.cloudstack.backup.veeam.api.ObjectInJob;
+import org.apache.cloudstack.backup.veeam.api.ObjectsInJob;
 import org.apache.cloudstack.backup.veeam.api.Ref;
 import org.apache.cloudstack.backup.veeam.api.Task;
 import org.apache.cloudstack.utils.security.SSLUtils;
@@ -67,6 +73,7 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.TrustAllManager;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
@@ -138,7 +145,9 @@ public class VeeamClient {
             LOG.debug("Requested Veeam resource does not exist");
             return;
         }
-        if (!(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK || response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) && response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
+        if (!(response.getStatusLine().getStatusCode() == HttpStatus.SC_OK ||
+                response.getStatusLine().getStatusCode() == HttpStatus.SC_ACCEPTED) &&
+                response.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to get valid response from Veeam B&R API call, please ask your administrator to diagnose and fix issues.");
         }
     }
@@ -184,9 +193,86 @@ public class VeeamClient {
         return response;
     }
 
-    //////////////////////////////////////////////////////////
-    //////////////// Public APIs: Backup /////////////////////
-    //////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
+    //////////////// Private Veeam Helper Methods /////////////////////
+    ///////////////////////////////////////////////////////////////////
+
+    private String findDCHierarchy(final String vmwareDcName) {
+        LOG.debug("Trying to find hierarchy ID for vmware datacenter: " + vmwareDcName);
+
+        try {
+            final HttpResponse response = get("/hierarchyRoots");
+            checkResponseOK(response);
+            final ObjectMapper objectMapper = new XmlMapper();
+            final EntityReferences references = objectMapper.readValue(response.getEntity().getContent(), EntityReferences.class);
+            for (final Ref ref : references.getRefs()) {
+                if (ref.getName().equals(vmwareDcName) && ref.getType().equals(HierarchyRootReference)) {
+                    return ref.getUid();
+                }
+            }
+        } catch (final IOException e) {
+            LOG.error("Failed to list Veeam jobs due to:", e);
+            checkResponseTimeOut(e);
+        }
+        throw new CloudRuntimeException("Failed to find hierarchy reference for VMware datacenter " + vmwareDcName + " in Veeam, please ask administrator to check Veeam B&R manager configuration");
+    }
+
+    private String lookupVM(final String hierarchyId, final String vmName) {
+        LOG.debug("Trying to lookup VM from veeam hierarchy:" + hierarchyId + " for vm name:" + vmName);
+
+        try {
+            final HttpResponse response = get(String.format("/lookup?host=%s&type=Vm&name=%s", hierarchyId, vmName));
+            checkResponseOK(response);
+            final ObjectMapper objectMapper = new XmlMapper();
+            final HierarchyItems items = objectMapper.readValue(response.getEntity().getContent(), HierarchyItems.class);
+            if (items == null || items.getItems() == null || items.getItems().isEmpty()) {
+                throw new CloudRuntimeException("Could not find VM " + vmName + " in Veeam, please ask administrator to check Veeam B&R manager");
+            }
+            for (final HierarchyItem item : items.getItems()) {
+                if (item.getObjectName().equals(vmName) && item.getObjectType().equals("Vm")) {
+                    return item.getObjectRef();
+                }
+            }
+        } catch (final IOException e) {
+            LOG.error("Failed to list Veeam jobs due to:", e);
+            checkResponseTimeOut(e);
+        }
+        throw new CloudRuntimeException("Failed to lookup VM " + vmName + " in Veeam, please ask administrator to check Veeam B&R manager configuration");
+    }
+
+    private Task parseTaskResponse(HttpResponse response) throws IOException {
+        checkResponseOK(response);
+        final ObjectMapper objectMapper = new XmlMapper();
+        return objectMapper.readValue(response.getEntity().getContent(), Task.class);
+    }
+
+    private boolean checkTaskStatus(final HttpResponse response) throws IOException {
+        final Task task = parseTaskResponse(response);
+        for (int i = 0; i < 20; i++) {
+            final HttpResponse taskResponse = get("/tasks/" + task.getTaskId());
+            final Task polledTask = parseTaskResponse(taskResponse);
+            if (polledTask.getState().equals("Finished")) {
+                final HttpResponse taskDeleteResponse = delete("/tasks/" + task.getTaskId());
+                if (taskDeleteResponse.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
+                    LOG.warn("Operation failed for veeam task id=" + task.getTaskId());
+                }
+                if (polledTask.getResult().getSuccess().equals("true")) {
+                    return true;
+                }
+                throw new CloudRuntimeException("Failed to assign VM to backup policy due to: " + polledTask.getResult().getMessage());
+            }
+            try {
+                Thread.sleep(5000);
+            } catch (InterruptedException e) {
+                LOG.debug("Failed to sleep while polling for Veeam task status due to: ", e);
+            }
+        }
+        return false;
+    }
+
+    ////////////////////////////////////////////////////////
+    //////////////// Public Veeam APIs /////////////////////
+    ////////////////////////////////////////////////////////
 
     public List<VeeamBackup> listAllBackups() {
         LOG.debug("Trying to list Veeam backups");
@@ -208,7 +294,7 @@ public class VeeamClient {
     }
 
     public List<BackupPolicy> listBackupPolicies() {
-        LOG.debug("Trying to list Veeam jobs that are backup policies");
+        LOG.debug("Trying to list backup policies that are Veeam jobs");
         try {
             final HttpResponse response = get("/jobs");
             checkResponseOK(response);
@@ -226,47 +312,57 @@ public class VeeamClient {
         return new ArrayList<>();
     }
 
-    private Task parseTaskResponse(HttpResponse response) throws IOException {
-        checkResponseOK(response);
-        final ObjectMapper objectMapper = new XmlMapper();
-        return objectMapper.readValue(response.getEntity().getContent(), Task.class);
-    }
-
-    // FIXME: pass an object that implement a common interface across backup plugins
-    public boolean assignBackupPolicyToVM(final String jobId, final String vmwareInstanceName, final String vcIpOrName) {
-        LOG.debug("Trying to assign VM to backup policy that is a veeam job");
+    public boolean startAdhocBackupJob(final String jobId) {
+        LOG.debug("Trying to start ad-hoc backup for Veeam job: " + jobId);
         try {
-            //FIXME: add logic to find hierarical root based on vCenter details this is useful in env with multiple VCs
-            final String heirarchyId = "dec37163-39df-4c4b-9690-899cf5543bf6";
-            final CreateObjectInJobSpec vmToBackupJob = new CreateObjectInJobSpec();
-            vmToBackupJob.setObjName(vmwareInstanceName);
-            vmToBackupJob.setObjRef(String.format("urn:VMware:VM:%s.%s", heirarchyId, vmwareInstanceName));
-            final HttpResponse response = post(String.format("/jobs/%s/includes", jobId), vmToBackupJob);
-            final Task task = parseTaskResponse(response);
-            for (int i = 0; i < 5; i++) {
-                final HttpResponse taskResponse = get("/tasks/" + task.getTaskId());
-                final Task polledTask = parseTaskResponse(taskResponse);
-                if (polledTask.getState().equals("Finished")) {
-                    final HttpResponse taskDeleteResponse = delete("/tasks/" + task.getTaskId());
-                    if (taskDeleteResponse.getStatusLine().getStatusCode() != HttpStatus.SC_NO_CONTENT) {
-                        LOG.warn("Failed to cleanup VM assign task on veeam job for task id=" + task.getTaskId());
-                    }
-                    if (polledTask.getResult().getSuccess().equals("true")) {
-                        return true;
-                    }
-                    throw new CloudRuntimeException("Failed to assign VM to backup policy due to: " + polledTask.getResult().getMessage());
-                }
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    LOG.debug("Failed to sleep while polling for task status due to: ", e);
-                }
-            }
+            final HttpResponse response = post(String.format("/jobs/%s?action=start", jobId), null);
+            return checkTaskStatus(response);
         } catch (final IOException e) {
             LOG.error("Failed to list Veeam jobs due to:", e);
             checkResponseTimeOut(e);
         }
-        throw new CloudRuntimeException("Failed to assign VM to backup policy likely due to timeout, please check veeam tasks");
+        return false;
+    }
+
+    public boolean addVMToVeeamJob(final String jobId, final String vmwareInstanceName, final String vmwareDcName) {
+        LOG.debug("Trying to add VM to backup policy that is a veeam job: " + jobId);
+        try {
+            final String heirarchyId = findDCHierarchy(vmwareDcName);
+            final String veeamVmRefId = lookupVM(heirarchyId, vmwareInstanceName);
+            final CreateObjectInJobSpec vmToBackupJob = new CreateObjectInJobSpec();
+            vmToBackupJob.setObjName(vmwareInstanceName);
+            vmToBackupJob.setObjRef(veeamVmRefId);
+            final HttpResponse response = post(String.format("/jobs/%s/includes", jobId), vmToBackupJob);
+            return checkTaskStatus(response);
+        } catch (final IOException e) {
+            LOG.error("Failed to add VM to Veeam job due to:", e);
+            checkResponseTimeOut(e);
+        }
+        throw new CloudRuntimeException("Failed to add VM to backup policy likely due to timeout, please check veeam tasks");
+    }
+
+    public boolean removeVMFromVeeamJob(final String jobId, final String vmwareInstanceName, final String vmwareDcName) {
+        LOG.debug("Trying to remove VM from backup policy that is a veeam job: " + jobId);
+        try {
+            final String heirarchyId = findDCHierarchy(vmwareDcName);
+            final String veeamVmRefId = lookupVM(heirarchyId, vmwareInstanceName);
+            final HttpResponse response = get(String.format("/jobs/%s/includes", jobId));
+            checkResponseOK(response);
+            final ObjectMapper objectMapper = new XmlMapper();
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            final ObjectsInJob jobObjects = objectMapper.readValue(response.getEntity().getContent(), ObjectsInJob.class);
+            for (final ObjectInJob jobObject : jobObjects.getObjects()) {
+                if (jobObject.getName().equals(vmwareInstanceName) && jobObject.getHierarchyObjRef().equals(veeamVmRefId)) {
+                    final HttpResponse deleteResponse = delete(String.format("/jobs/%s/includes/%s", jobId, jobObject.getObjectInJobId()));
+                    return checkTaskStatus(deleteResponse);
+                }
+            }
+            return checkTaskStatus(response);
+        } catch (final IOException e) {
+            LOG.error("Failed to list Veeam jobs due to:", e);
+            checkResponseTimeOut(e);
+        }
+        throw new CloudRuntimeException("Failed to remove VM from backup policy, please check veeam tasks");
     }
 
 }
