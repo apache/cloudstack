@@ -15,34 +15,25 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.backup.veeam;
+package org.apache.cloudstack.backup.veeam.api;
 
-import org.junit.Before;
-import org.junit.Test;
+import java.util.List;
 
-public class VeeamClientTest {
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
+import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
-    private VeeamClient client;
+@JacksonXmlRootElement(localName = "ObjectsInJob")
+public class ObjectsInJob {
+    @JacksonXmlProperty(localName = "ObjectInJob")
+    @JacksonXmlElementWrapper(localName = "ObjectInJob", useWrapping = false)
+    private List<ObjectInJob> objects;
 
-    @Before
-    public void setUp() throws Exception {
-        client = new VeeamClient("http://10.2.2.89:9399/api/", "administrator", "P@ssword123", true, 60);
+    public List<ObjectInJob> getObjects() {
+        return objects;
     }
 
-    @Test
-    public void testBackups() {
-        client.listAllBackups();
-    }
-
-    @Test
-    public void testPolicies() {
-        client.listBackupPolicies();
-    }
-
-    @Test
-    public void testBackupLifecycle() {
-        client.addVMToVeeamJob("8acac50d-3711-4c99-bf7b-76fe9c7e39c3", "i-2-9-VM", "10.2.2.52");
-        client.startAdhocBackupJob("8acac50d-3711-4c99-bf7b-76fe9c7e39c3");
-        client.removeVMFromVeeamJob("8acac50d-3711-4c99-bf7b-76fe9c7e39c3", "i-2-9-VM", "10.2.2.52");
+    public void setObjects(List<ObjectInJob> objects) {
+        this.objects = objects;
     }
 }

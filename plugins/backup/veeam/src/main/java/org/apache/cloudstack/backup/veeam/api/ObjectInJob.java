@@ -23,47 +23,26 @@ import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlElementWrapper;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
-@JacksonXmlRootElement(localName = "Ref")
-public class Ref {
-    @JacksonXmlProperty(localName = "UID", isAttribute = true)
-    private String uid;
-
-    @JacksonXmlProperty(localName = "Name", isAttribute = true)
-    private String name;
-
+@JacksonXmlRootElement(localName = "ObjectInJob")
+public class ObjectInJob {
     @JacksonXmlProperty(localName = "Href", isAttribute = true)
     private String href;
 
     @JacksonXmlProperty(localName = "Type", isAttribute = true)
-    private VeeamObjectType type;
+    private String type;
 
     @JacksonXmlProperty(localName = "Link")
     @JacksonXmlElementWrapper(localName = "Links")
     private List<Link> link;
 
-    public List<Link> getLink() {
-        return link;
-    }
+    @JacksonXmlProperty(localName = "ObjectInJobId", isAttribute = true)
+    private String objectInJobId;
 
-    public void setLink(List<Link> link) {
-        this.link = link;
-    }
+    @JacksonXmlProperty(localName = "HierarchyObjRef", isAttribute = true)
+    private String hierarchyObjRef;
 
-    public String getUid() {
-        return uid;
-    }
-
-    public void setUid(String uid) {
-        this.uid = uid;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
-    }
+    @JacksonXmlProperty(localName = "Name", isAttribute = true)
+    private String name;
 
     public String getHref() {
         return href;
@@ -73,11 +52,43 @@ public class Ref {
         this.href = href;
     }
 
-    public VeeamObjectType getType() {
+    public String getType() {
         return type;
     }
 
     public void setType(String type) {
-        this.type = VeeamObjectType.valueOf(type);
+        this.type = type;
+    }
+
+    public List<Link> getLink() {
+        return link;
+    }
+
+    public void setLink(List<Link> link) {
+        this.link = link;
+    }
+
+    public String getObjectInJobId() {
+        return objectInJobId;
+    }
+
+    public void setObjectInJobId(String objectInJobId) {
+        this.objectInJobId = objectInJobId;
+    }
+
+    public String getHierarchyObjRef() {
+        return hierarchyObjRef;
+    }
+
+    public void setHierarchyObjRef(String hierarchyObjRef) {
+        this.hierarchyObjRef = hierarchyObjRef;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
     }
 }

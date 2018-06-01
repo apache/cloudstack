@@ -22,15 +22,15 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
-import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.backup.veeam.VeeamClient;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.log4j.Logger;
 
+import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VirtualMachine;
 
 public class VeeamBackupProvider extends AdapterBase implements BackupProvider, Configurable {
     private static final Logger LOG = Logger.getLogger(VeeamBackupProvider.class);
@@ -73,7 +73,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public boolean addVMToBackupPolicy(Long zoneId, String policyId, VirtualMachine vm) {
         String instanceName = vm.getInstanceName();
         //TODO: Get vcenter ip
-        return getClient(zoneId).assignBackupPolicyToVM(policyId, instanceName, "");
+        return getClient(zoneId).addVMToVeeamJob(policyId, instanceName, "");
     }
 
     @Override
