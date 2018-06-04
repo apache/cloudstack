@@ -21,23 +21,28 @@ mountdir=$(mktemp -d)
 filepath=$mountdir/cloudstack
 
 user_data=$filepath/userdata/user_data.txt
-availability_zone=$filepath/metadata/availability_zone.txt
-cloud_identifier=$filepath/metadata/cloud_identifier.txt
-instance_id=$filepath/metadata/instance_id.txt
-local_hostname=$filepath/metadata/local_hostname.txt
-service_offering=$filepath/metadata/service_offering.txt
-vm_id=$filepath/metadata/vm_id.txt
-public_key=$filepath/metadata/public_keys.txt
 vm_password=$filepath/password/vm_password.txt
 
+declare -A metadata=(
+["availability-zone"]=$filepath/metadata/availability-zone.txt
+["cloud-identifier"]=$filepath/metadata/cloud-identifier.txt
+["instance-id"]=$filepath/metadata/instance-id.txt
+["local-hostname"]=$filepath/metadata/local-hostname.txt
+["local-ipv4"]=$filepath/metadata/local-ipv4.txt
+["public-ipv4"]=$filepath/metadata/public-ipv4.txt
+["service-offering"]=$filepath/metadata/service-offering.txt
+["vm-id"]=$filepath/metadata/vm-id.txt
+["public-key"]=$filepath/metadata/public-keys.txt
+)
 # If lable name is other than config, please change the below line as required
 DefaultDisk=/dev/disk/by-label/config-2
 
 function usage
 {
+    keys=${!metadata[@]}
     echo -e "USAGE: cloud-get-vm-data -options"
     echo -e "  where options include:"
-    echo -e "\\t-m | --metadata [availability-zone | cloud-identifier | instance-id | local-hostname | service-offering | vm-id | public-key] \\n\\t\\tprint vm metadata"
+    echo -e "\\t-m | --metadata [${keys// / | }] \\n\\t\\tprint vm metadata"
     echo -e "\\t-p | --password \\n\\t\\tprint vm password"
     echo -e "\\t-u | --userdata \\n\\t\\tprint vm userdata"
 }
@@ -52,7 +57,7 @@ function prepare_mount
     if [ -e $DefaultDisk ]; then
         Disk=$DefaultDisk
     else
-        BLOCK_DEVICE=$(blkid -t LABEL='config' /dev/hd? /dev/sd? /dev/xvd? -o device)
+        BLOCK_DEVICE=$(blkid -t LABEL='config-2' /dev/sr? /dev/hd? /dev/sd? /dev/xvd? -o device)
         if [ -n $BLOCK_DEVICE ]; then
             Disk=$BLOCK_DEVICE
         else
@@ -81,34 +86,21 @@ case $1 in
                         ;;
     -m | --metadata )   shift
                         if [ "$1" != "" ]; then
-                            case $1 in
-                                availability-zone ) echo -n "availability zone: ";  filename=$availability_zone
-                                                    ;;
-                                cloud-identifier )  echo -n "cloud identifier: ";   filename=$cloud_identifier
-                                                    ;;
-                                instance-id )       echo -n "instance-id: ";        filename=$instance_id
-                                                    ;;
-                                local-hostname )    echo -n "local-hostname: ";     filename=$local_hostname
-                                                    ;;
-                                service-offering )  echo -n "service-offering: ";   filename=$service_offering
-                                                    ;;
-                                vm-id )             echo -n  "vm-id: ";             filename=$vm_id
-                                                    ;;
-                                public-key )       echo -n  "public-key: ";         filename=$public_key
-                                                    ;;
-                                * )                 usage
-                                                    remove_mount
-                                                    exit 1
-                            esac
+                            if [ -n "${metadata[$1]}" ]; then
+                                echo -n "$1: "
+                                filename=${metadata[$1]}
+                            else
+                                usage
+                                remove_mount
+                                exit 1
+                            fi
                         else
                             echo -e "METADATA\\n"
-                            [ -f $availability_zone ] && echo -e "availability zone:\t" "$(cat $availability_zone)"
-                            [ -f $cloud_identifier ]  && echo -e "cloud identifier:\t"  "$(cat $cloud_identifier)"
-                            [ -f $instance_id ]       && echo -e "instance-id:\t\t"     "$(cat $instance_id)"
-                            [ -f $local_hostname ]    && echo -e "local-hostname:\t\t"  "$(cat $local_hostname)"
-                            [ -f $service_offering ]  && echo -e "service-offering:\t"  "$(cat $service_offering)"
-                            [ -f $vm_id ]             && echo -e "vm-id:\t\t\t"         "$(cat $vm_id)"
-                            [ -f $public_key ]        && echo -e "public-key:\t\t"      "$(cat $public_key)"
+                            for entry in "${!metadata[@]}"
+                            do
+                                file=${metadata[$entry]}
+                                [ -f $file ] && printf "%18s :\t%s\n" $entry "$(cat $file)"
+                            done
                         fi
                         ;;
     -p | --password )   echo -n "PASSWORD: "
