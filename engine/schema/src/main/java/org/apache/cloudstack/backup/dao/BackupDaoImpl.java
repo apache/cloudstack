@@ -112,10 +112,6 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
 
     @Override
     public List<Backup> syncVMBackups(Long zoneId, Long vmId, List<Backup> externalBackups) {
-        List<Backup> existingVMBackups = listByVmId(zoneId, vmId);
-        if (CollectionUtils.isNotEmpty(existingVMBackups)) {
-            removeExistingVMBackups(zoneId, vmId);
-        }
         for (Backup backup : externalBackups) {
             BackupVO backupVO = getBackupVO(backup);
             persist(backupVO);

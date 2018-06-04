@@ -49,6 +49,7 @@ import org.apache.cloudstack.backup.dao.BackupPolicyDao;
 import org.apache.cloudstack.backup.dao.BackupPolicyVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -165,8 +166,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }
-        List<Backup> externalBackups = backupProvider.listVMBackups(zoneId, vm);
-        return backupDao.syncVMBackups(zoneId, vmId, externalBackups);
+        List<Backup> existingBackups = backupDao.listByVmId(zoneId, vmId);
+        if (CollectionUtils.isNotEmpty(existingBackups)) {
+            return existingBackups;
+        } else {
+            List<Backup> externalBackups = backupProvider.listVMBackups(zoneId, vm);
+            return backupDao.syncVMBackups(zoneId, vmId, externalBackups);
+        }
     }
 
     /**

@@ -22,6 +22,10 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import org.apache.cloudstack.backup.veeam.VeeamClient;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -32,8 +36,17 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 
+import javax.inject.Inject;
+
 public class VeeamBackupProvider extends AdapterBase implements BackupProvider, Configurable {
+
     private static final Logger LOG = Logger.getLogger(VeeamBackupProvider.class);
+
+    @Inject
+    VmwareDatacenterZoneMapDao vmwareDatacenterZoneMapDao;
+
+    @Inject
+    VmwareDatacenterDao vmwareDatacenterDao;
 
     private ConfigKey<String> VeeamUrl = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.veeam.url",
@@ -69,17 +82,28 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         throw new CloudRuntimeException("Failed to build Veeam API client");
     }
 
+    private String getVCenterIp(Long zoneId) {
+        VmwareDatacenterZoneMapVO map = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
+        if (map == null) {
+            throw new CloudRuntimeException("No vCenter associated to zone " + zoneId);
+        }
+        long vmwareDcId = map.getVmwareDcId();
+        VmwareDatacenterVO dataCenterVO = vmwareDatacenterDao.findById(vmwareDcId);
+        return dataCenterVO.getVcenterHost();
+    }
+
     @Override
     public boolean addVMToBackupPolicy(Long zoneId, String policyId, VirtualMachine vm) {
         String instanceName = vm.getInstanceName();
-        //TODO: Get vcenter ip
-        return getClient(zoneId).addVMToVeeamJob(policyId, instanceName, "");
+        String vCenterIp = getVCenterIp(zoneId);
+        return getClient(zoneId).addVMToVeeamJob(policyId, instanceName, vCenterIp);
     }
 
     @Override
     public boolean removeVMFromBackupPolicy(Long zoneId, String policyId, VirtualMachine vm) {
-        //TODO: Remove VM from backup policy on the client
-        return false;
+        String instanceName = vm.getInstanceName();
+        String vCenterIp = getVCenterIp(zoneId);
+        return getClient(zoneId).removeVMFromVeeamJob(policyId, instanceName, vCenterIp);
     }
 
     @Override
@@ -107,7 +131,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     @Override
     public List<Backup> listVMBackups(Long zoneId, VirtualMachine vm) {
-        //TODO
+        //return getClient(zoneId).listAllBackups();
         return null;
     }
 
