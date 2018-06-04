@@ -1175,8 +1175,39 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     _ntwkOfferingServiceMapDao.persist(offService);
                     s_logger.trace("Added service for the network offering: " + offService);
                 }
+
+                createDefaultL2NetworkOfferings();
             }
         });
+    }
+
+    /**
+     * Create default L2 network offerings
+     */
+    private void createDefaultL2NetworkOfferings() {
+        NetworkOfferingVO l2NoVlan = new NetworkOfferingVO(NetworkOffering.DefaultL2NetworkOfferingNoVlan,
+                "Offering for L2 networks no VLAN", TrafficType.Guest, false, false, null,
+                null, true, Availability.Optional, null, Network.GuestType.L2, true,
+                false, false, false, false, false);
+        l2NoVlan.setState(NetworkOffering.State.Enabled);
+        l2NoVlan = _networkOfferingDao.persistDefaultNetworkOffering(l2NoVlan);
+
+        NetworkOfferingVO l2Vlan = new NetworkOfferingVO(NetworkOffering.DefaultL2NetworkOfferingVlan,
+                "Offering for L2 networks VLAN", TrafficType.Guest, false, true, null,
+                null, true, Availability.Optional, null, Network.GuestType.L2, true,
+                false, false, false, false, false);
+        l2Vlan.setState(NetworkOffering.State.Enabled);
+        l2Vlan = _networkOfferingDao.persistDefaultNetworkOffering(l2Vlan);
+
+        NetworkOfferingVO l2ConfigDrive = new NetworkOfferingVO(NetworkOffering.DefaultL2NetworkOfferingConfigDrive,
+                "Offering for L2 networks with config drive user data", TrafficType.Guest, false, false, null,
+                null, true, Availability.Optional, null, Network.GuestType.L2, true,
+                false, false, false, false, false);
+        l2ConfigDrive.setState(NetworkOffering.State.Enabled);
+        l2ConfigDrive = _networkOfferingDao.persistDefaultNetworkOffering(l2ConfigDrive);
+
+        NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(l2ConfigDrive.getId(), Service.UserData, Provider.ConfigDrive);
+        _ntwkOfferingServiceMapDao.persist(offService);
     }
 
     private void createDefaultNetworks() {

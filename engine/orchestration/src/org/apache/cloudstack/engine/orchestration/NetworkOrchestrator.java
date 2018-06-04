@@ -561,6 +561,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     offering.setDedicatedLB(false);
                     _networkOfferingDao.update(offering.getId(), offering);
                 }
+
+                createDefaultL2NetworkOfferings();
             }
         });
 
@@ -599,6 +601,42 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         s_logger.info("Network Manager is configured.");
 
         return true;
+    }
+
+    /**
+     * Create default L2 network offerings
+     */
+    private void createDefaultL2NetworkOfferings() {
+        NetworkOfferingVO offering = null;
+
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultL2NetworkOfferingNoVlan) == null) {
+            offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultL2NetworkOfferingNoVlan,
+                    "Offering for L2 networks no VLAN", TrafficType.Guest, null, false, Availability.Optional, null, null,
+                    true, Network.GuestType.L2, false, null, false, null, false, false, null, false, null, false, false);
+            offering.setState(NetworkOffering.State.Enabled);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
+
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultL2NetworkOfferingVlan) == null) {
+            offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultL2NetworkOfferingVlan,
+                    "Offering for L2 networks VLAN", TrafficType.Guest, null, true, Availability.Optional, null, null,
+                    true, Network.GuestType.L2, false, null, false, null, false, false, null, false, null, false, false);
+            offering.setState(NetworkOffering.State.Enabled);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
+
+        final Map<Network.Service, Set<Network.Provider>> l2ConfigDriveProviders = new HashMap<Network.Service, Set<Network.Provider>>();
+        final Set<Network.Provider> userDataProvider = new HashSet<Network.Provider>();
+        userDataProvider.add(Provider.ConfigDrive);
+        l2ConfigDriveProviders.put(Service.UserData, userDataProvider);
+
+        if (_networkOfferingDao.findByUniqueName(NetworkOffering.DefaultL2NetworkOfferingConfigDrive) == null) {
+            offering = _configMgr.createNetworkOffering(NetworkOffering.DefaultL2NetworkOfferingConfigDrive,
+                "Offering for L2 networks with config drive user data", TrafficType.Guest, null, false, Availability.Optional, null, l2ConfigDriveProviders,
+                    true, Network.GuestType.L2, false, null, false, null, false, false, null, false, null, false, false);
+            offering.setState(NetworkOffering.State.Enabled);
+            _networkOfferingDao.update(offering.getId(), offering);
+        }
     }
 
     @Override
