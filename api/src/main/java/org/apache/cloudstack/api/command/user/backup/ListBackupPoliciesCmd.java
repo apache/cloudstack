@@ -32,29 +32,28 @@ import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupPolicy;
+import org.apache.commons.lang.BooleanUtils;
 
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
-import org.apache.commons.lang.BooleanUtils;
 
 @APICommand(name = ListBackupPoliciesCmd.APINAME,
         description = "Lists backup policies",
         responseObject = BackupPolicyResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListBackupPoliciesCmd extends BaseBackupListCmd {
-
     public static final String APINAME = "listBackupPolicies";
 
     @Inject
-    BackupManager backupManager;
+    private BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.BACKUP_POLICY_ID, type = BaseCmd.CommandType.UUID, entityType = BackupPolicyResponse.class,
+    @Parameter(name = ApiConstants.ID, type = BaseCmd.CommandType.UUID, entityType = BackupPolicyResponse.class,
             description = "The backup policy ID")
     private Long policyId;
 
@@ -82,11 +81,6 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
         return policyId;
     }
 
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -95,7 +89,7 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
     public void execute() throws ResourceUnavailableException, ServerApiException, ConcurrentOperationException {
         validateParameters();
         try {
-            List<BackupPolicy> backupPolicies = backupManager.listBackupPolicies(zoneId, external, policyId);
+            final List<BackupPolicy> backupPolicies = backupManager.listBackupPolicies(getZoneId(), isExternal(), getPolicyId());
             setupResponseBackupPolicyList(backupPolicies);
         } catch (InvalidParameterValueException e) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, e.getMessage());
@@ -105,8 +99,13 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
     }
 
     private void validateParameters() {
-        if (zoneId == null && policyId == null) {
-            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide a zone id or a policy id");
+        if (external && zoneId == null) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide the zone id when external option is specified");
         }
+    }
+
+    @Override
+    public String getCommandName() {
+        return APINAME.toLowerCase() + RESPONSE_SUFFIX;
     }
 }

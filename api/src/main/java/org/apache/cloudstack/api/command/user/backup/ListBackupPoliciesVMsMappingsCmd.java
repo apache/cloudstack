@@ -16,12 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.backup;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.exception.CloudRuntimeException;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -35,8 +33,12 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupPolicyVMMap;
 
-import javax.inject.Inject;
-import java.util.List;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = ListBackupPoliciesVMsMappingsCmd.APINAME,
         description = "Lists VMs mapped to a backup policy",
@@ -46,13 +48,13 @@ public class ListBackupPoliciesVMsMappingsCmd extends BaseBackupListCmd {
     public static final String APINAME = "listBackupPoliciesVirtualMachineMappings";
 
     @Inject
-    BackupManager backupManager;
+    private BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.BACKUP_POLICY_ID, type = BaseCmd.CommandType.UUID, entityType = BackupPolicyResponse.class,
+    @Parameter(name = ApiConstants.POLICY_ID, type = BaseCmd.CommandType.UUID, entityType = BackupPolicyResponse.class,
             description = "The backup policy ID")
     private Long policyId;
 

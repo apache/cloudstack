@@ -17,12 +17,13 @@
 
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.backup.BackupPolicyVMMap;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = BackupPolicyVMMap.class)
 public class BackupPolicyVMMapResponse extends BaseResponse {
@@ -31,7 +32,7 @@ public class BackupPolicyVMMapResponse extends BaseResponse {
     @Param(description = "zone id")
     private String zoneId;
 
-    @SerializedName(ApiConstants.BACKUP_POLICY_ID)
+    @SerializedName(ApiConstants.POLICY_ID)
     @Param(description = "backup policy id")
     private String backupPolicyId;
 

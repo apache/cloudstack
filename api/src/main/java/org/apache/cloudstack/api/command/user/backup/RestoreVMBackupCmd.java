@@ -17,12 +17,8 @@
 
 package org.apache.cloudstack.api.command.user.backup;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -37,35 +33,41 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
-import javax.inject.Inject;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = RestoreBackupCmd.APINAME,
-        description = "Restore backup",
+@APICommand(name = RestoreVMBackupCmd.APINAME,
+        description = "Restore VM backup",
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class RestoreBackupCmd extends BaseCmd {
-    public static final String APINAME = "restoreBackup";
+public class RestoreVMBackupCmd extends BaseCmd {
+    public static final String APINAME = "restoreVMBackup";
 
     @Inject
-    BackupManager backupManager;
+    private BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
-            type = CommandType.UUID,
-            entityType = UserVmResponse.class,
-            required = true,
-            description = "id of the VM")
-    private Long virtualMachineId;
-
-    @Parameter(name = ApiConstants.BACKUP_ID,
+    @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = BackupResponse.class,
             required = true,
             description = "id of the backup")
     private Long backupId;
+
+    //FIXME: is this necessary when backup id is known? unless we want to restore to a different VM?
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+            type = CommandType.UUID,
+            entityType = UserVmResponse.class,
+            required = true,
+            description = "id of the VM")
+    private Long vmId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
             description = "The zone ID")
@@ -75,8 +77,8 @@ public class RestoreBackupCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
+    public Long getVmId() {
+        return vmId;
     }
 
     public Long getBackupId() {
@@ -87,16 +89,6 @@ public class RestoreBackupCmd extends BaseCmd {
         return zoneId;
     }
 
-    @Override
-    public String getCommandName() {
-        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        return CallContext.current().getCallingAccount().getId();
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -104,7 +96,7 @@ public class RestoreBackupCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreBackup(zoneId, virtualMachineId, backupId);
+            boolean result = backupManager.restoreBackup(zoneId, vmId, backupId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
@@ -117,5 +109,14 @@ public class RestoreBackupCmd extends BaseCmd {
         }
     }
 
+    @Override
+    public String getCommandName() {
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        return CallContext.current().getCallingAccount().getId();
+    }
 
 }
