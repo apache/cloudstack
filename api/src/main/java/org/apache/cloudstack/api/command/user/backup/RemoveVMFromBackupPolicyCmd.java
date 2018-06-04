@@ -17,11 +17,8 @@
 
 package org.apache.cloudstack.api.command.user.backup;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -36,18 +33,21 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
-import javax.inject.Inject;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = RemoveVMFromBackupPolicyCmd.APINAME,
         description = "Removes a VM from an existing backup policy",
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RemoveVMFromBackupPolicyCmd extends BaseCmd {
-
-    public static final String APINAME = "removeVirtualMachineFromBackupPolicy";
+    public static final String APINAME = "removeVMFromBackupPolicy";
 
     @Inject
-    BackupManager backupManager;
+    private BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -58,9 +58,9 @@ public class RemoveVMFromBackupPolicyCmd extends BaseCmd {
             entityType = UserVmResponse.class,
             required = true,
             description = "id of the VM to be removed from the backup policy")
-    private Long virtualMachineId;
+    private Long vmId;
 
-    @Parameter(name = ApiConstants.BACKUP_POLICY_ID,
+    @Parameter(name = ApiConstants.POLICY_ID,
             type = CommandType.UUID,
             entityType = BackupPolicyResponse.class,
             required = true,
@@ -77,8 +77,8 @@ public class RemoveVMFromBackupPolicyCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
+    public Long getVmId() {
+        return vmId;
     }
 
     public Long getPolicyId() {
@@ -106,7 +106,7 @@ public class RemoveVMFromBackupPolicyCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.removeVMFromBackupPolicy(zoneId, policyId, virtualMachineId);
+            boolean result = backupManager.removeVMFromBackupPolicy(getZoneId(), getPolicyId(), getVmId());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

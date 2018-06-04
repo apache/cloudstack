@@ -22,12 +22,20 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 
+import javax.inject.Inject;
+
 import org.apache.cloudstack.backup.veeam.VeeamClient;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.vmware.VmwareDatacenter;
+import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
@@ -53,9 +61,13 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     private ConfigKey<Boolean> VeeamValidateSSLSecurity = new ConfigKey<>("Advanced", Boolean.class, "backup.plugin.veeam.validate.ssl", "true",
             "When set to true, this will validate the SSL certificate when connecting to https/ssl enabled Veeam API service.", true, ConfigKey.Scope.Zone);
 
-
     private ConfigKey<Integer> VeeamApiRequestTimeout = new ConfigKey<>("Advanced", Integer.class, "backup.plugin.veeam.request.timeout", "300",
             "The Veeam B&R API request timeout in seconds.", true, ConfigKey.Scope.Zone);
+
+    @Inject
+    private VmwareDatacenterZoneMapDao vmwareDatacenterZoneMapDao;
+    @Inject
+    private VmwareDatacenterDao vmwareDatacenterDao;
 
     private VeeamClient getClient(final Long zoneId) {
         try {
@@ -70,27 +82,49 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean addVMToBackupPolicy(Long zoneId, String policyId, VirtualMachine vm) {
-        String instanceName = vm.getInstanceName();
-        //TODO: Get vcenter ip
-        return getClient(zoneId).addVMToVeeamJob(policyId, instanceName, "");
-    }
-
-    @Override
-    public boolean removeVMFromBackupPolicy(Long zoneId, String policyId, VirtualMachine vm) {
-        //TODO: Remove VM from backup policy on the client
-        return false;
-    }
-
-    @Override
-    public List<BackupPolicy> listBackupPolicies(Long zoneId) {
+    public List<BackupPolicy> listBackupPolicies(final Long zoneId) {
         return getClient(zoneId).listBackupPolicies();
     }
 
     @Override
-    public boolean isBackupPolicy(String uuid) {
-        //TODO
-        return true;
+    public boolean isBackupPolicy(final Long zoneId, final String uuid) {
+        List<BackupPolicy> policies = listBackupPolicies(zoneId);
+        if (CollectionUtils.isEmpty(policies)) {
+            return false;
+        }
+        for (final BackupPolicy policy : policies) {
+            if (policy.getExternalId().equals(uuid)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private VmwareDatacenter findVmwareDatacenterForVM(final VirtualMachine vm) {
+        if (vm == null || vm.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
+            throw new CloudRuntimeException("The Veeam backup provider is only applicable for VMware VMs");
+        }
+        final VmwareDatacenterZoneMap zoneMap = vmwareDatacenterZoneMapDao.findByZoneId(vm.getDataCenterId());
+        if (zoneMap == null) {
+            throw new CloudRuntimeException("Failed to find a mapped VMware datacenter for zone id:" + vm.getDataCenterId());
+        }
+        final VmwareDatacenter vmwareDatacenter = vmwareDatacenterDao.findById(zoneMap.getVmwareDcId());
+        if (vmwareDatacenter == null) {
+            throw new CloudRuntimeException("Failed to find a valid VMware datacenter mapped for zone id:" + vm.getDataCenterId());
+        }
+        return vmwareDatacenter;
+    }
+
+    @Override
+    public boolean addVMToBackupPolicy(final Long zoneId, final BackupPolicy policy, final VirtualMachine vm) {
+        final VmwareDatacenter vmwareDatacenter = findVmwareDatacenterForVM(vm);
+        return getClient(zoneId).addVMToVeeamJob(policy.getExternalId(), vm.getInstanceName(), vmwareDatacenter.getVcenterHost());
+    }
+
+    @Override
+    public boolean removeVMFromBackupPolicy(final Long zoneId, final BackupPolicy policy, final VirtualMachine vm) {
+        final VmwareDatacenter vmwareDatacenter = findVmwareDatacenterForVM(vm);
+        return getClient(zoneId).removeVMFromVeeamJob(policy.getExternalId(), vm.getInstanceName(), vmwareDatacenter.getVcenterHost());
     }
 
     @Override

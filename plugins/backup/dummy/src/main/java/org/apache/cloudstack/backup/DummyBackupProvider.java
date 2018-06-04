@@ -16,16 +16,17 @@
 // under the License.
 package org.apache.cloudstack.backup;
 
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.storage.Storage;
 import com.cloud.storage.Volume;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
-import org.apache.log4j.Logger;
-
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
 
 public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
@@ -42,18 +43,6 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean addVMToBackupPolicy(Long zoneId, String policyId, VirtualMachine vm) {
-        s_logger.debug("Assigning VM " + vm.getInstanceName() + " to backup policy " + policyId);
-        return true;
-    }
-
-    @Override
-    public boolean removeVMFromBackupPolicy(Long zoneId, String policyId, VirtualMachine vm) {
-        s_logger.debug("Removing VM " + vm.getInstanceName() + " from backup policy " + policyId);
-        return true;
-    }
-
-    @Override
     public List<BackupPolicy> listBackupPolicies(Long zoneId) {
         s_logger.debug("Listing backup policies on Dummy B&R Plugin");
         BackupPolicy policy1 = new BackupPolicyTO("aaaa-aaaa", "Golden Policy", "Gold description");
@@ -62,8 +51,20 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean isBackupPolicy(String uuid) {
+    public boolean isBackupPolicy(Long zoneId, String uuid) {
         s_logger.debug("Checking if backup policy exists on the Dummy Backup Provider");
+        return true;
+    }
+
+    @Override
+    public boolean addVMToBackupPolicy(Long zoneId, BackupPolicy policy, VirtualMachine vm) {
+        s_logger.debug("Assigning VM " + vm.getInstanceName() + " to backup policy " + policy.getName());
+        return true;
+    }
+
+    @Override
+    public boolean removeVMFromBackupPolicy(Long zoneId, BackupPolicy policy, VirtualMachine vm) {
+        s_logger.debug("Removing VM " + vm.getInstanceName() + " from backup policy " + policy.getName());
         return true;
     }
 

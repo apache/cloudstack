@@ -32,8 +32,6 @@ public class ApiConstants {
     public static final String APPLIED = "applied";
     public static final String LIST_LB_VMIPS = "lbvmips";
     public static final String AVAILABLE = "available";
-    public static final String BACKUP_ID = "backupid";
-    public static final String BACKUP_POLICY_ID = "backuppolicyid";
     public static final String BITS = "bits";
     public static final String BOOTABLE = "bootable";
     public static final String BIND_DN = "binddn";

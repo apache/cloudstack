@@ -17,38 +17,36 @@
 
 package org.apache.cloudstack.api.command.user.backup;
 
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.context.CallContext;
+
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseBackupListCmd;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.backup.BackupManager;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.backup.Backup;
+import com.cloud.utils.exception.CloudRuntimeException;
 
-import javax.inject.Inject;
-import java.util.List;
-
-@APICommand(name = ListBackupsCmd.APINAME,
-        description = "Lists backups",
-        responseObject = BackupResponse.class, since = "4.12.0",
+@APICommand(name = DeleteVMBackupCmd.APINAME,
+        description = "Delete VM backup",
+        responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListBackupsCmd extends BaseBackupListCmd {
-    public static final String APINAME = "listVMBackups";
+public class DeleteVMBackupCmd extends BaseCmd {
+    public static final String APINAME = "deleteVMBackup";
 
     @Inject
-    BackupManager backupManager;
+    private BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -59,22 +57,35 @@ public class ListBackupsCmd extends BaseBackupListCmd {
             entityType = UserVmResponse.class,
             required = true,
             description = "id of the VM")
-    private Long virtualMachineId;
-
-    @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
-            description = "The zone ID")
-    private Long zoneId;
+    private Long vmId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
+    public Long getVmId() {
+        return vmId;
     }
 
-    public Long getZoneId() {
-        return zoneId;
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+        try {
+            boolean result = backupManager.deleteBackup(vmId);
+            // FIXME: the response type
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new CloudRuntimeException("Error while deleting backup of VM");
+            }
+        } catch (Exception e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
     }
 
     @Override
@@ -86,20 +97,4 @@ public class ListBackupsCmd extends BaseBackupListCmd {
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
     }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        try{
-            List<Backup> backups = backupManager.listVMBackups(zoneId, virtualMachineId);
-            setupResponseBackupList(backups);
-        } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-        }
-    }
-
-
 }

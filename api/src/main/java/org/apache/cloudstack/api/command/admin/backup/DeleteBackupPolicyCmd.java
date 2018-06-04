@@ -17,11 +17,8 @@
 
 package org.apache.cloudstack.api.command.admin.backup;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,24 +31,27 @@ import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
-import javax.inject.Inject;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = DeleteBackupPolicyCmd.APINAME,
         description = "Deletes a backup policy",
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin})
 public class DeleteBackupPolicyCmd extends BaseCmd {
-
     public static final String APINAME = "deleteBackupPolicy";
 
     @Inject
-    BackupManager backupManager;
+    private BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     ////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.BACKUP_POLICY_ID,
+    @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
             entityType = BackupPolicyResponse.class,
             required = true,
@@ -66,6 +66,20 @@ public class DeleteBackupPolicyCmd extends BaseCmd {
         return id;
     }
 
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+        if (backupManager.deleteBackupPolicy(getId())) {
+            SuccessResponse response = new SuccessResponse(getCommandName());
+            setResponseObject(response);
+        } else {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to remove backup policy: " + getId());
+        }
+    }
+
     @Override
     public String getCommandName() {
         return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
@@ -74,19 +88,5 @@ public class DeleteBackupPolicyCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
-    }
-
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        if (backupManager.deleteBackupPolicy(id)) {
-            SuccessResponse response = new SuccessResponse(getCommandName());
-            setResponseObject(response);
-        } else {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Unable to remove backup policy: " + id);
-        }
     }
 }

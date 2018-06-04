@@ -17,12 +17,8 @@
 
 package org.apache.cloudstack.api.command.user.backup;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -38,23 +34,36 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
-import javax.inject.Inject;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = RestoreBackupVolumeCmd.APINAME,
         description = "Restore and attach a backed up volume to VM",
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class RestoreBackupVolumeCmd extends BaseCmd {
-
     public static final String APINAME = "restoreBackupVolumeAndAttachToVM";
 
     @Inject
-    BackupManager backupManager;
+    private BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    //FIXME: discuss on simplification
+    @Parameter(name = ApiConstants.ID,
+            type = CommandType.UUID,
+            entityType = BackupResponse.class,
+            required = true,
+            description = "id of the backup")
+    private Long backupId;
+
+    //FIXME: is this necessary when backup id is known? unless we want to restore to a different volume?
     @Parameter(name = ApiConstants.VOLUME_ID,
             type = CommandType.UUID,
             entityType = VolumeResponse.class,
@@ -62,19 +71,13 @@ public class RestoreBackupVolumeCmd extends BaseCmd {
             description = "id of the volume to restore and to be attached to the vm")
     private Long volumeId;
 
+    //FIXME: is this necessary when backup id is known? unless we want to restore to a different VM?
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
             required = true,
             description = "id of the VM where to attach the restored volume")
-    private Long virtualMachineId;
-
-    @Parameter(name = ApiConstants.BACKUP_ID,
-            type = CommandType.UUID,
-            entityType = BackupResponse.class,
-            required = true,
-            description = "id of the backup")
-    private Long backupId;
+    private Long vmId;
 
     @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
             description = "The zone ID")
@@ -88,8 +91,8 @@ public class RestoreBackupVolumeCmd extends BaseCmd {
         return volumeId;
     }
 
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
+    public Long getVmId() {
+        return vmId;
     }
 
     public Long getBackupId() {
@@ -117,7 +120,7 @@ public class RestoreBackupVolumeCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreBackupVolumeAndAttachToVM(zoneId, volumeId, virtualMachineId, backupId);
+            boolean result = backupManager.restoreBackupVolumeAndAttachToVM(zoneId, volumeId, vmId, backupId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

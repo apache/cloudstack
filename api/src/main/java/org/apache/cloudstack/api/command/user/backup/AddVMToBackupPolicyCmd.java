@@ -43,10 +43,10 @@ import com.cloud.exception.ResourceUnavailableException;
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class AddVMToBackupPolicyCmd extends BaseCmd {
-    public static final String APINAME = "addVirtualMachineToBackupPolicy";
+    public static final String APINAME = "addVMToBackupPolicy";
 
     @Inject
-    BackupManager backupManager;
+    private BackupManager backupManager;
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -57,9 +57,9 @@ public class AddVMToBackupPolicyCmd extends BaseCmd {
             entityType = UserVmResponse.class,
             required = true,
             description = "id of the VM to be assigned to the backup policy")
-    private Long virtualMachineId;
+    private Long vmId;
 
-    @Parameter(name = ApiConstants.BACKUP_POLICY_ID,
+    @Parameter(name = ApiConstants.POLICY_ID,
             type = CommandType.UUID,
             entityType = BackupPolicyResponse.class,
             required = true,
@@ -74,8 +74,8 @@ public class AddVMToBackupPolicyCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getVirtualMachineId() {
-        return virtualMachineId;
+    public Long getVmId() {
+        return vmId;
     }
 
     public Long getPolicyId() {
@@ -103,7 +103,7 @@ public class AddVMToBackupPolicyCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.addVMToBackupPolicy(zoneId, policyId, virtualMachineId);
+            boolean result = backupManager.addVMToBackupPolicy(getZoneId(), getPolicyId(), getVmId());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

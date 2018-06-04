@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_policy` (
   `uuid` varchar(40) NOT NULL,
   `name` varchar(255) NOT NULL COMMENT 'backup policy name',
   `description` varchar(255) NOT NULL COMMENT 'backup policy description',
-  `external_id` varchar(40) NOT NULL COMMENT 'backup policy ID on provider side',
+  `external_id` varchar(80) NOT NULL COMMENT 'backup policy ID on provider side',
   `zone_id` bigint(20) unsigned NOT NULL COMMENT 'zone id',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),

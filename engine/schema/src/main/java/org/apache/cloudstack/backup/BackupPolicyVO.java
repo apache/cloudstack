@@ -29,19 +29,6 @@ import javax.persistence.Table;
 @Entity
 @Table(name = "backup_policy")
 public class BackupPolicyVO implements BackupPolicy {
-
-    public BackupPolicyVO() {
-        this.uuid = UUID.randomUUID().toString();
-    }
-
-    public BackupPolicyVO(final long zoneId, final String externalId, final String name, final String description) {
-        this();
-        this.zoneId = zoneId;
-        this.name = name;
-        this.description = description;
-        this.externalId = externalId;
-    }
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -61,6 +48,19 @@ public class BackupPolicyVO implements BackupPolicy {
 
     @Column(name = "zone_id")
     private long zoneId;
+
+    public BackupPolicyVO() {
+        this.uuid = UUID.randomUUID().toString();
+    }
+
+    public BackupPolicyVO(final long zoneId, final String externalId, final String name, final String description) {
+        this();
+        this.zoneId = zoneId;
+        this.name = name;
+        this.description = description;
+        this.externalId = externalId;
+    }
+
 
     public String getUuid() {
         return uuid;
