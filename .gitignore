@@ -15,7 +15,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-build/replace.properties
 build/build.number
 .lock-wscript
 .waf-*
