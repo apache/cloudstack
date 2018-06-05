@@ -29,7 +29,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -67,12 +66,6 @@ public class RemoveVMFromBackupPolicyCmd extends BaseCmd {
             description = "id of the backup policy")
     private Long policyId;
 
-    @Parameter(name = ApiConstants.ZONE_ID,
-            type = CommandType.UUID,
-            entityType = ZoneResponse.class,
-            description = "the zone ID", required = true)
-    private Long zoneId;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -85,8 +78,24 @@ public class RemoveVMFromBackupPolicyCmd extends BaseCmd {
         return policyId;
     }
 
-    public Long getZoneId() {
-        return zoneId;
+    /////////////////////////////////////////////////////
+    /////////////// API Implementation///////////////////
+    /////////////////////////////////////////////////////
+
+    @Override
+    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
+        try {
+            boolean result = backupManager.removeVMFromBackupPolicy(getPolicyId(), getVmId());
+            if (result) {
+                SuccessResponse response = new SuccessResponse(getCommandName());
+                response.setResponseName(getCommandName());
+                setResponseObject(response);
+            } else {
+                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove VM from backup policy");
+            }
+        } catch (Exception e) {
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
+        }
     }
 
     @Override
@@ -99,23 +108,4 @@ public class RemoveVMFromBackupPolicyCmd extends BaseCmd {
         return CallContext.current().getCallingAccount().getId();
     }
 
-    /////////////////////////////////////////////////////
-    /////////////// API Implementation///////////////////
-    /////////////////////////////////////////////////////
-
-    @Override
-    public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
-        try {
-            boolean result = backupManager.removeVMFromBackupPolicy(getZoneId(), getPolicyId(), getVmId());
-            if (result) {
-                SuccessResponse response = new SuccessResponse(getCommandName());
-                response.setResponseName(getCommandName());
-                setResponseObject(response);
-            } else {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to remove VM from backup policy");
-            }
-        } catch (Exception e) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-        }
-    }
 }

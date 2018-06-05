@@ -116,15 +116,20 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean addVMToBackupPolicy(final Long zoneId, final BackupPolicy policy, final VirtualMachine vm) {
+    public boolean addVMToBackupPolicy(final BackupPolicy policy, final VirtualMachine vm) {
         final VmwareDatacenter vmwareDatacenter = findVmwareDatacenterForVM(vm);
-        return getClient(zoneId).addVMToVeeamJob(policy.getExternalId(), vm.getInstanceName(), vmwareDatacenter.getVcenterHost());
+        return getClient(vm.getDataCenterId()).addVMToVeeamJob(policy.getExternalId(), vm.getInstanceName(), vmwareDatacenter.getVcenterHost());
     }
 
     @Override
-    public boolean removeVMFromBackupPolicy(final Long zoneId, final BackupPolicy policy, final VirtualMachine vm) {
+    public boolean removeVMFromBackupPolicy(final BackupPolicy policy, final VirtualMachine vm) {
         final VmwareDatacenter vmwareDatacenter = findVmwareDatacenterForVM(vm);
-        return getClient(zoneId).removeVMFromVeeamJob(policy.getExternalId(), vm.getInstanceName(), vmwareDatacenter.getVcenterHost());
+        return getClient(vm.getDataCenterId()).removeVMFromVeeamJob(policy.getExternalId(), vm.getInstanceName(), vmwareDatacenter.getVcenterHost());
+    }
+
+    @Override
+    public boolean startBackup(BackupPolicy policy, VirtualMachine vm) {
+        return getClient(vm.getDataCenterId()).startBackupJob(policy.getExternalId());
     }
 
     @Override

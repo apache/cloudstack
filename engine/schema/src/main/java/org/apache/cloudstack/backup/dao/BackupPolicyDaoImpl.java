@@ -17,22 +17,22 @@
 
 package org.apache.cloudstack.backup.dao;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.utils.db.SearchCriteria;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.backup.BackupPolicy;
 import org.apache.cloudstack.backup.BackupPolicyVO;
 import org.springframework.stereotype.Component;
 
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.utils.db.SearchCriteria;
 
 @Component
 public class BackupPolicyDaoImpl extends GenericDaoBase<BackupPolicyVO, Long> implements BackupPolicyDao {
@@ -71,7 +71,9 @@ public class BackupPolicyDaoImpl extends GenericDaoBase<BackupPolicyVO, Long> im
     @Override
     public List<BackupPolicy> listByZone(Long zoneId) {
         SearchCriteria<BackupPolicyVO> sc = backupPoliciesSearch.create();
-        sc.setParameters("zone_id", zoneId);
+        if (zoneId != null) {
+            sc.setParameters("zone_id", zoneId);
+        }
         return new ArrayList<>(listBy(sc));
     }
 }

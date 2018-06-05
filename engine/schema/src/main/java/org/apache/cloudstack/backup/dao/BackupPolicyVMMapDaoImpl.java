@@ -19,6 +19,18 @@
 
 package org.apache.cloudstack.backup.dao;
 
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.response.BackupPolicyVMMapResponse;
+import org.apache.cloudstack.backup.BackupPolicyVMMap;
+import org.apache.cloudstack.backup.BackupPolicyVMMapVO;
+import org.apache.cloudstack.backup.BackupPolicyVO;
+import org.apache.commons.collections.CollectionUtils;
+import org.springframework.stereotype.Component;
+
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.utils.db.GenericDaoBase;
@@ -27,16 +39,6 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.api.response.BackupPolicyVMMapResponse;
-import org.apache.cloudstack.backup.BackupPolicyVMMap;
-import org.apache.cloudstack.backup.BackupPolicyVMMapVO;
-import org.apache.cloudstack.backup.BackupPolicyVO;
-import org.apache.commons.collections.CollectionUtils;
-import org.springframework.stereotype.Component;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import java.util.List;
 
 @Component
 public class BackupPolicyVMMapDaoImpl extends GenericDaoBase<BackupPolicyVMMapVO, Long> implements BackupPolicyVMMapDao {
@@ -94,9 +96,11 @@ public class BackupPolicyVMMapDaoImpl extends GenericDaoBase<BackupPolicyVMMapVO
     }
 
     @Override
-    public List<BackupPolicyVMMapVO> listByZoneId(long zoneId) {
+    public List<BackupPolicyVMMapVO> listByZoneId(Long zoneId) {
         SearchCriteria<BackupPolicyVMMapVO> sc = mapSearch.create();
-        sc.setParameters("zone_id", zoneId);
+        if (zoneId != null) {
+            sc.setParameters("zone_id", zoneId);
+        }
         return listBy(sc);
     }
 

@@ -99,7 +99,7 @@ public class ListBackupPoliciesCmd extends BaseBackupListCmd {
     }
 
     private void validateParameters() {
-        if (external && zoneId == null) {
+        if (isExternal() && getZoneId() == null) {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Please provide the zone id when external option is specified");
         }
     }

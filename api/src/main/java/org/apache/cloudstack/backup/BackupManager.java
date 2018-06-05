@@ -52,7 +52,17 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     /**
      * Assign VM to existing backup policy
      */
-    boolean addVMToBackupPolicy(Long zoneId, Long policyId, Long virtualMachineId);
+    boolean addVMToBackupPolicy(Long policyId, Long virtualMachineId);
+
+    /**
+     * Remove a VM from a backup policy
+     */
+    boolean removeVMFromBackupPolicy(Long policyId, Long vmId);
+
+    /**
+     * Return mappings between backup policy and VMs
+     */
+    List<BackupPolicyVMMap> listBackupPolicyVMMappings(Long vmId, Long zoneId, Long policyId);
 
     /**
      * List existing backups for a VM
@@ -95,14 +105,4 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * Deletes a backup policy
      */
     boolean deleteBackupPolicy(Long policyId);
-
-    /**
-     * Remove a VM from a backup policy
-     */
-    boolean removeVMFromBackupPolicy(Long zoneId, Long policyId, Long vmId);
-
-    /**
-     * Return mappings between backup policy and VMs
-     */
-    List<BackupPolicyVMMap> listBackupPolicyVMMappings(Long zoneId, Long policyId);
 }

@@ -57,14 +57,19 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean addVMToBackupPolicy(Long zoneId, BackupPolicy policy, VirtualMachine vm) {
+    public boolean addVMToBackupPolicy(BackupPolicy policy, VirtualMachine vm) {
         s_logger.debug("Assigning VM " + vm.getInstanceName() + " to backup policy " + policy.getName());
         return true;
     }
 
     @Override
-    public boolean removeVMFromBackupPolicy(Long zoneId, BackupPolicy policy, VirtualMachine vm) {
+    public boolean removeVMFromBackupPolicy(BackupPolicy policy, VirtualMachine vm) {
         s_logger.debug("Removing VM " + vm.getInstanceName() + " from backup policy " + policy.getName());
+        return true;
+    }
+
+    @Override
+    public boolean startBackup(BackupPolicy policy, VirtualMachine vm) {
         return true;
     }
 

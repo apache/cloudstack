@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.BackupPolicyVMMap;
@@ -40,12 +41,12 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = ListBackupPoliciesVMsMappingsCmd.APINAME,
+@APICommand(name = ListBackupPolicyVMMappingsCmd.APINAME,
         description = "Lists VMs mapped to a backup policy",
         responseObject = BackupPolicyResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class ListBackupPoliciesVMsMappingsCmd extends BaseBackupListCmd {
-    public static final String APINAME = "listBackupPoliciesVirtualMachineMappings";
+public class ListBackupPolicyVMMappingsCmd extends BaseBackupListCmd {
+    public static final String APINAME = "listBackupPolicyVMMappings";
 
     @Inject
     private BackupManager backupManager;
@@ -53,6 +54,10 @@ public class ListBackupPoliciesVMsMappingsCmd extends BaseBackupListCmd {
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
+
+    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID, type = CommandType.UUID, entityType = UserVmResponse.class,
+            description = "The id of the VM")
+    private Long vmId;
 
     @Parameter(name = ApiConstants.POLICY_ID, type = BaseCmd.CommandType.UUID, entityType = BackupPolicyResponse.class,
             description = "The backup policy ID")
@@ -63,13 +68,29 @@ public class ListBackupPoliciesVMsMappingsCmd extends BaseBackupListCmd {
     private Long zoneId;
 
     /////////////////////////////////////////////////////
+    /////////////////// Accessors ///////////////////////
+    /////////////////////////////////////////////////////
+
+    public Long getVmId() {
+        return vmId;
+    }
+
+    public Long getPolicyId() {
+        return policyId;
+    }
+
+    public Long getZoneId() {
+        return zoneId;
+    }
+
+    /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
 
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            List<BackupPolicyVMMap> mappings = backupManager.listBackupPolicyVMMappings(zoneId, policyId);
+            List<BackupPolicyVMMap> mappings = backupManager.listBackupPolicyVMMappings(getVmId(), getZoneId(), getPolicyId());
             setupResponseBackupPolicyVMMappings(mappings);
         } catch (CloudRuntimeException e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());

@@ -28,7 +28,6 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -66,10 +65,6 @@ public class AddVMToBackupPolicyCmd extends BaseCmd {
             description = "id of the backup policy")
     private Long policyId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = CommandType.UUID, entityType = ZoneResponse.class,
-            description = "the zone ID", required = true)
-    private Long zoneId;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -82,20 +77,6 @@ public class AddVMToBackupPolicyCmd extends BaseCmd {
         return policyId;
     }
 
-    public Long getZoneId() {
-        return zoneId;
-    }
-
-    @Override
-    public String getCommandName() {
-        return AddVMToBackupPolicyCmd.APINAME.toLowerCase() + RESPONSE_SUFFIX;
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        return CallContext.current().getCallingAccount().getId();
-    }
-
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -103,7 +84,7 @@ public class AddVMToBackupPolicyCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.addVMToBackupPolicy(getZoneId(), getPolicyId(), getVmId());
+            boolean result = backupManager.addVMToBackupPolicy(getPolicyId(), getVmId());
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
@@ -114,5 +95,15 @@ public class AddVMToBackupPolicyCmd extends BaseCmd {
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
+    }
+
+    @Override
+    public String getCommandName() {
+        return AddVMToBackupPolicyCmd.APINAME.toLowerCase() + RESPONSE_SUFFIX;
+    }
+
+    @Override
+    public long getEntityOwnerId() {
+        return CallContext.current().getCallingAccount().getId();
     }
 }

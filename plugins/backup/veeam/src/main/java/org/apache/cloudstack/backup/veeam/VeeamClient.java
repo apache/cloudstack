@@ -312,7 +312,7 @@ public class VeeamClient {
         return new ArrayList<>();
     }
 
-    public boolean startAdhocBackupJob(final String jobId) {
+    public boolean startBackupJob(final String jobId) {
         LOG.debug("Trying to start ad-hoc backup for Veeam job: " + jobId);
         try {
             final HttpResponse response = post(String.format("/jobs/%s?action=start", jobId), null);
@@ -357,7 +357,7 @@ public class VeeamClient {
                     return checkTaskStatus(deleteResponse);
                 }
             }
-            return checkTaskStatus(response);
+            throw new CloudRuntimeException("VM was not found to be assigned to backup policy");
         } catch (final IOException e) {
             LOG.error("Failed to list Veeam jobs due to:", e);
             checkResponseTimeOut(e);

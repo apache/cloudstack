@@ -17,32 +17,69 @@
 
 package org.apache.cloudstack.backup.veeam;
 
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.post;
+import static com.github.tomakehurst.wiremock.client.WireMock.postRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
+
+import java.util.List;
+
+import org.apache.cloudstack.backup.BackupPolicy;
+import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+
+import com.github.tomakehurst.wiremock.client.BasicCredentials;
+import com.github.tomakehurst.wiremock.junit.WireMockRule;
 
 public class VeeamClientTest {
 
+    private String adminUsername = "administrator";
+    private String adminPassword = "P@ssword123";
     private VeeamClient client;
+
+    @Rule
+    public WireMockRule wireMockRule = new WireMockRule(9399);
 
     @Before
     public void setUp() throws Exception {
-        client = new VeeamClient("http://10.2.2.89:9399/api/", "administrator", "P@ssword123", true, 60);
+        wireMockRule.stubFor(post(urlMatching(".*/sessionMngr/"))
+                .willReturn(aResponse()
+                        .withStatus(201)
+                        .withHeader("X-RestSvcSessionId", "some-session-auth-id")
+                        .withBody("")));
+        client = new VeeamClient("http://localhost:9399/api/", adminUsername, adminPassword, true, 60);
     }
 
     @Test
-    public void testBackups() {
-        client.listAllBackups();
+    public void testBasicAuth() {
+        verify(postRequestedFor(urlMatching(".*/sessionMngr/"))
+                .withBasicAuth(new BasicCredentials(adminUsername, adminPassword)));
     }
 
     @Test
-    public void testPolicies() {
-        client.listBackupPolicies();
-    }
-
-    @Test
-    public void testBackupLifecycle() {
-        client.addVMToVeeamJob("8acac50d-3711-4c99-bf7b-76fe9c7e39c3", "i-2-9-VM", "10.2.2.52");
-        client.startAdhocBackupJob("8acac50d-3711-4c99-bf7b-76fe9c7e39c3");
-        client.removeVMFromVeeamJob("8acac50d-3711-4c99-bf7b-76fe9c7e39c3", "i-2-9-VM", "10.2.2.52");
+    public void testVeeamJobs() {
+        wireMockRule.stubFor(get(urlMatching(".*/jobs"))
+                .willReturn(aResponse()
+                        .withHeader("Content-Type", "application/xml")
+                        .withStatus(200)
+                        .withBody("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                                "<EntityReferences xmlns=\"http://www.veeam.com/ent/v1.0\" xmlns:xsd=\"http://www.w3.org/2001/XMLSchema\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">\n" +
+                                "    <Ref UID=\"urn:veeam:Job:8acac50d-3711-4c99-bf7b-76fe9c7e39c3\" Name=\"ZONE1-GOLD\" Href=\"http://10.1.1.10:9399/api/jobs/8acac50d-3711-4c99-bf7b-76fe9c7e39c3\" Type=\"JobReference\">\n" +
+                                "        <Links>\n" +
+                                "            <Link Href=\"http://10.1.1.10:9399/api/backupServers/1efaeae4-d23c-46cd-84a1-8798f68bdb78\" Name=\"10.1.1.10\" Type=\"BackupServerReference\" Rel=\"Up\"/>\n" +
+                                "            <Link Href=\"http://10.1.1.10:9399/api/jobs/8acac50d-3711-4c99-bf7b-76fe9c7e39c3?format=Entity\" Name=\"ZONE1-GOLD\" Type=\"Job\" Rel=\"Alternate\"/>\n" +
+                                "            <Link Href=\"http://10.1.1.10:9399/api/jobs/8acac50d-3711-4c99-bf7b-76fe9c7e39c3/backupSessions\" Type=\"BackupJobSessionReferenceList\" Rel=\"Down\"/>\n" +
+                                "        </Links>\n" +
+                                "    </Ref>\n" +
+                                "</EntityReferences>")));
+        List<BackupPolicy> policies = client.listBackupPolicies();
+        verify(getRequestedFor(urlMatching(".*/jobs")));
+        Assert.assertEquals(policies.size(), 1);
+        Assert.assertEquals(policies.get(0).getName(), "ZONE1-GOLD");
     }
 }

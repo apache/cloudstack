@@ -50,12 +50,20 @@ public interface BackupProvider {
      * Assign VM to backup policy
      * @return true if VM is successfully assigned, false if not
      */
-    boolean addVMToBackupPolicy(Long zoneId, BackupPolicy policy, VirtualMachine vm);
+    boolean addVMToBackupPolicy(BackupPolicy policy, VirtualMachine vm);
 
     /**
      * Remove a VM form a backup policy
      */
-    boolean removeVMFromBackupPolicy(Long zoneId, BackupPolicy policy, VirtualMachine vm);
+    boolean removeVMFromBackupPolicy(BackupPolicy policy, VirtualMachine vm);
+
+    /**
+     * Starts ad-hoc backup of a VM assigned to a policy
+     * @param policy
+     * @param vm
+     * @return true if backup successfully starts
+     */
+    boolean startBackup(BackupPolicy policy, VirtualMachine vm);
 
     /**
      * Restore VM from backup
