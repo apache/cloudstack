@@ -216,6 +216,10 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         final Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
+        if (network.isRollingRestart()) {
+            params.put(VirtualMachineProfile.Param.RollingRestart, true);
+        }
+
         final RouterDeploymentDefinition routerDeploymentDefinition =
                 routerDeploymentDefinitionBuilder.create()
                 .setGuestNetwork(network)

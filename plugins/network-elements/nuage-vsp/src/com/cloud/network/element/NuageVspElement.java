@@ -54,6 +54,7 @@ import org.apache.cloudstack.resourcedetail.dao.VpcDetailsDao;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupVspCommand;
 import com.cloud.agent.api.element.ApplyAclRuleVspCommand;
@@ -289,14 +290,41 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         VspDhcpDomainOption vspDhcpOptions = _nuageVspEntityBuilder.buildNetworkDhcpOption(network, offering);
         HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
         ImplementVspCommand cmd = new ImplementVspCommand(vspNetwork, ingressFirewallRules, egressFirewallRules, floatingIpUuids, vspDhcpOptions);
+        send(cmd, network);
+
+        return true;
+    }
+
+    private void send(Command cmd, Network network)
+            throws ResourceUnavailableException {
+        send(cmd, network.getPhysicalNetworkId(), Network.class, network);
+    }
+
+    private void send(Command cmd, Vpc vpc)
+            throws ResourceUnavailableException {
+        send(cmd, getPhysicalNetworkId(vpc.getZoneId()), Vpc.class, vpc);
+    }
+
+
+    private <R extends InternalIdentity> void send(Command cmd, long physicalNetworkId, Class<R> resourceClass,
+            R resource)
+            throws ResourceUnavailableException {
+        HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(physicalNetworkId);
         Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
-        if (answer == null || !answer.getResult()) {
-            s_logger.error("ImplementVspCommand for network " + network.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
-            if ((null != answer) && (null != answer.getDetails())) {
-                throw new ResourceUnavailableException(answer.getDetails(), Network.class, network.getId());
+        if (isFailure(answer)) {
+            s_logger.error(cmd.getClass().getName() + " for " + resourceClass.getName() + " " + resource.getId() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
+            if (hasFailureDetails(answer)) {
+                throw new ResourceUnavailableException(answer.getDetails(), resourceClass, resource.getId());
             }
         }
-        return true;
+    }
+
+    private boolean hasFailureDetails(Answer answer) {
+        return (null != answer) && (null != answer.getDetails());
+    }
+
+    private boolean isFailure(Answer answer) {
+        return answer == null || !answer.getResult();
     }
 
     private boolean applyACLRulesForVpc(Network network, NetworkOffering offering) throws ResourceUnavailableException {
@@ -358,15 +386,9 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             NetworkOfferingVO networkOfferingVO = _ntwkOfferingDao.findById(network.getNetworkOfferingId());
             VspDhcpDomainOption vspDhcpOptions = _nuageVspEntityBuilder.buildNetworkDhcpOption(network, networkOfferingVO);
             VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
-            HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
+
             ShutDownVspCommand cmd = new ShutDownVspCommand(vspNetwork, vspDhcpOptions);
-            Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
-            if (answer == null || !answer.getResult()) {
-                s_logger.error("ShutDownVspCommand for network " + network.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
-                if ((null != answer) && (null != answer.getDetails())) {
-                    throw new ResourceUnavailableException(answer.getDetails(), Network.class, network.getId());
-                }
-            }
+            send(cmd, network);
         }
         return true;
     }
@@ -501,14 +523,17 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
 
     @Override
     public boolean setExtraDhcpOptions(Network network, long nicId, Map<Integer, String> dhcpOptions) {
+        if (network.isRollingRestart()) {
+            return true;
+        }
+
         VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(network);
         HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
         NicVO nic = _nicDao.findById(nicId);
 
         ExtraDhcpOptionsVspCommand extraDhcpOptionsVspCommand = new ExtraDhcpOptionsVspCommand(vspNetwork, nic.getUuid(), dhcpOptions);
         Answer answer = _agentMgr.easySend(nuageVspHost.getId(), extraDhcpOptionsVspCommand);
-
-        if (answer == null || !answer.getResult()) {
+        if (isFailure(answer)) {
             s_logger.error("[setExtraDhcpOptions] setting extra DHCP options for nic " + nic.getUuid() + " failed.");
             return false;
         }
@@ -539,15 +564,9 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
         }
 
         VspNetwork vspNetwork = _nuageVspEntityBuilder.buildVspNetwork(config);
-        HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(config.getPhysicalNetworkId());
         ApplyStaticNatVspCommand cmd = new ApplyStaticNatVspCommand(vspNetwork, vspStaticNatDetails);
-        Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
-        if (answer == null || !answer.getResult()) {
-            s_logger.error("ApplyStaticNatNuageVspCommand for network " + config.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
-            if ((null != answer) && (null != answer.getDetails())) {
-                throw new ResourceUnavailableException(answer.getDetails(), Network.class, config.getId());
-            }
-        }
+        send(cmd,
+             config);
 
         return true;
     }
@@ -611,16 +630,10 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             }
         });
 
-        HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(network.getPhysicalNetworkId());
         VspAclRule.ACLType vspAclType = isNetworkAcl ? VspAclRule.ACLType.NetworkACL : VspAclRule.ACLType.Firewall;
         ApplyAclRuleVspCommand cmd = new ApplyAclRuleVspCommand(vspAclType, vspNetwork, vspAclRules, networkReset);
-        Answer answer = _agentMgr.easySend(nuageVspHost.getId(), cmd);
-        if (answer == null || !answer.getResult()) {
-            s_logger.error("ApplyAclRuleNuageVspCommand for network " + network.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
-            if ((null != answer) && (null != answer.getDetails())) {
-                throw new ResourceUnavailableException(answer.getDetails(), Network.class, network.getId());
-            }
-        }
+        send(cmd,
+             network);
         return true;
     }
 
@@ -686,7 +699,6 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             });
 
             Domain vpcDomain = _domainDao.findById(vpc.getDomainId());
-            HostVO nuageVspHost = _nuageVspManager.getNuageVspHost(getPhysicalNetworkId(vpc.getZoneId()));
 
             String preConfiguredDomainTemplateName;
             VpcDetailVO domainTemplateNameDetail = _vpcDetailsDao.findDetail(vpc.getId(), NuageVspManager.nuageDomainTemplateDetailName);
@@ -710,14 +722,7 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             }
 
             ShutDownVpcVspCommand cmd = new ShutDownVpcVspCommand(vpcDomain.getUuid(), vpc.getUuid(), preConfiguredDomainTemplateName, domainRouterUuids, vpcDetails);
-            Answer answer =  _agentMgr.easySend(nuageVspHost.getId(), cmd);
-            if (answer == null || !answer.getResult()) {
-                s_logger.error("ShutDownVpcVspCommand for VPC " + vpc.getUuid() + " failed on Nuage VSD " + nuageVspHost.getDetail("hostname"));
-                if ((null != answer) && (null != answer.getDetails())) {
-                    throw new ResourceUnavailableException(answer.getDetails(), Vpc.class, vpc.getId());
-                }
-                return false;
-            }
+            send(cmd, vpc);
         }
         return true;
     }

@@ -20,7 +20,7 @@ Nuage VSP SDN plugin
 """
 # Import Local Modules
 from nuageTestCase import nuageTestCase
-from marvin.lib.base import Account
+from marvin.lib.base import Account, VPC
 # Import System Modules
 from nose.plugins.attrib import attr
 
@@ -117,6 +117,12 @@ class TestNuageVpcNetwork(nuageTestCase):
 
         # VSD verification for ACL item
         self.verify_vsd_firewall_rule(acl_item)
+
+        self.restart_Vpc(vpc, cleanup=True)
+
+        self.validate_Network(vpc_network, state="Implemented")
+        vr = self.get_Router(vpc_network)
+        self.verify_vsd_router(vr)
 
     @attr(
         tags=["advanced", "nuagevsp", "multizone"], required_hardware="false")
