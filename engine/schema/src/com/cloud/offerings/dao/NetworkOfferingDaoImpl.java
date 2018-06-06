@@ -225,40 +225,48 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         return false;
     }
 
+    /**
+     * Persist L2 deafult Network offering
+     */
+    private void persistL2DefaultNetworkOffering(String name, String displayText, boolean specifyVlan, boolean configDriveEnabled) {
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, TrafficType.Guest, false, specifyVlan,
+                null, null, true, Availability.Optional, null, Network.GuestType.L2,
+                true,false, false, false, false, false);
+        offering.setState(NetworkOffering.State.Enabled);
+        persistDefaultNetworkOffering(offering);
+
+        if (configDriveEnabled) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(),
+                    Network.Service.UserData, Network.Provider.ConfigDrive);
+            networkOfferingServiceMapDao.persist(offService);
+        }
+    }
+
+    /**
+     * Check for default L2 Network Offerings, create them if they are not already created
+     */
+    private void checkPersistL2NetworkOffering(String name, String displayText, boolean specifyVlan, boolean configDriveEnabled) {
+        if (findByUniqueName(name) == null) {
+            persistL2DefaultNetworkOffering(name, displayText, specifyVlan, configDriveEnabled);
+        }
+    }
+
     @Override
     public void persistDefaultL2NetworkOfferings() {
-        NetworkOfferingVO l2NoVlan = new NetworkOfferingVO(NetworkOffering.DefaultL2NetworkOffering,
-                "Offering for L2 networks", TrafficType.Guest, false, false, null,
-                null, true, Availability.Optional, null, Network.GuestType.L2, true,
-                false, false, false, false, false);
-        l2NoVlan.setState(NetworkOffering.State.Enabled);
-        persistDefaultNetworkOffering(l2NoVlan);
+        checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOffering,
+                "Offering for L2 networks",
+                false, false);
 
-        NetworkOfferingVO l2Vlan = new NetworkOfferingVO(NetworkOffering.DefaultL2NetworkOfferingVlan,
-                "Offering for L2 networks VLAN", TrafficType.Guest, false, true, null,
-                null, true, Availability.Optional, null, Network.GuestType.L2, true,
-                false, false, false, false, false);
-        l2Vlan.setState(NetworkOffering.State.Enabled);
-        persistDefaultNetworkOffering(l2Vlan);
+        checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOfferingVlan,
+                "Offering for L2 networks VLAN",
+                true, false);
 
-        NetworkOfferingVO l2ConfigDrive = new NetworkOfferingVO(NetworkOffering.DefaultL2NetworkOfferingConfigDrive,
-                "Offering for L2 networks with config drive user data", TrafficType.Guest, false, false, null,
-                null, true, Availability.Optional, null, Network.GuestType.L2, true,
-                false, false, false, false, false);
-        l2ConfigDrive.setState(NetworkOffering.State.Enabled);
-        persistDefaultNetworkOffering(l2ConfigDrive);
+        checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOfferingConfigDrive,
+                "Offering for L2 networks with config drive user data",
+                false, true);
 
-        NetworkOfferingVO l2ConfigDriveVlan = new NetworkOfferingVO(NetworkOffering.DefaultL2NetworkOfferingConfigDriveVlan,
-                "Offering for L2 networks with config drive user data VLAN", TrafficType.Guest, false, true, null,
-                null, true, Availability.Optional, null, Network.GuestType.L2, true,
-                false, false, false, false, false);
-        l2ConfigDriveVlan.setState(NetworkOffering.State.Enabled);
-        persistDefaultNetworkOffering(l2ConfigDriveVlan);
-
-        NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(l2ConfigDrive.getId(), Network.Service.UserData, Network.Provider.ConfigDrive);
-        networkOfferingServiceMapDao.persist(offService);
-
-        NetworkOfferingServiceMapVO offServiceVlan = new NetworkOfferingServiceMapVO(l2ConfigDriveVlan.getId(), Network.Service.UserData, Network.Provider.ConfigDrive);
-        networkOfferingServiceMapDao.persist(offServiceVlan);
+        checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOfferingConfigDriveVlan,
+                "Offering for L2 networks with config drive user data VLAN",
+                true, true);
     }
 }
