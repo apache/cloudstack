@@ -2412,14 +2412,17 @@
                                             if ($useVpcCb.is(':checked')) { //if useVpc is checked,
                                                 $useVpcCb.removeAttr("checked"); //remove "checked" attribute in useVpc
                                             }
+                                            $conservemode.css('display', 'inline-block');
                                         } else if ($guestTypeField.val() == 'Isolated') { //Isolated network offering
                                             $useVpc.css('display', 'inline-block');
                                             $supportedServices.css('display', 'inline-block');
                                             $userDataL2.hide();
+                                            $conservemode.css('display', 'inline-block');
                                         } else if ($guestTypeField.val() == 'L2') {
                                             $useVpc.hide();
                                             $supportedServices.hide();
                                             $userDataL2.css('display', 'inline-block');
+                                            $conservemode.hide();
                                         }
                                         var $providers = $useVpcCb.closest('form').find('.dynamic-input select[name!="service.Connectivity.provider"]');
                                         var $optionsOfProviders = $providers.find('option');
@@ -3403,6 +3406,9 @@
                                     } else {
                                         delete inputData.serviceProviderList;
                                     }
+
+                                    //Conserve mode is irrelevant on L2 network offerings as there are no resources to conserve, do not pass it, true by default on server side
+                                    delete inputData.conservemode;
                                 }
 
                                 if (inputData['forvpc'] == 'on') {
@@ -3411,10 +3417,12 @@
                                     delete inputData.forvpc; //if forVpc checkbox is unchecked, do not pass forVpc parameter to API call since we need to keep API call's size as small as possible (p.s. forVpc is defaulted as false at server-side)
                                 }
 
-                                if (inputData['conservemode'] == 'on') {
-                                    delete inputData.conservemode; //if ConserveMode checkbox is checked, do not pass conservemode parameter to API call since we need to keep API call's size as small as possible (p.s. conservemode is defaulted as true at server-side)
-                                } else {
-                                    inputData['conservemode'] = false;
+                                if (inputData['guestIpType'] == "Shared" || inputData['guestIpType'] == "Isolated") {
+                                    if (inputData['conservemode'] == 'on') {
+                                        delete inputData.conservemode; //if ConserveMode checkbox is checked, do not pass conservemode parameter to API call since we need to keep API call's size as small as possible (p.s. conservemode is defaulted as true at server-side)
+                                    } else {
+                                        inputData['conservemode'] = false;
+                                    }
                                 }
 
                                 // Make service provider map
