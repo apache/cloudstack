@@ -286,7 +286,7 @@ public class ConfigDriveBuilder {
         if (!NetworkModel.METATDATA_DIR.equals(dataType)) {
             return;
         }
-        if (StringUtils.isNotBlank(content)) {
+        if (StringUtils.isEmpty(content)) {
             return;
         }
         //keys are a special case in OpenStack format
