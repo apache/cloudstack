@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -52,6 +53,8 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     private final GenericSearchBuilder<NetworkOfferingVO, Long> UpgradeSearch;
     @Inject
     NetworkOfferingDetailsDao _detailsDao;
+    @Inject
+    private NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
 
     protected NetworkOfferingDaoImpl() {
         super();
@@ -220,5 +223,42 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
             return true;
 
         return false;
+    }
+
+    @Override
+    public void persistDefaultL2NetworkOfferings() {
+        NetworkOfferingVO l2NoVlan = new NetworkOfferingVO(NetworkOffering.DefaultL2NetworkOffering,
+                "Offering for L2 networks", TrafficType.Guest, false, false, null,
+                null, true, Availability.Optional, null, Network.GuestType.L2, true,
+                false, false, false, false, false);
+        l2NoVlan.setState(NetworkOffering.State.Enabled);
+        persistDefaultNetworkOffering(l2NoVlan);
+
+        NetworkOfferingVO l2Vlan = new NetworkOfferingVO(NetworkOffering.DefaultL2NetworkOfferingVlan,
+                "Offering for L2 networks VLAN", TrafficType.Guest, false, true, null,
+                null, true, Availability.Optional, null, Network.GuestType.L2, true,
+                false, false, false, false, false);
+        l2Vlan.setState(NetworkOffering.State.Enabled);
+        persistDefaultNetworkOffering(l2Vlan);
+
+        NetworkOfferingVO l2ConfigDrive = new NetworkOfferingVO(NetworkOffering.DefaultL2NetworkOfferingConfigDrive,
+                "Offering for L2 networks with config drive user data", TrafficType.Guest, false, false, null,
+                null, true, Availability.Optional, null, Network.GuestType.L2, true,
+                false, false, false, false, false);
+        l2ConfigDrive.setState(NetworkOffering.State.Enabled);
+        persistDefaultNetworkOffering(l2ConfigDrive);
+
+        NetworkOfferingVO l2ConfigDriveVlan = new NetworkOfferingVO(NetworkOffering.DefaultL2NetworkOfferingConfigDriveVlan,
+                "Offering for L2 networks with config drive user data VLAN", TrafficType.Guest, false, true, null,
+                null, true, Availability.Optional, null, Network.GuestType.L2, true,
+                false, false, false, false, false);
+        l2ConfigDriveVlan.setState(NetworkOffering.State.Enabled);
+        persistDefaultNetworkOffering(l2ConfigDriveVlan);
+
+        NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(l2ConfigDrive.getId(), Network.Service.UserData, Network.Provider.ConfigDrive);
+        networkOfferingServiceMapDao.persist(offService);
+
+        NetworkOfferingServiceMapVO offServiceVlan = new NetworkOfferingServiceMapVO(l2ConfigDriveVlan.getId(), Network.Service.UserData, Network.Provider.ConfigDrive);
+        networkOfferingServiceMapDao.persist(offServiceVlan);
     }
 }
