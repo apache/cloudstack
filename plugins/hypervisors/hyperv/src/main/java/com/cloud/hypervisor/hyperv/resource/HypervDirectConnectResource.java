@@ -1375,7 +1375,7 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
 
                 if (!result.first()) {
                     s_logger.error("Unable to copy haproxy configuration file");
-                    return new Answer(cmd, false, "LoadBalancerConfigCommand failed due to uanble to copy haproxy configuration file");
+                    return new Answer(cmd, false, "LoadBalancerConfigCommand failed due to unable to copy haproxy configuration file");
                 }
 
                 final String command = String.format("%s%s %s", "/root/", VRScripts.LB, args);

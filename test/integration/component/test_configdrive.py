@@ -42,7 +42,8 @@ from marvin.lib.base import (Account,
                              StaticNATRule,
                              VirtualMachine,
                              VPC,
-                             VpcOffering)
+                             VpcOffering,
+                             Hypervisor)
 from marvin.lib.common import (get_domain,
                                get_template,
                                get_zone,
@@ -144,6 +145,27 @@ class Services:
                     "UserData": 'ConfigDrive',
                     "Dns": 'VirtualRouter'
                 }
+            },
+            "shared_network_config_drive_offering": {
+                "name": 'shared_network_config_drive_offering',
+                "displaytext": 'shared_network_config_drive_offering',
+                "guestiptype": 'shared',
+                "supportedservices": 'Dhcp,UserData',
+                "traffictype": 'GUEST',
+                "specifyVlan": "True",
+                "specifyIpRanges": "True",
+                "availability": 'Optional',
+                "serviceProviderList": {
+                    "Dhcp": "VirtualRouter",
+                    "UserData": 'ConfigDrive'
+                }
+            },
+            "publiciprange2": {
+                "gateway": "10.219.1.1",
+                "netmask": "255.255.255.0",
+                "startip": "10.219.1.2",
+                "endip": "10.219.1.5",
+                "forvirtualnetwork": "false"
             },
             "acl": {
                 "network_all_1": {
@@ -513,16 +535,21 @@ class ConfigDriveUtils:
         :rtype: str
         """
         self.debug("Updating Service Provider ConfigDrive to %s" % new_state)
-        configdriveprovider = NetworkServiceProvider.list(
-            self.api_client,
-            name="ConfigDrive",
-            physicalnetworkid=self.vsp_physical_network.id)[0]
+        configdriveprovider = self.get_configdrive_provider()
         orig_state = configdriveprovider.state
         NetworkServiceProvider.update(self.api_client,
                                       configdriveprovider.id,
                                       state=new_state)
         self.validate_NetworkServiceProvider("ConfigDrive", state=new_state)
         return orig_state
+
+    def _get_test_data(self, key):
+        return self.test_data[key]
+
+    def get_configdrive_provider(self):
+        return NetworkServiceProvider.list(
+            self.api_client,
+            name="ConfigDrive")[0]
 
     def verify_network_creation(self, offering=None,
                                 offering_name=None,
@@ -549,7 +576,7 @@ class ConfigDriveUtils:
         if offering is None:
             self.debug("Creating Nuage VSP network offering...")
             offering = self.create_NetworkOffering(
-                self.test_data["nuagevsp"][offering_name])
+                self._get_test_data(offering_name))
             self.validate_NetworkOffering(offering, state="Enabled")
         try:
             network = self.create_Network(offering,
@@ -576,7 +603,7 @@ class ConfigDriveUtils:
         if offering is None:
             self.debug("Creating Nuage VSP VPC offering...")
             offering = self.create_VpcOffering(
-                self.test_data["nuagevsp"][offering_name])
+                self._get_test_data(offering_name))
             self.validate_VpcOffering(offering, state="Enabled")
         try:
             vpc = self.create_Vpc(offering, cidr='10.1.0.0/16')
@@ -627,7 +654,7 @@ class ConfigDriveUtils:
 
         self.debug("SSHing into the VM %s" % vm.name)
         if ssh_client is None:
-            ssh = self.ssh_into_VM(vm, public_ip, keypair=ssh_key)
+            ssh = self.ssh_into_VM(vm, public_ip)
         else:
             ssh = ssh_client
         d = {x.name: x for x in ssh.logger.handlers}
@@ -674,7 +701,10 @@ class ConfigDriveUtils:
             keypair=keypair)
         # Check VM
         self.check_VM_state(vm, state="Running")
-        self.verify_vsd_vm(vm)
+
+        if keypair:
+            self.decrypt_password(vm)
+
         # Check networks
         network_list = []
         if isinstance(networks, list):
@@ -685,10 +715,9 @@ class ConfigDriveUtils:
 
         for network in network_list:
             self.validate_Network(network, state="Implemented")
-            self.verify_vsd_network(self.domain.id, network, vpc=vpc)
 
         if acl_item is not None:
-            self.verify_vsd_firewall_rule(acl_item)
+            self.validate_firewall_rule(acl_item)
         return vm
 
     # nic_operation_VM - Performs NIC operations such as add, remove, and
@@ -754,12 +783,21 @@ class ConfigDriveUtils:
         self.debug("Sshkey reset to - %s" % self.keypair.name)
         vm.start(self.api_client)
 
-        # reset SSH key also resets the password.
-        # the new password is available in VM detail,
-        # named "Encrypted.Password".
-        # It is encrypted using the SSH Public Key,
-        # and thus can be decrypted using the SSH Private Key
+        vm.details = vm_new_ssh.details
 
+        # reset SSH key also resets the password.
+        self.decrypt_password(vm)
+
+    def decrypt_password(self, vm):
+        """Decrypt VM password
+
+        the new password is available in VM detail,
+        named "Encrypted.Password".
+        It is encrypted using the SSH Public Key,
+        and thus can be decrypted using the SSH Private Key
+
+        :type vm: VirtualMachine
+        """
         try:
             from base64 import b64decode
             from Crypto.PublicKey import RSA
@@ -768,14 +806,13 @@ class ConfigDriveUtils:
                 key = RSA.importKey(pkfile.read())
                 cipher = PKCS1_v1_5.new(key)
             new_password = cipher.decrypt(
-                b64decode(vm_new_ssh.details['Encrypted.Password']), None)
+                b64decode(vm.details['Encrypted.Password']), None)
             if new_password:
                 vm.password = new_password
             else:
                 self.debug("Failed to decrypt new password")
         except:
             self.debug("Failed to decrypt new password")
-
 
     def add_subnet_verify(self, network, services):
         """verify required nic is present in the VM"""
@@ -805,6 +842,9 @@ class ConfigDriveUtils:
             "Check New subnet is successfully added to the shared Network"
         )
         return addedsubnet
+
+    def ssh_into_VM(self, vm, public_ip, keypair):
+        pass
 
 
 class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
@@ -838,6 +878,9 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
             cls.api_client,
             cls.test_data["service_offering"])
         cls._cleanup = [cls.service_offering]
+
+        hypervisors = Hypervisor.list(cls.api_client, zoneid=cls.zone.id)
+        cls.isSimulator = any(h.name == "Simulator" for h in hypervisors)
         return
 
     def setUp(self):
@@ -947,6 +990,39 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
                              )
         self.debug("Successfully validated the creation and state of Network "
                    "Service Provider - %s" % provider_name)
+
+    # validate_PublicIPAddress - Validates if the given public IP address is in
+    # the expected state form the list of fetched public IP addresses
+    def validate_PublicIPAddress(self, public_ip, network, static_nat=False,
+                                 vm=None):
+        """Validates the Public IP Address"""
+        self.debug("Validating the assignment and state of public IP address "
+                   "- %s" % public_ip.ipaddress.ipaddress)
+        public_ips = PublicIPAddress.list(self.api_client,
+                                          id=public_ip.ipaddress.id,
+                                          networkid=network.id,
+                                          isstaticnat=static_nat,
+                                          listall=True
+                                          )
+        self.assertEqual(isinstance(public_ips, list), True,
+                         "List public IP for network should return a "
+                         "valid list"
+                         )
+        self.assertEqual(public_ips[0].ipaddress,
+                         public_ip.ipaddress.ipaddress,
+                         "List public IP for network should list the assigned "
+                         "public IP address"
+                         )
+        self.assertEqual(public_ips[0].state, "Allocated",
+                         "Assigned public IP is not in the allocated state"
+                         )
+        if static_nat and vm:
+            self.assertEqual(public_ips[0].virtualmachineid, vm.id,
+                             "Static NAT rule is not enabled for the VM on "
+                             "the assigned public IP"
+                             )
+        self.debug("Successfully validated the assignment and state of public "
+                   "IP address - %s" % public_ip.ipaddress.ipaddress)
 
     # create_NetworkOffering - Creates Network offering
     def create_NetworkOffering(self, net_offering, suffix=None,
@@ -1095,7 +1171,8 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
                    % vpc.name)
 
     # ssh_into_VM - Gets into the shell of the given VM using its public IP
-    def ssh_into_VM(self, vm, public_ip, reconnect=True, negative_test=False):
+    def ssh_into_VM(self, vm, public_ip, reconnect=True,
+                    negative_test=False, keypair=None):
         self.debug("SSH into VM with ID - %s on public IP address - %s" %
                    (vm.id, public_ip.ipaddress.ipaddress))
         tries = 1 if negative_test else 3
@@ -1782,22 +1859,18 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
                                          metadata=True,
                                          userdata=expected_user_data,
                                          ssh_key=self.keypair)
-        vpc_public_ip_2 = \
-            self.acquire_PublicIPAddress(create_tiernetwork2.network,
-                                         create_vpc.vpc)
-        self.create_StaticNatRule_For_VM(vm, vpc_public_ip_2,
-                                         create_tiernetwork2.network)
+
         vm.password = vm.resetPassword(self.api_client)
         self.debug("Password reset to - %s" % vm.password)
         self.debug("VM - %s password - %s !" %
                    (vm.name, vm.password))
-        self.verify_config_drive_content(vm, vpc_public_ip_2,
+        self.verify_config_drive_content(vm, vpc_public_ip_1,
                                          self.PasswordTest(vm.password),
                                          metadata=True,
                                          userdata=expected_user_data,
                                          ssh_key=self.keypair)
         expected_user_data1 = self.update_userdata(vm, "hellomultinicvm1")
-        self.verify_config_drive_content(vm, vpc_public_ip_2,
+        self.verify_config_drive_content(vm, vpc_public_ip_1,
                                          self.PasswordTest(vm.password),
                                          userdata=expected_user_data1,
                                          ssh_key=self.keypair)
@@ -1807,6 +1880,14 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.nic_operation_VM(vm,
                               create_tiernetwork2.network,
                               operation="update")
+        vm.stop(self.api_client)
+        vm.start(self.api_client)
+        vpc_public_ip_2 = \
+            self.acquire_PublicIPAddress(create_tiernetwork2.network,
+                                         create_vpc.vpc)
+        self.create_StaticNatRule_For_VM(vm, vpc_public_ip_2,
+                                     create_tiernetwork2.network)
+
         self.verify_config_drive_content(vm, vpc_public_ip_2,
                                          self.PasswordTest(vm.password),
                                          metadata=True,

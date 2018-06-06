@@ -17,21 +17,16 @@
 
 package org.apache.cloudstack.storage.configdrive;
 
-public class ConfigDrive {
+import java.io.IOException;
 
-    public final static String CONFIGDRIVEFILENAME = "configdrive.iso";
-    public final static String CONFIGDRIVEDIR = "configdrive";
+import org.junit.Assert;
+import org.junit.Test;
 
-    public static final String cloudStackConfigDriveName = "/cloudstack/";
-    public static final String openStackConfigDriveName = "/openstack/latest/";
+public class ConfigDriveTest {
 
-    /**
-     * Creates the path to ISO file relative to mount point.
-     * The config driver path will have the following formated: {@link #CONFIGDRIVEDIR} + / + instanceName + / + {@link #CONFIGDRIVEFILENAME}
-     *
-     * @return config drive ISO file path
-     */
-    public static String createConfigDrivePath(String instanceName) {
-        return ConfigDrive.CONFIGDRIVEDIR + "/" + instanceName + "/"  + ConfigDrive.CONFIGDRIVEFILENAME;
+    @Test
+    public void testConfigDriveIsoPath() throws IOException {
+        Assert.assertEquals(ConfigDrive.createConfigDrivePath("i-x-y"), "configdrive/i-x-y/configdrive.iso");
     }
+
 }

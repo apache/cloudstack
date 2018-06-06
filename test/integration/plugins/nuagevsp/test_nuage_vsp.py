@@ -19,7 +19,7 @@
 """
 # Import Local Modules
 from nuageTestCase import nuageTestCase
-from marvin.lib.base import Account, Nuage
+from marvin.lib.base import Account, Nuage, Network
 from marvin.cloudstackAPI import deleteNuageVspDevice
 # Import System Modules
 from nose.plugins.attrib import attr
@@ -158,7 +158,7 @@ class TestNuageVsp(nuageTestCase):
                        "Physical Network...")
             self.validate_NuageVspDevice()
 
-    @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
+    @attr(tags=["advanced", "nuagevsp", "isolated"], required_hardware="false")
     def test_nuage_vsp(self):
         """ Test Nuage VSP SDN plugin with basic Isolated Network functionality
         """
@@ -222,6 +222,12 @@ class TestNuageVsp(nuageTestCase):
 
             # VSD verification
             self.verify_vsd_vm(vm_2)
+
+            Network.restart(network, self.api_client, cleanup=True)
+
+            self.validate_Network(network, state="Implemented")
+            vr = self.get_Router(network)
+            self.verify_vsd_router(vr)
 
             # Deleting the network
             self.debug("Deleting the Isolated Network with Nuage VSP Isolated "
