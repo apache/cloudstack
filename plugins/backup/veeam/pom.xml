@@ -44,11 +44,6 @@
       <version>${cs.commons-lang3.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-plugin-hypervisor-vmware</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>com.github.tomakehurst</groupId>
       <artifactId>wiremock-standalone</artifactId>
       <version>${cs.wiremock.version}</version>
