@@ -561,6 +561,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     offering.setDedicatedLB(false);
                     _networkOfferingDao.update(offering.getId(), offering);
                 }
+
+                _networkOfferingDao.persistDefaultL2NetworkOfferings();
             }
         });
 
