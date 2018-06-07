@@ -1175,6 +1175,8 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     _ntwkOfferingServiceMapDao.persist(offService);
                     s_logger.trace("Added service for the network offering: " + offService);
                 }
+
+                _networkOfferingDao.persistDefaultL2NetworkOfferings();
             }
         });
     }

@@ -64,4 +64,9 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
     List<Long> listNetworkOfferingID();
 
     boolean isUsingServicePackage(String uuid);
+
+    /**
+     * Create default L2 network offerings
+     */
+    void persistDefaultL2NetworkOfferings();
 }

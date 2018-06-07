@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -52,6 +53,8 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     private final GenericSearchBuilder<NetworkOfferingVO, Long> UpgradeSearch;
     @Inject
     NetworkOfferingDetailsDao _detailsDao;
+    @Inject
+    private NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
 
     protected NetworkOfferingDaoImpl() {
         super();
@@ -220,5 +223,50 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
             return true;
 
         return false;
+    }
+
+    /**
+     * Persist L2 deafult Network offering
+     */
+    private void persistL2DefaultNetworkOffering(String name, String displayText, boolean specifyVlan, boolean configDriveEnabled) {
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, TrafficType.Guest, false, specifyVlan,
+                null, null, true, Availability.Optional, null, Network.GuestType.L2,
+                true,false, false, false, false, false);
+        offering.setState(NetworkOffering.State.Enabled);
+        persistDefaultNetworkOffering(offering);
+
+        if (configDriveEnabled) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(),
+                    Network.Service.UserData, Network.Provider.ConfigDrive);
+            networkOfferingServiceMapDao.persist(offService);
+        }
+    }
+
+    /**
+     * Check for default L2 Network Offerings, create them if they are not already created
+     */
+    private void checkPersistL2NetworkOffering(String name, String displayText, boolean specifyVlan, boolean configDriveEnabled) {
+        if (findByUniqueName(name) == null) {
+            persistL2DefaultNetworkOffering(name, displayText, specifyVlan, configDriveEnabled);
+        }
+    }
+
+    @Override
+    public void persistDefaultL2NetworkOfferings() {
+        checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOffering,
+                "Offering for L2 networks",
+                false, false);
+
+        checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOfferingVlan,
+                "Offering for L2 networks VLAN",
+                true, false);
+
+        checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOfferingConfigDrive,
+                "Offering for L2 networks with config drive user data",
+                false, true);
+
+        checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOfferingConfigDriveVlan,
+                "Offering for L2 networks with config drive user data VLAN",
+                true, true);
     }
 }
