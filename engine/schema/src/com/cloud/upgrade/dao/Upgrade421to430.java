@@ -23,9 +23,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Types;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
@@ -62,7 +60,6 @@ public class Upgrade421to430 implements DbUpgrade {
 
     @Override
     public void performDataMigration(Connection conn) {
-        encryptLdapConfigParams(conn);
         encryptImageStoreDetails(conn);
         upgradeMemoryOfSsvmOffering(conn);
     }
@@ -92,77 +89,6 @@ public class Upgrade421to430 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to upgrade ram_size of service offering for secondary storage vm. ", e);
         }
         s_logger.debug("Done upgrading RAM for service offering of Secondary Storage VM to " + newRamSize);
-    }
-
-    private void encryptLdapConfigParams(Connection conn) {
-        String[][] ldapParams = { {"ldap.user.object", "inetOrgPerson", "Sets the object type of users within LDAP"},
-                {"ldap.username.attribute", "uid", "Sets the username attribute used within LDAP"}, {"ldap.email.attribute", "mail", "Sets the email attribute used within LDAP"},
-                {"ldap.firstname.attribute", "givenname", "Sets the firstname attribute used within LDAP"},
-                {"ldap.lastname.attribute", "sn", "Sets the lastname attribute used within LDAP"},
-                {"ldap.group.object", "groupOfUniqueNames", "Sets the object type of groups within LDAP"},
-                {"ldap.group.user.uniquemember", "uniquemember", "Sets the attribute for uniquemembers within a group"}};
-
-        String insertSql = "INSERT INTO `cloud`.`configuration`(category, instance, component, name, value, description) VALUES ('Secure', 'DEFAULT', 'management-server', ?, ?, "
-                + "?) ON DUPLICATE KEY UPDATE category='Secure';";
-
-        try (PreparedStatement pstmt_insert_ldap_parameters = conn.prepareStatement(insertSql);){
-            for (String[] ldapParam : ldapParams) {
-                String name = ldapParam[0];
-                String value = ldapParam[1];
-                String desc = ldapParam[2];
-                String encryptedValue = DBEncryptionUtil.encrypt(value);
-                pstmt_insert_ldap_parameters.setString(1, name);
-                pstmt_insert_ldap_parameters.setBytes(2, encryptedValue.getBytes("UTF-8"));
-                pstmt_insert_ldap_parameters.setString(3, desc);
-                pstmt_insert_ldap_parameters.executeUpdate();
-            }
-
-            /**
-             * if encrypted, decrypt the ldap hostname and port and then update as they are not encrypted now.
-             */
-            try (
-                    PreparedStatement pstmt_ldap_hostname = conn.prepareStatement("SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.hostname'");
-                    ResultSet resultSet_ldap_hostname = pstmt_ldap_hostname.executeQuery();
-                ) {
-                String hostname = null;
-                String port;
-                int portNumber = 0;
-                if (resultSet_ldap_hostname.next()) {
-                    hostname = DBEncryptionUtil.decrypt(resultSet_ldap_hostname.getString(1));
-                }
-
-                try (
-                        PreparedStatement pstmt_ldap_port = conn.prepareStatement("SELECT conf.value FROM `cloud`.`configuration` conf WHERE conf.name='ldap.port'");
-                        ResultSet resultSet_ldap_port = pstmt_ldap_port.executeQuery();
-                    ) {
-                    if (resultSet_ldap_port.next()) {
-                        port = DBEncryptionUtil.decrypt(resultSet_ldap_port.getString(1));
-                        if (StringUtils.isNotBlank(port)) {
-                            portNumber = Integer.parseInt(port);
-                        }
-                    }
-
-                    if (StringUtils.isNotBlank(hostname)) {
-                        try (PreparedStatement pstmt_insert_ldap_hostname_port = conn.prepareStatement("INSERT INTO `cloud`.`ldap_configuration`(hostname, port) VALUES(?,?)");) {
-                            pstmt_insert_ldap_hostname_port.setString(1, hostname);
-                            if (portNumber != 0) {
-                                pstmt_insert_ldap_hostname_port.setInt(2, portNumber);
-                            } else {
-                                pstmt_insert_ldap_hostname_port.setNull(2, Types.INTEGER);
-                            }
-                            pstmt_insert_ldap_hostname_port.executeUpdate();
-                        }
-                    }
-                }
-            }
-
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to insert ldap configuration values ", e);
-        } catch (UnsupportedEncodingException e) {
-            throw new CloudRuntimeException("Unable to insert ldap configuration values ", e);
-        }
-        s_logger.debug("Done encrypting ldap Config values");
-
     }
 
     private void encryptImageStoreDetails(Connection conn) {
