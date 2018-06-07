@@ -147,44 +147,24 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         StoragePool sp = null;
         try {
             s_logger.debug(spd.toString());
+            // check whether the pool is already mounted
+            int mountpointResult = Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath);
+            // if the pool is mounted, try to unmount it
+            if(mountpointResult == 0) {
+                s_logger.info("Attempting to unmount old mount at " + targetPath);
+                String result = Script.runSimpleBashScript("umount -l " + targetPath);
+                if (result == null) {
+                    s_logger.info("Succeeded in unmounting " + targetPath);
+                } else {
+                    s_logger.error("Failed in unmounting storage");
+                }
+            }
+
             sp = conn.storagePoolCreateXML(spd.toString(), 0);
             return sp;
         } catch (LibvirtException e) {
             s_logger.error(e.toString());
-            // if error is that pool is mounted, try to handle it
-            if (e.toString().contains("already mounted")) {
-                s_logger.error("Attempting to unmount old mount libvirt is unaware of at " + targetPath);
-                String result = Script.runSimpleBashScript("umount -l " + targetPath);
-                if (result == null) {
-                    s_logger.error("Succeeded in unmounting " + targetPath);
-                    try {
-                        sp = conn.storagePoolCreateXML(spd.toString(), 0);
-                        s_logger.error("Succeeded in redefining storage");
-                        return sp;
-                    } catch (LibvirtException l) {
-                        s_logger.error("Target was already mounted, unmounted it but failed to redefine storage:" + l);
-                    }
-                } else {
-                    s_logger.error("Failed in unmounting and redefining storage");
-                }
-            } else {
-                s_logger.error("Internal error occurred when attempting to mount: specified path may be invalid");
-                throw e;
-            }
-            if (sp != null) {
-                try {
-                    if (sp.isPersistent() == 1) {
-                        sp.destroy();
-                        sp.undefine();
-                    } else {
-                        sp.destroy();
-                    }
-                    sp.free();
-                } catch (LibvirtException l) {
-                    s_logger.debug("Failed to undefine " + fsType.toString() + " storage pool with: " + l.toString());
-                }
-            }
-            return null;
+            throw e;
         }
     }
 
