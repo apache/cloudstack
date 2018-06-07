@@ -33,6 +33,7 @@ import org.apache.cloudstack.api.command.user.network.MoveNetworkAclItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLItemCmd;
 import org.apache.cloudstack.api.command.user.network.UpdateNetworkACLListCmd;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -58,6 +59,7 @@ import com.cloud.tags.ResourceTagVO;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.User;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.component.ManagerBase;
@@ -958,15 +960,56 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         validateMoveAclRulesData(ruleBeingMoved, previousRule, nextRule);
 
-        List<NetworkACLItemVO> allAclRules = getAllAclRulesSortedByNumber(ruleBeingMoved.getAclId());
-        if (previousRule == null) {
-            return moveRuleToTheTop(ruleBeingMoved, allAclRules);
-        }
-        if (nextRule == null) {
-            return moveRuleToTheBottom(ruleBeingMoved, allAclRules);
-        }
+        try {
+            NetworkACLVO lockedAcl = _networkACLDao.acquireInLockTable(ruleBeingMoved.getAclId());
+            List<NetworkACLItemVO> allAclRules = getAllAclRulesSortedByNumber(lockedAcl.getId());
+            validateAclConsistency(moveNetworkAclItemCmd, lockedAcl, allAclRules);
 
-        return moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
+            if (previousRule == null) {
+                return moveRuleToTheTop(ruleBeingMoved, allAclRules);
+            }
+            if (nextRule == null) {
+                return moveRuleToTheBottom(ruleBeingMoved, allAclRules);
+            }
+            return moveRuleBetweenAclRules(ruleBeingMoved, allAclRules, previousRule, nextRule);
+        } finally {
+            _networkACLDao.releaseFromLockTable(ruleBeingMoved.getAclId());
+        }
+    }
+
+    /**
+     * Validates the consistency of the ACL; the validation process is the following.
+     * <ul>
+     *  <li> If the ACL does not have rules yet, we do not have any validation to perform;
+     *  <li> we will check first if the user provided a consistency hash; if not, we will log a warning message informing administrators that the user is performing the call is assuming the risks of applying ACL replacement without a consistency check;
+     *  <li> if the ACL consistency hash is entered by the user, we check if it is the same as we currently have in the database. If it is different we throw an exception.
+     * </ul>
+     *
+     * If the consistency hash sent by the user is the same as the one we get with the database data we should be safe to proceed.
+     */
+    protected void validateAclConsistency(MoveNetworkAclItemCmd moveNetworkAclItemCmd, NetworkACLVO lockedAcl, List<NetworkACLItemVO> allAclRules) {
+        if (CollectionUtils.isEmpty(allAclRules)) {
+            s_logger.debug(String.format("No ACL rules for [id=%s, name=%s]. Therefore, there is no need for consistency validation.", lockedAcl.getUuid(), lockedAcl.getName()));
+            return;
+        }
+        String aclConsistencyHash = moveNetworkAclItemCmd.getAclConsistencyHash();
+        if (StringUtils.isBlank(aclConsistencyHash)) {
+            User callingUser = CallContext.current().getCallingUser();
+            Account callingAccount = CallContext.current().getCallingAccount();
+
+            s_logger.warn(String.format(
+                    "User [id=%s, name=%s] from Account [id=%s, name=%s] has not entered an ACL consistency hash to execute the replacement of an ACL rule. Therefore, she/he is assuming all of the risks of procedding without this validation.",
+                    callingUser.getUuid(), callingUser.getUsername(), callingAccount.getUuid(), callingAccount.getAccountName()));
+            return;
+        }
+        String aclRulesUuids = StringUtils.EMPTY;
+        for (NetworkACLItemVO rule : allAclRules) {
+            aclRulesUuids += rule.getUuid();
+        }
+        String md5UuidsSortedByNumber = DigestUtils.md5Hex(aclRulesUuids);
+        if (!md5UuidsSortedByNumber.equals(aclConsistencyHash)) {
+            throw new InvalidParameterValueException("It seems that the access control list in the database is not in the state that you used to apply the changed. Could you try it again?");
+        }
     }
 
     /**
