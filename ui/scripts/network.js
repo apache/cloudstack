@@ -5199,10 +5199,13 @@
                                                         }
                                                     };
 
-                                                    nuageDomainTemplateHandler(null, advZones[0].id);
-                                                    args.$select.bind('click', nuageDomainTemplateHandler); //bind on both events click, change, change event of dropdown.
-                                                    args.$select.bind('change', nuageDomainTemplateHandler);
-                                                    args.$form.find("[rel=nuageusedomaintemplate]").find("input").attr('checked', false);
+                                                    if (advZones && advZones.length > 0) {
+                                                        nuageDomainTemplateHandler(null, advZones[0].id);
+                                                        args.$select.bind('click', nuageDomainTemplateHandler); //bind on both events click, change, change event of dropdown.
+                                                        args.$select.bind('change', nuageDomainTemplateHandler);
+                                                        args.$form.find("[rel=nuageusedomaintemplate]").find("input").attr('checked', false);
+                                                    }
+
                                                     args.response.success({
                                                         data: $.map(advZones, function(zone) {
                                                             return {
