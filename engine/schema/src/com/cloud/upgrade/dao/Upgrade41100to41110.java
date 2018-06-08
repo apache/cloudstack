@@ -19,7 +19,12 @@
 
 package com.cloud.upgrade.dao;
 
-import java.io.*;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.log4j.Logger;
+
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,12 +33,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import com.cloud.utils.crypt.*;
-import org.apache.log4j.Logger;
-
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade41100to41110 implements DbUpgrade {
     final static Logger LOG = Logger.getLogger(Upgrade41000to41100.class);
