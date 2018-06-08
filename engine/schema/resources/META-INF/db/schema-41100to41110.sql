@@ -91,15 +91,3 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervis
 -- XCP-NG 7.4
 INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, storage_motion_supported) values (UUID(), 'XenServer', 'XCP-ng 7.4.0', 500, 13, 1);
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', 'XCP-ng 7.4.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.4.0';
-
-UPDATE `cloud`.`configuration` SET `category`='Advanced' WHERE `name`='ldap.basedn';
-UPDATE `cloud`.`configuration` SET `category`='Advanced' WHERE `name`='ldap.bind.principal';
-UPDATE `cloud`.`configuration` SET `category`='Advanced' WHERE `name`='ldap.email.attribute';
-UPDATE `cloud`.`configuration` SET `category`='Advanced' WHERE `name`='ldap.firstname.attribute';
-UPDATE `cloud`.`configuration` SET `category`='Advanced' WHERE `name`='ldap.group.object';
-UPDATE `cloud`.`configuration` SET `category`='Advanced' WHERE `name`='ldap.group.user.uniquemember';
-UPDATE `cloud`.`configuration` SET `category`='Advanced' WHERE `name`='ldap.lastname.attribute';
-UPDATE `cloud`.`configuration` SET `category`='Advanced' WHERE `name`='ldap.search.group.principle';
-UPDATE `cloud`.`configuration` SET `category`='Advanced' WHERE `name`='ldap.truststore';
-UPDATE `cloud`.`configuration` SET `category`='Advanced' WHERE `name`='ldap.user.object';
-UPDATE `cloud`.`configuration` SET `category`='Advanced' WHERE `name`='ldap.username.attribute';

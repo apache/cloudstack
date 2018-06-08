@@ -19,7 +19,7 @@
 
 package com.cloud.upgrade.dao;
 
-import java.io.InputStream;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.cloud.utils.crypt.*;
 import org.apache.log4j.Logger;
 
 import com.cloud.hypervisor.Hypervisor;
@@ -66,6 +67,65 @@ public class Upgrade41100to41110 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         updateSystemVmTemplates(conn);
+        markUnnecessarySecureConfigsAsUnsecure(conn);
+    }
+
+    private void markUnnecessarySecureConfigsAsUnsecure(Connection conn) {
+        String[] unsecureItems = new String[] {
+                "ldap.basedn",
+                "ldap.bind.principal",
+                "ldap.email.attribute",
+                "ldap.firstname.attribute",
+                "ldap.group.object",
+                "ldap.group.user.uniquemember",
+                "ldap.lastname.attribute",
+                "ldap.search.group.principle",
+                "ldap.truststore",
+                "ldap.user.object",
+                "ldap.username.attribute"
+        };
+
+        for (String name : unsecureItems) {
+            uncrypt(conn, name);
+        }
+    }
+
+    /**
+     * if encrypted, decrypt the ldap hostname and port and then update as they are not encrypted now.
+     */
+    private void uncrypt(Connection conn, String name)
+    {
+        String value = null;
+        try (
+                PreparedStatement prepSelStmt = conn.prepareStatement("SELECT conf.category,conf.value FROM `cloud`.`configuration` conf WHERE conf.name= ?");
+        ) {
+            prepSelStmt.setString(1,name);
+            try (
+                    ResultSet resultSet = prepSelStmt.executeQuery();
+            ) {
+                if (resultSet.next()) {
+                    if ("Secure".equals(resultSet.getString(1))) {
+                        value = DBEncryptionUtil.decrypt(resultSet.getString(2));
+                        try (
+                                PreparedStatement prepUpdStmt= conn.prepareStatement("UPDATE `cloud`.`configuration` set category = 'Advanced', value = ? where name is ?" );
+                        ) {
+                            prepUpdStmt.setString(1, value);
+                            prepUpdStmt.setString(2, name);
+                            prepUpdStmt.execute();
+                        } catch (SQLException e) {
+                            if (LOG.isInfoEnabled()) {
+                                LOG.info("failed to update configuration item '"+name+"' with value '"+value+"'");
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("failed to update configuration item '"+name+"' with value '"+value+"'", e);
+        }
     }
 
     @SuppressWarnings("serial")
