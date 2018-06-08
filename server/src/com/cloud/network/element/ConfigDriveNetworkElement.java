@@ -63,6 +63,7 @@ import com.cloud.storage.dao.GuestOSCategoryDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.component.AdapterBase;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
 import com.cloud.utils.fsm.StateMachine2;
@@ -212,7 +213,14 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         if (vm != null && vm.getVirtualMachine().getState().equals(VirtualMachine.State.Running)) {
             throw new CloudRuntimeException("VM should to stopped to reset password");
         }
-        return canHandle(network.getTrafficType());
+
+        final boolean canHandle = canHandle(network.getTrafficType());
+
+        if (canHandle) {
+            storePasswordInVmDetails(vm);
+        }
+
+        return canHandle;
     }
 
     @Override
@@ -223,7 +231,14 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         if (vm != null && vm.getVirtualMachine().getState().equals(VirtualMachine.State.Running)) {
             throw new CloudRuntimeException("VM should to stopped to reset password");
         }
-        return canHandle(network.getTrafficType());
+
+        final boolean canHandle = canHandle(network.getTrafficType());
+
+        if (canHandle) {
+            storePasswordInVmDetails(vm);
+        }
+
+        return canHandle;
     }
 
     @Override
@@ -235,6 +250,20 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
             throw new CloudRuntimeException("VM should to stopped to reset password");
         }
         return canHandle(network.getTrafficType());
+    }
+
+    /**
+     * Store password in vm details so it can be picked up during VM start.
+     */
+    private void storePasswordInVmDetails(VirtualMachineProfile vm) {
+        final String password = (String) vm.getParameter(VirtualMachineProfile.Param.VmPassword);
+        final String password_encrypted = DBEncryptionUtil.encrypt(password);
+        final UserVmVO userVmVO = _userVmDao.findById(vm.getId());
+
+        _userVmDetailsDao.addDetail(vm.getId(), "password", password_encrypted, false);
+
+        userVmVO.setUpdateParameters(true);
+        _userVmDao.update(userVmVO.getId(), userVmVO);
     }
 
     @Override
