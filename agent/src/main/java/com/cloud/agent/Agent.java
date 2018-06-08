@@ -728,7 +728,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             _shell.setPersistentProperty(null, KeyStoreUtils.KS_PASSPHRASE_PROPERTY, storedPassword);
         }
 
-        Script script = new Script(true, _keystoreSetupPath, 60000, s_logger);
+        Script script = new Script(_keystoreSetupPath, 60000, s_logger);
         script.add(agentFile.getAbsolutePath());
         script.add(keyStoreFile);
         script.add(storedPassword);
@@ -772,7 +772,7 @@ public class Agent implements HandlerFactory, IAgentControl {
             throw new CloudRuntimeException("Unable to save received agent client and ca certificates", e);
         }
 
-        Script script = new Script(true, _keystoreCertImportPath, 60000, s_logger);
+        Script script = new Script(_keystoreCertImportPath, 60000, s_logger);
         script.add(agentFile.getAbsolutePath());
         script.add(keyStoreFile);
         script.add(KeyStoreUtils.AGENT_MODE);
