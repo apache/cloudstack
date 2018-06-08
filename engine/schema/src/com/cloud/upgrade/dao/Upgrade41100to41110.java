@@ -115,7 +115,7 @@ public class Upgrade41100to41110 implements DbUpgrade {
                             if (LOG.isInfoEnabled()) {
                                 LOG.info("failed to update configuration item '"+name+"' with value '"+value+"'");
                                 if (LOG.isDebugEnabled()) {
-                                    LOG.debug("");
+                                    LOG.debug("no update because ", e);
                                 }
                             }
                         }
