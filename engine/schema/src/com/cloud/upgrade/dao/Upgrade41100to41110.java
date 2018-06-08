@@ -102,6 +102,9 @@ public class Upgrade41100to41110 implements DbUpgrade {
             try (
                     ResultSet resultSet = prepSelStmt.executeQuery();
             ) {
+                if (LOG.isInfoEnabled()) {
+                    LOG.info("updating setting '" + name + "'");
+                }
                 if (resultSet.next()) {
                     if ("Secure".equals(resultSet.getString(1))) {
                         value = DBEncryptionUtil.decrypt(resultSet.getString(2));
@@ -113,7 +116,7 @@ public class Upgrade41100to41110 implements DbUpgrade {
                             prepUpdStmt.execute();
                         } catch (SQLException e) {
                             if (LOG.isInfoEnabled()) {
-                                LOG.info("failed to update configuration item '"+name+"' with value '"+value+"'");
+                                LOG.info("failed to update configuration item '" + name + "' with value '" + value + "'");
                                 if (LOG.isDebugEnabled()) {
                                     LOG.debug("no update because ", e);
                                 }
