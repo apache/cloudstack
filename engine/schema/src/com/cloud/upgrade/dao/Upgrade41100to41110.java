@@ -109,7 +109,7 @@ public class Upgrade41100to41110 implements DbUpgrade {
                     if ("Secure".equals(resultSet.getString(1))) {
                         value = DBEncryptionUtil.decrypt(resultSet.getString(2));
                         try (
-                                PreparedStatement prepUpdStmt= conn.prepareStatement("UPDATE `cloud`.`configuration` set category = 'Advanced', value = ? where name is ?" );
+                                PreparedStatement prepUpdStmt= conn.prepareStatement("UPDATE `cloud`.`configuration` SET category = 'Advanced', value = ? WHERE name = ?" );
                         ) {
                             prepUpdStmt.setString(1, value);
                             prepUpdStmt.setString(2, name);
@@ -126,7 +126,7 @@ public class Upgrade41100to41110 implements DbUpgrade {
                 }
             }
         } catch (SQLException e) {
-            throw new CloudRuntimeException("failed to update configuration item '"+name+"' with value '"+value+"'", e);
+            throw new CloudRuntimeException("failed to update configuration item '" + name + "' with value '" + value + "'", e);
         }
     }
 
