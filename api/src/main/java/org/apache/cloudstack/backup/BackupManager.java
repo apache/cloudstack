@@ -67,7 +67,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     /**
      * List existing backups for a VM
      */
-    List<Backup> listVMBackups(Long zoneId, Long vmId);
+    List<Backup> listVMBackups(Long vmId);
 
     /**
      * List backup policies
@@ -82,24 +82,23 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @param vmId Virtual Machine ID
      * @return returns operation success
      */
-    boolean createBackup(Long vmId);
+    Backup createBackup(Long vmId);
 
     /**
-     * Deletes backup of a VM
-     * @param vmId Virtual Machine ID
+     * Deletes a backup
      * @return returns operation success
      */
-    boolean deleteBackup(Long vmId);
+    boolean deleteBackup(Long backupId);
 
     /**
-     * Restore a full backed up VM
+     * Restore a full VM from backup
      */
-    boolean restoreBackup(Long zoneId, Long vmId, Long backupId);
+    boolean restoreVMFromBackup(Long backupId);
 
     /**
      * Restore a backed up volume and attach it to a VM
      */
-    boolean restoreBackupVolumeAndAttachToVM(Long zoneId, Long volumeId, Long vmId, Long backupId);
+    boolean restoreBackupVolumeAndAttachToVM(Long volumeId, Long vmId, Long backupId);
 
     /**
      * Deletes a backup policy

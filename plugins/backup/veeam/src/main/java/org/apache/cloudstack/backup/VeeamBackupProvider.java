@@ -128,8 +128,10 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     @Override
-    public boolean startBackup(BackupPolicy policy, VirtualMachine vm) {
-        return getClient(vm.getDataCenterId()).startBackupJob(policy.getExternalId());
+    public Backup createVMBackup(BackupPolicy policy, VirtualMachine vm) {
+        //TODO: Return backup
+        getClient(vm.getDataCenterId()).startBackupJob(policy.getExternalId());
+        return null;
     }
 
     @Override
@@ -148,6 +150,12 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     public List<Backup> listVMBackups(Long zoneId, VirtualMachine vm) {
         //return getClient(zoneId).listAllBackups();
         return null;
+    }
+
+    @Override
+    public boolean removeVMBackup(VirtualMachine vm, String backupId) {
+        //TODO: Implement
+        return false;
     }
 
     @Override

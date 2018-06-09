@@ -17,9 +17,11 @@
 package org.apache.cloudstack.backup;
 
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.cloudstack.backup.dao.BackupDao;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.to.VolumeTO;
@@ -28,9 +30,14 @@ import com.cloud.storage.Volume;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
+import javax.inject.Inject;
+
 public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     private static final Logger s_logger = Logger.getLogger(DummyBackupProvider.class);
+
+    @Inject
+    private BackupDao backupDao;
 
     @Override
     public String getName() {
@@ -69,8 +76,24 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     }
 
     @Override
-    public boolean startBackup(BackupPolicy policy, VirtualMachine vm) {
-        return true;
+    public Backup createVMBackup(BackupPolicy policy, VirtualMachine vm) {
+        s_logger.debug("Creating VM backup for VM " + vm.getInstanceName() + " from backup policy " + policy.getName());
+
+        List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        String backupNumber = String.valueOf(backups.size() + 1);
+        Backup lastBackup = null;
+        if (backups.size() > 0) {
+            backups.sort(Comparator.comparing(Backup::getStartTime));
+            lastBackup = backups.get(backups.size() - 1);
+        }
+        BackupTO newBackup = new BackupTO(vm.getDataCenterId(), vm.getAccountId(),
+                "xxxx-xxxx-" + vm.getUuid() + "-" + backupNumber, "Backup-" + vm.getUuid() + backupNumber,
+                "VM-" + vm.getInstanceName() + "-backup-" + backupNumber,
+                lastBackup != null ? lastBackup.getExternalId() : null, vm.getId(), null,
+                Backup.Status.BackedUp, new Date());
+        backups.add(newBackup);
+
+        return newBackup;
     }
 
     @Override
@@ -89,15 +112,19 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public List<Backup> listVMBackups(Long zoneId, VirtualMachine vm) {
         s_logger.debug("Listing VM " + vm.getInstanceName() + "backups on the Dummy Backup Provider");
+        return backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+    }
 
-        BackupTO backup1 = new BackupTO(zoneId, vm.getAccountId(),
-                "xxxx-xxxx", "Backup-1", "VM-" + vm.getInstanceName() + "-backup-1",
-                null, vm.getId(), null, Backup.Status.BackedUp, new Date());
+    @Override
+    public boolean removeVMBackup(VirtualMachine vm, String backupId) {
+        s_logger.debug("Removing VM backup " + backupId + " for VM " + vm.getInstanceName() + " on the Dummy Backup Provider");
 
-        BackupTO backup2 = new BackupTO(zoneId, vm.getAccountId(), "yyyy-yyyy",
-                "Backup-2", "VM-" + vm.getInstanceName() + "-backup-2",
-                backup1.getExternalId(), vm.getId(), null, Backup.Status.BackedUp, new Date());
-
-        return Arrays.asList(backup1, backup2);
+        List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        for (Backup backup : backups) {
+            if (backup.getExternalId().equals(backupId)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

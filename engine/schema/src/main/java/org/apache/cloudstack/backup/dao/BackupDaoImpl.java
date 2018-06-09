@@ -82,7 +82,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         return findOneBy(sc);
     }
 
-    private BackupVO getBackupVO(Backup backup) {
+    public BackupVO getBackupVO(Backup backup) {
         BackupVO backupVO = new BackupVO();
         backupVO.setZoneId(backup.getZoneId());
         backupVO.setAccountId(backup.getAccountId());
@@ -146,6 +146,7 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
             backupResponse.setVolumeIds(volIds);
         }
         backupResponse.setStatus(backup.getStatus());
+        backupResponse.setStartDate(backup.getStartTime());
         backupResponse.setObjectName("backup");
         return backupResponse;
     }

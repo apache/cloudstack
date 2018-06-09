@@ -19,11 +19,12 @@ package org.apache.cloudstack.api.command.user.backup;
 
 import javax.inject.Inject;
 
+import com.cloud.event.EventTypes;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
@@ -42,7 +43,7 @@ import com.cloud.exception.ResourceUnavailableException;
         description = "Removes a VM from an existing backup policy",
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class RemoveVMFromBackupPolicyCmd extends BaseCmd {
+public class RemoveVMFromBackupPolicyCmd extends BaseAsyncCmd {
     public static final String APINAME = "removeVMFromBackupPolicy";
 
     @Inject
@@ -108,4 +109,13 @@ public class RemoveVMFromBackupPolicyCmd extends BaseCmd {
         return CallContext.current().getCallingAccount().getId();
     }
 
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_REMOVE_VM_FROM_BACKUP_POLICY;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Removing VM " + vmId + " from backup policy " + policyId;
+    }
 }

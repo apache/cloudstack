@@ -26,8 +26,8 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -52,19 +52,19 @@ public class DeleteVMBackupCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
+    @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
-            entityType = UserVmResponse.class,
+            entityType = BackupResponse.class,
             required = true,
-            description = "id of the VM")
-    private Long vmId;
+            description = "id of backup")
+    private Long backupId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getVmId() {
-        return vmId;
+    public Long getId() {
+        return backupId;
     }
 
     /////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ public class DeleteVMBackupCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.deleteBackup(vmId);
+            boolean result = backupManager.deleteBackup(backupId);
             // FIXME: the response type
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());

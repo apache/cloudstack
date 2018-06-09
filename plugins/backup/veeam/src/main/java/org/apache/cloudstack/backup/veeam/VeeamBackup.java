@@ -83,6 +83,11 @@ public class VeeamBackup implements Backup {
     }
 
     @Override
+    public Date getRemoved() {
+        return null;
+    }
+
+    @Override
     public String getUuid() {
         return uid;
     }

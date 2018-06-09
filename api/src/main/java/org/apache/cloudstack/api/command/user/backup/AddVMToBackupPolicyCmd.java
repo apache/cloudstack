@@ -18,11 +18,12 @@ package org.apache.cloudstack.api.command.user.backup;
 
 import javax.inject.Inject;
 
+import com.cloud.event.EventTypes;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
@@ -41,7 +42,7 @@ import com.cloud.exception.ResourceUnavailableException;
         description = "Assigns a VM to an existing backup policy",
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class AddVMToBackupPolicyCmd extends BaseCmd {
+public class AddVMToBackupPolicyCmd extends BaseAsyncCmd {
     public static final String APINAME = "addVMToBackupPolicy";
 
     @Inject
@@ -105,5 +106,15 @@ public class AddVMToBackupPolicyCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_ADD_VM_TO_BACKUP_POLICY;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Adding VM " + vmId + " to backup policy " + policyId;
     }
 }

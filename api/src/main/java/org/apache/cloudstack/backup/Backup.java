@@ -39,4 +39,5 @@ public interface Backup extends InternalIdentity, Identity {
     List<Long> getVolumeIds();
     Status getStatus();
     Date getStartTime();
+    Date getRemoved();
 }

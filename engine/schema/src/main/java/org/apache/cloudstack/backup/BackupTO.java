@@ -165,6 +165,11 @@ public class BackupTO implements Backup {
         return startTime;
     }
 
+    @Override
+    public Date getRemoved() {
+        return null;
+    }
+
     public void setStartTime(Date startTime) {
         this.startTime = startTime;
     }

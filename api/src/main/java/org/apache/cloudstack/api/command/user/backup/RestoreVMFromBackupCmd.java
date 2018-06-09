@@ -19,17 +19,17 @@ package org.apache.cloudstack.api.command.user.backup;
 
 import javax.inject.Inject;
 
+import com.cloud.event.EventTypes;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -40,12 +40,12 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = RestoreVMBackupCmd.APINAME,
-        description = "Restore VM backup",
+@APICommand(name = RestoreVMFromBackupCmd.APINAME,
+        description = "Restore VM from backup",
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class RestoreVMBackupCmd extends BaseCmd {
-    public static final String APINAME = "restoreVMBackup";
+public class RestoreVMFromBackupCmd extends BaseAsyncCmd {
+    public static final String APINAME = "restoreVMFromBackup";
 
     @Inject
     private BackupManager backupManager;
@@ -61,32 +61,12 @@ public class RestoreVMBackupCmd extends BaseCmd {
             description = "id of the backup")
     private Long backupId;
 
-    //FIXME: is this necessary when backup id is known? unless we want to restore to a different VM?
-    @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
-            type = CommandType.UUID,
-            entityType = UserVmResponse.class,
-            required = true,
-            description = "id of the VM")
-    private Long vmId;
-
-    @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
-            description = "The zone ID")
-    private Long zoneId;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getVmId() {
-        return vmId;
-    }
-
     public Long getBackupId() {
         return backupId;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
     }
 
     /////////////////////////////////////////////////////
@@ -96,7 +76,7 @@ public class RestoreVMBackupCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreBackup(zoneId, vmId, backupId);
+            boolean result = backupManager.restoreVMFromBackup(backupId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
@@ -119,4 +99,13 @@ public class RestoreVMBackupCmd extends BaseCmd {
         return CallContext.current().getCallingAccount().getId();
     }
 
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_RESTORE_VM_FROM_BACKUP;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Restoring VM from backup " + backupId;
+    }
 }

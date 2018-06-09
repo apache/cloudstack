@@ -63,7 +63,7 @@ public interface BackupProvider {
      * @param vm
      * @return true if backup successfully starts
      */
-    boolean startBackup(BackupPolicy policy, VirtualMachine vm);
+    Backup createVMBackup(BackupPolicy policy, VirtualMachine vm);
 
     /**
      * Restore VM from backup
@@ -79,4 +79,9 @@ public interface BackupProvider {
      * List VM Backups
      */
     List<Backup> listVMBackups(Long zoneId, VirtualMachine vm);
+
+    /**
+     * Remove a VM backup
+     */
+    boolean removeVMBackup(VirtualMachine vm, String backupId);
 }

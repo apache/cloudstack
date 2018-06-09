@@ -18,10 +18,12 @@ package org.apache.cloudstack.api.command.admin.backup;
 
 import javax.inject.Inject;
 
+import com.cloud.event.EventTypes;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -43,7 +45,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         description = "Imports a backup policy from the backup provider",
         responseObject = BackupPolicyResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin})
-public class ImportBackupPolicyCmd extends BaseCmd {
+public class ImportBackupPolicyCmd extends BaseAsyncCmd {
     public static final String APINAME = "importBackupPolicy";
 
     @Inject
@@ -121,5 +123,15 @@ public class ImportBackupPolicyCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_IMPORT_BACKUP_POLICY;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Importing backup policy: " + policyName + " (externalId=" + policyExternalId + ") on zone " + zoneId ;
     }
 }

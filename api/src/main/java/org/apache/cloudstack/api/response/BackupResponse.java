@@ -24,6 +24,7 @@ import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 import org.apache.cloudstack.backup.Backup;
 
+import java.util.Date;
 import java.util.List;
 
 @EntityReference(value = Backup.class)
@@ -68,6 +69,10 @@ public class BackupResponse extends BaseResponse {
     @SerializedName(ApiConstants.STATUS)
     @Param(description = "backup volume ids")
     private Backup.Status status;
+
+    @SerializedName(ApiConstants.START_DATE)
+    @Param(description = "backup start date")
+    private Date startDate;
 
     public String getId() {
         return id;
@@ -147,5 +152,13 @@ public class BackupResponse extends BaseResponse {
 
     public void setVolumeIds(List<String> volumeIds) {
         this.volumeIds = volumeIds;
+    }
+
+    public Date getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(Date startDate) {
+        this.startDate = startDate;
     }
 }

@@ -31,7 +31,6 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
@@ -62,20 +61,12 @@ public class ListVMBackupsCmd extends BaseBackupListCmd {
             description = "id of the VM")
     private Long vmId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
-            description = "The zone ID")
-    private Long zoneId;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
     public Long getVmId() {
         return vmId;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
     }
 
     /////////////////////////////////////////////////////
@@ -85,7 +76,7 @@ public class ListVMBackupsCmd extends BaseBackupListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try{
-            List<Backup> backups = backupManager.listVMBackups(getZoneId(), getVmId());
+            List<Backup> backups = backupManager.listVMBackups(getVmId());
             setupResponseBackupList(backups);
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());

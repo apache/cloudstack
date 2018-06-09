@@ -18,7 +18,7 @@
 
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.utils import (cleanup_resources)
-from marvin.lib.base import (Account, ServiceOffering, VirtualMachine, BackupPolicy, Configurations)
+from marvin.lib.base import (Account, ServiceOffering, VirtualMachine, BackupPolicy, Configurations, VMBackup)
 from marvin.lib.common import (get_domain, get_zone, get_template)
 from nose.plugins.attrib import attr
 from marvin.codes import FAILED
@@ -50,8 +50,8 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
 
         # Check backup configuration values, set them to enable the dummy provider
 
-        backup_enabled_cfg = Configurations.list(cls.api_client, name='backup.framework.enabled')
-        backup_provider_cfg = Configurations.list(cls.api_client, name='backup.framework.provider.plugin')
+        backup_enabled_cfg = Configurations.list(cls.api_client, name='backup.framework.enabled', zoneid=cls.zone.id)
+        backup_provider_cfg = Configurations.list(cls.api_client, name='backup.framework.provider.plugin', zoneid=cls.zone.id)
         cls.backup_enabled = backup_enabled_cfg[0].value
         cls.backup_provider = backup_provider_cfg[0].value
 
@@ -110,20 +110,24 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         # 3. Delete backup policy
         # 4. List internal backup policies, policy id should not be listed
 
+        # Import backup policy
         ext_policy = self.external_policies[1]
         self.debug("Importing backup policy %s - %s" % (ext_policy.externalid, ext_policy.name))
         policy = BackupPolicy.importExisting(self.apiclient, self.zone.id, ext_policy.externalid,
                                              ext_policy.name, ext_policy.description)
 
+        # Verify policy is listed
         imported_policies = BackupPolicy.listInternal(self.apiclient, self.zone.id)
         self.assertIsInstance(imported_policies, list, "List Backup Policies should return a valid response")
         self.assertNotEqual(len(imported_policies), 0, "Check if the list API returns a non-empty response")
         matching_policies = [x for x in imported_policies if x.id == policy.id]
         self.assertNotEqual(len(matching_policies), 0, "Check if there is a matching policy")
 
+        # Delete backup policy
         self.debug("Deleting backup policy %s" % policy.id)
         policy.delete(self.apiclient)
 
+        #  Verify policy is not listed
         imported_policies = BackupPolicy.listInternal(self.apiclient, self.zone.id)
         self.assertIsInstance(imported_policies, list, "List Backup Policies should return a valid response")
         matching_policies = [x for x in imported_policies if x.id == policy.id]
@@ -141,28 +145,58 @@ class TestDummyBackupAndRecovery(cloudstackTestCase):
         # 3. Remove VM from backup policy
         # 4. Verify there is no mapping between the VM and the backup policy
 
+        # Add VM to backup policy
         self.debug("Adding VM %s to backup policy %s" % (self.vm.id, self.policy.id))
-        self.policy.addVM(self.apiclient, self.vm.id, self.zone.id)
+        self.policy.addVM(self.apiclient, self.vm.id)
 
         # Verify a mapping between backup policy and VM is created on DB
-        qresultset = self.dbclient.execute("select id from vm_instance where uuid='%s';" % self.vm.id)
-        vm_id = qresultset[0][0]
+        mappings = BackupPolicy.listVMMappings(self.apiclient, self.policy.id, self.vm.id, self.zone.id)
+        self.assertNotEqual(len(mappings), 0, "A mapping between VM and backup policy should exist")
+        self.assertNotEqual(mappings[0], None, "A mapping between VM and backup policy should exist")
 
-        qresultset = self.dbclient.execute("select id from backup_policy where uuid='%s';" % self.policy.id)
-        policy_id = qresultset[0][0]
-
-        qresultset = self.dbclient.execute("select id from backup_policy_vm_map where policy_id='%d' and vm_id = '%d';"
-                                           % (policy_id, vm_id))
-
-        map = qresultset[0]
-        self.assertNotEqual(len(map), 0, "A mapping between VM and backup policy should exist on DB")
-        self.assertNotEqual(map[0], None, "A mapping between VM and backup policy should exist on DB")
-
+        # Remove VM from backup policy
         self.debug("Removing VM %s from backup policy %s" % (self.vm.id, self.policy.id))
-        self.policy.removeVM(self.apiclient, self.vm.id, self.zone.id)
+        self.policy.removeVM(self.apiclient, self.vm.id)
 
-        # Verify mapping is removed from DB
-        qresultset = self.dbclient.execute("select id from backup_policy_vm_map where policy_id='%d' and vm_id = '%d';"
-                                           % (policy_id, vm_id))
+        # Verify mapping is removed
+        zone_mappings = BackupPolicy.listVMMappings(self.apiclient, zoneid=self.zone.id)
+        matching_mappings = [x for x in zone_mappings if x.policyid == self.policy.id and x.virtualmachineid == self.vm.id]
+        self.assertEqual(len(matching_mappings), 0, "The mapping between VM and backup policy should be removed")
 
-        self.assertEqual(len(qresultset), 0, "The mapping between VM and backup policy should be removed from DB")
+    @attr(tags=["advanced", "backup"], required_hardware="false")
+    def test_vm_backup_lifecycle(self):
+        """
+        Test VM backup lifecycle
+        """
+
+        # Validate the following:
+        # 1. List VM backups, verify no backups are created
+        # 2. Add VM to policy
+        # 3. Create VM backup
+        # 4. List VM backups, verify backup is created
+        # 5. Delete VM backup
+        # 6. List VM backups, verify backup is deleted
+        # 7. Remove VM from policy
+
+        # Verify there are no backups for the VM
+        backups = VMBackup.list(self.apiclient, self.vm.id)
+        self.assertEqual(backups, None, "There should not exist any backup for the VM")
+
+        # Create a VM backup
+        self.policy.addVM(self.apiclient, self.vm.id)
+        VMBackup.create(self.apiclient, self.vm.id)
+
+        # Verify backup is created for the VM
+        backups = VMBackup.list(self.apiclient, self.vm.id)
+        self.assertEqual(len(backups), 1, "There should exist only one backup for the VM")
+        backup = backups[0]
+
+        # Delete backup
+        VMBackup.delete(self.apiclient, backup.id)
+
+        # Verify backup is deleted
+        backups = VMBackup.list(self.apiclient, self.vm.id)
+        self.assertEqual(backups, None, "There should not exist any backup for the VM")
+
+        # Remove VM from policy
+        self.policy.removeVM(self.apiclient, self.vm.id)

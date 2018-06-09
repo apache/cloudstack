@@ -19,15 +19,18 @@ package org.apache.cloudstack.api.command.user.backup;
 
 import javax.inject.Inject;
 
+import com.cloud.event.EventTypes;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.SuccessResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -40,9 +43,9 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = CreateVMBackupCmd.APINAME,
         description = "Create VM backup",
-        responseObject = SuccessResponse.class, since = "4.12.0",
+        responseObject = BackupResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class CreateVMBackupCmd extends BaseCmd {
+public class CreateVMBackupCmd extends BaseAsyncCmd {
     public static final String APINAME = "createVMBackup";
 
     @Inject
@@ -76,10 +79,9 @@ public class CreateVMBackupCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.createBackup(vmId);
-            // FIXME: the response type
-            if (result) {
-                SuccessResponse response = new SuccessResponse(getCommandName());
+            Backup backup = backupManager.createBackup(vmId);
+            if (backup != null) {
+                BackupResponse response = _responseGenerator.createBackupResponse(backup);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
@@ -98,5 +100,15 @@ public class CreateVMBackupCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return CallContext.current().getCallingAccount().getId();
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_CREATE_VM_BACKUP;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Creating backup for VM " + vmId;
     }
 }

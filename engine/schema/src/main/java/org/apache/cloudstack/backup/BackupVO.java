@@ -71,7 +71,7 @@ public class BackupVO implements Backup {
     private Long parentId;
 
     @Column(name = "vm_id")
-    private long vmId;
+    private Long vmId;
 
     @Column(name = "volumes")
     private String volumes;
@@ -82,6 +82,10 @@ public class BackupVO implements Backup {
     @Column(name = "start")
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date startTime;
+
+    @Column(name = "removed")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date removed;
 
     @Transient
     private List<Long> volumeIds;
@@ -173,7 +177,7 @@ public class BackupVO implements Backup {
         this.parentId = parentId;
     }
 
-    public void setVmId(long vmId) {
+    public void setVmId(Long vmId) {
         this.vmId = vmId;
     }
 
@@ -222,6 +226,14 @@ public class BackupVO implements Backup {
         } else {
             volumes = null;
         }
+    }
+
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(Date removed) {
+        this.removed = removed;
     }
 
     protected String getVolumes() {

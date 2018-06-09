@@ -19,10 +19,12 @@ package org.apache.cloudstack.api.command.user.backup;
 
 import javax.inject.Inject;
 
+import com.cloud.event.EventTypes;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
@@ -30,7 +32,6 @@ import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -41,12 +42,12 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = RestoreBackupVolumeCmd.APINAME,
+@APICommand(name = RestoreVolumeFromBackupAndAttachToVMCmd.APINAME,
         description = "Restore and attach a backed up volume to VM",
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class RestoreBackupVolumeCmd extends BaseCmd {
-    public static final String APINAME = "restoreBackupVolumeAndAttachToVM";
+public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
+    public static final String APINAME = "restoreVolumeFromBackupAndAttachToVM";
 
     @Inject
     private BackupManager backupManager;
@@ -79,10 +80,6 @@ public class RestoreBackupVolumeCmd extends BaseCmd {
             description = "id of the VM where to attach the restored volume")
     private Long vmId;
 
-    @Parameter(name = ApiConstants.ZONE_ID, type = BaseCmd.CommandType.UUID, entityType = ZoneResponse.class,
-            description = "The zone ID")
-    private Long zoneId;
-
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -97,10 +94,6 @@ public class RestoreBackupVolumeCmd extends BaseCmd {
 
     public Long getBackupId() {
         return backupId;
-    }
-
-    public Long getZoneId() {
-        return zoneId;
     }
 
     @Override
@@ -120,7 +113,7 @@ public class RestoreBackupVolumeCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreBackupVolumeAndAttachToVM(zoneId, volumeId, vmId, backupId);
+            boolean result = backupManager.restoreBackupVolumeAndAttachToVM(volumeId, vmId, backupId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
@@ -131,5 +124,15 @@ public class RestoreBackupVolumeCmd extends BaseCmd {
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
+    }
+
+    @Override
+    public String getEventType() {
+        return EventTypes.EVENT_RESTORE_VOLUME_FROM_BACKUP_AND_ATTACH_TO_VM;
+    }
+
+    @Override
+    public String getEventDescription() {
+        return "Restoring volume "+ volumeId + " from backup " + backupId + " and attaching it to VM " + vmId;
     }
 }

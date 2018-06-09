@@ -30,4 +30,5 @@ public interface BackupDao extends GenericDao<BackupVO, Long> {
     List<Backup> syncVMBackups(Long zoneId, Long vmId, List<Backup> externalBackups);
 
     BackupResponse newBackupResponse(Backup backup);
+    BackupVO getBackupVO(Backup backup);
 }
