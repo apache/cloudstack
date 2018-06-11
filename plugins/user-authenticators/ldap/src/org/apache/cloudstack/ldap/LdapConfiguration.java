@@ -88,7 +88,7 @@ public class LdapConfiguration implements Configurable{
             ConfigKey.Scope.Domain);
 
     private static final ConfigKey<String> ldapBindPassword = new ConfigKey<String>(
-            "Advanced",
+            "Secure",
             String.class,
             "ldap.bind.password",
             null,
@@ -96,7 +96,7 @@ public class LdapConfiguration implements Configurable{
             true,
             ConfigKey.Scope.Domain);
     private static final ConfigKey<String> ldapBindPrincipal = new ConfigKey<String>(
-            "Advanced",
+            "Secure",
             String.class,
             "ldap.bind.principal",
             null,
@@ -176,7 +176,7 @@ public class LdapConfiguration implements Configurable{
             true,
             ConfigKey.Scope.Domain);
     private static final ConfigKey<String> ldapTrustStorePassword = new ConfigKey<String>(
-            "Advanced",
+            "Secure",
             String.class,
             "ldap.truststore.password",
             null,

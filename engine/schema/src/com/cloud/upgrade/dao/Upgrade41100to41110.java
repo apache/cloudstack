@@ -19,6 +19,11 @@
 
 package com.cloud.upgrade.dao;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.utils.crypt.DBEncryptionUtil;
+import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.log4j.Logger;
+
 import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -28,11 +33,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.log4j.Logger;
-
-import com.cloud.hypervisor.Hypervisor;
-import com.cloud.utils.exception.CloudRuntimeException;
 
 public class Upgrade41100to41110 implements DbUpgrade {
     final static Logger LOG = Logger.getLogger(Upgrade41000to41100.class);
@@ -66,6 +66,76 @@ public class Upgrade41100to41110 implements DbUpgrade {
     @Override
     public void performDataMigration(Connection conn) {
         updateSystemVmTemplates(conn);
+        markUnnecessarySecureConfigsAsUnsecure(conn);
+    }
+
+    private void markUnnecessarySecureConfigsAsUnsecure(Connection conn) {
+        /*
+         * the following config items where added as 'Secure' in the past. For some this made sense but for the ones below,
+         * this makes no sense and is a inconvenience at best. The below method will
+         ** retrieve,
+         ** unencrypt,
+         ** mark as 'Advanced' and then
+         ** store the item
+         */
+        String[] unsecureItems = new String[] {
+                "ldap.basedn",
+                "ldap.bind.principal",
+                "ldap.email.attribute",
+                "ldap.firstname.attribute",
+                "ldap.group.object",
+                "ldap.group.user.uniquemember",
+                "ldap.lastname.attribute",
+                "ldap.search.group.principle",
+                "ldap.truststore",
+                "ldap.user.object",
+                "ldap.username.attribute"
+        };
+
+        for (String name : unsecureItems) {
+            uncrypt(conn, name);
+        }
+    }
+
+    /**
+     * if encrypted, decrypt the ldap hostname and port and then update as they are not encrypted now.
+     */
+    private void uncrypt(Connection conn, String name)
+    {
+        String value = null;
+        try (
+                PreparedStatement prepSelStmt = conn.prepareStatement("SELECT conf.category,conf.value FROM `cloud`.`configuration` conf WHERE conf.name= ?");
+        ) {
+            prepSelStmt.setString(1,name);
+            try (
+                    ResultSet resultSet = prepSelStmt.executeQuery();
+            ) {
+                if (LOG.isInfoEnabled()) {
+                    LOG.info("updating setting '" + name + "'");
+                }
+                if (resultSet.next()) {
+                    if ("Secure".equals(resultSet.getString(1))) {
+                        value = DBEncryptionUtil.decrypt(resultSet.getString(2));
+                        try (
+                                PreparedStatement prepUpdStmt= conn.prepareStatement("UPDATE `cloud`.`configuration` SET category = 'Advanced', value = ? WHERE name = ?" );
+                        ) {
+                            prepUpdStmt.setString(1, value);
+                            prepUpdStmt.setString(2, name);
+                            prepUpdStmt.execute();
+                        } catch (SQLException e) {
+                            if (LOG.isInfoEnabled()) {
+                                LOG.info("failed to update configuration item '" + name + "' with value '" + value + "'");
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("no update because ", e);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("failed to update configuration item '" + name + "' with value '" + value + "'", e);
+        }
     }
 
     @SuppressWarnings("serial")
