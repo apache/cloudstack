@@ -70,6 +70,14 @@ public class Upgrade41100to41110 implements DbUpgrade {
     }
 
     private void markUnnecessarySecureConfigsAsUnsecure(Connection conn) {
+        /*
+         * the following config items where added as 'Secure' in the past. For some this made sense but for the ones below,
+         * this makes no sense and is a inconvenience at best. The below method will
+         ** retrieve,
+         ** unencrypt,
+         ** mark as 'Advanced' and then
+         ** store the item
+         */
         String[] unsecureItems = new String[] {
                 "ldap.basedn",
                 "ldap.bind.principal",
