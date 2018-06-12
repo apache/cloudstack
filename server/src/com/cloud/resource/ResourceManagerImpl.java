@@ -1295,7 +1295,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     /**
      * Add VNC details as user VM details for each VM in 'vms' (KVM hosts only)
      */
-    private void setKVMVncAccess(long hostId, List<VMInstanceVO> vms) {
+    protected void setKVMVncAccess(long hostId, List<VMInstanceVO> vms) {
         for (VMInstanceVO vm : vms) {
             GetVncPortAnswer vmVncPortAnswer = (GetVncPortAnswer) _agentMgr.easySend(hostId, new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
             if (vmVncPortAnswer != null) {
@@ -1308,7 +1308,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     /**
      * Configure VNC access for host VMs which have failed migrating to another host while trying to enter Maintenance mode
      */
-    private void configureVncAccessForKVMHostFailedMigrations(HostVO host, List<VMInstanceVO> failedMigrations) {
+    protected void configureVncAccessForKVMHostFailedMigrations(HostVO host, List<VMInstanceVO> failedMigrations) {
         if (host.getHypervisorType().equals(HypervisorType.KVM)) {
             _agentMgr.pullAgentOutMaintenance(host.getId());
             setKVMVncAccess(host.getId(), failedMigrations);
@@ -1321,7 +1321,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      * - Cancel scheduled migrations for those which have already failed
      * - Configure VNC access for VMs (KVM hosts only)
      */
-    private boolean setHostIntoErrorInMaintenance(HostVO host, List<VMInstanceVO> failedMigrations) throws NoTransitionException {
+    protected boolean setHostIntoErrorInMaintenance(HostVO host, List<VMInstanceVO> failedMigrations) throws NoTransitionException {
         s_logger.debug("Unable to migrate " + failedMigrations.size() + " VM(s) from host " + host.getUuid());
         _haMgr.cancelScheduledMigrations(host);
         configureVncAccessForKVMHostFailedMigrations(host, failedMigrations);
@@ -1332,7 +1332,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     /**
      * Safely transit host into Maintenance mode
      */
-    private boolean setHostIntoMaintenance(HostVO host) throws NoTransitionException {
+    protected boolean setHostIntoMaintenance(HostVO host) throws NoTransitionException {
         s_logger.debug("Host " + host.getUuid() + " entering in Maintenance");
         resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
         ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
@@ -1345,7 +1345,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
      * Return true if host goes into Maintenance mode, only when:
      * - No Running, Migrating or Failed migrations (host_id = last_host_id) for the host
      */
-    private boolean isHostInMaintenance(HostVO host, List<VMInstanceVO> runningVms, List<VMInstanceVO> migratingVms, List<VMInstanceVO> failedMigrations) throws NoTransitionException {
+    protected boolean isHostInMaintenance(HostVO host, List<VMInstanceVO> runningVms, List<VMInstanceVO> migratingVms, List<VMInstanceVO> failedMigrations) throws NoTransitionException {
         if (CollectionUtils.isEmpty(runningVms) && CollectionUtils.isEmpty(migratingVms)) {
             return CollectionUtils.isEmpty(failedMigrations) ?
                     setHostIntoMaintenance(host) :
