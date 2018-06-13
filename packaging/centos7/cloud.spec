@@ -87,7 +87,6 @@ management, and intelligence in CloudStack.
 
 %package common
 Summary: Apache CloudStack common files and scripts
-Requires: libuuid
 Requires: python
 Requires: python-argparse
 Requires: python-netaddr
