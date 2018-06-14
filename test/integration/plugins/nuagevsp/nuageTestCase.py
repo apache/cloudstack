@@ -17,8 +17,19 @@
 
 """ Custom base class for Nuage VSP SDN plugin specific Marvin tests
 """
+import functools
+import importlib
+import logging
+import socket
+
+import sys
+import time
 # Import Local Modules
 from bambou.nurest_object import NURESTObject
+from marvin.cloudstackAPI import (restartVPC,
+                                  enableNuageUnderlayVlanIpRange,
+                                  disableNuageUnderlayVlanIpRange,
+                                  listNuageUnderlayVlanIpRanges)
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.lib.base import (Domain,
                              EgressFireWallRule,
@@ -44,22 +55,10 @@ from marvin.lib.base import (Domain,
 from marvin.lib.common import (get_domain,
                                get_template,
                                get_zone)
-from marvin.cloudstackAPI import (restartVPC,
-                                  enableNuageUnderlayVlanIpRange,
-                                  disableNuageUnderlayVlanIpRange,
-                                  listNuageUnderlayVlanIpRanges)
-
-from nuage_test_data import nuage_test_data
-from nuage_vsp_statistics import VsdDataCollector
-
 # Import System Modules
 from retry import retry
-import importlib
-import functools
-import logging
-import socket
-import time
-import sys
+
+from nuage_test_data import nuage_test_data
 
 
 class needscleanup(object):
@@ -86,38 +85,6 @@ class needscleanup(object):
             if wants_cleanup:
                 cleanup.append(result)
             return result
-        return _wrapper
-
-
-class gherkin(object):
-    """Decorator to mark a method as Gherkin style.
-       Add extra colored logging
-    """
-    BLACK = "\033[0;30m"
-    BLUE = "\033[0;34m"
-    GREEN = "\033[0;32m"
-    CYAN = "\033[0;36m"
-    RED = "\033[0;31m"
-    BOLDBLUE = "\033[1;34m"
-    NORMAL = "\033[0m"
-
-    def __init__(self, method):
-        self.method = method
-
-    def __get__(self, obj=None, objtype=None):
-        @functools.wraps(self.method)
-        def _wrapper(*args, **kwargs):
-            gherkin_step = self.method.__name__.replace("_", " ").capitalize()
-            obj.info("=G= %s%s%s" % (self.BOLDBLUE, gherkin_step, self.NORMAL))
-            try:
-                result = self.method(obj, *args, **kwargs)
-                obj.info("=G= %s%s: [SUCCESS]%s" %
-                         (self.GREEN, gherkin_step, self.NORMAL))
-                return result
-            except Exception as e:
-                obj.info("=G= %s%s: [FAILED]%s%s" %
-                         (self.RED, gherkin_step, self.NORMAL, e))
-                raise
         return _wrapper
 
 
@@ -825,7 +792,7 @@ class nuageTestCase(cloudstackTestCase):
             name=provider_name,
             physicalnetworkid=self.vsp_physical_network.id
         )
-        self.assertEqual(isinstance(providers, list), True,
+        self.assertIsInstance(providers, list,
                          "List Network Service Provider should return a "
                          "valid list"
                          )

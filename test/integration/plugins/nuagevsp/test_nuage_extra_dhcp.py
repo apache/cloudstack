@@ -19,7 +19,8 @@
 Nuage VSP SDN plugin
 """
 # Import Local Modules
-from nuageTestCase import (nuageTestCase, gherkin)
+from nuageTestCase import (nuageTestCase)
+from plugins.nuagevsp.nuage_lib import gherkin
 from marvin.cloudstackAPI import updateVirtualMachine, updateZone
 from marvin.lib.base import (Account,
                              Network,

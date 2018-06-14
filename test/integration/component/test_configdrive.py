@@ -20,6 +20,8 @@
     ConfigDrive
 """
 # Import Local Modules
+from contextlib import contextmanager
+
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (resetSSHKeyForVirtualMachine,
                                   updateTemplate,
@@ -213,6 +215,12 @@ class ConfigDriveUtils:
                 self.test_presence = True
                 self.password = password
                 self.presence = True
+
+    @contextmanager
+    def stopped_vm(self, vm):
+        vm.stop(self.api_client)
+        yield
+        vm.start(self.api_client)
 
     def updateTemplate(self, value):
         """Updates value of the guest VM template's password enabled setting
@@ -439,7 +447,7 @@ class ConfigDriveUtils:
         )
         self.assertEqual(
             str(metadata["local-hostname.txt"]),
-            vm.instancename,
+            vm.name,
             "vm name inside metadata does not match with the "
             "instance name"
         )
@@ -754,14 +762,27 @@ class ConfigDriveUtils:
         :rtype: str
         """
         updated_user_data = base64.b64encode(new_user_data)
-        vm.update(self.api_client, userdata=updated_user_data)
-        return new_user_data
+        with self.stopped_vm(vm):
+            vm.update(self.api_client, userdata=updated_user_data)
+        return updated_user_data
 
     def reset_password(self, vm):
-        vm.password = vm.resetPassword(self.api_client)
+        """Resets the password of a VM
+
+        :param vm: the Virtual Machine
+        :type vm: VirtualMachine
+        :returns: The new password
+        :rtype: str
+        """
+
+        with self.stopped_vm(vm):
+            vm.password = vm.resetPassword(self.api_client)
+
         self.debug("Password reset to - %s" % vm.password)
         self.debug("VM - %s password - %s !" %
                    (vm.name, vm.password))
+
+        return vm.password
 
     def wait_until_done(self, thread_list, name):
         for aThread in thread_list:
@@ -774,14 +795,13 @@ class ConfigDriveUtils:
 
         :type vm: VirtualMachine
         """
-        vm.stop(self.api_client)
-        vm_new_ssh = vm.resetSshKey(self.api_client,
-                       keypair=self.keypair.name,
-                       account=self.account.user[0].account,
-                       domainid=self.account.domainid)
+        with self.stopped_vm(vm):
+            vm_new_ssh = vm.resetSshKey(self.api_client,
+                           keypair=self.keypair.name,
+                           account=self.account.user[0].account,
+                           domainid=self.account.domainid)
 
         self.debug("Sshkey reset to - %s" % self.keypair.name)
-        vm.start(self.api_client)
 
         vm.details = vm_new_ssh.details
 
@@ -1339,6 +1359,46 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
             self.debug("No host available for migration. "
                        "Test requires at-least 2 hosts")
 
+    # create_NetworkAclList - Creates network ACL list in the given VPC
+    def create_NetworkAclList(self, name, description, vpc):
+        self.debug("Adding NetworkACL list in VPC with ID - %s" % vpc.id)
+        return NetworkACLList.create(self.api_client,
+                                     services={},
+                                     name=name,
+                                     description=description,
+                                     vpcid=vpc.id
+                                     )
+
+    # create_NetworkAclRule - Creates Ingress/Egress Network ACL rule in the
+    # given VPC network/acl list
+    def create_NetworkAclRule(self, rule, traffic_type="Ingress", network=None,
+                              acl_list=None):
+        self.debug("Adding NetworkACL rule - %s" % rule)
+        if acl_list:
+            return NetworkACL.create(self.api_client,
+                                     networkid=network.id if network else None,
+                                     services=rule,
+                                     traffictype=traffic_type,
+                                     aclid=acl_list.id
+                                     )
+        else:
+            return NetworkACL.create(self.api_client,
+                                     networkid=network.id if network else None,
+                                     services=rule,
+                                     traffictype=traffic_type
+                                     )
+
+    # restart_Vpc - Restarts the given VPC with/without cleanup
+    def restart_Vpc(self, vpc, cleanup=False):
+        self.debug("Restarting VPC with ID - %s" % vpc.id)
+        cmd = restartVPC.restartVPCCmd()
+        cmd.id = vpc.id
+        cmd.cleanup = cleanup
+        cmd.makeredundant = False
+        self.api_client.restartVPC(cmd)
+        self.debug("Restarted VPC with ID - %s" % vpc.id)
+
+
     @attr(tags=["advanced", "isonw"], required_hardware="true")
     def test_configdrive_isolated_network(self):
         """Test Configdrive as provider for isolated Networks
@@ -1410,7 +1470,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.check_Router_state(vr, state="Running")
 
         # We need to have the vm password
-        vm1.password = vm1.resetPassword(self.api_client)
+        self.reset_password(vm1)
         self.debug("Password reset to - %s" % vm1.password)
         self.debug("VM - %s password - %s !" %
                    (vm1.name, vm1.password))
@@ -1435,7 +1495,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.generate_ssh_keys()
         self.update_sshkeypair(vm1)
         # After sshkey reset we need to have the vm password again
-        vm1.password = vm1.resetPassword(self.api_client)
+        self.reset_password(vm1)
         self.debug("Password reset to - %s" % vm1.password)
         self.debug("VM - %s password - %s !" %
                    (vm1.name, vm1.password))
@@ -1454,7 +1514,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
                                          metadata=True,
                                          userdata=expected_user_data1,
                                          ssh_key=self.keypair)
-        vm1.password = vm1.resetPassword(self.api_client)
+        self.reset_password(vm1)
         self.debug("Password reset to - %s" % vm1.password)
         self.debug("VM - %s password - %s !" %
                    (vm1.name, vm1.password))
@@ -1481,7 +1541,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
                                          self.PasswordTest(False),
                                          metadata=True,
                                          userdata=expected_user_data1)
-        vm1.password = vm1.resetPassword(self.api_client)
+        self.reset_password(vm1)
         self.debug("Password reset to - %s" % vm1.password)
         self.debug("VM - %s password - %s !" %
                    (vm1.name, vm1.password))
@@ -1535,7 +1595,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
                               create_network2.network, operation="remove")
         create_network2.network.delete(self.api_client)
 
-        vm1.password = vm1.resetPassword(self.api_client)
+        self.reset_password(vm1)
         self.debug("Password reset to - %s" % vm1.password)
         self.debug("VM - %s password - %s !" %
                    (vm1.name, vm1.password))
@@ -1669,45 +1729,6 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
                                          ssh_key=self.keypair)
         vm1.delete(self.api_client, expunge=True)
         create_network1.network.delete(self.api_client)
-
-    # create_NetworkAclList - Creates network ACL list in the given VPC
-    def create_NetworkAclList(self, name, description, vpc):
-        self.debug("Adding NetworkACL list in VPC with ID - %s" % vpc.id)
-        return NetworkACLList.create(self.api_client,
-                                     services={},
-                                     name=name,
-                                     description=description,
-                                     vpcid=vpc.id
-                                     )
-
-    # create_NetworkAclRule - Creates Ingress/Egress Network ACL rule in the
-    # given VPC network/acl list
-    def create_NetworkAclRule(self, rule, traffic_type="Ingress", network=None,
-                              acl_list=None):
-        self.debug("Adding NetworkACL rule - %s" % rule)
-        if acl_list:
-            return NetworkACL.create(self.api_client,
-                                     networkid=network.id if network else None,
-                                     services=rule,
-                                     traffictype=traffic_type,
-                                     aclid=acl_list.id
-                                     )
-        else:
-            return NetworkACL.create(self.api_client,
-                                     networkid=network.id if network else None,
-                                     services=rule,
-                                     traffictype=traffic_type
-                                     )
-
-    # restart_Vpc - Restarts the given VPC with/without cleanup
-    def restart_Vpc(self, vpc, cleanup=False):
-        self.debug("Restarting VPC with ID - %s" % vpc.id)
-        cmd = restartVPC.restartVPCCmd()
-        cmd.id = vpc.id
-        cmd.cleanup = cleanup
-        cmd.makeredundant = False
-        self.api_client.restartVPC(cmd)
-        self.debug("Restarted VPC with ID - %s" % vpc.id)
 
     @attr(tags=["advanced", "vpc"], required_hardware="true")
     def test_configdrive_vpc_network(self):
@@ -2188,20 +2209,14 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         self.check_Router_state(shared_vr, state="Running")
 
         # We need to have the vm password
-        vm1.password = vm1.resetPassword(self.api_client)
-        self.debug("Password reset to - %s" % vm1.password)
-        self.debug("VM - %s password - %s !" %
-                   (vm1.name, vm1.password))
+        self.reset_password(vm1)
         self.update_userdata(vm1, "helloworld vm1")
 
         self.debug("Adding a non-default nic to the VM "
                    "making it a multi-nic VM...")
         self.nic_operation_VM(vm1, shared_network2.network,
                               operation="add")
-        vm1.password = vm1.resetPassword(self.api_client)
-        self.debug("Password reset to - %s" % vm1.password)
-        self.debug("VM - %s password - %s !" %
-                   (vm1.name, vm1.password))
+        self.reset_password(vm1)
 
         self.debug("updating non-default nic as the default nic "
                    "of the multi-nic VM...")
@@ -2210,10 +2225,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         vm1.stop(self.api_client)
         vm1.start(self.api_client)
 
-        vm1.password = vm1.resetPassword(self.api_client)
-        self.debug("Password reset to - %s" % vm1.password)
-        self.debug("VM - %s password - %s !" %
-                   (vm1.name, vm1.password))
+        self.reset_password(vm1)
         self.update_userdata(vm1, "hellomultinicvm1")
 
         self.debug("Updating the default nic of the multi-nic VM, "
@@ -2227,10 +2239,7 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
                               shared_network2.network, operation="remove")
         shared_network2.network.delete(self.api_client)
         # We need to have the vm password
-        vm1.password = vm1.resetPassword(self.api_client)
-        self.debug("Password reset to - %s" % vm1.password)
-        self.debug("VM - %s password - %s !" %
-                   (vm1.name, vm1.password))
+        self.reset_password(vm1)
 
         self.debug("+++ When template is not password enabled, "
                    "verify configdrive of VM - %s" % vm1.name)

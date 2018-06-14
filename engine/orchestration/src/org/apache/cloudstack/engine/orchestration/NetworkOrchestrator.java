@@ -1336,7 +1336,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         //check if the there are no service provider other than virtualrouter.
         for(Provider provider : providers) {
-            if (provider!=Provider.VirtualRouter)
+            if (provider != Provider.VirtualRouter)
                 throw new UnsupportedOperationException("Cannot update the network resources in sequence when providers other than virtualrouter are used");
         }
         //check if routers are in correct state before proceeding with the update

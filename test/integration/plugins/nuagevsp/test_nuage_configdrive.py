@@ -242,6 +242,34 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
     # ---                    Gherkin style helper methods                   ---
     # =========================================================================
 
+    def given_config_drive_provider_is(self, state):
+        return self.update_provider_state(state)
+
+    def given_a_network_offering_with_configdrive(self):
+        self.offering = self.create_NetworkOffering(self._get_test_data(
+            "isolated_configdrive_network_offering_withoutdns"))
+
+    def then_creating_a_network_with_that_offering_fails(self):
+        create_network = self.verify_network_creation(
+            offering=self.offering,
+            gateway='10.6.6.6')
+        self.assertFalse(create_network.success,
+                         'Network found success = %s, expected success =%s'
+                         % (str(create_network.success), 'False'))
+
+    def when_I_create_a_network_with_that_offering(self):
+        return self.verify_network_creation(
+            offering=self.offering,
+            gateway='10.1.1.1')
+
+    def then_the_network_is_successfully_created(self, network):
+        self.assertTrue(network.success,
+                        'Network found success = %s, expected success = %s'
+                        % (str(network.success), 'True'))
+
+    def then_the_network_is_has(self, network, state):
+        self.validate_Network(network, state=state)
+
     # =========================================================================
     # ---                            TEST CASES                             ---
     # =========================================================================
@@ -290,34 +318,24 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
 
             self.debug("+++Testing configdrive in an Isolated network fails..."
                        "as provider configdrive is still disabled...")
-            self.update_provider_state("Disabled")
-            create_network = self.verify_network_creation(
-                offering_name="isolated_configdrive_network_offering_"
-                              "withoutdns",
-                gateway='10.1.1.1')
-            self.assertFalse(create_network.success,
-                             'Network found success = %s, expected success =%s'
-                             % (str(create_network.success), 'False'))
 
-
+            self.given_config_drive_provider_is("Disabled")
+            self.given_a_network_offering_with_configdrive()
+            self.then_creating_a_network_with_that_offering_fails()
 
             self.debug("+++Test user data & password reset functionality "
                        "using configdrive in an Isolated network without VR")
-            self.update_provider_state("Enabled")
-            create_network1 = self.verify_network_creation(
-                offering=create_network.offering,
-                gateway='10.1.1.1')
-            self.assertTrue(create_network1.success,
-                            'Network found success = %s, expected success = %s'
-                            % (str(create_network1.success), 'True'))
-            self.validate_Network(create_network1.network, state="Allocated")
-            create_network2 = self.verify_network_creation(
-                offering=create_network.offering,
-                gateway='10.1.2.1')
-            self.assertTrue(create_network2.success,
-                            'Network found success = %s,expected success = %s'
-                            % (str(create_network2.success), 'True'))
-            self.validate_Network(create_network2.network, state="Allocated")
+
+            self.given_config_drive_provider_is("Enabled")
+            create_network1 = self.when_I_create_a_network_with_that_offering()
+            self.then_the_network_is_successfully_created(create_network1)
+            self.then_the_network_is_has(create_network1, state="Allocated")
+
+            create_network2 = self.when_I_create_a_network_with_that_offering()
+            self.then_the_network_is_successfully_created(create_network2)
+            self.then_the_network_is_has(create_network2, state="Allocated")
+
+
             self.update_password_enable_in_template(True)
 
             self.debug("+++Deploy VM in the created Isolated network "
@@ -331,8 +349,9 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
             with self.assertRaises(Exception):
                 self.get_Router(create_network1)
             self.debug("+++Verified no VR is spawned for this network ")
+
             # We need to have the vm password
-            vm1.password = vm1.resetPassword(self.api_client)
+            self.reset_password(vm1)
             self.debug("Password reset to - %s" % vm1.password)
             self.debug("VM - %s password - %s !" %
                        (vm1.name, vm1.password))
@@ -362,10 +381,7 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
                                              userdata=expected_user_data1,
                                              ssh_key=self.keypair)
             # After sshkey reset we need to have the vm password again
-            vm1.password = vm1.resetPassword(self.api_client)
-            self.debug("Password reset to - %s" % vm1.password)
-            self.debug("VM - %s password - %s !" %
-                       (vm1.name, vm1.password))
+            self.reset_password(vm1)
 
             self.debug("Adding a non-default nic to the VM "
                        "making it a multi-nic VM...")
@@ -376,10 +392,7 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
                                              metadata=True,
                                              userdata=expected_user_data1,
                                              ssh_key=self.keypair)
-            vm1.password = vm1.resetPassword(self.api_client)
-            self.debug("Password reset to - %s" % vm1.password)
-            self.debug("VM - %s password - %s !" %
-                       (vm1.name, vm1.password))
+            self.reset_password(vm1)
 
             expected_user_data1 = self.update_userdata(vm1,
                                                        "hellomultinicvm1")
@@ -403,10 +416,7 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
                                              self.PasswordTest(False),
                                              metadata=True,
                                              userdata=expected_user_data1)
-            vm1.password = vm1.resetPassword(self.api_client)
-            self.debug("Password reset to - %s" % vm1.password)
-            self.debug("VM - %s password - %s !" %
-                       (vm1.name, vm1.password))
+            self.reset_password(vm1)
             self.verify_config_drive_content(vm1, public_ip_2,
                                              self.PasswordTest(vm1.password),
                                              userdata=expected_user_data1)
@@ -457,10 +467,7 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
                                   create_network2.network, operation="remove")
             create_network2.network.delete(self.api_client)
 
-            vm1.password = vm1.resetPassword(self.api_client)
-            self.debug("Password reset to - %s" % vm1.password)
-            self.debug("VM - %s password - %s !" %
-                       (vm1.name, vm1.password))
+            self.reset_password(vm1)
 
             self.debug("+++ Restarting the created Isolated network without "
                        "VR without cleanup...")
@@ -517,10 +524,7 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
             self.debug("+++Verified VR is spawned for this network ")
 
             # We need to have the vm password
-            vm2.password = vm2.resetPassword(self.api_client)
-            self.debug("Password reset to - %s" % vm2.password)
-            self.debug("VM2 - %s password - %s !" %
-                       (vm2.name, vm2.password))
+            self.reset_password(vm2)
             public_ip_3 = self.acquire_PublicIPAddress(
                 create_vrnetwork1.network)
             self.create_and_verify_fip_and_fw(vm2, public_ip_3,
@@ -632,7 +636,6 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
             self.verify_config_drive_content(vm1, public_ip_1,
                                              self.PasswordTest(False),
                                              userdata=expected_user_data1)
-            self.debug("Resetting password for VM - %s" % vm1.name)
             self.reset_password(vm1)
             self.debug("SSHing into the VM for verifying its new password "
                        "after its password reset...")
@@ -966,7 +969,7 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
             self.verify_vsd_router(vr2)
             self.debug("+++Verified VR is spawned for this network ")
             # We need to have the vm password
-            vm2.password = vm2.resetPassword(self.api_client)
+            self.reset_password(vm2)
             self.debug("Password reset to - %s" % vm2.password)
             self.debug("VM2 - %s password - %s !" %
                        (vm2.name, vm2.password))
@@ -1431,7 +1434,7 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
                 self.get_Router(shared_network)
             self.debug("+++ Verified no VR is spawned for this network ")
             # We need to have the vm password
-            vm1.password = vm1.resetPassword(self.api_client)
+            self.reset_password(vm1)
             self.debug("Password reset to - %s" % vm1.password)
             self.debug("VM - %s password - %s !" %
                        (vm1.name, vm1.password))
@@ -1456,7 +1459,7 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
                                              metadata=True,
                                              userdata=expected_user_data,
                                              ssh_key=self.keypair)
-            vm1.password = vm1.resetPassword(self.api_client)
+            self.reset_password(vm1)
             self.debug("Password reset to - %s" % vm1.password)
             self.debug("VM - %s password - %s !" %
                        (vm1.name, vm1.password))
@@ -1482,7 +1485,7 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
                                              self.PasswordTest(False),
                                              metadata=True,
                                              userdata=expected_user_data1)
-            vm1.password = vm1.resetPassword(self.api_client)
+            self.reset_password(vm1)
             self.debug("Password reset to - %s" % vm1.password)
             self.debug("VM - %s password - %s !" %
                        (vm1.name, vm1.password))
@@ -1534,7 +1537,7 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
 
             shared_network2.network.delete(self.api_client)
             # We need to have the vm password
-            vm1.password = vm1.resetPassword(self.api_client)
+            self.reset_password(vm1)
             self.debug("Password reset to - %s" % vm1.password)
             self.debug("VM - %s password - %s !" %
                        (vm1.name, vm1.password))
@@ -1687,7 +1690,7 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
                 self.get_Router(create_network)
             self.debug("+++Verified no VR is spawned for this network ")
             # We need to have the vm password
-            vm1.password = vm1.resetPassword(self.api_client)
+            self.reset_password(vm1)
             self.debug("Password reset to - %s" % vm1.password)
             self.debug("VM - %s password - %s !" %
                        (vm1.name, vm1.password))
