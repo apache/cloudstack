@@ -45,6 +45,9 @@ INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created,
 INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, enable_password, display_text,  format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
     VALUES (7, UUID(), 'centos53-x64', 'CentOS 5.3(64-bit) no GUI (vSphere)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://download.cloudstack.org/releases/2.2.0/CentOS5.3-x86_64.ova', 'f6f881b7f2292948d8494db837fe0f47', 0, 'CentOS 5.3(64-bit) no GUI (vSphere)', 'OVA', 12, 1, 1, 'VMware', 1);
 
+INSERT INTO `cloud`.`vm_template` (id, uuid, unique_name, name, public, created, type, hvm, bits, account_id, url, checksum, display_text, enable_password, format, guest_os_id, featured, cross_zones, hypervisor_type, extractable)
+    VALUES (13, UUID(), 'macchinina-x86_64', 'macchinina(64-bit KVM)', 1, now(), 'BUILTIN', 0, 64, 1, 'http://dl.openvm.eu/cloudstack/macchinina/x86_64/macchinina-kvm.qcow2.bz2', '6952e58f39b470bd166ace11ffd20bf479bed936', 'lucky macchinina(64-bit KVM)', 1, 'QCOW2', 99, 1, 1, 'KVM', 1);
+
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (1, UUID(), 'CentOS');
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (2, UUID(), 'Debian');
 INSERT INTO `cloud`.`guest_os_category` (id, uuid, name) VALUES (3, UUID(), 'Oracle');
