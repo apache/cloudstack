@@ -2088,6 +2088,7 @@ class TestNuageStaticNat(nuageTestCase):
         self.debug("Restarting the created VPC network with cleanup...")
         Network.restart(vpc_tier, self.api_client, cleanup=True)
         self.validate_Network(vpc_tier, state="Implemented")
+        vpc_vr = self.get_Router(vpc_tier)
         self.check_Router_state(vpc_vr, state="Running")
         self.check_VM_state(vpc_vm, state="Running")
 

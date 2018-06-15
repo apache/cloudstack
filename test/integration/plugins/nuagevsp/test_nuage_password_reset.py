@@ -120,7 +120,7 @@ class TestNuagePasswordReset(nuageTestCase):
 
     # stop_vm - Stops the given VM, and verifies its state
     def stop_vm(self, vm):
-        self.debug("Stoping VM")
+        self.debug("Stopping VM")
         vm.stop(self.api_client)
         list_vm_response = VirtualMachine.list(self.api_client,
                                                id=vm.id
@@ -330,10 +330,20 @@ class TestNuagePasswordReset(nuageTestCase):
                 vm_test_public_ip = public_ip_1
 
             self.debug("Resetting password for VM - %s" % vm_test.name)
+            self.stop_vm(vm_test)
             vm_test.password = vm_test.resetPassword(self.api_client)
             self.debug("Password reset to - %s" % vm_test.password)
 
             self.debug("Starting the VM")
+            vm_test.start(self.api_client)
+
+            self.debug("until CLOUDSTACK-10380 is fixed, redo resetPassword")
+            self.stop_vm(vm_test)
+            self.debug("Resetting password again for VM - %s" % vm_test.name)
+            vm_test.password = vm_test.resetPassword(self.api_client)
+            self.debug("VM - %s password - %s !" %
+                       (vm_test.name, vm_test.password))
+            self.debug("Starting the VM again")
             vm_test.start(self.api_client)
 
             self.debug("verifying that the guest VM template is password "

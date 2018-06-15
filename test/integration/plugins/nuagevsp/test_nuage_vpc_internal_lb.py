@@ -1928,6 +1928,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.debug("Restarting the Internal tier with cleanup...")
         Network.restart(internal_tier, self.api_client, cleanup=True)
         self.validate_Network(internal_tier, state="Implemented")
+        vr = self.get_Router(internal_tier)
         self.check_Router_state(vr, state="Running")
         self.check_VM_state(internal_vm, state="Running")
         self.check_VM_state(internal_vm_1, state="Running")
@@ -2011,6 +2012,7 @@ class TestNuageInternalLb(nuageTestCase):
         self.debug("Restarting the Public tier with cleanup...")
         Network.restart(public_tier, self.api_client, cleanup=True)
         self.validate_Network(public_tier, state="Implemented")
+        vr = self.get_Router(public_tier)
         self.check_Router_state(vr, state="Running")
         self.check_VM_state(public_vm, state="Running")
         self.validate_PublicIPAddress(
