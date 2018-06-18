@@ -47,6 +47,8 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.agent.api.UnsupportedAnswer;
+import com.cloud.resource.RequestWrapper;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
@@ -1438,8 +1440,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         try {
             return wrapper.execute(cmd, this);
-        } catch (final Exception e) {
+        } catch (final RequestWrapper.CommandNotSupported cmde) {
             return Answer.createUnsupportedCommandAnswer(cmd);
+        } catch (Exception e) {
+            return new UnsupportedAnswer(cmd, e.getLocalizedMessage());
         }
     }
 
