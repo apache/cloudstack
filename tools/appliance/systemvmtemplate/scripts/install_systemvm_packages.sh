@@ -80,6 +80,13 @@ function install_packages() {
 
   ${apt_get} install links
 
+  #32 bit architecture support for vhd-util: not required for 32 bit template
+  if [ "${arch}" != "i386" ]; then
+    dpkg --add-architecture i386
+    apt-get update
+    ${apt_get} install libuuid1:i386 libc6:i386
+  fi
+
   # Install xenserver guest utilities as debian repos don't have it
   wget https://mirrors.kernel.org/ubuntu/pool/main/x/xe-guest-utilities/xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
   dpkg -i xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
