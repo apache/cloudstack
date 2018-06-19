@@ -30,13 +30,12 @@ import com.cloud.agent.api.Command;
 
 public abstract class RequestWrapper {
     static public class CommandNotSupported extends NullPointerException {
-        Throwable reason = null;
         public CommandNotSupported(String msg) {
             super(msg);
         }
         public CommandNotSupported(String msg, Throwable cause) {
             super(msg);
-            reason = cause;
+            initCause(cause);
         }
     }
 
