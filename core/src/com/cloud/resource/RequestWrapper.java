@@ -30,8 +30,13 @@ import com.cloud.agent.api.Command;
 
 public abstract class RequestWrapper {
     static public class CommandNotSupported extends NullPointerException {
+        Throwable reason = null;
         public CommandNotSupported(String msg) {
             super(msg);
+        }
+        public CommandNotSupported(String msg, Throwable cause) {
+            super(msg);
+            reason = cause;
         }
     }
 
@@ -115,10 +120,8 @@ public abstract class RequestWrapper {
                 keepResourceClass = resourceClass2;
 
                 commandWrapper = retrieveCommands(command.getClass(), resourceCommands2);
-            } catch (final ClassCastException e) {
-                throw new CommandNotSupported("No key found for '" + command.getClass() + "' in the Map!");
-            } catch (final NullPointerException e) {
-                throw e;
+            } catch (final ClassCastException | NullPointerException e) {
+                throw new CommandNotSupported("No key found for '" + command.getClass() + "' in the Map!", e);
             }
         }
         return commandWrapper;
