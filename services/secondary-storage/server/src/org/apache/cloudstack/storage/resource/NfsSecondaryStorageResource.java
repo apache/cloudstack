@@ -42,6 +42,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -337,7 +338,7 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             Path tempDir = null;
             try {
                 tempDir = java.nio.file.Files.createTempDirectory(ConfigDrive.CONFIGDRIVEDIR);
-                File tmpIsoFile = ConfigDriveBuilder.base64StringToFile(cmd.getIsoData(), tempDir.toAbsolutePath().toString(), ConfigDrive.CONFIGDRIVEFILENAME);
+                File tmpIsoFile = ConfigDriveBuilder.base64StringToFile(cmd.getIsoData(), tempDir.toAbsolutePath().toString(), cmd.getIsoFile());
                 copyLocalToNfs(tmpIsoFile, new File(cmd.getIsoFile()), cmd.getDestStore());
             } catch (IOException | ConfigurationException e) {
                 return new Answer(cmd, false, "Failed due to exception: " + e.getMessage());
@@ -355,11 +356,11 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
             DataStoreTO dstore = cmd.getDestStore();
             if (dstore instanceof NfsTO) {
                 NfsTO nfs = (NfsTO) dstore;
-                String relativeTemplatePath = new File(cmd.getIsoFile()).getParent();
+                String relativeTemplatePath = new File(cmd.getIsoFile()).getPath();
                 String nfsMountPoint = getRootDir(nfs.getUrl(), _nfsVersion);
                 File tmpltPath = new File(nfsMountPoint, relativeTemplatePath);
                 try {
-                    FileUtils.deleteDirectory(tmpltPath);
+                    Files.deleteIfExists(tmpltPath.toPath());
                 } catch (IOException e) {
                     return new Answer(cmd, e);
                 }
