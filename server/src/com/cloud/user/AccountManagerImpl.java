@@ -1734,6 +1734,8 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                 UserVO newUser = new UserVO(user);
                 user.setExternalEntity(user.getUuid());
                 user.setUuid(UUID.randomUUID().toString());
+                user.setApiKey(null);
+                user.setSecretKey(null);
                 _userDao.update(user.getId(),user);
                 newUser.setAccountId(newAccountId);
                 boolean success = _userDao.remove(user.getId());
