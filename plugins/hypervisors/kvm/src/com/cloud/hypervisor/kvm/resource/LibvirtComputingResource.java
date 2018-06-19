@@ -1434,6 +1434,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
+    /**
+     * This finds a command wrapper to handle the command and executes it.
+     * If no wrapper is found an {@see UnsupportedAnswer} is sent back.
+     * Any other exceptions are to be caught and wrapped in an generic {@see Answer}, marked as failed.
+     *
+     * @param cmd the instance of a {@see Command} to execute.
+     * @return the for the {@see Command} appropriate {@see Answer} or {@see UnsupportedAnswer}
+     */
     @Override
     public Answer executeRequest(final Command cmd) {
 
@@ -1442,8 +1450,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             return wrapper.execute(cmd, this);
         } catch (final RequestWrapper.CommandNotSupported cmde) {
             return Answer.createUnsupportedCommandAnswer(cmd);
-        } catch (Exception e) {
-            return new UnsupportedAnswer(cmd, e.getLocalizedMessage());
         }
     }
 
