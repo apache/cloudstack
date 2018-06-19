@@ -476,9 +476,10 @@ class CsIP:
             self.fw.append(["", "front", "-A NETWORK_STATS_%s -o %s -s %s" %
                             ("eth1", "eth1", guestNetworkCidr)])
 
-            self.fw.append(["nat", "front",
-                            "-A POSTROUTING -s %s -o %s -j SNAT --to-source %s" %
-                            (guestNetworkCidr, self.dev, self.address['public_ip'])])
+            if self.address["source_nat"]:
+                self.fw.append(["nat", "front",
+                                "-A POSTROUTING -o %s -j SNAT --to-source %s" %
+                                (self.dev, self.address['public_ip'])])
 
         if self.get_type() in ["public"]:
             self.fw.append(
