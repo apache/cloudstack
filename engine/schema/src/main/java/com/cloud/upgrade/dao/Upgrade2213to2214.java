@@ -91,16 +91,6 @@ public class Upgrade2213to2214 implements DbUpgrade {
             throw new CloudRuntimeException("Unable to execute cloud_usage usage_event table update", e);
         }
 
-        //Drop netapp_volume primary key and add it again
-        DbUpgradeUtils.dropPrimaryKeyIfExists(conn, "cloud.netapp_volume");
-        try {
-            PreparedStatement pstmt = conn.prepareStatement("ALTER TABLE `cloud`.`netapp_volume` add PRIMARY KEY (`id`)");
-            pstmt.executeUpdate();
-            pstmt.close();
-        } catch (SQLException e) {
-            throw new CloudRuntimeException("Unable to update primary key for netapp_volume", e);
-        }
-
         //Drop i_snapshots__removed key (if exists) and re-add it again
         keys = new ArrayList<String>();
         keys.add("i_snapshots__removed");

@@ -138,22 +138,11 @@
       <artifactId>cloud-api</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
-      <scope>test</scope>      
+      <scope>test</scope>
     </dependency>
   </dependencies>
 
   <profiles>
-    <profile>
-      <id>netapp</id>
-      <activation>
-        <property>
-          <name>noredist</name>
-        </property>
-      </activation>
-      <modules>
-        <module>file-systems/netapp</module>
-      </modules>
-    </profile>
     <profile>
       <id>f5</id>
       <activation>
