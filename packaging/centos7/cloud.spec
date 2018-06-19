@@ -93,6 +93,7 @@ Requires: python-netaddr
 Group:   System Environment/Libraries
 %description common
 The Apache CloudStack files shared between agent and management server
+%global __requires_exclude ^libuuid\\.so\\.1$
 
 %package agent
 Summary: CloudStack Agent for KVM hypervisors
