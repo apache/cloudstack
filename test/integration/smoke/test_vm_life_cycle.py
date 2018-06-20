@@ -839,7 +839,6 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
-
         cls.apiclient = super(TestSecuredVmMigration, cls).getClsTestClient().getApiClient()
         try:
             cleanup_resources(cls.apiclient, cls._cleanup)
@@ -850,135 +849,29 @@ class TestSecuredVmMigration(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
+
         if self.hypervisor.lower() not in ["kvm"]:
             self.skipTest("Secured migration is not supported on other than KVM")
 
+        self.hosts = Host.list(
+            self.apiclient,
+            zoneid=self.zone.id,
+            type='Routing',
+            hypervisor='KVM')
+
+        if len(self.hosts) < 2:
+            self.skipTest("Requires at least two hosts for performing migration related tests")
+
+        self.secure_all_hosts()
         self.updateConfiguration("ca.plugin.root.auth.strictness", "false")
-        self.make_all_hosts_secure()
 
     def tearDown(self):
-        self.make_all_hosts_secure()
-
+        self.secure_all_hosts()
+        self.updateConfiguration("ca.plugin.root.auth.strictness", "true")
         try:
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
-    def test_01_secured_vm_migration(self):
-        """Test secured VM migration"""
-
-        # Validate the following
-        # 1. Environment has enough hosts for migration
-        # 2. DeployVM on suitable host (with another host in the cluster)
-        # 3. Migrate the VM and assert migration successful
-
-        hosts = self.get_hosts()
-
-        secured_hosts = []
-
-        for host in hosts:
-            if host.details.secured == 'true':
-                secured_hosts.append(host)
-
-        if len(secured_hosts) < 2:
-            self.skipTest("At least two hosts should be present in the zone for migration")
-
-        origin_host = secured_hosts[0]
-
-        self.vm_to_migrate = self.deploy_vm(origin_host)
-
-        target_host = self.get_target_host(secured='true', virtualmachineid=self.vm_to_migrate.id)
-
-        self.migrate_and_check(origin_host, target_host, proto='tls')
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
-    def test_02_not_secured_vm_migration(self):
-        """Test Non-secured VM Migration
-        """
-        #self.skipTest()
-        # Validate the following
-        # 1. Prepare 2 hosts to run in non-secured more
-        # 2. DeployVM on suitable host (with another host in the cluster)
-        # 3. Migrate the VM and assert migration successful
-        hosts = self.get_hosts()
-        for host in hosts:
-            self.make_unsecure_connection(host)
-
-        non_secured_hosts = []
-
-        hosts = self.get_hosts()
-
-        for host in hosts:
-            if host.details.secured == 'false':
-                non_secured_hosts.append(host)
-
-        if len(non_secured_hosts) < 2:
-            self.skipTest("At least two hosts should be present in the zone for migration")
-        origin_host = non_secured_hosts[0]
-
-        self.vm_to_migrate = self.deploy_vm(origin_host)
-
-        target_host = self.get_target_host(secured='false', virtualmachineid=self.vm_to_migrate.id)
-
-        self.migrate_and_check(origin_host, target_host, proto='tcp')
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
-    def test_03_secured_to_nonsecured_vm_migration(self):
-        """Test destroy Virtual Machine
-        """
-
-        # Validate the following
-        # 1. Makes one of the hosts non-secured
-        # 2. Deploys a VM to a Secured host
-        # 3. Migrates the VM to the non-secured host and assers the migration is via TCP.
-
-        hosts = self.get_hosts()
-
-        non_secured_host = self.make_unsecure_connection(hosts[0])
-
-        secured_hosts = []
-        hosts = self.get_hosts()
-
-        for host in hosts:
-            if host.details.secured == 'true':
-                secured_hosts.append(host)
-
-        self.vm_to_migrate = self.deploy_vm(secured_hosts[0])
-        try:
-            self.migrate_and_check(origin_host=secured_hosts[0], destination_host=non_secured_host, proto='tcp')
-        except Exception:
-            pass
-        else: self.fail("Migration succeed, instead it should fail")
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="false")
-    def test_04_nonsecured_to_secured_vm_migration(self):
-        """Test Non-secured VM Migration
-        """
-
-        # Validate the following
-        # 1. Makes one of the hosts non-secured
-        # 2. Deploys a VM to the non-secured host
-        # 3. Migrates the VM to the secured host and assers the migration is via TCP.
-        hosts = self.get_hosts()
-
-        non_secured_host = self.make_unsecure_connection(hosts[0])
-
-        secured_hosts = []
-
-        hosts = self.get_hosts()
-        for host in hosts:
-            if host.details.secured == 'true':
-                secured_hosts.append(host)
-
-        self.vm_to_migrate = self.deploy_vm(non_secured_host)
-
-        try:
-            self.migrate_and_check(origin_host=non_secured_host, destination_host=secured_hosts[0], proto='tcp')
-        except Exception:
-            pass
-        else:
-            self.fail("Migration succeed, instead it should fail")
 
     def get_target_host(self, secured, virtualmachineid):
         target_hosts = Host.listForMigration(self.apiclient,
@@ -992,54 +885,43 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     def check_migration_protocol(self, protocol, host):
         resp = SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
-            .execute("grep -a Live /var/log/cloudstack/agent/agent.log | tail -1")
+            .execute("grep -a listen_%s=1 /etc/libvirt/libvirtd.conf | tail -1" % protocol)
 
         if protocol not in resp[0]:
-            cloudstackTestCase.fail(self, "Migration protocol was not as expected: '" + protocol + "\n"
-                                    "Instead we got: " + resp[0])
+            cloudstackTestCase.fail(self, "Libvirt listen protocol expected: '" + protocol + "\n"
+                                    "does not match actual: " + resp[0])
 
-    def make_unsecure_connection(self, host):
-        SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
-            .execute("rm -f /etc/cloudstack/agent/cloud*")
+    def migrate_and_check(self, vm, src_host, dest_host, proto='tls'):
+        """
+            Migrates a VM from source host to destination host and checks status
+        """
+        self.check_migration_protocol(protocol=proto, host=src_host)
+        vm.migrate(self.apiclient, hostid=dest_host.id)
+        vm_response = VirtualMachine.list(self.apiclient, id=vm.id)[0]
+        self.assertEqual(vm_response.hostid, dest_host.id, "Check destination host ID of migrated VM")
 
-        SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
-            .execute("sed -i 's/listen_tls.*/listen_tls=0/g' /etc/libvirt/libvirtd.conf")
-        SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
-            .execute("sed -i 's/listen_tcp.*/listen_tcp=1/g' /etc/libvirt/libvirtd.conf ")
-        SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
-            .execute("sed -i '/.*_file.*/d' /etc/libvirt/libvirtd.conf")
-        SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
-            .execute("service libvirtd restart")
-        SshClient(host.ipaddress, port=22, user=self.hostConfig["username"],passwd=self.hostConfig["password"])\
-            .execute("service cloudstack-agent restart")
+    def unsecure_host(self, host):
+        SshClient(host.ipaddress, port=22, user=self.hostConfig["username"], passwd=self.hostConfig["password"])\
+            .execute("rm -f /etc/cloudstack/agent/cloud* && \
+                      sed -i 's/listen_tls.*/listen_tls=0/g' /etc/libvirt/libvirtd.conf && \
+                      sed -i 's/listen_tcp.*/listen_tcp=1/g' /etc/libvirt/libvirtd.conf && \
+                      sed -i '/.*_file=.*/d' /etc/libvirt/libvirtd.conf && \
+                      service libvirtd restart && \
+                      service cloudstack-agent restart")
 
-        self.check_connection(host=host, secured='false')
         time.sleep(10)
+        self.check_connection(host=host, secured='false')
         return host
 
-    def make_all_hosts_secure(self):
-        hosts = Host.list(
-            self.apiclient,
-            zoneid=self.zone.id,
-            type='Routing'
-        )
-        for host in hosts:
+    def secure_all_hosts(self):
+        for host in self.hosts:
             cmd = provisionCertificate.provisionCertificateCmd()
             cmd.hostid = host.id
+            cmd.reconnect = True
             self.apiclient.updateConfiguration(cmd)
 
-        for host in hosts:
+        for host in self.hosts:
             self.check_connection(secured='true', host=host)
-
-    def get_hosts(self):
-
-        hosts = Host.list(
-            self.apiclient,
-            zoneid=self.zone.id,
-            type='Routing'
-        )
-        self.assertEqual(validateList(hosts)[0], PASS, "hosts list validation failed")
-        return hosts
 
     def deploy_vm(self, origin_host):
         return VirtualMachine.create(
@@ -1049,10 +931,9 @@ class TestSecuredVmMigration(cloudstackTestCase):
             domainid=self.account.domainid,
             serviceofferingid=self.small_offering.id,
             mode=self.services["mode"],
-            hostid=origin_host.id
-        )
+            hostid=origin_host.id)
 
-    def check_connection(self, secured, host, retries=5, interval=5):
+    def check_connection(self, secured, host, retries=20, interval=6):
 
         while retries > -1:
             time.sleep(interval)
@@ -1069,21 +950,88 @@ class TestSecuredVmMigration(cloudstackTestCase):
             else:
                 return
 
-        raise Exception("Host communication is not as expected: " + secured +
-                        ". Instead it's: " + host.details.secured)
-
-    def migrate_and_check(self, origin_host, destination_host, proto):
-
-        self.vm_to_migrate.migrate(self.apiclient, hostid=destination_host.id)
-
-        self.check_migration_protocol(protocol=proto, host=origin_host)
-
-        vm_response = VirtualMachine.list(self.apiclient, id=self.vm_to_migrate.id)[0]
-
-        self.assertEqual(vm_response.hostid, destination_host.id, "Check destination hostID of migrated VM")
+        raise Exception("Host detail 'secured' was expected: " + secured +
+                        ", actual is: " + host.details.secured)
 
     def updateConfiguration(self, name, value):
         cmd = updateConfiguration.updateConfigurationCmd()
         cmd.name = name
         cmd.value = value
         self.apiclient.updateConfiguration(cmd)
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "security"], required_hardware="false")
+    def test_01_secure_vm_migration(self):
+        """Test secure VM migration"""
+        # Validate the following
+        # 1. Environment has enough hosts for migration
+        # 2. DeployVM on suitable host (with another host in the cluster)
+        # 3. Migrate the VM and assert migration successful
+
+        src_host = self.hosts[0]
+        vm = self.deploy_vm(src_host)
+        self.cleanup.append(vm)
+
+        dest_host = self.get_target_host(secured='true', virtualmachineid=vm.id)
+        self.migrate_and_check(vm, src_host, dest_host)
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "security"], required_hardware="false")
+    def test_02_unsecure_vm_migration(self):
+        """Test Non-secured VM Migration
+        """
+        # Validate the following
+        # 1. Prepare 2 hosts to run in non-secured more
+        # 2. DeployVM on suitable host (with another host in the cluster)
+        # 3. Migrate the VM and assert migration successful
+
+        for host in self.hosts:
+            self.unsecure_host(host)
+
+        src_host = self.hosts[0]
+        vm = self.deploy_vm(src_host)
+        self.cleanup.append(vm)
+
+        dest_host = self.get_target_host(secured='false', virtualmachineid=vm.id)
+        self.migrate_and_check(vm, src_host, dest_host, proto='tcp')
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "security"], required_hardware="false")
+    def test_03_secured_to_nonsecured_vm_migration(self):
+        """Test destroy Virtual Machine
+        """
+        # Validate the following
+        # 1. Makes one of the hosts non-secured
+        # 2. Deploys a VM to a Secured host
+        # 3. Migrates the VM to the non-secured host via TLS, and ensure exception
+
+        unsecure_host = self.unsecure_host(self.hosts[0])
+        secure_host = self.hosts[1]
+
+        vm = self.deploy_vm(secure_host)
+        self.cleanup.append(vm)
+
+        try:
+            self.migrate_and_check(vm, secure_host, unsecure_host, proto='tls')
+        except Exception:
+            pass
+        else: self.fail("Migration succeeded, instead it should fail")
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg", "security"], required_hardware="false")
+    def test_04_nonsecured_to_secured_vm_migration(self):
+        """Test Non-secured VM Migration
+        """
+        # Validate the following
+        # 1. Makes one of the hosts non-secured
+        # 2. Deploys a VM to the non-secured host
+        # 3. Migrates the VM to the non-secured host via TCP, and ensure exception
+
+        unsecure_host = self.unsecure_host(self.hosts[0])
+        secure_host = self.hosts[1]
+
+        vm = self.deploy_vm(unsecure_host)
+        self.cleanup.append(vm)
+
+        try:
+            self.migrate_and_check(vm, unsecure_host, secure_host, proto='tcp')
+        except Exception:
+            pass
+        else: self.fail("Migration succeeded, instead it should fail")
+
