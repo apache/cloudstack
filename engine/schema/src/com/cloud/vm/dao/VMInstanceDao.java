@@ -150,4 +150,6 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     VMInstanceVO findVMByHostNameInZone(String hostName, long zoneId);
 
     boolean isPowerStateUpToDate(long instanceId);
+
+    List<VMInstanceVO> listNonMigratingVmsByHostEqualsLastHost(long hostId);
 }
