@@ -373,6 +373,15 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
     }
 
     @Override
+    public Date getRemoved() {
+        return removed;
+    }
+
+    public void setRemoved(final Date removed) {
+        this.removed = removed;
+    }
+
+    @Override
     public String toString() {
         StringBuffer sb = new StringBuffer();
         sb.append("AsyncJobVO {id:").append(getId());
@@ -392,6 +401,7 @@ public class AsyncJobVO implements AsyncJob, JobInfo {
         sb.append(", lastUpdated: ").append(getLastUpdated());
         sb.append(", lastPolled: ").append(getLastPolled());
         sb.append(", created: ").append(getCreated());
+        sb.append(", removed: ").append(getRemoved());
         sb.append("}");
         return sb.toString();
     }

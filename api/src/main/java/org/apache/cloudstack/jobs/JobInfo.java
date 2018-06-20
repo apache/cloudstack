@@ -68,6 +68,8 @@ public interface JobInfo extends Identity, InternalIdentity {
 
     Date getCreated();
 
+    Date getRemoved();
+
     Date getLastUpdated();
 
     Date getLastPolled();

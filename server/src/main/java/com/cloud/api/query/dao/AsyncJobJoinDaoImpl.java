@@ -50,12 +50,13 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
     }
 
     @Override
-    public AsyncJobResponse newAsyncJobResponse(AsyncJobJoinVO job) {
-        AsyncJobResponse jobResponse = new AsyncJobResponse();
+    public AsyncJobResponse newAsyncJobResponse(final AsyncJobJoinVO job) {
+        final AsyncJobResponse jobResponse = new AsyncJobResponse();
         jobResponse.setAccountId(job.getAccountUuid());
         jobResponse.setUserId(job.getUserUuid());
         jobResponse.setCmd(job.getCmd());
         jobResponse.setCreated(job.getCreated());
+        jobResponse.setRemoved(job.getRemoved());
         jobResponse.setJobId(job.getUuid());
         jobResponse.setJobStatus(job.getStatus());
         jobResponse.setJobProcStatus(job.getProcessStatus());
@@ -68,15 +69,15 @@ public class AsyncJobJoinDaoImpl extends GenericDaoBase<AsyncJobJoinVO, Long> im
         }
         jobResponse.setJobResultCode(job.getResultCode());
 
-        boolean savedValue = SerializationContext.current().getUuidTranslation();
+        final boolean savedValue = SerializationContext.current().getUuidTranslation();
         SerializationContext.current().setUuidTranslation(false);
 
-        Object resultObject = ApiSerializerHelper.fromSerializedString(job.getResult());
+        final Object resultObject = ApiSerializerHelper.fromSerializedString(job.getResult());
         jobResponse.setJobResult((ResponseObject)resultObject);
         SerializationContext.current().setUuidTranslation(savedValue);
 
         if (resultObject != null) {
-            Class<?> clz = resultObject.getClass();
+            final Class<?> clz = resultObject.getClass();
             if (clz.isPrimitive() || clz.getSuperclass() == Number.class || clz == String.class || clz == Date.class) {
                 jobResponse.setJobResultType("text");
             } else {
