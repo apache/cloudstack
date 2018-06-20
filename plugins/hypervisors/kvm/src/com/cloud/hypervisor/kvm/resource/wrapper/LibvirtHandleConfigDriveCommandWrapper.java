@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import org.apache.cloudstack.storage.configdrive.ConfigDriveBuilder;
-import org.apache.commons.io.FileUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -67,7 +66,7 @@ public final class LibvirtHandleConfigDriveCommandWrapper extends CommandWrapper
             }
         } else {
             try {
-                FileUtils.deleteDirectory(isoPath.getParent().toFile());
+                Files.deleteIfExists(isoPath);
             } catch (IOException e) {
                 LOG.warn("Failed to delete config drive: " + isoPath.toAbsolutePath().toString());
                 return new Answer(command, false, "Failed due to exception: " + e.getMessage());

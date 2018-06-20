@@ -375,8 +375,9 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
 
         LOG.debug("Creating config drive ISO for vm: " + profile.getInstanceName());
 
+        final String isoFileName = ConfigDrive.configIsoFileName(profile.getInstanceName());
         final String isoPath = ConfigDrive.createConfigDrivePath(profile.getInstanceName());
-        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), ConfigDrive.CONFIGDRIVEFILENAME, profile.getConfigDriveLabel());
+        final String isoData = ConfigDriveBuilder.buildConfigDrive(profile.getVmData(), isoFileName, profile.getConfigDriveLabel());
         final HandleConfigDriveIsoCommand configDriveIsoCommand = new HandleConfigDriveIsoCommand(isoPath, isoData, dataStore.getTO(), true);
 
         final Answer answer = agentManager.easySend(agentId, configDriveIsoCommand);
