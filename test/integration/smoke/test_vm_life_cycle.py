@@ -917,6 +917,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
         for host in self.hosts:
             cmd = provisionCertificate.provisionCertificateCmd()
             cmd.hostid = host.id
+            cmd.reconnect = True
             self.apiclient.updateConfiguration(cmd)
 
         for host in self.hosts:
@@ -932,7 +933,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
             mode=self.services["mode"],
             hostid=origin_host.id)
 
-    def check_connection(self, secured, host, retries=5, interval=10):
+    def check_connection(self, secured, host, retries=20, interval=6):
 
         while retries > -1:
             time.sleep(interval)
