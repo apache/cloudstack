@@ -26,7 +26,7 @@ public class ConfigDriveTest {
 
     @Test
     public void testConfigDriveIsoPath() throws IOException {
-        Assert.assertEquals(ConfigDrive.createConfigDrivePath("i-x-y"), "configdrive/i-x-y/configdrive.iso");
+        Assert.assertEquals(ConfigDrive.createConfigDrivePath("i-x-y"), "configdrive/i-x-y.iso");
     }
 
 }

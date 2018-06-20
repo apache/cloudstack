@@ -19,7 +19,6 @@ package org.apache.cloudstack.storage.configdrive;
 
 public class ConfigDrive {
 
-    public final static String CONFIGDRIVEFILENAME = "configdrive.iso";
     public final static String CONFIGDRIVEDIR = "configdrive";
 
     public static final String cloudStackConfigDriveName = "/cloudstack/";
@@ -27,11 +26,20 @@ public class ConfigDrive {
 
     /**
      * Creates the path to ISO file relative to mount point.
-     * The config driver path will have the following formated: {@link #CONFIGDRIVEDIR} + / + instanceName + / + {@link #CONFIGDRIVEFILENAME}
+     * The config driver path will have the following format: {@link #CONFIGDRIVEDIR} + / + instanceName + ".iso"
      *
      * @return config drive ISO file path
      */
     public static String createConfigDrivePath(String instanceName) {
-        return ConfigDrive.CONFIGDRIVEDIR + "/" + instanceName + "/"  + ConfigDrive.CONFIGDRIVEFILENAME;
+        return ConfigDrive.CONFIGDRIVEDIR + "/" + configIsoFileName(instanceName);
+    }
+
+    /**
+     * Config Drive iso file name for an instance name
+     * @param instanceName
+     * @return
+     */
+    public static String configIsoFileName(String instanceName) {
+        return instanceName + ".iso";
     }
 }
