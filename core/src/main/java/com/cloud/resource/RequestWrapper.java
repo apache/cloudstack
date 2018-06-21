@@ -29,6 +29,15 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 
 public abstract class RequestWrapper {
+    static public class CommandNotSupported extends NullPointerException {
+        public CommandNotSupported(String msg) {
+            super(msg);
+        }
+        public CommandNotSupported(String msg, Throwable cause) {
+            super(msg);
+            initCause(cause);
+        }
+    }
 
     private static final Logger s_logger = Logger.getLogger(RequestWrapper.class);
 
@@ -52,7 +61,7 @@ public abstract class RequestWrapper {
 
                 keepResourceClass = keepResourceClass2;
             } catch (final ClassCastException e) {
-                throw new NullPointerException("No key found for '" + command.getClass() + "' in the Map!");
+                throw new CommandNotSupported("No key found for '" + command.getClass() + "' in the Map!");
             }
         }
         return resource;
@@ -69,14 +78,14 @@ public abstract class RequestWrapper {
                 final Class<? extends Command> commandClass2 = (Class<? extends Command>) keepCommandClass.getSuperclass();
 
                 if (commandClass2 == null) {
-                    throw new NullPointerException("All the COMMAND hierarchy tree has been visited but no compliant key has been found for '" + commandClass + "'.");
+                    throw new CommandNotSupported("All the COMMAND hierarchy tree has been visited but no compliant key has been found for '" + commandClass + "'.");
                 }
 
                 commandWrapper = resourceCommands.get(commandClass2);
 
                 keepCommandClass = commandClass2;
             } catch (final ClassCastException e) {
-                throw new NullPointerException("No key found for '" + keepCommandClass.getClass() + "' in the Map!");
+                throw new CommandNotSupported("No key found for '" + keepCommandClass.getClass() + "' in the Map!");
             } catch (final NullPointerException e) {
                 // Will now traverse all the resource hierarchy. Returning null
                 // is not a problem.
@@ -102,7 +111,7 @@ public abstract class RequestWrapper {
                 final Class<? extends ServerResource> resourceClass2 = (Class<? extends ServerResource>) keepResourceClass.getSuperclass();
 
                 if (resourceClass2 == null) {
-                    throw new NullPointerException("All the SERVER-RESOURCE hierarchy tree has been visited but no compliant key has been found for '" + command.getClass() + "'.");
+                    throw new CommandNotSupported("All the SERVER-RESOURCE hierarchy tree has been visited but no compliant key has been found for '" + command.getClass() + "'.");
                 }
 
                 final Hashtable<Class<? extends Command>, CommandWrapper> resourceCommands2 = retrieveResource(command,
@@ -110,10 +119,8 @@ public abstract class RequestWrapper {
                 keepResourceClass = resourceClass2;
 
                 commandWrapper = retrieveCommands(command.getClass(), resourceCommands2);
-            } catch (final ClassCastException e) {
-                throw new NullPointerException("No key found for '" + command.getClass() + "' in the Map!");
-            } catch (final NullPointerException e) {
-                throw e;
+            } catch (final ClassCastException | NullPointerException e) {
+                throw new CommandNotSupported("No key found for '" + command.getClass() + "' in the Map!", e);
             }
         }
         return commandWrapper;

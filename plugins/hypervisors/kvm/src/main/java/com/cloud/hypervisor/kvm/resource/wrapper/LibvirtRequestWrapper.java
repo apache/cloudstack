@@ -72,6 +72,9 @@ public class LibvirtRequestWrapper extends RequestWrapper {
             commandWrapper = retryWhenAllFails(command, resourceClass, resourceCommands);
         }
 
+        if (commandWrapper == null) {
+            throw new CommandNotSupported("No way to handle " + command.getClass());
+        }
         return commandWrapper.execute(command, serverResource);
     }
 }

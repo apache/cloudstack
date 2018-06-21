@@ -30,6 +30,7 @@ import java.util.Random;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.vm.dao.UserVmDetailsDao;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -53,6 +54,8 @@ import org.springframework.stereotype.Component;
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetGPUStatsAnswer;
 import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
@@ -74,6 +77,7 @@ import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.configuration.Config;
+import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -247,7 +251,11 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     @Inject
     private VMTemplateDao _templateDao;
     @Inject
+    private ConfigurationManager _configMgr;
+    @Inject
     private ClusterVSMMapDao _clusterVSMMapDao;
+    @Inject
+    private UserVmDetailsDao userVmDetailsDao;
 
     private final long _nodeId = ManagementServerNode.getManagementServerId();
 
@@ -606,7 +614,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     private List<HostVO> discoverHostsFull(final Long dcId, final Long podId, Long clusterId, final String clusterName, String url, String username, String password,
             final String hypervisorType, final List<String> hostTags, final Map<String, String> params, final boolean deferAgentCreation) throws IllegalArgumentException, DiscoveryException,
-    InvalidParameterValueException {
+            InvalidParameterValueException {
         URI uri = null;
 
         // Check if the zone exists in the system
@@ -1282,6 +1290,68 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
     }
 
+    /**
+     * Add VNC details as user VM details for each VM in 'vms' (KVM hosts only)
+     */
+    protected void setKVMVncAccess(long hostId, List<VMInstanceVO> vms) {
+        for (VMInstanceVO vm : vms) {
+            GetVncPortAnswer vmVncPortAnswer = (GetVncPortAnswer) _agentMgr.easySend(hostId, new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
+            if (vmVncPortAnswer != null) {
+                userVmDetailsDao.addDetail(vm.getId(), "kvm.vnc.address", vmVncPortAnswer.getAddress(), true);
+                userVmDetailsDao.addDetail(vm.getId(), "kvm.vnc.port", String.valueOf(vmVncPortAnswer.getPort()), true);
+            }
+        }
+    }
+
+    /**
+     * Configure VNC access for host VMs which have failed migrating to another host while trying to enter Maintenance mode
+     */
+    protected void configureVncAccessForKVMHostFailedMigrations(HostVO host, List<VMInstanceVO> failedMigrations) {
+        if (host.getHypervisorType().equals(HypervisorType.KVM)) {
+            _agentMgr.pullAgentOutMaintenance(host.getId());
+            setKVMVncAccess(host.getId(), failedMigrations);
+            _agentMgr.pullAgentToMaintenance(host.getId());
+        }
+    }
+
+    /**
+     * Set host into ErrorInMaintenance state, as errors occurred during VM migrations. Do the following:
+     * - Cancel scheduled migrations for those which have already failed
+     * - Configure VNC access for VMs (KVM hosts only)
+     */
+    protected boolean setHostIntoErrorInMaintenance(HostVO host, List<VMInstanceVO> failedMigrations) throws NoTransitionException {
+        s_logger.debug("Unable to migrate " + failedMigrations.size() + " VM(s) from host " + host.getUuid());
+        _haMgr.cancelScheduledMigrations(host);
+        configureVncAccessForKVMHostFailedMigrations(host, failedMigrations);
+        resourceStateTransitTo(host, ResourceState.Event.UnableToMigrate, _nodeId);
+        return false;
+    }
+
+    /**
+     * Safely transit host into Maintenance mode
+     */
+    protected boolean setHostIntoMaintenance(HostVO host) throws NoTransitionException {
+        s_logger.debug("Host " + host.getUuid() + " entering in Maintenance");
+        resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
+                EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE,
+                "completed maintenance for host " + host.getId(), 0);
+        return true;
+    }
+
+    /**
+     * Return true if host goes into Maintenance mode, only when:
+     * - No Running, Migrating or Failed migrations (host_id = last_host_id) for the host
+     */
+    protected boolean isHostInMaintenance(HostVO host, List<VMInstanceVO> runningVms, List<VMInstanceVO> migratingVms, List<VMInstanceVO> failedMigrations) throws NoTransitionException {
+        if (CollectionUtils.isEmpty(runningVms) && CollectionUtils.isEmpty(migratingVms)) {
+            return CollectionUtils.isEmpty(failedMigrations) ?
+                    setHostIntoMaintenance(host) :
+                    setHostIntoErrorInMaintenance(host, failedMigrations);
+        }
+        return false;
+    }
+
     @Override
     public boolean checkAndMaintain(final long hostId) {
         boolean hostInMaintenance = false;
@@ -1291,11 +1361,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             if (host.getType() != Host.Type.Storage) {
                 final List<VMInstanceVO> vos = _vmDao.listByHostId(hostId);
                 final List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
-                if (vos.isEmpty() && vosMigrating.isEmpty()) {
-                    resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
-                    hostInMaintenance = true;
-                    ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE, "completed maintenance for host " + hostId, 0);
-                }
+                final List<VMInstanceVO> failedVmMigrations = _vmDao.listNonMigratingVmsByHostEqualsLastHost(hostId);
+
+                hostInMaintenance = isHostInMaintenance(host, vos, vosMigrating, failedVmMigrations);
             }
         } catch (final NoTransitionException e) {
             s_logger.debug("Cannot transmit host " + host.getId() + "to Maintenance state", e);

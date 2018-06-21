@@ -21,6 +21,7 @@ import java.net.URI;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 
 import com.cloud.network.IpAddressManager;
@@ -30,7 +31,6 @@ import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.vpc.PrivateIpAddress;
 import com.cloud.network.vpc.PrivateIpVO;
-import com.cloud.network.vpc.Vpc;
 import com.cloud.network.vpc.VpcGateway;
 import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpc.dao.PrivateIpDao;
@@ -65,9 +65,11 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         PrivateIpVO ipVO = _privateIpDao.allocateIpAddress(privateNetwork.getDataCenterId(), privateNetwork.getId(), privateGateway.getIp4Address());
 
         final Long vpcId = privateGateway.getVpcId();
-        final Vpc activeVpc = _vpcMgr.getActiveVpc(vpcId);
-        if (activeVpc.isRedundant() && ipVO == null) {
+        if (ipVO == null) {
             ipVO = _privateIpDao.findByIpAndVpcId(vpcId, privateGateway.getIp4Address());
+            if (ipVO == null) {
+                throw new CloudRuntimeException("cannot find IP address " + privateGateway.getIp4Address() + " to reuse for private gateway on vpc (id==" + vpcId + ")");
+            }
         }
 
         Nic privateNic = null;
