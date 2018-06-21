@@ -720,7 +720,7 @@ class TestPrivateGwACL(cloudstackTestCase):
         succeeded_pings = 0
         minimum_vms_to_pass = 2
         for vm_ip in vms_ips:
-            ssh_command = "ping -c 5 %s" % vm_ip
+            ssh_command = "ping -c 10 %s" % vm_ip
 
             # Should be able to SSH VM
             packet_loss = 100
