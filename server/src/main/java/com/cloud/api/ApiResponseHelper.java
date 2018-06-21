@@ -1808,16 +1808,16 @@ public class ApiResponseHelper implements ResponseGenerator {
     }
 
     @Override
-    public AsyncJobResponse queryJobResult(QueryAsyncJobResultCmd cmd) {
-        Account caller = CallContext.current().getCallingAccount();
+    public AsyncJobResponse queryJobResult(final QueryAsyncJobResultCmd cmd) {
+        final Account caller = CallContext.current().getCallingAccount();
 
-        AsyncJob job = _entityMgr.findById(AsyncJob.class, cmd.getId());
+        final AsyncJob job = _entityMgr.findByIdIncludingRemoved(AsyncJob.class, cmd.getId());
         if (job == null) {
             throw new InvalidParameterValueException("Unable to find a job by id " + cmd.getId());
         }
 
-        User userJobOwner = _accountMgr.getUserIncludingRemoved(job.getUserId());
-        Account jobOwner = _accountMgr.getAccount(userJobOwner.getAccountId());
+        final User userJobOwner = _accountMgr.getUserIncludingRemoved(job.getUserId());
+        final Account jobOwner = _accountMgr.getAccount(userJobOwner.getAccountId());
 
         //check permissions
         if (_accountMgr.isNormalUser(caller.getId())) {
