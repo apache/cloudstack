@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package com.cloud.storage.dao;
 
 import com.cloud.api.query.dao.AsyncJobJoinDaoImpl;
@@ -23,7 +41,6 @@ public class AsyncJobJoinDaoTest {
 
     @Test
     public void testNewAsyncJobResponseValidValues() {
-
         final AsyncJobJoinVO job = new AsyncJobJoinVO();
         ReflectionTestUtils.setField(job,"uuid","a2b22932-1b61-4406-8e89-4ae19968e8d3");
         ReflectionTestUtils.setField(job,"accountUuid","4dea2836-72cc-11e8-b2de-107b4429825a");
