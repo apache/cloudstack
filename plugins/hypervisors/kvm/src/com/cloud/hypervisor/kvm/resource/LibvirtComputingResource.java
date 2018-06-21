@@ -47,6 +47,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import com.cloud.resource.RequestWrapper;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
@@ -1432,13 +1433,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return true;
     }
 
+    /**
+     * This finds a command wrapper to handle the command and executes it.
+     * If no wrapper is found an {@see UnsupportedAnswer} is sent back.
+     * Any other exceptions are to be caught and wrapped in an generic {@see Answer}, marked as failed.
+     *
+     * @param cmd the instance of a {@see Command} to execute.
+     * @return the for the {@see Command} appropriate {@see Answer} or {@see UnsupportedAnswer}
+     */
     @Override
     public Answer executeRequest(final Command cmd) {
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         try {
             return wrapper.execute(cmd, this);
-        } catch (final Exception e) {
+        } catch (final RequestWrapper.CommandNotSupported cmde) {
             return Answer.createUnsupportedCommandAnswer(cmd);
         }
     }
