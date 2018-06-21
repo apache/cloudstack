@@ -451,7 +451,7 @@ class TestVPCNics(cloudstackTestCase):
     def do_default_routes_test(self):
         for o in self.networks:
             for vmObj in o.get_vms():
-                ssh_command = "ping -c 5 8.8.8.8"
+                ssh_command = "ping -c 10 8.8.8.8"
 
                 # Should be able to SSH VM
                 packet_loss = 100
