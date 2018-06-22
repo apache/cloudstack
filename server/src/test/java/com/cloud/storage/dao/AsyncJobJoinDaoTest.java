@@ -25,18 +25,16 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.mockito.InjectMocks;
+import org.mockito.runners.MockitoJUnitRunner;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import javax.inject.Inject;
 import java.util.Date;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(locations = "classpath:/AsyncJobJoinDaoTestContext.xml")
+@RunWith(MockitoJUnitRunner.class)
 public class AsyncJobJoinDaoTest {
 
-    @Inject
+    @InjectMocks
     AsyncJobJoinDaoImpl dao;
 
     @Test
