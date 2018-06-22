@@ -35,9 +35,10 @@ import javax.sql.DataSource;
 
 import org.apache.commons.dbcp2.ConnectionFactory;
 import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp2.PoolableConnection;
 import org.apache.commons.dbcp2.PoolableConnectionFactory;
 import org.apache.commons.dbcp2.PoolingDataSource;
-import org.apache.commons.dbcp2.managed.PoolableManagedConnectionFactory;
+import org.apache.commons.pool2.ObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.log4j.Logger;
@@ -1085,9 +1086,9 @@ public class TransactionLegacy implements Closeable {
             DriverLoader.loadDriver(cloudDriver);
 
             // Default Data Source for CloudStack
-            s_ds = createDataSource(cloudConnectionUri, cloudUsername, cloudPassword,
-                    cloudMaxActive, cloudMaxIdle, cloudMaxWait,
-                    cloudTimeBtwEvictionRunsMillis, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle, cloudTestOnBorrow);
+            s_ds = createDataSource(cloudConnectionUri, cloudUsername, cloudPassword, cloudMaxActive, cloudMaxIdle, cloudMaxWait,
+                    cloudTimeBtwEvictionRunsMillis, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle, cloudTestOnBorrow,
+                    cloudValidationQuery, isolationLevel);
 
             // Configure the usage db
             final int usageMaxActive = Integer.parseInt(dbProps.getProperty("db.usage.maxActive"));
@@ -1109,7 +1110,8 @@ public class TransactionLegacy implements Closeable {
 
             // Data Source for usage server
             s_usageDS = createDataSource(usageConnectionUri, usageUsername, usagePassword,
-                    usageMaxActive, usageMaxIdle, usageMaxWait, null, null, null, null);
+                    usageMaxActive, usageMaxIdle, usageMaxWait, null, null, null, null,
+                    null, isolationLevel);
 
             try {
                 // Configure the simulator db
@@ -1129,7 +1131,7 @@ public class TransactionLegacy implements Closeable {
                 DriverLoader.loadDriver(simulatorDriver);
 
                 s_simulatorDS = createDataSource(simulatorConnectionUri, simulatorUsername, simulatorPassword,
-                        simulatorMaxActive, simulatorMaxIdle, simulatorMaxWait, null, null, null, null);
+                        simulatorMaxActive, simulatorMaxIdle, simulatorMaxWait, null, null, null, null, cloudValidationQuery, isolationLevel);
             } catch (Exception e) {
                 s_logger.debug("Simulator DB properties are not available. Not initializing simulator DS");
             }
@@ -1146,30 +1148,23 @@ public class TransactionLegacy implements Closeable {
     /**
      * Creates a data source
      */
-    private static DataSource createDataSource(String connectionUri, String username, String password,
+    private static DataSource createDataSource(String uri, String username, String password,
                                                Integer maxActive, Integer maxIdle, Long maxWait,
                                                Long timeBtwnEvictionRuns, Long minEvictableIdleTime,
-                                               Boolean testWhileIdle, Boolean testOnBorrow) {
-        PoolableManagedConnectionFactory connectionFactory = createPoolableManagedConnectionFactory(connectionUri, username, password);
-        GenericObjectPool connectionPool = createConnectionPool(connectionFactory, maxActive, maxIdle, maxWait,
-                timeBtwnEvictionRuns, minEvictableIdleTime, testWhileIdle, testOnBorrow);
-        return new PoolingDataSource(connectionPool);
-    }
-
-    /**
-     * Create a connection pool from a poolable connection factory and its configuration values
-     */
-    private static GenericObjectPool createConnectionPool(PoolableManagedConnectionFactory connectionFactory, Integer maxActive, Integer maxIdle, Long maxWait, Long timeBtwnEvictionRuns, Long minEvictableIdleTime, Boolean testWhileIdle, Boolean testOnBorrow) {
+                                               Boolean testWhileIdle, Boolean testOnBorrow,
+                                               String validationQuery, Integer isolationLevel) {
+        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(uri, username, password);
+        PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
         GenericObjectPoolConfig config = createPoolConfig(maxActive, maxIdle, maxWait, timeBtwnEvictionRuns, minEvictableIdleTime, testWhileIdle, testOnBorrow);
-        return new GenericObjectPool<>(connectionFactory, config);
-    }
-
-    /**
-     * Create a poolable connection factory
-     */
-    private static PoolableManagedConnectionFactory createPoolableManagedConnectionFactory(String connectionUri, String username, String password) {
-        ConnectionFactory cloudConnectionFactory = new DriverManagerConnectionFactory(connectionUri, username, password);
-        return (PoolableManagedConnectionFactory) new PoolableConnectionFactory(cloudConnectionFactory, null);
+        ObjectPool<PoolableConnection> connectionPool = new GenericObjectPool<>(poolableConnectionFactory, config);
+        poolableConnectionFactory.setPool(connectionPool);
+        if (validationQuery != null) {
+            poolableConnectionFactory.setValidationQuery(validationQuery);
+        }
+        if (isolationLevel != null) {
+            poolableConnectionFactory.setDefaultTransactionIsolation(isolationLevel);
+        }
+        return new PoolingDataSource<>(connectionPool);
     }
 
     /**
@@ -1182,10 +1177,19 @@ public class TransactionLegacy implements Closeable {
         config.setMaxTotal(maxActive);
         config.setMaxIdle(maxIdle);
         config.setMaxWaitMillis(maxWait);
-        config.setTimeBetweenEvictionRunsMillis(timeBtwnEvictionRuns);
-        config.setMinEvictableIdleTimeMillis(minEvictableIdleTime);
-        config.setTestWhileIdle(testWhileIdle);
-        config.setTestOnBorrow(testOnBorrow);
+
+        if (timeBtwnEvictionRuns != null) {
+            config.setTimeBetweenEvictionRunsMillis(timeBtwnEvictionRuns);
+        }
+        if (minEvictableIdleTime != null) {
+            config.setMinEvictableIdleTimeMillis(minEvictableIdleTime);
+        }
+        if (testWhileIdle != null) {
+            config.setTestWhileIdle(testWhileIdle);
+        }
+        if (testOnBorrow != null) {
+            config.setTestOnBorrow(testOnBorrow);
+        }
         return config;
     }
 
