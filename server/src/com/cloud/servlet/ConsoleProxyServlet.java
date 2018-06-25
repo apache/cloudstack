@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import com.cloud.resource.ResourceState;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
@@ -418,7 +419,14 @@ public class ConsoleProxyServlet extends HttpServlet {
         StringBuffer sb = new StringBuffer(rootUrl);
         String host = hostVo.getPrivateIpAddress();
 
-        Pair<String, Integer> portInfo = _ms.getVncPort(vm);
+        Pair<String, Integer> portInfo;
+        if (hostVo.getResourceState().equals(ResourceState.ErrorInMaintenance)) {
+            UserVmDetailVO detailAddress = _userVmDetailsDao.findDetail(vm.getId(), "kvm.vnc.address");
+            UserVmDetailVO detailPort = _userVmDetailsDao.findDetail(vm.getId(), "kvm.vnc.port");
+            portInfo = new Pair<>(detailAddress.getValue(), Integer.valueOf(detailPort.getValue()));
+        } else {
+            portInfo = _ms.getVncPort(vm);
+        }
         if (s_logger.isDebugEnabled())
             s_logger.debug("Port info " + portInfo.first());
 

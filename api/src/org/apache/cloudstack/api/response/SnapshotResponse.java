@@ -16,17 +16,15 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.Date;
-import java.util.List;
-
+import com.cloud.serializer.Param;
+import com.cloud.storage.Snapshot;
 import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
 
-import com.cloud.serializer.Param;
-import com.cloud.storage.Snapshot;
+import java.util.Date;
+import java.util.List;
 
 @EntityReference(value = Snapshot.class)
 public class SnapshotResponse extends BaseResponse implements ControlledEntityResponse {
@@ -82,6 +80,10 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @Param(description = "valid types are hourly, daily, weekly, monthy, template, and none.")
     private String intervalType;
 
+    @SerializedName(ApiConstants.LOCATION_TYPE)
+    @Param(description = "valid location types are primary and secondary.")
+    private String locationType;
+
     @SerializedName(ApiConstants.STATE)
     @Param(description = "the state of the snapshot. BackedUp means that snapshot is ready to be used; Creating - the snapshot is being allocated on the primary storage; BackingUp - the snapshot is being backed up on secondary storage")
     private Snapshot.State state;
@@ -101,6 +103,18 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
     @SerializedName(ApiConstants.REVERTABLE)
     @Param(description = "indicates whether the underlying storage supports reverting the volume to this snapshot")
     private boolean revertable;
+
+    @SerializedName(ApiConstants.OS_TYPE_ID)
+    @Param(description = "id of the os on volume", since = "4.10")
+    private String osTypeId;
+
+    @SerializedName(ApiConstants.OS_DISPLAY_NAME)
+    @Param(description = "display name of the os on volume")
+    private String osDisplayName;
+
+    @SerializedName(ApiConstants.VIRTUAL_SIZE)
+    @Param(description = "virtual size of backedup snapshot on image store")
+    private long virtualSize;
 
     @Override
     public String getObjectId() {
@@ -166,6 +180,10 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
         this.intervalType = intervalType;
     }
 
+    public void setLocationType(String locationType) {
+        this.locationType = locationType;
+    }
+
     public void setState(Snapshot.State state) {
         this.state = state;
     }
@@ -192,11 +210,23 @@ public class SnapshotResponse extends BaseResponse implements ControlledEntityRe
         this.tags = tags;
     }
 
-    public boolean isRevertable() {
-        return revertable;
-    }
-
     public void setRevertable(boolean revertable) {
         this.revertable = revertable;
+    }
+
+    public String getOsTypeId() {
+        return osTypeId;
+    }
+
+    public void setOsTypeId(String osTypeId) {
+        this.osTypeId = osTypeId;
+    }
+
+    public void setOsDisplayName(String osDisplayName) {
+        this.osDisplayName = osDisplayName;
+    }
+
+    public void setVirtualSize(long virtualSize) {
+        this.virtualSize = virtualSize;
     }
 }

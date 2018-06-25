@@ -24,13 +24,13 @@ import java.util.Map;
 
 import com.cloud.agent.api.to.DataTO;
 
-public final class CopyCommand extends StorageSubSystemCommand {
+public class CopyCommand extends StorageSubSystemCommand {
     private DataTO srcTO;
     private DataTO destTO;
     private DataTO cacheTO;
     private boolean executeInSequence = false;
-    private Map<String, String> options = new HashMap<String, String>();
-    private Map<String, String> options2 = new HashMap<String, String>();
+    private Map<String, String> options = new HashMap<>();
+    private Map<String, String> options2 = new HashMap<>();
 
     public CopyCommand(final DataTO srcData, final DataTO destData, final int timeout, final boolean executeInSequence) {
         super();

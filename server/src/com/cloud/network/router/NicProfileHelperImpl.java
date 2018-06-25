@@ -19,7 +19,6 @@ package com.cloud.network.router;
 
 import java.net.URI;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
@@ -43,7 +42,6 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 
-@Local(value = {NicProfileHelper.class})
 public class NicProfileHelperImpl implements NicProfileHelper {
 
     @Inject
@@ -87,14 +85,14 @@ public class NicProfileHelperImpl implements NicProfileHelper {
                                     router.getHypervisorType(), privateNetwork));
 
             if (router.getIsRedundantRouter()) {
-              String newMacAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress()));
+              String newMacAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress(), NetworkModel.MACIdentifier.value()));
               privateNicProfile.setMacAddress(newMacAddress);
             }
         } else {
             final String netmask = NetUtils.getCidrNetmask(privateNetwork.getCidr());
             final PrivateIpAddress ip =
                     new PrivateIpAddress(ipVO, privateNetwork.getBroadcastUri().toString(), privateNetwork.getGateway(), netmask,
-                            NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress())));
+                            NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(ipVO.getMacAddress(), NetworkModel.MACIdentifier.value())));
 
             final URI netUri = BroadcastDomainType.fromString(ip.getBroadcastUri());
             privateNicProfile.setIPv4Address(ip.getIpAddress());
@@ -127,7 +125,7 @@ public class NicProfileHelperImpl implements NicProfileHelper {
         guestNic.setBroadcastType(guestNetwork.getBroadcastDomainType());
         guestNic.setIsolationUri(guestNetwork.getBroadcastUri());
         guestNic.setMode(guestNetwork.getMode());
-        final String gatewayCidr = guestNetwork.getCidr();
+        final String gatewayCidr = _networkModel.getValidNetworkCidr(guestNetwork);
         guestNic.setIPv4Netmask(NetUtils.getCidrNetmask(gatewayCidr));
 
         return guestNic;

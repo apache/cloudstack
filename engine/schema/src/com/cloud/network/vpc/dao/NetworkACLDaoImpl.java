@@ -19,15 +19,29 @@ package com.cloud.network.vpc.dao;
 
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+
 import com.cloud.network.vpc.NetworkACLVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
 
 @Component
 @DB()
 public class NetworkACLDaoImpl extends GenericDaoBase<NetworkACLVO, Long> implements NetworkACLDao {
+    protected final SearchBuilder<NetworkACLVO> AllFieldsSearch;
 
     protected NetworkACLDaoImpl() {
+        AllFieldsSearch = createSearchBuilder();
+        AllFieldsSearch.and("vpcId", AllFieldsSearch.entity().getVpcId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.and("id", AllFieldsSearch.entity().getId(), SearchCriteria.Op.EQ);
+        AllFieldsSearch.done();
     }
 
+    @Override public List<NetworkACLVO> listByVpcId(long vpcId) {
+        SearchCriteria<NetworkACLVO> sc = AllFieldsSearch.create();
+        sc.setParameters("vpcId", vpcId);
+        return listBy(sc);
+    }
 }

@@ -390,7 +390,7 @@ public interface ManagementService {
      * @return Ternary<List<? extends Host>, List<? extends Host>, Map<Host, Boolean>> List of all Hosts to which a VM
      *         can be migrated, list of Hosts with enough capacity and hosts requiring storage motion for migration.
      */
-    Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize);
+    Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> listHostsForMigrationOfVM(Long vmId, Long startIndex, Long pageSize, String keyword);
 
     /**
      * List storage pools for live migrating of a volume. The API returns list of all pools in the cluster to which the

@@ -20,6 +20,7 @@ import java.util.Date;
 
 import com.cloud.dc.VlanVO;
 import com.cloud.network.IpAddress;
+import com.cloud.network.NetworkModel;
 import com.cloud.network.PublicIpAddress;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.utils.net.Ip;
@@ -39,7 +40,7 @@ public class PublicIp implements PublicIpAddress {
     }
 
     public static PublicIp createFromAddrAndVlan(IPAddressVO addr, VlanVO vlan) {
-        return new PublicIp(addr, vlan, NetUtils.createSequenceBasedMacAddress(addr.getMacAddress()));
+        return new PublicIp(addr, vlan, NetUtils.createSequenceBasedMacAddress(addr.getMacAddress(), NetworkModel.MACIdentifier.value()));
     }
 
     @Override
@@ -249,7 +250,18 @@ public class PublicIp implements PublicIpAddress {
     }
 
     @Override
-    public Class<?> getEntityType() {
+    public Class<?> getEntityType()
+    {
         return IpAddress.class;
+    }
+
+    @Override
+    public State getRuleState() {
+        return _addr.getRuleState();
+    }
+
+    @Override
+    public void setRuleState(State ruleState) {
+        _addr.setRuleState(ruleState);
     }
 }

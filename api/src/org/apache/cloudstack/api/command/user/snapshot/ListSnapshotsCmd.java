@@ -34,8 +34,8 @@ import org.apache.cloudstack.api.response.ZoneResponse;
 import com.cloud.storage.Snapshot;
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.", responseObject = SnapshotResponse.class, entityType = {Snapshot.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
+@APICommand(name = "listSnapshots", description = "Lists all available snapshots for the account.", responseObject = SnapshotResponse.class, entityType = {
+        Snapshot.class }, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class ListSnapshotsCmd extends BaseListTaggedResourcesCmd {
     public static final Logger s_logger = Logger.getLogger(ListSnapshotsCmd.class.getName());
 

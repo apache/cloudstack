@@ -186,7 +186,7 @@ class Services:
             },
             "vpn_customer_gw": {
                 "ipsecpsk": "s2svpn",
-                "ikepolicy": "3des-md5",
+                "ikepolicy": "3des-md5;modp1536",
                 "ikelifetime": "86400",
                 "esppolicy": "3des-md5",
                 "esplifetime": "3600",
@@ -2517,6 +2517,8 @@ class TestVPC(cloudstackTestCase):
             self.cleanup.append(vpnGw)
         except Exception as e:
             self.fail("Creating vpn customer gateway with hostname\
+            PR: https://github.com/apache/cloudstack/pull/955\
+            JIRA: https://issues.apache.org/jira/browse/CLOUDSTACK-8969\
                       Failed with error :%s" % e)
         vpn_cgw_res = VpnCustomerGateway.list(
             self.apiclient,

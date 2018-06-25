@@ -38,7 +38,7 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     }
 
     public enum Detail {
-        InternalLbProvider, PublicLbProvider
+        InternalLbProvider, PublicLbProvider, servicepackageuuid, servicepackagedescription, PromiscuousMode, MacAddressChanges, ForgedTransmits, RelatedNetworkOffering
     }
 
     public final static String SystemPublicNetwork = "System-Public-Network";
@@ -57,6 +57,10 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     public final static String DefaultIsolatedNetworkOfferingForVpcNetworks = "DefaultIsolatedNetworkOfferingForVpcNetworks";
     public final static String DefaultIsolatedNetworkOfferingForVpcNetworksNoLB = "DefaultIsolatedNetworkOfferingForVpcNetworksNoLB";
     public final static String DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB = "DefaultIsolatedNetworkOfferingForVpcNetworksWithInternalLB";
+    public final static String DefaultL2NetworkOffering = "DefaultL2NetworkOffering";
+    public final static String DefaultL2NetworkOfferingVlan = "DefaultL2NetworkOfferingVlan";
+    public final static String DefaultL2NetworkOfferingConfigDrive = "DefaultL2NetworkOfferingConfigDrive";
+    public final static String DefaultL2NetworkOfferingConfigDriveVlan = "DefaultL2NetworkOfferingConfigDriveVlan";
 
     /**
      * @return name for the network offering.
@@ -77,6 +81,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
      * @return the rate megabits per sec to which a VM's multicast&broadcast traffic is throttled to
      */
     Integer getMulticastRateMbps();
+
+    boolean getForVpc();
 
     TrafficType getTrafficType();
 
@@ -131,4 +137,8 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
     boolean isKeepAliveEnabled();
 
     boolean getSupportsStrechedL2();
+
+    boolean getSupportsPublicAccess();
+
+    String getServicePackage();
 }

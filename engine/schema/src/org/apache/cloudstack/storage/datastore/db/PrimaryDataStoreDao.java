@@ -53,7 +53,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
      */
     void updateCapacityIops(long id, long capacityIops);
 
-    StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details);
+    StoragePoolVO persist(StoragePoolVO pool, Map<String, String> details, List<String> tags);
 
     /**
      * Find pool by name.
@@ -100,7 +100,7 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
 
     Map<String, String> getDetails(long poolId);
 
-    List<String> searchForStoragePoolDetails(long poolId, String value);
+    List<String> searchForStoragePoolTags(long poolId);
 
     List<StoragePoolVO> findIfDuplicatePoolsExistByUUID(String uuid);
 
@@ -121,4 +121,6 @@ public interface PrimaryDataStoreDao extends GenericDao<StoragePoolVO, Long> {
     List<StoragePoolVO> findLocalStoragePoolsByHostAndTags(long hostId, String[] tags);
 
     List<StoragePoolVO> listLocalStoragePoolByPath(long datacenterId, String path);
+
+    void deletePoolTags(long poolId);
 }

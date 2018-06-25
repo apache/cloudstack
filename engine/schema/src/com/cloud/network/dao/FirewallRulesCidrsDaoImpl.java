@@ -71,8 +71,8 @@ public class FirewallRulesCidrsDaoImpl extends GenericDaoBase<FirewallRulesCidrs
         TransactionLegacy txn = TransactionLegacy.currentTxn();
 
         txn.start();
-        for (String tag : sourceCidrs) {
-            FirewallRulesCidrsVO vo = new FirewallRulesCidrsVO(firewallRuleId, tag);
+        for (String cidr : sourceCidrs) {
+            FirewallRulesCidrsVO vo = new FirewallRulesCidrsVO(firewallRuleId, cidr);
             persist(vo);
         }
         txn.commit();

@@ -20,27 +20,21 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import com.cloud.resource.ResourceState;
-import com.cloud.utils.fsm.StateMachine2;
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProvider;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
-import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -52,7 +46,6 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Config;
-import com.cloud.configuration.ConfigurationManager;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.dc.ClusterDetailsVO;
 import com.cloud.dc.ClusterVO;
@@ -69,6 +62,7 @@ import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.resource.ResourceListener;
 import com.cloud.resource.ResourceManager;
+import com.cloud.resource.ResourceState;
 import com.cloud.resource.ServerResource;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
@@ -81,7 +75,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
@@ -89,6 +82,7 @@ import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.fsm.StateListener;
+import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.vm.UserVmDetailVO;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
@@ -124,8 +118,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Inject
     StorageManager _storageMgr;
     @Inject
-    ConfigurationManager _configMgr;
-    @Inject
     HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     @Inject
     protected VMSnapshotDao _vmSnapshotDao;
@@ -136,14 +128,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Inject
     ClusterDao _clusterDao;
     @Inject
-    ConfigDepot _configDepot;
-    @Inject
     DataStoreProviderManager _dataStoreProviderMgr;
 
     @Inject
     ClusterDetailsDao _clusterDetailsDao;
     private int _vmCapacityReleaseInterval;
-    private ScheduledExecutorService _executor;
     long _extraBytesPerVolume = 0;
 
     @Inject
@@ -155,7 +144,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _vmCapacityReleaseInterval = NumbersUtil.parseInt(_configDao.getValue(Config.CapacitySkipcountingHours.key()), 3600);
 
-        _executor = Executors.newScheduledThreadPool(1, new NamedThreadFactory("HostCapacity-Checker"));
         VirtualMachine.State.getStateMachine().registerListener(this);
         _agentManager.registerForHostEvents(new StorageCapacityListener(_capacityDao, _storageMgr), true, false, false);
         _agentManager.registerForHostEvents(new ComputeCapacityListener(_capacityDao, this), true, false, false);
@@ -172,7 +160,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
     @Override
     public boolean stop() {
-        _executor.shutdownNow();
         return true;
     }
 
@@ -591,6 +578,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             offeringsMap.put(offering.getId(), offering);
         }
 
+        long usedCpuCore = 0;
+        long reservedCpuCore = 0;
         long usedCpu = 0;
         long usedMemory = 0;
         long reservedMemory = 0;
@@ -607,9 +596,9 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         ClusterDetailsVO clusterDetailRam = _clusterDetailsDao.findDetail(cluster.getId(), "memoryOvercommitRatio");
         Float clusterCpuOvercommitRatio = Float.parseFloat(clusterDetailCpu.getValue());
         Float clusterRamOvercommitRatio = Float.parseFloat(clusterDetailRam.getValue());
-        Float cpuOvercommitRatio = 1f;
-        Float ramOvercommitRatio = 1f;
         for (VMInstanceVO vm : vms) {
+            Float cpuOvercommitRatio = 1.0f;
+            Float ramOvercommitRatio = 1.0f;
             Map<String, String> vmDetails = _userVmDetailsDao.listDetailsKeyPairs(vm.getId());
             String vmDetailCpu = vmDetails.get("cpuOvercommitRatio");
             String vmDetailRam = vmDetails.get("memoryOvercommitRatio");
@@ -626,9 +615,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 usedCpu +=
                     ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
                         clusterCpuOvercommitRatio;
+                usedCpuCore += Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name()));
             } else {
                 usedMemory += ((so.getRamSize() * 1024L * 1024L) / ramOvercommitRatio) * clusterRamOvercommitRatio;
                 usedCpu += ((so.getCpu() * so.getSpeed()) / cpuOvercommitRatio) * clusterCpuOvercommitRatio;
+                usedCpuCore += so.getCpu();
             }
         }
 
@@ -637,6 +628,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
             s_logger.debug("Found " + vmsByLastHostId.size() + " VM, not running on host " + host.getId());
         }
         for (VMInstanceVO vm : vmsByLastHostId) {
+            Float cpuOvercommitRatio = 1.0f;
+            Float ramOvercommitRatio = 1.0f;
             long secondsSinceLastUpdate = (DateUtil.currentGMTTime().getTime() - vm.getUpdateTime().getTime()) / 1000;
             if (secondsSinceLastUpdate < _vmCapacityReleaseInterval) {
                 UserVmDetailVO vmDetailCpu = _userVmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio");
@@ -655,9 +648,11 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     reservedCpu +=
                         ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
                             clusterCpuOvercommitRatio;
+                    reservedCpuCore += Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name()));
                 } else {
                     reservedMemory += ((so.getRamSize() * 1024L * 1024L) / ramOvercommitRatio) * clusterRamOvercommitRatio;
                     reservedCpu += (so.getCpu() * so.getSpeed() / cpuOvercommitRatio) * clusterCpuOvercommitRatio;
+                    reservedCpuCore += so.getCpu();
                 }
             } else {
                 // signal if not done already, that the VM has been stopped for skip.counting.hours,
@@ -678,6 +673,53 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
 
         CapacityVO cpuCap = _capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_CPU);
         CapacityVO memCap = _capacityDao.findByHostIdType(host.getId(), Capacity.CAPACITY_TYPE_MEMORY);
+        CapacityVO cpuCoreCap = _capacityDao.findByHostIdType(host.getId(), CapacityVO.CAPACITY_TYPE_CPU_CORE);
+
+        if (cpuCoreCap != null) {
+            long hostTotalCpuCore = host.getCpus().longValue();
+
+            if (cpuCoreCap.getTotalCapacity() != hostTotalCpuCore) {
+                s_logger.debug("Calibrate total cpu for host: " + host.getId() + " old total CPU:"
+                        + cpuCoreCap.getTotalCapacity() + " new total CPU:" + hostTotalCpuCore);
+                cpuCoreCap.setTotalCapacity(hostTotalCpuCore);
+
+            }
+
+            if (cpuCoreCap.getUsedCapacity() == usedCpuCore && cpuCoreCap.getReservedCapacity() == reservedCpuCore) {
+                s_logger.debug("No need to calibrate cpu capacity, host:" + host.getId() + " usedCpuCore: " + cpuCoreCap.getUsedCapacity()
+                        + " reservedCpuCore: " + cpuCoreCap.getReservedCapacity());
+            } else {
+                if (cpuCoreCap.getReservedCapacity() != reservedCpuCore) {
+                    s_logger.debug("Calibrate reserved cpu core for host: " + host.getId() + " old reservedCpuCore:"
+                            + cpuCoreCap.getReservedCapacity() + " new reservedCpuCore:" + reservedCpuCore);
+                    cpuCoreCap.setReservedCapacity(reservedCpuCore);
+                }
+                if (cpuCoreCap.getUsedCapacity() != usedCpuCore) {
+                    s_logger.debug("Calibrate used cpu core for host: " + host.getId() + " old usedCpuCore:"
+                            + cpuCoreCap.getUsedCapacity() + " new usedCpuCore:" + usedCpuCore);
+                    cpuCoreCap.setUsedCapacity(usedCpuCore);
+                }
+            }
+            try {
+                _capacityDao.update(cpuCoreCap.getId(), cpuCoreCap);
+            } catch (Exception e) {
+                s_logger.error("Caught exception while updating cpucore capacity for the host " +host.getId(), e);
+            }
+        } else {
+            final long usedCpuCoreFinal = usedCpuCore;
+            final long reservedCpuCoreFinal = reservedCpuCore;
+            Transaction.execute(new TransactionCallbackNoReturn() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) {
+                    CapacityVO capacity = new CapacityVO(host.getId(), host.getDataCenterId(), host.getPodId(), host.getClusterId(), usedCpuCoreFinal, host.getCpus().longValue(),
+                            CapacityVO.CAPACITY_TYPE_CPU_CORE);
+                    capacity.setReservedCapacity(reservedCpuCoreFinal);
+                    capacity.setCapacityState(capacityState);
+                    _capacityDao.persist(capacity);
+                }
+            });
+        }
+
         if (cpuCap != null && memCap != null) {
             if (host.getTotalMemory() != null) {
                 memCap.setTotalCapacity(host.getTotalMemory());
@@ -1101,6 +1143,6 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {CpuOverprovisioningFactor, MemOverprovisioningFactor, StorageCapacityDisableThreshold, StorageOverprovisioningFactor,
-            StorageAllocatedCapacityDisableThreshold, StorageOperationsExcludeCluster};
+            StorageAllocatedCapacityDisableThreshold, StorageOperationsExcludeCluster, VmwareCreateCloneFull, ImageStoreNFSVersion};
     }
 }

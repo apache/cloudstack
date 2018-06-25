@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# since veewee wants .sh files to execute, we'll give it a shar
+# since packer wants .sh files to execute, we'll give it a shar
 
 set -e
 set -x
@@ -37,14 +37,11 @@ TEMP_DIR=`mktemp -d ${TMPDIR}/shar_cloud.XXXXXXXX`
 cd ${TEMP_DIR}
 mkdir cloud_scripts
 mkdir -p cloud_scripts/opt/cloudstack
-cp -r ${CLOUDSTACK_DIR}/systemvm/patches/debian/config/* cloud_scripts/
-cp -r ${CLOUDSTACK_DIR}/systemvm/patches/debian/vpn/* cloud_scripts/
+cp -r ${CLOUDSTACK_DIR}/systemvm/debian/* cloud_scripts/
 
 mkdir -p cloud_scripts/usr/share/cloud
-cd ${CLOUDSTACK_DIR}/systemvm/patches/debian/config
+cd ${CLOUDSTACK_DIR}/systemvm/debian
 tar -cf ${TEMP_DIR}/cloud_scripts/usr/share/cloud/cloud-scripts.tar *
-cd ${CLOUDSTACK_DIR}/systemvm/patches/debian/vpn
-tar -rf ${TEMP_DIR}/cloud_scripts/usr/share/cloud/cloud-scripts.tar *
 
 cd ${TEMP_DIR}
 shar `find . -print` > ${CURR_DIR}/cloud_scripts_shar_archive.sh

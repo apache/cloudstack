@@ -40,10 +40,10 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
      * True means heartbeaing is on going, or we can't get it's status. False
      * means heartbeating is stopped definitely
      */
-    private Boolean checkingHB() {
+    @Override
+    public Boolean checkingHB() {
         List<Boolean> results = new ArrayList<Boolean>();
         for (NfsStoragePool pool : _pools) {
-
             Script cmd = new Script(s_heartBeatPath, _heartBeatCheckerTimeout, s_logger);
             cmd.add("-i", pool._poolIp);
             cmd.add("-p", pool._poolMountSourcePath);
@@ -53,11 +53,11 @@ public class KVMHAChecker extends KVMHABase implements Callable<Boolean> {
             cmd.add("-t", String.valueOf(_heartBeatUpdateFreq / 1000));
             OutputInterpreter.OneLineParser parser = new OutputInterpreter.OneLineParser();
             String result = cmd.execute(parser);
-            s_logger.debug("pool: " + pool._poolIp);
-            s_logger.debug("reture: " + result);
-            s_logger.debug("parser: " + parser.getLine());
+            s_logger.debug("KVMHAChecker pool: " + pool._poolIp);
+            s_logger.debug("KVMHAChecker result: " + result);
+            s_logger.debug("KVMHAChecker parser: " + parser.getLine());
             if (result == null && parser.getLine().contains("> DEAD <")) {
-                s_logger.debug("read heartbeat failed: " + result);
+                s_logger.debug("read heartbeat failed: ");
                 results.add(false);
             } else {
                 results.add(true);

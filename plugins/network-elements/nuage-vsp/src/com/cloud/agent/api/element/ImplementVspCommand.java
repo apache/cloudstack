@@ -19,36 +19,37 @@
 
 package com.cloud.agent.api.element;
 
-import com.cloud.agent.api.Command;
+import java.util.List;
+import java.util.Objects;
+
 import net.nuage.vsp.acs.client.api.model.VspAclRule;
+import net.nuage.vsp.acs.client.api.model.VspDhcpDomainOption;
 import net.nuage.vsp.acs.client.api.model.VspNetwork;
 
-import java.util.List;
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import com.cloud.agent.api.Command;
 
 public class ImplementVspCommand extends Command {
 
     private final VspNetwork _network;
-    private final List<String> _dnsServers;
     private final List<VspAclRule> _ingressFirewallRules;
     private final List<VspAclRule> _egressFirewallRules;
     private final List<String> _floatingIpUuids;
+    private final VspDhcpDomainOption _dhcpOption;
 
-    public ImplementVspCommand(VspNetwork network, List<String> dnsServers, List<VspAclRule> ingressFirewallRules,
-            List<VspAclRule> egressFirewallRules, List<String> floatingIpUuids) {
+    public ImplementVspCommand(VspNetwork network, List<VspAclRule> ingressFirewallRules,
+                               List<VspAclRule> egressFirewallRules, List<String> floatingIpUuids, VspDhcpDomainOption dhcpOption) {
         super();
         this._network = network;
-        this._dnsServers = dnsServers;
         this._ingressFirewallRules = ingressFirewallRules;
         this._egressFirewallRules = egressFirewallRules;
         this._floatingIpUuids = floatingIpUuids;
+        this._dhcpOption = dhcpOption;
     }
 
     public VspNetwork getNetwork() {
         return _network;
-    }
-
-    public List<String> getDnsServers() {
-        return _dnsServers;
     }
 
     public List<VspAclRule> getIngressFirewallRules() {
@@ -63,6 +64,10 @@ public class ImplementVspCommand extends Command {
         return _floatingIpUuids;
     }
 
+    public VspDhcpDomainOption getDhcpOption() {
+        return _dhcpOption;
+    }
+
     @Override
     public boolean executeInSequence() {
         return false;
@@ -70,32 +75,30 @@ public class ImplementVspCommand extends Command {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ImplementVspCommand)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof ImplementVspCommand)) {
+            return false;
+        }
 
         ImplementVspCommand that = (ImplementVspCommand) o;
 
-        if (_dnsServers != null ? !_dnsServers.equals(that._dnsServers) : that._dnsServers != null) return false;
-        if (_egressFirewallRules != null ? !_egressFirewallRules.equals(that._egressFirewallRules) : that._egressFirewallRules != null)
-            return false;
-        if (_floatingIpUuids != null ? !_floatingIpUuids.equals(that._floatingIpUuids) : that._floatingIpUuids != null)
-            return false;
-        if (_ingressFirewallRules != null ? !_ingressFirewallRules.equals(that._ingressFirewallRules) : that._ingressFirewallRules != null)
-            return false;
-        if (_network != null ? !_network.equals(that._network) : that._network != null) return false;
-
-        return true;
+        return super.equals(that)
+            && Objects.equals(_network, that._network)
+            && Objects.equals(_dhcpOption, that._dhcpOption)
+            && Objects.equals(_floatingIpUuids, that._floatingIpUuids)
+            && Objects.equals(_ingressFirewallRules, that._ingressFirewallRules)
+            && Objects.equals(_egressFirewallRules, that._egressFirewallRules);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (_network != null ? _network.hashCode() : 0);
-        result = 31 * result + (_dnsServers != null ? _dnsServers.hashCode() : 0);
-        result = 31 * result + (_ingressFirewallRules != null ? _ingressFirewallRules.hashCode() : 0);
-        result = 31 * result + (_egressFirewallRules != null ? _egressFirewallRules.hashCode() : 0);
-        result = 31 * result + (_floatingIpUuids != null ? _floatingIpUuids.hashCode() : 0);
-        return result;
+        return new HashCodeBuilder()
+                .appendSuper(super.hashCode())
+                .append(_network)
+                .append(_dhcpOption)
+                .toHashCode();
     }
 }

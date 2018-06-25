@@ -89,7 +89,8 @@ class TestResizeVolume(cloudstackTestCase):
 
         try:
             cls.hypervisor = str(get_hypervisor_type(cls.api_client)).lower()
-
+            if cls.hypervisor.lower() in ['hyperv']:
+                raise unittest.SkipTest("Volume resize is not supported on %s" % cls.hypervisor)
             # Creating service offering with normal config
             cls.service_offering = ServiceOffering.create(
                 cls.api_client,

@@ -15,7 +15,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.9.4.0-SNAPSHOT</version>
+    <version>4.11.1.0-SNAPSHOT</version>
   </parent>
   <dependencies>
     <dependency>
@@ -54,6 +54,11 @@
     </dependency>
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-ca</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-framework-jobs</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -68,16 +73,6 @@
     <dependency>
       <groupId>javax.mail</groupId>
       <artifactId>mail</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>jstl</groupId>
-      <artifactId>jstl</artifactId>
-      <version>${cs.jstl.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>javax.servlet.jsp.jstl</groupId>
-      <artifactId>javax.servlet.jsp.jstl-api</artifactId>
-      <version>${cs.jstl-api.version}</version>
     </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
@@ -139,6 +134,16 @@
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-engine-components-api</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-framework-agent-lb</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.cloudstack</groupId>
+      <artifactId>cloud-engine-storage-configdrive</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

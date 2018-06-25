@@ -16,22 +16,28 @@
 // under the License.
 package com.cloud.vm;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.host.Host;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Matchers;
+import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.MockitoAnnotations;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.ComponentScan.Filter;
@@ -94,6 +100,7 @@ import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountManager;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @RunWith(SpringJUnit4ClassRunner.class)
@@ -121,7 +128,7 @@ public class DeploymentPlanningManagerImplTest {
     @Inject
     DataCenterDao _dcDao;
 
-    @Inject
+    @Mock
     FirstFitPlanner _planner;
 
     @Inject
@@ -130,9 +137,15 @@ public class DeploymentPlanningManagerImplTest {
     @Inject
     DedicatedResourceDao _dedicatedDao;
 
-    private static long domainId = 5L;
+    @Inject
+    UserVmDetailsDao vmDetailsDao;
 
+    @Mock
+    Host host;
+
+    private static long domainId = 5L;
     private static long dataCenterId = 1L;
+    private static long hostId = 1l;
 
     @BeforeClass
     public static void setUp() throws ConfigurationException {
@@ -140,6 +153,8 @@ public class DeploymentPlanningManagerImplTest {
 
     @Before
     public void testSetUp() {
+        MockitoAnnotations.initMocks(this);
+
         ComponentContext.initComponentsLifeCycle();
 
         PlannerHostReservationVO reservationVO = new PlannerHostReservationVO(200L, 1L, 2L, 3L, PlannerResourceUsage.Shared);
@@ -149,6 +164,8 @@ public class DeploymentPlanningManagerImplTest {
 
         VMInstanceVO vm = new VMInstanceVO();
         Mockito.when(vmProfile.getVirtualMachine()).thenReturn(vm);
+
+        Mockito.when(vmDetailsDao.listDetailsKeyPairs(Matchers.anyLong())).thenReturn(null);
 
         Mockito.when(_dcDao.findById(Matchers.anyLong())).thenReturn(dc);
         Mockito.when(dc.getId()).thenReturn(dataCenterId);
@@ -162,6 +179,7 @@ public class DeploymentPlanningManagerImplTest {
         planners.add(_planner);
         _dpm.setPlanners(planners);
 
+        Mockito.when(host.getId()).thenReturn(hostId);
     }
 
     @Test
@@ -210,6 +228,26 @@ public class DeploymentPlanningManagerImplTest {
         Mockito.when(((DeploymentClusterPlanner)_planner).orderClusters(vmProfile, plan, avoids)).thenReturn(null);
         DeployDestination dest = _dpm.planDeployment(vmProfile, plan, avoids, null);
         assertNull("Planner cannot handle, destination should be null! ", dest);
+    }
+
+    @Test
+    public void testCheckAffinityEmptyPreferredHosts() {
+        assertTrue(_dpm.checkAffinity(host, new ArrayList<>()));
+    }
+
+    @Test
+    public void testCheckAffinityNullPreferredHosts() {
+        assertTrue(_dpm.checkAffinity(host, null));
+    }
+
+    @Test
+    public void testCheckAffinityNotEmptyPreferredHostsContainingHost() {
+        assertTrue(_dpm.checkAffinity(host, Arrays.asList(3l, 4l, hostId, 2l)));
+    }
+
+    @Test
+    public void testCheckAffinityNotEmptyPreferredHostsNotContainingHost() {
+        assertFalse(_dpm.checkAffinity(host, Arrays.asList(3l, 4l, 2l)));
     }
 
     @Configuration
@@ -380,6 +418,11 @@ public class DeploymentPlanningManagerImplTest {
         @Bean
         public UserVmDao userVMDao() {
             return Mockito.mock(UserVmDao.class);
+        }
+
+        @Bean
+        public UserVmDetailsDao userVmDetailsDao() {
+            return Mockito.mock(UserVmDetailsDao.class);
         }
 
         @Bean

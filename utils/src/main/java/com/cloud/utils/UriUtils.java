@@ -30,12 +30,16 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Comparator;
 
-import javax.net.ssl.HttpsURLConnection;
-
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
@@ -55,6 +59,12 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.base.Strings;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.NamedNodeMap;
 
 public class UriUtils {
 
@@ -200,39 +210,47 @@ public class UriUtils {
     }
 
     // Get the size of a file from URL response header.
-    public static Long getRemoteSize(String url) {
-        Long remoteSize = (long)0;
-        HttpURLConnection httpConn = null;
-        HttpsURLConnection httpsConn = null;
-        try {
-            URI uri = new URI(url);
-            if (uri.getScheme().equalsIgnoreCase("http")) {
+    public static long getRemoteSize(String url) {
+        long remoteSize = 0L;
+        final String[] methods = new String[]{"HEAD", "GET"};
+        IllegalArgumentException exception = null;
+        // Attempting first a HEAD request to avoid downloading the whole file. If
+        // it fails (for example with S3 presigned URL), fallback on a standard GET
+        // request.
+        for (String method : methods) {
+            HttpURLConnection httpConn = null;
+            try {
+                URI uri = new URI(url);
                 httpConn = (HttpURLConnection)uri.toURL().openConnection();
-                if (httpConn != null) {
-                    httpConn.setConnectTimeout(2000);
-                    httpConn.setReadTimeout(5000);
-                    String contentLength = httpConn.getHeaderField("content-length");
-                    if (contentLength != null) {
-                        remoteSize = Long.parseLong(contentLength);
+                httpConn.setRequestMethod(method);
+                httpConn.setConnectTimeout(2000);
+                httpConn.setReadTimeout(5000);
+                String contentLength = httpConn.getHeaderField("Content-Length");
+                if (contentLength != null) {
+                    remoteSize = Long.parseLong(contentLength);
+                } else if (method.equals("GET") && httpConn.getResponseCode() < 300) {
+                    // Calculate the content size based on the input stream content
+                    byte[] buf = new byte[1024];
+                    int length;
+                    while ((length = httpConn.getInputStream().read(buf, 0, buf.length)) != -1) {
+                        remoteSize += length;
                     }
+                }
+                return remoteSize;
+            } catch (URISyntaxException e) {
+                throw new IllegalArgumentException("Invalid URL " + url);
+            } catch (IOException e) {
+                exception = new IllegalArgumentException("Unable to establish connection with URL " + url);
+            } finally {
+                if (httpConn != null) {
                     httpConn.disconnect();
                 }
-            } else if (uri.getScheme().equalsIgnoreCase("https")) {
-                httpsConn = (HttpsURLConnection)uri.toURL().openConnection();
-                if (httpsConn != null) {
-                    String contentLength = httpsConn.getHeaderField("content-length");
-                    if (contentLength != null) {
-                        remoteSize = Long.parseLong(contentLength);
-                    }
-                    httpsConn.disconnect();
-                }
             }
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Invalid URL " + url);
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Unable to establish connection with URL " + url);
         }
-        return remoteSize;
+        if (exception != null) {
+            throw exception;
+        }
+        return 0L;
     }
 
     public static Pair<String, Integer> validateUrl(String url) throws IllegalArgumentException {
@@ -281,19 +299,190 @@ public class UriUtils {
         }
     }
 
+    /**
+     * Add element to priority list examining node attributes: priority (for urls) and type (for checksums)
+     */
+    protected static void addPriorityListElementExaminingNode(String tagName, Node node, List<Pair<String, Integer>> priorityList) {
+        Integer priority = Integer.MAX_VALUE;
+        String first = node.getTextContent();
+        if (node.hasAttributes()) {
+            NamedNodeMap attributes = node.getAttributes();
+            for (int k=0; k<attributes.getLength(); k++) {
+                Node attr = attributes.item(k);
+                if (tagName.equals("url") && attr.getNodeName().equals("priority")) {
+                    String prio = attr.getNodeValue().replace("\"", "");
+                    priority = Integer.parseInt(prio);
+                    break;
+                } else if (tagName.equals("hash") && attr.getNodeName().equals("type")) {
+                    first = "{" + attr.getNodeValue() + "}" + first;
+                    break;
+                }
+            }
+        }
+        priorityList.add(new Pair<>(first, priority));
+    }
+
+    /**
+     * Return the list of first elements on the list of pairs
+     */
+    protected static List<String> getListOfFirstElements(List<Pair<String, Integer>> priorityList) {
+        List<String> values = new ArrayList<>();
+        for (Pair<String, Integer> pair : priorityList) {
+            values.add(pair.first());
+        }
+        return values;
+    }
+
+    /**
+     * Return HttpClient with connection timeout
+     */
+    private static HttpClient getHttpClient() {
+        MultiThreadedHttpConnectionManager s_httpClientManager = new MultiThreadedHttpConnectionManager();
+        s_httpClientManager.getParams().setConnectionTimeout(5000);
+        return new HttpClient(s_httpClientManager);
+    }
+
+    public static List<String> getMetalinkChecksums(String url) {
+        HttpClient httpClient = getHttpClient();
+        GetMethod getMethod = new GetMethod(url);
+        try {
+            if (httpClient.executeMethod(getMethod) == HttpStatus.SC_OK) {
+                InputStream is = getMethod.getResponseBodyAsStream();
+                Map<String, List<String>> checksums = getMultipleValuesFromXML(is, new String[] {"hash"});
+                if (checksums.containsKey("hash")) {
+                    List<String> listChksum = new ArrayList<>();
+                    for (String chk : checksums.get("hash")) {
+                        listChksum.add(chk.replaceAll("\n", "").replaceAll(" ", "").trim());
+                    }
+                    return listChksum;
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            getMethod.releaseConnection();
+        }
+        return null;
+    }
+    /**
+     * Retrieve values from XML documents ordered by ascending priority for each tag name
+     */
+    protected static Map<String, List<String>> getMultipleValuesFromXML(InputStream is, String[] tagNames) {
+        Map<String, List<String>> returnValues = new HashMap<String, List<String>>();
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder docBuilder = factory.newDocumentBuilder();
+            Document doc = docBuilder.parse(is);
+            Element rootElement = doc.getDocumentElement();
+            for (int i = 0; i < tagNames.length; i++) {
+                NodeList targetNodes = rootElement.getElementsByTagName(tagNames[i]);
+                if (targetNodes.getLength() <= 0) {
+                    s_logger.error("no " + tagNames[i] + " tag in XML response...");
+                } else {
+                    List<Pair<String, Integer>> priorityList = new ArrayList<>();
+                    for (int j = 0; j < targetNodes.getLength(); j++) {
+                        Node node = targetNodes.item(j);
+                        addPriorityListElementExaminingNode(tagNames[i], node, priorityList);
+                    }
+                    priorityList.sort(Comparator.comparing(x -> x.second()));
+                    returnValues.put(tagNames[i], getListOfFirstElements(priorityList));
+                }
+            }
+        } catch (Exception ex) {
+            s_logger.error(ex);
+        }
+        return returnValues;
+    }
+
+    /**
+     * Check if there is at least one existent URL defined on metalink
+     * @param url metalink url
+     * @return true if at least one existent URL defined on metalink, false if not
+     */
+    protected static boolean checkUrlExistenceMetalink(String url) {
+        HttpClient httpClient = getHttpClient();
+        GetMethod getMethod = new GetMethod(url);
+        try {
+            if (httpClient.executeMethod(getMethod) == HttpStatus.SC_OK) {
+                InputStream is = getMethod.getResponseBodyAsStream();
+                Map<String, List<String>> metalinkUrls = getMultipleValuesFromXML(is, new String[] {"url"});
+                if (metalinkUrls.containsKey("url")) {
+                    List<String> urls = metalinkUrls.get("url");
+                    boolean validUrl = false;
+                    for (String u : urls) {
+                        if (url.endsWith("torrent")) {
+                            continue;
+                        }
+                        try {
+                            UriUtils.checkUrlExistence(u);
+                            validUrl = true;
+                            break;
+                        }
+                        catch (IllegalArgumentException e) {
+                            s_logger.warn(e.getMessage());
+                        }
+                    }
+                    return validUrl;
+                }
+            }
+        } catch (IOException e) {
+            s_logger.warn(e.getMessage());
+        } finally {
+            getMethod.releaseConnection();
+        }
+        return false;
+    }
+
+    /**
+     * Get list of urls on metalink ordered by ascending priority (for those which priority tag is not defined, highest priority value is assumed)
+     */
+    public static List<String> getMetalinkUrls(String metalinkUrl) {
+        HttpClient httpClient = getHttpClient();
+        GetMethod getMethod = new GetMethod(metalinkUrl);
+        List<String> urls = new ArrayList<>();
+        int status;
+        try {
+            status = httpClient.executeMethod(getMethod);
+        } catch (IOException e) {
+            s_logger.error("Error retrieving urls form metalink: " + metalinkUrl);
+            getMethod.releaseConnection();
+            return null;
+        }
+        try {
+            InputStream is = getMethod.getResponseBodyAsStream();
+            if (status == HttpStatus.SC_OK) {
+                Map<String, List<String>> metalinkUrlsMap = getMultipleValuesFromXML(is, new String[] {"url"});
+                if (metalinkUrlsMap.containsKey("url")) {
+                    List<String> metalinkUrls = metalinkUrlsMap.get("url");
+                    urls.addAll(metalinkUrls);
+                }
+            }
+        } catch (IOException e) {
+            s_logger.warn(e.getMessage());
+        } finally {
+            getMethod.releaseConnection();
+        }
+        return urls;
+    }
+
     // use http HEAD method to validate url
     public static void checkUrlExistence(String url) {
         if (url.toLowerCase().startsWith("http") || url.toLowerCase().startsWith("https")) {
-            HttpClient httpClient = new HttpClient(new MultiThreadedHttpConnectionManager());
+            HttpClient httpClient = getHttpClient();
             HeadMethod httphead = new HeadMethod(url);
             try {
                 if (httpClient.executeMethod(httphead) != HttpStatus.SC_OK) {
                     throw new IllegalArgumentException("Invalid URL: " + url);
                 }
+                if (url.endsWith("metalink") && !checkUrlExistenceMetalink(url)) {
+                    throw new IllegalArgumentException("Invalid URLs defined on metalink: " + url);
+                }
             } catch (HttpException hte) {
-                throw new IllegalArgumentException("Cannot reach URL: " + url);
+                throw new IllegalArgumentException("Cannot reach URL: " + url + " due to: " + hte.getMessage());
             } catch (IOException ioe) {
-                throw new IllegalArgumentException("Cannot reach URL: " + url);
+                throw new IllegalArgumentException("Cannot reach URL: " + url + " due to: " + ioe.getMessage());
+            } finally {
+                httphead.releaseConnection();
             }
         }
     }
@@ -312,7 +501,8 @@ public class UriUtils {
                 (!uripath.toLowerCase().endsWith("img.gz")) && (!uripath.toLowerCase().endsWith("img.zip")) && (!uripath.toLowerCase().endsWith("img.bz2")) &&
                 (!uripath.toLowerCase().endsWith("raw")) && (!uripath.toLowerCase().endsWith("raw.gz")) && (!uripath.toLowerCase().endsWith("raw.bz2")) &&
                 (!uripath.toLowerCase().endsWith("raw.zip")) && (!uripath.toLowerCase().endsWith("iso")) && (!uripath.toLowerCase().endsWith("iso.zip"))
-                && (!uripath.toLowerCase().endsWith("iso.bz2")) && (!uripath.toLowerCase().endsWith("iso.gz"))) {
+                && (!uripath.toLowerCase().endsWith("iso.bz2")) && (!uripath.toLowerCase().endsWith("iso.gz"))
+                && (!uripath.toLowerCase().endsWith("metalink"))) {
             throw new IllegalArgumentException("Please specify a valid " + format.toLowerCase());
         }
 
@@ -330,12 +520,14 @@ public class UriUtils {
                 && (!uripath.toLowerCase().endsWith("qcow2")
                         && !uripath.toLowerCase().endsWith("qcow2.zip")
                         && !uripath.toLowerCase().endsWith("qcow2.bz2")
-                        && !uripath.toLowerCase().endsWith("qcow2.gz")))
+                        && !uripath.toLowerCase().endsWith("qcow2.gz"))
+                        && !uripath.toLowerCase().endsWith("metalink"))
                 || (format.equalsIgnoreCase("ova")
                 && (!uripath.toLowerCase().endsWith("ova")
                         && !uripath.toLowerCase().endsWith("ova.zip")
                         && !uripath.toLowerCase().endsWith("ova.bz2")
-                        && !uripath.toLowerCase().endsWith("ova.gz")))
+                        && !uripath.toLowerCase().endsWith("ova.gz")
+                        && !uripath.toLowerCase().endsWith("metalink")))
                 || (format.equalsIgnoreCase("tar")
                 && (!uripath.toLowerCase().endsWith("tar")
                         && !uripath.toLowerCase().endsWith("tar.zip")
@@ -359,7 +551,8 @@ public class UriUtils {
                 && (!uripath.toLowerCase().endsWith("iso")
                         && !uripath.toLowerCase().endsWith("iso.zip")
                         && !uripath.toLowerCase().endsWith("iso.bz2")
-                        && !uripath.toLowerCase().endsWith("iso.gz")))) {
+                        && !uripath.toLowerCase().endsWith("iso.gz"))
+                        && !uripath.toLowerCase().endsWith("metalink"))) {
             throw new IllegalArgumentException("Please specify a valid URL. URL:" + uripath + " is an invalid for the format " + format.toLowerCase());
         }
 
@@ -390,5 +583,53 @@ public class UriUtils {
             s_logger.error("Failed to read from URL: " + url);
             return null;
         }
+    }
+
+    /**
+     * Expands a given vlan URI to a list of vlan IDs
+     * @param vlanAuthority the URI part without the vlan:// scheme
+     * @return returns list of vlan integer ids
+     */
+    public static List<Integer> expandVlanUri(final String vlanAuthority) {
+        final List<Integer> expandedVlans = new ArrayList<>();
+        if (Strings.isNullOrEmpty(vlanAuthority)) {
+            return expandedVlans;
+        }
+        for (final String vlanPart: vlanAuthority.split(",")) {
+            if (Strings.isNullOrEmpty(vlanPart)) {
+                continue;
+            }
+            final String[] range = vlanPart.split("-");
+            if (range.length == 2) {
+                Integer start = NumbersUtil.parseInt(range[0], -1);
+                Integer end = NumbersUtil.parseInt(range[1], -1);
+                if (start <= end && end > -1 && start > -1) {
+                    while (start <= end) {
+                        expandedVlans.add(start++);
+                    }
+                }
+            } else {
+                final Integer value = NumbersUtil.parseInt(range[0], -1);
+                if (value > -1) {
+                    expandedVlans.add(value);
+                }
+            }
+        }
+        return expandedVlans;
+    }
+
+    /**
+     * Checks if given vlan URI authorities overlap
+     * @param vlanRange1
+     * @param vlanRange2
+     * @return true if they overlap
+     */
+    public static boolean checkVlanUriOverlap(final String vlanRange1, final String vlanRange2) {
+        final List<Integer> vlans1 = expandVlanUri(vlanRange1);
+        final List<Integer> vlans2 = expandVlanUri(vlanRange2);
+        if (vlans1 == null || vlans2 == null) {
+            return true;
+        }
+        return !Collections.disjoint(vlans1, vlans2);
     }
 }

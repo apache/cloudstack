@@ -21,7 +21,6 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import org.apache.log4j.Logger;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseCmd;
@@ -29,10 +28,10 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.QuotaResponseBuilder;
-import org.apache.cloudstack.api.response.QuotaStatementResponse;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.quota.vo.QuotaUsageVO;
 import org.apache.cloudstack.api.response.QuotaStatementItemResponse;
+import org.apache.cloudstack.api.response.QuotaStatementResponse;
+import org.apache.cloudstack.quota.vo.QuotaUsageVO;
+import org.apache.log4j.Logger;
 
 import com.cloud.user.Account;
 
@@ -62,7 +61,7 @@ public class QuotaStatementCmd extends BaseCmd {
     private Long accountId;
 
     @Inject
-    QuotaResponseBuilder _responseBuilder;
+    private QuotaResponseBuilder _responseBuilder;
 
     public Long getAccountId() {
         return accountId;
@@ -119,9 +118,9 @@ public class QuotaStatementCmd extends BaseCmd {
 
     @Override
     public long getEntityOwnerId() {
-        Long accountId = _accountService.getActiveAccountByName(accountName, domainId).getAccountId();
-        if (accountId == null) {
-            return CallContext.current().getCallingAccount().getId();
+        Account activeAccountByName = _accountService.getActiveAccountByName(accountName, domainId);
+        if (activeAccountByName != null) {
+            return activeAccountByName.getAccountId();
         }
         return Account.ACCOUNT_ID_SYSTEM;
     }

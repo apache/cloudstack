@@ -153,6 +153,10 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
         final Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
 
+        if (vpc.isRollingRestart()) {
+            params.put(VirtualMachineProfile.Param.RollingRestart, true);
+        }
+
         final RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create().setVpc(vpc).setDeployDestination(dest)
                 .setAccountOwner(_accountMgr.getAccount(vpc.getAccountId())).setParams(params).build();
 
@@ -193,6 +197,10 @@ public class VpcVirtualRouterElement extends VirtualRouterElement implements Vpc
 
         final Map<VirtualMachineProfile.Param, Object> params = new HashMap<VirtualMachineProfile.Param, Object>(1);
         params.put(VirtualMachineProfile.Param.ReProgramGuestNetworks, true);
+
+        if (network.isRollingRestart()) {
+            params.put(VirtualMachineProfile.Param.RollingRestart, true);
+        }
 
         final RouterDeploymentDefinition routerDeploymentDefinition = routerDeploymentDefinitionBuilder.create()
                 .setGuestNetwork(network)

@@ -19,6 +19,7 @@ package org.apache.cloudstack.engine.subsystem.api.storage;
 import com.cloud.storage.Snapshot;
 
 public interface SnapshotStrategy {
+
     enum SnapshotOperation {
         TAKE, BACKUP, DELETE, REVERT
     }
@@ -32,4 +33,6 @@ public interface SnapshotStrategy {
     boolean revertSnapshot(SnapshotInfo snapshot);
 
     StrategyPriority canHandle(Snapshot snapshot, SnapshotOperation op);
+
+    void postSnapshotCreation(SnapshotInfo snapshot);
 }

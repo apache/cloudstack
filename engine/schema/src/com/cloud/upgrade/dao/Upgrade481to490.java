@@ -17,9 +17,9 @@
 
 package com.cloud.upgrade.dao;
 
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -30,7 +30,6 @@ import org.apache.log4j.Logger;
 
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade481to490 implements DbUpgrade {
     final static Logger s_logger = Logger.getLogger(Upgrade481to490.class);
@@ -51,12 +50,14 @@ public class Upgrade481to490 implements DbUpgrade {
     }
 
     @Override
-    public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-481to490.sql");
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-481to490.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-481to490.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
-        return new File[] {new File(script)};
+
+        return new InputStream[] {script};
     }
 
     @Override
@@ -117,12 +118,13 @@ public class Upgrade481to490 implements DbUpgrade {
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Configuring default role-api mappings, use migrate-dynamicroles.py instead if you want to migrate rules from an existing commands.properties file");
         }
-        String script = Script.findScript("", "db/create-default-role-api-mappings.sql");
+        final String scriptFile = "META-INF/db/create-default-role-api-mappings.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
             s_logger.error("Unable to find default role-api mapping sql file, please configure api per role manually");
             return;
         }
-        try(final FileReader reader = new FileReader(new File(script))) {
+        try(final InputStreamReader reader = new InputStreamReader(script)) {
             ScriptRunner runner = new ScriptRunner(conn, false, true);
             runner.runScript(reader);
         } catch (SQLException | IOException e) {
@@ -131,11 +133,13 @@ public class Upgrade481to490 implements DbUpgrade {
     }
 
     @Override
-    public File[] getCleanupScripts() {
-        String script = Script.findScript("", "db/schema-481to490-cleanup.sql");
+    public InputStream[] getCleanupScripts() {
+        final String scriptFile = "META-INF/db/schema-481to490-cleanup.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-481to490-cleanup.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
-        return new File[] {new File(script)};
+
+        return new InputStream[] {script};
     }
 }

@@ -16,10 +16,10 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.host;
 
-import java.util.List;
-
-import org.apache.log4j.Logger;
-
+import com.cloud.host.Host;
+import com.cloud.user.Account;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.annotation.AnnotationService;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -28,9 +28,9 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.GuestOSCategoryResponse;
 import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.log4j.Logger;
 
-import com.cloud.host.Host;
-import com.cloud.user.Account;
+import java.util.List;
 
 @APICommand(name = "updateHost", description = "Updates a host.", responseObject = HostResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -62,6 +62,9 @@ public class UpdateHostCmd extends BaseCmd {
     @Parameter(name = ApiConstants.URL, type = CommandType.STRING, description = "the new uri for the secondary storage: nfs://host/path")
     private String url;
 
+    @Parameter(name = ApiConstants.ANNOTATION, type = CommandType.STRING, description = "Add an annotation to this host", since = "4.11", authorized = {RoleType.Admin})
+    private String annotation;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -84,6 +87,10 @@ public class UpdateHostCmd extends BaseCmd {
 
     public String getUrl() {
         return url;
+    }
+
+    public String getAnnotation() {
+        return annotation;
     }
 
     /////////////////////////////////////////////////////
@@ -109,6 +116,9 @@ public class UpdateHostCmd extends BaseCmd {
         Host result;
         try {
             result = _resourceService.updateHost(this);
+            if(getAnnotation() != null) {
+                annotationService.addAnnotation(getAnnotation(), AnnotationService.EntityType.HOST, result.getUuid());
+            }
             HostResponse hostResponse = _responseGenerator.createHostResponse(result);
             hostResponse.setResponseName(getCommandName());
             this.setResponseObject(hostResponse);

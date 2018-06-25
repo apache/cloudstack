@@ -17,22 +17,47 @@
 package com.cloud.tags.dao;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import com.cloud.server.ResourceTag;
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.ResourceTagVO;
 import com.cloud.utils.db.GenericDao;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
 
 public interface ResourceTagDao extends GenericDao<ResourceTagVO, Long> {
 
     /**
-     * @param resourceId
-     * @param resourceType
-     * @return
+     * Remove a resourceTag based on the resourceId and type
+     * @param resourceId the id of the resource you want to remove
+     * @param resourceType the resource type
+     * @return true if successful
      */
     boolean removeByIdAndType(long resourceId, ResourceObjectType resourceType);
 
     List<? extends ResourceTag> listBy(long resourceId, ResourceObjectType resourceType);
 
+    /**
+     * Find a resource tag based on the resource id, resource type and key
+     * @param resourceId the id of the resource you want to find
+     * @param resourceType the resource type (e.g. VPC)
+     * @param key the key value
+     * @return the ResourceTag matching the search criteria
+     */
+    ResourceTag findByKey(long resourceId, ResourceObjectType resourceType, String key);
+
     void updateResourceId(long srcId, long destId, ResourceObjectType resourceType);
+
+    Map<String, Set<ResourceTagResponse>> listTags();
+
+    /**
+     * remove a resource tag based on the resource id, resource type and key
+     * @param resourceId the id of the resource you want to remove
+     * @param resourceType the resource type (e.g. VPC)
+     * @param key the key value
+     */
+    void removeByResourceIdAndKey(long resourceId, ResourceObjectType resourceType, String key);
+
+    List<? extends ResourceTag> listByResourceUuid(String resourceUuid);
 }

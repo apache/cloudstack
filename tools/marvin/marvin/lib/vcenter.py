@@ -19,9 +19,12 @@ from pyVmomi import vim, vmodl
 from pyVim import connect
 import atexit
 import ssl
-if hasattr(ssl, '_create_unverified_context'):
-    ssl._create_default_https_context = ssl._create_unverified_context
+import subprocess
+import time
+import json
 
+if hasattr(ssl, '_create_unverified_context'):
+    ssl._create_default_https_context = ssl._create_unverified_context()
 
 class Vcenter():
 
@@ -29,9 +32,15 @@ class Vcenter():
         """
         create a service_instance object
         """
-        self.service_instance = connect.SmartConnect(host=host,
-                                                    user=user,
-                                                    pwd=pwd)
+        if hasattr(ssl, '_create_default_https_context'):
+            self.service_instance = connect.SmartConnect(host=host,
+                                                         user=user,
+                                                         pwd=pwd,
+                                                         sslContext=ssl._create_default_https_context)
+        else:
+            self.service_instance = connect.SmartConnect(host=host,
+                                                         user=user,
+                                                         pwd=pwd)
         atexit.register(connect.Disconnect, self.service_instance)
 
     @staticmethod
@@ -183,7 +192,157 @@ class Vcenter():
         """
         pass
 
+    def create_datacenter(self, dcname=None, service_instance=None, folder=None):
+        """
+        Creates a new datacenter with the given name.
+        Any % (percent) character used in this name parameter must be escaped,
+        unless it is used to start an escape sequence. Clients may also escape
+        any other characters in this name parameter.
 
+        An entity name must be a non-empty string of
+        less than 80 characters. The slash (/), backslash (\) and percent (%)
+        will be escaped using the URL syntax. For example, %2F
+
+        This can raise the following exceptions:
+        vim.fault.DuplicateName
+        vim.fault.InvalidName
+        vmodl.fault.NotSupported
+        vmodl.fault.RuntimeFault
+        ValueError raised if the name len is > 79
+        https://github.com/vmware/pyvmomi/blob/master/docs/vim/Folder.rst
+
+        Required Privileges
+        Datacenter.Create
+
+        :param folder: Folder object to create DC in. If None it will default to
+                       rootFolder
+        :param dcname: Name for the new datacenter.
+        :param service_instance: ServiceInstance connection to a given vCenter
+        :return:
+        """
+        if len(dcname) > 79:
+            raise ValueError("The name of the datacenter must be under "
+                             "80 characters.")
+
+        if folder is None:
+            folder = self.service_instance.content.rootFolder
+
+        if folder is not None and isinstance(folder, vim.Folder):
+            dc_moref = folder.CreateDatacenter(name=dcname)
+            return dc_moref
+
+    def create_cluster(self, cluster_name, datacenter):
+        """
+        Method to create a Cluster in vCenter
+
+        :param cluster_name: Name of the cluster
+        :param datacenter: Name of the data center
+        :return: Cluster MORef
+        """
+        # cluster_name = kwargs.get("name")
+        # cluster_spec = kwargs.get("cluster_spec")
+        # datacenter = kwargs.get("datacenter")
+
+        if cluster_name is None:
+            raise ValueError("Missing value for name.")
+        if datacenter is None:
+            raise ValueError("Missing value for datacenter.")
+
+        cluster_spec = vim.cluster.ConfigSpecEx()
+
+        host_folder = datacenter.hostFolder
+        cluster = host_folder.CreateClusterEx(name=cluster_name, spec=cluster_spec)
+        return cluster
+
+    def add_host(self, cluster, hostname, sslthumbprint, username, password):
+        """
+        Method to add host in a vCenter Cluster
+
+        :param cluster_name
+        :param hostname
+        :param username
+        :param password
+        """
+        if hostname is None:
+            raise ValueError("Missing value for name.")
+        try:
+            hostspec = vim.host.ConnectSpec(hostName=hostname,
+                                            userName=username,
+                                            sslThumbprint=sslthumbprint,
+                                            password=password,
+                                            force=True)
+            task = cluster.AddHost(spec=hostspec, asConnected=True)
+        except Exception as e:
+            print "Error adding host :%s" % e
+        self.wait_for_task(task)
+        host = self._get_obj([vim.HostSystem], hostname)
+        return host
+
+    def create_datacenters(self, config):
+        """
+        Method to create data centers in vCenter server programmatically
+        It expects configuration data in the form of dictionary.
+        configuration file is same as the one we pass to deployDataCenter.py for creating
+        datacenter in CS
+
+        :param config:
+        :return:
+        """
+        zones = config['zones']
+        try:
+            for zone in zones:
+                dc_obj = self.create_datacenter(zone['name'])
+                for pod in zone['pods']:
+                    for cluster in pod['clusters']:
+                        clustername = cluster['clustername'].split('/')[-1]
+                        cluster_obj = self.create_cluster(
+                            cluster_name=clustername,
+                            datacenter=dc_obj
+                        )
+                        for host in cluster['hosts']:
+                            host_ip = host['url'].split("//")[-1]
+                            user = host['username']
+                            passwd = host['password']
+                            sslthumbprint=self.getsslThumbprint(host_ip)
+                            self.add_host(cluster=cluster_obj,
+                                          hostname=host_ip,
+                                          sslthumbprint=sslthumbprint,
+                                          username=user,
+                                          password=passwd)
+        except Exception as e:
+            print "Failed to create datacenter: %s" % e
+
+    def wait_for_task(self, task):
+
+        while task.info.state == (vim.TaskInfo.State.running or vim.TaskInfo.State.queued):
+            time.sleep(2)
+
+        if task.info.state == vim.TaskInfo.State.success:
+            if task.info.result is not None:
+                out = 'Task completed successfully, result: %s' % (task.info.result,)
+                print out
+        elif task.info.state == vim.TaskInfo.State.error:
+            out = 'Error - Task did not complete successfully: %s' % (task.info.error,)
+            raise ValueError(out)
+        return task.info.result
+
+    def getsslThumbprint(self,ip):
+
+        p1 = subprocess.Popen(('echo', '-n'), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p2 = subprocess.Popen(('openssl', 's_client', '-connect', '{0}:443'.format(ip)),
+                              stdin=p1.stdout,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE
+        )
+        p3 = subprocess.Popen(('openssl', 'x509', '-noout', '-fingerprint', '-sha1'),
+                              stdin=p2.stdout,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE
+        )
+        out = p3.stdout.read()
+        ssl_thumbprint = out.split('=')[-1].strip()
+        return ssl_thumbprint
+    
 if __name__ == '__main__':
     vc_object = Vcenter("10.x.x.x", "username", "password")
 

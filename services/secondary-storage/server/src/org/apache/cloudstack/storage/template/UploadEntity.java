@@ -34,6 +34,7 @@ public class UploadEntity {
     private int maxSizeInGB;
     private String description;
     private long contentLength;
+    private long processTimeout;
 
     public static enum ResourceType {
         VOLUME, TEMPLATE
@@ -58,6 +59,14 @@ public class UploadEntity {
         this.filename=filename;
         this.installPathPrefix = installPathPrefix;
         this.entityId=entityId;
+    }
+
+    public void setProcessTimeout(long processTimeout) {
+        this.processTimeout = processTimeout;
+    }
+
+    public long getProcessTimeout() {
+        return processTimeout;
     }
 
     public UploadEntity(){

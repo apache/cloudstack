@@ -745,12 +745,19 @@
                         }
                     },
                     dataProvider: function(args) {
+                        var data = {
+                            page: args.page,
+                            pageSize: pageSize,
+                            networkid: args.context.networks[0].id,
+                            listAll: true
+                        };
+                        var keyword = (((args || {}).filterBy || {}).search || {}).value;
+                        if (keyword) {
+                            data.keyword = keyword;
+                        }
                         $.ajax({
                             url: createURL('listLoadBalancers'),
-                            data: {
-                                networkid: args.context.networks[0].id,
-                                listAll: true
-                            },
+                            data: data,
                             success: function(json) {
                                 var items = json.listloadbalancersresponse.loadbalancer;
                                 if (items != null) {
@@ -1327,7 +1334,7 @@
                                                 url: createURL('listNetworkACLs&aclid=' + args.context.aclLists[0].id),
                                                 success: function(json) {
                                                     var items = json.listnetworkaclsresponse.networkacl.sort(function(a, b) {
-                                                        return a.number >= b.number;
+                                                        return a.number - b.number;
                                                     }).map(function(acl) {
                                                         if (parseInt(acl.protocol)) { // protocol number
                                                             acl.protocolnumber = acl.protocol;
@@ -3941,7 +3948,9 @@
                                     required: true
                                 }
                             },
-
+                            externalId: {
+                            label: 'label.guest.externalId'
+                            },
                             aclid: {
                                 label: 'label.acl',
                                 select: function(args) {
@@ -4033,11 +4042,17 @@
                                 zoneId: args.context.vpc[0].zoneid
                         });
 
+                        if (args.data.externalId != null && args.data.externalId.length > 0) {
+                            $.extend(dataObj, {
+                                externalid: args.data.externalId
+                            });
+                        }
 
-                        if (args.data.aclid != '')
+                        if (args.data.aclid != '') {
                             $.extend(dataObj, {
                                 aclid: args.data.aclid
                             });
+                        }
 
                         if (args.$form.find('.form-item[rel=vlan]').is(':visible')) {
                             $.extend(dataObj, {

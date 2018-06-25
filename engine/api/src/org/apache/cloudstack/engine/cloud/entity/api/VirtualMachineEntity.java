@@ -106,7 +106,8 @@ public interface VirtualMachineEntity extends CloudStackEntity {
      * @param reservationId reservation id from reserve call.
      *
      */
-    void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params) throws InsufficientCapacityException, ResourceUnavailableException;
+    void deploy(String reservationId, String caller, Map<VirtualMachineProfile.Param, Object> params, boolean deployOnGivenHost)
+            throws InsufficientCapacityException, ResourceUnavailableException;
 
     /**
      * Stop the virtual machine
@@ -129,8 +130,9 @@ public interface VirtualMachineEntity extends CloudStackEntity {
 
     /**
      * Destroys the VM.
+     * @param expunge indicates if vm should be expunged
      */
-    boolean destroy(String caller) throws AgentUnavailableException, CloudException, ConcurrentOperationException;
+    boolean destroy(String caller, boolean expunge) throws AgentUnavailableException, CloudException, ConcurrentOperationException;
 
     /**
      * Duplicate this VM in the database so that it will start new

@@ -117,6 +117,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "the size of the template")
     private Long size;
 
+    @SerializedName(ApiConstants.PHYSICAL_SIZE)
+    @Param(description = "the physical size of the template")
+    private Long physicalSize;
+
     @SerializedName("templatetype")
     @Param(description = "the type of the template")
     private String templateType;
@@ -169,6 +173,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @Param(description = "additional key/value details tied with template")
     private Map details;
 
+    @SerializedName(ApiConstants.BITS)
+    @Param(description = "the processor bit size", since = "4.10")
+    private int bits;
+
     @SerializedName(ApiConstants.SSHKEY_ENABLED)
     @Param(description = "true if template is sshkey enabled, false otherwise")
     private Boolean sshKeyEnabled;
@@ -176,6 +184,18 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
     @SerializedName(ApiConstants.IS_DYNAMICALLY_SCALABLE)
     @Param(description = "true if template contains XS/VMWare tools inorder to support dynamic scaling of VM cpu/memory")
     private Boolean isDynamicallyScalable;
+
+    @SerializedName(ApiConstants.DIRECT_DOWNLOAD)
+    @Param(description = "KVM Only: true if template is directly downloaded to Primary Storage bypassing Secondary Storage")
+    private Boolean directDownload;
+
+    @SerializedName("parenttemplateid")
+    @Param(description = "if Datadisk template, then id of the root disk template this template belongs to")
+    private String parentTemplateId;
+
+    @SerializedName("childtemplates")
+    @Param(description = "if root disk template, then ids of the datas disk templates this template owns")
+    private Set<ChildTemplateResponse> childTemplates;
 
     public TemplateResponse() {
         tags = new LinkedHashSet<ResourceTagResponse>();
@@ -271,6 +291,10 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
         this.size = size;
     }
 
+    public void setPhysicalSize(Long physicalSize) {
+        this.physicalSize = physicalSize;
+    }
+
     public void setTemplateType(String templateType) {
         this.templateType = templateType;
     }
@@ -345,6 +369,26 @@ public class TemplateResponse extends BaseResponseWithTagInformation implements 
 
     public String getZoneId() {
         return zoneId;
+    }
+
+    public void setBits(int bits) {
+        this.bits = bits;
+    }
+
+    public void setDirectDownload(Boolean directDownload) {
+        this.directDownload = directDownload;
+    }
+
+    public Boolean getDirectDownload() {
+        return directDownload;
+    }
+
+    public void setParentTemplateId(String parentTemplateId) {
+        this.parentTemplateId = parentTemplateId;
+    }
+
+    public void setChildTemplates(Set<ChildTemplateResponse> childTemplateIds) {
+        this.childTemplates = childTemplateIds;
     }
 
 }

@@ -28,4 +28,12 @@ public interface VMSnapshotStrategy {
     boolean revertVMSnapshot(VMSnapshot vmSnapshot);
 
     StrategyPriority canHandle(VMSnapshot vmSnapshot);
+
+    /**
+     * Delete vm snapshot only from database. Introduced as a Vmware optimization in which vm snapshots are deleted when
+     * the vm gets deleted on hypervisor (no need to delete each vm snapshot before deleting vm, just mark them as deleted on DB)
+     * @param vmSnapshot vm snapshot to be marked as deleted.
+     * @return true if vm snapshot removed from DB, false if not.
+     */
+    boolean deleteVMSnapshotFromDB(VMSnapshot vmSnapshot);
 }

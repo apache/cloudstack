@@ -61,4 +61,12 @@ public interface NetworkOfferingDao extends GenericDao<NetworkOfferingVO, Long> 
 
     NetworkOfferingVO persist(NetworkOfferingVO off, Map<Detail, String> details);
 
+    List<Long> listNetworkOfferingID();
+
+    boolean isUsingServicePackage(String uuid);
+
+    /**
+     * Create default L2 network offerings
+     */
+    void persistDefaultL2NetworkOfferings();
 }

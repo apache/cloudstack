@@ -25,7 +25,7 @@ import com.cloud.utils.SerialVersionUID;
  * Used by the Task class to wrap-up its exceptions.
  */
 public class TaskExecutionException extends Exception {
-    private static final long serialVersionUID = SerialVersionUID.NioConnectionException;
+    private static final long serialVersionUID = SerialVersionUID.TaskExecutionException;
 
     protected int csErrorCode;
 

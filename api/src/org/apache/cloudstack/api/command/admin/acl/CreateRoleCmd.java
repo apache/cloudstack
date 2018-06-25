@@ -34,7 +34,7 @@ import org.apache.cloudstack.context.CallContext;
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false,
         since = "4.9.0",
         authorized = {RoleType.Admin})
-public class CreateRoleCmd extends BaseCmd {
+public class CreateRoleCmd extends RoleCmd {
     public static final String APINAME = "createRole";
 
     /////////////////////////////////////////////////////
@@ -81,16 +81,6 @@ public class CreateRoleCmd extends BaseCmd {
     @Override
     public long getEntityOwnerId() {
         return Account.ACCOUNT_ID_SYSTEM;
-    }
-
-    private void setupResponse(final Role role) {
-        final RoleResponse response = new RoleResponse();
-        response.setId(role.getUuid());
-        response.setRoleName(role.getName());
-        response.setRoleType(role.getRoleType());
-        response.setResponseName(getCommandName());
-        response.setObjectName("role");
-        setResponseObject(response);
     }
 
     @Override

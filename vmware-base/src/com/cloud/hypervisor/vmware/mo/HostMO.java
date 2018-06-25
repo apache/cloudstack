@@ -992,7 +992,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
 
         if (s_logger.isTraceEnabled())
             s_logger.trace("vCenter API trace - getHyperHostNetworkSummary() done(failed)");
-        throw new Exception("Uanble to find management port group " + managementPortGroup);
+        throw new Exception("Unable to find management port group " + managementPortGroup);
     }
 
     @Override
@@ -1039,7 +1039,7 @@ public class HostMO extends BaseMO implements VmwareHypervisorHost {
     @Override
     public boolean isHyperHostConnected() throws Exception {
         HostRuntimeInfo runtimeInfo = (HostRuntimeInfo)_context.getVimClient().getDynamicProperty(_mor, "runtime");
-        return runtimeInfo.getConnectionState() == HostSystemConnectionState.CONNECTED;
+        return runtimeInfo != null && runtimeInfo.getConnectionState() == HostSystemConnectionState.CONNECTED;
     }
 
     public boolean revertToSnapshot(ManagedObjectReference morSnapshot) throws Exception {

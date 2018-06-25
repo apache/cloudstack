@@ -25,6 +25,7 @@ import com.cloud.storage.Volume;
 import com.cloud.vm.VirtualMachine;
 
 public interface VolumeInfo extends DataObject, Volume {
+
     boolean isAttachedVM();
 
     void addPayload(Object data);
@@ -36,6 +37,7 @@ public interface VolumeInfo extends DataObject, Volume {
     Long getLastPoolId();
 
     String getAttachedVmName();
+
     VirtualMachine getAttachedVM();
 
     void processEventOnly(ObjectInDataStoreStateMachine.Event event);

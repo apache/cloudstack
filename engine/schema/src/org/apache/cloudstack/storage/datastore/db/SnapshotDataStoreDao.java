@@ -63,4 +63,5 @@ public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Lo
 
     SnapshotDataStoreVO findByVolume(long volumeId, DataStoreRole role);
 
+    List<SnapshotDataStoreVO> listByState(ObjectInDataStoreStateMachine.State... states);
 }

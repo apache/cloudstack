@@ -30,12 +30,14 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.security.keystore.KeystoreManager;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
@@ -87,12 +89,12 @@ import com.cloud.info.RunningHostInfoAgregator.ZoneHostInfo;
 import com.cloud.network.Network;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.StorageNetworkManager;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.rules.RulesManager;
-import com.cloud.network.StorageNetworkManager;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -121,6 +123,7 @@ import com.cloud.user.AccountService;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
@@ -164,7 +167,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 // because sooner or later, it will be driven into Running state
 //
 public class SecondaryStorageManagerImpl extends ManagerBase implements SecondaryStorageVmManager, VirtualMachineGuru, SystemVmLoadScanHandler<Long>,
-        ResourceStateAdapter {
+        ResourceStateAdapter, Configurable {
     private static final Logger s_logger = Logger.getLogger(SecondaryStorageManagerImpl.class);
 
     private static final int DEFAULT_CAPACITY_SCAN_INTERVAL = 30000; // 30
@@ -243,6 +246,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     VolumeDataStoreDao _volumeStoreDao;
     @Inject
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
+    @Inject
+    private IndirectAgentLB indirectAgentLB;
+
     private long _capacityScanInterval = DEFAULT_CAPACITY_SCAN_INTERVAL;
     private int _secStorageVmMtuSize;
 
@@ -256,6 +262,9 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     private Map<Long, ZoneHostInfo> _zoneHostInfoMap; // map <zone id, info about running host in zone>
 
     private final GlobalLock _allocLock = GlobalLock.getInternLock(getAllocLockName());
+
+    static final ConfigKey<String> NTPServerConfig = new ConfigKey<String>(String.class, "ntp.server.list", "Advanced", null,
+            "Comma separated list of NTP servers to configure in Secondary storage VM", false, ConfigKey.Scope.Global, null);
 
     public SecondaryStorageManagerImpl() {
     }
@@ -382,7 +391,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             List<String> allowedCidrs = new ArrayList<String>();
             String[] cidrs = _allowedInternalSites.split(",");
             for (String cidr : cidrs) {
-                if (NetUtils.isValidCIDR(cidr) || NetUtils.isValidIp(cidr) || !cidr.startsWith("0.0.0.0")) {
+                if (NetUtils.isValidIp4Cidr(cidr) || NetUtils.isValidIp4(cidr) || !cidr.startsWith("0.0.0.0")) {
                     allowedCidrs.add(cidr);
                 }
             }
@@ -1113,7 +1122,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=secstorage");
-        buf.append(" host=").append(ApiServiceConfiguration.ManagementHostIPAdr.value());
+        buf.append(" host=").append(StringUtils.toCSVList(indirectAgentLB.getManagementServerList(dest.getHost().getId(), dest.getDataCenter().getId(), null)));
         buf.append(" port=").append(_mgmtPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
 
@@ -1145,6 +1154,10 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             buf.append(" vmpassword=").append(_configDao.getValue("system.vm.password"));
         }
 
+        if (NTPServerConfig.value() != null) {
+            buf.append(" ntpserverlist=").append(NTPServerConfig.value().replaceAll("\\s+",""));
+        }
+
         for (NicProfile nic : profile.getNics()) {
             int deviceId = nic.getDeviceId();
             if (nic.getIPv4Address() == null) {
@@ -1160,7 +1173,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             }
             if (nic.getTrafficType() == TrafficType.Management) {
                 String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
-                if (NetUtils.isValidCIDR(mgmt_cidr)) {
+                if (NetUtils.isValidIp4Cidr(mgmt_cidr)) {
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
                 }
                 buf.append(" localgw=").append(dest.getPod().getGateway());
@@ -1488,6 +1501,16 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
     @Inject
     public void setSecondaryStorageVmAllocators(List<SecondaryStorageVmAllocator> ssVmAllocators) {
         _ssVmAllocators = ssVmAllocators;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return SecondaryStorageManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {NTPServerConfig};
     }
 
 }

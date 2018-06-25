@@ -701,7 +701,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         boolean success = false;
 
         if (apply) {
-            success = applyPortForwardingRules(rule.getSourceIpAddressId(), true, caller);
+            success = applyPortForwardingRules(rule.getSourceIpAddressId(), _ipAddrMgr.RulesContinueOnError.value(), caller);
         } else {
             success = true;
         }
@@ -736,7 +736,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         boolean success = false;
 
         if (apply) {
-            success = applyStaticNatRulesForIp(rule.getSourceIpAddressId(), true, caller, true);
+            success = applyStaticNatRulesForIp(rule.getSourceIpAddressId(),  _ipAddrMgr.RulesContinueOnError.value(), caller, true);
         } else {
             success = true;
         }
@@ -769,7 +769,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         // apply rules for all ip addresses
         for (Long ipId : ipsToReprogram) {
             s_logger.debug("Applying port forwarding rules for ip address id=" + ipId + " as a part of vm expunge");
-            if (!applyPortForwardingRules(ipId, true, _accountMgr.getSystemAccount())) {
+            if (!applyPortForwardingRules(ipId,  _ipAddrMgr.RulesContinueOnError.value(), _accountMgr.getSystemAccount())) {
                 s_logger.warn("Failed to apply port forwarding rules for ip id=" + ipId);
                 success = false;
             }
@@ -1098,10 +1098,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         boolean success = true;
 
         // revoke all port forwarding rules
-        success = success && applyPortForwardingRules(ipId, true, caller);
+        success = success && applyPortForwardingRules(ipId,  _ipAddrMgr.RulesContinueOnError.value(), caller);
 
         // revoke all all static nat rules
-        success = success && applyStaticNatRulesForIp(ipId, true, caller, true);
+        success = success && applyStaticNatRulesForIp(ipId,  _ipAddrMgr.RulesContinueOnError.value(), caller, true);
 
         // revoke static nat for the ip address
         success = success && applyStaticNatForIp(ipId, false, caller, true);
@@ -1144,9 +1144,11 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         boolean success = true;
         // revoke all PF rules for the network
         success = success && applyPortForwardingRulesForNetwork(networkId, true, caller);
+        success = success && applyPortForwardingRulesForNetwork(networkId,  _ipAddrMgr.RulesContinueOnError.value(), caller);
 
         // revoke all all static nat rules for the network
         success = success && applyStaticNatRulesForNetwork(networkId, true, caller);
+        success = success && applyStaticNatRulesForNetwork(networkId,  _ipAddrMgr.RulesContinueOnError.value(), caller);
 
         // Now we check again in case more rules have been inserted.
         rules.addAll(_portForwardingDao.listByNetworkAndNotRevoked(networkId));
@@ -1257,6 +1259,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             throw ex;
         }
 
+        ipAddress.setRuleState(IpAddress.State.Releasing);
+        _ipAddressDao.update(ipAddress.getId(), ipAddress);
+        ipAddress = _ipAddressDao.findById(ipId);
+
         // Revoke all firewall rules for the ip
         try {
             s_logger.debug("Revoking all " + Purpose.Firewall + "rules as a part of disabling static nat for public IP id=" + ipId);
@@ -1278,6 +1284,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             boolean isIpSystem = ipAddress.getSystem();
             ipAddress.setOneToOneNat(false);
             ipAddress.setAssociatedWithVmId(null);
+            ipAddress.setRuleState(null);
             ipAddress.setVmIp(null);
             if (isIpSystem && !releaseIpIfElastic) {
                 ipAddress.setSystem(false);
@@ -1293,6 +1300,9 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             return true;
         } else {
             s_logger.warn("Failed to disable one to one nat for the ip address id" + ipId);
+            ipAddress = _ipAddressDao.findById(ipId);
+            ipAddress.setRuleState(null);
+            _ipAddressDao.update(ipAddress.getId(), ipAddress);
             return false;
         }
     }
@@ -1515,7 +1525,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NET_RULE_MODIFY, eventDescription = "updating forwarding rule", async = true)
-    public PortForwardingRule updatePortForwardingRule(long id, Integer privatePort, Long virtualMachineId, Ip vmGuestIp, String customId, Boolean forDisplay) {
+    public PortForwardingRule updatePortForwardingRule(long id, Integer privatePort, Integer privateEndPort, Long virtualMachineId, Ip vmGuestIp, String customId, Boolean forDisplay) {
         Account caller = CallContext.current().getCallingAccount();
         PortForwardingRuleVO rule = _portForwardingDao.findById(id);
         if (rule == null) {
@@ -1531,9 +1541,29 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             rule.setDisplay(forDisplay);
         }
 
-        if (!rule.getSourcePortStart().equals(rule.getSourcePortEnd()) && privatePort != null) {
-            throw new InvalidParameterValueException("Unable to update the private port of port forwarding rule as  the rule has port range : " + rule.getSourcePortStart() + " to " + rule.getSourcePortEnd());
+        if (privatePort != null && !NetUtils.isValidPort(privatePort)) {
+            throw new InvalidParameterValueException("privatePort is an invalid value: " + privatePort);
         }
+        if (privateEndPort != null && !NetUtils.isValidPort(privateEndPort)) {
+            throw new InvalidParameterValueException("PrivateEndPort has an invalid value: " + privateEndPort);
+        }
+
+        if (privatePort != null && privateEndPort != null && ((privateEndPort - privatePort) != (rule.getSourcePortEnd() - rule.getSourcePortStart())))
+        {
+            throw new InvalidParameterValueException("Unable to update the private port range of port forwarding rule as  " +
+                    "the provided port range is not consistent with the port range : " + rule.getSourcePortStart() + " to " + rule.getSourcePortEnd());
+        }
+
+        //in case of port range
+        if (!rule.getSourcePortStart().equals(rule.getSourcePortEnd())) {
+             if ((privatePort == null || privateEndPort == null) && !(privatePort == null && privateEndPort == null)) {
+                throw new InvalidParameterValueException("Unable to update the private port range of port forwarding rule as  " +
+                        "the provided port range is not consistent with the port range : " + rule.getSourcePortStart() + " to " + rule.getSourcePortEnd());
+            }
+        }
+
+
+
         if (virtualMachineId == null && vmGuestIp != null) {
             throw new InvalidParameterValueException("vmguestip should be set along with virtualmachineid");
         }
@@ -1578,8 +1608,12 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         rule.setState(State.Add);
         if (privatePort != null) {
             rule.setDestinationPortStart(privatePort.intValue());
-            rule.setDestinationPortEnd(privatePort.intValue());
+            rule.setDestinationPortEnd((privateEndPort == null) ? privatePort.intValue() : privateEndPort.intValue());
+        } else if (privateEndPort != null) {
+            rule.setDestinationPortStart(privateEndPort.intValue());
+            rule.setDestinationPortEnd(privateEndPort);
         }
+
         if (virtualMachineId != null) {
             rule.setVirtualMachineId(virtualMachineId);
             rule.setDestinationIpAddress(dstIp);

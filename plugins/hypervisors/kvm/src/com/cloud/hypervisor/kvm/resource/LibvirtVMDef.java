@@ -16,14 +16,16 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
-import com.google.common.collect.Maps;
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.log4j.Logger;
-
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.log4j.Logger;
+
+import com.google.common.collect.Maps;
 
 public class LibvirtVMDef {
     private static final Logger s_logger = Logger.getLogger(LibvirtVMDef.class);
@@ -544,6 +546,23 @@ public class LibvirtVMDef {
             }
         }
 
+        public enum DiscardType {
+            IGNORE("ignore"), UNMAP("unmap");
+            String _discardType;
+            DiscardType(String discardType) {
+                _discardType = discardType;
+            }
+
+            @Override
+            public String toString() {
+                if (_discardType == null) {
+                    return "ignore";
+                }
+                return _discardType;
+            }
+
+        }
+
         private DeviceType _deviceType; /* floppy, disk, cdrom */
         private DiskType _diskType;
         private DiskProtocol _diskProtocol;
@@ -565,6 +584,15 @@ public class LibvirtVMDef {
         private DiskCacheMode _diskCacheMode;
         private String _serial;
         private boolean qemuDriver = true;
+        private DiscardType _discard = DiscardType.IGNORE;
+
+        public DiscardType getDiscard() {
+            return _discard;
+        }
+
+        public void setDiscard(DiscardType discard) {
+            this._discard = discard;
+        }
 
         public void setDeviceType(DeviceType deviceType) {
             _deviceType = deviceType;
@@ -581,14 +609,10 @@ public class LibvirtVMDef {
 
         }
 
-        /* skip iso label */
-        private String getDevLabel(int devId, DiskBus bus) {
+        /* skip iso labels */
+        private String getDevLabel(int devId, DiskBus bus, boolean forIso) {
             if (devId < 0) {
                 return "";
-            }
-
-            if (devId == 2) {
-                devId++;
             }
 
             if (bus == DiskBus.SCSI) {
@@ -596,7 +620,13 @@ public class LibvirtVMDef {
             } else if (bus == DiskBus.VIRTIO) {
                 return "vd" + getDevLabelSuffix(devId);
             }
+            if (forIso) {
+                devId --;
+            } else if(devId >= 2) {
+                devId += 2;
+            }
             return "hd" + getDevLabelSuffix(devId);
+
         }
 
         private String getDevLabelSuffix(int deviceIndex) {
@@ -621,7 +651,7 @@ public class LibvirtVMDef {
             _deviceType = DeviceType.DISK;
             _diskCacheMode = DiskCacheMode.NONE;
             _sourcePath = filePath;
-            _diskLabel = getDevLabel(devId, bus);
+            _diskLabel = getDevLabel(devId, bus, false);
             _diskFmtType = diskFmtType;
             _bus = bus;
 
@@ -631,10 +661,24 @@ public class LibvirtVMDef {
             _diskType = DiskType.FILE;
             _deviceType = DeviceType.CDROM;
             _sourcePath = volPath;
-            _diskLabel = "hdc";
+            _diskLabel = getDevLabel(3, DiskBus.IDE, true);
             _diskFmtType = DiskFmtType.RAW;
             _diskCacheMode = DiskCacheMode.NONE;
             _bus = DiskBus.IDE;
+        }
+
+        public void defISODisk(String volPath, Integer devId) {
+            if (devId == null) {
+                defISODisk(volPath);
+            } else {
+                _diskType = DiskType.FILE;
+                _deviceType = DeviceType.CDROM;
+                _sourcePath = volPath;
+                _diskLabel = getDevLabel(devId, DiskBus.IDE, true);
+                _diskFmtType = DiskFmtType.RAW;
+                _diskCacheMode = DiskCacheMode.NONE;
+                _bus = DiskBus.IDE;
+            }
         }
 
         public void defBlockBasedDisk(String diskName, int devId, DiskBus bus) {
@@ -643,7 +687,7 @@ public class LibvirtVMDef {
             _diskFmtType = DiskFmtType.RAW;
             _diskCacheMode = DiskCacheMode.NONE;
             _sourcePath = diskName;
-            _diskLabel = getDevLabel(devId, bus);
+            _diskLabel = getDevLabel(devId, bus, false);
             _bus = bus;
         }
 
@@ -668,7 +712,7 @@ public class LibvirtVMDef {
             _sourcePort = sourcePort;
             _authUserName = authUserName;
             _authSecretUUID = authSecretUUID;
-            _diskLabel = getDevLabel(devId, bus);
+            _diskLabel = getDevLabel(devId, bus, false);
             _bus = bus;
             _diskProtocol = protocol;
         }
@@ -775,8 +819,16 @@ public class LibvirtVMDef {
             diskBuilder.append(" type='" + _diskType + "'");
             diskBuilder.append(">\n");
             if(qemuDriver) {
-                diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType
-                        + "' cache='" + _diskCacheMode + "' " + "/>\n");
+                diskBuilder.append("<driver name='qemu'" + " type='" + _diskFmtType + "' ");
+
+                if (_deviceType != DeviceType.CDROM) {
+                    diskBuilder.append("cache='" + _diskCacheMode + "' ");
+                }
+
+                if(_discard != null && _discard != DiscardType.IGNORE) {
+                    diskBuilder.append("discard='" + _discard.toString() + "' ");
+                }
+                diskBuilder.append("/>\n");
             }
 
             if (_diskType == DiskType.FILE) {
@@ -859,7 +911,7 @@ public class LibvirtVMDef {
             }
         }
 
-        enum NicModel {
+        public enum NicModel {
             E1000("e1000"), VIRTIO("virtio"), RTL8139("rtl8139"), NE2KPCI("ne2k_pci"), VMXNET3("vmxnet3");
             String _model;
 
@@ -894,6 +946,8 @@ public class LibvirtVMDef {
         private String _virtualPortInterfaceId;
         private int _vlanTag = -1;
         private boolean _pxeDisable = false;
+        private boolean _linkStateUp = true;
+        private Integer _slot;
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0);
@@ -981,6 +1035,10 @@ public class LibvirtVMDef {
             return _networkName;
         }
 
+        public void setDevName(String networkName) {
+            _networkName = networkName;
+        }
+
         public String getMacAddress() {
             return _macAddr;
         }
@@ -1011,6 +1069,22 @@ public class LibvirtVMDef {
 
         public int getVlanTag() {
             return _vlanTag;
+        }
+
+        public void setSlot(Integer slot) {
+            _slot = slot;
+        }
+
+        public Integer getSlot() {
+            return _slot;
+        }
+
+        public void setLinkStateUp(boolean linkStateUp) {
+            _linkStateUp = linkStateUp;
+        }
+
+        public boolean isLinkStateUp() {
+            return _linkStateUp;
         }
 
         @Override
@@ -1055,6 +1129,12 @@ public class LibvirtVMDef {
             if (_vlanTag > 0 && _vlanTag < 4095) {
                 netBuilder.append("<vlan trunk='no'>\n<tag id='" + _vlanTag + "'/>\n</vlan>");
             }
+
+            netBuilder.append("<link state='" + (_linkStateUp ? "up" : "down") +"'/>\n");
+
+            if (_slot  != null) {
+                netBuilder.append(String.format("<address type='pci' domain='0x0000' bus='0x00' slot='0x%02x' function='0x0'/>\n", _slot));
+            }
             netBuilder.append("</interface>\n");
             return netBuilder.toString();
         }
@@ -1095,6 +1175,11 @@ public class LibvirtVMDef {
 
     public static class CpuTuneDef {
         private int _shares = 0;
+        private int quota = 0;
+        private int period = 0;
+        static final int DEFAULT_PERIOD = 10000;
+        static final int MIN_QUOTA = 1000;
+        static final int MAX_PERIOD = 1000000;
 
         public void setShares(int shares) {
             _shares = shares;
@@ -1104,12 +1189,34 @@ public class LibvirtVMDef {
             return _shares;
         }
 
+        public int getQuota() {
+            return quota;
+        }
+
+        public void setQuota(int quota) {
+            this.quota = quota;
+        }
+
+        public int getPeriod() {
+            return period;
+        }
+
+        public void setPeriod(int period) {
+            this.period = period;
+        }
+
         @Override
         public String toString() {
             StringBuilder cpuTuneBuilder = new StringBuilder();
             cpuTuneBuilder.append("<cputune>\n");
             if (_shares > 0) {
                 cpuTuneBuilder.append("<shares>" + _shares + "</shares>\n");
+            }
+            if (quota > 0) {
+                cpuTuneBuilder.append("<quota>" + quota + "</quota>\n");
+            }
+            if (period > 0) {
+                cpuTuneBuilder.append("<period>" + period + "</period>\n");
             }
             cpuTuneBuilder.append("</cputune>\n");
             return cpuTuneBuilder.toString();
@@ -1222,25 +1329,95 @@ public class LibvirtVMDef {
         }
     }
 
-    public static class VirtioSerialDef {
-        private final String _name;
-        private String _path;
+    public final static class ChannelDef {
+        enum ChannelType {
+            UNIX("unix"), SERIAL("serial");
+            String type;
 
-        public VirtioSerialDef(String name, String path) {
-            _name = name;
-            _path = path;
+            ChannelType(String type) {
+                this.type = type;
+            }
+
+            @Override
+            public String toString() {
+                return this.type;
+            }
+        }
+
+        enum ChannelState {
+            DISCONNECTED("disconnected"), CONNECTED("connected");
+            String type;
+
+            ChannelState(String type) {
+                this.type = type;
+            }
+
+            @Override
+            public String toString() {
+                return type;
+            }
+        }
+
+        private final String name;
+        private File path = new File("");
+        private final ChannelType type;
+        private ChannelState state;
+
+        public ChannelDef(String name, ChannelType type) {
+            this.name = name;
+            this.type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, File path) {
+            this.name = name;
+            this.path = path;
+            this.type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, ChannelState state) {
+            this.name = name;
+            this.state = state;
+            this.type = type;
+        }
+
+        public ChannelDef(String name, ChannelType type, ChannelState state, File path) {
+            this.name = name;
+            this.path = path;
+            this.state = state;
+            this.type = type;
+        }
+
+        public ChannelType getChannelType() {
+            return type;
+        }
+
+        public ChannelState getChannelState() {
+            return state;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public File getPath() {
+            return path;
         }
 
         @Override
         public String toString() {
             StringBuilder virtioSerialBuilder = new StringBuilder();
-            if (_path == null) {
-                _path = "/var/lib/libvirt/qemu";
+            virtioSerialBuilder.append("<channel type='" + type.toString() + "'>\n");
+            if (path == null) {
+                virtioSerialBuilder.append("<source mode='bind'/>\n");
+            } else {
+                virtioSerialBuilder.append("<source mode='bind' path='" + path.toString() + "'/>\n");
             }
-            virtioSerialBuilder.append("<channel type='unix'>\n");
-            virtioSerialBuilder.append("<source mode='bind' path='" + _path + "/" + _name + ".agent'/>\n");
-            virtioSerialBuilder.append("<target type='virtio' name='" + _name + ".vport'/>\n");
             virtioSerialBuilder.append("<address type='virtio-serial'/>\n");
+            if (state == null) {
+                virtioSerialBuilder.append("<target type='virtio' name='" + name + "'/>\n");
+            } else {
+                virtioSerialBuilder.append("<target type='virtio' name='" + name + "' state='" + state.toString() + "'/>\n");
+            }
             virtioSerialBuilder.append("</channel>\n");
             return virtioSerialBuilder.toString();
         }
@@ -1284,6 +1461,37 @@ public class LibvirtVMDef {
             }
             graphicBuilder.append("/>\n");
             return graphicBuilder.toString();
+        }
+    }
+
+    public static class SCSIDef {
+        private short index = 0;
+        private int domain = 0;
+        private int bus = 0;
+        private int slot = 9;
+        private int function = 0;
+
+        public SCSIDef(short index, int domain, int bus, int slot, int function) {
+            this.index = index;
+            this.domain = domain;
+            this.bus = bus;
+            this.slot = slot;
+            this.function = function;
+        }
+
+        public SCSIDef() {
+
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder scsiBuilder = new StringBuilder();
+
+            scsiBuilder.append(String.format("<controller type='scsi' index='%d' model='virtio-scsi'>\n", this.index ));
+            scsiBuilder.append(String.format("<address type='pci' domain='0x%04X' bus='0x%02X' slot='0x%02X' function='0x%01X'/>\n",
+                    this.domain, this.bus, this.slot, this.function ) );
+            scsiBuilder.append("</controller>\n");
+            return scsiBuilder.toString();
         }
     }
 
@@ -1366,16 +1574,177 @@ public class LibvirtVMDef {
         @Override
         public String toString() {
             StringBuilder fsBuilder = new StringBuilder();
+            fsBuilder.append("<nuage-extension xmlns='nuagenetworks.net/nuage/cna'>\n");
             for (Map.Entry<String, String> address : addresses.entrySet()) {
-                fsBuilder.append("<nuage-extension>\n")
-                        .append("  <interface mac='")
-                        .append(address.getKey())
-                        .append("' vsp-vr-ip='")
-                        .append(address.getValue())
-                        .append("'></interface>\n")
-                        .append("</nuage-extension>\n");
+                fsBuilder.append("  <interface mac='")
+                         .append(address.getKey())
+                         .append("' vsp-vr-ip='")
+                         .append(address.getValue())
+                         .append("'></interface>\n");
             }
-            return fsBuilder.toString();
+            return fsBuilder.append("</nuage-extension>\n").toString();
+        }
+    }
+
+    public static class RngDef {
+        enum RngModel {
+            VIRTIO("virtio");
+            String model;
+
+            RngModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        enum RngBackendModel {
+            RANDOM("random"), EGD("egd");
+            String model;
+
+            RngBackendModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        private String path = "/dev/random";
+        private RngModel rngModel = RngModel.VIRTIO;
+        private RngBackendModel rngBackendModel = RngBackendModel.RANDOM;
+        private int rngRateBytes = 2048;
+        private int rngRatePeriod = 1000;
+
+        public RngDef(String path) {
+            this.path = path;
+        }
+
+        public RngDef(String path, int rngRateBytes, int rngRatePeriod) {
+            this.path = path;
+            this.rngRateBytes = rngRateBytes;
+            this.rngRatePeriod = rngRatePeriod;
+        }
+
+        public RngDef(RngModel rngModel) {
+            this.rngModel = rngModel;
+        }
+
+        public RngDef(RngBackendModel rngBackendModel) {
+            this.rngBackendModel = rngBackendModel;
+        }
+
+        public RngDef(String path, RngBackendModel rngBackendModel) {
+            this.path = path;
+            this.rngBackendModel = rngBackendModel;
+        }
+
+        public RngDef(String path, RngBackendModel rngBackendModel, int rngRateBytes, int rngRatePeriod) {
+            this.path = path;
+            this.rngBackendModel = rngBackendModel;
+            this.rngRateBytes = rngRateBytes;
+            this.rngRatePeriod = rngRatePeriod;
+        }
+
+        public RngDef(String path, RngModel rngModel) {
+            this.path = path;
+            this.rngModel = rngModel;
+        }
+
+        public String getPath() {
+           return path;
+        }
+
+        public RngBackendModel getRngBackendModel() {
+            return rngBackendModel;
+        }
+
+        public RngModel getRngModel() {
+            return rngModel;
+        }
+
+        public int getRngRateBytes() {
+            return rngRateBytes;
+        }
+
+        public int getRngRatePeriod() {
+            return rngRatePeriod;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder rngBuilder = new StringBuilder();
+            rngBuilder.append("<rng model='" + rngModel + "'>\n");
+            rngBuilder.append("<rate period='" + rngRatePeriod + "' bytes='" + rngRateBytes + "' />\n");
+            rngBuilder.append("<backend model='" + rngBackendModel + "'>" + path + "</backend>");
+            rngBuilder.append("</rng>\n");
+            return rngBuilder.toString();
+        }
+    }
+
+    public static class WatchDogDef {
+        enum WatchDogModel {
+            I6300ESB("i6300esb"), IB700("ib700"), DIAG288("diag288");
+            String model;
+
+            WatchDogModel(String model) {
+                this.model = model;
+            }
+
+            @Override
+            public String toString() {
+                return model;
+            }
+        }
+
+        enum WatchDogAction {
+            RESET("reset"), SHUTDOWN("shutdown"), POWEROFF("poweroff"), PAUSE("pause"), NONE("none"), DUMP("dump");
+            String action;
+
+            WatchDogAction(String action) {
+                this.action = action;
+            }
+
+            @Override
+            public String toString() {
+                return action;
+            }
+        }
+
+        WatchDogModel model = WatchDogModel.I6300ESB;
+        WatchDogAction action = WatchDogAction.NONE;
+
+        public WatchDogDef(WatchDogAction action) {
+            this.action = action;
+        }
+
+        public WatchDogDef(WatchDogModel model) {
+            this.model = model;
+        }
+
+        public WatchDogDef(WatchDogAction action, WatchDogModel model) {
+            this.action = action;
+            this.model = model;
+        }
+
+        public WatchDogAction getAction() {
+            return action;
+        }
+
+        public WatchDogModel getModel() {
+            return model;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder wacthDogBuilder = new StringBuilder();
+            wacthDogBuilder.append("<watchdog model='" + model + "' action='" + action + "'/>\n");
+            return wacthDogBuilder.toString();
         }
     }
 

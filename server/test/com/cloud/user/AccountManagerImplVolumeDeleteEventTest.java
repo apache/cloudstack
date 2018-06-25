@@ -21,6 +21,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.anyBoolean;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -118,7 +119,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
         VirtualMachineEntity vmEntity = mock(VirtualMachineEntity.class);
 
         when(_orchSrvc.getVirtualMachine(anyString())).thenReturn(vmEntity);
-        when(vmEntity.destroy(anyString())).thenReturn(true);
+        when(vmEntity.destroy(anyString(), anyBoolean())).thenReturn(true);
 
         Mockito.doReturn(vm).when(_vmDao).findById(anyLong());
 

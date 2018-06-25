@@ -271,11 +271,28 @@
                                 $dependsOn.attr('checked', true);
                             }
                         }
+                    } else  if (typeof(field.isHidden) == 'function') {
+                        //If a checkbox depends on a field. Call the isHidden function of the checkbox.
+                        $dependsOn.bind('change', function(event) {
+                            var $target = $(this);
+                            var $dependent = $target.closest('form').find('[depends-on=\'' + dependsOn + '\']');
+                            $dependsOn.attr('checked', isChecked);
+                            if (field.isHidden(args)) {
+                                $dependent.hide();
+                            } else {
+                                $dependent.show();
+                            }
+                        });
                     }
                 }
 
                 // Determine field type of input
                 if (field.select) {
+                    var multiple = false;
+                    if (field.isMultiple != null){
+                        if (typeof(field.isMultiple) == 'boolean' && field.isMultiple == true)
+                            multiple = true;
+                    }
                     isAsync = true;
                     selectArgs = {
                         context: args.context,
@@ -321,10 +338,18 @@
                     };
 
                     selectFn = field.select;
-                    $input = $('<select>')
-                        .attr({
+                    var attrib = {};
+                    if (multiple)
+                        attrib = {
+                            name: key,
+                            multiple: 'multiple'
+                        };
+                    else
+                        attrib = {
                             name: key
-                        })
+                        }
+                    $input = $('<select>')
+                        .attr(attrib)
                         .data('dialog-select-fn', function(args) {
                             selectFn(args ? $.extend(true, {}, selectArgs, args) : selectArgs);
                         })
@@ -872,7 +897,7 @@
 
             $listView.dialog({
                 dialogClass: 'multi-edit-add-list panel',
-                width: 825,
+                width: 900,
                 title: _l('Select VM'),
                 buttons: [{
                     text: _l('label.apply'),

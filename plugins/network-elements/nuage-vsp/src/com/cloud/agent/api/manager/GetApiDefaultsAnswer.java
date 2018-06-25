@@ -19,8 +19,13 @@
 
 package com.cloud.agent.api.manager;
 
-import com.cloud.agent.api.Answer;
+import java.util.Objects;
+
 import net.nuage.vsp.acs.client.api.model.VspApiDefaults;
+
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import com.cloud.agent.api.Answer;
 
 public class GetApiDefaultsAnswer extends Answer {
 
@@ -41,21 +46,25 @@ public class GetApiDefaultsAnswer extends Answer {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof GetApiDefaultsAnswer)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof GetApiDefaultsAnswer)) {
+            return false;
+        }
 
         GetApiDefaultsAnswer that = (GetApiDefaultsAnswer) o;
 
-        if (_apiDefaults != null ? !_apiDefaults.equals(that._apiDefaults) : that._apiDefaults != null) return false;
-
-        return true;
+        return super.equals(that)
+                && Objects.equals(_apiDefaults, that._apiDefaults);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (_apiDefaults != null ? _apiDefaults.hashCode() : 0);
-        return result;
+        return new HashCodeBuilder()
+                .appendSuper(super.hashCode())
+                .append(_apiDefaults)
+                .toHashCode();
     }
 }

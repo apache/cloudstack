@@ -120,6 +120,10 @@ public class NetworkOfferingResponse extends BaseResponse {
     @Param(description = "true if network offering supports network that span multiple zones", since = "4.4")
     private Boolean supportsStrechedL2Subnet;
 
+    @SerializedName(ApiConstants.SUPPORTS_PUBLIC_ACCESS)
+    @Param(description = "true if network offering supports public access for guest networks", since = "4.10.0")
+    private Boolean supportsPublicAccess;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -206,5 +210,9 @@ public class NetworkOfferingResponse extends BaseResponse {
 
     public void setSupportsStrechedL2Subnet(Boolean supportsStrechedL2Subnet) {
         this.supportsStrechedL2Subnet = supportsStrechedL2Subnet;
+    }
+
+    public void setSupportsPublicAccess(Boolean supportsPublicAccess) {
+        this.supportsPublicAccess = supportsPublicAccess;
     }
 }

@@ -105,7 +105,7 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
         ZoneTypeSearch.done();
 
         NetworkVlanSearch = createSearchBuilder();
-        NetworkVlanSearch.and("networkOfferingId", NetworkVlanSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
+        NetworkVlanSearch.and("networkId", NetworkVlanSearch.entity().getNetworkId(), SearchCriteria.Op.EQ);
         NetworkVlanSearch.done();
 
         PhysicalNetworkVlanSearch = createSearchBuilder();
@@ -330,10 +330,16 @@ public class VlanDaoImpl extends GenericDaoBase<VlanVO, Long> implements VlanDao
     }
 
     @Override
-    public List<VlanVO> listVlansByNetworkId(long networkOfferingId) {
+    public List<VlanVO> listVlansByNetworkId(long networkId) {
         SearchCriteria<VlanVO> sc = NetworkVlanSearch.create();
-        sc.setParameters("networkOfferingId", networkOfferingId);
+        sc.setParameters("networkId", networkId);
         return listBy(sc);
+    }
+
+    @Override public List<VlanVO> listVlansByNetworkIdIncludingRemoved(long networkId) {
+        SearchCriteria<VlanVO> sc = NetworkVlanSearch.create();
+        sc.setParameters("networkId", networkId);
+        return listIncludingRemovedBy(sc);
     }
 
     @Override

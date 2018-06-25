@@ -424,6 +424,7 @@ class TestEgressFWRules(cloudstackTestCase):
                                     "| grep -oP \'\d+(?=% packet loss)\'",
                                     "['100']",
                                     negative_test=False)
+        # If failed probably we've hit this issue: CLOUDSTACK-10075
 
     @attr(tags=["advanced"], required_hardware="true")
     def test_02_egress_fr2(self):

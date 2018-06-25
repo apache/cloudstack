@@ -20,9 +20,14 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+
+import com.cloud.capacity.CapacityManager;
+import com.google.common.base.Preconditions;
 
 public class ImageStoreDetailsUtil {
 
@@ -30,38 +35,49 @@ public class ImageStoreDetailsUtil {
     protected ImageStoreDao imageStoreDao;
     @Inject
     protected ImageStoreDetailsDao imageStoreDetailsDao;
+    @Inject
+    protected ConfigurationDao configurationDao;
 
     /**
-     * Obtain NFS protocol version (if provided) for a store id.<br/>
-     * It can be set by adding an entry in {@code image_store_details} table, providing {@code name=nfs.version} and {@code value=X} (e.g. 3)
+     * Retrieve global secondary storage NFS version default value
+     * @return global default value
+     */
+    protected Integer getGlobalDefaultNfsVersion(){
+        ConfigurationVO globalNfsVersion = configurationDao.findByName(CapacityManager.ImageStoreNFSVersion.key());
+        Preconditions.checkState(globalNfsVersion != null, "Unable to find global NFS version for version key " + CapacityManager.ImageStoreNFSVersion.key());
+        String value = globalNfsVersion.getValue();
+        return (value != null ? Integer.valueOf(value) : null);
+    }
+    /**
+     * Obtain NFS protocol version (if provided) for a store id, if not use default config value<br/>
      * @param storeId image store id
-     * @return {@code null} if {@code nfs.version} is not found for storeId <br/>
-     * {@code X} if {@code nfs.version} is found found for storeId
+     * @return {@code null} if {@code secstorage.nfs.version} is not found for storeId <br/>
+     * {@code X} if {@code secstorage.nfs.version} is found found for storeId
      */
     public Integer getNfsVersion(long storeId) throws NumberFormatException {
-        String nfsVersion = null;
-        if (imageStoreDetailsDao.getDetails(storeId) != null){
-            Map<String, String> storeDetails = imageStoreDetailsDao.getDetails(storeId);
-            if (storeDetails != null && storeDetails.containsKey("nfs.version")){
-                nfsVersion = storeDetails.get("nfs.version");
-            }
+
+        final Map<String, String> storeDetails = imageStoreDetailsDao.getDetails(storeId);
+        if (storeDetails != null && storeDetails.containsKey(CapacityManager.ImageStoreNFSVersion.key())) {
+            final String version = storeDetails.get(CapacityManager.ImageStoreNFSVersion.key());
+            return (version != null ? Integer.valueOf(version) : null);
         }
-        return (nfsVersion != null ? Integer.valueOf(nfsVersion) : null);
+
+        return getGlobalDefaultNfsVersion();
+
     }
 
     /**
      * Obtain NFS protocol version (if provided) for a store uuid.<br/>
-     * It can be set by adding an entry in {@code image_store_details} table, providing {@code name=nfs.version} and {@code value=X} (e.g. 3)
-     * @param storeId image store id
-     * @return {@code null} if {@code nfs.version} is not found for storeUuid <br/>
-     * {@code X} if {@code nfs.version} is found found for storeUuid
+     * @param resourceId image store id
+     * @return {@code null} if {@code secstorage.nfs.version} is not found for storeUuid <br/>
+     * {@code X} if {@code secstorage.nfs.version} is found found for storeUuid
      */
     public Integer getNfsVersionByUuid(String storeUuid){
         ImageStoreVO imageStore = imageStoreDao.findByUuid(storeUuid);
         if (imageStore != null){
             return getNfsVersion(imageStore.getId());
         }
-        return null;
+        return getGlobalDefaultNfsVersion();
     }
 
 }

@@ -75,6 +75,7 @@ public class AutoScaleVmProfileResponse extends BaseResponse implements Controll
     @Parameter(name = ApiConstants.CS_URL,
                type = CommandType.STRING,
                description = "the API URL including port of the CloudStack Management Server example: http://server.cloud.com:8080/client/api?")
+    // leaving cloud.com reference above as it serves only as an example
     private String csUrl;
 
     @SerializedName(ApiConstants.ACCOUNT)

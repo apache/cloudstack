@@ -79,6 +79,10 @@ public class FirewallResponse extends BaseResponse {
     @Param(description = "is rule for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
 
+    @SerializedName(ApiConstants.DEST_CIDR_LIST)
+    @Param(description = "the cidr list to forward traffic to")
+    private String destCidr;
+
     public void setId(String id) {
         this.id = id;
     }
@@ -129,5 +133,9 @@ public class FirewallResponse extends BaseResponse {
 
     public void setForDisplay(Boolean forDisplay) {
         this.forDisplay = forDisplay;
+    }
+
+    public void setDestCidr(String cidrList){
+        this.destCidr = cidrList;
     }
 }

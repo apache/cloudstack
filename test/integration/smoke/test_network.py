@@ -37,7 +37,7 @@ from marvin.lib.base import (Account,
                              Router)
 from marvin.lib.common import (get_domain,
                                get_zone,
-                               get_template,
+                               get_test_template,
                                list_hosts,
                                list_publicIP,
                                list_nat_rules,
@@ -258,14 +258,13 @@ class TestPortForwarding(cloudstackTestCase):
         # Get Zone, Domain and templates
         cls.domain = get_domain(cls.apiclient)
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
-        template = get_template(
+        template = get_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template with description %s" % cls.services[
-                "ostype"]
+            assert False, "get_test_template() failed to return template"
 
         # Create an account, network, VM and IP addresses
         cls.account = Account.create(
@@ -583,15 +582,15 @@ class TestRebootRouter(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient)
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
-        template = get_template(
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        template = get_test_template(
             self.apiclient,
             self.zone.id,
-            self.services["ostype"]
+            self.hypervisor
         )
         if template == FAILED:
-            self.fail(
-                "get_template() failed to return template with description %s" %
-                self.services["ostype"])
+            self.fail("get_test_template() failed to return template")
+
         self.services["virtual_machine"]["zoneid"] = self.zone.id
 
         # Create an account, network, VM and IP addresses
@@ -756,10 +755,11 @@ class TestReleaseIP(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient)
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
-        template = get_template(
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        template = get_test_template(
             self.apiclient,
             self.zone.id,
-            self.services["ostype"]
+            self.hypervisor
         )
         self.services["virtual_machine"]["zoneid"] = self.zone.id
 
@@ -897,10 +897,11 @@ class TestDeleteAccount(cloudstackTestCase):
         # Get Zone, Domain and templates
         self.domain = get_domain(self.apiclient)
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
-        template = get_template(
+        self.hypervisor = self.testClient.getHypervisorInfo()
+        template = get_test_template(
             self.apiclient,
             self.zone.id,
-            self.services["ostype"]
+            self.hypervisor
         )
         self.services["virtual_machine"]["zoneid"] = self.zone.id
 
@@ -1040,14 +1041,13 @@ class TestRouterRules(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.hypervisor = testClient.getHypervisorInfo()
         cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
-        template = get_template(
+        template = get_test_template(
             cls.apiclient,
             cls.zone.id,
-            cls.services["ostype"]
+            cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template\
-                    with description %s" % cls.services["ostype"]
+            assert False, "get_test_template() failed to return template"
 
         # Create an account, network, VM and IP addresses
         cls.account = Account.create(
@@ -1270,4 +1270,227 @@ class TestRouterRules(cloudstackTestCase):
                 retries=2,
                 delay=0
             )
+        return
+
+class TestL2Networks(cloudstackTestCase):
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.services["network"]["networkoffering"] = self.network_offering.id
+
+        self.l2_network = Network.create(
+            self.apiclient,
+            self.services["l2-network"],
+            zoneid=self.zone.id,
+            networkofferingid=self.network_offering.id
+        )
+        self.cleanup = [
+            self.l2_network]
+
+    def tearDown(self):
+        cleanup_resources(self.apiclient, self.cleanup)
+        return
+
+    @classmethod
+    def setUpClass(cls):
+        testClient = super(TestL2Networks, cls).getClsTestClient()
+        cls.apiclient = testClient.getApiClient()
+        cls.services = testClient.getParsedTestDataConfig()
+
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.apiclient)
+        cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
+        cls.hypervisor = testClient.getHypervisorInfo()
+        cls.services['mode'] = cls.zone.networktype
+        # Create Accounts & networks
+        cls.account = Account.create(
+            cls.apiclient,
+            cls.services["account"],
+            admin=True,
+            domainid=cls.domain.id
+        )
+        cls.template = get_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.hypervisor
+        )
+        cls.service_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["tiny"]
+        )
+        cls.services["network"]["zoneid"] = cls.zone.id
+
+        cls.network_offering = NetworkOffering.create(
+            cls.apiclient,
+            cls.services["l2-network_offering"],
+        )
+        # Enable Network offering
+        cls.network_offering.update(cls.apiclient, state='Enabled')
+
+        cls._cleanup = [
+            cls.account,
+            cls.network_offering,
+            cls.service_offering
+        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            # Cleanup resources used
+            cleanup_resources(cls.apiclient, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
+    def test_deploy_vm_l2network(self):
+        """Creates an l2 network and verifies user is able to deploy a VM in it"""
+
+        # Validate the following:
+        # 1. Deploys a VM
+        # 2. There are no network services available since this is L2 Network
+
+        self.virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            serviceofferingid=self.service_offering.id,
+            networkids=self.l2_network.id,
+            zoneid=self.zone.id
+        )
+
+        self.cleanup.insert(0, self.virtual_machine)
+
+        list_vm = list_virtual_machines(
+            self.apiclient,
+            id = self.virtual_machine.id
+        )
+        self.assertEqual(
+            isinstance(list_vm, list),
+            True,
+            "Check if virtual machine is present"
+        )
+
+        self.assertEqual(
+            list_vm[0].nic[0].type,
+            'L2',
+            "Check Correct Network type is available"
+        )
+
+        self.assertFalse(
+            'gateway' in str(list_vm[0].nic[0])
+        )
+
+        self.assertFalse(
+            'ipaddress' in str(list_vm[0].nic[0])
+        )
+
+        return
+
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
+    def test_delete_network_while_vm_on_it(self):
+        """It verifies the user is not able to delete network which has running vms"""
+
+        # Validate the following:
+        # 1. Deploys a VM
+        # 2. Tries to delete network and expects exception to appear
+
+        self.virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            serviceofferingid=self.service_offering.id,
+            networkids=self.l2_network.id,
+            zoneid=self.zone.id
+        )
+
+        self.cleanup.insert(0, self.virtual_machine)
+
+        list_vm = list_virtual_machines(
+            self.apiclient,
+            id = self.virtual_machine.id
+        )
+        self.assertEqual(
+            isinstance(list_vm, list),
+            True,
+            "Check if virtual machine is present"
+        )
+
+        try:
+            self.l2_network.delete(self.apiclient)
+        except Exception:
+            pass
+        else:
+            self.fail("Expected an exception to be thrown, failing")
+
+        return
+
+    @attr(tags=["advanced", "advancedns", "smoke"], required_hardware="false")
+    def test_l2network_restart(self):
+        """This test covers a few scenarios around restarting a network"""
+
+        # Validate the following:
+        # 1. Creates a l2 network
+        # 2. Tries to restart a network with no VMs, which trows error 'not in the right state'
+        # 3. Deploys a VM
+        # 4. Restarts the network without cleanup
+        # 5. Restarts the network with cleanup
+
+        try:
+            self.l2_network.restart(self.apiclient, cleanup=True)
+        except Exception:
+            pass
+        else:
+            self.fail("Expected an exception to be thrown, failing")
+
+        li_net = self.l2_network.list(self.apiclient)[0]
+
+        self.assertTrue(
+            li_net.state,
+            'Allocated'
+            "Not the correct state"
+        )
+
+        self.virtual_machine = VirtualMachine.create(
+            self.apiclient,
+            self.services["virtual_machine"],
+            templateid=self.template.id,
+            serviceofferingid=self.service_offering.id,
+            networkids=self.l2_network.id,
+            zoneid=self.zone.id
+        )
+
+        self.cleanup.insert(0, self.virtual_machine)
+
+        list_vm = list_virtual_machines(
+            self.apiclient,
+            id = self.virtual_machine.id
+        )
+        self.assertEqual(
+            isinstance(list_vm, list),
+            True,
+            "Check if virtual machine is present"
+        )
+
+        self.l2_network.restart(self.apiclient, cleanup=False)
+
+        li_net = self.l2_network.list(self.apiclient)[0]
+
+        self.assertTrue(
+            li_net.state,
+            'Implemented'
+            "Not the correct state"
+        )
+
+        self.l2_network.restart(self.apiclient, cleanup=True)
+
+        li_net = self.l2_network.list(self.apiclient)[0]
+
+        self.assertTrue(
+            li_net.state,
+            'Implemented'
+            "Not the correct state"
+        )
+
         return

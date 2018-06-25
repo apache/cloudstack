@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.template;
 
+import com.cloud.hypervisor.Hypervisor;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -109,7 +111,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     private String url;
 
     @Parameter(name=ApiConstants.ZONE_ID, type=CommandType.UUID, entityType = ZoneResponse.class,
-            required=true, description="the ID of the zone the template is to be hosted on")
+            required=false, description="the ID of the zone the template is to be hosted on")
     protected Long zoneId;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
@@ -121,7 +123,7 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional accountName. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the MD5 checksum value of this template")
+    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the checksum value of this template. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
     private String checksum;
 
     @Parameter(name = ApiConstants.TEMPLATE_TAG, type = CommandType.STRING, description = "the tag for this template.")
@@ -130,7 +132,8 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Register template for the project")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP, description = "Template details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].hypervisortoolsversion=xenserver61")
+    @Parameter(name = ApiConstants.DETAILS, type = CommandType.MAP,
+            description = "Template details in key/value pairs using format details[i].keyname=keyvalue. Example: details[0].hypervisortoolsversion=xenserver61")
     protected Map details;
 
     @Parameter(name = ApiConstants.IS_DYNAMICALLY_SCALABLE,
@@ -140,6 +143,23 @@ public class RegisterTemplateCmd extends BaseCmd {
 
     @Parameter(name = ApiConstants.ROUTING, type = CommandType.BOOLEAN, description = "true if the template type is routing i.e., if template is used to deploy router")
     protected Boolean isRoutingType;
+
+    @Parameter(name=ApiConstants.ZONE_ID_LIST,
+            type=CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            required=false,
+            description="A list of zone ids where the template will be hosted. Use this parameter if the template needs " +
+                    "to be registered to multiple zones in one go. Use zoneid if the template " +
+                    "needs to be registered to only one zone." +
+                    "Passing only -1 to this will cause the template to be registered as a cross " +
+                    "zone template and will be copied to all zones. ")
+    protected List<Long> zoneIds;
+
+    @Parameter(name=ApiConstants.DIRECT_DOWNLOAD,
+                type = CommandType.BOOLEAN,
+                description = "true if template should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
+    private Boolean directDownload;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -197,8 +217,22 @@ public class RegisterTemplateCmd extends BaseCmd {
         return url;
     }
 
-    public Long getZoneId() {
-        return zoneId;
+    public List<Long> getZoneIds() {
+        // This function will return null when the zoneId
+        //is -1 which means all zones.
+        if (zoneIds != null && !(zoneIds.isEmpty())) {
+            if ((zoneIds.size() == 1) && (zoneIds.get(0) == -1L))
+                return null;
+            else
+                return zoneIds;
+        }
+        if (zoneId == null)
+            return null;
+        if (zoneId!= null && zoneId == -1)
+            return null;
+        List<Long> zones = new ArrayList<>();
+        zones.add(zoneId);
+        return zones;
     }
 
     public Long getDomainId() {
@@ -235,6 +269,10 @@ public class RegisterTemplateCmd extends BaseCmd {
         return isRoutingType;
     }
 
+    public boolean isDirectDownload() {
+        return directDownload == null ? false : directDownload;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -261,10 +299,13 @@ public class RegisterTemplateCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceAllocationException {
         try {
+            validateParameters();
+
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null) {
                 ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(ResponseView.Restricted, template, zoneId, false);
+                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(ResponseView.Restricted,
+                        template, getZoneIds(), false);
                 response.setResponses(templateResponses);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
@@ -274,6 +315,25 @@ public class RegisterTemplateCmd extends BaseCmd {
         } catch (URISyntaxException ex1) {
             s_logger.info(ex1);
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR, ex1.getMessage());
+        }
+    }
+
+    protected void validateParameters() {
+        if ((zoneId != null) && (zoneIds != null && !zoneIds.isEmpty()))
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Both zoneid and zoneids cannot be specified at the same time");
+
+        if (zoneId == null && (zoneIds == null || zoneIds.isEmpty()))
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Either zoneid or zoneids is required. Both cannot be null.");
+
+        if (zoneIds != null && zoneIds.size() > 1 && zoneIds.contains(-1L))
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Parameter zoneids cannot combine all zones (-1) option with other zones");
+
+        if (isDirectDownload() && !getHypervisor().equalsIgnoreCase(Hypervisor.HypervisorType.KVM.toString())) {
+            throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
+                    "Parameter directdownload is only allowed for KVM templates");
         }
     }
 }

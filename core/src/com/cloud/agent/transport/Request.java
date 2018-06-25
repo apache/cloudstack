@@ -47,6 +47,7 @@ import com.google.gson.JsonSerializer;
 import com.google.gson.stream.JsonReader;
 
 import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.BadCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand.PortConfig;
 import com.cloud.exception.UnsupportedVersionException;
@@ -249,6 +250,8 @@ public class Request {
                 JsonReader jsonReader = new JsonReader(reader);
                 jsonReader.setLenient(true);
                 _cmds = s_gson.fromJson(jsonReader, (Type)Command[].class);
+            } catch (JsonParseException e) {
+                _cmds = new Command[] { new BadCommand() };
             } catch (RuntimeException e) {
                 s_logger.error("Caught problem with " + _content, e);
                 throw e;
@@ -399,7 +402,7 @@ public class Request {
                 try {
                     _cmds = s_gson.fromJson(_content, this instanceof Response ? Answer[].class : Command[].class);
                 } catch (RuntimeException e) {
-                    s_logger.error("Unable to convert to json: " + _content);
+                    s_logger.error("Unable to deserialize from json: " + _content);
                     throw e;
                 }
             }

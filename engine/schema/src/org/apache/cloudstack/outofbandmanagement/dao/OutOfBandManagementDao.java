@@ -27,5 +27,5 @@ import java.util.List;
 public interface OutOfBandManagementDao extends GenericDao<OutOfBandManagementVO, Long>, StateDao<OutOfBandManagement.PowerState, OutOfBandManagement.PowerState.Event, OutOfBandManagement> {
     OutOfBandManagement findByHost(long hostId);
     List<OutOfBandManagementVO> findAllByManagementServer(long serverId);
-    void expireOutOfBandManagementOwnershipByServer(long serverId);
+    void expireServerOwnership(long serverId);
 }

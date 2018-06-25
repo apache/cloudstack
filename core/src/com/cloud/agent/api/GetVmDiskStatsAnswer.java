@@ -24,7 +24,7 @@ import java.util.List;
 
 import com.cloud.agent.api.LogLevel.Log4jLevel;
 
-@LogLevel(Log4jLevel.Trace)
+@LogLevel(Log4jLevel.Debug)
 public class GetVmDiskStatsAnswer extends Answer {
 
     String hostName;

@@ -16,22 +16,20 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-
+import com.cloud.utils.script.Script;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.log4j.Logger;
 import org.libvirt.Connect;
 import org.libvirt.LibvirtException;
 import org.libvirt.StoragePool;
 import org.libvirt.StoragePoolInfo.StoragePoolState;
 
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-
-import com.cloud.utils.script.Script;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class KVMHAMonitor extends KVMHABase implements Runnable {
     private static final Logger s_logger = Logger.getLogger(KVMHAMonitor.class);
@@ -70,6 +68,12 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
     public List<NfsStoragePool> getStoragePools() {
         synchronized (_storagePool) {
             return new ArrayList<NfsStoragePool>(_storagePool.values());
+        }
+    }
+
+    public NfsStoragePool getStoragePool(String uuid) {
+        synchronized (_storagePool) {
+            return _storagePool.get(uuid);
         }
     }
 
@@ -115,7 +119,8 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                     }
 
                     String result = null;
-                    for (int i = 0; i < 5; i++) {
+                    // Try multiple times, but sleep in between tries to ensure it isn't a short lived transient error
+                    for (int i = 1; i <= _heartBeatUpdateMaxTries; i++) {
                         Script cmd = new Script(s_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
                         cmd.add("-i", primaryStoragePool._poolIp);
                         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
@@ -123,14 +128,21 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                         cmd.add("-h", _hostIP);
                         result = cmd.execute();
                         if (result != null) {
-                            s_logger.warn("write heartbeat failed: " + result + ", retry: " + i);
+                            s_logger.warn("write heartbeat failed: " + result + ", try: " + i + " of " + _heartBeatUpdateMaxTries);
+                            try {
+                                Thread.sleep(_heartBeatUpdateRetrySleep);
+                            } catch (InterruptedException e) {
+                                s_logger.debug("[ignored] interupted between heartbeat retries.");
+                            }
                         } else {
                             break;
                         }
                     }
 
                     if (result != null) {
-                        s_logger.warn("write heartbeat failed: " + result + "; reboot the host");
+                        // Stop cloudstack-agent if can't write to heartbeat file.
+                        // This will raise an alert on the mgmt server
+                        s_logger.warn("write heartbeat failed: " + result + "; stopping cloudstack-agent");
                         Script cmd = new Script(s_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
                         cmd.add("-i", primaryStoragePool._poolIp);
                         cmd.add("-p", primaryStoragePool._poolMountSourcePath);

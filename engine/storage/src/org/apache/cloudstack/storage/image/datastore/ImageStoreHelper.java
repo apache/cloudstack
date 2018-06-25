@@ -129,15 +129,12 @@ public class ImageStoreHelper {
             Iterator<String> keyIter = details.keySet().iterator();
             while (keyIter.hasNext()) {
                 String key = keyIter.next().toString();
-                ImageStoreDetailVO detail = new ImageStoreDetailVO();
-                detail.setStoreId(store.getId());
-                detail.setName(key);
                 String value = details.get(key);
                 // encrypt swift key or s3 secret key
                 if (key.equals(ApiConstants.KEY) || key.equals(ApiConstants.S3_SECRET_KEY)) {
                     value = DBEncryptionUtil.encrypt(value);
                 }
-                detail.setValue(value);
+                ImageStoreDetailVO detail = new ImageStoreDetailVO(store.getId(), key, value, true);
                 imageStoreDetailsDao.persist(detail);
             }
         }

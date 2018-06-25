@@ -25,6 +25,7 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.spy;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.cloud.exception.NetworkRuleConflictException;
@@ -189,9 +190,17 @@ public class FirewallManagerTest {
         FirewallRuleVO rule2 = spy(new FirewallRuleVO("rule2", 3, 1701, "UDP", 1, 2, 1, Purpose.Vpn, null, null, null, null));
         FirewallRuleVO rule3 = spy(new FirewallRuleVO("rule3", 3, 4500, "UDP", 1, 2, 1, Purpose.Vpn, null, null, null, null));
 
+        List<String> sString = Arrays.asList("10.1.1.1/24","192.168.1.1/24");
+        List<String> dString1 = Arrays.asList("10.1.1.1/25");
+        List<String> dString2 = Arrays.asList("10.1.1.128/25");
+
+        FirewallRuleVO rule4 = spy(new FirewallRuleVO("rule4", 3L, 10, 20, "TCP", 1, 2, 1, Purpose.Firewall, sString, dString1, null, null,
+                null, FirewallRule.TrafficType.Egress));
+
         ruleList.add(rule1);
         ruleList.add(rule2);
         ruleList.add(rule3);
+        ruleList.add(rule4);
 
         FirewallManagerImpl firewallMgr = (FirewallManagerImpl)_firewallMgr;
 
@@ -199,15 +208,19 @@ public class FirewallManagerTest {
         when(rule1.getId()).thenReturn(1L);
         when(rule2.getId()).thenReturn(2L);
         when(rule3.getId()).thenReturn(3L);
+        when(rule4.getId()).thenReturn(4L);
 
         FirewallRule newRule1 = new FirewallRuleVO("newRule1", 3, 500, "TCP", 1, 2, 1, Purpose.PortForwarding, null, null, null, null);
         FirewallRule newRule2 = new FirewallRuleVO("newRule2", 3, 1701, "TCP", 1, 2, 1, Purpose.PortForwarding, null, null, null, null);
         FirewallRule newRule3 = new FirewallRuleVO("newRule3", 3, 4500, "TCP", 1, 2, 1, Purpose.PortForwarding, null, null, null, null);
+        FirewallRule newRule4 = new FirewallRuleVO("newRule4", 3L, 15, 25, "TCP", 1, 2, 1, Purpose.Firewall, sString, dString2, null, null,
+                null, FirewallRule.TrafficType.Egress);
 
         try {
             firewallMgr.detectRulesConflict(newRule1);
             firewallMgr.detectRulesConflict(newRule2);
             firewallMgr.detectRulesConflict(newRule3);
+            firewallMgr.detectRulesConflict(newRule4);
         }
         catch (NetworkRuleConflictException ex) {
             Assert.fail();

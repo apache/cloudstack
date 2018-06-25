@@ -18,6 +18,7 @@
 package com.cloud.vm.snapshot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -33,7 +34,10 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
@@ -44,23 +48,32 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import org.apache.cloudstack.framework.jobs.impl.OutcomeImpl;
 import org.apache.cloudstack.framework.jobs.impl.VmWorkJobVO;
 import org.apache.cloudstack.jobs.JobInfo;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 
+import com.cloud.agent.api.RestoreVMSnapshotCommand;
+import com.cloud.agent.api.VMSnapshotTO;
 import com.cloud.api.query.MutualExclusiveIdsManagerBase;
 import com.cloud.event.ActionEvent;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ManagementServerException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.VirtualMachineMigrationException;
 import com.cloud.gpu.GPU;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
 import com.cloud.storage.VolumeVO;
@@ -82,8 +95,15 @@ import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.UserVmDetailVO;
+import com.cloud.vm.UserVmManager;
 import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.State;
@@ -95,11 +115,13 @@ import com.cloud.vm.VmWorkJobHandler;
 import com.cloud.vm.VmWorkJobHandlerProxy;
 import com.cloud.vm.VmWorkSerializer;
 import com.cloud.vm.dao.UserVmDao;
+import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+import com.cloud.vm.snapshot.dao.VMSnapshotDetailsDao;
 
 @Component
-public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase implements VMSnapshotManager, VMSnapshotService, VmWorkJobHandler {
+public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase implements VMSnapshotManager, VMSnapshotService, VmWorkJobHandler, Configurable {
     private static final Logger s_logger = Logger.getLogger(VMSnapshotManagerImpl.class);
 
     public static final String VM_WORK_JOB_HANDLER = VMSnapshotManagerImpl.class.getSimpleName();
@@ -119,7 +141,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     @Inject HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     @Inject
     StorageStrategyFactory storageStrategyFactory;
-
+    @Inject
+    VolumeDataFactory volumeDataFactory;
     @Inject
     EntityManager _entityMgr;
     @Inject
@@ -127,6 +150,14 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
     @Inject
     VmWorkJobDao _workJobDao;
+    @Inject
+    protected UserVmManager _userVmManager;
+    @Inject
+    protected ServiceOfferingDao _serviceOfferingDao;
+    @Inject
+    protected UserVmDetailsDao _userVmDetailsDao;
+    @Inject
+    protected VMSnapshotDetailsDao _vmSnapshotDetailsDao;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -293,8 +324,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new InvalidParameterValueException("Creating vm snapshot failed due to VM:" + vmId + " is not in the running or Stopped state");
         }
 
-        if(snapshotMemory && userVmVo.getState() == VirtualMachine.State.Stopped){
-            throw new InvalidParameterValueException("Can not snapshot memory when VM is in stopped state");
+        if(snapshotMemory && userVmVo.getState() != VirtualMachine.State.Running){
+            throw new InvalidParameterValueException("Can not snapshot memory when VM is not in Running state");
         }
 
         // for KVM, only allow snapshot with memory when VM is in running state
@@ -318,6 +349,9 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             if (activeSnapshots.size() > 0) {
                 throw new CloudRuntimeException("There is other active volume snapshot tasks on the instance to which the volume is attached, please try again later.");
             }
+            if (userVmVo.getHypervisorType() == HypervisorType.KVM && volume.getFormat() != ImageFormat.QCOW2) {
+                throw new CloudRuntimeException("We only support create vm snapshots from vm with QCOW2 image");
+            }
         }
 
         // check if there are other active VM snapshot tasks
@@ -330,19 +364,63 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             vmSnapshotType = VMSnapshot.Type.DiskAndMemory;
 
         try {
-            VMSnapshotVO vmSnapshotVo =
-                new VMSnapshotVO(userVmVo.getAccountId(), userVmVo.getDomainId(), vmId, vsDescription, vmSnapshotName, vsDisplayName, userVmVo.getServiceOfferingId(),
-                    vmSnapshotType, null);
-            VMSnapshot vmSnapshot = _vmSnapshotDao.persist(vmSnapshotVo);
-            if (vmSnapshot == null) {
-                throw new CloudRuntimeException("Failed to create snapshot for vm: " + vmId);
-            }
-            return vmSnapshot;
+            return createAndPersistVMSnapshot(userVmVo, vsDescription, vmSnapshotName, vsDisplayName, vmSnapshotType);
         } catch (Exception e) {
             String msg = e.getMessage();
             s_logger.error("Create vm snapshot record failed for vm: " + vmId + " due to: " + msg);
         }
         return null;
+    }
+
+    /**
+     * Create, persist and return vm snapshot for userVmVo with given parameters.
+     * Persistence and support for custom service offerings are done on the same transaction
+     * @param userVmVo user vm
+     * @param vmId vm id
+     * @param vsDescription vm description
+     * @param vmSnapshotName vm snapshot name
+     * @param vsDisplayName vm snapshot display name
+     * @param vmSnapshotType vm snapshot type
+     * @return vm snapshot
+     * @throws CloudRuntimeException if vm snapshot couldn't be persisted
+     */
+    protected VMSnapshot createAndPersistVMSnapshot(UserVmVO userVmVo, String vsDescription, String vmSnapshotName, String vsDisplayName, VMSnapshot.Type vmSnapshotType) {
+        final Long vmId = userVmVo.getId();
+        final Long serviceOfferingId = userVmVo.getServiceOfferingId();
+        final VMSnapshotVO vmSnapshotVo =
+                new VMSnapshotVO(userVmVo.getAccountId(), userVmVo.getDomainId(), vmId, vsDescription, vmSnapshotName, vsDisplayName, serviceOfferingId,
+                        vmSnapshotType, null);
+        return Transaction.execute(new TransactionCallbackWithException<VMSnapshot, CloudRuntimeException>() {
+            @Override
+            public VMSnapshot doInTransaction(TransactionStatus status) {
+                VMSnapshot vmSnapshot = _vmSnapshotDao.persist(vmSnapshotVo);
+                if (vmSnapshot == null) {
+                    throw new CloudRuntimeException("Failed to create snapshot for vm: " + vmId);
+                }
+                addSupportForCustomServiceOffering(vmId, serviceOfferingId, vmSnapshot.getId());
+                return vmSnapshot;
+            }
+        });
+    }
+
+    /**
+     * Add entries on vm_snapshot_details if service offering is dynamic. This will allow setting details when revert to vm snapshot
+     * @param vmId vm id
+     * @param serviceOfferingId service offering id
+     * @param vmSnapshotId vm snapshot id
+     */
+    protected void addSupportForCustomServiceOffering(long vmId, long serviceOfferingId, long vmSnapshotId) {
+        ServiceOfferingVO serviceOfferingVO = _serviceOfferingDao.findById(serviceOfferingId);
+        if (serviceOfferingVO.isDynamic()) {
+            List<UserVmDetailVO> vmDetails = _userVmDetailsDao.listDetails(vmId);
+            List<VMSnapshotDetailsVO> vmSnapshotDetails = new ArrayList<VMSnapshotDetailsVO>();
+            for (UserVmDetailVO detail : vmDetails) {
+                if(detail.getName().equalsIgnoreCase(VmDetailConstants.CPU_NUMBER) || detail.getName().equalsIgnoreCase(VmDetailConstants.CPU_SPEED) || detail.getName().equalsIgnoreCase(VmDetailConstants.MEMORY)) {
+                    vmSnapshotDetails.add(new VMSnapshotDetailsVO(vmSnapshotId, detail.getName(), detail.getValue(), detail.isDisplay()));
+                }
+            }
+            _vmSnapshotDetailsDao.saveDetails(vmSnapshotDetails);
+        }
     }
 
     @Override
@@ -362,7 +440,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_SNAPSHOT_CREATE, eventDescription = "creating VM snapshot", async = true)
-    public VMSnapshot creatVMSnapshot(Long vmId, Long vmSnapshotId, Boolean quiescevm) {
+    public VMSnapshot createVMSnapshot(Long vmId, Long vmSnapshotId, Boolean quiescevm) {
         UserVmVO userVm = _userVMDao.findById(vmId);
         if (userVm == null) {
             throw new InvalidParameterValueException("Create vm to snapshot failed due to vm: " + vmId + " is not found");
@@ -526,9 +604,10 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
         _accountMgr.checkAccess(caller, null, true, vmSnapshot);
 
-        // check VM snapshot states, only allow to delete vm snapshots in created and error state
-        if (VMSnapshot.State.Ready != vmSnapshot.getState() && VMSnapshot.State.Expunging != vmSnapshot.getState() && VMSnapshot.State.Error != vmSnapshot.getState()) {
-            throw new InvalidParameterValueException("Can't delete the vm snapshotshot " + vmSnapshotId + " due to it is not in Created or Error, or Expunging State");
+        List<VMSnapshot.State> validStates = Arrays.asList(VMSnapshot.State.Ready, VMSnapshot.State.Expunging, VMSnapshot.State.Error, VMSnapshot.State.Allocated);
+        // check VM snapshot states, only allow to delete vm snapshots in ready, expunging, allocated and error state
+        if (!validStates.contains(vmSnapshot.getState())) {
+            throw new InvalidParameterValueException("Can't delete the vm snapshot " + vmSnapshotId + " due to it is not in " + validStates.toString()  + "States");
         }
 
         // check if there are other active VM snapshot tasks
@@ -638,16 +717,76 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         }
     }
 
+    /**
+     * If snapshot was taken with a different service offering than actual used in vm, should change it back to it
+     * @param userVm vm to change service offering (if necessary)
+     * @param vmSnapshotVo vm snapshot
+     */
+    protected void updateUserVmServiceOffering(UserVm userVm, VMSnapshotVO vmSnapshotVo) {
+        if (vmSnapshotVo.getServiceOfferingId() != userVm.getServiceOfferingId()) {
+            changeUserVmServiceOffering(userVm, vmSnapshotVo);
+        }
+    }
+
+    /**
+     * Get user vm details as a map
+     * @param userVm user vm
+     * @return map
+     */
+    protected Map<String, String> getVmMapDetails(UserVm userVm) {
+        List<UserVmDetailVO> userVmDetails = _userVmDetailsDao.listDetails(userVm.getId());
+        Map<String, String> details = new HashMap<String, String>();
+        for (UserVmDetailVO detail : userVmDetails) {
+            details.put(detail.getName(), detail.getValue());
+        }
+        return details;
+    }
+
+    /**
+     * Update service offering on {@link userVm} to the one specified in {@link vmSnapshotVo}
+     * @param userVm user vm to be updated
+     * @param vmSnapshotVo vm snapshot
+     */
+    protected void changeUserVmServiceOffering(UserVm userVm, VMSnapshotVO vmSnapshotVo) {
+        Map<String, String> vmDetails = getVmMapDetails(userVm);
+        boolean result = upgradeUserVmServiceOffering(userVm.getId(), vmSnapshotVo.getServiceOfferingId(), vmDetails);
+        if (! result){
+            throw new CloudRuntimeException("VM Snapshot reverting failed due to vm service offering couldn't be changed to the one used when snapshot was taken");
+        }
+        s_logger.debug("Successfully changed service offering to " + vmSnapshotVo.getServiceOfferingId() + " for vm " + userVm.getId());
+    }
+
+    /**
+     * Upgrade virtual machine {@linkplain vmId} to new service offering {@linkplain serviceOfferingId}
+     * @param vmId vm id
+     * @param serviceOfferingId service offering id
+     * @param details vm details
+     * @return if operation was successful
+     */
+    protected boolean upgradeUserVmServiceOffering(Long vmId, Long serviceOfferingId, Map<String, String> details) {
+        boolean result;
+        try {
+            result = _userVmManager.upgradeVirtualMachine(vmId, serviceOfferingId, details);
+            if (! result){
+                s_logger.error("Couldn't change service offering for vm " + vmId + " to " + serviceOfferingId);
+            }
+            return result;
+        } catch (ConcurrentOperationException | ResourceUnavailableException | ManagementServerException | VirtualMachineMigrationException e) {
+            s_logger.error("Couldn't change service offering for vm " + vmId + " to " + serviceOfferingId + " due to: " + e.getMessage());
+            return false;
+        }
+    }
+
     private UserVm orchestrateRevertToVMSnapshot(Long vmSnapshotId) throws InsufficientCapacityException, ResourceUnavailableException, ConcurrentOperationException {
 
         // check if VM snapshot exists in DB
-        VMSnapshotVO vmSnapshotVo = _vmSnapshotDao.findById(vmSnapshotId);
+        final VMSnapshotVO vmSnapshotVo = _vmSnapshotDao.findById(vmSnapshotId);
         if (vmSnapshotVo == null) {
             throw new InvalidParameterValueException(
                     "unable to find the vm snapshot with id " + vmSnapshotId);
         }
         Long vmId = vmSnapshotVo.getVmId();
-        UserVmVO userVm = _userVMDao.findById(vmId);
+        final UserVmVO userVm = _userVMDao.findById(vmId);
         // check if VM exists
         if (userVm == null) {
             throw new InvalidParameterValueException("Revert vm to snapshot: "
@@ -705,11 +844,69 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         try {
             VMSnapshotStrategy strategy = findVMSnapshotStrategy(vmSnapshotVo);
             strategy.revertVMSnapshot(vmSnapshotVo);
+            Transaction.execute(new TransactionCallbackWithExceptionNoReturn<CloudRuntimeException>() {
+                @Override
+                public void doInTransactionWithoutResult(TransactionStatus status) throws CloudRuntimeException {
+                    revertUserVmDetailsFromVmSnapshot(userVm, vmSnapshotVo);
+                    updateUserVmServiceOffering(userVm, vmSnapshotVo);
+                }
+            });
             return userVm;
         } catch (Exception e) {
             s_logger.debug("Failed to revert vmsnapshot: " + vmSnapshotId, e);
             throw new CloudRuntimeException(e.getMessage());
         }
+    }
+
+    /**
+     * Update or add user vm details from vm snapshot for vms with custom service offerings
+     * @param userVm user vm
+     * @param vmSnapshotVo vm snapshot
+     */
+    protected void revertUserVmDetailsFromVmSnapshot(UserVmVO userVm, VMSnapshotVO vmSnapshotVo) {
+        ServiceOfferingVO serviceOfferingVO = _serviceOfferingDao.findById(vmSnapshotVo.getServiceOfferingId());
+        if (serviceOfferingVO.isDynamic()) {
+            List<VMSnapshotDetailsVO> vmSnapshotDetails = _vmSnapshotDetailsDao.listDetails(vmSnapshotVo.getId());
+            List<UserVmDetailVO> userVmDetails = new ArrayList<UserVmDetailVO>();
+            for (VMSnapshotDetailsVO detail : vmSnapshotDetails) {
+                userVmDetails.add(new UserVmDetailVO(userVm.getId(), detail.getName(), detail.getValue(), detail.isDisplay()));
+            }
+            _userVmDetailsDao.saveDetails(userVmDetails);
+        }
+    }
+
+    @Override
+    public RestoreVMSnapshotCommand createRestoreCommand(UserVmVO userVm, List<VMSnapshotVO> vmSnapshotVOs) {
+        if (!HypervisorType.KVM.equals(userVm.getHypervisorType()))
+            return null;
+
+        List<VMSnapshotTO> snapshots = new ArrayList<VMSnapshotTO>();
+        Map<Long, VMSnapshotTO> snapshotAndParents = new HashMap<Long, VMSnapshotTO>();
+        for (VMSnapshotVO vmSnapshotVO: vmSnapshotVOs) {
+            if (vmSnapshotVO.getType() == VMSnapshot.Type.DiskAndMemory) {
+                VMSnapshotVO snapshot = _vmSnapshotDao.findById(vmSnapshotVO.getId());
+                VMSnapshotTO parent = getSnapshotWithParents(snapshot).getParent();
+                VMSnapshotOptions options = snapshot.getOptions();
+                boolean quiescevm = true;
+                if (options != null)
+                    quiescevm = options.needQuiesceVM();
+                VMSnapshotTO vmSnapshotTO = new VMSnapshotTO(snapshot.getId(), snapshot.getName(), snapshot.getType(),
+                        snapshot.getCreated().getTime(), snapshot.getDescription(), snapshot.getCurrent(), parent, quiescevm);
+                snapshots.add(vmSnapshotTO);
+                snapshotAndParents.put(vmSnapshotVO.getId(), parent);
+            }
+        }
+        if (snapshotAndParents.isEmpty())
+            return null;
+
+        // prepare RestoreVMSnapshotCommand
+        String vmInstanceName = userVm.getInstanceName();
+        List<VolumeObjectTO> volumeTOs = getVolumeTOList(userVm.getId());
+        GuestOSVO guestOS = _guestOSDao.findById(userVm.getGuestOSId());
+        RestoreVMSnapshotCommand restoreSnapshotCommand = new RestoreVMSnapshotCommand(vmInstanceName, null, volumeTOs, guestOS.getDisplayName());
+        restoreSnapshotCommand.setSnapshots(snapshots);
+        restoreSnapshotCommand.setSnapshotAndParents(snapshotAndParents);
+        return restoreSnapshotCommand;
     }
 
     @Override
@@ -1044,5 +1241,74 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         _workJobDao.persist(workJob);
 
         return workJob;
+    }
+
+    private List<VolumeObjectTO> getVolumeTOList(Long vmId) {
+        List<VolumeObjectTO> volumeTOs = new ArrayList<VolumeObjectTO>();
+        List<VolumeVO> volumeVos = _volumeDao.findByInstance(vmId);
+        VolumeInfo volumeInfo = null;
+        for (VolumeVO volume : volumeVos) {
+            volumeInfo = volumeDataFactory.getVolume(volume.getId());
+
+            volumeTOs.add((VolumeObjectTO)volumeInfo.getTO());
+        }
+        return volumeTOs;
+    }
+
+    private VMSnapshotTO convert2VMSnapshotTO(VMSnapshotVO vo) {
+        return new VMSnapshotTO(vo.getId(), vo.getName(), vo.getType(), vo.getCreated().getTime(), vo.getDescription(), vo.getCurrent(), null, true);
+    }
+
+    private VMSnapshotTO getSnapshotWithParents(VMSnapshotVO snapshot) {
+        Map<Long, VMSnapshotVO> snapshotMap = new HashMap<Long, VMSnapshotVO>();
+        List<VMSnapshotVO> allSnapshots = _vmSnapshotDao.findByVm(snapshot.getVmId());
+        for (VMSnapshotVO vmSnapshotVO : allSnapshots) {
+            snapshotMap.put(vmSnapshotVO.getId(), vmSnapshotVO);
+        }
+
+        VMSnapshotTO currentTO = convert2VMSnapshotTO(snapshot);
+        VMSnapshotTO result = currentTO;
+        VMSnapshotVO current = snapshot;
+        while (current.getParent() != null) {
+            VMSnapshotVO parent = snapshotMap.get(current.getParent());
+            if (parent == null) {
+                break;
+            }
+            currentTO.setParent(convert2VMSnapshotTO(parent));
+            current = snapshotMap.get(current.getParent());
+            currentTO = currentTO.getParent();
+        }
+        return result;
+    }
+
+    @Override
+    public boolean deleteVMSnapshotsFromDB(Long vmId) {
+        List<VMSnapshotVO> listVmSnapshots = _vmSnapshotDao.findByVm(vmId);
+        if (listVmSnapshots == null || listVmSnapshots.isEmpty()) {
+            return true;
+        }
+        for (VMSnapshotVO snapshot : listVmSnapshots) {
+            try {
+                VMSnapshotStrategy strategy = findVMSnapshotStrategy(snapshot);
+                if (! strategy.deleteVMSnapshotFromDB(snapshot)) {
+                    s_logger.error("Couldn't delete vm snapshot with id " + snapshot.getId());
+                    return false;
+                }
+            }
+            catch (CloudRuntimeException e) {
+                s_logger.error("Couldn't delete vm snapshot due to: " + e.getMessage());
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return VMSnapshotManager.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {VMSnapshotExpireInterval};
     }
 }

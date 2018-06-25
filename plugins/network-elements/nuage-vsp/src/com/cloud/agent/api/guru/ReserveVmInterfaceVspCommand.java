@@ -19,11 +19,17 @@
 
 package com.cloud.agent.api.guru;
 
-import com.cloud.agent.api.Command;
+import java.util.Objects;
+
+import net.nuage.vsp.acs.client.api.model.VspDhcpVMOption;
 import net.nuage.vsp.acs.client.api.model.VspNetwork;
 import net.nuage.vsp.acs.client.api.model.VspNic;
 import net.nuage.vsp.acs.client.api.model.VspStaticNat;
 import net.nuage.vsp.acs.client.api.model.VspVm;
+
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
+import com.cloud.agent.api.Command;
 
 public class ReserveVmInterfaceVspCommand extends Command {
 
@@ -31,13 +37,15 @@ public class ReserveVmInterfaceVspCommand extends Command {
     private final VspVm _vm;
     private final VspNic _nic;
     private final VspStaticNat _staticNat;
+    private final  VspDhcpVMOption _dhcpOption;
 
-    public ReserveVmInterfaceVspCommand(VspNetwork network, VspVm vm, VspNic nic, VspStaticNat staticNat) {
+    public ReserveVmInterfaceVspCommand(VspNetwork network, VspVm vm, VspNic nic, VspStaticNat staticNat, VspDhcpVMOption dhcpOption) {
         super();
         this._network = network;
         this._vm = vm;
         this._nic = nic;
         this._staticNat = staticNat;
+        this._dhcpOption = dhcpOption;
     }
 
     public VspNetwork getNetwork() {
@@ -56,6 +64,10 @@ public class ReserveVmInterfaceVspCommand extends Command {
         return _staticNat;
     }
 
+    public VspDhcpVMOption getDhcpOption() {
+        return _dhcpOption;
+    }
+
     @Override
     public boolean executeInSequence() {
         return false;
@@ -63,27 +75,33 @@ public class ReserveVmInterfaceVspCommand extends Command {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof ReserveVmInterfaceVspCommand)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof ReserveVmInterfaceVspCommand)) {
+            return false;
+        }
 
         ReserveVmInterfaceVspCommand that = (ReserveVmInterfaceVspCommand) o;
 
-        if (_network != null ? !_network.equals(that._network) : that._network != null) return false;
-        if (_nic != null ? !_nic.equals(that._nic) : that._nic != null) return false;
-        if (_staticNat != null ? !_staticNat.equals(that._staticNat) : that._staticNat != null) return false;
-        if (_vm != null ? !_vm.equals(that._vm) : that._vm != null) return false;
-
-        return true;
+        return super.equals(that)
+                && Objects.equals(_network, that._network)
+                && Objects.equals(_nic, that._nic)
+                && Objects.equals(_dhcpOption, that._dhcpOption)
+                && Objects.equals(_staticNat, that._staticNat)
+                && Objects.equals(_vm, that._vm);
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (_network != null ? _network.hashCode() : 0);
-        result = 31 * result + (_vm != null ? _vm.hashCode() : 0);
-        result = 31 * result + (_nic != null ? _nic.hashCode() : 0);
-        result = 31 * result + (_staticNat != null ? _staticNat.hashCode() : 0);
-        return result;
+        return new HashCodeBuilder()
+                .appendSuper(super.hashCode())
+                .append(_network)
+                .append(_vm)
+                .append(_nic)
+                .append(_staticNat)
+                .append(_dhcpOption)
+                .toHashCode();
     }
 }

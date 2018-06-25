@@ -132,7 +132,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
         dc.setMacAddress(nextMac);
         _dcDao.update(dc.getId(), dc);
 
-        String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(mac));
+        String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(mac,NetworkModel.MACIdentifier.value()));
         UserIpv6AddressVO ipVO = new UserIpv6AddressVO(ip, dcId, macAddress, ipVlan.getId());
         ipVO.setPhysicalNetworkId(network.getPhysicalNetworkId());
         ipVO.setSourceNetworkId(networkId);

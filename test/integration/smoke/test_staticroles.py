@@ -68,7 +68,7 @@ class TestStaticRoles(cloudstackTestCase):
         except Exception:
             self.debug("Failed to ssh into mgmt server host and grab commands.properties file")
             testDir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-            localFileName = os.path.abspath(testDir + "/../../../client/tomcatconf/commands.properties.in")
+            localFileName = os.path.abspath(testDir + "/../../../client/conf/commands.properties.in")
             if os.path.isfile(localFileName):
                 self.info("Detected that we're running in developer mode with maven, using file at:" + localFileName)
                 with open(localFileName) as f:

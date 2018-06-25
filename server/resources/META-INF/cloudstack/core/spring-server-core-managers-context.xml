@@ -23,13 +23,13 @@
        xmlns:util="http://www.springframework.org/schema/util"
        
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-                      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                      http://www.springframework.org/schema/beans/spring-beans.xsd
                       http://www.springframework.org/schema/aop 
-                      http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+                      http://www.springframework.org/schema/aop/spring-aop.xsd
                       http://www.springframework.org/schema/context
-                      http://www.springframework.org/schema/context/spring-context-3.0.xsd
+                      http://www.springframework.org/schema/context/spring-context.xsd
                       http://www.springframework.org/schema/util
-                      http://www.springframework.org/schema/util/spring-util-3.0.xsd"
+                      http://www.springframework.org/schema/util/spring-util.xsd"
                       >
 
     <bean id="authenticationManagerImpl" class="com.cloud.api.auth.APIAuthenticationManagerImpl">
@@ -70,6 +70,15 @@
             value="#{resourceDiscoverersRegistry.registered}" />
     </bean>
 
+    <!-- the new background poll manager -->
+    <bean id="bgPollManager" class="org.apache.cloudstack.poll.BackgroundPollManagerImpl">
+    </bean>
+
+    <!-- the new HA manager -->
+    <bean id="haManagerImpl" class="org.apache.cloudstack.ha.HAManagerImpl">
+        <property name="haProviders" value="#{haProvidersRegistry.registered}" />
+    </bean>
+
     <bean id="highAvailabilityManagerExtImpl" class="com.cloud.ha.HighAvailabilityManagerExtImpl">
         <property name="investigators" value="#{haInvestigatorsRegistry.registered}" />
         <property name="fenceBuilders" value="#{haFenceBuildersRegistry.registered}" />
@@ -83,7 +92,9 @@
         <property name="networkElements" value="#{networkElementsRegistry.registered}" />
     </bean>
 
+
     <bean id="configurationServerImpl" class="com.cloud.server.ConfigurationServerImpl" />
+
 
     <bean id="userVmManagerImpl" class="com.cloud.vm.UserVmManagerImpl" />
 
@@ -95,6 +106,8 @@
     <bean id="securityGroupManagerImpl2" class="com.cloud.network.security.SecurityGroupManagerImpl2" />
 
     <bean id="ipv6AddressManagerImpl" class="com.cloud.network.Ipv6AddressManagerImpl" />
+
+    <bean id="NetworkMigrationManagerImpl" class="com.cloud.network.NetworkMigrationManagerImpl" />
 
 
     <bean id="alertManagerImpl" class="com.cloud.alert.AlertManagerImpl" />
@@ -271,6 +284,18 @@
         class="org.apache.cloudstack.region.gslb.GlobalLoadBalancingRulesServiceImpl" >
         <property name="gslbServiceProviders" value="#{gslbServiceProvidersRegistry.registered}" />
     </bean>
-    <bean id="certServiceImpl" class="org.apache.cloudstack.network.lb.CertServiceImpl" />
+    <bean id="certServiceImpl" class="org.apache.cloudstack.network.ssl.CertServiceImpl" />
+
     <bean id="imageStoreUploadMonitorImpl" class="com.cloud.storage.ImageStoreUploadMonitorImpl" />
+
+    <!-- the new CA manager -->
+    <bean id="caManager" class="org.apache.cloudstack.ca.CAManagerImpl">
+        <property name="caProviders" value="#{caProvidersRegistry.registered}" />
+    </bean>
+
+    <bean id="annotationService" class="org.apache.cloudstack.annotation.AnnotationManagerImpl" />
+
+    <bean id="indirectAgentLBService" class="org.apache.cloudstack.agent.lb.IndirectAgentLBServiceImpl" />
+
+    <bean id="directDownloadManager" class="org.apache.cloudstack.direct.download.DirectDownloadManagerImpl" />
 </beans>

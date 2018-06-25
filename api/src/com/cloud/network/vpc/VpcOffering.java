@@ -52,7 +52,7 @@ public interface VpcOffering extends InternalIdentity, Identity {
     boolean isDefault();
 
     /**
-     * @return service offering id used by VPC virutal router
+     * @return service offering id used by VPC virtual router
      */
     Long getServiceOfferingId();
 

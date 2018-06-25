@@ -76,7 +76,7 @@ public class FindHostsForMigrationCmd extends BaseListCmd {
         Map<Host, Boolean> hostsRequiringStorageMotion;
 
         Ternary<Pair<List<? extends Host>, Integer>, List<? extends Host>, Map<Host, Boolean>> hostsForMigration =
-            _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal());
+            _mgr.listHostsForMigrationOfVM(getVirtualMachineId(), this.getStartIndex(), this.getPageSizeVal(), this.getKeyword());
         result = hostsForMigration.first();
         List<? extends Host> hostsWithCapacity = hostsForMigration.second();
         hostsRequiringStorageMotion = hostsForMigration.third();

@@ -21,10 +21,10 @@
        xmlns:context="http://www.springframework.org/schema/context"
        xmlns:aop="http://www.springframework.org/schema/aop"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
-                      http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-                      http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+                      http://www.springframework.org/schema/beans/spring-beans.xsd
+                      http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
                       http://www.springframework.org/schema/context
-                      http://www.springframework.org/schema/context/spring-context-3.0.xsd"
+                      http://www.springframework.org/schema/context/spring-context.xsd"
                       >
 
   <!--
@@ -130,6 +130,7 @@
   <bean id="autoScaleVmProfileDaoImpl" class="com.cloud.network.as.dao.AutoScaleVmProfileDaoImpl" />
   <bean id="capacityDaoImpl" class="com.cloud.capacity.dao.CapacityDaoImpl" />
   <bean id="certificateDaoImpl" class="com.cloud.certificate.dao.CertificateDaoImpl" />
+  <bean id="crlDaoImpl" class="com.cloud.certificate.dao.CrlDaoImpl" />
   <bean id="clusterDaoImpl" class="com.cloud.dc.dao.ClusterDaoImpl" />
   <bean id="clusterDetailsDaoImpl" class="com.cloud.dc.ClusterDetailsDaoImpl" />
   <bean id="clusterVSMMapDaoImpl" class="com.cloud.dc.dao.ClusterVSMMapDaoImpl" />
@@ -146,6 +147,7 @@
   <bean id="engineDcDetailsDaoImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.db.dao.DcDetailsDaoImpl" />
   <bean id="diskOfferingJoinDaoImpl" class="com.cloud.api.query.dao.DiskOfferingJoinDaoImpl" />
   <bean id="domainDaoImpl" class="com.cloud.domain.dao.DomainDaoImpl" />
+  <bean id="domainDetailsDaoImpl" class="com.cloud.domain.dao.DomainDetailsDaoImpl" />
   <bean id="domainJoinDaoImpl" class="com.cloud.api.query.dao.DomainJoinDaoImpl" />
   <bean id="domainRouterDaoImpl" class="com.cloud.vm.dao.DomainRouterDaoImpl" />
   <bean id="domainRouterJoinDaoImpl" class="com.cloud.api.query.dao.DomainRouterJoinDaoImpl" />
@@ -158,8 +160,9 @@
   <bean id="externalFirewallDeviceDaoImpl" class="com.cloud.network.dao.ExternalFirewallDeviceDaoImpl" />
   <bean id="externalLoadBalancerDeviceDaoImpl" class="com.cloud.network.dao.ExternalLoadBalancerDeviceDaoImpl" />
   <bean id="externalPublicIpStatisticsDaoImpl" class="com.cloud.usage.dao.ExternalPublicIpStatisticsDaoImpl" />
-  <bean id="firewallRulesCidrsDaoImpl" class="com.cloud.network.dao.FirewallRulesCidrsDaoImpl" />
   <bean id="firewallRulesDaoImpl" class="com.cloud.network.dao.FirewallRulesDaoImpl" />
+  <bean id="firewallRulesCidrsDaoImpl" class="com.cloud.network.dao.FirewallRulesCidrsDaoImpl" />
+  <bean id="firewallRulesDcidrsDaoImpl" class="com.cloud.network.dao.FirewallRulesDcidrsDaoImpl" />
   <bean id="MonitoringServiceDaoImpl" class="com.cloud.network.dao.MonitoringServiceDaoImpl" />
   <bean id="OpRouterMonitorServiceDaoImpl" class="com.cloud.network.dao.OpRouterMonitorServiceDaoImpl" />
   <bean id="globalLoadBalancerDaoImpl" class="org.apache.cloudstack.region.gslb.GlobalLoadBalancerDaoImpl" />
@@ -167,6 +170,8 @@
   <bean id="guestOSCategoryDaoImpl" class="com.cloud.storage.dao.GuestOSCategoryDaoImpl" />
   <bean id="guestOSDaoImpl" class="com.cloud.storage.dao.GuestOSDaoImpl" />
   <bean id="guestOSHypervisorDaoImpl" class="com.cloud.storage.dao.GuestOSHypervisorDaoImpl" />
+  <!-- New HA Config -->
+  <bean id="haConfigDaoImpl" class="org.apache.cloudstack.ha.dao.HAConfigDaoImpl" />
   <bean id="highAvailabilityDaoImpl" class="com.cloud.ha.dao.HighAvailabilityDaoImpl" />
   <bean id="hostDaoImpl" class="com.cloud.host.dao.HostDaoImpl" />
   <bean id="engineHostDetailsDaoImpl" class="org.apache.cloudstack.engine.datacenter.entity.api.db.dao.HostDetailsDaoImpl" />
@@ -176,8 +181,8 @@
   <bean id="hostTagsDaoImpl" class="com.cloud.host.dao.HostTagsDaoImpl" />
   <bean id="hostTransferMapDaoImpl" class="com.cloud.cluster.agentlb.dao.HostTransferMapDaoImpl" />
   <bean id="iPAddressDaoImpl" class="com.cloud.network.dao.IPAddressDaoImpl" />
-  <bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.ImageStoreDaoImpl" />
-  <bean id="imageStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.image.db.ImageStoreDetailsDaoImpl" />
+  <bean id="imageStoreDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDaoImpl" />
+  <bean id="imageStoreDetailsDaoImpl" class="org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDaoImpl" />
   <bean id="imageStoreJoinDaoImpl" class="com.cloud.api.query.dao.ImageStoreJoinDaoImpl" />
   <bean id="snapshotDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.SnapshotDataStoreDaoImpl" />
   <bean id="templateDataStoreDaoImpl" class="org.apache.cloudstack.storage.image.db.TemplateDataStoreDaoImpl" />
@@ -211,6 +216,7 @@
   <bean id="networkServiceMapDaoImpl" class="com.cloud.network.dao.NetworkServiceMapDaoImpl" />
   <bean id="nicDaoImpl" class="com.cloud.vm.dao.NicDaoImpl" />
   <bean id="nicDetailsDaoImpl" class="com.cloud.vm.dao.NicDetailsDaoImpl" />
+  <bean id="nicExtraDhcpOptionDaoImpl" class="com.cloud.vm.dao.NicExtraDhcpOptionDaoImpl" />
   <bean id="nicSecondaryIpDaoImpl" class="com.cloud.vm.dao.NicSecondaryIpDaoImpl" />
   <bean id="nicIpAliasDaoImpl" class="com.cloud.vm.dao.NicIpAliasDaoImpl" />
   <bean id="objectInDataStoreDaoImpl" class="org.apache.cloudstack.storage.db.ObjectInDataStoreDaoImpl" />
@@ -266,10 +272,9 @@
   <bean id="storageNetworkIpRangeDaoImpl" class="com.cloud.dc.dao.StorageNetworkIpRangeDaoImpl" />
   <bean id="storagePoolDetailsDaoImpl" class="com.cloud.storage.dao.StoragePoolDetailsDaoImpl" />
   <bean id="storagePoolJoinDaoImpl" class="com.cloud.api.query.dao.StoragePoolJoinDaoImpl" />
-  <bean id="storageTagDaoImpl" class="com.cloud.api.query.dao.StorageTagDaoImpl" />
+  <bean id="storagePoolTagsDaoImpl" class="com.cloud.storage.dao.StoragePoolTagsDaoImpl" />
   <bean id="hostTagDaoImpl" class="com.cloud.api.query.dao.HostTagDaoImpl" />
   <bean id="storagePoolWorkDaoImpl" class="com.cloud.storage.dao.StoragePoolWorkDaoImpl" />
-  <bean id="templatePrimaryDataStoreDaoImpl" class="org.apache.cloudstack.storage.volume.db.TemplatePrimaryDataStoreDaoImpl" />
   <bean id="uploadDaoImpl" class="com.cloud.storage.dao.UploadDaoImpl" />
   <bean id="usageDaoImpl" class="com.cloud.usage.dao.UsageDaoImpl" />
   <bean id="usageEventDaoImpl" class="com.cloud.event.dao.UsageEventDaoImpl" />
@@ -325,6 +330,7 @@
   <bean id="networkOfferingDetailsDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDetailsDaoImpl" />
   <bean id="serviceOfferingDetailsDaoImpl" class="com.cloud.service.dao.ServiceOfferingDetailsDaoImpl"/>
   <bean id="networkDetailsDaoImpl" class="com.cloud.network.dao.NetworkDetailsDaoImpl" />
+  <bean id="vlanDetailsDaoImpl" class="com.cloud.dc.dao.VlanDetailsDaoImpl" />
   <bean id="hostGpuGroupsDaoImpl" class="com.cloud.gpu.dao.HostGpuGroupsDaoImpl" />
   <bean id="vGPUTypesDaoImpl" class="com.cloud.gpu.dao.VGPUTypesDaoImpl" />
   <bean id="AffinityGroupDaoImpl" class="org.apache.cloudstack.affinity.dao.AffinityGroupDaoImpl" />
@@ -348,5 +354,6 @@
   <bean id="LBStickinessPolicyDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.LBStickinessPolicyDetailsDaoImpl" />
   <bean id="LBHealthCheckPolicyDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.LBHealthCheckPolicyDetailsDaoImpl" />
   <bean id="outOfBandManagementDaoImpl" class="org.apache.cloudstack.outofbandmanagement.dao.OutOfBandManagementDaoImpl" />
-
+  <bean id="GuestOsDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDaoImpl" />
+  <bean id="annotationDaoImpl" class="org.apache.cloudstack.annotation.dao.AnnotationDaoImpl" />
 </beans>

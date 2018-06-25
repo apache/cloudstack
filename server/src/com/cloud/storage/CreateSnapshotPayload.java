@@ -23,6 +23,8 @@ public class CreateSnapshotPayload {
     private Long snapshotId;
     private Account account;
     private boolean quiescevm;
+    private Snapshot.LocationType locationType;
+    private boolean asyncBackup;
 
     public Long getSnapshotPolicyId() {
         return snapshotPolicyId;
@@ -48,12 +50,21 @@ public class CreateSnapshotPayload {
         this.account = account;
     }
 
-    public void setQuiescevm(boolean quiescevm) {
-        this.quiescevm = quiescevm;
-    }
+    public void setQuiescevm(boolean quiescevm) { this.quiescevm = quiescevm; }
 
     public boolean getQuiescevm() {
         return this.quiescevm;
     }
 
+    public Snapshot.LocationType getLocationType() { return this.locationType; }
+
+    public void setLocationType(Snapshot.LocationType locationType) { this.locationType = locationType; }
+
+    public void setAsyncBackup(boolean asyncBackup) {
+        this.asyncBackup = asyncBackup;
+    }
+
+    public boolean getAsyncBackup() {
+        return this.asyncBackup;
+    }
 }

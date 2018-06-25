@@ -35,6 +35,8 @@ import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.IpAddressManager;
 import com.cloud.network.Ipv6AddressManager;
 import com.cloud.network.Network;
@@ -46,6 +48,8 @@ import com.cloud.network.NetworkProfile;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
+import com.cloud.network.PhysicalNetwork;
+import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
@@ -99,8 +103,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     IpAddressManager _ipAddrMgr;
     @Inject
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
+    @Inject
+    PhysicalNetworkDao _physicalNetworkDao;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
+    protected IsolationMethod[] _isolationMethods;
 
     @Override
     public boolean isMyTrafficType(TrafficType type) {
@@ -112,14 +119,34 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         return false;
     }
 
+    protected boolean isMyIsolationMethod(PhysicalNetwork physicalNetwork) {
+        for (IsolationMethod m : _isolationMethods) {
+            if (physicalNetwork.getIsolationMethods().contains(m.toString())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public TrafficType[] getSupportedTrafficType() {
         return TrafficTypes;
     }
 
-    protected boolean canHandle(NetworkOffering offering, DataCenter dc) {
+    /**
+     * True for Advanced zones, with VXLAN isolation method and Security Groups enabled
+     */
+    private boolean isMyIsolationMethodVxlanWithSecurityGroups(NetworkOffering offering, DataCenter dc, PhysicalNetwork physnet) {
+        return dc.getNetworkType().equals(NetworkType.Advanced) &&
+                _networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup) &&
+                physnet.getIsolationMethods().contains("VXLAN");
+    }
+
+    protected boolean canHandle(NetworkOffering offering, DataCenter dc, PhysicalNetwork physnet) {
         // this guru handles only Guest networks in Advance zone with source nat service disabled
-        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) && offering.getGuestType() == GuestType.Shared
+        boolean vxlanWithSecurityGroups = isMyIsolationMethodVxlanWithSecurityGroups(offering, dc, physnet);
+        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) &&
+                (isMyIsolationMethod(physnet) || vxlanWithSecurityGroups) && offering.getGuestType() == GuestType.Shared
                 && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NuageVsp)
                 && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NiciraNvp)) {
             return true;
@@ -132,8 +159,9 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     @Override
     public Network design(NetworkOffering offering, DeploymentPlan plan, Network userSpecified, Account owner) {
         DataCenter dc = _dcDao.findById(plan.getDataCenterId());
+        PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
 
-        if (!canHandle(offering, dc)) {
+        if (!canHandle(offering, dc, physnet)) {
             return null;
         }
 
@@ -190,6 +218,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     protected DirectNetworkGuru() {
         super();
+        _isolationMethods = new IsolationMethod[] { new IsolationMethod("VLAN") };
     }
 
     @Override

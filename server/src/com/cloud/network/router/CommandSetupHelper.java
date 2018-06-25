@@ -84,6 +84,7 @@ import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.Site2SiteCustomerGatewayDao;
 import com.cloud.network.dao.Site2SiteCustomerGatewayVO;
 import com.cloud.network.dao.Site2SiteVpnGatewayDao;
@@ -440,6 +441,7 @@ public class CommandSetupHelper {
             }
             for (final FirewallRule rule : rules) {
                 _rulesDao.loadSourceCidrs((FirewallRuleVO) rule);
+                _rulesDao.loadDestinationCidrs((FirewallRuleVO)rule);
                 final FirewallRule.TrafficType traffictype = rule.getTrafficType();
                 if (traffictype == FirewallRule.TrafficType.Ingress) {
                     final IpAddress sourceIp = _networkModel.getIp(rule.getSourceIpAddressId());
@@ -473,7 +475,7 @@ public class CommandSetupHelper {
 
     public void createAssociateIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, final Commands cmds, final long vmId) {
         final String ipAssocCommand = "IPAssocCommand";
-        createRedundantAssociateIPCommands(router, ips, cmds, ipAssocCommand, vmId);
+        createRedundantAssociateIPCommands(router, ips, cmds, ipAssocCommand, false);
     }
 
     public void createNetworkACLsCommands(final List<? extends NetworkACLItem> rules, final VirtualRouter router, final Commands cmds, final long guestNetworkId,
@@ -599,7 +601,9 @@ public class CommandSetupHelper {
                 final NicVO nic = _nicDao.findByNtwkIdAndInstanceId(guestNetworkId, vm.getId());
                 if (nic != null) {
                     s_logger.debug("Creating user data entry for vm " + vm + " on domR " + router);
-                    createVmDataCommand(router, vm, nic, null, cmds);
+
+                    _userVmDao.loadDetails(vm);
+                    createVmDataCommand(router, vm, nic, vm.getDetail("SSH.PublicKey"), cmds);
                 }
             }
         }
@@ -641,7 +645,7 @@ public class CommandSetupHelper {
 
         final String ipAssocCommand = "IPAssocVpcCommand";
         if (router.getIsRedundantRouter()) {
-            createRedundantAssociateIPCommands(router, ips, cmds, ipAssocCommand, 0);
+            createRedundantAssociateIPCommands(router, ips, cmds, ipAssocCommand, true);
             return;
         }
 
@@ -738,7 +742,7 @@ public class CommandSetupHelper {
         }
     }
 
-    public void createRedundantAssociateIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, final Commands cmds, final String ipAssocCommand, final long vmId) {
+    public void createRedundantAssociateIPCommands(final VirtualRouter router, final List<? extends PublicIpAddress> ips, final Commands cmds, final String ipAssocCommand, final boolean isVPC) {
 
         // Ensure that in multiple vlans case we first send all ip addresses of
         // vlan1, then all ip addresses of vlan2, etc..
@@ -835,12 +839,46 @@ public class CommandSetupHelper {
                 associatedWithNetworkId = ipAddrList.get(0).getNetworkId();
             }
 
+            // for network if the ips does not have any rules, then only last ip
+            final List<IPAddressVO> userIps = _ipAddressDao.listByAssociatedNetwork(associatedWithNetworkId, null);
+            boolean hasSourceNat = false;
+            if (isVPC && userIps.size() > 0 && userIps.get(0) != null) {
+                // All ips should belong to a VPC
+                final Long vpcId = userIps.get(0).getVpcId();
+                final List<IPAddressVO> sourceNatIps = _ipAddressDao.listByAssociatedVpc(vpcId, true);
+                if (sourceNatIps != null && sourceNatIps.size() > 0) {
+                    hasSourceNat = true;
+                }
+            }
+
+            int ipsWithrules = 0;
+            int ipsStaticNat = 0;
+            for (IPAddressVO ip : userIps) {
+                if ( _rulesDao.countRulesByIpIdAndState(ip.getId(), FirewallRule.State.Active) > 0){
+                    ipsWithrules++;
+                }
+
+                // check onetoonenat and also check if the ip "add":false. If there are 2 PF rules remove and
+                // 1 static nat rule add
+                if (ip.isOneToOneNat() && ip.getRuleState() == null) {
+                    ipsStaticNat++;
+                }
+            }
+
             final IpAssocCommand cmd = new IpAssocCommand(ipsToSend);
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_IP, _routerControlHelper.getRouterControlIp(router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_GUEST_IP, _routerControlHelper.getRouterIpInNetwork(associatedWithNetworkId, router.getId()));
             cmd.setAccessDetail(NetworkElementCommand.ROUTER_NAME, router.getInstanceName());
             final DataCenterVO dcVo = _dcDao.findById(router.getDataCenterId());
             cmd.setAccessDetail(NetworkElementCommand.ZONE_NETWORK_TYPE, dcVo.getNetworkType().toString());
+
+            // if there is 1 static nat then it will be checked for remove at the resource
+            if (ipsWithrules == 0 && ipsStaticNat == 0 && !hasSourceNat) {
+                // there is only one ip address for the network.
+                cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "true");
+            } else {
+                cmd.setAccessDetail(NetworkElementCommand.NETWORK_PUB_LAST_IP, "false");
+            }
 
             cmds.addCommand(ipAssocCommand, cmd);
         }

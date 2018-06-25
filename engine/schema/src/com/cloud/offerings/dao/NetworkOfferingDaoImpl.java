@@ -16,12 +16,15 @@
 // under the License.
 package com.cloud.offerings.dao;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
+import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.network.Network;
@@ -32,6 +35,7 @@ import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingDetailsVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.GenericSearchBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -49,6 +53,8 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
     private final GenericSearchBuilder<NetworkOfferingVO, Long> UpgradeSearch;
     @Inject
     NetworkOfferingDetailsDao _detailsDao;
+    @Inject
+    private NetworkOfferingServiceMapDao networkOfferingServiceMapDao;
 
     protected NetworkOfferingDaoImpl() {
         super();
@@ -189,4 +195,78 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         return vo;
     }
 
+    @Override
+    public List<Long> listNetworkOfferingID() {
+        final SearchCriteria<NetworkOfferingVO> sc_1 = createSearchCriteria();
+        final Filter searchFilter_1 = new Filter(NetworkOfferingVO.class, "created", false, null, null);
+        sc_1.addAnd("servicePackageUuid", SearchCriteria.Op.NEQ, null);
+        sc_1.addAnd("removed", SearchCriteria.Op.EQ, null);
+        List<NetworkOfferingVO> set_of_servicePackageUuid = this.search(sc_1, searchFilter_1);
+        List<Long> id_set = new ArrayList<Long>();
+        for (NetworkOfferingVO node : set_of_servicePackageUuid) {
+            if (node.getServicePackage() != null && !node.getServicePackage().isEmpty()) {
+                id_set.add(node.getId());
+            }
+        }
+        return id_set;
+    }
+
+    @Override
+    public boolean isUsingServicePackage(String uuid) {
+        final SearchCriteria<NetworkOfferingVO> sc = createSearchCriteria();
+        final Filter searchFilter= new Filter(NetworkOfferingVO.class, "created", false, null, null);
+        sc.addAnd("state", SearchCriteria.Op.EQ, NetworkOffering.State.Enabled);
+        sc.addAnd("servicePackageUuid", SearchCriteria.Op.EQ, uuid);
+        List<NetworkOfferingVO> list = this.search(sc, searchFilter);
+
+        if(CollectionUtils.isNotEmpty(list))
+            return true;
+
+        return false;
+    }
+
+    /**
+     * Persist L2 deafult Network offering
+     */
+    private void persistL2DefaultNetworkOffering(String name, String displayText, boolean specifyVlan, boolean configDriveEnabled) {
+        NetworkOfferingVO offering = new NetworkOfferingVO(name, displayText, TrafficType.Guest, false, specifyVlan,
+                null, null, true, Availability.Optional, null, Network.GuestType.L2,
+                true,false, false, false, false, false);
+        offering.setState(NetworkOffering.State.Enabled);
+        persistDefaultNetworkOffering(offering);
+
+        if (configDriveEnabled) {
+            NetworkOfferingServiceMapVO offService = new NetworkOfferingServiceMapVO(offering.getId(),
+                    Network.Service.UserData, Network.Provider.ConfigDrive);
+            networkOfferingServiceMapDao.persist(offService);
+        }
+    }
+
+    /**
+     * Check for default L2 Network Offerings, create them if they are not already created
+     */
+    private void checkPersistL2NetworkOffering(String name, String displayText, boolean specifyVlan, boolean configDriveEnabled) {
+        if (findByUniqueName(name) == null) {
+            persistL2DefaultNetworkOffering(name, displayText, specifyVlan, configDriveEnabled);
+        }
+    }
+
+    @Override
+    public void persistDefaultL2NetworkOfferings() {
+        checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOffering,
+                "Offering for L2 networks",
+                false, false);
+
+        checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOfferingVlan,
+                "Offering for L2 networks VLAN",
+                true, false);
+
+        checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOfferingConfigDrive,
+                "Offering for L2 networks with config drive user data",
+                false, true);
+
+        checkPersistL2NetworkOffering(NetworkOffering.DefaultL2NetworkOfferingConfigDriveVlan,
+                "Offering for L2 networks with config drive user data VLAN",
+                true, true);
+    }
 }

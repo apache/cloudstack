@@ -104,6 +104,15 @@ public class NetworkOfferingServiceMapDaoImpl extends GenericDaoBase<NetworkOffe
     }
 
     @Override
+    public boolean canProviderSupportServiceInNetworkOffering(long networkOfferingId, Service service, Provider provider) {
+        SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();
+        sc.setParameters("networkOfferingId", networkOfferingId);
+        sc.setParameters("service", service.getName());
+        sc.setParameters("provider", provider.getName());
+        return findOneBy(sc) != null;
+    }
+
+    @Override
     public List<NetworkOfferingServiceMapVO> listByNetworkOfferingId(long networkOfferingId) {
         SearchCriteria<NetworkOfferingServiceMapVO> sc = AllFieldsSearch.create();
         sc.setParameters("networkOfferingId", networkOfferingId);

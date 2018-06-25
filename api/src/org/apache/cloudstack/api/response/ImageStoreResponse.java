@@ -16,9 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.LinkedHashSet;
-import java.util.Set;
-
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -63,12 +60,7 @@ public class ImageStoreResponse extends BaseResponse {
     @Param(description = "the scope of the image store")
     private ScopeType scope;
 
-    @SerializedName("details")
-    @Param(description = "the details of the image store")
-    private Set<ImageStoreDetailResponse> details;
-
     public ImageStoreResponse() {
-        this.details = new LinkedHashSet<ImageStoreDetailResponse>();
     }
 
     @Override
@@ -138,18 +130,6 @@ public class ImageStoreResponse extends BaseResponse {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
-    }
-
-    public Set<ImageStoreDetailResponse> getDetails() {
-        return details;
-    }
-
-    public void setDetails(Set<ImageStoreDetailResponse> details) {
-        this.details = details;
-    }
-
-    public void addDetail(ImageStoreDetailResponse detail) {
-        this.details.add(detail);
     }
 
 }

@@ -28,7 +28,7 @@ public abstract class SnapshotStrategyBase implements SnapshotStrategy {
 
     @Override
     public SnapshotInfo takeSnapshot(SnapshotInfo snapshot) {
-        return snapshotSvr.takeSnapshot(snapshot).getSnashot();
+        return snapshotSvr.takeSnapshot(snapshot).getSnapshot();
     }
 
     @Override

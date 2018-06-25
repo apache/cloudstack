@@ -20,12 +20,13 @@
 from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.cloudstackAPI import (stopSystemVm,
                                   rebootSystemVm,
-                                  destroySystemVm)
+                                  destroySystemVm, updateConfiguration)
 from marvin.lib.utils import (cleanup_resources,
                               get_process_status,
-                              get_host_credentials)
+                              get_host_credentials,
+                              wait_until)
 from marvin.lib.base import (PhysicalNetwork,
-                             NetScaler)
+                             NetScaler, ImageStore)
 from marvin.lib.common import (get_zone,
                                list_hosts,
                                list_ssvms,
@@ -33,6 +34,7 @@ from marvin.lib.common import (get_zone,
                                list_vlan_ipranges)
 from nose.plugins.attrib import attr
 import telnetlib
+import logging
 
 # Import System modules
 import time
@@ -42,46 +44,65 @@ _multiprocess_shared_ = True
 class TestSSVMs(cloudstackTestCase):
 
     def setUp(self):
+        test_case = super(TestSSVMs, self)
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
         self.cleanup = []
+        self.config = test_case.getClsConfig()
         self.services = self.testClient.getParsedTestDataConfig()
         self.zone = get_zone(self.apiclient, self.testClient.getZoneForTests())
 
-        # Default sleep is set to 90 seconds, which is too long if the SSVM takes up to 2min to start.
-        # Second sleep in the loop will waste test time.
-        self.services["sleep"] = 30
-        # Default value is 120 seconds. That's just too much.
-        self.services["configurableData"]["systemVmDelay"] = 60
-
-        return
+        self.logger = logging.getLogger('TestSSVMs')
+        self.stream_handler = logging.StreamHandler()
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.addHandler(self.stream_handler)
 
     def tearDown(self):
         try:
-            # Clean up, terminate the created templates
             cleanup_resources(self.apiclient, self.cleanup)
-
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     def waitForSystemVMAgent(self, vmname):
-        timeout = self.services["timeout"]
-
-        while True:
+        def checkRunningAgent():
             list_host_response = list_hosts(
                 self.apiclient,
                 name=vmname
             )
+            if isinstance(list_host_response, list):
+                return list_host_response[0].state == 'Up', None
+            return False, None
 
-            if list_host_response and list_host_response[0].state == 'Up':
-                break
+        res, _ = wait_until(3, 300, checkRunningAgent)
+        if not res:
+            raise Exception("Failed to wait for SSVM agent to be Up")
 
-            if timeout == 0:
-                raise Exception("Timed out waiting for SSVM agent to be Up")
+    def checkForRunningSystemVM(self, ssvm, ssvm_type=None):
+        if not ssvm:
+            return None
 
-            time.sleep(self.services["sleep"])
-            timeout = timeout - 1
+        def checkRunningState():
+            if not ssvm_type:
+                response = list_ssvms(
+                    self.apiclient,
+                    id=ssvm.id
+                )
+            else:
+                response = list_ssvms(
+                    self.apiclient,
+                    zoneid=self.zone.id,
+                    systemvmtype=ssvm_type
+                )
+
+            if isinstance(response, list):
+                ssvm_response = response[0]
+                return ssvm_response.state == 'Running', ssvm_response
+            return False, None
+
+        res, ssvm_response = wait_until(3, 300, checkRunningState)
+        if not res:
+            self.fail("Failed to reach systemvm state to Running")
+        return ssvm_response
 
     @attr(
         tags=[
@@ -177,7 +198,6 @@ class TestSSVMs(cloudstackTestCase):
                 True,
                 "Check list response returns a valid list"
             )
-            iprange = ipranges_response[0]
 
             # Fetch corresponding Physical Network of SSVM's Zone
             listphyntwk = PhysicalNetwork.list(
@@ -192,9 +212,14 @@ class TestSSVMs(cloudstackTestCase):
                         self.apiclient,
                         physicalnetworkid=listphyntwk[0].id),
                     list) is True):
-                self.assertEqual(
-                    ssvm.gateway,
-                    iprange.gateway,
+                gatewayFound = False
+                for iprange in ipranges_response:
+                    if ssvm.gateway == iprange.gateway:
+                        gatewayFound = True
+                        break
+
+                self.assertTrue(
+                    gatewayFound,
                     "Check gateway with that of corresponding ip range"
                 )
 
@@ -219,7 +244,6 @@ class TestSSVMs(cloudstackTestCase):
                 zone_response[0].dns2,
                 "Check DNS2 with that of corresponding zone"
             )
-        return
 
     @attr(
         tags=[
@@ -313,7 +337,6 @@ class TestSSVMs(cloudstackTestCase):
                 True,
                 "Check list response returns a valid list"
             )
-            iprange = ipranges_response[0]
 
             # Fetch corresponding Physical Network of SSVM's Zone
             listphyntwk = PhysicalNetwork.list(
@@ -328,9 +351,13 @@ class TestSSVMs(cloudstackTestCase):
                         self.apiclient,
                         physicalnetworkid=listphyntwk[0].id),
                     list) is True):
-                self.assertEqual(
-                    cpvm.gateway,
-                    iprange.gateway,
+                gatewayFound = False
+                for iprange in ipranges_response:
+                    if iprange.gateway == cpvm.gateway:
+                        gatewayFound = True
+                        break
+                self.assertTrue(
+                    gatewayFound,
                     "Check gateway with that of corresponding ip range"
                 )
 
@@ -351,7 +378,6 @@ class TestSSVMs(cloudstackTestCase):
                 zone_response[0].dns2,
                 "Check DNS2 with that of corresponding zone"
             )
-        return
 
     @attr(
         tags=[
@@ -450,7 +476,7 @@ class TestSSVMs(cloudstackTestCase):
                 self.apiclient.connection.user,
                 self.apiclient.connection.passwd,
                 ssvm.privateip,
-                "service cloud status",
+                "systemctl is-active cloud",
                 hypervisor=self.hypervisor
             )
         else:
@@ -463,7 +489,7 @@ class TestSSVMs(cloudstackTestCase):
                     host.user,
                     host.passwd,
                     ssvm.linklocalip,
-                    "service cloud status"
+                    "systemctl is-active cloud"
                 )
             except KeyError:
                 self.skipTest(
@@ -471,13 +497,13 @@ class TestSSVMs(cloudstackTestCase):
                             credentials to check router services")
         res = str(result)
         self.debug("Cloud Process status: %s" % res)
-        # cloud.com service (type=secstorage) is running: process id: 2346
+        # Apache CloudStack service (type=secstorage) is running: process id: 2346
         self.assertEqual(
-            res.count("is running"),
+            res.count("active"),
             1,
             "Check cloud service is running or not"
         )
-        
+
         linklocal_ip = None
         # Check status of cloud service
         if self.hypervisor.lower() in ('vmware', 'hyperv'):
@@ -517,8 +543,6 @@ class TestSSVMs(cloudstackTestCase):
             res,
             "The cached Link Local should be the same as the current Link Local IP, but they are different! Current ==> %s; Cached ==> %s " % (linklocal_ip, res)
         )
-        
-        return
 
     @attr(
         tags=[
@@ -586,7 +610,7 @@ class TestSSVMs(cloudstackTestCase):
                 self.apiclient.connection.user,
                 self.apiclient.connection.passwd,
                 cpvm.privateip,
-                "service cloud status",
+                "systemctl is-active cloud",
                 hypervisor=self.hypervisor
             )
         else:
@@ -599,7 +623,7 @@ class TestSSVMs(cloudstackTestCase):
                     host.user,
                     host.passwd,
                     cpvm.linklocalip,
-                    "service cloud status"
+                    "systemctl is-active cloud"
                 )
             except KeyError:
                 self.skipTest(
@@ -608,7 +632,7 @@ class TestSSVMs(cloudstackTestCase):
         res = str(result)
         self.debug("Cloud Process status: %s" % res)
         self.assertEqual(
-            res.count("is running"),
+            res.count("active"),
             1,
             "Check cloud service is running or not"
         )
@@ -652,8 +676,6 @@ class TestSSVMs(cloudstackTestCase):
             res,
             "The cached Link Local should be the same as the current Link Local IP, but they are different! Current ==> %s; Cached ==> %s " % (linklocal_ip, res)
         )
-
-        return
 
     @attr(
         tags=[
@@ -702,45 +724,21 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = ssvm.id
         self.apiclient.stopSystemVm(cmd)
 
-        timeout = self.services["timeout"]
-        while True:
-            list_ssvm_response = list_ssvms(
-                self.apiclient,
-                id=ssvm.id
-            )
-            if isinstance(list_ssvm_response, list):
-                if list_ssvm_response[0].state == 'Running':
-                    break
-            if timeout == 0:
-                raise Exception("List SSVM call failed!")
-
-            time.sleep(self.services["sleep"])
-            timeout = timeout - 1
-
-        self.assertEqual(
-            isinstance(list_ssvm_response, list),
-            True,
-            "Check list response returns a valid list"
-        )
-        ssvm_response = list_ssvm_response[0]
+        ssvm_response = self.checkForRunningSystemVM(ssvm)
         self.debug("SSVM state after debug: %s" % ssvm_response.state)
         self.assertEqual(
             ssvm_response.state,
             'Running',
             "Check whether SSVM is running or not"
         )
+
         # Wait for the agent to be up
         self.waitForSystemVMAgent(ssvm_response.name)
 
         # Call above tests to ensure SSVM is properly running
         self.test_01_list_sec_storage_vm()
 
-        # Wait for some time before running diagnostic scripts on SSVM
-        # as it may take some time to start all service properly
-        time.sleep(int(self.services["configurableData"]["systemVmDelay"]))
-
         self.test_03_ssvm_internals()
-        return
 
     @attr(
         tags=[
@@ -789,23 +787,7 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = cpvm.id
         self.apiclient.stopSystemVm(cmd)
 
-        timeout = self.services["timeout"]
-        while True:
-            list_cpvm_response = list_ssvms(
-                self.apiclient,
-                id=cpvm.id
-            )
-            if isinstance(list_cpvm_response, list):
-                if list_cpvm_response[0].state == 'Running':
-                    break
-            if timeout == 0:
-                raise Exception("List CPVM call failed!")
-
-            time.sleep(self.services["sleep"])
-            timeout = timeout - 1
-
-        cpvm_response = list_cpvm_response[0]
-
+        cpvm_response = self.checkForRunningSystemVM(cpvm)
         self.debug("CPVM state after debug: %s" % cpvm_response.state)
 
         self.assertEqual(
@@ -820,12 +802,7 @@ class TestSSVMs(cloudstackTestCase):
         # Call above tests to ensure CPVM is properly running
         self.test_02_list_cpvm_vm()
 
-        # Wait for some time before running diagnostic scripts on SSVM
-        # as it may take some time to start all service properly
-        time.sleep(int(self.services["configurableData"]["systemVmDelay"]))
-
         self.test_04_cpvm_internals()
-        return
 
     @attr(
         tags=[
@@ -878,22 +855,7 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = ssvm_response.id
         self.apiclient.rebootSystemVm(cmd)
 
-        timeout = self.services["timeout"]
-        while True:
-            list_ssvm_response = list_ssvms(
-                self.apiclient,
-                id=ssvm_response.id
-            )
-            if isinstance(list_ssvm_response, list):
-                if list_ssvm_response[0].state == 'Running':
-                    break
-            if timeout == 0:
-                raise Exception("List SSVM call failed!")
-
-            time.sleep(self.services["sleep"])
-            timeout = timeout - 1
-
-        ssvm_response = list_ssvm_response[0]
+        ssvm_response = self.checkForRunningSystemVM(ssvm_response)
         self.debug("SSVM State: %s" % ssvm_response.state)
         self.assertEqual(
             'Running',
@@ -912,13 +874,8 @@ class TestSSVMs(cloudstackTestCase):
         # Wait for the agent to be up
         self.waitForSystemVMAgent(ssvm_response.name)
 
-        # Wait for some time before running diagnostic scripts on SSVM
-        # as it may take some time to start all service properly
-        time.sleep(int(self.services["configurableData"]["systemVmDelay"]))
-
         # Call to verify cloud process is running
         self.test_03_ssvm_internals()
-        return
 
     @attr(
         tags=[
@@ -970,23 +927,7 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = cpvm_response.id
         self.apiclient.rebootSystemVm(cmd)
 
-        timeout = self.services["timeout"]
-        while True:
-            list_cpvm_response = list_ssvms(
-                self.apiclient,
-                id=cpvm_response.id
-            )
-            if isinstance(list_cpvm_response, list):
-                if list_cpvm_response[0].state == 'Running':
-                    break
-            if timeout == 0:
-                raise Exception("List CPVM call failed!")
-
-            time.sleep(self.services["sleep"])
-            timeout = timeout - 1
-
-        cpvm_response = list_cpvm_response[0]
-
+        cpvm_response = self.checkForRunningSystemVM(cpvm_response)
         self.debug("CPVM state: %s" % cpvm_response.state)
         self.assertEqual(
             'Running',
@@ -1001,17 +942,12 @@ class TestSSVMs(cloudstackTestCase):
         )
 
         # Private IP Address of System VMs are allowed to change after reboot - CLOUDSTACK-7745
-        
+
         # Wait for the agent to be up
         self.waitForSystemVMAgent(cpvm_response.name)
 
-        # Wait for some time before running diagnostic scripts on SSVM
-        # as it may take some time to start all service properly
-        time.sleep(int(self.services["configurableData"]["systemVmDelay"]))
-
         # Call to verify cloud process is running
         self.test_04_cpvm_internals()
-        return
 
     @attr(
         tags=[
@@ -1052,23 +988,7 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = ssvm_response.id
         self.apiclient.destroySystemVm(cmd)
 
-        timeout = self.services["timeout"]
-        while True:
-            list_ssvm_response = list_ssvms(
-                self.apiclient,
-                zoneid=self.zone.id,
-                systemvmtype='secondarystoragevm'
-            )
-            if isinstance(list_ssvm_response, list):
-                if list_ssvm_response[0].state == 'Running':
-                    break
-            if timeout == 0:
-                raise Exception("List SSVM call failed!")
-
-            time.sleep(self.services["sleep"])
-            timeout = timeout - 1
-
-        ssvm_response = list_ssvm_response[0]
+        ssvm_response = self.checkForRunningSystemVM(ssvm_response, 'secondarystoragevm')
 
         # Verify Name, Public IP, Private IP and Link local IP
         # for newly created SSVM
@@ -1098,13 +1018,8 @@ class TestSSVMs(cloudstackTestCase):
         # Wait for the agent to be up
         self.waitForSystemVMAgent(ssvm_response.name)
 
-        # Wait for some time before running diagnostic scripts on SSVM
-        # as it may take some time to start all service properly
-        time.sleep(int(self.services["configurableData"]["systemVmDelay"]))
-
         # Call to verify cloud process is running
         self.test_03_ssvm_internals()
-        return
 
     @attr(
         tags=[
@@ -1144,23 +1059,7 @@ class TestSSVMs(cloudstackTestCase):
         cmd.id = cpvm_response.id
         self.apiclient.destroySystemVm(cmd)
 
-        timeout = self.services["timeout"]
-        while True:
-            list_cpvm_response = list_ssvms(
-                self.apiclient,
-                systemvmtype='consoleproxy',
-                zoneid=self.zone.id
-            )
-            if isinstance(list_cpvm_response, list):
-                if list_cpvm_response[0].state == 'Running':
-                    break
-            if timeout == 0:
-                raise Exception("List CPVM call failed!")
-
-            time.sleep(self.services["sleep"])
-            timeout = timeout - 1
-
-        cpvm_response = list_cpvm_response[0]
+        cpvm_response = self.checkForRunningSystemVM(cpvm_response, 'consoleproxy')
 
         # Verify Name, Public IP, Private IP and Link local IP
         # for newly created CPVM
@@ -1190,10 +1089,147 @@ class TestSSVMs(cloudstackTestCase):
         # Wait for the agent to be up
         self.waitForSystemVMAgent(cpvm_response.name)
 
-        # Wait for some time before running diagnostic scripts on SSVM
-        # as it may take some time to start all service properly
-        time.sleep(int(self.services["configurableData"]["systemVmDelay"]))
-
         # Call to verify cloud process is running
         self.test_04_cpvm_internals()
-        return
+
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "sg"],
+        required_hardware="true")
+    def test_11_ss_nfs_version_on_ssvm(self):
+        """Test NFS Version on Secondary Storage mounted properly on SSVM
+        """
+
+        # 1) List SSVM in zone
+        # 2) Get id and url from mounted nfs store
+        # 3) Update NFS version for previous image store
+        # 4) Stop SSVM
+        # 5) Check NFS version of mounted nfs store after SSVM starts 
+
+        nfs_version = self.config.nfsVersion
+        if nfs_version == None:
+            self.skipTest('No NFS version provided in test data')
+
+        #List SSVM for zone id
+        list_ssvm_response = list_ssvms(
+            self.apiclient,
+            systemvmtype='secondarystoragevm',
+            state='Running',
+            zoneid=self.zone.id
+        )
+        self.assertNotEqual(
+            list_ssvm_response,
+            None
+        )
+        self.assertEqual(
+            isinstance(list_ssvm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertEqual(
+            len(list_ssvm_response),
+            1,
+            "Check list System VMs response"
+        )
+
+        ssvm = list_ssvm_response[0]
+        image_stores_response = ImageStore.list(self.apiclient,zoneid=self.zone.id)
+
+        if self.hypervisor.lower() in ('vmware', 'hyperv'):
+            # SSH into SSVMs is done via management server for Vmware and Hyper-V
+            result = get_process_status(
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
+                ssvm.privateip,
+                "mount | grep 'type nfs'",
+                hypervisor=self.hypervisor)
+
+        for res in result:
+            split_res = res.split("on")
+            mounted_img_store_url = split_res[0].strip()
+            for img_store in image_stores_response:
+                img_store_url = str(img_store.url)
+                if img_store_url.startswith("nfs://"):
+                    img_store_url = img_store_url[6:]
+                    #Add colon after ip address to match output from mount command
+                    first_slash = img_store_url.find('/')
+                    img_store_url = img_store_url[0:first_slash] + ':' + img_store_url[first_slash:]
+                    if img_store_url == mounted_img_store_url:
+                        img_store_id = img_store.id
+                        break
+
+        self.assertNotEqual(
+            img_store_id,
+            None,
+            "Check image store id mounted on SSVM"
+        )
+
+        #Update NFS version for image store mounted on SSVM
+        updateConfigurationCmd = updateConfiguration.updateConfigurationCmd()
+        updateConfigurationCmd.name = "secstorage.nfs.version"
+        updateConfigurationCmd.value = nfs_version
+        updateConfigurationCmd.imagestoreuuid = img_store_id
+
+        updateConfigurationResponse = self.apiclient.updateConfiguration(updateConfigurationCmd)
+        self.logger.debug("updated the parameter %s with value %s"%(updateConfigurationResponse.name, updateConfigurationResponse.value))
+
+        #Stop SSVM
+        self.debug("Stopping SSVM: %s" % ssvm.id)
+        cmd = stopSystemVm.stopSystemVmCmd()
+        cmd.id = ssvm.id
+        self.apiclient.stopSystemVm(cmd)
+
+        new_list_ssvm_response = self.checkForRunningSystemVM(ssvm)
+
+        self.assertNotEqual(
+            new_list_ssvm_response,
+            None
+        )
+        self.assertEqual(
+            isinstance(new_list_ssvm_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        ssvm = new_list_ssvm_response[0]
+        self.debug("SSVM state after debug: %s" % ssvm.state)
+        self.assertEqual(
+            ssvm.state,
+            'Running',
+            "Check whether SSVM is running or not"
+        )
+        # Wait for the agent to be up
+        self.waitForSystemVMAgent(ssvm.name)
+
+        #Check NFS version on mounted image store
+        result = get_process_status(
+                self.apiclient.connection.mgtSvr,
+                22,
+                self.apiclient.connection.user,
+                self.apiclient.connection.passwd,
+                ssvm.privateip,
+                "mount | grep '%s'"%mounted_img_store_url,
+                hypervisor=self.hypervisor)
+
+        self.assertNotEqual(
+            result,
+            None
+        )
+        self.assertEqual(
+            len(result),
+            1,
+            "Check result length"
+        )
+
+        res = result[0]
+        mounted_nfs_version = res.split("vers=")[1][0:1]
+        self.assertEqual(
+            int(mounted_nfs_version),
+            int(nfs_version),
+            "Check mounted NFS version to be the same as provided"
+        )

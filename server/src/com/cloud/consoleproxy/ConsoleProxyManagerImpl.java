@@ -29,7 +29,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.cloudstack.config.ApiServiceConfiguration;
+import org.apache.cloudstack.agent.lb.IndirectAgentLB;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -110,6 +110,7 @@ import com.cloud.user.AccountManager;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
+import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
@@ -210,6 +211,8 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private KeysManager _keysMgr;
     @Inject
     private VirtualMachineManager _itMgr;
+    @Inject
+    private IndirectAgentLB indirectAgentLB;
 
     private ConsoleProxyListener _listener;
 
@@ -228,7 +231,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
     private String _instance;
 
     private int _proxySessionTimeoutValue = DEFAULT_PROXY_SESSION_TIMEOUT;
-    private boolean _sslEnabled = true;
+    private boolean _sslEnabled = false;
     private String _consoleProxyUrlDomain;
 
     // global load picture at zone basis
@@ -1243,8 +1246,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
-        String value = configs.get(Config.ConsoleProxyCmdPort.key());
-        value = configs.get("consoleproxy.sslEnabled");
+        String value = configs.get("consoleproxy.sslEnabled");
         if (value != null && value.equalsIgnoreCase("true")) {
             _sslEnabled = true;
         }
@@ -1354,7 +1356,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
         StringBuilder buf = profile.getBootArgsBuilder();
         buf.append(" template=domP type=consoleproxy");
-        buf.append(" host=").append(ApiServiceConfiguration.ManagementHostIPAdr.value());
+        buf.append(" host=").append(StringUtils.toCSVList(indirectAgentLB.getManagementServerList(dest.getHost().getId(), dest.getDataCenter().getId(), null)));
         buf.append(" port=").append(_mgmtPort);
         buf.append(" name=").append(profile.getVirtualMachine().getHostName());
         if (_sslEnabled) {
@@ -1394,7 +1396,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
 
             if (nic.getTrafficType() == TrafficType.Management) {
                 String mgmt_cidr = _configDao.getValue(Config.ManagementNetwork.key());
-                if (NetUtils.isValidCIDR(mgmt_cidr)) {
+                if (NetUtils.isValidIp4Cidr(mgmt_cidr)) {
                     buf.append(" mgmtcidr=").append(mgmt_cidr);
                 }
                 buf.append(" localgw=").append(dest.getPod().getGateway());

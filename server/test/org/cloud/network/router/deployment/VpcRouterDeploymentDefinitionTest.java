@@ -168,9 +168,30 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
         assertEquals("If there is already a router found, there is no need to deploy more", 0, deployment.getNumberOfRoutersToDeploy());
     }
 
+    protected void driveTestPrepareDeployment(final boolean isRedundant, final boolean isPublicNw) {
+        // Prepare
+        when(vpcMgr.isSrcNatIpRequired(mockVpc.getVpcOfferingId())).thenReturn(isPublicNw);
+
+        // Execute
+        final boolean canProceedDeployment = deployment.prepareDeployment();
+        // Assert
+        assertTrue("There are no preconditions for Vpc Deployment, thus it should always pass", canProceedDeployment);
+        assertEquals(isPublicNw, deployment.isPublicNetwork());
+    }
+
     @Test
-    public void testPrepareDeployment() {
-        assertTrue("There are no preconditions for Vpc Deployment, thus it should always pass", deployment.prepareDeployment());
+    public void testPrepareDeploymentPublicNw() {
+        driveTestPrepareDeployment(true, true);
+    }
+
+    @Test
+    public void testPrepareDeploymentNonRedundant() {
+        driveTestPrepareDeployment(false, true);
+    }
+
+    @Test
+    public void testPrepareDeploymentRedundantNonPublicNw() {
+        driveTestPrepareDeployment(true, false);
     }
 
     @Test
@@ -246,6 +267,7 @@ public class VpcRouterDeploymentDefinitionTest extends RouterDeploymentDefinitio
         // Prepare
         final PublicIp publicIp = mock(PublicIp.class);
         when(vpcMgr.assignSourceNatIpAddressToVpc(mockOwner, mockVpc)).thenReturn(publicIp);
+        deployment.isPublicNetwork = true;
 
         // Execute
         deployment.findSourceNatIP();

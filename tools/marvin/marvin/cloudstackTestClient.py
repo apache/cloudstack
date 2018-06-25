@@ -147,9 +147,19 @@ class CSTestClient(object):
                     self.__logger.error("__createApiClient: API "
                                         "Client Creation Failed")
                     return FAILED
+
+                getuser_keys = getUserKeys.getUserKeysCmd()
+                getuser_keys.id = list_user_res[0].id
+                getuser_keys_res = self.__apiClient.getUserKeys(getuser_keys)
+                if getuser_keys_res is None :
+                    self.__logger.error("__createApiClient: API "
+                                        "Client Creation Failed")
+                    return FAILED
+
+                api_key = getuser_keys_res.apikey
+                security_key = getuser_keys_res.secretkey
+
                 user_id = list_user_res[0].id
-                api_key = list_user_res[0].apikey
-                security_key = list_user_res[0].secretkey
                 if api_key is None:
                     ret = self.__getKeys(user_id)
                     if ret != FAILED:
@@ -210,7 +220,18 @@ class CSTestClient(object):
                 self.__apiClient.registerUserKeys(register_user)
             if not register_user_res:
                 return FAILED
-            return (register_user_res.apikey, register_user_res.secretkey)
+
+            getuser_keys = getUserKeys.getUserKeysCmd()
+            getuser_keys.id = userid
+            getuser_keys_res = self.__apiClient.getUserKeys(getuser_keys)
+            if getuser_keys_res is None :
+                self.__logger.error("__createApiClient: API "
+                                "Client Creation Failed")
+                return FAILED
+
+            api_key = getuser_keys_res.apikey
+            security_key = getuser_keys_res.secretkey
+            return (api_key, security_key)
         except Exception as e:
             self.__logger.exception("Exception Occurred Under __geKeys : "
                                     "%s" % GetDetailExceptionInfo(e))
@@ -349,8 +370,17 @@ class CSTestClient(object):
 
             listuserRes = self.__apiClient.listUsers(listuser)
             userId = listuserRes[0].id
-            apiKey = listuserRes[0].apikey
-            securityKey = listuserRes[0].secretkey
+
+            getuser_keys = getUserKeys.getUserKeysCmd()
+            getuser_keys.id = listuserRes[0].id
+            getuser_keys_res = self.__apiClient.getUserKeys(getuser_keys)
+            if getuser_keys_res is None or\
+                (validateList(getuser_keys_res) != PASS):
+                self.__logger.error("__createApiClient: API "
+                                "Client Creation Failed")
+
+            apiKey = getuser_keys_res.apikey
+            securityKey = getuser_keys_res.secretkey
 
             if apiKey is None:
                 ret = self.__getKeys(userId)

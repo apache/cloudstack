@@ -48,6 +48,11 @@ public final class CitrixResizeVolumeCommandWrapper extends CommandWrapper<Resiz
         long newSize = command.getNewSize();
 
         try {
+
+            if (command.getCurrentSize() >= newSize) {
+                s_logger.info("No need to resize volume: " + volId +", current size " + command.getCurrentSize() + " is same as  new size " + newSize);
+                return new ResizeVolumeAnswer(command, true, "success", newSize);
+            }
             if (command.isManaged()) {
                 resizeSr(conn, command);
             }
@@ -77,7 +82,7 @@ public final class CitrixResizeVolumeCommandWrapper extends CommandWrapper<Resiz
             Set<PBD> allPbds = new HashSet<>();
 
             for (SR sr : srs) {
-                if (!CitrixResourceBase.SRType.LVMOISCSI.equals(sr.getType(conn))) {
+                if (!(CitrixResourceBase.SRType.LVMOISCSI.equals(sr.getType(conn))))  {
                     continue;
                 }
 

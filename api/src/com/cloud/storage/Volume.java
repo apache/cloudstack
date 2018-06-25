@@ -51,7 +51,8 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         NotUploaded("The volume entry is just created in DB, not yet uploaded"),
         UploadInProgress("Volume upload is in progress"),
         UploadError("Volume upload encountered some error"),
-        UploadAbandoned("Volume upload is abandoned since the upload was never initiated within a specificed time");
+        UploadAbandoned("Volume upload is abandoned since the upload was never initiated within a specificed time"),
+        Attaching("The volume is attaching to a VM");
 
         String _description;
 
@@ -118,6 +119,9 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadInProgress, Event.OperationTimeout, UploadError, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadError, Event.DestroyRequested, Destroy, null));
             s_fsm.addTransition(new StateMachine2.Transition<State, Event>(UploadAbandoned, Event.DestroyRequested, Destroy, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Ready, Event.AttachRequested, Attaching, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.OperationSucceeded, Ready, null));
+            s_fsm.addTransition(new StateMachine2.Transition<State, Event>(Attaching, Event.OperationFailed, Ready, null));
         }
     }
 
@@ -139,6 +143,7 @@ public interface Volume extends ControlledEntity, Identity, InternalIdentity, Ba
         DestroyRequested,
         ExpungingRequested,
         ResizeRequested,
+        AttachRequested,
         OperationTimeout;
     }
 

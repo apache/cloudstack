@@ -85,7 +85,7 @@ class Services:
                     "displaytext": "Public Template",
                     "name": "Public template",
                     "ostype": 'CentOS 5.3 (64-bit)',
-                    "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
+                    "url": "http://download.cloudstack.org/releases/2.0.0/UbuntuServer-10-04-64bit.vhd.bz2",
                     "hypervisor": 'XenServer',
                     "format": 'VHD',
                     "isfeatured": True,

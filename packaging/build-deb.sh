@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-set -e
+#set -e
 
 #
 # This script builds Debian packages for CloudStack and does
@@ -34,20 +34,30 @@ set -e
 # Assume that the cloudstack source is present in /tmp/cloudstack
 #
 # Ubuntu 16.04
-# docker run -ti -v /tmp:/src ubuntu:16.04 /bin/bash -c "apt-get update && apt-get install -y dpkg-dev python debhelper openjdk-8-jdk genisoimage python-mysql.connector maven lsb-release devscripts && /src/cloudstack/packaging/build-deb.sh"
+# docker run -ti -v /tmp:/src ubuntu:16.04 /bin/bash -c "apt-get update && apt-get install -y dpkg-dev python debhelper openjdk-8-jdk genisoimage python-mysql.connector maven lsb-release devscripts dh-systemd python-setuptools && /src/cloudstack/packaging/build-deb.sh"
 #
 # Ubuntu 14.04
-# docker run -ti -v /tmp:/src ubuntu:14.04 /bin/bash -c "apt-get update && apt-get install -y dpkg-dev python debhelper openjdk-7-jdk genisoimage python-mysql.connector maven lsb-release devscripts && /src/cloudstack/packaging/build-deb.sh"
+# docker run -ti -v /tmp:/src ubuntu:14.04 /bin/bash -c "apt-get update && apt-get install -y dpkg-dev python debhelper openjdk-8-jdk genisoimage python-mysql.connector maven lsb-release devscripts dh-systemd python-setuptools && /src/cloudstack/packaging/build-deb.sh"
 #
 
 cd `dirname $0`
 cd ..
 
-dpkg-checkbuilddeps
+DCH=$(which dch)
+if [ -z "$DCH" ] ; then
+    echo -e "dch not found, please install devscripts at first. \nDEB Build Failed"
+    exit
+fi
 
-VERSION=$(grep '^  <version>' pom.xml| cut -d'>' -f2 |cut -d'<' -f1)
+VERSION=$(head -n1 debian/changelog  |awk -F [\(\)] '{print $2}')
 DISTCODE=$(lsb_release -sc)
 
-dch -b -v "${VERSION}~${DISTCODE}" -u low -m "Apache CloudStack Release ${VERSION}"
+/bin/cp debian/changelog /tmp/changelog.orig
 
-dpkg-buildpackage -j2 -b -uc -us
+dch -b -v "${VERSION}~${DISTCODE}" -u low -m "Apache CloudStack Release ${VERSION}"
+sed -i '0,/ UNRELEASED;/s// unstable;/g' debian/changelog
+
+dpkg-checkbuilddeps
+dpkg-buildpackage -uc -us -b
+
+/bin/mv /tmp/changelog.orig debian/changelog

@@ -39,12 +39,12 @@ public interface VMEntityManager {
     String reserveVirtualMachine(VMEntityVO vmEntityVO, DeploymentPlanner plannerToUse, DeploymentPlan plan, ExcludeList exclude) throws InsufficientCapacityException,
         ResourceUnavailableException;
 
-    void deployVirtualMachine(String reservationId, VMEntityVO vmEntityVO, String caller, Map<VirtualMachineProfile.Param, Object> params)
+    void deployVirtualMachine(String reservationId, VMEntityVO vmEntityVO, String caller, Map<VirtualMachineProfile.Param, Object> params, boolean deployOnGivenHost)
         throws InsufficientCapacityException, ResourceUnavailableException;
 
     boolean stopvirtualmachine(VMEntityVO vmEntityVO, String caller) throws ResourceUnavailableException;
 
     boolean stopvirtualmachineforced(VMEntityVO vmEntityVO, String caller) throws ResourceUnavailableException;
 
-    boolean destroyVirtualMachine(VMEntityVO vmEntityVO, String caller) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
+    boolean destroyVirtualMachine(VMEntityVO vmEntityVO, String caller, boolean expunge) throws AgentUnavailableException, OperationTimedoutException, ConcurrentOperationException;
 }

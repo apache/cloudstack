@@ -80,4 +80,11 @@ public class UserVmDetailVO implements ResourceDetail {
         return display;
     }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setValue(String value) {
+        this.value = value;
+    }
 }

@@ -120,4 +120,10 @@ public class UsageVMSnapshotVO implements InternalIdentity {
         return this.id;
     }
 
+    @Override
+    public String toString() {
+        return "UsageVMSnapshotVO [id=" + id + ", zoneId=" + zoneId + ", accountId=" + accountId + ", domainId=" + domainId + ", vmId=" + vmId + ", diskOfferingId="
+                + diskOfferingId + ", size=" + size + ", created=" + created + ", processed=" + processed + "]";
+    }
+
 }

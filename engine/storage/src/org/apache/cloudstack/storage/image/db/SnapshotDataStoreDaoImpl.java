@@ -16,25 +16,6 @@
 // under the License.
 package org.apache.cloudstack.storage.image.db;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-
-import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
-import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-
 import com.cloud.storage.DataStoreRole;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;
@@ -43,6 +24,28 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UpdateBuilder;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.dao.SnapshotDao;
+import javax.inject.Inject;
+import com.cloud.hypervisor.Hypervisor;
+import java.util.ArrayList;
+import com.cloud.utils.db.Filter;
+import javax.naming.ConfigurationException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO, Long> implements SnapshotDataStoreDao {
@@ -56,9 +59,15 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     private SearchBuilder<SnapshotDataStoreVO> snapshotIdSearch;
     private SearchBuilder<SnapshotDataStoreVO> volumeIdSearch;
     private SearchBuilder<SnapshotDataStoreVO> volumeSearch;
+    private SearchBuilder<SnapshotDataStoreVO> stateSearch;
+    private SearchBuilder<SnapshotDataStoreVO> parentSnapshotSearch;
+    private SearchBuilder<SnapshotVO> snapshotVOSearch;
 
-    private final String parentSearch = "select store_id, store_role, snapshot_id from cloud.snapshot_store_ref where store_id = ? "
-        + " and store_role = ? and volume_id = ? and state = 'Ready'" + " order by created DESC " + " limit 1";
+    public static ArrayList<Hypervisor.HypervisorType> hypervisorsSupportingSnapshotsChaining = new ArrayList<Hypervisor.HypervisorType>();
+
+    @Inject
+    private SnapshotDao _snapshotDao;
+
     private final String findLatestSnapshot = "select store_id, store_role, snapshot_id from cloud.snapshot_store_ref where " +
             " store_role = ? and volume_id = ? and state = 'Ready'" +
             " order by created DESC " +
@@ -103,6 +112,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         snapshotSearch = createSearchBuilder();
         snapshotSearch.and("snapshot_id", snapshotSearch.entity().getSnapshotId(), SearchCriteria.Op.EQ);
         snapshotSearch.and("store_role", snapshotSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        snapshotSearch.and("state", snapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
         snapshotSearch.done();
 
         storeSnapshotSearch = createSearchBuilder();
@@ -124,6 +134,21 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         volumeSearch.and("volume_id", volumeSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
         volumeSearch.and("store_role", volumeSearch.entity().getRole(), SearchCriteria.Op.EQ);
         volumeSearch.done();
+
+        stateSearch = createSearchBuilder();
+        stateSearch.and("state", stateSearch.entity().getState(), SearchCriteria.Op.IN);
+        stateSearch.done();
+
+        parentSnapshotSearch = createSearchBuilder();
+        parentSnapshotSearch.and("volume_id", parentSnapshotSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        parentSnapshotSearch.and("store_id", parentSnapshotSearch.entity().getDataStoreId(), SearchCriteria.Op.EQ);
+        parentSnapshotSearch.and("store_role", parentSnapshotSearch.entity().getRole(), SearchCriteria.Op.EQ);
+        parentSnapshotSearch.and("state", parentSnapshotSearch.entity().getState(), SearchCriteria.Op.EQ);
+        parentSnapshotSearch.done();
+
+        snapshotVOSearch = _snapshotDao.createSearchBuilder();
+        snapshotVOSearch.and("volume_id", snapshotVOSearch.entity().getVolumeId(), SearchCriteria.Op.EQ);
+        snapshotVOSearch.done();
 
         return true;
     }
@@ -269,22 +294,17 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
     @Override
     @DB
     public SnapshotDataStoreVO findParent(DataStoreRole role, Long storeId, Long volumeId) {
-        TransactionLegacy txn = TransactionLegacy.currentTxn();
-        try (
-                PreparedStatement pstmt = txn.prepareStatement(parentSearch);
-            ){
-            pstmt.setLong(1, storeId);
-            pstmt.setString(2, role.toString());
-            pstmt.setLong(3, volumeId);
-            try (ResultSet rs = pstmt.executeQuery();) {
-                while (rs.next()) {
-                    long sid = rs.getLong(1);
-                    long snid = rs.getLong(3);
-                    return findByStoreSnapshot(role, sid, snid);
-                }
+        if(isSnapshotChainingRequired(volumeId)) {
+            SearchCriteria<SnapshotDataStoreVO> sc = parentSnapshotSearch.create();
+            sc.setParameters("volume_id", volumeId);
+            sc.setParameters("store_role", role.toString());
+            sc.setParameters("state", ObjectInDataStoreStateMachine.State.Ready.name());
+            sc.setParameters("store_id", storeId);
+
+            List<SnapshotDataStoreVO> snapshotList = listBy(sc, new Filter(SnapshotDataStoreVO.class, "created", false, null, null));
+            if (snapshotList != null && snapshotList.size() != 0) {
+                return snapshotList.get(0);
             }
-        } catch (SQLException e) {
-            s_logger.debug("Failed to find parent snapshot: " + e.toString());
         }
         return null;
     }
@@ -294,6 +314,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         SearchCriteria<SnapshotDataStoreVO> sc = snapshotSearch.create();
         sc.setParameters("snapshot_id", snapshotId);
         sc.setParameters("store_role", role);
+        sc.setParameters("state", State.Ready);
         return findOneBy(sc);
     }
 
@@ -408,4 +429,28 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         UpdateBuilder ub = getUpdateBuilder(snapshot);
         update(ub, sc, null);
     }
+
+    @Override
+    public List<SnapshotDataStoreVO> listByState(ObjectInDataStoreStateMachine.State... states) {
+        SearchCriteria<SnapshotDataStoreVO> sc = stateSearch.create();
+        sc.setParameters("state", (Object[])states);
+        return listBy(sc, null);
+    }
+
+    private boolean isSnapshotChainingRequired(long volumeId) {
+
+        hypervisorsSupportingSnapshotsChaining.add(Hypervisor.HypervisorType.XenServer);
+
+        SearchCriteria<SnapshotVO> sc = snapshotVOSearch.create();
+        sc.setParameters("volume_id", volumeId);
+
+        SnapshotVO volSnapshot = _snapshotDao.findOneBy(sc);
+
+        if (volSnapshot != null && hypervisorsSupportingSnapshotsChaining.contains(volSnapshot.getHypervisorType())) {
+            return true;
+        }
+
+        return false;
+    }
+
 }

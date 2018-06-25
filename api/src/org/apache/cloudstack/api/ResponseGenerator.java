@@ -20,6 +20,7 @@ import java.text.DecimalFormat;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -237,6 +238,8 @@ public interface ResponseGenerator {
 
     VlanIpRangeResponse createVlanIpRangeResponse(Vlan vlan);
 
+    VlanIpRangeResponse createVlanIpRangeResponse(Class<? extends VlanIpRangeResponse> subClass, Vlan vlan);
+
     IPAddressResponse createIPAddressResponse(ResponseView view, IpAddress ipAddress);
 
     GuestVlanRangeResponse createDedicatedGuestVlanRangeResponse(GuestVlan result);
@@ -283,6 +286,8 @@ public interface ResponseGenerator {
 
     Host findHostById(Long hostId);
 
+    DiskOffering findDiskOfferingById(Long diskOfferingId);
+
     VpnUsersResponse createVpnUserResponse(VpnUser user);
 
     RemoteAccessVpnResponse createRemoteAccessVpnResponse(RemoteAccessVpn vpn);
@@ -305,7 +310,11 @@ public interface ResponseGenerator {
 
     TemplateResponse createTemplateUpdateResponse(ResponseView view, VirtualMachineTemplate result);
 
-    List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result, Long zoneId, boolean readyOnly);
+    List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result,
+                                                   Long zoneId, boolean readyOnly);
+
+    List<TemplateResponse> createTemplateResponses(ResponseView view, VirtualMachineTemplate result,
+                                                   List<Long> zoneIds, boolean readyOnly);
 
     List<CapacityResponse> createCapacityResponse(List<? extends Capacity> result, DecimalFormat format);
 
@@ -423,6 +432,10 @@ public interface ResponseGenerator {
     SnapshotScheduleResponse createSnapshotScheduleResponse(SnapshotSchedule sched);
 
     UsageRecordResponse createUsageResponse(Usage usageRecord);
+
+    UsageRecordResponse createUsageResponse(Usage usageRecord, Map<String, Set<ResourceTagResponse>> resourceTagResponseMap);
+
+    public Map<String, Set<ResourceTagResponse>> getUsageResourceTags();
 
     TrafficMonitorResponse createTrafficMonitorResponse(Host trafficMonitor);
 

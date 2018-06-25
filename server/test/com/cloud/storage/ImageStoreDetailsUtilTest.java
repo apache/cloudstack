@@ -17,42 +17,54 @@
 package com.cloud.storage;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.cloud.capacity.CapacityManager;
+
 public class ImageStoreDetailsUtilTest {
 
     private final static long STORE_ID = 1l;
     private final static String STORE_UUID = "aaaa-aaaa-aaaa-aaaa";
     private final static Integer NFS_VERSION = 3;
+    private final static Integer NFS_VERSION_DEFAULT = 2;
 
     ImageStoreDetailsUtil imageStoreDetailsUtil = new ImageStoreDetailsUtil();
 
     ImageStoreDao imgStoreDao = mock(ImageStoreDao.class);
     ImageStoreDetailsDao imgStoreDetailsDao = mock(ImageStoreDetailsDao.class);
+    ConfigurationDao configurationDao = mock(ConfigurationDao.class);
 
     @Before
     public void setup() throws Exception {
         Map<String, String> imgStoreDetails = new HashMap<String, String>();
-        imgStoreDetails.put("nfs.version", String.valueOf(NFS_VERSION));
+        String nfsVersionKey = CapacityManager.ImageStoreNFSVersion.key();
+        imgStoreDetails.put(nfsVersionKey, String.valueOf(NFS_VERSION));
         when(imgStoreDetailsDao.getDetails(STORE_ID)).thenReturn(imgStoreDetails);
 
         ImageStoreVO imgStoreVO = mock(ImageStoreVO.class);
         when(imgStoreVO.getId()).thenReturn(Long.valueOf(STORE_ID));
         when(imgStoreDao.findByUuid(STORE_UUID)).thenReturn(imgStoreVO);
 
+        ConfigurationVO confVO = mock(ConfigurationVO.class);
+        String defaultValue = (NFS_VERSION_DEFAULT == null ? null : String.valueOf(NFS_VERSION_DEFAULT));
+        when(confVO.getValue()).thenReturn(defaultValue);
+        when(configurationDao.findByName(nfsVersionKey)).thenReturn(confVO);
+
         imageStoreDetailsUtil.imageStoreDao = imgStoreDao;
         imageStoreDetailsUtil.imageStoreDetailsDao = imgStoreDetailsDao;
+        imageStoreDetailsUtil.configurationDao = configurationDao;
     }
 
     @Test
@@ -68,7 +80,7 @@ public class ImageStoreDetailsUtilTest {
         when(imgStoreDetailsDao.getDetails(STORE_ID)).thenReturn(imgStoreDetails);
 
         Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(STORE_ID);
-        assertNull(nfsVersion);
+        assertEquals(NFS_VERSION_DEFAULT, nfsVersion);
     }
 
     @Test
@@ -77,7 +89,7 @@ public class ImageStoreDetailsUtilTest {
         when(imgStoreDetailsDao.getDetails(STORE_ID)).thenReturn(imgStoreDetails);
 
         Integer nfsVersion = imageStoreDetailsUtil.getNfsVersion(STORE_ID);
-        assertNull(nfsVersion);
+        assertEquals(NFS_VERSION_DEFAULT, nfsVersion);
     }
 
     @Test
@@ -90,6 +102,12 @@ public class ImageStoreDetailsUtilTest {
     public void testGetNfsVersionByUuidNoImgStore(){
         when(imgStoreDao.findByUuid(STORE_UUID)).thenReturn(null);
         Integer nfsVersion = imageStoreDetailsUtil.getNfsVersionByUuid(STORE_UUID);
-        assertNull(nfsVersion);
+        assertEquals(NFS_VERSION_DEFAULT, nfsVersion);
+    }
+
+    @Test
+    public void testGetGlobalDefaultNfsVersion(){
+        Integer globalDefaultNfsVersion = imageStoreDetailsUtil.getGlobalDefaultNfsVersion();
+        assertEquals(NFS_VERSION_DEFAULT, globalDefaultNfsVersion);
     }
 }

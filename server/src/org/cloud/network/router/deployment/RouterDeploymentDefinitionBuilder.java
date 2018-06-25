@@ -22,6 +22,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.network.dao.NetworkDetailsDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -96,6 +97,8 @@ public class RouterDeploymentDefinitionBuilder {
     private VpcManager vpcMgr;
     @Inject
     private VlanDao vlanDao;
+    @Inject
+    private NetworkDetailsDao networkDetailsDao;
 
     @Autowired
     @Qualifier("networkHelper")
@@ -133,6 +136,7 @@ public class RouterDeploymentDefinitionBuilder {
         routerDeploymentDefinition.ipv6Dao = ipv6Dao;
         routerDeploymentDefinition.ipAddressDao = ipAddressDao;
         routerDeploymentDefinition.serviceOfferingId = offeringId;
+        routerDeploymentDefinition.networkDetailsDao = networkDetailsDao;
 
         routerDeploymentDefinition.nwHelper = nwHelper;
 

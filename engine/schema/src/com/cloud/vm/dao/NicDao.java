@@ -44,6 +44,8 @@ public interface NicDao extends GenericDao<NicVO, Long> {
 
     NicVO findByIp4AddressAndNetworkId(String ip4Address, long networkId);
 
+    NicVO findByNetworkIdAndMacAddress(long networkId, String mac);
+
     NicVO findDefaultNicForVM(long instanceId);
 
     /**
@@ -74,4 +76,10 @@ public interface NicDao extends GenericDao<NicVO, Long> {
     List<NicVO> listByNetworkIdTypeAndGatewayAndBroadcastUri(long networkId, VirtualMachine.Type vmType, String gateway, URI broadcastUri);
 
     int countNicsForStartingVms(long networkId);
+
+    NicVO getControlNicForVM(long vmId);
+
+    Long getPeerRouterId(String publicMacAddress, long routerId);
+
+    List<NicVO> listByVmIdAndKeyword(long instanceId, String keyword);
 }

@@ -30,6 +30,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
+import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.IsolationType;
@@ -491,6 +492,11 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
         return false;
     }
 
+    @Override
+    public boolean providerSupportsCapability(Set<Provider> providers, Service service, Capability cap) {
+        return false;
+    }
+
     /* (non-Javadoc)
      * @see com.cloud.network.NetworkModel#checkCapabilityForProvider(java.util.Set, com.cloud.network.Network.Service, com.cloud.network.Network.Capability, java.lang.String)
      */
@@ -825,7 +831,7 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public void checkRequestedIpAddresses(long networkId, String ip4, String ip6) throws InvalidParameterValueException {
+    public void checkRequestedIpAddresses(long networkId, IpAddresses ips) throws InvalidParameterValueException {
         // TODO Auto-generated method stub
     }
 
@@ -892,7 +898,12 @@ public class MockNetworkModelImpl extends ManagerBase implements NetworkModel {
     }
 
     @Override
-    public List<String[]> generateVmData(String userData, String serviceOffering, String zoneName, String vmName, long vmId, String publicKey, String password, Boolean isWindows) {
+    public List<String[]> generateVmData(String userData, String serviceOffering, long datacenterId, String vmName, String vmHostName, long vmId, String vmUuid, String guestIpAddress, String publicKey, String password, Boolean isWindows) {
+        return null;
+    }
+
+    @Override
+    public String getValidNetworkCidr(Network guestNetwork) {
         return null;
     }
 

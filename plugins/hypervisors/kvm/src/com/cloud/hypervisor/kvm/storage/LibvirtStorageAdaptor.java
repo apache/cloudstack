@@ -147,44 +147,24 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         StoragePool sp = null;
         try {
             s_logger.debug(spd.toString());
+            // check whether the pool is already mounted
+            int mountpointResult = Script.runSimpleBashScriptForExitValue("mountpoint -q " + targetPath);
+            // if the pool is mounted, try to unmount it
+            if(mountpointResult == 0) {
+                s_logger.info("Attempting to unmount old mount at " + targetPath);
+                String result = Script.runSimpleBashScript("umount -l " + targetPath);
+                if (result == null) {
+                    s_logger.info("Succeeded in unmounting " + targetPath);
+                } else {
+                    s_logger.error("Failed in unmounting storage");
+                }
+            }
+
             sp = conn.storagePoolCreateXML(spd.toString(), 0);
             return sp;
         } catch (LibvirtException e) {
             s_logger.error(e.toString());
-            // if error is that pool is mounted, try to handle it
-            if (e.toString().contains("already mounted")) {
-                s_logger.error("Attempting to unmount old mount libvirt is unaware of at " + targetPath);
-                String result = Script.runSimpleBashScript("umount -l " + targetPath);
-                if (result == null) {
-                    s_logger.error("Succeeded in unmounting " + targetPath);
-                    try {
-                        sp = conn.storagePoolCreateXML(spd.toString(), 0);
-                        s_logger.error("Succeeded in redefining storage");
-                        return sp;
-                    } catch (LibvirtException l) {
-                        s_logger.error("Target was already mounted, unmounted it but failed to redefine storage:" + l);
-                    }
-                } else {
-                    s_logger.error("Failed in unmounting and redefining storage");
-                }
-            } else {
-                s_logger.error("Internal error occurred when attempting to mount: specified path may be invalid");
-                throw e;
-            }
-            if (sp != null) {
-                try {
-                    if (sp.isPersistent() == 1) {
-                        sp.destroy();
-                        sp.undefine();
-                    } else {
-                        sp.destroy();
-                    }
-                    sp.free();
-                } catch (LibvirtException l) {
-                    s_logger.debug("Failed to undefine " + fsType.toString() + " storage pool with: " + l.toString());
-                }
-            }
-            return null;
+            throw e;
         }
     }
 
@@ -659,25 +639,25 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         s_logger.info("Attempting to create volume " + name + " (" + pool.getType().toString() + ") in pool "
                 + pool.getUuid() + " with size " + size);
 
-        switch (pool.getType()){
-        case RBD:
-            return createPhysicalDiskOnRBD(name, pool, format, provisioningType, size);
-        case NetworkFilesystem:
-        case Filesystem:
-            switch (format){
-            case QCOW2:
-                return createPhysicalDiskByQemuImg(name, pool, format, provisioningType, size);
-            case RAW:
-                return createPhysicalDiskByQemuImg(name, pool, format, provisioningType, size);
-            case DIR:
-                return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
-            case TAR:
-                return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+        switch (pool.getType()) {
+            case RBD:
+                return createPhysicalDiskByLibVirt(name, pool, PhysicalDiskFormat.RAW, provisioningType, size);
+            case NetworkFilesystem:
+            case Filesystem:
+                switch (format) {
+                    case QCOW2:
+                        return createPhysicalDiskByQemuImg(name, pool, format, provisioningType, size);
+                    case RAW:
+                        return createPhysicalDiskByQemuImg(name, pool, format, provisioningType, size);
+                    case DIR:
+                        return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                    case TAR:
+                        return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                    default:
+                        throw new CloudRuntimeException("Unexpected disk format is specified.");
+                }
             default:
-                throw new CloudRuntimeException("Unexpected disk format is specified.");
-            }
-        default:
-            return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
+                return createPhysicalDiskByLibVirt(name, pool, format, provisioningType, size);
         }
     }
 
@@ -748,50 +728,6 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
         return disk;
     }
 
-    private KVMPhysicalDisk createPhysicalDiskOnRBD(String name, KVMStoragePool pool,
-            PhysicalDiskFormat format, Storage.ProvisioningType provisioningType, long size) {
-        String volPath = null;
-
-        /**
-         * To have RBD function properly we want RBD images of format 2
-         * libvirt currently defaults to format 1
-         *
-         * This has been fixed in libvirt 1.2.2, but that's not upstream
-         * in all distributions
-         *
-         * For that reason we use the native RBD bindings to create the
-         * RBD image until libvirt creates RBD format 2 by default
-         */
-
-        try {
-            s_logger.info("Creating RBD image " + pool.getSourceDir() + "/" + name + " with size " + size);
-
-            Rados r = new Rados(pool.getAuthUserName());
-            r.confSet("mon_host", pool.getSourceHost() + ":" + pool.getSourcePort());
-            r.confSet("key", pool.getAuthSecret());
-            r.confSet("client_mount_timeout", "30");
-            r.connect();
-            s_logger.debug("Succesfully connected to Ceph cluster at " + r.confGet("mon_host"));
-
-            IoCTX io = r.ioCtxCreate(pool.getSourceDir());
-            Rbd rbd = new Rbd(io);
-            rbd.create(name, size, rbdFeatures, rbdOrder);
-
-            r.ioCtxDestroy(io);
-        } catch (RadosException e) {
-            throw new CloudRuntimeException(e.toString());
-        } catch (RbdException e) {
-            throw new CloudRuntimeException(e.toString());
-        }
-
-        volPath = pool.getSourceDir() + "/" + name;
-        KVMPhysicalDisk disk = new KVMPhysicalDisk(volPath, name, pool);
-        disk.setFormat(PhysicalDiskFormat.RAW);
-        disk.setSize(size);
-        disk.setVirtualSize(size);
-        return disk;
-    }
-
     @Override
     public boolean connectPhysicalDisk(String name, KVMStoragePool pool, Map<String, String> details) {
         // this is for managed storage that needs to prep disks prior to use
@@ -802,6 +738,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     public boolean disconnectPhysicalDisk(String uuid, KVMStoragePool pool) {
         // this is for managed storage that needs to cleanup disks after use
         return true;
+    }
+
+    @Override
+    public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
+        // this is for managed storage that needs to cleanup disks after use
+        return false;
     }
 
     @Override
@@ -1385,4 +1327,5 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private void deleteDirVol(LibvirtStoragePool pool, StorageVol vol) throws LibvirtException {
         Script.runSimpleBashScript("rm -r --interactive=never " + vol.getPath());
     }
+
 }

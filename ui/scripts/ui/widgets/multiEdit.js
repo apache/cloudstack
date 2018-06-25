@@ -31,6 +31,7 @@
             var $item = $('<div>').addClass('data-item');
             var multiRule = data;
             var reorder = options.reorder;
+            var selectPermission = options.selectPermission;
 
             $item.append($('<table>').append($('<tbody>')));
             $tr = $('<tr>').appendTo($item.find('tbody'));
@@ -178,6 +179,19 @@
                             }
                             $td.attr('title', data[fieldName]);
                         }
+                    } else if (field.isBoolean) {
+                        var $checkbox = $('<input>');
+                        $checkbox.attr({
+                            disabled: true,
+                            name: fieldName,
+                            type: 'checkbox'
+                        });
+                        if (_s(data[fieldName])) {
+                            $checkbox.attr({
+                                checked: true
+                            });
+                        }
+                        $checkbox.appendTo($td);
                     } else if (field.select) {
                         // Get matching option text
                         var $matchingSelect = $multi.find('select')
@@ -189,10 +203,34 @@
                                 return $(this).val() == data[fieldName];
                             });
 
-                        var matchingValue = $matchingOption.size() ?
-                            $matchingOption.html() : data[fieldName];
+                        if (selectPermission) {
+                            // Wrap div to get its html code
+                            selectedOptionHtml = $matchingOption.clone().wrap('<div>').parent().html();
+                            // Get html code from not matching option
+                            $matchingSelect.find('option').each(
+                                function() {
+                                    if ($(this).val() != data[fieldName]){
+                                        selectedOptionHtml += $(this).clone().wrap('<div>').parent().html();
+                                    }
+                                }
+                            );
+                            $select = $('<select>');
+                            $select.html(selectedOptionHtml);
+                            $select.change(function(event) {
+                                selectPermission.action({
+                                    roleid: data['roleid'],
+                                    ruleid: data['id'],
+                                    permission: $(this).val()
+                                });
+                            });
+                            $td.append($select);
+                        }
+                        else {
+                            var matchingValue = $matchingOption.size() ?
+                                $matchingOption.html() : data[fieldName];
 
-                        $td.append($('<span>').html(_s(matchingValue)));
+                            $td.append($('<span>').html(_s(matchingValue)));
+                        }
                     } else if (field.addButton && !options.noSelect) {
                         if (options.multipleAdd) {
                             $addButton.click(function() {
@@ -554,7 +592,7 @@
 
             var $dataList = $listView.addClass('multi-edit-add-list').dialog({
                 dialogClass: 'multi-edit-add-list panel',
-                width: 825,
+                width: 900,
                 title: label,
                 buttons: [{
                     text: _l('label.apply'),
@@ -862,6 +900,7 @@
         var actionPreFilter = args.actionPreFilter;
         var readOnlyCheck = args.readOnlyCheck;
         var reorder = args.reorder;
+        var selectPermission = args.selectPermission;
 
         var $thead = $('<tr>').appendTo(
             $('<thead>').appendTo($inputTable)
@@ -954,6 +993,12 @@
                         error: function(args) {}
                     }
                 });
+            } else if (field.isBoolean) {
+                var $input = $('<input>')
+                    .attr({
+                        name: fieldName,
+                        type: 'checkbox'
+                }).appendTo($td);
             } else if (field.edit && field.edit != 'ignore') {
                 if (field.range) {
                     var $range = $('<div>').addClass('range').appendTo($td);
@@ -1092,7 +1137,11 @@
                 $multi.find('input').each(function() {
                     var $input = $(this);
 
-                    if ($input.data('multi-default-value')) {
+                    if ($input.is(":checkbox")) {
+                        $input.attr({
+                            checked: false
+                        });
+                    } else if ($input.data('multi-default-value')) {
                         $input.val($input.data('multi-default-value'));
                     } else {
                         $input.val('');
@@ -1197,7 +1246,8 @@
                                     preFilter: actionPreFilter,
                                     listView: listView,
                                     tags: tags,
-                                    reorder: reorder
+                                    reorder: reorder,
+                                    selectPermission: selectPermission
                                 }
                             ).appendTo($dataBody);
                         });

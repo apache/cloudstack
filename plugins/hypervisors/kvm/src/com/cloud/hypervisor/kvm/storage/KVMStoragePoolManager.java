@@ -158,6 +158,18 @@ public class KVMStoragePoolManager {
         return result;
     }
 
+    public boolean disconnectPhysicalDisk(Map<String, String> volumeToDisconnect) {
+        for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
+            StorageAdaptor adaptor = set.getValue();
+
+            if (adaptor.disconnectPhysicalDisk(volumeToDisconnect)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public boolean disconnectPhysicalDiskByPath(String path) {
         for (Map.Entry<String, StorageAdaptor> set : _storageMapper.entrySet()) {
             StorageAdaptor adaptor = set.getValue();
@@ -253,7 +265,7 @@ public class KVMStoragePoolManager {
         String uuid = null;
         String sourceHost = "";
         StoragePoolType protocol = null;
-        if (storageUri.getScheme().equalsIgnoreCase("nfs")) {
+        if (storageUri.getScheme().equalsIgnoreCase("nfs") || storageUri.getScheme().equalsIgnoreCase("NetworkFilesystem")) {
             sourcePath = storageUri.getPath();
             sourcePath = sourcePath.replace("//", "/");
             sourceHost = storageUri.getHost();

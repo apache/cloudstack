@@ -21,21 +21,21 @@ import org.apache.cloudstack.storage.command.CommandResult;
 import com.cloud.agent.api.Answer;
 
 public class SnapshotResult extends CommandResult {
-    private SnapshotInfo snashot;
+    private SnapshotInfo snapshot;
     private Answer answer;
 
     public SnapshotResult(SnapshotInfo snapshot, Answer answer) {
         super();
-        this.setSnashot(snapshot);
+        this.setSnapshot(snapshot);
         this.setAnswer(answer);
     }
 
-    public SnapshotInfo getSnashot() {
-        return snashot;
+    public SnapshotInfo getSnapshot() {
+        return snapshot;
     }
 
-    public void setSnashot(SnapshotInfo snashot) {
-        this.snashot = snashot;
+    public void setSnapshot(SnapshotInfo snapshot) {
+        this.snapshot = snapshot;
     }
 
     public Answer getAnswer() {

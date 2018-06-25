@@ -72,6 +72,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> IdStatesSearch;
     protected SearchBuilder<VMInstanceVO> AllFieldsSearch;
     protected SearchBuilder<VMInstanceVO> ZoneTemplateNonExpungedSearch;
+    protected SearchBuilder<VMInstanceVO> TemplateNonExpungedSearch;
     protected SearchBuilder<VMInstanceVO> NameLikeSearch;
     protected SearchBuilder<VMInstanceVO> StateChangeSearch;
     protected SearchBuilder<VMInstanceVO> TransitionSearch;
@@ -87,10 +88,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected GenericSearchBuilder<VMInstanceVO, Long> FindIdsOfVirtualRoutersByAccount;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountActiveByHost;
     protected GenericSearchBuilder<VMInstanceVO, Long> CountRunningByAccount;
+    protected GenericSearchBuilder<VMInstanceVO, Long> CountByZoneAndState;
     protected SearchBuilder<VMInstanceVO> NetworkTypeSearch;
     protected GenericSearchBuilder<VMInstanceVO, String> DistinctHostNameSearch;
     protected SearchBuilder<VMInstanceVO> HostAndStateSearch;
     protected SearchBuilder<VMInstanceVO> StartingWithNoHostSearch;
+    protected SearchBuilder<VMInstanceVO> NotMigratingSearch;
 
     @Inject
     ResourceTagDao _tagsDao;
@@ -163,6 +166,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         ZoneTemplateNonExpungedSearch.and("template", ZoneTemplateNonExpungedSearch.entity().getTemplateId(), Op.EQ);
         ZoneTemplateNonExpungedSearch.and("state", ZoneTemplateNonExpungedSearch.entity().getState(), Op.NEQ);
         ZoneTemplateNonExpungedSearch.done();
+
+
+        TemplateNonExpungedSearch = createSearchBuilder();
+        TemplateNonExpungedSearch.and("template", TemplateNonExpungedSearch.entity().getTemplateId(), Op.EQ);
+        TemplateNonExpungedSearch.and("state", TemplateNonExpungedSearch.entity().getState(), Op.NEQ);
+        TemplateNonExpungedSearch.done();
 
         NameLikeSearch = createSearchBuilder();
         NameLikeSearch.and("name", NameLikeSearch.entity().getHostName(), Op.LIKE);
@@ -242,6 +251,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         CountRunningByAccount.and("state", CountRunningByAccount.entity().getState(), SearchCriteria.Op.EQ);
         CountRunningByAccount.done();
 
+        CountByZoneAndState = createSearchBuilder(Long.class);
+        CountByZoneAndState.select(null, Func.COUNT, null);
+        CountByZoneAndState.and("zone", CountByZoneAndState.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        CountByZoneAndState.and("state", CountByZoneAndState.entity().getState(), SearchCriteria.Op.EQ);
+        CountByZoneAndState.done();
+
         HostAndStateSearch = createSearchBuilder();
         HostAndStateSearch.and("host", HostAndStateSearch.entity().getHostId(), Op.EQ);
         HostAndStateSearch.and("states", HostAndStateSearch.entity().getState(), Op.IN);
@@ -266,6 +281,11 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         DistinctHostNameSearch.join("nicSearch", nicSearch, DistinctHostNameSearch.entity().getId(), nicSearch.entity().getInstanceId(), JoinBuilder.JoinType.INNER);
         DistinctHostNameSearch.done();
 
+        NotMigratingSearch = createSearchBuilder();
+        NotMigratingSearch.and("host", NotMigratingSearch.entity().getHostId(), Op.EQ);
+        NotMigratingSearch.and("lastHost", NotMigratingSearch.entity().getLastHostId(), Op.EQ);
+        NotMigratingSearch.and("state", NotMigratingSearch.entity().getState(), Op.NEQ);
+        NotMigratingSearch.done();
     }
 
     @Override
@@ -287,6 +307,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
         sc.setParameters("host", hostid);
 
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMInstanceVO> listNonMigratingVmsByHostEqualsLastHost(long hostId) {
+        SearchCriteria<VMInstanceVO> sc = NotMigratingSearch.create();
+        sc.setParameters("host", hostId);
+        sc.setParameters("lastHost", hostId);
+        sc.setParameters("state", State.Migrating);
         return listBy(sc);
     }
 
@@ -324,6 +353,15 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<VMInstanceVO> sc = AllFieldsSearch.create();
         sc.setParameters("zone", zoneId);
         sc.setParameters("type", type.toString());
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMInstanceVO> listNonExpungedByTemplate(long templateId) {
+        SearchCriteria<VMInstanceVO> sc = TemplateNonExpungedSearch.create();
+
+        sc.setParameters("template", templateId);
+        sc.setParameters("state", State.Expunging);
         return listBy(sc);
     }
 
@@ -715,6 +753,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         SearchCriteria<Long> sc = CountRunningByAccount.create();
         sc.setParameters("account", accountId);
         sc.setParameters("state", State.Running);
+        return customSearch(sc, null).get(0);
+    }
+
+    @Override
+    public Long countByZoneAndState(long zoneId, State state) {
+        SearchCriteria<Long> sc = CountByZoneAndState.create();
+        sc.setParameters("zone", zoneId);
+        sc.setParameters("state", state);
         return customSearch(sc, null).get(0);
     }
 

@@ -19,6 +19,8 @@
 
 package com.cloud.hypervisor.xenserver.resource.wrapper.xenbase;
 
+import java.util.Map;
+
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -32,22 +34,40 @@ import com.xensource.xenapi.SR;
 
 @ResourceWrapper(handles =  DeleteStoragePoolCommand.class)
 public final class CitrixDeleteStoragePoolCommandWrapper extends CommandWrapper<DeleteStoragePoolCommand, Answer, CitrixResourceBase> {
-
     private static final Logger s_logger = Logger.getLogger(CitrixDeleteStoragePoolCommandWrapper.class);
 
     @Override
     public Answer execute(final DeleteStoragePoolCommand command, final CitrixResourceBase citrixResourceBase) {
         final Connection conn = citrixResourceBase.getConnection();
         final StorageFilerTO poolTO = command.getPool();
+
         try {
-            final SR sr = citrixResourceBase.getStorageRepository(conn, poolTO.getUuid());
+            final SR sr;
+
+            // getRemoveDatastore being true indicates we are using managed storage and need to pull the SR name out of a Map
+            // instead of pulling it out using getUuid of the StorageFilerTO instance.
+            if (command.getRemoveDatastore()) {
+                Map<String, String> details = command.getDetails();
+
+                String srNameLabel = details.get(DeleteStoragePoolCommand.DATASTORE_NAME);
+
+                sr = citrixResourceBase.getStorageRepository(conn, srNameLabel);
+            }
+            else {
+                sr = citrixResourceBase.getStorageRepository(conn, poolTO.getUuid());
+            }
+
             citrixResourceBase.removeSR(conn, sr);
+
             final Answer answer = new Answer(command, true, "success");
+
             return answer;
         } catch (final Exception e) {
-            final String msg = "DeleteStoragePoolCommand XenAPIException:" + e.getMessage() + " host:" + citrixResourceBase.getHost().getUuid() + " pool: " + poolTO.getHost()
-                    + poolTO.getPath();
-            s_logger.warn(msg, e);
+            final String msg = "DeleteStoragePoolCommand XenAPIException:" + e.getMessage() + " host:" + citrixResourceBase.getHost().getUuid() +
+                    " pool: " + poolTO.getHost() + poolTO.getPath();
+
+            s_logger.error(msg, e);
+
             return new Answer(command, false, msg);
         }
     }

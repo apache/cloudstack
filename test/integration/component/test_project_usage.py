@@ -20,7 +20,7 @@
 from nose.plugins.attrib import attr
 from marvin.cloudstackTestCase import cloudstackTestCase, unittest
 from marvin.cloudstackAPI import deleteVolume
-from marvin.lib.utils import (cleanup_resources)
+from marvin.lib.utils import (cleanup_resources, validateList)
 from marvin.lib.base import (Project,
                              VirtualMachine,
                              Account,
@@ -35,14 +35,17 @@ from marvin.lib.base import (Project,
                              DiskOffering,
                              LoadBalancerRule,
                              Template,
-                             Iso)
+                             Iso,
+                             VmSnapshot)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_template,
                                list_volumes,
                                get_builtin_template_info,
-                               find_storage_pool_type)
+                               find_storage_pool_type
+                               )
 import time
+from marvin.codes import PASS
 
 class Services:
     """Test Snapshots Services
@@ -67,8 +70,8 @@ class Services:
                                     "name": "Tiny Instance",
                                     "displaytext": "Tiny Instance",
                                     "cpunumber": 1,
-                                    "cpuspeed": 100,    # in MHz
-                                    "memory": 128,       # In MBs
+                                    "cpuspeed": 256,    # in MHz
+                                    "memory": 256,       # In MBs
                         },
                         "disk_offering": {
                                     "displaytext": "Small",
@@ -93,7 +96,7 @@ class Services:
                                     "name": 'Template',
                                     "ostype": 'CentOS 5.3 (64-bit)',
                                     "templatefilter": 'self',
-                                    "url": "http://download.cloud.com/releases/2.0.0/UbuntuServer-10-04-64bit.qcow2.bz2"
+                                    "url": "http://download.cloudstack.org/releases/2.0.0/UbuntuServer-10-04-64bit.qcow2.bz2"
                                 },
                         "iso": {
                                   "displaytext": "Test ISO",
@@ -142,14 +145,14 @@ class TestVmUsage(cloudstackTestCase):
         cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
-        template = get_template(
+        cls.template = get_template(
                             cls.api_client,
                             cls.zone.id,
                             cls.services["ostype"]
                             )
         cls.services["server"]["zoneid"] = cls.zone.id
 
-        cls.services["template"] = template.id
+        cls.services["template"] = cls.template.id
 
         # Create Account, VMs etc
         cls.account = Account.create(
@@ -171,13 +174,7 @@ class TestVmUsage(cloudstackTestCase):
                                             cls.api_client,
                                             cls.services["service_offering"]
                                             )
-        cls.virtual_machine = VirtualMachine.create(
-                                cls.api_client,
-                                cls.services["server"],
-                                templateid=template.id,
-                                serviceofferingid=cls.service_offering.id,
-                                projectid=cls.project.id
-                                )
+
         cls._cleanup = [
                         cls.project,
                         cls.service_offering,
@@ -213,6 +210,7 @@ class TestVmUsage(cloudstackTestCase):
         """Test Create/Destroy VM and verify usage calculation
         """
         # Validate the following
+        # Validate 'listProjects' return tags 'vmstopped' or 'vmrunning' when their value is zero
         # 1. Create a VM. Verify usage_events table contains VM .create,
         #    VM.start , Network.offering.assign , Volume.create events
         # 2. Stop the VM. Verify usage_events table contains
@@ -221,10 +219,38 @@ class TestVmUsage(cloudstackTestCase):
         #    VM.Destroy and volume .delete Event for the created account
         # 4. Delete the account
 
+        projectlist=Project.list(self.apiclient,account=self.account.name,
+                                 domainid=self.account.domainid,id=self.project.id)
+        self.assertEqual(hasattr(projectlist[0],"vmrunning"), True ,
+                         "vmrunningattribute is not returned in list project api ")
+        self.assertEqual(projectlist[0].vmrunning,0,"vmrunning value is not returned")
+        self.assertEqual(hasattr(projectlist[0], "vmrunning"), True,
+                         "vmrunningattribute is not returned in list project api ")
+        self.assertEqual(projectlist[0].vmstopped,0,"vmstopped value is not returned")
+
+        self.virtual_machine = VirtualMachine.create(
+                                self.apiclient,
+                                self.services["server"],
+                                templateid=self.template.id,
+                                serviceofferingid=self.service_offering.id,
+                                projectid=self.project.id
+                                )
+
+        projectlist=Project.list(self.apiclient,account=self.account.name,
+                                 domainid=self.account.domainid,id=self.project.id)
+
+        self.assertEqual(projectlist[0].vmrunning,1,"vmrunning value is not returned")
+        self.assertEqual(projectlist[0].vmstopped,0,"vmstopped value is not returned")
         try:
             self.debug("Stopping the VM: %s" % self.virtual_machine.id)
             # Stop the VM
             self.virtual_machine.stop(self.apiclient)
+            projectlist=Project.list(self.apiclient,account=self.account.name,
+                                 domainid=self.account.domainid,id=self.project.id)
+
+            self.assertEqual(projectlist[0].vmrunning,0,"vmrunning value is not returned")
+            self.assertEqual(projectlist[0].vmstopped,1,"vmstopped value is not returned")
+
         except Exception as e:
             self.fail("Failed to stop VM: %s" % e)
 
@@ -307,6 +333,8 @@ class TestVmUsage(cloudstackTestCase):
                             1,
                             "Check VM.STOP in events table"
                         )
+
+
 
         self.assertEqual(
                             qresult.count('NETWORK.OFFERING.REMOVE'),
@@ -1817,5 +1845,185 @@ class TestVpnUsage(cloudstackTestCase):
                             qresult.count('VPN.USER.ADD'),
                             1,
                             "Check VPN.USER.ADD in events table"
+                        )
+        return
+
+class TestVMSnapshotUsage(cloudstackTestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        cls.testClient = super(TestVMSnapshotUsage, cls).getClsTestClient()
+        cls.api_client = cls.testClient.getApiClient()
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.snapshotSupported = True
+        cls._cleanup = []
+        if cls.hypervisor.lower() in ['hyperv', 'lxc', 'kvm','baremetal']:
+            cls.snapshotSupported = False
+            return
+        cls.services = Services().services
+        # Get Zone, Domain and templates
+        cls.domain = get_domain(cls.api_client)
+        cls.zone = get_zone(cls.api_client, cls.testClient.getZoneForTests())
+        cls.services['mode'] = cls.zone.networktype
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        template = get_template(
+                            cls.api_client,
+                            cls.zone.id,
+                            cls.services["ostype"]
+                            )
+        cls.services["server"]["zoneid"] = cls.zone.id
+
+        cls.services["template"] = template.id
+
+        # Create Account, VMs etc
+        cls.account = Account.create(
+                            cls.api_client,
+                            cls.services["account"],
+                            domainid=cls.domain.id
+                            )
+
+        cls.services["account"] = cls.account.name
+
+        cls.project = Project.create(
+                                 cls.api_client,
+                                 cls.services["project"],
+                                 account=cls.account.name,
+                                 domainid=cls.account.domainid
+                                 )
+
+        cls.service_offering = ServiceOffering.create(
+                                            cls.api_client,
+                                            cls.services["service_offering"]
+                                            )
+        cls.virtual_machine = VirtualMachine.create(
+                                cls.api_client,
+                                cls.services["server"],
+                                templateid=template.id,
+                                serviceofferingid=cls.service_offering.id,
+                                projectid=cls.project.id
+                                )
+        cls._cleanup = [
+                        cls.project,
+                        cls.service_offering,
+                        cls.account,
+                        ]
+        return
+
+    @classmethod
+    def tearDownClass(cls):
+        try:
+            #Cleanup resources used
+            cleanup_resources(cls.api_client, cls._cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+    def setUp(self):
+        self.apiclient = self.testClient.getApiClient()
+        self.dbclient = self.testClient.getDbConnection()
+        self.cleanup = []
+        if not self.snapshotSupported:
+            self.skipTest("Snapshots are not supported on %s" % self.hypervisor)
+        return
+
+    def tearDown(self):
+        try:
+            #Clean up, terminate the created instance and snapshots
+            cleanup_resources(self.apiclient, self.cleanup)
+        except Exception as e:
+            raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
+
+
+    @attr(tags=["advanced", "basic"])
+    def test_01_vmsnapshot_usage(self):
+        """Test Create/Delete a manual snap shot and verify
+        correct usage is recorded
+        """
+        # Validate the following
+        # 1. Create vmsnapshot of the VM  for this account. vm.Snapshot.create
+        #    event is there for the created account in cloud.usage_event table
+        # 2. Destroy the snapshot after some time. vm.Snapshot.delete event is
+        #    generated for the destroyed Snapshot
+        # 3. Delete the account
+
+        vmsnapshot=VmSnapshot.create(self.apiclient,self.virtual_machine.id,snapshotmemory="true")
+        vmsnap = VmSnapshot.list(
+                            self.apiclient,
+                            projectid=self.project.id,
+                            type='ROOT',
+                            listall=True
+                            )
+        self.assertEqual(
+                         isinstance(vmsnap, list),
+                         True,
+                         "Check if list volumes return a valid data"
+                        )
+        self.assertEqual(vmsnapshot.projectid, self.project.id, "check if list vmsnapshot api returns projectid")
+        self.assertEqual(vmsnapshot.project, self.project.name,"check if list vmsnapshot returns project name")
+
+        # Delete snapshot Rule
+        self.debug("Deleting vmsnapshot: %s" % vmsnapshot.id)
+        VmSnapshot.deleteVMSnapshot(self.apiclient,vmsnapshot.id)
+
+
+        # Fetch project account ID from project UUID
+        self.debug(
+            "select project_account_id from projects where uuid = '%s';" \
+                        % self.project.id)
+
+        qresultset = self.dbclient.execute(
+                        "select project_account_id from projects where uuid = '%s';" \
+                        % self.project.id
+                        )
+        self.assertEqual(
+                         isinstance(qresultset, list),
+                         True,
+                         "Check DB query result set for valid data"
+                         )
+
+        self.assertNotEqual(
+                            len(qresultset),
+                            0,
+                            "Check DB Query result set"
+                            )
+        qresult = qresultset[0]
+
+        account_id = qresult[0]
+        self.debug("select type from usage_event where account_id = '%s';" \
+                        % account_id)
+
+        qresultset = self.dbclient.execute(
+                        "select type from usage_event where account_id = '%s';" \
+                        % account_id
+                        )
+
+        self.assertEqual(
+                         isinstance(qresultset, list),
+                         True,
+                         "Check if database query returns a valid data"
+                         )
+
+        self.assertNotEqual(
+                            len(qresultset),
+                            0,
+                            "Check DB Query result set"
+                            )
+
+        qresult = str(qresultset)
+        self.debug("Query Result: %s" % qresult)
+
+        # Check for VM.SNAPSHOT.CREATE, VM.SNAPSHOT.DELETE events in cloud.usage_event
+        # table
+        self.assertEqual(
+                            qresult.count('VMSNAPSHOT.CREATE'),
+                            1,
+                            "Check VM.SNAPSHOT.CREATE event in events table"
+                        )
+
+        self.assertEqual(
+                            qresult.count('VMSNAPSHOT.DELETE'),
+                            1,
+                            "Check VM.SNAPSHOT.DELETE in events table"
                         )
         return

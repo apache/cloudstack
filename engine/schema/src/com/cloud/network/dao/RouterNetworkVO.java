@@ -68,6 +68,10 @@ public class RouterNetworkVO implements InternalIdentity {
         return guestType;
     }
 
+    public void setNetworkId(long networkId) {
+        this.networkId = networkId;
+    }
+
     @Override
     public long getId() {
         return id;

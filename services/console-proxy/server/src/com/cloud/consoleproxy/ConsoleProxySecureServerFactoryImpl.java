@@ -91,6 +91,8 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
                     SSLParameters sslparams = c.getDefaultSSLParameters();
 
                     params.setSSLParameters(sslparams);
+                    params.setProtocols(SSLUtils.getRecommendedProtocols());
+                    params.setCipherSuites(SSLUtils.getRecommendedCiphers());
                     // statement above could throw IAE if any params invalid.
                     // eg. if app has a UI and parameters supplied by a user.
                 }
@@ -110,7 +112,8 @@ public class ConsoleProxySecureServerFactoryImpl implements ConsoleProxyServerFa
             SSLServerSocket srvSock = null;
             SSLServerSocketFactory ssf = sslContext.getServerSocketFactory();
             srvSock = (SSLServerSocket)ssf.createServerSocket(port);
-            srvSock.setEnabledProtocols(SSLUtils.getSupportedProtocols(srvSock.getEnabledProtocols()));
+            srvSock.setEnabledProtocols(SSLUtils.getRecommendedProtocols());
+            srvSock.setEnabledCipherSuites(SSLUtils.getRecommendedCiphers());
 
             s_logger.info("create SSL server socket on port: " + port);
             return srvSock;

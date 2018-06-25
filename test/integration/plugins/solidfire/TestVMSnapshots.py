@@ -18,7 +18,12 @@
 import logging
 import random
 import SignedAPICall
+import time
 import XenAPI
+
+from solidfire.factory import ElementFactory
+
+from util import sf_util
 
 # All tests inherit from cloudstackTestCase
 from marvin.cloudstackTestCase import cloudstackTestCase
@@ -34,10 +39,10 @@ from marvin.lib.common import get_domain, get_template, get_zone, list_hosts, li
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources
 
-from solidfire import solidfire_element_api as sf_api
-
-# on April 15, 2016: Ran 2 tests in 800.299s with three hosts
-# on May 2, 2016: Ran 2 tests in 789.729s with two hosts
+# Prerequisites:
+#  Only one zone
+#  Only one pod
+#  Only one cluster
 
 
 class TestData:
@@ -59,7 +64,6 @@ class TestData:
     solidFire = "solidfire"
     storageTag = "SolidFire_SAN_1"
     tags = "tags"
-    templateName = "templatename"
     url = "url"
     user = "user"
     username = "username"
@@ -68,14 +72,17 @@ class TestData:
     xenServer = "xenserver"
     zoneId = "zoneId"
 
+    # modify to control which hypervisor type to test
+    hypervisor_type = xenServer
+
     def __init__(self):
         self.testdata = {
             TestData.solidFire: {
-                TestData.mvip: "192.168.139.112",
-                TestData.login: "admin",
+                TestData.mvip: "10.117.40.120",
+                TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
-                TestData.url: "https://192.168.139.112:443"
+                TestData.url: "https://10.117.40.120:443"
             },
             TestData.xenServer: {
                 TestData.username: "root",
@@ -98,7 +105,7 @@ class TestData:
             TestData.primaryStorage: {
                 "name": "SolidFire-%d" % random.randint(0, 100),
                 TestData.scope: "ZONE",
-                "url": "MVIP=192.168.139.112;SVIP=10.10.8.112;" +
+                "url": "MVIP=10.117.40.120;SVIP=10.117.41.120;" +
                        "clusterAdminUsername=admin;clusterAdminPassword=admin;" +
                        "clusterDefaultMinIops=10000;clusterDefaultMaxIops=15000;" +
                        "clusterDefaultBurstIopsPercentOfMaxIops=1.5;",
@@ -136,82 +143,13 @@ class TestData:
                 TestData.tags: TestData.storageTag,
                 "storagetype": "shared"
             },
-            "testdiskofferings": {
-                "customiopsdo": {
-                    "name": "SF_Custom_IOPS_DO",
-                    "displaytext": "Customized IOPS DO (Size = 128 GB; Min IOPS = 500; Max IOPS = 1000)",
-                    "disksize": 128,
-                    "customizediops": True,
-                    "miniops": 500,
-                    "maxiops": 1000,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "customsizedo": {
-                    "name": "SF_Custom_Size_DO",
-                    "displaytext": "Customized IOPS DO (Min IOPS = 500; Max IOPS = 1000)",
-                    "disksize": 175,
-                    "customizediops": False,
-                    "miniops": 500,
-                    "maxiops": 1000,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "customsizeandiopsdo": {
-                    "name": "SF_Custom_Size_IOPS_DO",
-                    "displaytext": "Customized Size and IOPS DO",
-                    "disksize": 200,
-                    "customizediops": True,
-                    "miniops": 400,
-                    "maxiops": 800,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "newiopsdo": {
-                    "name": "SF_New_IOPS_DO",
-                    "displaytext": "New IOPS (Size = 128 GB; Min IOPS = 350, Max IOPS = 700)",
-                    "disksize": 128,
-                    "miniops": 350,
-                    "maxiops": 700,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "newsizedo": {
-                    "name": "SF_New_Size_DO",
-                    "displaytext": "New Size: 175",
-                    "disksize": 175,
-                    "miniops": 400,
-                    "maxiops": 800,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                },
-                "newsizeandiopsdo": {
-                    "name": "SF_New_Size_IOPS_DO",
-                    "displaytext": "New Size and IOPS",
-                    "disksize": 200,
-                    "miniops": 200,
-                    "maxiops": 400,
-                    "hypervisorsnapshotreserve": 200,
-                    TestData.tags: TestData.storageTag,
-                    "storagetype": "shared"
-                }
-            },
             TestData.volume_1: {
                 "diskname": "testvolume",
             },
-            "volume2": {
-                "diskname": "testvolume2",
-            },
-            TestData.templateName: "CentOS 5.6(64-bit) no GUI (XenServer)",
             TestData.zoneId: 1,
             TestData.clusterId: 1,
             TestData.domainId: 1,
-            TestData.url: "192.168.129.50"
+            TestData.url: "10.117.40.114"
         }
 
 
@@ -233,7 +171,9 @@ class TestVMSnapshots(cloudstackTestCase):
     def setUpClass(cls):
         # Set up API client
         testclient = super(TestVMSnapshots, cls).getClsTestClient()
+
         cls.apiClient = testclient.getApiClient()
+        cls.configData = testclient.getParsedTestDataConfig()
 
         cls.testdata = TestData().testdata
 
@@ -248,11 +188,13 @@ class TestVMSnapshots(cloudstackTestCase):
         cls.xen_session.xenapi.login_with_password(xenserver[TestData.username], xenserver[TestData.password])
 
         # Set up SolidFire connection
-        cls.sf_client = sf_api.SolidFireAPI(endpoint_dict=cls.testdata[TestData.solidFire])
+        solidfire = cls.testdata[TestData.solidFire]
+
+        cls.sfe = ElementFactory.create(solidfire[TestData.mvip], solidfire[TestData.username], solidfire[TestData.password])
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
-        template = get_template(cls.apiClient, cls.zone.id, template_name=cls.testdata[TestData.templateName])
+        template = get_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 
         # Create test account
@@ -314,7 +256,6 @@ class TestVMSnapshots(cloudstackTestCase):
         )
 
         cls._cleanup = [
-            cls.virtual_machine,
             compute_offering,
             cls.disk_offering,
             user,
@@ -324,11 +265,15 @@ class TestVMSnapshots(cloudstackTestCase):
     @classmethod
     def tearDownClass(cls):
         try:
+            time.sleep(60)
+
+            cls.virtual_machine.delete(cls.apiClient, True)
+
             cleanup_resources(cls.apiClient, cls._cleanup)
 
             cls.primary_storage.delete(cls.apiClient)
 
-            cls._purge_solidfire_volumes()
+            sf_util.purge_solidfire_volumes(cls.sfe)
         except Exception as e:
             logging.debug("Exception in tearDownClass(cls): %s" % e)
 
@@ -346,7 +291,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         root_volumes = list_volumes(self.apiClient, type="ROOT", listAll="true")
 
-        self._check_list(root_volumes, 1, TestVMSnapshots._should_only_be_one_root_volume_err_msg)
+        sf_util.check_list(root_volumes, 1, self, TestVMSnapshots._should_only_be_one_root_volume_err_msg)
 
         root_volume = root_volumes[0]
 
@@ -355,7 +300,7 @@ class TestVMSnapshots(cloudstackTestCase):
         sf_iscsi_name_result = self.cs_api.getVolumeiScsiName(volume_id)
         sf_iscsi_name = sf_iscsi_name_result['apivolumeiscsiname']['volumeiScsiName']
 
-        self._check_iscsi_name(sf_iscsi_name)
+        sf_util.check_iscsi_name(sf_iscsi_name, self)
 
         root_volume_path_1 = self._get_path(volume_id)
 
@@ -388,7 +333,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         xen_vdis = self.xen_session.xenapi.SR.get_VDIs(xen_sr)
 
-        self._check_list(xen_vdis, 3, TestVMSnapshots._should_be_three_vdis_err_msg)
+        sf_util.check_list(xen_vdis, 3, self, TestVMSnapshots._should_be_three_vdis_err_msg)
 
         vdis_after_create = self._get_vdis(xen_vdis)
 
@@ -411,7 +356,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         list_vm_snapshots = VmSnapshot.list(self.apiClient, listAll="true")
 
-        self._check_list(list_vm_snapshots, 1, TestVMSnapshots._should_only_be_one_vm_snapshot_err_msg)
+        sf_util.check_list(list_vm_snapshots, 1, self, TestVMSnapshots._should_only_be_one_vm_snapshot_err_msg)
 
         root_volume_path_3 = self._get_path(volume_id)
 
@@ -423,7 +368,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         xen_vdis = self.xen_session.xenapi.SR.get_VDIs(xen_sr)
 
-        self._check_list(xen_vdis, 3, TestVMSnapshots._should_be_three_vdis_err_msg)
+        sf_util.check_list(xen_vdis, 3, self, TestVMSnapshots._should_be_three_vdis_err_msg)
 
         vdis_after_revert = self._get_vdis(xen_vdis)
 
@@ -470,7 +415,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         xen_vdis = self.xen_session.xenapi.SR.get_VDIs(xen_sr)
 
-        self._check_list(xen_vdis, 1, TestVMSnapshots._should_only_be_one_vdi_err_msg)
+        sf_util.check_list(xen_vdis, 1, self, TestVMSnapshots._should_only_be_one_vdi_err_msg)
 
         vdis_after_delete = self._get_vdis(xen_vdis, True)
 
@@ -505,7 +450,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         root_volumes = list_volumes(self.apiClient, type="ROOT", listAll="true")
 
-        self._check_list(root_volumes, 1, TestVMSnapshots._should_only_be_one_root_volume_err_msg)
+        sf_util.check_list(root_volumes, 1, self, TestVMSnapshots._should_only_be_one_root_volume_err_msg)
 
         root_volume = root_volumes[0]
 
@@ -514,13 +459,13 @@ class TestVMSnapshots(cloudstackTestCase):
         sf_iscsi_name_result = self.cs_api.getVolumeiScsiName(root_volume_id)
         sf_iscsi_root_volume_name = sf_iscsi_name_result['apivolumeiscsiname']['volumeiScsiName']
 
-        self._check_iscsi_name(sf_iscsi_root_volume_name)
+        sf_util.check_iscsi_name(sf_iscsi_root_volume_name, self)
 
         root_volume_path_1 = self._get_path(root_volume_id)
 
         data_volumes = list_volumes(self.apiClient, type="DATADISK", listAll="true")
 
-        self._check_list(data_volumes, 1, "There should only be one data volume.")
+        sf_util.check_list(data_volumes, 1, self, "There should only be one data volume.")
 
         data_volume = data_volumes[0]
 
@@ -529,7 +474,7 @@ class TestVMSnapshots(cloudstackTestCase):
         sf_iscsi_name_result = self.cs_api.getVolumeiScsiName(data_volume_id)
         sf_iscsi_data_volume_name = sf_iscsi_name_result['apivolumeiscsiname']['volumeiScsiName']
 
-        self._check_iscsi_name(sf_iscsi_data_volume_name)
+        sf_util.check_iscsi_name(sf_iscsi_data_volume_name, self)
 
         data_volume_path_1 = self._get_path(data_volume_id)
 
@@ -570,7 +515,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         root_volume_xen_vdis = self.xen_session.xenapi.SR.get_VDIs(root_volume_xen_sr)
 
-        self._check_list(root_volume_xen_vdis, 3, TestVMSnapshots._should_be_three_vdis_err_msg)
+        sf_util.check_list(root_volume_xen_vdis, 3, self, TestVMSnapshots._should_be_three_vdis_err_msg)
 
         root_volume_vdis_after_create = self._get_vdis(root_volume_xen_vdis)
 
@@ -586,7 +531,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         data_volume_xen_vdis = self.xen_session.xenapi.SR.get_VDIs(data_volume_xen_sr)
 
-        self._check_list(data_volume_xen_vdis, 3, TestVMSnapshots._should_be_three_vdis_err_msg)
+        sf_util.check_list(data_volume_xen_vdis, 3, self, TestVMSnapshots._should_be_three_vdis_err_msg)
 
         data_volume_vdis_after_create = self._get_vdis(data_volume_xen_vdis)
 
@@ -609,7 +554,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         list_vm_snapshots = VmSnapshot.list(self.apiClient, listAll="true")
 
-        self._check_list(list_vm_snapshots, 1, TestVMSnapshots._should_only_be_one_vm_snapshot_err_msg)
+        sf_util.check_list(list_vm_snapshots, 1, self, TestVMSnapshots._should_only_be_one_vm_snapshot_err_msg)
 
         root_volume_path_3 = self._get_path(root_volume_id)
 
@@ -621,7 +566,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         root_volume_xen_vdis = self.xen_session.xenapi.SR.get_VDIs(root_volume_xen_sr)
 
-        self._check_list(root_volume_xen_vdis, 3, TestVMSnapshots._should_be_three_vdis_err_msg)
+        sf_util.check_list(root_volume_xen_vdis, 3, self, TestVMSnapshots._should_be_three_vdis_err_msg)
 
         root_volume_vdis_after_revert = self._get_vdis(root_volume_xen_vdis)
 
@@ -653,7 +598,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         data_volume_xen_vdis = self.xen_session.xenapi.SR.get_VDIs(data_volume_xen_sr)
 
-        self._check_list(data_volume_xen_vdis, 3, TestVMSnapshots._should_be_three_vdis_err_msg)
+        sf_util.check_list(data_volume_xen_vdis, 3, self, TestVMSnapshots._should_be_three_vdis_err_msg)
 
         data_volume_vdis_after_revert = self._get_vdis(data_volume_xen_vdis)
 
@@ -700,7 +645,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         root_volume_xen_vdis = self.xen_session.xenapi.SR.get_VDIs(root_volume_xen_sr)
 
-        self._check_list(root_volume_xen_vdis, 1, TestVMSnapshots._should_only_be_one_vdi_err_msg)
+        sf_util.check_list(root_volume_xen_vdis, 1, self, TestVMSnapshots._should_only_be_one_vdi_err_msg)
 
         root_volume_vdis_after_delete = self._get_vdis(root_volume_xen_vdis, True)
 
@@ -720,7 +665,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         data_volume_xen_vdis = self.xen_session.xenapi.SR.get_VDIs(data_volume_xen_sr)
 
-        self._check_list(data_volume_xen_vdis, 1, TestVMSnapshots._should_only_be_one_vdi_err_msg)
+        sf_util.check_list(data_volume_xen_vdis, 1, self, TestVMSnapshots._should_only_be_one_vdi_err_msg)
 
         data_volume_vdis_after_delete = self._get_vdis(data_volume_xen_vdis, True)
 
@@ -745,7 +690,7 @@ class TestVMSnapshots(cloudstackTestCase):
         return path_result['apipathforvolume']['path']
 
     def _verify_vm_snapshot(self, list_vm_snapshots, vm_snapshot):
-        self._check_list(list_vm_snapshots, 1, TestVMSnapshots._should_only_be_one_vm_snapshot_err_msg)
+        sf_util.check_list(list_vm_snapshots, 1, self, TestVMSnapshots._should_only_be_one_vm_snapshot_err_msg)
 
         vm_snapshot_from_list = list_vm_snapshots[0]
 
@@ -765,26 +710,6 @@ class TestVMSnapshots(cloudstackTestCase):
             vm_snapshot.state,
             "Ready",
             "The snapshot is not in the 'Ready' state."
-        )
-
-    def _check_iscsi_name(self, sf_iscsi_name):
-        self.assertEqual(
-            sf_iscsi_name[0],
-            "/",
-            "The iSCSI name needs to start with a forward slash."
-        )
-
-    def _check_list(self, in_list, expected_size_of_list, err_msg):
-        self.assertEqual(
-            isinstance(in_list, list),
-            True,
-            "'in_list' is not a list."
-        )
-
-        self.assertEqual(
-            len(in_list),
-            expected_size_of_list,
-            err_msg
         )
 
     def _get_vdis(self, xen_vdis, only_active_expected=False):
@@ -852,11 +777,3 @@ class TestVMSnapshots(cloudstackTestCase):
         vdis.base_vdi = base_vdi
 
         return vdis
-
-    @classmethod
-    def _purge_solidfire_volumes(cls):
-        deleted_volumes = cls.sf_client.list_deleted_volumes()
-
-        for deleted_volume in deleted_volumes:
-            cls.sf_client.purge_deleted_volume(deleted_volume['volumeID'])
-

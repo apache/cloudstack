@@ -32,7 +32,8 @@ import com.cloud.utils.db.SearchCriteria.Op;
 @Component
 public class LdapConfigurationDaoImpl extends GenericDaoBase<LdapConfigurationVO, Long> implements LdapConfigurationDao {
     private final SearchBuilder<LdapConfigurationVO> hostnameSearch;
-    private final SearchBuilder<LdapConfigurationVO> listAllConfigurationsSearch;
+    private final SearchBuilder<LdapConfigurationVO> listGlobalConfigurationsSearch;
+    private final SearchBuilder<LdapConfigurationVO> listDomainConfigurationsSearch;
 
     public LdapConfigurationDaoImpl() {
         super();
@@ -40,10 +41,16 @@ public class LdapConfigurationDaoImpl extends GenericDaoBase<LdapConfigurationVO
         hostnameSearch.and("hostname", hostnameSearch.entity().getHostname(), SearchCriteria.Op.EQ);
         hostnameSearch.done();
 
-        listAllConfigurationsSearch = createSearchBuilder();
-        listAllConfigurationsSearch.and("hostname", listAllConfigurationsSearch.entity().getHostname(), Op.EQ);
-        listAllConfigurationsSearch.and("port", listAllConfigurationsSearch.entity().getPort(), Op.EQ);
-        listAllConfigurationsSearch.done();
+        listGlobalConfigurationsSearch = createSearchBuilder();
+        listGlobalConfigurationsSearch.and("hostname", listGlobalConfigurationsSearch.entity().getHostname(), Op.EQ);
+        listGlobalConfigurationsSearch.and("port", listGlobalConfigurationsSearch.entity().getPort(), Op.EQ);
+        listGlobalConfigurationsSearch.and("domain_id", listGlobalConfigurationsSearch.entity().getDomainId(),SearchCriteria.Op.NULL);
+        listGlobalConfigurationsSearch.done();
+        listDomainConfigurationsSearch = createSearchBuilder();
+        listDomainConfigurationsSearch.and("hostname", listDomainConfigurationsSearch.entity().getHostname(), Op.EQ);
+        listDomainConfigurationsSearch.and("port", listDomainConfigurationsSearch.entity().getPort(), Op.EQ);
+        listDomainConfigurationsSearch.and("domain_id", listDomainConfigurationsSearch.entity().getDomainId(), Op.EQ);
+        listDomainConfigurationsSearch.done();
     }
 
     @Override
@@ -54,11 +61,31 @@ public class LdapConfigurationDaoImpl extends GenericDaoBase<LdapConfigurationVO
     }
 
     @Override
-    public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(final String hostname, final int port) {
-        final SearchCriteria<LdapConfigurationVO> sc = listAllConfigurationsSearch.create();
+    public LdapConfigurationVO find(String hostname, int port, Long domainId) {
+        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId);
+        return findOneBy(sc);
+    }
+
+    @Override
+    public Pair<List<LdapConfigurationVO>, Integer> searchConfigurations(final String hostname, final int port, final Long domainId) {
+        SearchCriteria<LdapConfigurationVO> sc = getSearchCriteria(hostname, port, domainId);
+        return searchAndCount(sc, null);
+    }
+
+    private SearchCriteria<LdapConfigurationVO> getSearchCriteria(String hostname, int port, Long domainId) {
+        SearchCriteria<LdapConfigurationVO> sc;
+        if (domainId == null) {
+            sc = listDomainConfigurationsSearch.create();
+        } else {
+            sc = listDomainConfigurationsSearch.create();
+            sc.setParameters("domain_id", domainId);
+        }
         if (hostname != null) {
             sc.setParameters("hostname", hostname);
         }
-        return searchAndCount(sc, null);
+        if (port > 0) {
+            sc.setParameters("port", port);
+        }
+        return sc;
     }
 }

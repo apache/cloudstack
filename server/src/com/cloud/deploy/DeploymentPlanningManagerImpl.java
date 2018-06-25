@@ -30,8 +30,10 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.fsm.StateMachine2;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -249,50 +251,16 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     public DeployDestination planDeployment(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoids, DeploymentPlanner planner)
             throws InsufficientServerCapacityException, AffinityConflictException {
 
-        // call affinitygroup chain
+        ServiceOffering offering = vmProfile.getServiceOffering();
+        int cpu_requested = offering.getCpu() * offering.getSpeed();
+        long ram_requested = offering.getRamSize() * 1024L * 1024L;
         VirtualMachine vm = vmProfile.getVirtualMachine();
-        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
         DataCenter dc = _dcDao.findById(vm.getDataCenterId());
 
-        if (vmGroupCount > 0) {
-            for (AffinityGroupProcessor processor : _affinityProcessors) {
-                processor.process(vmProfile, plan, avoids);
-            }
-        }
 
         if (vm.getType() == VirtualMachine.Type.User || vm.getType() == VirtualMachine.Type.DomainRouter) {
             checkForNonDedicatedResources(vmProfile, dc, avoids);
         }
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: " + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
-        }
-
-        // call planners
-        //DataCenter dc = _dcDao.findById(vm.getDataCenterId());
-        // check if datacenter is in avoid set
-        if (avoids.shouldAvoid(dc)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("DataCenter id = '" + dc.getId() + "' provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.");
-            }
-            return null;
-        }
-
-        ServiceOffering offering = vmProfile.getServiceOffering();
-        if(planner == null){
-            String plannerName = offering.getDeploymentPlanner();
-            if (plannerName == null) {
-                if (vm.getHypervisorType() == HypervisorType.BareMetal) {
-                    plannerName = "BareMetalPlanner";
-                } else {
-                    plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
-                }
-            }
-            planner = getDeploymentPlannerByName(plannerName);
-        }
-
-        int cpu_requested = offering.getCpu() * offering.getSpeed();
-        long ram_requested = offering.getRamSize() * 1024L * 1024L;
-
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("DeploymentPlanner allocation algorithm: " + planner);
 
@@ -316,12 +284,22 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 s_logger.debug("The specified host is in avoid set");
             } else {
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Looking for suitable pools for this host under zone: " + host.getDataCenterId() + ", pod: " + host.getPodId() + ", cluster: " +
-                            host.getClusterId());
+                    s_logger.debug(
+                            "Looking for suitable pools for this host under zone: " + host.getDataCenterId() + ", pod: " + host.getPodId() + ", cluster: " + host.getClusterId());
                 }
 
                 Pod pod = _podDao.findById(host.getPodId());
+                // check if the cluster or the pod is disabled
+                if (pod.getAllocationState() != Grouping.AllocationState.Enabled) {
+                    s_logger.warn("The Pod containing this host is in disabled state, PodId= " + pod.getId());
+                    return null;
+                }
+
                 Cluster cluster = _clusterDao.findById(host.getClusterId());
+                if (cluster.getAllocationState() != Grouping.AllocationState.Enabled) {
+                    s_logger.warn("The Cluster containing this host is in disabled state, PodId= " + cluster.getId());
+                    return null;
+                }
 
                 if (vm.getHypervisorType() == HypervisorType.BareMetal) {
                     DeployDestination dest = new DeployDestination(dc, pod, cluster, host, new HashMap<Volume, StoragePool>());
@@ -344,7 +322,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     suitableHosts.add(host);
                     Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
                             suitableHosts, suitableVolumeStoragePools, avoids,
-                            getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes);
+                            getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes, plan.getPreferredHosts());
                     if (potentialResources != null) {
                         pod = _podDao.findById(host.getPodId());
                         cluster = _clusterDao.findById(host.getClusterId());
@@ -362,6 +340,44 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             }
             s_logger.debug("Cannot deploy to specified host, returning.");
             return null;
+        }
+
+        // call affinitygroup chain
+        long vmGroupCount = _affinityGroupVMMapDao.countAffinityGroupsForVm(vm.getId());
+
+        if (vmGroupCount > 0) {
+            for (AffinityGroupProcessor processor : _affinityProcessors) {
+                processor.process(vmProfile, plan, avoids);
+            }
+        }
+
+        if (vm.getType() == VirtualMachine.Type.User) {
+            checkForNonDedicatedResources(vmProfile, dc, avoids);
+        }
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Deploy avoids pods: " + avoids.getPodsToAvoid() + ", clusters: " + avoids.getClustersToAvoid() + ", hosts: " + avoids.getHostsToAvoid());
+        }
+
+        // call planners
+        // DataCenter dc = _dcDao.findById(vm.getDataCenterId());
+        // check if datacenter is in avoid set
+        if (avoids.shouldAvoid(dc)) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("DataCenter id = '" + dc.getId() + "' provided is in avoid set, DeploymentPlanner cannot allocate the VM, returning.");
+            }
+            return null;
+        }
+
+        if (planner == null) {
+            String plannerName = offering.getDeploymentPlanner();
+            if (plannerName == null) {
+                if (vm.getHypervisorType() == HypervisorType.BareMetal) {
+                    plannerName = "BareMetalPlanner";
+                } else {
+                    plannerName = _configDao.getValue(Config.VmDeploymentPlanner.key());
+                }
+            }
+            planner = getDeploymentPlannerByName(plannerName);
         }
 
         if (vm.getLastHostId() != null && haVmTag == null) {
@@ -446,7 +462,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                                 suitableHosts.add(host);
                                 Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
                                         suitableHosts, suitableVolumeStoragePools, avoids,
-                                        getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes);
+                                        getPlannerUsage(planner, vmProfile, plan, avoids), readyAndReusedVolumes, plan.getPreferredHosts());
                                 if (potentialResources != null) {
                                     Map<Volume, StoragePool> storageVolMap = potentialResources.second();
                                     // remove the reused vol<->pool from
@@ -625,21 +641,21 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             if (domainGroupMappings == null || domainGroupMappings.isEmpty()) {
                 //The dedicated resource belongs to VM Account ID.
 
-                tempStorage = _dedicatedDao.searchDedicatedPods(null, vmDomainId, vmAccountId, null).first();
+                tempStorage = _dedicatedDao.searchDedicatedPods(null, vmDomainId, vmAccountId, null, new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
 
                 for(DedicatedResourceVO vo : tempStorage) {
                     allPodsFromDedicatedID.add(vo.getPodId());
                 }
 
                 tempStorage.clear();
-                tempStorage = _dedicatedDao.searchDedicatedClusters(null, vmDomainId, vmAccountId, null).first();
+                tempStorage = _dedicatedDao.searchDedicatedClusters(null, vmDomainId, vmAccountId, null, new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
 
                 for(DedicatedResourceVO vo : tempStorage) {
                     allClustersFromDedicatedID.add(vo.getClusterId());
                 }
 
                 tempStorage.clear();
-                tempStorage = _dedicatedDao.searchDedicatedHosts(null, vmDomainId, vmAccountId, null).first();
+                tempStorage = _dedicatedDao.searchDedicatedHosts(null, vmDomainId, vmAccountId, null, new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
 
                 for(DedicatedResourceVO vo : tempStorage) {
                     allHostsFromDedicatedID.add(vo.getHostId());
@@ -653,21 +669,21 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             else {
                 //The dedicated resource belongs to VM Domain ID or No dedication.
 
-                tempStorage = _dedicatedDao.searchDedicatedPods(null, vmDomainId, null, null).first();
+                tempStorage = _dedicatedDao.searchDedicatedPods(null, vmDomainId, null, null, new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
 
                 for(DedicatedResourceVO vo : tempStorage) {
                     allPodsFromDedicatedID.add(vo.getPodId());
                 }
 
                 tempStorage.clear();
-                tempStorage = _dedicatedDao.searchDedicatedClusters(null, vmDomainId, null, null).first();
+                tempStorage = _dedicatedDao.searchDedicatedClusters(null, vmDomainId, null, null, new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
 
                 for(DedicatedResourceVO vo : tempStorage) {
                     allClustersFromDedicatedID.add(vo.getClusterId());
                 }
 
                 tempStorage.clear();
-                tempStorage = _dedicatedDao.searchDedicatedHosts(null, vmDomainId, null, null).first();
+                tempStorage = _dedicatedDao.searchDedicatedHosts(null, vmDomainId, null, null, new Filter(DedicatedResourceVO.class, "id", true, 0L, 1L)).first();
 
                 for(DedicatedResourceVO vo : tempStorage) {
                     allHostsFromDedicatedID.add(vo.getHostId());
@@ -1025,6 +1041,11 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         for (Long clusterId : clusterList) {
             ClusterVO clusterVO = _clusterDao.findById(clusterId);
 
+            if (clusterVO.getAllocationState() == Grouping.AllocationState.Disabled) {
+                s_logger.debug("Cannot deploy in disabled cluster " + clusterId + ", skipping this cluster");
+                avoid.addCluster(clusterVO.getId());
+            }
+
             if (clusterVO.getHypervisorType() != vmProfile.getHypervisorType()) {
                 s_logger.debug("Cluster: " + clusterId + " has HyperVisorType that does not match the VM, skipping this cluster");
                 avoid.addCluster(clusterVO.getId());
@@ -1037,47 +1058,49 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             DataCenterDeployment potentialPlan =
                     new DataCenterDeployment(plan.getDataCenterId(), clusterVO.getPodId(), clusterVO.getId(), null, plan.getPoolId(), null, plan.getReservationContext());
 
-            // find suitable hosts under this cluster, need as many hosts as we
-            // get.
-            List<Host> suitableHosts = findSuitableHosts(vmProfile, potentialPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
-            // if found suitable hosts in this cluster, find suitable storage
-            // pools for each volume of the VM
-            if (suitableHosts != null && !suitableHosts.isEmpty()) {
-                if (vmProfile.getHypervisorType() == HypervisorType.BareMetal) {
-                    Pod pod = _podDao.findById(clusterVO.getPodId());
-                    DeployDestination dest = new DeployDestination(dc, pod, clusterVO, suitableHosts.get(0));
-                    return dest;
-                }
-
-                Pair<Map<Volume, List<StoragePool>>, List<Volume>> result =
-                        findSuitablePoolsForVolumes(vmProfile, potentialPlan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
-                Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
-                List<Volume> readyAndReusedVolumes = result.second();
-
-                // choose the potential host and pool for the VM
-                if (!suitableVolumeStoragePools.isEmpty()) {
-                    Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(
-                            suitableHosts, suitableVolumeStoragePools, avoid, resourceUsageRequired,
-                            readyAndReusedVolumes);
-
-                    if (potentialResources != null) {
-                        Pod pod = _podDao.findById(clusterVO.getPodId());
-                        Host host = _hostDao.findById(potentialResources.first().getId());
-                        Map<Volume, StoragePool> storageVolMap = potentialResources.second();
-                        // remove the reused vol<->pool from destination, since
-                        // we don't have to prepare this volume.
-                        for (Volume vol : readyAndReusedVolumes) {
-                            storageVolMap.remove(vol);
-                        }
-                        DeployDestination dest = new DeployDestination(dc, pod, clusterVO, host, storageVolMap);
-                        s_logger.debug("Returning Deployment Destination: " + dest);
+            Pod pod = _podDao.findById(clusterVO.getPodId());
+            if (pod.getAllocationState() == Grouping.AllocationState.Enabled ) {
+                // find suitable hosts under this cluster, need as many hosts as we
+                // get.
+                List<Host> suitableHosts = findSuitableHosts(vmProfile, potentialPlan, avoid, HostAllocator.RETURN_UPTO_ALL);
+                // if found suitable hosts in this cluster, find suitable storage
+                // pools for each volume of the VM
+                if (suitableHosts != null && !suitableHosts.isEmpty()) {
+                    if (vmProfile.getHypervisorType() == HypervisorType.BareMetal) {
+                        DeployDestination dest = new DeployDestination(dc, pod, clusterVO, suitableHosts.get(0));
                         return dest;
                     }
+
+                    Pair<Map<Volume, List<StoragePool>>, List<Volume>> result = findSuitablePoolsForVolumes(vmProfile, potentialPlan, avoid, StoragePoolAllocator.RETURN_UPTO_ALL);
+                    Map<Volume, List<StoragePool>> suitableVolumeStoragePools = result.first();
+                    List<Volume> readyAndReusedVolumes = result.second();
+
+                    // choose the potential host and pool for the VM
+                    if (!suitableVolumeStoragePools.isEmpty()) {
+                        Pair<Host, Map<Volume, StoragePool>> potentialResources = findPotentialDeploymentResources(suitableHosts, suitableVolumeStoragePools, avoid,
+                                resourceUsageRequired, readyAndReusedVolumes, plan.getPreferredHosts());
+
+                        if (potentialResources != null) {
+                            Host host = _hostDao.findById(potentialResources.first().getId());
+                            Map<Volume, StoragePool> storageVolMap = potentialResources.second();
+                            // remove the reused vol<->pool from destination, since
+                            // we don't have to prepare this volume.
+                            for (Volume vol : readyAndReusedVolumes) {
+                                storageVolMap.remove(vol);
+                            }
+                            DeployDestination dest = new DeployDestination(dc, pod, clusterVO, host, storageVolMap);
+                            s_logger.debug("Returning Deployment Destination: " + dest);
+                            return dest;
+                        }
+                    } else {
+                        s_logger.debug("No suitable storagePools found under this Cluster: " + clusterId);
+                    }
                 } else {
-                    s_logger.debug("No suitable storagePools found under this Cluster: " + clusterId);
+                    s_logger.debug("No suitable hosts found under this Cluster: " + clusterId);
                 }
-            } else {
-                s_logger.debug("No suitable hosts found under this Cluster: " + clusterId);
+            }
+            else {
+                s_logger.debug("The cluster is in a disabled pod : " + pod.getId());
             }
 
             if (canAvoidCluster(clusterVO, avoid, plannerAvoidOutput, vmProfile)) {
@@ -1195,11 +1218,12 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
     }
 
     protected Pair<Host, Map<Volume, StoragePool>> findPotentialDeploymentResources(List<Host> suitableHosts, Map<Volume, List<StoragePool>> suitableVolumeStoragePools,
-            ExcludeList avoid, DeploymentPlanner.PlannerResourceUsage resourceUsageRequired, List<Volume> readyAndReusedVolumes) {
+            ExcludeList avoid, DeploymentPlanner.PlannerResourceUsage resourceUsageRequired, List<Volume> readyAndReusedVolumes, List<Long> preferredHosts) {
         s_logger.debug("Trying to find a potenial host and associated storage pools from the suitable host/pool lists for this VM");
 
         boolean hostCanAccessPool = false;
         boolean haveEnoughSpace = false;
+        boolean hostAffinityCheck = false;
 
         if (readyAndReusedVolumes == null) {
             readyAndReusedVolumes = new ArrayList<Volume>();
@@ -1223,6 +1247,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 s_logger.debug("Checking if host: " + potentialHost.getId() + " can access any suitable storage pool for volume: " + vol.getVolumeType());
                 List<StoragePool> volumePoolList = suitableVolumeStoragePools.get(vol);
                 hostCanAccessPool = false;
+                hostAffinityCheck = checkAffinity(potentialHost, preferredHosts);
                 for (StoragePool potentialSPool : volumePoolList) {
                     if (hostCanAccessSPool(potentialHost, potentialSPool)) {
                         hostCanAccessPool = true;
@@ -1251,8 +1276,12 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     s_logger.warn("insufficient capacity to allocate all volumes");
                     break;
                 }
+                if (!hostAffinityCheck) {
+                    s_logger.debug("Host affinity check failed");
+                    break;
+                }
             }
-            if (hostCanAccessPool && haveEnoughSpace && checkIfHostFitsPlannerUsage(potentialHost.getId(), resourceUsageRequired)) {
+            if (hostCanAccessPool && haveEnoughSpace && hostAffinityCheck && checkIfHostFitsPlannerUsage(potentialHost.getId(), resourceUsageRequired)) {
                 s_logger.debug("Found a potential host " + "id: " + potentialHost.getId() + " name: " + potentialHost.getName() +
                         " and associated storage pools for this VM");
                 return new Pair<Host, Map<Volume, StoragePool>>(potentialHost, storage);
@@ -1262,6 +1291,20 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
         }
         s_logger.debug("Could not find a potential host that has associated storage pools from the suitable host/pool lists for this VM");
         return null;
+    }
+
+    /**
+     * True if:
+     * - Affinity is not enabled (preferred host is empty)
+     * - Affinity is enabled and potential host is on the preferred hosts list
+     *
+     * False if not
+     */
+    @DB
+    public boolean checkAffinity(Host potentialHost, List<Long> preferredHosts) {
+        boolean hostAffinityEnabled = CollectionUtils.isNotEmpty(preferredHosts);
+        boolean hostAffinityMatches = hostAffinityEnabled && preferredHosts.contains(potentialHost.getId());
+        return !hostAffinityEnabled || hostAffinityMatches;
     }
 
     protected boolean hostCanAccessSPool(Host host, StoragePool pool) {

@@ -406,7 +406,7 @@ public class NetworkACLServiceImpl extends ManagerBase implements NetworkACLServ
 
         if (sourceCidrList != null) {
             for (final String cidr : sourceCidrList) {
-                if (!NetUtils.isValidCIDR(cidr)) {
+                if (!NetUtils.isValidIp4Cidr(cidr)) {
                     throw new ServerApiException(ApiErrorCode.PARAM_ERROR, "Source cidrs formatting error " + cidr);
                 }
             }

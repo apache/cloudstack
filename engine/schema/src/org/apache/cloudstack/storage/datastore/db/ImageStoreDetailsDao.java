@@ -18,9 +18,11 @@ package org.apache.cloudstack.storage.datastore.db;
 
 import java.util.Map;
 
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
+
 import com.cloud.utils.db.GenericDao;
 
-public interface ImageStoreDetailsDao extends GenericDao<ImageStoreDetailVO, Long> {
+public interface ImageStoreDetailsDao extends GenericDao<ImageStoreDetailVO, Long>, ResourceDetailsDao<ImageStoreDetailVO> {
 
     void update(long storeId, Map<String, String> details);
 

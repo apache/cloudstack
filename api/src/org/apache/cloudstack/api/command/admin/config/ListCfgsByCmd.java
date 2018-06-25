@@ -19,6 +19,7 @@ package org.apache.cloudstack.api.command.admin.config;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -28,6 +29,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.StoragePoolResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -76,6 +78,18 @@ public class ListCfgsByCmd extends BaseListCmd {
                description = "the ID of the Account to update the parameter value for corresponding account")
     private Long accountId;
 
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+               type = CommandType.UUID,
+               entityType = DomainResponse.class,
+               description = "the ID of the Domain to update the parameter value for corresponding domain")
+    private Long domainId;
+
+    @Parameter(name = ApiConstants.IMAGE_STORE_UUID,
+            type = CommandType.UUID,
+            entityType = ImageStoreResponse.class,
+            description = "the ID of the Image Store to update the parameter value for corresponding image store")
+    private Long imageStoreId;
+
     // ///////////////////////////////////////////////////
     // ///////////////// Accessors ///////////////////////
     // ///////////////////////////////////////////////////
@@ -102,6 +116,14 @@ public class ListCfgsByCmd extends BaseListCmd {
 
     public Long getAccountId() {
         return accountId;
+    }
+
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public Long getImageStoreId() {
+        return imageStoreId;
     }
 
     @Override
@@ -146,6 +168,12 @@ public class ListCfgsByCmd extends BaseListCmd {
             }
             if (getAccountId() != null) {
                 cfgResponse.setScope("account");
+            }
+            if (getDomainId() != null) {
+                cfgResponse.setScope("domain");
+            }
+            if (getImageStoreId() != null){
+                cfgResponse.setScope("imagestore");
             }
             configResponses.add(cfgResponse);
         }

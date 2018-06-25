@@ -26,16 +26,20 @@ import com.cloud.agent.api.to.LoadBalancerTO;
  */
 public class HealthCheckLBConfigCommand extends NetworkElementCommand {
     LoadBalancerTO[] loadBalancers;
-
+    long networkId;
     protected HealthCheckLBConfigCommand() {
     }
 
-    public HealthCheckLBConfigCommand(LoadBalancerTO[] loadBalancers) {
+    public HealthCheckLBConfigCommand(LoadBalancerTO[] loadBalancers, long networkid) {
         this.loadBalancers = loadBalancers;
+        this.networkId = networkid;
     }
 
     public LoadBalancerTO[] getLoadBalancers() {
         return loadBalancers;
     }
 
+    public long getNetworkId() {
+        return networkId;
+    }
 }

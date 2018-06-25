@@ -19,6 +19,8 @@
 
 package com.cloud.agent.api.sync;
 
+import org.apache.commons.lang.builder.HashCodeBuilder;
+
 import com.cloud.agent.api.Answer;
 
 public class SyncDomainAnswer extends Answer {
@@ -37,21 +39,26 @@ public class SyncDomainAnswer extends Answer {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof SyncDomainAnswer)) return false;
-        if (!super.equals(o)) return false;
+        if (this == o) {
+            return true;
+        }
+
+        if (!(o instanceof SyncDomainAnswer)) {
+            return false;
+        }
 
         SyncDomainAnswer that = (SyncDomainAnswer) o;
 
-        if (_success != that._success) return false;
-
-        return true;
+        return super.equals(that)
+                && _success == that._success;
     }
 
     @Override
     public int hashCode() {
-        int result = super.hashCode();
-        result = 31 * result + (_success ? 1 : 0);
-        return result;
+        return new HashCodeBuilder()
+                .appendSuper(super.hashCode())
+                .append(_success)
+                .toHashCode();
+
     }
 }

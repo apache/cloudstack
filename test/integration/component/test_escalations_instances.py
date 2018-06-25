@@ -42,7 +42,7 @@ from marvin.codes import PASS
 from marvin.sshClient import SshClient
 from nose.plugins.attrib import attr
 import time
-
+from marvin.cloudstackException import CloudstackAPIException
 
 class TestListInstances(cloudstackTestCase):
     @classmethod
@@ -2068,6 +2068,95 @@ class TestListInstances(cloudstackTestCase):
                 "VM NIC is not same as expected"
             )
         return
+    @attr(tags=["advanced", "basic"], required_hardware="true")
+    def test_14_Create_vm_with_same_sshkey(self):
+        """
+        @Desc: Test to verify API call Register ssh key pair fails when uses same public key for differnet key name
+        """
+
+
+        # Listing all the SSH Key pairs
+        list_keypairs_before = SSHKeyPair.list(
+            self.userapiclient
+        )
+        list_keypairs_before_size = 0
+        if list_keypairs_before is not None:
+            list_keypairs_before_size = len(list_keypairs_before)
+
+        # Registering first Key pair
+        new_keypair1 = SSHKeyPair.register(
+            self.userapiclient,
+            name="keypair1",
+            publickey="ssh-rsa: e6:9a:1e:b5:98:75:88:5d:56:bc:92:7b:43:48:05:b2")
+        self.assertIsNotNone(
+            new_keypair1,
+            "New Key pair generation failed"
+        )
+        self.assertEquals(
+            "keypair1",
+            new_keypair1.name,
+            "Key Pair not created with given name"
+        )
+        # Listing all the SSH Key pairs again
+        list_keypairs_after = SSHKeyPair.list(
+            self.userapiclient
+        )
+        status = validateList(list_keypairs_after)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "Listing of Key pairs failed"
+        )
+        # Verifying that list size is increased by 1
+        self.assertEquals(
+            list_keypairs_before_size + 1,
+            len(list_keypairs_after),
+            "List count is not matching"
+        )
+
+        # Deploying a VM with keypair 1
+        first_vm_created = VirtualMachine.create(
+            self.userapiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            serviceofferingid=self.service_offering.id,
+            keypair=new_keypair1.name
+        )
+        self.assertIsNotNone(
+            first_vm_created,
+            "VM creation failed"
+        )
+        # Listing all the VMs for a user again
+        list_vms_after = VirtualMachine.list(
+            self.userapiclient,id=first_vm_created.id,
+            listall=True,
+        )
+        status = validateList(list_vms_after)
+        self.assertEquals(
+            PASS,
+            status[0],
+            "VM creation failed"
+        )
+        vm = list_vms_after[0]
+        self.assertEqual(
+            vm.state,
+            "Running",
+            "VM state should be running after deployment")
+        self.assertEqual(vm.keypair , new_keypair1.name , "VM keypair name is not keypair1")
+
+        try:
+
+            # Registering second key pair using same public key
+            new_keypair2 = SSHKeyPair.register(
+                self.userapiclient,
+                name="keypair2",
+                publickey="ssh-rsa: e6:9a:1e:b5:98:75:88:5d:56:bc:92:7b:43:48:05:b2")
+            self.fail("SSH Key creation passed using same public key ")
+        except CloudstackAPIException  as e:
+            self.assertRaises("Exception Raised : %s" % e)
+
+        return
 
 
 class TestInstances(cloudstackTestCase):
@@ -2204,11 +2293,12 @@ class TestInstances(cloudstackTestCase):
         6. Issue "reset VM" command on CCP
         7. check disk sequence on hypervisor remains same and VM starts successfully
         """
+        if self.hypervisor.lower() in ['kvm', 'hyperv', 'lxc', 'vmware']:
+            self.skipTest(
+                "This test not applicable on existing hypervisor. Hence,\
+                        skipping the test")
         try:
-            if self.hypervisor.lower() in ['kvm', 'hyperv', 'lxc', 'vmware']:
-                self.skipTest(
-                    "This test not applicable on existing hypervisor. Hence,\
-                            skipping the test")
+
             template = Template.register(self.apiClient,
                                          self.services["Windows 7 (64-bit)"],
                                          zoneid=self.zone.id,
@@ -2380,7 +2470,6 @@ class TestInstances(cloudstackTestCase):
                 serviceofferingid=self.service_offering.id
 
             )
-            self.cleanup.append(virtual_machine)
             self.debug("creating an instance with template ID: %s" % self.template.id)
             vm_response = VirtualMachine.list(self.apiClient,
                                               id=virtual_machine.id,
@@ -2416,7 +2505,6 @@ class TestInstances(cloudstackTestCase):
                 domainid=self.account.domainid,
                 diskofferingid=disk_offering.id
             )
-            self.cleanup.append(volume)
             # Check List Volume response for newly created volume
             list_volume_response = Volume.list(
                 self.apiClient,

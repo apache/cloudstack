@@ -16,27 +16,27 @@
 // under the License.
 package com.cloud.upgrade.dao;
 
-import java.io.File;
+import java.io.InputStream;
 import java.sql.Connection;
 
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade217to218 implements DbUpgrade {
 
     @Override
-    public File[] getPrepareScripts() {
-        String schemaFile = Script.findScript("", "db/schema-217to218.sql");
-        if (schemaFile == null) {
-            throw new CloudRuntimeException("Unable to find the upgrade script, schema-217to218.sql");
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-217to218.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
+        if (script == null) {
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
+        }
+        final String dataFile = "META-INF/db/data-217to218.sql";
+        final InputStream data = Thread.currentThread().getContextClassLoader().getResourceAsStream(dataFile);
+        if (data == null) {
+            throw new CloudRuntimeException("Unable to find " + dataFile);
         }
 
-        String dataFile = Script.findScript("", "db/data-217to218.sql");
-        if (dataFile == null) {
-            throw new CloudRuntimeException("Unable to find the upgrade script, data-217to218.sql");
-        }
-
-        return new File[] {new File(schemaFile), new File(dataFile)};
+        return new InputStream[] {script, data};
     }
 
     @Override
@@ -45,7 +45,7 @@ public class Upgrade217to218 implements DbUpgrade {
     }
 
     @Override
-    public File[] getCleanupScripts() {
+    public InputStream[] getCleanupScripts() {
         return null;
     }
 

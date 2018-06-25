@@ -21,10 +21,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -40,6 +38,23 @@ import java.util.concurrent.Executors;
 
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.template.Processor;
+import com.cloud.storage.template.S3TemplateDownloader;
+import com.cloud.storage.template.TemplateDownloader;
+import com.cloud.storage.template.TemplateLocation;
+import com.cloud.storage.template.MetalinkTemplateDownloader;
+import com.cloud.storage.template.HttpTemplateDownloader;
+import com.cloud.storage.template.LocalTemplateDownloader;
+import com.cloud.storage.template.ScpTemplateDownloader;
+import com.cloud.storage.template.TemplateProp;
+import com.cloud.storage.template.OVAProcessor;
+import com.cloud.storage.template.IsoProcessor;
+import com.cloud.storage.template.QCOW2Processor;
+import com.cloud.storage.template.VmdkProcessor;
+import com.cloud.storage.template.RawImageProcessor;
+import com.cloud.storage.template.TARProcessor;
+import com.cloud.storage.template.VhdProcessor;
+import com.cloud.storage.template.TemplateConstants;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand.ResourceType;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
@@ -58,25 +73,9 @@ import com.cloud.storage.Storage.ImageFormat;
 import com.cloud.storage.StorageLayer;
 import com.cloud.storage.VMTemplateHostVO;
 import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.template.HttpTemplateDownloader;
-import com.cloud.storage.template.IsoProcessor;
-import com.cloud.storage.template.LocalTemplateDownloader;
-import com.cloud.storage.template.OVAProcessor;
-import com.cloud.storage.template.Processor;
 import com.cloud.storage.template.Processor.FormatInfo;
-import com.cloud.storage.template.QCOW2Processor;
-import com.cloud.storage.template.RawImageProcessor;
-import com.cloud.storage.template.S3TemplateDownloader;
-import com.cloud.storage.template.ScpTemplateDownloader;
-import com.cloud.storage.template.TARProcessor;
-import com.cloud.storage.template.TemplateConstants;
-import com.cloud.storage.template.TemplateDownloader;
 import com.cloud.storage.template.TemplateDownloader.DownloadCompleteCallback;
 import com.cloud.storage.template.TemplateDownloader.Status;
-import com.cloud.storage.template.TemplateLocation;
-import com.cloud.storage.template.TemplateProp;
-import com.cloud.storage.template.VhdProcessor;
-import com.cloud.storage.template.VmdkProcessor;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.component.ManagerBase;
@@ -84,12 +83,14 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 import com.cloud.utils.storage.QCOW2Utils;
+import org.apache.cloudstack.utils.security.ChecksumValue;
+import org.apache.cloudstack.utils.security.DigestHelper;
 
 public class DownloadManagerImpl extends ManagerBase implements DownloadManager {
     private String _name;
     StorageLayer _storage;
     public Map<String, Processor> _processors;
-
+    private long _processTimeout;
     private Integer _nfsVersion;
 
     public class Completion implements DownloadCompleteCallback {
@@ -315,33 +316,11 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         }
     }
 
-    private String computeCheckSum(File f) {
-        byte[] buffer = new byte[8192];
-        int read = 0;
-        MessageDigest digest;
-        String checksum = null;
-        InputStream is = null;
-        try {
-            digest = MessageDigest.getInstance("MD5");
-            is = new FileInputStream(f);
-            while ((read = is.read(buffer)) > 0) {
-                digest.update(buffer, 0, read);
-            }
-            byte[] md5sum = digest.digest();
-            BigInteger bigInt = new BigInteger(1, md5sum);
-            checksum = String.format("%032x", bigInt);
-            return checksum;
+    private ChecksumValue computeCheckSum(String algorithm, File f) throws NoSuchAlgorithmException {
+        try (InputStream is = new FileInputStream(f);) {
+            return DigestHelper.digest(algorithm, is);
         } catch (IOException e) {
             return null;
-        } catch (NoSuchAlgorithmException e) {
-            return null;
-        } finally {
-            try {
-                if (is != null)
-                    is.close();
-            } catch (IOException e) {
-                return null;
-            }
         }
     }
 
@@ -357,12 +336,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             // The QCOW2 is the only format with a header,
             // and as such can be easily read.
 
-            try {
-                InputStream inputStream = td.getS3ObjectInputStream();
-
+            try (InputStream inputStream = td.getS3ObjectInputStream();) {
                 dnld.setTemplatesize(QCOW2Utils.getVirtualSize(inputStream));
-
-                inputStream.close();
             }
             catch (IOException e) {
                 result = "Couldn't read QCOW2 virtual size. Error: " + e.getMessage();
@@ -398,11 +373,22 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         ResourceType resourceType = dnld.getResourceType();
 
         File originalTemplate = new File(td.getDownloadLocalPath());
-        String checkSum = computeCheckSum(originalTemplate);
-        if (checkSum == null) {
+        ChecksumValue oldValue = new ChecksumValue(dnld.getChecksum());
+        ChecksumValue newValue = null;
+        try {
+            newValue = computeCheckSum(oldValue.getAlgorithm(), originalTemplate);
+        } catch (NoSuchAlgorithmException e) {
+            return "checksum algorithm not recognised: " + oldValue.getAlgorithm();
+        }
+        if(StringUtils.isNotBlank(dnld.getChecksum()) && ! oldValue.equals(newValue)) {
+            return "checksum \"" + newValue +"\" didn't match the given value, \"" + oldValue + "\"";
+        }
+        String checksum = newValue.getChecksum();
+        if (checksum == null) {
             s_logger.warn("Something wrong happened when try to calculate the checksum of downloaded template!");
         }
-        dnld.setCheckSum(checkSum);
+
+        dnld.setCheckSum(checksum);
 
         int imgSizeGigs = (int)Math.ceil(_storage.getSize(td.getDownloadLocalPath()) * 1.0d / (1024 * 1024 * 1024));
         imgSizeGigs++; // add one just in case
@@ -435,11 +421,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
         scr.add("-n", templateFilename);
 
         scr.add("-t", resourcePath);
-        scr.add("-f", td.getDownloadLocalPath()); // this is the temporary
-        // template file downloaded
-        if (dnld.getChecksum() != null && dnld.getChecksum().length() > 1) {
-            scr.add("-c", dnld.getChecksum());
-        }
+        scr.add("-f", td.getDownloadLocalPath()); // this is the temporary template file downloaded
         scr.add("-u"); // cleanup
         String result;
         result = scr.execute();
@@ -477,7 +459,7 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
             FormatInfo info = null;
             try {
-                info = processor.process(resourcePath, null, templateName);
+                info = processor.process(resourcePath, null, templateName, this._processTimeout);
             } catch (InternalErrorException e) {
                 s_logger.error("Template process exception ", e);
                 return e.toString();
@@ -579,7 +561,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
                     }
                     TemplateDownloader td;
                     if ((uri != null) && (uri.getScheme() != null)) {
-                        if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
+                        if (uri.getPath().endsWith(".metalink")) {
+                            td = new MetalinkTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes);
+                        } else if (uri.getScheme().equalsIgnoreCase("http") || uri.getScheme().equalsIgnoreCase("https")) {
                             td = new HttpTemplateDownloader(_storage, url, tmpDir, new Completion(jobId), maxTemplateSizeInBytes, user, password, proxy, resourceType);
                         } else if (uri.getScheme().equalsIgnoreCase("file")) {
                             td = new LocalTemplateDownloader(_storage, url, tmpDir, maxTemplateSizeInBytes, new Completion(jobId));
@@ -693,6 +677,8 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
     @Override
     public DownloadAnswer handleDownloadCommand(SecondaryStorageResource resource, DownloadCommand cmd) {
+        int timeout = NumbersUtil.parseInt(cmd.getContextParam("vmware.package.ova.timeout"), 3600000);
+        this._processTimeout = timeout;
         ResourceType resourceType = cmd.getResourceType();
         if (cmd instanceof DownloadProgressCommand) {
             return handleDownloadProgressCmd(resource, (DownloadProgressCommand)cmd);
@@ -705,6 +691,10 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         if (cmd.getName() == null) {
             return new DownloadAnswer("Invalid Name", VMTemplateStorageResourceAssoc.Status.DOWNLOAD_ERROR);
+        }
+
+        if(! DigestHelper.isAlgorithmSupported(cmd.getChecksum())) {
+            return new DownloadAnswer("invalid algorithm: " + cmd.getChecksum(), VMTemplateStorageResourceAssoc.Status.NOT_DOWNLOADED);
         }
 
         DataStoreTO dstore = cmd.getDataStore();
@@ -865,17 +855,6 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
             result.put(tInfo.getTemplateName(), tInfo);
             s_logger.debug("Added template name: " + tInfo.getTemplateName() + ", path: " + tmplt);
         }
-        /*
-        for (String tmplt : isoTmplts) {
-            String tmp[];
-            tmp = tmplt.split("/");
-            String tmpltName = tmp[tmp.length - 2];
-            tmplt = tmplt.substring(tmplt.lastIndexOf("iso/"));
-            TemplateInfo tInfo = new TemplateInfo(tmpltName, tmplt, false);
-            s_logger.debug("Added iso template name: " + tmpltName + ", path: " + tmplt);
-            result.put(tmpltName, tInfo);
-        }
-         */
         return result;
     }
 
@@ -1096,10 +1075,9 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
     }
 
     private void startAdditionalServices() {
-
-        Script command = new Script("/bin/bash", s_logger);
-        command.add("-c");
-        command.add("if [ -d /etc/apache2 ] ; then service apache2 stop; else service httpd stop; fi ");
+        Script command = new Script("/bin/systemctl", s_logger);
+        command.add("stop");
+        command.add("apache2");
         String result = command.execute();
         if (result != null) {
             s_logger.warn("Error in stopping httpd service err=" + result);
@@ -1114,21 +1092,25 @@ public class DownloadManagerImpl extends ManagerBase implements DownloadManager 
 
         result = command.execute();
         if (result != null) {
-            s_logger.warn("Error in opening up httpd port err=" + result);
+            s_logger.warn("Error in opening up apache2 port err=" + result);
             return;
         }
 
-        command = new Script("/bin/bash", s_logger);
-        command.add("-c");
-        command.add("if [ -d /etc/apache2 ] ; then service apache2 start; else service httpd start; fi ");
+        command = new Script("/bin/systemctl", s_logger);
+        command.add("start");
+        command.add("apache2");
         result = command.execute();
         if (result != null) {
-            s_logger.warn("Error in starting httpd service err=" + result);
+            s_logger.warn("Error in starting apache2 service err=" + result);
             return;
         }
-        command = new Script("mkdir", s_logger);
-        command.add("-p");
-        command.add("/var/www/html/copy/template");
+
+        command = new Script("/bin/su", s_logger);
+        command.add("-s");
+        command.add("/bin/bash");
+        command.add("-c");
+        command.add("mkdir -p /var/www/html/copy/template");
+        command.add("www-data");
         result = command.execute();
         if (result != null) {
             s_logger.warn("Error in creating directory =" + result);

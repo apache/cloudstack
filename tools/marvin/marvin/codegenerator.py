@@ -232,7 +232,10 @@ class CodeGenerator(object):
 
         for cmdName in self.cmdsName:
             body += self.space
-            body += 'def %s(self, command, method="GET"):\n' % cmdName
+            if cmdName in ["login", "logout"]:
+                body += 'def %s(self, command, method="POST"):\n' % cmdName
+            else:
+                body += 'def %s(self, command, method="GET"):\n' % cmdName
             body += self.space + self.space
             body += 'response = %sResponse()\n' % cmdName
             body += self.space + self.space
@@ -368,6 +371,7 @@ class CodeGenerator(object):
                             self.constructResponseFromJSON(innerResponse)
                         paramProperty.subProperties.append(subProperty)
             paramProperty.type = response['type']
+            paramProperty.dataType = response['type']
         return paramProperty
 
     def loadCmdFromJSON(self, apiStream):
@@ -404,13 +408,14 @@ class CodeGenerator(object):
                 assert paramProperty.name
 
                 if 'required' in param:
-                    paramProperty.required = param['required']
+                    paramProperty.required = str(param['required']).lower()
 
                 if 'description' in param:
                     paramProperty.desc = param['description']
 
                 if 'type' in param:
                     paramProperty.type = param['type']
+                    paramProperty.dataType = param['type']
 
                 csCmd.request.append(paramProperty)
 

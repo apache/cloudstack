@@ -128,7 +128,7 @@ class MarvinLog:
     def createLogs(self,
                    test_module_name=None,
                    log_cfg=None,
-                   user_provided_logpath=None):
+                   user_provided_logpath=None, use_temp_path=True):
         '''
         @Name : createLogs
         @Desc : Gets the Logger with file paths initialized and created
@@ -140,29 +140,34 @@ class MarvinLog:
                                        If user provided log path
                                        is available, then one in cfg
                                        will  not be picked up.
+                 use_temp_path: Boolean value which specifies either logs will
+                                       be prepended by random path or not.
         @Output : SUCCESS\FAILED
         '''
         try:
-            temp_ts = time.strftime("%b_%d_%Y_%H_%M_%S",
-                                    time.localtime())
+            temp_ts = time.strftime("%b_%d_%Y_%H_%M_%S", time.localtime())
+
             if test_module_name is None:
                 temp_path = temp_ts + "_" + random_gen()
             else:
-                temp_path = str(test_module_name) + \
-                    "__" + str(temp_ts) + "_" + random_gen()
+                temp_path = str(test_module_name) + "__" + str(temp_ts) + "_" + random_gen()
 
             if user_provided_logpath:
-                temp_dir = user_provided_logpath + "/MarvinLogs"
+                temp_dir = os.path.join(user_provided_logpath, "MarvinLogs")
             elif ((log_cfg is not None) and
                     ('LogFolderPath' in log_cfg.__dict__.keys()) and
                     (log_cfg.__dict__.get('LogFolderPath') is not None)):
-                temp_dir = \
-                    log_cfg.__dict__.get('LogFolderPath') + "/MarvinLogs"
+                temp_dir = os.path.join(log_cfg.__dict__.get('LogFolderPath'), "MarvinLogs")
 
-            self.__logFolderDir = temp_dir + "//" + temp_path
-            print "\n==== Log Folder Path: %s. " \
-                  "All logs will be available here ====" \
-                  % str(self.__logFolderDir)
+            if use_temp_path == True:
+                self.__logFolderDir = os.path.join(temp_dir, temp_path)
+            else:
+                if test_module_name == None:
+                    self.__logFolderDir = temp_dir
+                else:
+                    self.__logFolderDir = os.path.join(temp_dir, str(test_module_name))
+
+            print "\n==== Log Folder Path: %s. All logs will be available here ====" % str(self.__logFolderDir)
             os.makedirs(self.__logFolderDir)
 
             '''
@@ -171,9 +176,10 @@ class MarvinLog:
             2. RunLog contains the complete Run Information for Test Run
             3. ResultFile contains the TC result information for Test Run
             '''
-            tc_failed_exception_log = \
-                self.__logFolderDir + "/failed_plus_exceptions.txt"
-            tc_run_log = self.__logFolderDir + "/runinfo.txt"
+
+            tc_failed_exception_log = os.path.join(self.__logFolderDir, "failed_plus_exceptions.txt")
+            tc_run_log = os.path.join(self.__logFolderDir, "runinfo.txt")
+
             if self.__setLogHandler(tc_run_log,
                                     log_level=logging.DEBUG) != FAILED:
                 self.__setLogHandler(tc_failed_exception_log,

@@ -22,6 +22,7 @@ package com.cloud.resource;
 import java.io.File;
 import java.util.UUID;
 
+import org.apache.cloudstack.agent.directdownload.DirectDownloadCommand;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.storage.command.AttachAnswer;
@@ -76,19 +77,32 @@ public class SimulatorStorageProcessor implements StorageProcessor {
     }
 
     @Override
+    public Answer handleDownloadTemplateToPrimaryStorage(DirectDownloadCommand cmd) {
+        return null;
+    }
+
+    @Override
     public Answer copyTemplateToPrimaryStorage(CopyCommand cmd) {
         TemplateObjectTO template = new TemplateObjectTO();
         template.setPath(UUID.randomUUID().toString());
-        template.setSize(new Long(100));
+        template.setSize(100L);
         template.setFormat(Storage.ImageFormat.RAW);
         return new CopyCmdAnswer(template);
     }
 
     @Override
     public Answer cloneVolumeFromBaseTemplate(CopyCommand cmd) {
+        long size = 100;
+        DataTO dataTO = cmd.getDestTO();
+        if (dataTO instanceof VolumeObjectTO) {
+            VolumeObjectTO destVolume = (VolumeObjectTO)dataTO;
+            if (destVolume.getSize() != null) {
+                size = destVolume.getSize();
+            }
+        }
         VolumeObjectTO volume = new VolumeObjectTO();
         volume.setPath(UUID.randomUUID().toString());
-        volume.setSize(100);
+        volume.setSize(size);
         volume.setFormat(Storage.ImageFormat.RAW);
         return new CopyCmdAnswer(volume);
     }

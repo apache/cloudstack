@@ -17,10 +17,20 @@
 
 package com.cloud.vm.snapshot;
 
+import java.util.List;
+
+import org.apache.cloudstack.framework.config.ConfigKey;
+
+import com.cloud.agent.api.RestoreVMSnapshotCommand;
 import com.cloud.utils.component.Manager;
+import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 
 public interface VMSnapshotManager extends VMSnapshotService, Manager {
+
+    static final ConfigKey<Integer> VMSnapshotExpireInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vmsnapshot.expire.interval", "-1",
+            "VM Snapshot expire interval in hours", true, ConfigKey.Scope.Account);
+
     public static final int VMSNAPSHOTMAX = 10;
 
     /**
@@ -42,4 +52,7 @@ public interface VMSnapshotManager extends VMSnapshotService, Manager {
     boolean syncVMSnapshot(VMInstanceVO vm, Long hostId);
 
     boolean hasActiveVMSnapshotTasks(Long vmId);
+
+    RestoreVMSnapshotCommand createRestoreCommand(UserVmVO userVm, List<VMSnapshotVO> vmSnapshotVOs);
+
 }

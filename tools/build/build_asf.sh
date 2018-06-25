@@ -97,7 +97,6 @@ mv deps/XenServerJava/pom.xml.versionsBackup deps/XenServerJava/pom.xml
 perl -pi -e "s/<cs.xapi.version>6.2.0-1-SNAPSHOT<\/cs.xapi.version>/<cs.xapi.version>6.2.0-1<\/cs.xapi.version>/" pom.xml
 perl -pi -e "s/-SNAPSHOT//" deps/XenServerJava/pom.xml
 perl -pi -e "s/-SNAPSHOT//" tools/apidoc/pom.xml
-perl -pi -e "s/-SNAPSHOT//" Dockerfile
 perl -pi -e "s/-SNAPSHOT//" build/replace.properties
 perl -pi -e "s/-SNAPSHOT//" services/console-proxy/plugin/pom.xml
 perl -pi -e "s/-SNAPSHOT//" tools/marvin/setup.py
@@ -105,6 +104,9 @@ perl -pi -e "s/-SNAPSHOT//" tools/marvin/marvin/deployAndRun.py
 perl -pi -e "s/-SNAPSHOT//" services/iam/plugin/pom.xml
 perl -pi -e "s/-SNAPSHOT//" services/iam/pom.xm
 perl -pi -e "s/-SNAPSHOT//" services/iam/server/pom.xml
+perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile
+perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile.marvin
+perl -pi -e "s/-SNAPSHOT//" tools/docker/Dockerfile.centos6
 
 case "$currentversion" in 
   *-SNAPSHOT*)

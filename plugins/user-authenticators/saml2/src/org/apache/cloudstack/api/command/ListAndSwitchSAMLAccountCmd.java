@@ -172,6 +172,7 @@ public class ListAndSwitchSAMLAccountCmd extends BaseCmd implements APIAuthentic
                     accountResponse.setUserName(user.getUsername());
                     accountResponse.setDomainId(domain.getUuid());
                     accountResponse.setDomainName(domain.getName());
+                    accountResponse.setDomainPath(domain.getPath());
                     accountResponse.setAccountName(userAccount.getAccountName());
                     accountResponse.setIdpId(user.getExternalEntity());
                     accountResponses.add(accountResponse);

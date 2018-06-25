@@ -95,6 +95,12 @@ public class SnapshotEntityImpl implements SnapshotEntity {
     }
 
     @Override
+    public long getSnapshotId() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
     public Date getCreated() {
         // TODO Auto-generated method stub
         return null;
@@ -181,6 +187,11 @@ public class SnapshotEntityImpl implements SnapshotEntity {
     @Override
     public Type getRecurringType() {
         // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public LocationType getLocationType() {
         return null;
     }
 

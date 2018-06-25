@@ -130,7 +130,7 @@ public class Ovm3Configuration {
             LOGGER.debug("Clustering requires a pool, setting pool to true");
             agentInOvm3Pool = true;
         }
-        if (!NetUtils.isValidIp(ovm3PoolVip)) {
+        if (!NetUtils.isValidIp4(ovm3PoolVip)) {
             LOGGER.debug("No VIP, Setting ovm3pool and ovm3cluster to false");
             agentInOvm3Pool = false;
             agentInOvm3Cluster = false;

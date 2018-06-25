@@ -20,6 +20,9 @@ import java.util.Map;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.ca.SetupKeyStoreCommand;
+
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
 import com.cloud.agent.api.CheckNetworkCommand;
@@ -51,6 +54,10 @@ public interface MockAgentManager extends Manager {
     Answer checkHealth(CheckHealthCommand cmd);
 
     Answer pingTest(PingTestCommand cmd);
+
+    Answer setupKeyStore(SetupKeyStoreCommand cmd);
+
+    Answer setupCertificate(SetupCertificateCommand cmd);
 
     MockHost getHost(String guid);
 

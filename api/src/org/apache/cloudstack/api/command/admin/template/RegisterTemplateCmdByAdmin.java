@@ -40,10 +40,13 @@ public class RegisterTemplateCmdByAdmin extends RegisterTemplateCmd {
     @Override
     public void execute() throws ResourceAllocationException{
         try {
+            validateParameters();
+
             VirtualMachineTemplate template = _templateService.registerTemplate(this);
             if (template != null){
                 ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(ResponseView.Full, template, zoneId, false);
+                List<TemplateResponse> templateResponses = _responseGenerator.createTemplateResponses(ResponseView.Full, template,
+                        zoneIds, false);
                 response.setResponses(templateResponses);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);

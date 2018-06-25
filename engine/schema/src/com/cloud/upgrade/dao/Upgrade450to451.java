@@ -17,7 +17,7 @@
 
 package com.cloud.upgrade.dao;
 
-import java.io.File;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -31,7 +31,6 @@ import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 
 import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.utils.script.Script;
 
 public class Upgrade450to451 implements DbUpgrade {
         final static Logger s_logger = Logger.getLogger(Upgrade450to451.class);
@@ -52,22 +51,25 @@ public class Upgrade450to451 implements DbUpgrade {
     }
 
     @Override
-    public File[] getPrepareScripts() {
-        String script = Script.findScript("", "db/schema-450to451.sql");
+    public InputStream[] getPrepareScripts() {
+        final String scriptFile = "META-INF/db/schema-450to451.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-450to451.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
-        return new File[] {new File(script)};
+
+        return new InputStream[] {script};
     }
 
     @Override
-    public File[] getCleanupScripts() {
-        String script = Script.findScript("", "db/schema-450to451-cleanup.sql");
+    public InputStream[] getCleanupScripts() {
+        final String scriptFile = "META-INF/db/schema-450to451-cleanup.sql";
+        final InputStream script = Thread.currentThread().getContextClassLoader().getResourceAsStream(scriptFile);
         if (script == null) {
-            throw new CloudRuntimeException("Unable to find db/schema-450to451-cleanup.sql");
+            throw new CloudRuntimeException("Unable to find " + scriptFile);
         }
 
-        return new File[] {new File(script)};
+        return new InputStream[] {script};
     }
 
     @Override

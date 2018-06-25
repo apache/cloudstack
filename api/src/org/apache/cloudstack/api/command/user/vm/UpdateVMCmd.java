@@ -17,8 +17,11 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -34,12 +37,12 @@ import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
 
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.net.Dhcp;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "updateVirtualMachine", description="Updates properties of a virtual machine. The VM has to be stopped and restarted for the " +
@@ -116,6 +119,16 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction 
             )
     private List<String> securityGroupNameList;
 
+    @Parameter(name = ApiConstants.CLEAN_UP_DETAILS,
+            type = CommandType.BOOLEAN,
+            description = "optional boolean field, which indicates if details should be cleaned up or not (if set to true, details removed for this resource, details field ignored; if false or not set, no action)")
+    private Boolean cleanupDetails;
+
+    @Parameter(name = ApiConstants.DHCP_OPTIONS_NETWORK_LIST, type = CommandType.MAP, description = "DHCP options which are passed to the VM on start up"
+            + " Example: dhcpoptionsnetworklist[0].dhcp:114=url&dhcpoptionsetworklist[0].networkid=networkid&dhcpoptionsetworklist[0].dhcp:66=www.test.com")
+    private Map dhcpOptionsNetworkList;
+
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -171,6 +184,41 @@ public class UpdateVMCmd extends BaseCustomIdCmd implements SecurityGroupAction 
 
     public List<String> getSecurityGroupNameList() {
         return securityGroupNameList;
+    }
+
+    public boolean isCleanupDetails(){
+        return cleanupDetails == null ? false : cleanupDetails.booleanValue();
+    }
+
+    public Map<String, Map<Integer, String>> getDhcpOptionsMap() {
+        Map<String, Map<Integer, String>> dhcpOptionsMap = new HashMap<>();
+        if (dhcpOptionsNetworkList != null && !dhcpOptionsNetworkList.isEmpty()) {
+
+            Collection<Map<String, String>> paramsCollection = this.dhcpOptionsNetworkList.values();
+            for(Map<String, String> dhcpNetworkOptions : paramsCollection) {
+                String networkId = dhcpNetworkOptions.get(ApiConstants.NETWORK_ID);
+
+                if(networkId == null) {
+                    throw new IllegalArgumentException("No networkid specified when providing extra dhcp options.");
+                }
+
+                Map<Integer, String> dhcpOptionsForNetwork = new HashMap<>();
+                dhcpOptionsMap.put(networkId, dhcpOptionsForNetwork);
+
+                for (String key : dhcpNetworkOptions.keySet()) {
+                    if (key.startsWith(ApiConstants.DHCP_PREFIX)) {
+                        int dhcpOptionValue = Integer.parseInt(key.replaceFirst(ApiConstants.DHCP_PREFIX, ""));
+                        dhcpOptionsForNetwork.put(dhcpOptionValue, dhcpNetworkOptions.get(key));
+                    } else if (!key.equals(ApiConstants.NETWORK_ID)) {
+                        Dhcp.DhcpOptionCode dhcpOptionEnum = Dhcp.DhcpOptionCode.valueOfString(key);
+                        dhcpOptionsForNetwork.put(dhcpOptionEnum.getCode(), dhcpNetworkOptions.get(key));
+                    }
+                }
+
+            }
+        }
+
+        return dhcpOptionsMap;
     }
 
     /////////////////////////////////////////////////////

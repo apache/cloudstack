@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
+import com.cloud.configuration.Resource;
 import com.google.gson.annotations.SerializedName;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -43,6 +44,10 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
     @SerializedName(ApiConstants.RESOURCE_TYPE)
     @Param(description = "resource type. Values include 0, 1, 2, 3, 4, 6, 7, 8, 9, 10, 11. See the resourceType parameter for more information on these values.")
     private String resourceType;
+
+    @SerializedName(ApiConstants.RESOURCE_TYPE_NAME)
+    @Param(description = "resource type name. Values include user_vm, public_ip, volume, snapshot, template, project, network, vpc, cpu, memory, primary_storage, secondary_storage.")
+    private String resourceTypeName;
 
     @SerializedName("max")
     @Param(description = "the maximum number of the resource. A -1 means the resource currently has no limit.")
@@ -76,8 +81,9 @@ public class ResourceLimitResponse extends BaseResponse implements ControlledEnt
         this.domainName = domainName;
     }
 
-    public void setResourceType(String resourceType) {
-        this.resourceType = resourceType;
+    public void setResourceType(Resource.ResourceType resourceType) {
+        this.resourceType = Integer.valueOf(resourceType.getOrdinal()).toString();
+        this.resourceTypeName = resourceType.getName();
     }
 
     public void setMax(Long max) {

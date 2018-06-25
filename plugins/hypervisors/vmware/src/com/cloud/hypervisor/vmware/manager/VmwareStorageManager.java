@@ -51,7 +51,7 @@ public interface VmwareStorageManager {
 
     boolean execute(VmwareHostService hostService, CreateEntityDownloadURLCommand cmd);
 
-    public void createOva(String path, String name);
+    public void createOva(String path, String name, int archiveTimeout);
 
-    public String createOvaForTemplate(TemplateObjectTO template);
+    public String createOvaForTemplate(TemplateObjectTO template, int archiveTimeout);
 }

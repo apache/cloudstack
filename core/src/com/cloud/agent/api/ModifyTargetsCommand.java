@@ -23,7 +23,11 @@ import java.util.List;
 import java.util.Map;
 
 public class ModifyTargetsCommand extends Command {
+    public enum TargetTypeToRemove { BOTH, NEITHER, STATIC, DYNAMIC }
+
     public static final String IQN = "iqn";
+    public static final String STORAGE_TYPE = "storageType";
+    public static final String STORAGE_UUID = "storageUuid";
     public static final String STORAGE_HOST = "storageHost";
     public static final String STORAGE_PORT = "storagePort";
     public static final String CHAP_NAME = "chapName";
@@ -32,6 +36,9 @@ public class ModifyTargetsCommand extends Command {
     public static final String MUTUAL_CHAP_SECRET = "mutualChapSecret";
 
     private boolean add;
+    private boolean applyToAllHostsInCluster;
+    private TargetTypeToRemove targetTypeToRemove = TargetTypeToRemove.BOTH;
+    private boolean removeAsync;
     private List<Map<String, String>> targets;
 
     public void setAdd(boolean add) {
@@ -40,6 +47,30 @@ public class ModifyTargetsCommand extends Command {
 
     public boolean getAdd() {
         return add;
+    }
+
+    public void setApplyToAllHostsInCluster(boolean applyToAllHostsInCluster) {
+        this.applyToAllHostsInCluster = applyToAllHostsInCluster;
+    }
+
+    public boolean getApplyToAllHostsInCluster() {
+        return applyToAllHostsInCluster;
+    }
+
+    public void setTargetTypeToRemove(TargetTypeToRemove targetTypeToRemove) {
+        this.targetTypeToRemove = targetTypeToRemove;
+    }
+
+    public TargetTypeToRemove getTargetTypeToRemove() {
+        return targetTypeToRemove;
+    }
+
+    public void setRemoveAsync(boolean removeAsync) {
+        this.removeAsync = removeAsync;
+    }
+
+    public boolean isRemoveAsync() {
+        return removeAsync;
     }
 
     public void setTargets(List<Map<String, String>> targets) {

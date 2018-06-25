@@ -29,6 +29,7 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
 
     static final String ClusterCPUCapacityDisableThresholdCK = "cluster.cpu.allocated.capacity.disablethreshold";
     static final String ClusterMemoryCapacityDisableThresholdCK = "cluster.memory.allocated.capacity.disablethreshold";
+    static final String ClusterThresholdEnabledCK = "cluster.threshold.enabled";
 
     static final ConfigKey<Float> ClusterCPUCapacityDisableThreshold =
         new ConfigKey<Float>(
@@ -46,6 +47,15 @@ public interface DeploymentClusterPlanner extends DeploymentPlanner {
             "0.85",
             "Percentage (as a value between 0 and 1) of memory utilization above which allocators will disable using the cluster for low memory available. Keep the corresponding notification threshold lower than this to be notified beforehand.",
             true, ConfigKey.Scope.Cluster, null);
+    static final ConfigKey<Boolean> ClusterThresholdEnabled =
+        new ConfigKey<Boolean>(
+            "Advanced",
+            Boolean.class,
+            ClusterThresholdEnabledCK,
+            "true",
+            "Enable/Disable cluster thresholds. If disabled, an instance can start in a cluster even though the threshold may be crossed.",
+            false,
+            ConfigKey.Scope.Global);
 
     /**
      * This is called to determine list of possible clusters where a virtual

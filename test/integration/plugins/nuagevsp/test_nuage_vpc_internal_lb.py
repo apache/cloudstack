@@ -29,6 +29,7 @@ from marvin.cloudstackAPI import (listInternalLoadBalancerVMs,
                                   startInternalLoadBalancerVM)
 # Import System Modules
 from nose.plugins.attrib import attr
+from unittest import skip
 import copy
 import time
 
@@ -170,6 +171,10 @@ class TestNuageInternalLb(nuageTestCase):
     # verify_vpc_vm_ingress_traffic - Verifies ingress traffic to the given VM
     # (SSH into VM) via a created Static NAT rule in the given VPC network
     def verify_vpc_vm_ingress_traffic(self, vm, network, vpc):
+        if self.isSimulator:
+            self.debug("Simulator Environment: "
+                       "skipping vpc vm ingress traffic tests.")
+            return
         self.debug("Verifying ingress traffic to the VM (SSH into VM) - %s "
                    "via a created Static NAT rule in the VPC network - %s" %
                    (vm, network))
@@ -235,6 +240,9 @@ class TestNuageInternalLb(nuageTestCase):
     # wget_from_vm_cmd - From within the given VM (ssh client),
     # fetches index.html file of web server running with the given public IP
     def wget_from_vm_cmd(self, ssh_client, ip_address, port):
+        if self.isSimulator:
+            self.debug("Simulator Environment: not wgeting from vm cmd.")
+            return
         wget_file = ""
         cmd = "rm -rf index.html*"
         self.execute_cmd(ssh_client, cmd)
@@ -259,6 +267,9 @@ class TestNuageInternalLb(nuageTestCase):
     # belongs to the given Internal LB rule
     # assigned VMs (vm array)
     def verify_lb_wget_file(self, wget_file, vm_array):
+        if self.isSimulator:
+            self.debug("Simulator Environment: not verifying file on vm.")
+            return
         wget_server_ip = None
         for vm in vm_array:
             for nic in vm.nic:
@@ -1405,6 +1416,10 @@ class TestNuageInternalLb(nuageTestCase):
         # VSD verification
         self.verify_vsd_firewall_rule(public_ssh_rule)
 
+        if self.isSimulator:
+            self.debug("Simulator Environment: skipping traffic tests.")
+            return
+
         # Internal LB (wget) traffic tests
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         wget_file_1 = self.wget_from_vm_cmd(
@@ -1428,6 +1443,7 @@ class TestNuageInternalLb(nuageTestCase):
             http_rule["publicport"])
 
         # Verifying Internal LB (wget) traffic tests
+        # Bug CLOUDSTACK-9749
         self.verify_lb_wget_file(
             wget_file_1, [internal_vm_1, internal_vm_1_1, internal_vm_1_2])
         self.verify_lb_wget_file(
@@ -1661,6 +1677,10 @@ class TestNuageInternalLb(nuageTestCase):
         # VSD verification
         self.verify_vsd_firewall_rule(public_ssh_rule)
 
+        if self.isSimulator:
+            self.debug("Simulator Environment: skipping traffic tests.")
+            return
+
         # Internal LB (wget) traffic tests with Round Robin Algorithm
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         self.validate_internallb_algorithm_traffic(
@@ -1861,14 +1881,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_firewall_rule(public_ssh_rule)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        self.verify_lb_wget_file(
-            wget_file, [internal_vm, internal_vm_1, internal_vm_2])
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm)
 
         # Restart Internal tier (cleanup = false)
         # InternalLbVm gets destroyed and deployed again in the Internal tier
@@ -1907,15 +1921,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        self.verify_lb_wget_file(
-            wget_file, [internal_vm, internal_vm_1, internal_vm_2])
-
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm)
         # Restart Internal tier (cleanup = true)
         # InternalLbVm gets destroyed and deployed again in the Internal tier
         self.debug("Restarting the Internal tier with cleanup...")
@@ -1953,14 +1960,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        self.verify_lb_wget_file(
-            wget_file, [internal_vm, internal_vm_1, internal_vm_2])
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm)
 
         # Restart Public tier (cleanup = false)
         # This restart has no effect on the InternalLbVm functionality
@@ -2039,14 +2040,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        self.verify_lb_wget_file(
-            wget_file, [internal_vm, internal_vm_1, internal_vm_2])
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm)
 
         # Stopping VMs in the Internal tier
         # wget traffic test fails as all the VMs in the Internal tier are in
@@ -2077,17 +2072,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        with self.assertRaises(Exception):
-            self.verify_lb_wget_file(
-                wget_file, [internal_vm, internal_vm_1, internal_vm_2])
-        self.debug("Failed to wget file as all the VMs in the Internal tier "
-                   "are in stopped state")
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm, should_fail=True)
 
         # Starting VMs in the Internal tier
         # wget traffic test succeeds as all the VMs in the Internal tier are
@@ -2126,23 +2112,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        tries = 0
-        while tries < 25:
-            wget_file = self.wget_from_vm_cmd(
-                ssh_client, int_lb_rule_1.sourceipaddress,
-                self.test_data["http_rule"]["publicport"])
-            if wget_file != "":
-                break
-            self.debug("Waiting for the InternalLbVm and all the VMs in the "
-                       "Internal tier to be fully resolved for (wget) traffic "
-                       "test...")
-            time.sleep(60)
-            tries += 1
-
-        # Verifying Internal LB (wget) traffic test
-        self.verify_lb_wget_file(
-            wget_file, [internal_vm, internal_vm_1, internal_vm_2])
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm)
 
         # Restarting VPC (cleanup = false)
         # VPC VR gets destroyed and deployed again in the VPC
@@ -2189,14 +2160,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        self.verify_lb_wget_file(
-            wget_file, [internal_vm, internal_vm_1, internal_vm_2])
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm)
 
         # Restarting VPC (cleanup = true)
         # VPC VR gets destroyed and deployed again in the VPC
@@ -2252,6 +2217,37 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_lb_wget_file(
             wget_file, [internal_vm, internal_vm_1, internal_vm_2])
 
+    def verify_internal_lb_wget_traffic(self, int_lb_rule_1, internal_vm, internal_vm_1, internal_vm_2, public_ip, public_vm, should_fail=False):
+        if self.isSimulator:
+            self.debug("Simulator Environment: not running wget traffic tests.")
+            return
+        ssh_client = self.ssh_into_VM(public_vm, public_ip)
+        tries = 0
+        wget_file = None
+        while tries < 120:
+            wget_file = self.wget_from_vm_cmd(
+                ssh_client, int_lb_rule_1.sourceipaddress,
+                self.test_data["http_rule"]["publicport"])
+            if wget_file != "":
+                break
+            self.debug("Waiting for the InternalLbVm in the Internal tier to "
+                       "be fully resolved for (wget) traffic test...")
+            time.sleep(5)
+            tries += 1
+
+        # Verifying Internal LB (wget) traffic test
+        if should_fail:
+            with self.assertRaises(Exception):
+                self.verify_lb_wget_file(
+                    wget_file, [internal_vm, internal_vm_1, internal_vm_2])
+            self.debug("Failed to wget file as all the VMs in the Internal tier "
+                       "are in stopped state")
+        else:
+            self.verify_lb_wget_file(
+                wget_file, [internal_vm, internal_vm_1, internal_vm_2])
+
+    @skip
+    # Skip until CLOUDSTACK-9837 is fixed
     @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
     def test_08_nuage_internallb_appliance_operations_traffic(self):
         """Test Nuage VSP VPC Internal LB functionality with InternalLbVm
@@ -2433,14 +2429,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_firewall_rule(public_ssh_rule)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        self.verify_lb_wget_file(
-            wget_file, [internal_vm, internal_vm_1, internal_vm_2])
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm)
 
         # # Stopping the InternalLbVm when the VPC VR is in Stopped state
         self.stop_InternalLbVm(int_lb_vm)
@@ -2459,17 +2449,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        with self.assertRaises(Exception):
-            self.verify_lb_wget_file(
-                wget_file, [internal_vm, internal_vm_1, internal_vm_2])
-        self.debug("Failed to wget file as the InternalLbVm is in stopped"
-                   " state")
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm,
+                                             should_fail=True)
 
         # # Starting the InternalLbVm when the VPC VR is in Stopped state
         self.start_InternalLbVm(int_lb_vm)
@@ -2488,14 +2470,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        self.verify_lb_wget_file(
-            wget_file, [internal_vm, internal_vm_1, internal_vm_2])
+        # Bug CLOUDSTACK-9837
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm)
 
         # Starting the VPC VR
         # VPC VR has no effect on the InternalLbVm functionality
@@ -2526,17 +2503,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        with self.assertRaises(Exception):
-            self.verify_lb_wget_file(
-                wget_file, [internal_vm, internal_vm_1, internal_vm_2])
-        self.debug("Failed to wget file as the InternalLbVm is in stopped"
-                   " state")
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm, should_fail=True)
 
         # # Starting the InternalLbVm when the VPC VR is in Running state
         self.start_InternalLbVm(int_lb_vm)
@@ -2555,14 +2523,8 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        self.verify_lb_wget_file(
-            wget_file, [internal_vm, internal_vm_1, internal_vm_2])
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm)
 
         # # Force Stopping the InternalLbVm when the VPC VR is in Running state
         self.stop_InternalLbVm(int_lb_vm, force=True)
@@ -2581,17 +2543,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        with self.assertRaises(Exception):
-            self.verify_lb_wget_file(
-                wget_file, [internal_vm, internal_vm_1, internal_vm_2])
-        self.debug("Failed to wget file as the InternalLbVm is in stopped"
-                   " state")
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm,
+                                             should_fail=True)
 
         # # Starting the InternalLbVm when the VPC VR is in Running state
         self.start_InternalLbVm(int_lb_vm)
@@ -2610,11 +2564,5 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        ssh_client = self.ssh_into_VM(public_vm, public_ip)
-        wget_file = self.wget_from_vm_cmd(
-            ssh_client, int_lb_rule_1.sourceipaddress,
-            self.test_data["http_rule"]["publicport"])
-
-        # Verifying Internal LB (wget) traffic test
-        self.verify_lb_wget_file(
-            wget_file, [internal_vm, internal_vm_1, internal_vm_2])
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
+                                             internal_vm_2, public_ip, public_vm)

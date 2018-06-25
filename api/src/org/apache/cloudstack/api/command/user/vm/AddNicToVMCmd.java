@@ -17,7 +17,10 @@
 package org.apache.cloudstack.api.command.user.vm;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 
@@ -36,8 +39,11 @@ import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
+import com.cloud.utils.net.Dhcp;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
@@ -60,6 +66,13 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "IP Address for the new network")
     private String ipaddr;
 
+    @Parameter(name = ApiConstants.MAC_ADDRESS, type = CommandType.STRING, description = "Mac Address for the new network")
+    private String macaddr;
+
+    @Parameter(name = ApiConstants.DHCP_OPTIONS, type = CommandType.MAP, description = "DHCP options which are passed to the nic"
+            + " Example: dhcpoptions[0].dhcp:114=url&dhcpoptions[0].dhcp:66=www.test.com")
+    private Map dhcpOptions;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -74,6 +87,18 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
 
     public String getIpAddress() {
         return ipaddr;
+    }
+
+    public String getMacAddress() {
+        if (macaddr == null) {
+            return null;
+        }
+        if(!NetUtils.isValidMac(macaddr)) {
+            throw new InvalidParameterValueException("Mac address is not valid: " + macaddr);
+        } else if(!NetUtils.isUnicastMac(macaddr)) {
+            throw new InvalidParameterValueException("Mac address is not unicast: " + macaddr);
+        }
+        return NetUtils.standardizeMacAddress(macaddr);
     }
 
     /////////////////////////////////////////////////////
@@ -106,6 +131,28 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
              return Account.ACCOUNT_ID_SYSTEM; // bad id given, parent this command to SYSTEM so ERROR events are tracked
         }
         return vm.getAccountId();
+    }
+
+    public Map<Integer, String> getDhcpOptionsMap() {
+        Map<Integer, String> dhcpOptionsMap = new HashMap<>();
+        if (dhcpOptions != null && !dhcpOptions.isEmpty()) {
+
+            Collection<Map<String, String>> paramsCollection = this.dhcpOptions.values();
+            for(Map<String, String> dhcpNetworkOptions : paramsCollection) {
+                for (String key : dhcpNetworkOptions.keySet()) {
+                    if (key.startsWith(ApiConstants.DHCP_PREFIX)) {
+                        int dhcpOptionValue = Integer.parseInt(key.replaceFirst(ApiConstants.DHCP_PREFIX, ""));
+                        dhcpOptionsMap.put(dhcpOptionValue, dhcpNetworkOptions.get(key));
+                    } else {
+                        Dhcp.DhcpOptionCode dhcpOptionEnum = Dhcp.DhcpOptionCode.valueOfString(key);
+                        dhcpOptionsMap.put(dhcpOptionEnum.getCode(), dhcpNetworkOptions.get(key));
+                    }
+                }
+
+            }
+        }
+
+        return dhcpOptionsMap;
     }
 
     @Override

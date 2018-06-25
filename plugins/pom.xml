@@ -26,7 +26,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloudstack</artifactId>
-    <version>4.9.4.0-SNAPSHOT</version>
+    <version>4.11.1.0-SNAPSHOT</version>
   </parent>
 
   <build>
@@ -53,6 +53,7 @@
     <module>acl/dynamic-role-based</module>
     <module>affinity-group-processors/host-anti-affinity</module>
     <module>affinity-group-processors/explicit-dedication</module>
+    <module>ca/root-ca</module>
     <module>deployment-planners/user-concentrated-pod</module>
     <module>deployment-planners/user-dispersing</module>
     <module>deployment-planners/implicit-dedication</module>
@@ -79,10 +80,10 @@
     <module>network-elements/nuage-vsp</module>
     <module>network-elements/bigswitch</module>
     <module>network-elements/brocade-vcs</module>
-    <module>network-elements/midonet</module>
     <module>network-elements/stratosphere-ssp</module>
     <module>network-elements/opendaylight</module>
     <module>outofbandmanagement-drivers/ipmitool</module>
+    <module>outofbandmanagement-drivers/nested-cloudstack</module>
     <module>storage-allocators/random</module>
     <module>user-authenticators/ldap</module>
     <module>user-authenticators/md5</module>
@@ -106,6 +107,9 @@
     <module>network-elements/vxlan</module>
     <module>network-elements/globodns</module>
     <module>database/quota</module>
+    <module>integrations/cloudian</module>
+    <module>integrations/prometheus</module>
+    <module>affinity-group-processors/host-affinity</module>
   </modules>
 
   <dependencies>
@@ -182,6 +186,17 @@
       <modules>
         <module>hypervisors/vmware</module>
         <module>network-elements/cisco-vnmc</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>vmware-sioc</id>
+      <activation>
+        <property>
+          <name>noredist</name>
+        </property>
+      </activation>
+      <modules>
+        <module>api/vmware-sioc</module>
       </modules>
     </profile>
     <profile>

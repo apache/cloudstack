@@ -22,7 +22,6 @@ import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 import java.rmi.RemoteException;
 import java.sql.Connection;
-import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.sql.SQLRecoverableException;
 import java.util.ArrayList;
@@ -546,7 +545,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                         profiler.start();
 
                         profilerHeartbeatUpdate.start();
-                        txn.transitToUserManagedConnection(getHeartbeatConnection());
+                        txn.transitToAutoManagedConnection(TransactionLegacy.CLOUD_DB);
                         if (s_logger.isTraceEnabled()) {
                             s_logger.trace("Cluster manager heartbeat update, id:" + _mshostId);
                         }
@@ -597,7 +596,6 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                         invalidHeartbeatConnection();
                     }
                 } finally {
-                    txn.transitToAutoManagedConnection(TransactionLegacy.CLOUD_DB);
                     txn.close("ClusterHeartbeat");
                 }
             }
@@ -614,15 +612,6 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
         }
 
         return false;
-    }
-
-    private Connection getHeartbeatConnection() throws SQLException {
-        if (_heartbeatConnection == null) {
-            final Connection conn = TransactionLegacy.getStandaloneConnectionWithException();
-            _heartbeatConnection = new ConnectionConcierge("ClusterManagerHeartbeat", conn, false);
-        }
-
-        return _heartbeatConnection.conn();
     }
 
     private void invalidHeartbeatConnection() {

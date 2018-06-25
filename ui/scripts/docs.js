@@ -395,6 +395,10 @@ cloudStack.docs = {
         desc: 'If you want to assign a special domain name to this domain\'s guest VM network, specify the DNS suffix',
         externalLink: ''
     },
+    helpDomainId: {
+        desc: 'A valid domain id. CloudStack will generate one for you if empty.',
+        externalLink: ''
+    },
     // Add F5
     helpF5IPAddress: {
         desc: 'The IP address of the device',
@@ -566,6 +570,10 @@ cloudStack.docs = {
     },
     helpNetScalerCapacity: {
         desc: 'Number of guest networks/accounts that will share this device',
+        externalLink: ''
+    },
+    helpNetscalerServicePackages: {
+        desc: 'Choose the Netscaler Service Package you want to use.',
         externalLink: ''
     },
     // Add network offering
@@ -1159,6 +1167,10 @@ cloudStack.docs = {
         desc: 'The Management Server will download the file from the specified URL, such as http://my.web.server/filename.iso',
         externalLink: ''
     },
+    helpRegisterISODirectDownload: {
+        desc: 'KVM Only: Secondary Storage is bypassed and ISO is downloaded to Primary Storage on deployment',
+        externalLink: ''
+    },
     helpRegisterISOZone: {
         desc: 'Choose the zone where you want the ISO to be available, or All Zones to make it available throughout the cloud',
         externalLink: ''
@@ -1196,8 +1208,12 @@ cloudStack.docs = {
         desc: 'The Management Server will download the file from the specified URL, such as http://my.web.server/filename.vhd.gz',
         externalLink: ''
     },
+    helpRegisterTemplateDirectDownload: {
+        desc: 'KVM Only: Secondary Storage is bypassed and template/ISO is downloaded to Primary Storage on deployment',
+        externalLink: ''
+    },
     helpRegisterTemplateZone: {
-        desc: 'Choose the zone where you want the template to be available, or All Zones to make it available throughout the cloud',
+        desc: 'Choose one or more zones where you want the template to be available, or All Zones to make it available throughout the cloud. (Tip: Use Ctrl to choose multiple zones)',
         externalLink: ''
     },
     helpRegisterTemplateHypervisor: {
@@ -1332,5 +1348,12 @@ cloudStack.docs = {
     },
     helpLdapLinkDomainAdmin: {
         desc: 'domain admin of the linked domain. Specify a username in GROUP/OU of LDAP'
+    },
+    helpSetReservationSystemVms: {
+        desc: 'If enabled, IP range reservation is set for SSVM & CPVM. Global setting "system.vm.public.ip.reservation.mode.strictness" is used to control whether reservation is strict or not (preferred)'
+    },
+    helpL2UserData: {
+        desc: 'Pass user and meta data to VMs (via ConfigDrive)',
+        externalLink: ''
     }
 };

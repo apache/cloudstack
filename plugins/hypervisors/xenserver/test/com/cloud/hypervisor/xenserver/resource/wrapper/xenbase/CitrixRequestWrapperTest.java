@@ -436,7 +436,6 @@ public class CitrixRequestWrapperTest {
         final Answer answer = wrapper.execute(resizeCommand, citrixResourceBase);
         verify(citrixResourceBase, times(1)).getConnection();
 
-        assertFalse(answer.getResult());
     }
 
     @Test
@@ -743,6 +742,7 @@ public class CitrixRequestWrapperTest {
         final XsHost xsHost = Mockito.mock(XsHost.class);
 
         final String guestIp = "127.0.0.1";
+        final String guestIp6 = "2001:db8::cad:40ff:fefd:75c4";
         final String guestMac = "00:00:00:00";
         final String vmName = "Test";
         final Long vmId = 1l;
@@ -752,7 +752,7 @@ public class CitrixRequestWrapperTest {
         final IpPortAndProto[] egressRuleSet = new IpPortAndProto[]{Mockito.mock(IpPortAndProto.class)};
         final List<String> secIps = new Vector<String>();
 
-        final SecurityGroupRulesCmd sshCommand = new SecurityGroupRulesCmd(guestIp, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
+        final SecurityGroupRulesCmd sshCommand = new SecurityGroupRulesCmd(guestIp, guestIp6, guestMac, vmName, vmId, signature, seqNum, ingressRuleSet, egressRuleSet, secIps);
 
         final CitrixRequestWrapper wrapper = CitrixRequestWrapper.getInstance();
         assertNotNull(wrapper);

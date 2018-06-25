@@ -24,22 +24,23 @@ import javax.inject.Inject;
 
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 
+import com.cloud.capacity.CapacityManager;
+
 public abstract class NfsImageStoreDriverImpl extends BaseImageStoreDriverImpl {
 
     @Inject
     ImageStoreDetailsDao _imageStoreDetailsDao;
 
-    private static final String NFS_VERSION_DETAILS_KEY = "nfs.version";
-
     /**
      * Retrieve NFS version to be used for imgStoreId store, if provided in image_store_details table
      * @param imgStoreId store id
-     * @return "nfs.version" associated value for imgStoreId in image_store_details table if exists, null if not
+     * @return "secstorage.nfs.version" associated value for imgStoreId in image_store_details table if exists, null if not
      */
     protected Integer getNfsVersion(long imgStoreId){
         Map<String, String> imgStoreDetails = _imageStoreDetailsDao.getDetails(imgStoreId);
-        if (imgStoreDetails != null && imgStoreDetails.containsKey(NFS_VERSION_DETAILS_KEY)){
-            String nfsVersionParam = imgStoreDetails.get(NFS_VERSION_DETAILS_KEY);
+        String nfsVersionKey = CapacityManager.ImageStoreNFSVersion.key();
+        if (imgStoreDetails != null && imgStoreDetails.containsKey(nfsVersionKey)){
+            String nfsVersionParam = imgStoreDetails.get(nfsVersionKey);
             return (nfsVersionParam != null ? Integer.valueOf(nfsVersionParam) : null);
         }
         return null;

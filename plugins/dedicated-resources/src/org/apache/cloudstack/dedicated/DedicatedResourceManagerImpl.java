@@ -20,12 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.ejb.Local;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -48,6 +44,8 @@ import org.apache.cloudstack.api.response.DedicatePodResponse;
 import org.apache.cloudstack.api.response.DedicateZoneResponse;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterVO;
@@ -75,6 +73,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
@@ -84,7 +83,6 @@ import com.cloud.vm.UserVmVO;
 import com.cloud.vm.dao.UserVmDao;
 
 @Component
-@Local({DedicatedService.class})
 public class DedicatedResourceManagerImpl implements DedicatedService {
     private static final Logger s_logger = Logger.getLogger(DedicatedResourceManagerImpl.class);
 
@@ -819,6 +817,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         String accountName = cmd.getAccountName();
         Long accountId = null;
         Long affinityGroupId = cmd.getAffinityGroupId();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
 
         if (accountName != null) {
             if (domainId != null) {
@@ -830,7 +830,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 throw new InvalidParameterValueException("Please specify the domain id of the account: " + accountName);
             }
         }
-        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedZones(zoneId, domainId, accountId, affinityGroupId);
+        Filter searchFilter = new Filter(DedicatedResourceVO.class, "id", true, startIndex, pageSize);
+        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedZones(zoneId, domainId, accountId, affinityGroupId, searchFilter);
         return new Pair<List<? extends DedicatedResourceVO>, Integer>(result.first(), result.second());
     }
 
@@ -841,6 +842,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         String accountName = cmd.getAccountName();
         Long accountId = null;
         Long affinityGroupId = cmd.getAffinityGroupId();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
 
         if (accountName != null) {
             if (domainId != null) {
@@ -852,7 +855,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 throw new InvalidParameterValueException("Please specify the domain id of the account: " + accountName);
             }
         }
-        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedPods(podId, domainId, accountId, affinityGroupId);
+        Filter searchFilter = new Filter(DedicatedResourceVO.class, "id", true, startIndex, pageSize);
+        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedPods(podId, domainId, accountId, affinityGroupId, searchFilter);
         return new Pair<List<? extends DedicatedResourceVO>, Integer>(result.first(), result.second());
     }
 
@@ -863,6 +867,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         String accountName = cmd.getAccountName();
         Long accountId = null;
         Long affinityGroupId = cmd.getAffinityGroupId();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
 
         if (accountName != null) {
             if (domainId != null) {
@@ -874,7 +880,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 throw new InvalidParameterValueException("Please specify the domain id of the account: " + accountName);
             }
         }
-        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedClusters(clusterId, domainId, accountId, affinityGroupId);
+        Filter searchFilter = new Filter(DedicatedResourceVO.class, "id", true, startIndex, pageSize);
+        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedClusters(clusterId, domainId, accountId, affinityGroupId, searchFilter);
         return new Pair<List<? extends DedicatedResourceVO>, Integer>(result.first(), result.second());
     }
 
@@ -884,6 +891,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();
         Long affinityGroupId = cmd.getAffinityGroupId();
+        Long startIndex = cmd.getStartIndex();
+        Long pageSize = cmd.getPageSizeVal();
 
         Long accountId = null;
         if (accountName != null) {
@@ -896,8 +905,8 @@ public class DedicatedResourceManagerImpl implements DedicatedService {
                 throw new InvalidParameterValueException("Please specify the domain id of the account: " + accountName);
             }
         }
-
-        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedHosts(hostId, domainId, accountId, affinityGroupId);
+        Filter searchFilter = new Filter(DedicatedResourceVO.class, "id", true, startIndex, pageSize);
+        Pair<List<DedicatedResourceVO>, Integer> result = _dedicatedDao.searchDedicatedHosts(hostId, domainId, accountId, affinityGroupId, searchFilter);
         return new Pair<List<? extends DedicatedResourceVO>, Integer>(result.first(), result.second());
     }
 

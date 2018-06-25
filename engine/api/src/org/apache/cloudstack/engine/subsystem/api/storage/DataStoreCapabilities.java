@@ -36,5 +36,9 @@ public enum DataStoreCapabilities {
     /**
      * indicates that this driver supports the "cloneOfSnapshot" property of cloud.snapshot_details (for creating a volume from a volume)
      */
-    CAN_CREATE_VOLUME_FROM_VOLUME
+    CAN_CREATE_VOLUME_FROM_VOLUME,
+    /**
+     * indicates that this driver supports reverting a volume to a snapshot state
+     */
+    CAN_REVERT_VOLUME_TO_SNAPSHOT
 }

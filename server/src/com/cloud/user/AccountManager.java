@@ -23,6 +23,7 @@ import java.net.InetAddress;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.command.admin.account.UpdateAccountCmd;
 import org.apache.cloudstack.api.command.admin.user.DeleteUserCmd;
+import org.apache.cloudstack.api.command.admin.user.MoveUserCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
 import com.cloud.api.query.vo.ControlledViewEntity;
@@ -33,12 +34,14 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
 /**
  * AccountManager includes logic that deals with accounts, domains, and users.
  *
  */
-public interface AccountManager extends AccountService {
+public interface AccountManager extends AccountService, Configurable{
     /**
      * Disables an account by accountId
      * @param accountId
@@ -154,9 +157,16 @@ public interface AccountManager extends AccountService {
     boolean deleteUser(DeleteUserCmd deleteUserCmd);
 
     /**
+     * moves a user to another account within the same domain
+     * @param moveUserCmd
+     * @return true if the user was successfully moved
+     */
+    boolean moveUser(MoveUserCmd moveUserCmd);
+
+    /**
      * Update a user by userId
      *
-     * @param userId
+     * @param cmd
      * @return UserAccount object
      */
     UserAccount updateUser(UpdateUserCmd cmd);
@@ -198,4 +208,13 @@ public interface AccountManager extends AccountService {
     public static final String MESSAGE_ADD_ACCOUNT_EVENT = "Message.AddAccount.Event";
 
     public static final String MESSAGE_REMOVE_ACCOUNT_EVENT = "Message.RemoveAccount.Event";
+    public static final ConfigKey<Boolean> UseSecretKeyInResponse = new ConfigKey<Boolean>(
+            "Advanced",
+            Boolean.class,
+            "use.secret.key.in.response",
+            "false",
+            "This parameter allows the users to enable or disable of showing secret key as a part of response for various APIs. By default it is set to false.",
+            true);
+
+    boolean moveUser(long id, Long domainId, long accountId);
 }

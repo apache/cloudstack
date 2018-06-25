@@ -16,26 +16,24 @@
 // under the License.
 package com.cloud.vm;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Map;
-
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.api.Displayable;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.fsm.StateMachine2;
 import com.cloud.utils.fsm.StateMachine2.Transition;
 import com.cloud.utils.fsm.StateMachine2.Transition.Impact;
 import com.cloud.utils.fsm.StateObject;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.api.Displayable;
+import org.apache.cloudstack.kernel.Partition;
+
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Map;
 
 /**
  * VirtualMachine describes the properties held by a virtual machine
  *
  */
-public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, InternalIdentity, Displayable, StateObject<VirtualMachine.State> {
+public interface VirtualMachine extends RunningOn, ControlledEntity, Partition, Displayable, StateObject<VirtualMachine.State> {
 
     public enum PowerState {
         PowerUnknown,
@@ -214,6 +212,7 @@ public interface VirtualMachine extends RunningOn, ControlledEntity, Identity, I
 
     public enum Type {
         User(false), DomainRouter(true), ConsoleProxy(true), SecondaryStorageVm(true), ElasticIpVm(true), ElasticLoadBalancerVm(true), InternalLoadBalancerVm(true),
+        NetScalerVm(true),
 
         /*
          * UserBareMetal is only used for selecting VirtualMachineGuru, there is no

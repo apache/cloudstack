@@ -42,6 +42,11 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import org.apache.cloudstack.alert.AlertService;
 import org.apache.cloudstack.alert.AlertService.AlertType;
 import org.apache.cloudstack.api.command.admin.router.RebootRouterCmd;
@@ -61,10 +66,6 @@ import org.apache.cloudstack.network.topology.NetworkTopology;
 import org.apache.cloudstack.network.topology.NetworkTopologyContext;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.cloudstack.utils.usage.UsageUtils;
-import org.apache.log4j.Logger;
-import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
@@ -1372,7 +1373,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 if (dest.getHost().getHypervisorType() == HypervisorType.VMware || dest.getHost().getHypervisorType() == HypervisorType.Hyperv) {
                     s_logger.info("Check if we need to add management server explicit route to DomR. pod cidr: " + dest.getPod().getCidrAddress() + "/"
                             + dest.getPod().getCidrSize() + ", pod gateway: " + dest.getPod().getGateway() + ", management host: "
-                            + ApiServiceConfiguration.ManagementHostIPAdr.value());
+                            + ApiServiceConfiguration.ManagementServerAddresses.value());
 
                     if (s_logger.isInfoEnabled()) {
                         s_logger.info("Add management server explicit route to DomR.");
@@ -1382,7 +1383,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                     // networking setup, DomR may have two interfaces while both
                     // are on the same subnet
                     _mgmtCidr = _configDao.getValue(Config.ManagementNetwork.key());
-                    if (NetUtils.isValidCIDR(_mgmtCidr)) {
+                    if (NetUtils.isValidIp4Cidr(_mgmtCidr)) {
                         buf.append(" mgmtcidr=").append(_mgmtCidr);
                         buf.append(" localgw=").append(dest.getPod().getGateway());
                     }
@@ -1483,7 +1484,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             } else {
                 buf.append(String.format(" baremetalnotificationsecuritykey=%s", user.getSecretKey()));
                 buf.append(String.format(" baremetalnotificationapikey=%s", user.getApiKey()));
-                buf.append(" host=").append(ApiServiceConfiguration.ManagementHostIPAdr.value());
+                buf.append(" host=").append(ApiServiceConfiguration.ManagementServerAddresses.value());
                 buf.append(" port=").append(_configDao.getValue(Config.BaremetalProvisionDoneNotificationPort.key()));
             }
         }
@@ -1534,7 +1535,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
                 }
             }
         } else if (dc.getNetworkType() == NetworkType.Advanced) {
-            final String cidr = guestNetwork.getCidr();
+            final String cidr = _networkModel.getValidNetworkCidr(guestNetwork);
             if (cidr != null) {
                 cidrSize = NetUtils.getCidrSize(NetUtils.getCidrNetmask(cidr));
                 dhcpRange = NetUtils.getDhcpRange(cidr);
@@ -1784,7 +1785,8 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     }
 
     protected void finalizeUserDataAndDhcpOnStart(final Commands cmds, final DomainRouterVO router, final Provider provider, final Long guestNetworkId) {
-        if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)) {
+        if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dhcp, provider)
+                || _networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.Dns, provider)) {
             // Resend dhcp
             s_logger.debug("Reapplying dhcp entries as a part of domR " + router + " start...");
             _commandSetupHelper.createDhcpEntryCommandsForVMs(router, cmds, guestNetworkId);
@@ -1847,7 +1849,15 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 if (_networkModel.isProviderSupportServiceInNetwork(guestNetworkId, Service.StaticNat, provider)) {
                     if (ip.isOneToOneNat()) {
-                        final StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), guestNetworkId, ip.getId(), ip.getVmIp(), false);
+
+                        boolean revoke = false;
+                        if (ip.getState() == IpAddress.State.Releasing ) {
+                            // for ips got struck in releasing state we need to delete the rule not add.
+                            s_logger.debug("Rule revoke set to true for the ip " + ip.getAddress() +" becasue it is in releasing state");
+                            revoke = true;
+                        }
+                        final StaticNatImpl staticNat = new StaticNatImpl(ip.getAccountId(), ip.getDomainId(), guestNetworkId, ip.getId(), ip.getVmIp(), revoke);
+
                         staticNats.add(staticNat);
                     }
                 }
@@ -1942,10 +1952,13 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // The default on the router is set to Deny all. So, if the default configuration in the offering is set to true (Allow), we change the Egress here
         if (defaultEgressPolicy) {
             final List<String> sourceCidr = new ArrayList<String>();
+            final List<String> destCidr = new ArrayList<String>();
 
-            sourceCidr.add(NetUtils.ALL_CIDRS);
+            sourceCidr.add(network.getCidr());
+            destCidr.add(NetUtils.ALL_IP4_CIDRS);
+
             final FirewallRule rule = new FirewallRuleVO(null, null, null, null, "all", networkId, network.getAccountId(), network.getDomainId(), Purpose.Firewall, sourceCidr,
-                    null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
+                    destCidr, null, null, null, FirewallRule.TrafficType.Egress, FirewallRule.FirewallRuleType.System);
 
             rules.add(rule);
         } else {
@@ -2241,6 +2254,11 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         // verify parameters
         DomainRouterVO router = _routerDao.findById(routerId);
+        //clean up the update_state feild
+        if(router.getUpdateState()== VirtualRouter.UpdateState.UPDATE_FAILED){
+            router.setUpdateState(null);
+            _routerDao.update(router.getId(),router);
+        }
         if (router == null) {
             throw new InvalidParameterValueException("Unable to find router by id " + routerId + ".");
         }
@@ -2615,25 +2633,6 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
             }
         }
         return false;
-    }
-
-    protected class RebootTask extends ManagedContextRunnable {
-
-        long _routerId;
-
-        public RebootTask(final long routerId) {
-            _routerId = routerId;
-        }
-
-        @Override
-        protected void runInContext() {
-            try {
-                s_logger.info("Reboot router " + _routerId + " to refresh network rules");
-                rebootRouter(_routerId, true);
-            } catch (final Exception e) {
-                s_logger.warn("Error while rebooting the router", e);
-            }
-        }
     }
 
     protected boolean aggregationExecution(final AggregationControlCommand.Action action, final Network network, final List<DomainRouterVO> routers)

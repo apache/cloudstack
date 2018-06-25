@@ -1,46 +1,28 @@
-cloudstack (4.9.4.0-SNAPSHOT) unstable; urgency=low
+cloudstack (4.11.1.0-SNAPSHOT) unstable; urgency=low
 
-  * Update the version to 4.9.4.0-SNAPSHOT
+  * Update the version to 4.11.1.0-SNAPSHOT
 
- -- the Apache CloudStack project <dev@cloudstack.apache.org>  Fri, 06 Dec 2016 10:38:00 +0530
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 05 Feb 2018 11:10:37 +0100
 
-cloudstack (4.9.3.0) unstable; urgency=low
+cloudstack (4.11.0.0) unstable; urgency=low
 
-  * Update the version to 4.9.3.0
+  * Update the version to 4.11.0.0
 
- -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 28 Aug 2017 14:52:37 +0200
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Fri, 26 Jan 2018 13:13:37 +0100
 
-cloudstack (4.9.3.0-SNAPSHOT) unstable; urgency=low
+cloudstack (4.11.0.0-SNAPSHOT) unstable; urgency=low
 
-  * Update the version to 4.9.3.0-SNAPSHOT
+  * Update the version to 4.11.0.0-SNAPSHOT
 
- -- the Apache CloudStack project <dev@cloudstack.apache.org>  Fri, 06 Dec 2016 10:38:00 +0530
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 03 Jul 2017 10:06:42 +0530
 
-cloudstack (4.9.2.0) unstable; urgency=low
+cloudstack (4.11.0.0-SNAPSHOT-SNAPSHOT) unstable; urgency=low
 
-  * Update the version to 4.9.2.0
+  * Update the version to 4.10.0.snapshot
 
- -- the Apache CloudStack project <dev@cloudstack.apache.org>  Tue, 03 Jan 2017 12:28:47 +0530
-
-cloudstack (4.9.2.0-SNAPSHOT) unstable; urgency=low
-
-  * Update the version to 4.9.2.0-SNAPSHOT
-
- -- the Apache CloudStack project <dev@cloudstack.apache.org>  Sat, 10 Dec 2016 08:38:03 +0530
-
-cloudstack (4.9.2.0-SNAPSHOT) unstable; urgency=low
-
-  * Update the version to 4.9.2.0-SNAPSHOT
-
- -- the Apache CloudStack project <dev@cloudstack.apache.org>  Fri, 19 Aug 2016 13:48:00 +0530
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 08 Aug 2016 11:22:34 +0530
 
 cloudstack (4.9.0) unstable; urgency=low
-
-  * Update the version to 4.9.0
-
- -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 25 Jul 2016 16:56:03 -0400
-
-cloudstack (4.9.0-SNAPSHOT) unstable; urgency=low
 
   [ Remi Bergsma ]
   * Update the version to 4.9.0.snapshot

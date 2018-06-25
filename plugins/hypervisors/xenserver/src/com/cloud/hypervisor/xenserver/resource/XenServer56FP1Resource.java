@@ -18,16 +18,12 @@ package com.cloud.hypervisor.xenserver.resource;
 
 import java.util.Map;
 
-import javax.ejb.Local;
-
 import org.apache.xmlrpc.XmlRpcException;
 
-import com.cloud.resource.ServerResource;
 import com.xensource.xenapi.Connection;
 import com.xensource.xenapi.Host;
 import com.xensource.xenapi.Types.XenAPIException;
 
-@Local(value = ServerResource.class)
 public class XenServer56FP1Resource extends XenServer56Resource {
 
     @Override

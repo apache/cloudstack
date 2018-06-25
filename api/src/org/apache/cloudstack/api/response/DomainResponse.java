@@ -165,7 +165,7 @@ public class DomainResponse extends BaseResponse implements ResourceLimitAndCoun
     private String secondaryStorageLimit;
 
     @SerializedName("secondarystoragetotal") @Param(description="the total secondary storage space (in GiB) owned by domain", since="4.2.0")
-    private Long secondaryStorageTotal;
+    private float secondaryStorageTotal;
 
     @SerializedName("secondarystorageavailable") @Param(description="the total secondary storage space (in GiB) available to be used for this domain", since="4.2.0")
     private String secondaryStorageAvailable;
@@ -399,7 +399,7 @@ public class DomainResponse extends BaseResponse implements ResourceLimitAndCoun
     }
 
     @Override
-    public void setSecondaryStorageTotal(Long secondaryStorageTotal) {
+    public void setSecondaryStorageTotal(float secondaryStorageTotal) {
         this.secondaryStorageTotal = secondaryStorageTotal;
     }
 

@@ -15,7 +15,7 @@ was tested against a CentOS 6.5 x86_64 setup.
 Install tools and dependencies used for development:
 
     $ yum install git ant ant-devel java-1.6.0-openjdk java-1.6.0-openjdk-devel
-    mysql mysql-server tomcat6 mkisofs gcc python MySQL-python openssh-clients wget
+    mysql mysql-server mkisofs gcc python MySQL-python openssh-clients wget
 
     # yum -y update
     # yum -y install java-1.7.0-openjdk
@@ -124,7 +124,6 @@ To create debs install the following extra packages:
 
     # apt-get -y install python-mysqldb
     # apt-get -y install debhelper
-    # apt-get -y install tomcat6
 
 Then:
 
@@ -138,7 +137,6 @@ All the deb packages will be located one level down.
 To create rpms, install the following extra packages:
 
     # yum -y install rpm-build
-    # yum -y install tomcat6
     # yum -y install ws-commons-util
     # yum -y instal gcc
     # yum -y install glibc-devel
@@ -154,7 +152,7 @@ All the rpm packages will be created in `dist/rpmbuild/RPMS/x86_64` directory.
 
 ## Notes
 
-If you will be using Xen as your hypervisor, please download [vhd-util](http://download.cloud.com.s3.amazonaws.com/tools/vhd-util)
+If you will be using Xen as your hypervisor, please download [vhd-util](http://download.cloudstack.org/tools/vhd-util)
 
 If management server is installed on RHEL/CentOS, then copy vhd-util into:
 

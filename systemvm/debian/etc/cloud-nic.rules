@@ -1,0 +1,1 @@
+SUBSYSTEM=="net" KERNEL=="eth*" RUN+="/opt/cloud/bin/cloud-nic.sh $env{ACTION} %k"

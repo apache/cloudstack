@@ -44,6 +44,11 @@ public class VmdkProcessor extends AdapterBase implements Processor {
 
     @Override
     public FormatInfo process(String templatePath, ImageFormat format, String templateName) throws InternalErrorException {
+     return process(templatePath, format, templateName, 0);
+    }
+
+    @Override
+    public FormatInfo process(String templatePath, ImageFormat format, String templateName, long processTimeout) throws InternalErrorException {
         if (format != null) {
             if (s_logger.isInfoEnabled()) {
                 s_logger.info("We currently don't handle conversion from " + format + " to VMDK.");

@@ -23,7 +23,11 @@ import com.cloud.vm.VirtualMachine;
  */
 public interface VirtualRouter extends VirtualMachine {
     public enum Role {
-        VIRTUAL_ROUTER, LB, INTERNAL_LB_VM
+        VIRTUAL_ROUTER, LB, INTERNAL_LB_VM, NETSCALER_VM
+    }
+
+    public enum UpdateState {
+        UPDATE_NEEDED, UPDATE_IN_PROGRESS, UPDATE_COMPLETE, UPDATE_FAILED
     }
 
     Role getRole();

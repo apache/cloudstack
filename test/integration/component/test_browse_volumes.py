@@ -1288,7 +1288,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                                 self.apiclient.connection.user,
                                 self.apiclient.connection.passwd,
                                 ssvm.privateip,
-                                "service cloud status",
+                                "systemctl is-active cloud",
                                 hypervisor=self.hypervisor
                                 )
         else:
@@ -1300,15 +1300,15 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                                     host.user,
                                     host.passwd,
                                     ssvm.linklocalip,
-                                    "service cloud status"
+                                    "systemctl is-active cloud"
                                     )
             except KeyError:
                 self.skipTest("Marvin configuration has no host credentials to check router services")
         res = str(result)
         self.debug("Cloud Process status: %s" % res)
-        # cloud.com service (type=secstorage) is running: process id: 2346
+        # Apache CloudStack service (type=secstorage) is running: process id: 2346
         self.assertEqual(
-                            res.count("is running"),
+                            res.count("active"),
                             1,
                             "Check cloud service is running or not"
                         )

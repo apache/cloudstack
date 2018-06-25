@@ -17,7 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import com.google.gson.annotations.SerializedName;
-
+import java.util.List;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
@@ -32,6 +32,10 @@ public class NicSecondaryIpResponse extends BaseResponse {
     @SerializedName(ApiConstants.ID)
     @Param(description = "the ID of the secondary private IP addr")
     private String id;
+
+    @SerializedName("secondaryip")
+    @Param(description = "the list of Secondary ipv4 addr of nic")
+    private List<NicSecondaryIpResponse> secondaryIpsList;
 
     @SerializedName(ApiConstants.IP_ADDRESS)
     @Param(description = "Secondary IP address")
@@ -94,4 +98,11 @@ public class NicSecondaryIpResponse extends BaseResponse {
         this.id = id;
     }
 
+    public List<NicSecondaryIpResponse> getSecondaryIpsList() {
+        return secondaryIpsList;
+    }
+
+    public void setSecondaryIpsList(List<NicSecondaryIpResponse> secondaryIpsList) {
+        this.secondaryIpsList = secondaryIpsList;
+    }
 }

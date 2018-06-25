@@ -95,6 +95,10 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
     @Param(description = "the id of the zone the rule belongs to")
     private String zoneId;
 
+    @SerializedName(ApiConstants.ZONE_NAME)
+    @Param(description = "the name of the zone the load balancer rule belongs to", since = "4.11")
+    private String zoneName;
+
     @SerializedName(ApiConstants.PROTOCOL)
     @Param(description = "the protocol of the loadbalanacer rule")
     private String lbProtocol;
@@ -164,6 +168,10 @@ public class LoadBalancerResponse extends BaseResponse implements ControlledEnti
 
     public void setZoneId(String zoneId) {
         this.zoneId = zoneId;
+    }
+
+    public void setZoneName(String zoneName) {
+        this.zoneName = zoneName;
     }
 
     @Override

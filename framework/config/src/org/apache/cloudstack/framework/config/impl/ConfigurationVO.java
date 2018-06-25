@@ -122,7 +122,7 @@ public class ConfigurationVO implements Configuration {
 
     @Override
     public String getValue() {
-        if(isEncryptedConfig()) {
+        if(isEncrypted()) {
             return DBEncryptionUtil.decrypt(value);
         } else {
             return value;
@@ -130,14 +130,15 @@ public class ConfigurationVO implements Configuration {
     }
 
     public void setValue(String value) {
-        if(isEncryptedConfig()) {
+        if(isEncrypted()) {
             this.value = DBEncryptionUtil.encrypt(value);
         } else {
             this.value = value;
         }
     }
 
-    private boolean isEncryptedConfig() {
+    @Override
+    public boolean isEncrypted() {
         return "Hidden".equals(getCategory()) || "Secure".equals(getCategory());
     }
 

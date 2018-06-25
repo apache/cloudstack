@@ -29,9 +29,11 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
 import org.apache.cloudstack.api.response.SecurityGroupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.user.Account;
 import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
@@ -58,11 +60,14 @@ public class AssignVMCmd extends BaseCmd  {
                description = "id of the VM to be moved")
     private Long virtualMachineId;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, required = true, description = "account name of the new VM owner.")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "account name of the new VM owner.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, required = true, description = "domain id of the new VM owner.")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "domain id of the new VM owner.")
     private Long domainId;
+
+    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "an optional project for the new VM owner.")
+    private Long projectId;
 
     //Network information
     @Parameter(name = ApiConstants.NETWORK_IDS,
@@ -98,6 +103,10 @@ public class AssignVMCmd extends BaseCmd  {
         return domainId;
     }
 
+    public Long getProjectId() {
+        return projectId;
+    }
+
     public List<Long> getNetworkIds() {
         return networkIds;
     }
@@ -125,6 +134,9 @@ public class AssignVMCmd extends BaseCmd  {
             UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", userVm).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
+        } catch (InvalidParameterValueException e){
+            e.printStackTrace();
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         } catch (Exception e) {
             e.printStackTrace();
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to move vm " + e.getMessage());

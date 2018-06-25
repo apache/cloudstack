@@ -78,7 +78,7 @@ public class EventResponse extends BaseResponse implements ControlledViewEntityR
     @Param(description = "the state of the event")
     private Event.State state;
 
-    @SerializedName("parentid")
+    @SerializedName(ApiConstants.PARENT_ID)
     @Param(description = "whether the event is parented")
     private String parentId;
 

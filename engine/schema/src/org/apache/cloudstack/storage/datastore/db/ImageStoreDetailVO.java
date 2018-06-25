@@ -23,18 +23,18 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import org.apache.cloudstack.api.InternalIdentity;
+import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name = "image_store_details")
-public class ImageStoreDetailVO implements InternalIdentity {
+public class ImageStoreDetailVO implements ResourceDetail {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
     long id;
 
     @Column(name = "store_id")
-    long storeId;
+    long resourceId;
 
     @Column(name = "name")
     String name;
@@ -42,13 +42,17 @@ public class ImageStoreDetailVO implements InternalIdentity {
     @Column(name = "value")
     String value;
 
+    @Column(name = "display")
+    private boolean display = true;
+
     public ImageStoreDetailVO() {
     }
 
-    public ImageStoreDetailVO(long storeId, String name, String value) {
-        this.storeId = storeId;
+    public ImageStoreDetailVO(long storeId, String name, String value, boolean display) {
+        this.resourceId = storeId;
         this.name = name;
         this.value = value;
+        this.display = display;
     }
 
     @Override
@@ -56,28 +60,24 @@ public class ImageStoreDetailVO implements InternalIdentity {
         return id;
     }
 
-    public long getStoreId() {
-        return storeId;
+    @Override
+    public long getResourceId() {
+        return resourceId;
     }
 
-    public void setStoreId(long storeId) {
-        this.storeId = storeId;
-    }
-
+    @Override
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
+    @Override
     public String getValue() {
         return value;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    @Override
+    public boolean isDisplay() {
+        return display;
     }
 
 }

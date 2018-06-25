@@ -44,7 +44,7 @@ echo "Redeploy Version: $VERSION"
 #some defaults
 spath='nfs2.lab.vmops.com:/export/home/bvt/secondary'
 hypervisor='xenserver'
-sysvmurl='http://download.cloud.com/templates/acton/acton-systemvm-02062012.vhd.bz2'
+sysvmurl='http://download.cloudstack.org/templates/acton/acton-systemvm-02062012.vhd.bz2'
 systemvm_seeder='/usr/share/cloudstack-common/scripts/storage/secondary/cloud-install-sys-tmplt'
 
 while getopts 'u:s:h:' OPTION

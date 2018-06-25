@@ -62,6 +62,7 @@ public class SnapshotObject implements SnapshotInfo {
     private SnapshotVO snapshot;
     private DataStore store;
     private Object payload;
+    private Boolean fullBackup;
     @Inject
     protected SnapshotDao snapshotDao;
     @Inject
@@ -191,7 +192,9 @@ public class SnapshotObject implements SnapshotInfo {
             s_logger.debug("Failed to update state:" + e.toString());
             throw new CloudRuntimeException("Failed to update state: " + e.toString());
         } finally {
-            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed) {
+            DataObjectInStore obj = objectInStoreMgr.findObject(this, this.getDataStore());
+            if (event == ObjectInDataStoreStateMachine.Event.OperationFailed && !obj.getState().equals(ObjectInDataStoreStateMachine.State.Destroying)) {
+                // Don't delete db entry if snapshot is successfully removed.
                 objectInStoreMgr.deleteIfNotReady(this);
             }
         }
@@ -229,6 +232,11 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
+    public long getSnapshotId() {
+        return snapshot.getSnapshotId();
+    }
+
+    @Override
     public Date getCreated() {
         return snapshot.getCreated();
     }
@@ -237,6 +245,9 @@ public class SnapshotObject implements SnapshotInfo {
     public Type getRecurringType() {
         return snapshot.getRecurringType();
     }
+
+    @Override
+    public LocationType getLocationType() { return snapshot.getLocationType(); }
 
     @Override
     public State getState() {
@@ -381,6 +392,16 @@ public class SnapshotObject implements SnapshotInfo {
     @Override
     public Object getPayload() {
         return payload;
+    }
+
+    @Override
+    public void setFullBackup(Boolean data) {
+        fullBackup = data;
+    }
+
+    @Override
+    public Boolean getFullBackup() {
+        return fullBackup;
     }
 
     @Override

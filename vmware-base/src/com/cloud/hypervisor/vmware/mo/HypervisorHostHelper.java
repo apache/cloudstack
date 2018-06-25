@@ -16,11 +16,45 @@
 // under the License.
 package com.cloud.hypervisor.vmware.mo;
 
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.security.InvalidParameterException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.traversal.DocumentTraversal;
+import org.w3c.dom.traversal.NodeFilter;
+import org.w3c.dom.traversal.NodeIterator;
+import org.xml.sax.SAXException;
+
 import com.cloud.exception.CloudException;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
 import com.cloud.hypervisor.vmware.util.VmwareHelper;
 import com.cloud.network.Networks.BroadcastDomainType;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.utils.ActionDelegate;
+import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.cisco.n1kv.vsm.NetconfHelper;
 import com.cloud.utils.cisco.n1kv.vsm.PolicyMap;
@@ -33,6 +67,8 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.nicira.nvp.plugin.NiciraNvpApiVersion;
+import com.vmware.vim25.OvfCreateDescriptorParams;
+import com.vmware.vim25.OvfCreateDescriptorResult;
 import com.vmware.vim25.AlreadyExistsFaultMsg;
 import com.vmware.vim25.BoolPolicy;
 import com.vmware.vim25.CustomFieldStringValue;
@@ -54,10 +90,13 @@ import com.vmware.vim25.LocalizedMethodFault;
 import com.vmware.vim25.LongPolicy;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.MethodFault;
+import com.vmware.vim25.NumericRange;
 import com.vmware.vim25.ObjectContent;
+import com.vmware.vim25.OptionValue;
 import com.vmware.vim25.OvfCreateImportSpecParams;
 import com.vmware.vim25.OvfCreateImportSpecResult;
 import com.vmware.vim25.OvfFileItem;
+import com.vmware.vim25.OvfFile;
 import com.vmware.vim25.ParaVirtualSCSIController;
 import com.vmware.vim25.VMwareDVSConfigSpec;
 import com.vmware.vim25.VMwareDVSPortSetting;
@@ -67,6 +106,7 @@ import com.vmware.vim25.VMwareDVSPvlanMapEntry;
 import com.vmware.vim25.VirtualBusLogicController;
 import com.vmware.vim25.VirtualController;
 import com.vmware.vim25.VirtualDevice;
+import com.vmware.vim25.VirtualDisk;
 import com.vmware.vim25.VirtualDeviceConfigSpec;
 import com.vmware.vim25.VirtualDeviceConfigSpecOperation;
 import com.vmware.vim25.VirtualIDEController;
@@ -78,36 +118,13 @@ import com.vmware.vim25.VirtualMachineGuestOsIdentifier;
 import com.vmware.vim25.VirtualMachineVideoCard;
 import com.vmware.vim25.VirtualSCSIController;
 import com.vmware.vim25.VirtualSCSISharing;
+import com.vmware.vim25.VirtualMachineImportSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchPvlanSpec;
+import com.vmware.vim25.VmwareDistributedVirtualSwitchTrunkVlanSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanIdSpec;
 import com.vmware.vim25.VmwareDistributedVirtualSwitchVlanSpec;
-import org.apache.log4j.Logger;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.traversal.DocumentTraversal;
-import org.w3c.dom.traversal.NodeFilter;
-import org.w3c.dom.traversal.NodeIterator;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.io.FileWriter;
+import java.util.UUID;
 
 public class HypervisorHostHelper {
     private static final Logger s_logger = Logger.getLogger(HypervisorHostHelper.class);
@@ -116,6 +133,8 @@ public class HypervisorHostHelper {
 
     // make vmware-base loosely coupled with cloud-specific stuff, duplicate VLAN.UNTAGGED constant here
     private static final String UNTAGGED_VLAN_NAME = "untagged";
+    private static final String VMDK_PACK_DIR = "ova";
+    private static final String OVA_OPTION_KEY_BOOTDISK = "cloud.ova.bootdisk";
 
     public static VirtualMachineMO findVmFromObjectContent(VmwareContext context, ObjectContent[] ocs, String name, String instanceNameCustomField) {
 
@@ -150,6 +169,10 @@ public class HypervisorHostHelper {
             morDs = hyperHost.findDatastore(uuidName);
 
         return morDs;
+    }
+
+    public static String getSecondaryDatastoreUUID(String storeUrl) {
+        return UUID.nameUUIDFromBytes(storeUrl.getBytes()).toString();
     }
 
     public static DatastoreMO getHyperHostDatastoreMO(VmwareHypervisorHost hyperHost, String datastoreName) throws Exception {
@@ -452,13 +475,14 @@ public class HypervisorHostHelper {
      * @param timeOutMs
      * @param vSwitchType
      * @param numPorts
+     * @param details
      * @return
      * @throws Exception
      */
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String physicalNetwork, String namePrefix, HostMO hostMo, String vlanId, String secondaryvlanId,
-            Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs, VirtualSwitchType vSwitchType, int numPorts, String gateway,
-            boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType, Map<String, String> vsmCredentials) throws Exception {
+                                                                      Integer networkRateMbps, Integer networkRateMulticastMbps, long timeOutMs, VirtualSwitchType vSwitchType, int numPorts, String gateway,
+                                                                      boolean configureVServiceInNexus, BroadcastDomainType broadcastDomainType, Map<String, String> vsmCredentials, Map<NetworkOffering.Detail, String> details) throws Exception {
         ManagedObjectReference morNetwork = null;
         VmwareContext context = hostMo.getContext();
         ManagedObjectReference dcMor = hostMo.getHyperHostDatacenter();
@@ -501,11 +525,17 @@ public class HypervisorHostHelper {
             // No doubt about this, depending on vid=null to avoid lots of code below
             vid = null;
         } else {
+            if (vlanId != null) {
+                vlanId = vlanId.replace("vlan://", "");
+            }
             networkName = composeCloudNetworkName(namePrefix, vlanId, secondaryvlanId, networkRateMbps, physicalNetwork);
 
-            if (vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId)) {
+            if (vlanId != null && !UNTAGGED_VLAN_NAME.equalsIgnoreCase(vlanId) && !StringUtils.containsAny(vlanId, ",-")) {
                 createGCTag = true;
                 vid = Integer.parseInt(vlanId);
+            }
+            if (vlanId != null && StringUtils.containsAny(vlanId, ",-")) {
+                createGCTag = true;
             }
             if (secondaryvlanId != null) {
                 spvlanid = Integer.parseInt(secondaryvlanId);
@@ -544,7 +574,7 @@ public class HypervisorHostHelper {
                 dvSwitchMo = new DistributedVirtualSwitchMO(context, morDvSwitch);
 
                 shapingPolicy = getDVSShapingPolicy(networkRateMbps);
-                secPolicy = createDVSSecurityPolicy();
+                secPolicy = createDVSSecurityPolicy(details);
 
                 // First, if both vlan id and pvlan id are provided, we need to
                 // reconfigure the DVSwitch to have a tuple <vlan id, pvlan id> of
@@ -562,7 +592,7 @@ public class HypervisorHostHelper {
                     portGroupPolicy.setPortConfigResetAtDisconnect(true);
                 }
                 // Next, create the port group. For this, we need to create a VLAN spec.
-                createPortGroup(physicalNetwork, networkName, vid, spvlanid, dataCenterMo, shapingPolicy, secPolicy, portGroupPolicy, dvSwitchMo, numPorts, autoExpandSupported);
+                createPortGroup(physicalNetwork, networkName, vlanId, vid, spvlanid, dataCenterMo, shapingPolicy, secPolicy, portGroupPolicy, dvSwitchMo, numPorts, autoExpandSupported);
                 bWaitPortGroupReady = true;
             }
         } else if (vSwitchType == VirtualSwitchType.NexusDistributedVirtualSwitch) {
@@ -699,8 +729,8 @@ public class HypervisorHostHelper {
 
     }
 
-    private static void createPortGroup(String physicalNetwork, String networkName, Integer vid, Integer spvlanid, DatacenterMO dataCenterMo,
-            DVSTrafficShapingPolicy shapingPolicy, DVSSecurityPolicy secPolicy, VMwareDVSPortgroupPolicy portGroupPolicy, DistributedVirtualSwitchMO dvSwitchMo, int numPorts, boolean autoExpandSupported)
+    private static void createPortGroup(String physicalNetwork, String networkName, String vlanRange, Integer vid, Integer spvlanid, DatacenterMO dataCenterMo,
+                                        DVSTrafficShapingPolicy shapingPolicy, DVSSecurityPolicy secPolicy, VMwareDVSPortgroupPolicy portGroupPolicy, DistributedVirtualSwitchMO dvSwitchMo, int numPorts, boolean autoExpandSupported)
                     throws Exception {
         VmwareDistributedVirtualSwitchVlanSpec vlanSpec = null;
         VmwareDistributedVirtualSwitchPvlanSpec pvlanSpec = null;
@@ -710,7 +740,7 @@ public class HypervisorHostHelper {
         // Next, create the port group. For this, we need to create a VLAN spec.
         // NOTE - VmwareDistributedVirtualSwitchPvlanSpec extends VmwareDistributedVirtualSwitchVlanSpec.
         if (vid == null || spvlanid == null) {
-            vlanSpec = createDVPortVlanIdSpec(vid);
+            vlanSpec = createDVPortVlanSpec(vid, vlanRange);
             dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, vlanSpec);
         } else if (spvlanid != null) {
             // Create a pvlan spec. The pvlan spec is different from the pvlan config spec
@@ -725,9 +755,8 @@ public class HypervisorHostHelper {
             dvsPortSetting = createVmwareDVPortSettingSpec(shapingPolicy, secPolicy, pvlanSpec);
         }
 
-        newDvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, numPorts, autoExpandSupported);
-        if (portGroupPolicy != null)
-        {
+        newDvPortGroupSpec = createDvPortGroupSpec(networkName, dvsPortSetting, autoExpandSupported);
+        if (portGroupPolicy != null) {
             newDvPortGroupSpec.setPolicy(portGroupPolicy);
         }
 
@@ -735,6 +764,7 @@ public class HypervisorHostHelper {
             s_logger.info("Distributed Virtual Port group " + networkName + " not found.");
             // TODO(sateesh): Handle Exceptions
             try {
+                newDvPortGroupSpec.setNumPorts(numPorts);
                 dvSwitchMo.createDVPortGroup(newDvPortGroupSpec);
             } catch (Exception e) {
                 String msg = "Failed to create distributed virtual port group " + networkName + " on dvSwitch " + physicalNetwork;
@@ -851,12 +881,57 @@ public class HypervisorHostHelper {
             }
         }
 
-        VmwareDistributedVirtualSwitchVlanIdSpec oldVlanSpec = (VmwareDistributedVirtualSwitchVlanIdSpec)((
-                VMwareDVSPortSetting)currentDvPortgroupInfo.getDefaultPortConfig()).getVlan();
-        VmwareDistributedVirtualSwitchVlanIdSpec newVlanSpec = (VmwareDistributedVirtualSwitchVlanIdSpec)((
-                VMwareDVSPortSetting)newDvPortGroupSpec.getDefaultPortConfig()).getVlan();
-        int oldVlanId = oldVlanSpec.getVlanId();
-        int newVlanId = newVlanSpec.getVlanId();
+        VMwareDVSPortSetting currentPortSetting = ((VMwareDVSPortSetting)currentDvPortgroupInfo.getDefaultPortConfig());
+        VMwareDVSPortSetting newPortSetting = ((VMwareDVSPortSetting)newDvPortGroupSpec.getDefaultPortConfig());
+        if ((currentPortSetting.getSecurityPolicy() == null && newPortSetting.getSecurityPolicy() != null) ||
+                (currentPortSetting.getSecurityPolicy() != null && newPortSetting.getSecurityPolicy() == null)) {
+            specMatches = false;
+        }
+        if (currentPortSetting.getSecurityPolicy() != null && newPortSetting.getSecurityPolicy() != null) {
+            if (currentPortSetting.getSecurityPolicy().getAllowPromiscuous() != null &&
+                    newPortSetting.getSecurityPolicy().getAllowPromiscuous() != null &&
+                    newPortSetting.getSecurityPolicy().getAllowPromiscuous().isValue() != null &&
+                    !newPortSetting.getSecurityPolicy().getAllowPromiscuous().isValue().equals(currentPortSetting.getSecurityPolicy().getAllowPromiscuous().isValue())) {
+                specMatches = false;
+            }
+            if (currentPortSetting.getSecurityPolicy().getForgedTransmits() != null &&
+                    newPortSetting.getSecurityPolicy().getForgedTransmits() != null &&
+                    newPortSetting.getSecurityPolicy().getForgedTransmits().isValue() != null &&
+                    !newPortSetting.getSecurityPolicy().getForgedTransmits().isValue().equals(currentPortSetting.getSecurityPolicy().getForgedTransmits().isValue())) {
+                specMatches = false;
+            }
+            if (currentPortSetting.getSecurityPolicy().getMacChanges() != null &&
+                    newPortSetting.getSecurityPolicy().getMacChanges() != null &&
+                    newPortSetting.getSecurityPolicy().getMacChanges().isValue() != null &&
+                    !newPortSetting.getSecurityPolicy().getMacChanges().isValue().equals(currentPortSetting.getSecurityPolicy().getMacChanges().isValue())) {
+                specMatches = false;
+            }
+        }
+
+        VmwareDistributedVirtualSwitchVlanSpec oldVlanSpec = currentPortSetting.getVlan();
+        VmwareDistributedVirtualSwitchVlanSpec newVlanSpec = newPortSetting.getVlan();
+
+        int oldVlanId, newVlanId;
+        if (oldVlanSpec instanceof VmwareDistributedVirtualSwitchPvlanSpec && newVlanSpec instanceof VmwareDistributedVirtualSwitchPvlanSpec) {
+            VmwareDistributedVirtualSwitchPvlanSpec oldpVlanSpec = (VmwareDistributedVirtualSwitchPvlanSpec) oldVlanSpec;
+            VmwareDistributedVirtualSwitchPvlanSpec newpVlanSpec = (VmwareDistributedVirtualSwitchPvlanSpec) newVlanSpec;
+            oldVlanId = oldpVlanSpec.getPvlanId();
+            newVlanId = newpVlanSpec.getPvlanId();
+        } else if (oldVlanSpec instanceof VmwareDistributedVirtualSwitchTrunkVlanSpec && newVlanSpec instanceof VmwareDistributedVirtualSwitchTrunkVlanSpec) {
+            VmwareDistributedVirtualSwitchTrunkVlanSpec oldpVlanSpec = (VmwareDistributedVirtualSwitchTrunkVlanSpec) oldVlanSpec;
+            VmwareDistributedVirtualSwitchTrunkVlanSpec newpVlanSpec = (VmwareDistributedVirtualSwitchTrunkVlanSpec) newVlanSpec;
+            oldVlanId = oldpVlanSpec.getVlanId().get(0).getStart();
+            newVlanId = newpVlanSpec.getVlanId().get(0).getStart();
+        } else if (oldVlanSpec instanceof VmwareDistributedVirtualSwitchVlanIdSpec && newVlanSpec instanceof VmwareDistributedVirtualSwitchVlanIdSpec) {
+            VmwareDistributedVirtualSwitchVlanIdSpec oldVlanIdSpec = (VmwareDistributedVirtualSwitchVlanIdSpec) oldVlanSpec;
+            VmwareDistributedVirtualSwitchVlanIdSpec newVlanIdSpec = (VmwareDistributedVirtualSwitchVlanIdSpec) newVlanSpec;
+            oldVlanId = oldVlanIdSpec.getVlanId();
+            newVlanId = newVlanIdSpec.getVlanId();
+        } else {
+            s_logger.debug("Old and new vlan spec type mismatch found for [" + dvPortGroupName + "] has changed. Old spec type is: " + oldVlanSpec.getClass() + ", and new spec type is:" + newVlanSpec.getClass());
+            return false;
+        }
+
         if (oldVlanId != newVlanId) {
             s_logger.info("Detected that new VLAN [" + newVlanId + "] of dvPortGroup [" + dvPortGroupName +
                         "] is different from current VLAN [" + oldVlanId + "]");
@@ -919,13 +994,12 @@ public class HypervisorHostHelper {
         return true;
     }
 
-    public static DVPortgroupConfigSpec createDvPortGroupSpec(String dvPortGroupName, DVPortSetting portSetting, int numPorts, boolean autoExpandSupported) {
+    public static DVPortgroupConfigSpec createDvPortGroupSpec(String dvPortGroupName, DVPortSetting portSetting, boolean autoExpandSupported) {
         DVPortgroupConfigSpec spec = new DVPortgroupConfigSpec();
         spec.setName(dvPortGroupName);
         spec.setDefaultPortConfig(portSetting);
         spec.setPortNameFormat("vnic<portIndex>");
         spec.setType("earlyBinding");
-        spec.setNumPorts(numPorts);
         spec.setAutoExpand(autoExpandSupported);
         return spec;
     }
@@ -994,25 +1068,114 @@ public class HypervisorHostHelper {
         return pvlanConfigSpec;
     }
 
-    public static VmwareDistributedVirtualSwitchVlanIdSpec createDVPortVlanIdSpec(Integer vlanId) {
+    public static VmwareDistributedVirtualSwitchVlanSpec createDVPortVlanSpec(Integer vlanId, String vlanRange) {
+        if (vlanId == null && vlanRange != null && !vlanRange.isEmpty()) {
+            s_logger.debug("Creating dvSwitch port vlan-trunk spec with range: " + vlanRange);
+            VmwareDistributedVirtualSwitchTrunkVlanSpec trunkVlanSpec = new VmwareDistributedVirtualSwitchTrunkVlanSpec();
+            for (final String vlanRangePart : vlanRange.split(",")) {
+                if (vlanRangePart == null || vlanRange.isEmpty()) {
+                    continue;
+                }
+                final NumericRange numericRange = new NumericRange();
+                if (vlanRangePart.contains("-")) {
+                    final String[] range = vlanRangePart.split("-");
+                    if (range.length == 2 && range[0] != null && range[1] != null) {
+                        numericRange.setStart(NumbersUtil.parseInt(range[0], 0));
+                        numericRange.setEnd(NumbersUtil.parseInt(range[1], 0));
+                    } else {
+                        continue;
+                    }
+                } else {
+                    numericRange.setStart(NumbersUtil.parseInt(vlanRangePart, 0));
+                    numericRange.setEnd(NumbersUtil.parseInt(vlanRangePart, 0));
+                }
+                trunkVlanSpec.getVlanId().add(numericRange);
+            }
+            if (trunkVlanSpec.getVlanId().size() != 0) {
+                return trunkVlanSpec;
+            }
+        }
         VmwareDistributedVirtualSwitchVlanIdSpec vlanIdSpec = new VmwareDistributedVirtualSwitchVlanIdSpec();
-        vlanIdSpec.setVlanId(vlanId == null ? 0 : vlanId.intValue());
+        vlanIdSpec.setVlanId(vlanId == null ? 0 : vlanId);
+        s_logger.debug("Creating dvSwitch port vlan-id spec with id: " + vlanIdSpec.getVlanId());
         return vlanIdSpec;
     }
 
-    public static DVSSecurityPolicy createDVSSecurityPolicy() {
+    public static Map<NetworkOffering.Detail, String> getDefaultSecurityDetails() {
+        final Map<NetworkOffering.Detail, String> details = new HashMap<>();
+        details.put(NetworkOffering.Detail.PromiscuousMode, NetworkOrchestrationService.PromiscuousMode.value().toString());
+        details.put(NetworkOffering.Detail.MacAddressChanges, NetworkOrchestrationService.MacAddressChanges.value().toString());
+        details.put(NetworkOffering.Detail.ForgedTransmits, NetworkOrchestrationService.ForgedTransmits.value().toString());
+        return details;
+    }
+
+    public static DVSSecurityPolicy createDVSSecurityPolicy(Map<NetworkOffering.Detail, String> nicDetails) {
         DVSSecurityPolicy secPolicy = new DVSSecurityPolicy();
         BoolPolicy allow = new BoolPolicy();
         allow.setValue(true);
+        BoolPolicy deny = new BoolPolicy();
+        deny.setValue(false);
 
+        secPolicy.setAllowPromiscuous(deny);
         secPolicy.setForgedTransmits(allow);
-        secPolicy.setAllowPromiscuous(allow);
         secPolicy.setMacChanges(allow);
+
+        if (nicDetails == null) {
+            nicDetails = getDefaultSecurityDetails();
+        }
+
+        if (nicDetails.containsKey(NetworkOffering.Detail.PromiscuousMode)) {
+            if (Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.PromiscuousMode))) {
+                secPolicy.setAllowPromiscuous(allow);
+            } else {
+                secPolicy.setAllowPromiscuous(deny);
+            }
+        }
+        if (nicDetails.containsKey(NetworkOffering.Detail.ForgedTransmits)) {
+            if (Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.ForgedTransmits))) {
+                secPolicy.setForgedTransmits(allow);
+            } else {
+                secPolicy.setForgedTransmits(deny);
+            }
+        }
+        if (nicDetails.containsKey(NetworkOffering.Detail.MacAddressChanges)) {
+            if (Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.MacAddressChanges))) {
+                secPolicy.setMacChanges(allow);
+            } else {
+                secPolicy.setMacChanges(deny);
+            }
+        }
+
+        return secPolicy;
+    }
+
+    public static HostNetworkSecurityPolicy createVSSecurityPolicy(Map<NetworkOffering.Detail, String> nicDetails) {
+        HostNetworkSecurityPolicy secPolicy = new HostNetworkSecurityPolicy();
+        secPolicy.setAllowPromiscuous(Boolean.FALSE);
+        secPolicy.setForgedTransmits(Boolean.TRUE);
+        secPolicy.setMacChanges(Boolean.TRUE);
+
+        if (nicDetails == null) {
+            nicDetails = getDefaultSecurityDetails();
+        }
+
+        if (nicDetails.containsKey(NetworkOffering.Detail.PromiscuousMode)) {
+            secPolicy.setAllowPromiscuous(Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.PromiscuousMode)));
+        }
+
+        if (nicDetails.containsKey(NetworkOffering.Detail.ForgedTransmits)) {
+            secPolicy.setForgedTransmits(Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.ForgedTransmits)));
+        }
+
+        if (nicDetails.containsKey(NetworkOffering.Detail.MacAddressChanges)) {
+            secPolicy.setMacChanges(Boolean.valueOf(nicDetails.get(NetworkOffering.Detail.MacAddressChanges)));
+        }
+
         return secPolicy;
     }
 
     public static Pair<ManagedObjectReference, String> prepareNetwork(String vSwitchName, String namePrefix, HostMO hostMo, String vlanId, Integer networkRateMbps,
-            Integer networkRateMulticastMbps, long timeOutMs, boolean syncPeerHosts, BroadcastDomainType broadcastDomainType, String nicUuid) throws Exception {
+                                                                      Integer networkRateMulticastMbps, long timeOutMs, boolean syncPeerHosts, BroadcastDomainType broadcastDomainType, String nicUuid, Map<NetworkOffering.Detail, String> nicDetails) throws Exception {
 
         HostVirtualSwitch vSwitch;
         if (vSwitchName == null) {
@@ -1059,13 +1222,8 @@ public class HypervisorHostHelper {
             }
         }
 
-        HostNetworkSecurityPolicy secPolicy = null;
-        if (namePrefix.equalsIgnoreCase("cloud.private")) {
-            secPolicy = new HostNetworkSecurityPolicy();
-            secPolicy.setAllowPromiscuous(Boolean.TRUE);
-            secPolicy.setForgedTransmits(Boolean.TRUE);
-            secPolicy.setMacChanges(Boolean.TRUE);
-        }
+        HostNetworkSecurityPolicy secPolicy = createVSSecurityPolicy(nicDetails);
+
         HostNetworkTrafficShapingPolicy shapingPolicy = null;
         if (networkRateMbps != null && networkRateMbps.intValue() > 0) {
             shapingPolicy = new HostNetworkTrafficShapingPolicy();
@@ -1105,7 +1263,7 @@ public class HypervisorHostHelper {
                 bWaitPortGroupReady = false;
             } else {
                 HostPortGroupSpec spec = hostMo.getPortGroupSpec(networkName);
-                if (!isSpecMatch(spec, vid, shapingPolicy)) {
+                if (!isSpecMatch(spec, vid, secPolicy, shapingPolicy)) {
                     hostMo.updatePortGroup(vSwitch, networkName, vid, secPolicy, shapingPolicy);
                     bWaitPortGroupReady = true;
                 }
@@ -1149,7 +1307,7 @@ public class HypervisorHostHelper {
                                             if (s_logger.isDebugEnabled())
                                                 s_logger.debug("Prepare network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
                                             prepareNetwork(vSwitchName, namePrefix, otherHostMo, vlanId, networkRateMbps, networkRateMulticastMbps, timeOutMs, false,
-                                                    broadcastDomainType, nicUuid);
+                                                    broadcastDomainType, nicUuid, nicDetails);
                                         } catch (Exception e) {
                                             s_logger.warn("Unable to prepare network on other host, vlan: " + vlanId + ", host: " + otherHostMo.getHostName());
                                         }
@@ -1172,7 +1330,7 @@ public class HypervisorHostHelper {
         return new Pair<ManagedObjectReference, String>(morNetwork, networkName);
     }
 
-    private static boolean isSpecMatch(HostPortGroupSpec spec, Integer vlanId, HostNetworkTrafficShapingPolicy shapingPolicy) {
+    private static boolean isSpecMatch(HostPortGroupSpec spec, Integer vlanId, HostNetworkSecurityPolicy securityPolicy, HostNetworkTrafficShapingPolicy shapingPolicy) {
         // check VLAN configuration
         if (vlanId != null) {
             if (vlanId.intValue() != spec.getVlanId())
@@ -1182,16 +1340,36 @@ public class HypervisorHostHelper {
                 return false;
         }
 
+        // check security policy for the portgroup
+        HostNetworkSecurityPolicy secPolicyInSpec = null;
+        if (spec.getPolicy() != null) {
+            secPolicyInSpec = spec.getPolicy().getSecurity();
+        }
+
+        if ((secPolicyInSpec != null && securityPolicy == null) || (secPolicyInSpec == null && securityPolicy != null)) {
+            return false;
+        }
+
+        if (secPolicyInSpec != null && securityPolicy != null
+                && ((securityPolicy.isAllowPromiscuous() != null && !securityPolicy.isAllowPromiscuous().equals(secPolicyInSpec.isAllowPromiscuous()))
+                    || (securityPolicy.isForgedTransmits() != null && !securityPolicy.isForgedTransmits().equals(secPolicyInSpec.isForgedTransmits()))
+                    || (securityPolicy.isMacChanges() != null && securityPolicy.isMacChanges().equals(secPolicyInSpec.isMacChanges())))) {
+            return false;
+        }
+
         // check traffic shaping configuration
         HostNetworkTrafficShapingPolicy policyInSpec = null;
-        if (spec.getPolicy() != null)
+        if (spec.getPolicy() != null) {
             policyInSpec = spec.getPolicy().getShapingPolicy();
+        }
 
-        if (policyInSpec != null && shapingPolicy == null || policyInSpec == null && shapingPolicy != null)
+        if ((policyInSpec != null && shapingPolicy == null) || (policyInSpec == null && shapingPolicy != null)) {
             return false;
+        }
 
-        if (policyInSpec == null && shapingPolicy == null)
+        if (policyInSpec == null && shapingPolicy == null) {
             return true;
+        }
 
         // so far policyInSpec and shapingPolicy should both not be null
         if (policyInSpec.isEnabled() == null || !policyInSpec.isEnabled().booleanValue())
@@ -1453,7 +1631,7 @@ public class HypervisorHostHelper {
         }
 
         String host = uri.getHost();
-        if (NetUtils.isValidIp(host)) {
+        if (NetUtils.isValidIp4(host)) {
             s_logger.info("host name in url is already in IP address, url: " + url);
             return url;
         }
@@ -1540,7 +1718,6 @@ public class HypervisorHostHelper {
         importSpecParams.setDiskProvisioning(diskOption); // diskOption: thin, thick, etc
 
         String ovfDescriptor = removeOVFNetwork(HttpNfcLeaseMO.readOvfContent(ovfFilePath));
-
         VmwareContext context = host.getContext();
         OvfCreateImportSpecResult ovfImportResult =
                 context.getService().createImportSpec(context.getServiceContent().getOvfManager(), ovfDescriptor, morRp, dsMo.getMor(), importSpecParams);
@@ -1550,7 +1727,6 @@ public class HypervisorHostHelper {
             s_logger.error(msg);
             throw new Exception(msg);
         }
-
         if(!ovfImportResult.getError().isEmpty()) {
             for (LocalizedMethodFault fault : ovfImportResult.getError()) {
                 s_logger.error("createImportSpec error: " + fault.getLocalizedMessage());
@@ -1590,17 +1766,18 @@ public class HypervisorHostHelper {
                         for (OvfFileItem ovfFileItem : ovfImportResult.getFileItem()) {
                             if (deviceKey.equals(ovfFileItem.getDeviceId())) {
                                 String absoluteFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
-                                String urlToPost = deviceUrl.getUrl();
-                                urlToPost = resolveHostNameInUrl(dcMo, urlToPost);
-
-                                context.uploadVmdkFile(ovfFileItem.isCreate() ? "PUT" : "POST", urlToPost, absoluteFile, bytesAlreadyWritten, new ActionDelegate<Long>() {
-                                    @Override
-                                    public void action(Long param) {
-                                        progressReporter.reportProgress((int)(param * 100 / totalBytes));
-                                    }
-                                });
-
-                                bytesAlreadyWritten += ovfFileItem.getSize();
+                                File f = new File(absoluteFile);
+                                if (f.exists()){
+                                    String urlToPost = deviceUrl.getUrl();
+                                    urlToPost = resolveHostNameInUrl(dcMo, urlToPost);
+                                    context.uploadVmdkFile(ovfFileItem.isCreate() ? "PUT" : "POST", urlToPost, absoluteFile, bytesAlreadyWritten, new ActionDelegate<Long>() {
+                                        @Override
+                                        public void action(Long param) {
+                                            progressReporter.reportProgress((int)(param * 100 / totalBytes));
+                                        }
+                                    });
+                                    bytesAlreadyWritten += ovfFileItem.getSize();
+                                }
                             }
                         }
                     }
@@ -1608,7 +1785,7 @@ public class HypervisorHostHelper {
                     String erroMsg = "File upload task failed to complete due to: " + e.getMessage();
                     s_logger.error(erroMsg);
                     importSuccess = false; // Set flag to cleanup the stale template left due to failed import operation, if any
-                    throw new Exception(erroMsg);
+                    throw new Exception(erroMsg, e);
                 } catch (Throwable th) {
                     String errorMsg = "throwable caught during file upload task: " + th.getMessage();
                     s_logger.error(errorMsg);
@@ -1636,6 +1813,199 @@ public class HypervisorHostHelper {
             }
         }
     }
+
+    public static List<Pair<String, Boolean>> readOVF(VmwareHypervisorHost host, String ovfFilePath, DatastoreMO dsMo) throws Exception {
+        List<Pair<String, Boolean>> ovfVolumeInfos = new ArrayList<Pair<String, Boolean>>();
+        List<String> files = new ArrayList<String>();
+
+        ManagedObjectReference morRp = host.getHyperHostOwnerResourcePool();
+        assert (morRp != null);
+        ManagedObjectReference morHost = host.getMor();
+        String importEntityName = UUID.randomUUID().toString();
+        OvfCreateImportSpecParams importSpecParams = new OvfCreateImportSpecParams();
+        importSpecParams.setHostSystem(morHost);
+        importSpecParams.setLocale("US");
+        importSpecParams.setEntityName(importEntityName);
+        importSpecParams.setDeploymentOption("");
+
+        String ovfDescriptor = removeOVFNetwork(HttpNfcLeaseMO.readOvfContent(ovfFilePath));
+        VmwareContext context = host.getContext();
+        OvfCreateImportSpecResult ovfImportResult = context.getService().createImportSpec(context.getServiceContent().getOvfManager(), ovfDescriptor, morRp, dsMo.getMor(),
+                importSpecParams);
+
+        if (ovfImportResult == null) {
+            String msg = "createImportSpec() failed. ovfFilePath: " + ovfFilePath;
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+
+        if (!ovfImportResult.getError().isEmpty()) {
+            for (LocalizedMethodFault fault : ovfImportResult.getError()) {
+                s_logger.error("createImportSpec error: " + fault.getLocalizedMessage());
+            }
+            throw new CloudException("Failed to create an import spec from " + ovfFilePath + ". Check log for details.");
+        }
+
+        if (!ovfImportResult.getWarning().isEmpty()) {
+            for (LocalizedMethodFault fault : ovfImportResult.getError()) {
+                s_logger.warn("createImportSpec warning: " + fault.getLocalizedMessage());
+            }
+        }
+
+        VirtualMachineImportSpec importSpec = (VirtualMachineImportSpec)ovfImportResult.getImportSpec();
+        if (importSpec == null) {
+            String msg = "createImportSpec() failed to create import specification for OVF template at " + ovfFilePath;
+            s_logger.error(msg);
+            throw new Exception(msg);
+        }
+
+        File ovfFile = new File(ovfFilePath);
+        for (OvfFileItem ovfFileItem : ovfImportResult.getFileItem()) {
+            String absFile = ovfFile.getParent() + File.separator + ovfFileItem.getPath();
+            files.add(absFile);
+        }
+
+
+       int osDiskSeqNumber = 0;
+       VirtualMachineConfigSpec config = importSpec.getConfigSpec();
+       String paramVal = getOVFParamValue(config);
+       if (paramVal != null && !paramVal.isEmpty()) {
+           try {
+               osDiskSeqNumber = getOsDiskFromOvfConf(config, paramVal);
+           } catch (Exception e) {
+               osDiskSeqNumber = 0;
+           }
+       }
+
+        int diskCount = 0;
+        int deviceCount = 0;
+        List<VirtualDeviceConfigSpec> deviceConfigList = config.getDeviceChange();
+        for (VirtualDeviceConfigSpec deviceSpec : deviceConfigList) {
+            Boolean osDisk = false;
+            VirtualDevice device = deviceSpec.getDevice();
+            if (device instanceof VirtualDisk) {
+                if ((osDiskSeqNumber == 0 && diskCount == 0) || osDiskSeqNumber == deviceCount) {
+                    osDisk = true;
+                }
+                Pair<String, Boolean> ovfVolumeInfo = new Pair<String, Boolean>(files.get(diskCount), osDisk);
+                ovfVolumeInfos.add(ovfVolumeInfo);
+                diskCount++;
+            }
+            deviceCount++;
+        }
+        return ovfVolumeInfos;
+    }
+
+    public static void createOvfFile(VmwareHypervisorHost host, String diskFileName, String ovfName, String datastorePath, String templatePath, long diskCapacity, long fileSize,
+            ManagedObjectReference morDs) throws Exception {
+        VmwareContext context = host.getContext();
+        ManagedObjectReference morOvf = context.getServiceContent().getOvfManager();
+        VirtualMachineMO workerVmMo = HypervisorHostHelper.createWorkerVM(host, new DatastoreMO(context, morDs), ovfName);
+        if (workerVmMo == null)
+            throw new Exception("Unable to find just-created worker VM");
+
+        String[] disks = {datastorePath + File.separator + diskFileName};
+        try {
+            VirtualMachineConfigSpec vmConfigSpec = new VirtualMachineConfigSpec();
+            VirtualDeviceConfigSpec deviceConfigSpec = new VirtualDeviceConfigSpec();
+
+            // Reconfigure worker VM with datadisk
+            VirtualDevice device = VmwareHelper.prepareDiskDevice(workerVmMo, null, -1, disks, morDs, -1, 1);
+            deviceConfigSpec.setDevice(device);
+            deviceConfigSpec.setOperation(VirtualDeviceConfigSpecOperation.ADD);
+            vmConfigSpec.getDeviceChange().add(deviceConfigSpec);
+            workerVmMo.configureVm(vmConfigSpec);
+
+            // Write OVF descriptor file
+            OvfCreateDescriptorParams ovfDescParams = new OvfCreateDescriptorParams();
+            String deviceId = File.separator + workerVmMo.getMor().getValue() + File.separator + "VirtualIDEController0:0";
+            OvfFile ovfFile = new OvfFile();
+            ovfFile.setPath(diskFileName);
+            ovfFile.setDeviceId(deviceId);
+            ovfFile.setSize(fileSize);
+            ovfFile.setCapacity(diskCapacity);
+            ovfDescParams.getOvfFiles().add(ovfFile);
+            OvfCreateDescriptorResult ovfCreateDescriptorResult = context.getService().createDescriptor(morOvf, workerVmMo.getMor(), ovfDescParams);
+
+            String ovfPath = templatePath + File.separator + ovfName + ".ovf";
+            try {
+                FileWriter out = new FileWriter(ovfPath);
+                out.write(ovfCreateDescriptorResult.getOvfDescriptor());
+                out.close();
+            } catch (Exception e) {
+                throw e;
+            }
+        } finally {
+            workerVmMo.detachAllDisks();
+            workerVmMo.destroy();
+        }
+    }
+
+    public static int getOsDiskFromOvfConf(VirtualMachineConfigSpec config, String deviceLocation) {
+        List<VirtualDeviceConfigSpec> deviceConfigList = config.getDeviceChange();
+        int controllerKey = 0;
+        int deviceSeqNumber = 0;
+        int controllerNumber = 0;
+        int deviceNodeNumber = 0;
+        int controllerCount = 0;
+        String[] virtualNodeInfo = deviceLocation.split(":");
+
+        if (deviceLocation.startsWith("scsi")) {
+           controllerNumber = Integer.parseInt(virtualNodeInfo[0].substring(4)); // get substring excluding prefix scsi
+           deviceNodeNumber = Integer.parseInt(virtualNodeInfo[1]);
+
+           for (VirtualDeviceConfigSpec deviceConfig : deviceConfigList) {
+               VirtualDevice device = deviceConfig.getDevice();
+               if (device instanceof VirtualSCSIController) {
+                   if (controllerNumber == controllerCount) { //((VirtualSCSIController)device).getBusNumber()) {
+                       controllerKey = device.getKey();
+                       break;
+                   }
+                   controllerCount++;
+               }
+           }
+       } else {
+           controllerNumber = Integer.parseInt(virtualNodeInfo[0].substring(3)); // get substring excluding prefix ide
+           deviceNodeNumber = Integer.parseInt(virtualNodeInfo[1]);
+           controllerCount = 0;
+
+           for (VirtualDeviceConfigSpec deviceConfig : deviceConfigList) {
+               VirtualDevice device = deviceConfig.getDevice();
+               if (device instanceof VirtualIDEController) {
+                   if (controllerNumber == controllerCount) { //((VirtualIDEController)device).getBusNumber()) {
+                       // Only 2 IDE controllers supported and they will have bus numbers 0 and 1
+                       controllerKey = device.getKey();
+                       break;
+                   }
+                   controllerCount++;
+               }
+           }
+       }
+       // Get devices on this controller at specific device node.
+       for (VirtualDeviceConfigSpec deviceConfig : deviceConfigList) {
+           VirtualDevice device = deviceConfig.getDevice();
+           if (device instanceof VirtualDisk) {
+               if (controllerKey == device.getControllerKey() && deviceNodeNumber == device.getUnitNumber()) {
+                   break;
+               }
+               deviceSeqNumber++;
+           }
+       }
+       return deviceSeqNumber;
+   }
+
+   public static String getOVFParamValue(VirtualMachineConfigSpec config) {
+       String paramVal = "";
+       List<OptionValue> options = config.getExtraConfig();
+       for (OptionValue option : options) {
+           if (OVA_OPTION_KEY_BOOTDISK.equalsIgnoreCase(option.getKey())) {
+               paramVal = (String)option.getValue();
+               break;
+           }
+       }
+       return paramVal;
+   }
+
 
     public static String getScsiController(Pair<String, String> controllerInfo, String recommendedController) {
         String rootDiskController = controllerInfo.first();

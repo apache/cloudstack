@@ -42,7 +42,7 @@ For more information on Apache CloudStack, please visit the [website](http://clo
 
 Apache CloudStack project uses Git. The official Git repository is at:
 
-    https://git-wip-us.apache.org/repos/asf/cloudstack.git
+    https://gitbox.apache.org/repos/asf/cloudstack.git
 
 And a mirror is hosted on Github:
 
@@ -92,8 +92,7 @@ developer [page](http://cloudstack.apache.org/developers.html) for contributing 
 
 * [Blog](https://blogs.apache.org/cloudstack)
 * [Twitter](https://twitter.com/cloudstack)
-* [Planet CloudStack](http://planet.apache.org/cloudstack)
-* [Events and meetup](http://lanyrd.com/topics/apache-cloudstack)
+* [Events and meetup](http://cloudstackcollab.org/)
 
 ## Reporting Security Vulnerabilities
 

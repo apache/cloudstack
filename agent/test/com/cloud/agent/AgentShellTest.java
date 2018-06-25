@@ -16,12 +16,16 @@
 // under the License.
 package com.cloud.agent;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
 import org.junit.Assert;
 import org.junit.Test;
+
+import com.cloud.utils.StringUtils;
 
 public class AgentShellTest {
     @Test
@@ -31,7 +35,7 @@ public class AgentShellTest {
         shell.parseCommand(new String[] {"port=55555", "threads=4", "host=localhost", "pod=pod1", "guid=" + anyUuid, "zone=zone1"});
         Assert.assertEquals(55555, shell.getPort());
         Assert.assertEquals(4, shell.getWorkers());
-        Assert.assertEquals("localhost", shell.getHost());
+        Assert.assertEquals("localhost", shell.getNextHost());
         Assert.assertEquals(anyUuid.toString(), shell.getGuid());
         Assert.assertEquals("pod1", shell.getPod());
         Assert.assertEquals("zone1", shell.getZone());
@@ -43,5 +47,16 @@ public class AgentShellTest {
         shell.loadProperties();
         Assert.assertNotNull(shell.getProperties());
         Assert.assertFalse(shell.getProperties().entrySet().isEmpty());
+    }
+
+    @Test
+    public void testGetHost() {
+        AgentShell shell = new AgentShell();
+        List<String> hosts = Arrays.asList("10.1.1.1", "20.2.2.2", "30.3.3.3", "2001:db8::1");
+        shell.setHosts(StringUtils.listToCsvTags(hosts));
+        for (String host : hosts) {
+            Assert.assertEquals(host, shell.getNextHost());
+        }
+        Assert.assertEquals(shell.getNextHost(), hosts.get(0));
     }
 }

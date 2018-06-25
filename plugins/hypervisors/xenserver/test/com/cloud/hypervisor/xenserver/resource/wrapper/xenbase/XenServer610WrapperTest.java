@@ -204,9 +204,9 @@ public class XenServer610WrapperTest {
         final StorageFilerTO storage1 = Mockito.mock(StorageFilerTO.class);
         final StorageFilerTO storage2 = Mockito.mock(StorageFilerTO.class);
 
-        final List<Pair<VolumeTO, StorageFilerTO>> volumeToFiler = new ArrayList<Pair<VolumeTO, StorageFilerTO>>();
-        volumeToFiler.add(new Pair<VolumeTO, StorageFilerTO>(vol1, storage1));
-        volumeToFiler.add(new Pair<VolumeTO, StorageFilerTO>(vol2, storage2));
+        final List<Pair<VolumeTO, String>> volumeToFiler = new ArrayList<>();
+        volumeToFiler.add(new Pair<>(vol1, storage1.getPath()));
+        volumeToFiler.add(new Pair<>(vol2, storage2.getPath()));
 
         final NicTO nicTO1 = Mockito.mock(NicTO.class);
         final NicTO nicTO2 = Mockito.mock(NicTO.class);

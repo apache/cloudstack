@@ -37,13 +37,9 @@ import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.annotation.DirtiesContext.ClassMode;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import com.cloud.agent.api.Answer;
 import com.globo.globodns.client.GloboDns;
@@ -57,8 +53,6 @@ import com.globo.globodns.cloudstack.commands.CreateOrUpdateRecordAndReverseComm
 import com.globo.globodns.cloudstack.commands.RemoveDomainCommand;
 import com.globo.globodns.cloudstack.commands.RemoveRecordCommand;
 
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration(loader = AnnotationConfigContextLoader.class)
 @DirtiesContext(classMode = ClassMode.AFTER_EACH_TEST_METHOD)
 public class GloboDnsResourceTest {
 
@@ -75,7 +69,6 @@ public class GloboDnsResourceTest {
 
     @Before
     public void setUp() throws Exception {
-        // ComponentContext.initComponentsLifeCycle();
 
         String name = "GloboDNS";
         Map<String, Object> params = new HashMap<String, Object>();

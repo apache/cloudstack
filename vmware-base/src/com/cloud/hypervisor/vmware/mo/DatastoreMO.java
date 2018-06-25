@@ -24,7 +24,9 @@ import org.apache.log4j.Logger;
 import com.vmware.vim25.DatastoreHostMount;
 import com.vmware.vim25.DatastoreSummary;
 import com.vmware.vim25.FileInfo;
+import com.vmware.vim25.FileQueryFlags;
 import com.vmware.vim25.HostDatastoreBrowserSearchResults;
+import com.vmware.vim25.HostDatastoreBrowserSearchSpec;
 import com.vmware.vim25.HostMountInfo;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.ObjectContent;
@@ -55,7 +57,7 @@ public class DatastoreMO extends BaseMO {
     @Override
     public String getName() throws Exception {
         if (_name == null)
-            _name = (String)_context.getVimClient().getDynamicProperty(_mor, "name");
+            _name = _context.getVimClient().getDynamicProperty(_mor, "name");
 
         return _name;
     }
@@ -107,7 +109,7 @@ public class DatastoreMO extends BaseMO {
         PropertyFilterSpec pfSpec = new PropertyFilterSpec();
         pfSpec.getPropSet().add(pSpec);
         pfSpec.getObjectSet().add(oSpec);
-        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<>();
         pfSpecArr.add(pfSpec);
 
         List<ObjectContent> ocs = _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
@@ -116,8 +118,12 @@ public class DatastoreMO extends BaseMO {
         assert (ocs.get(0).getObj() != null);
         assert (ocs.get(0).getPropSet() != null);
         String dcName = ocs.get(0).getPropSet().get(0).getVal().toString();
-        _ownerDc = new Pair<DatacenterMO, String>(new DatacenterMO(_context, ocs.get(0).getObj()), dcName);
+        _ownerDc = new Pair<>(new DatacenterMO(_context, ocs.get(0).getObj()), dcName);
         return _ownerDc;
+    }
+
+    public void renameDatastore(String newDatastoreName) throws Exception {
+        _context.getService().renameDatastore(_mor, newDatastoreName);
     }
 
     public void makeDirectory(String path, ManagedObjectReference morDc) throws Exception {
@@ -131,7 +137,7 @@ public class DatastoreMO extends BaseMO {
         _context.getService().makeDirectory(morFileManager, fullPath, morDc, true);
     }
 
-    public String getDatastoreRootPath() throws Exception {
+    String getDatastoreRootPath() throws Exception {
         return String.format("[%s]", getName());
     }
 
@@ -166,6 +172,10 @@ public class DatastoreMO extends BaseMO {
     }
 
     public boolean deleteFile(String path, ManagedObjectReference morDc, boolean testExistence) throws Exception {
+        return deleteFile(path, morDc, testExistence, null);
+    }
+
+    public boolean deleteFile(String path, ManagedObjectReference morDc, boolean testExistence, String excludeFolders) throws Exception {
         String datastoreName = getName();
         ManagedObjectReference morFileManager = _context.getServiceContent().getFileManager();
 
@@ -180,7 +190,7 @@ public class DatastoreMO extends BaseMO {
 
         try {
             if (testExistence && !fileExists(fullPath)) {
-                String searchResult = searchFileInSubFolders(file.getFileName(), true);
+                String searchResult = searchFileInSubFolders(file.getFileName(), true, excludeFolders);
                 if (searchResult == null) {
                     return true;
                 } else {
@@ -204,7 +214,7 @@ public class DatastoreMO extends BaseMO {
         return false;
     }
 
-    public boolean copyDatastoreFile(String srcFilePath, ManagedObjectReference morSrcDc, ManagedObjectReference morDestDs, String destFilePath,
+    boolean copyDatastoreFile(String srcFilePath, ManagedObjectReference morSrcDc, ManagedObjectReference morDestDs, String destFilePath,
             ManagedObjectReference morDestDc, boolean forceOverwrite) throws Exception {
 
         String srcDsName = getName();
@@ -263,7 +273,7 @@ public class DatastoreMO extends BaseMO {
     public String[] getVmdkFileChain(String rootVmdkDatastoreFullPath) throws Exception {
         Pair<DatacenterMO, String> dcPair = getOwnerDatacenter();
 
-        List<String> files = new ArrayList<String>();
+        List<String> files = new ArrayList<>();
         files.add(rootVmdkDatastoreFullPath);
 
         String currentVmdkFullPath = rootVmdkDatastoreFullPath;
@@ -282,7 +292,7 @@ public class DatastoreMO extends BaseMO {
 
             if (parentFileName.startsWith("/")) {
                 // when parent file is not at the same directory as it is, assume it is at parent directory
-                // this is only valid in cloud.com primary storage deployment
+                // this is only valid in Apache CloudStack primary storage deployment
                 DatastoreFile dsFile = new DatastoreFile(currentVmdkFullPath);
                 String dir = dsFile.getDir();
                 if (dir != null && dir.lastIndexOf('/') > 0)
@@ -335,6 +345,36 @@ public class DatastoreMO extends BaseMO {
         return false;
     }
 
+    public long fileDiskSize(String fileFullPath) throws Exception {
+        long size = 0;
+        DatastoreFile file = new DatastoreFile(fileFullPath);
+        DatastoreFile dirFile = new DatastoreFile(file.getDatastoreName(), file.getDir());
+
+        HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
+
+        HostDatastoreBrowserSearchSpec searchSpec = new HostDatastoreBrowserSearchSpec();
+        FileQueryFlags fqf = new FileQueryFlags();
+        fqf.setFileSize(true);
+        fqf.setFileOwner(true);
+        fqf.setModification(true);
+        searchSpec.setDetails(fqf);
+        searchSpec.setSearchCaseInsensitive(false);
+        searchSpec.getMatchPattern().add(file.getFileName());
+        s_logger.debug("Search file " + file.getFileName() + " on " + dirFile.getPath()); //ROOT-2.vmdk, [3ecf7a579d3b3793b86d9d019a97ae27] s-2-VM
+        HostDatastoreBrowserSearchResults result = browserMo.searchDatastore(dirFile.getPath(), searchSpec);
+        if (result != null) {
+            List<FileInfo> info = result.getFile();
+            for (FileInfo fi : info) {
+                if (file.getFileName().equals(fi.getPath())) {
+                    s_logger.debug("File found = " + fi.getPath() + ", size=" + fi.getFileSize());
+                    return fi.getFileSize();
+                }
+            }
+        }
+        s_logger.debug("File " + fileFullPath + " does not exist on datastore");
+        return size;
+    }
+
     public boolean folderExists(String folderParentDatastorePath, String folderName) throws Exception {
         HostDatastoreBrowserMO browserMo = getHostDatastoreBrowserMO();
 
@@ -352,13 +392,18 @@ public class DatastoreMO extends BaseMO {
     }
 
     public String searchFileInSubFolders(String fileName, boolean caseInsensitive) throws Exception {
+        return searchFileInSubFolders(fileName,caseInsensitive,null);
+    }
+
+    public String searchFileInSubFolders(String fileName, boolean caseInsensitive, String excludeFolders) throws Exception {
         String datastorePath = "[" + getName() + "]";
         String rootDirectoryFilePath = String.format("%s %s", datastorePath, fileName);
+        String[] searchExcludedFolders = getSearchExcludedFolders(excludeFolders);
         if (fileExists(rootDirectoryFilePath)) {
             return rootDirectoryFilePath;
         }
 
-        String parentFolderPath = null;
+        String parentFolderPath;
         String absoluteFileName = null;
         s_logger.info("Searching file " + fileName + " in " + datastorePath);
 
@@ -380,11 +425,28 @@ public class DatastoreMO extends BaseMO {
                     if (parentFolderPath.endsWith("]"))
                         absoluteFileName += " ";
                     absoluteFileName += fi.getPath();
+                    if(isValidCloudStackFolderPath(parentFolderPath, searchExcludedFolders)) {
+                        return absoluteFileName;
+                    }
                     break;
                 }
             }
         }
         return absoluteFileName;
+    }
+
+    private String[] getSearchExcludedFolders(String excludeFolders) {
+        return excludeFolders != null ?  excludeFolders.replaceAll("\\s","").split(",") : new String[] {};
+    }
+
+    private boolean isValidCloudStackFolderPath(String dataStoreFolderPath, String[] searchExcludedFolders) throws Exception {
+        String dsFolder = dataStoreFolderPath.replaceFirst("\\[" + getName() + "\\]", "").trim();
+        for( String excludedFolder : searchExcludedFolders) {
+            if (dsFolder.startsWith(excludedFolder)) {
+                return  false;
+            }
+        }
+        return true;
     }
 
     public boolean isAccessibleToHost(String hostValue) throws Exception {

@@ -38,7 +38,7 @@ install_cloud_agent() {
                 exit 1
             fi 
         fi
-        wget -N -P /etc/yum.repos.d/ http://download.cloud.com/foss/fedora/cloud.repo
+        wget -N -P /etc/yum.repos.d/ http://download.cloudstack.org/foss/fedora/cloud.repo
         if [ $? -gt 0 ]
         then
             printf "Failed to download repo"
@@ -99,7 +99,7 @@ install_cloud_consoleP() {
                 exit 1
             fi 
         fi
-        wget -N -P=/etc/yum.repos.d/ http://download.cloud.com/foss/fedora/cloud.repo
+        wget -N -P=/etc/yum.repos.d/ http://download.cloudstack.org/foss/fedora/cloud.repo
         if [ $? -gt 0 ]
         then
             printf "Failed to download repo"

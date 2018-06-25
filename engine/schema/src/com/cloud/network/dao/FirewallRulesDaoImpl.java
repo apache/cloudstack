@@ -54,6 +54,8 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
     @Inject
     protected FirewallRulesCidrsDao _firewallRulesCidrsDao;
     @Inject
+    protected FirewallRulesDcidrsDao _firewallRulesDcidrsDao;
+    @Inject
     ResourceTagDao _tagsDao;
     @Inject
     IPAddressDao _ipDao;
@@ -224,8 +226,17 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         txn.start();
 
         FirewallRuleVO dbfirewallRule = super.persist(firewallRule);
+
+        //Fill the firewall_rules_cidrs table
         saveSourceCidrs(firewallRule, firewallRule.getSourceCidrList());
+
+        //Fill the firewall_ruls_dcidrs table
+        saveDestinationCidrs(firewallRule, firewallRule.getDestinationCidrList());
+
+        //Add the source and dest cidrs into the dbfirewall rule to be returned.
+        //Have to read again from DB as the fields are transient.
         loadSourceCidrs(dbfirewallRule);
+        loadDestinationCidrs(dbfirewallRule);
 
         txn.commit();
         return dbfirewallRule;
@@ -236,6 +247,14 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
             return;
         }
         _firewallRulesCidrsDao.persist(firewallRule.getId(), cidrList);
+    }
+
+    public void saveDestinationCidrs(FirewallRuleVO firewallRule, List<String> cidrList){
+        if(cidrList == null){
+            return;
+        }
+        _firewallRulesDcidrsDao.persist(firewallRule.getId(), cidrList);
+
     }
 
     @Override
@@ -360,4 +379,11 @@ public class FirewallRulesDaoImpl extends GenericDaoBase<FirewallRuleVO, Long> i
         List<String> sourceCidrs = _firewallRulesCidrsDao.getSourceCidrs(rule.getId());
         rule.setSourceCidrList(sourceCidrs);
     }
+
+    @Override
+    public void loadDestinationCidrs(FirewallRuleVO rule){
+        List<String> destCidrs = _firewallRulesDcidrsDao.getDestCidrs(rule.getId());
+        rule.setDestinationCidrsList(destCidrs);
+    }
+
 }

@@ -64,4 +64,6 @@ public interface FirewallRulesDao extends GenericDao<FirewallRuleVO, Long> {
     List<FirewallRuleVO> listByIpAndPurposeWithState(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 
     void loadSourceCidrs(FirewallRuleVO rule);
+
+    void loadDestinationCidrs(FirewallRuleVO rule);
 }

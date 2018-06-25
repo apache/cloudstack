@@ -54,7 +54,11 @@ public class LinkDomainToLdapCmd extends BaseCmd {
     @Parameter(name = ApiConstants.TYPE, type = CommandType.STRING, required = true, description = "type of the ldap name. GROUP or OU")
     private String type;
 
-    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = true, description = "name of the group or OU in LDAP")
+    @Parameter(name = ApiConstants.LDAP_DOMAIN, type = CommandType.STRING, required = false, description = "name of the group or OU in LDAP")
+    private String ldapDomain;
+
+    @Deprecated
+    @Parameter(name = ApiConstants.NAME, type = CommandType.STRING, required = false, description = "name of the group or OU in LDAP")
     private String name;
 
     @Parameter(name = ApiConstants.ADMIN, type = CommandType.STRING, required = false, description = "domain admin username in LDAP ")
@@ -67,14 +71,35 @@ public class LinkDomainToLdapCmd extends BaseCmd {
     @Inject
     private LdapManager _ldapManager;
 
+    public Long getDomainId() {
+        return domainId;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public String getLdapDomain() {
+        return ldapDomain == null ? name : ldapDomain;
+    }
+
+    public String getAdmin() {
+        return admin;
+    }
+
+    public short getAccountType() {
+        return accountType;
+    }
+
+
     @Override
     public void execute() throws ServerApiException {
         try {
-            LinkDomainToLdapResponse response = _ldapManager.linkDomainToLdap(domainId, type, name, accountType);
+            LinkDomainToLdapResponse response = _ldapManager.linkDomainToLdap(this);
             if(admin!=null) {
                 LdapUser ldapUser = null;
                 try {
-                    ldapUser = _ldapManager.getUser(admin, type, name);
+                    ldapUser = _ldapManager.getUser(admin, type, getLdapDomain(), domainId);
                 } catch (NoLdapUserMatchingQueryException e) {
                     s_logger.debug("no ldap user matching username " + admin + " in the given group/ou", e);
                 }

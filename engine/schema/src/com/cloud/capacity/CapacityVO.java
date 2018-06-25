@@ -17,6 +17,8 @@
 package com.cloud.capacity;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -74,6 +76,9 @@ public class CapacityVO implements Capacity {
 
     @Transient
     private Float usedPercentage;
+
+    @Transient
+    private Long allocatedCapacity;
 
     public CapacityVO() {
     }
@@ -208,8 +213,37 @@ public class CapacityVO implements Capacity {
         this.usedPercentage = usedPercentage;
     }
 
+    public Long getAllocatedCapacity() {
+        return allocatedCapacity;
+    }
+
+    public void setAllocatedCapacity(Long allocatedCapacity) {
+        this.allocatedCapacity = allocatedCapacity;
+    }
+
     @Override
     public String getUuid() {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    private static Map<Short, String> capacityNames = null;
+    static {
+        capacityNames = new HashMap<Short, String>();
+        capacityNames.put(CAPACITY_TYPE_MEMORY, "MEMORY");
+        capacityNames.put(CAPACITY_TYPE_CPU, "CPU");
+        capacityNames.put(CAPACITY_TYPE_STORAGE, "STORAGE");
+        capacityNames.put(CAPACITY_TYPE_STORAGE_ALLOCATED, "STORAGE_ALLOCATED");
+        capacityNames.put(CAPACITY_TYPE_VIRTUAL_NETWORK_PUBLIC_IP, "VIRTUAL_NETWORK_PUBLIC_IP");
+        capacityNames.put(CAPACITY_TYPE_PRIVATE_IP, "PRIVATE_IP");
+        capacityNames.put(CAPACITY_TYPE_SECONDARY_STORAGE, "SECONDARY_STORAGE");
+        capacityNames.put(CAPACITY_TYPE_VLAN, "VLAN");
+        capacityNames.put(CAPACITY_TYPE_DIRECT_ATTACHED_PUBLIC_IP, "DIRECT_ATTACHED_PUBLIC_IP");
+        capacityNames.put(CAPACITY_TYPE_LOCAL_STORAGE, "LOCAL_STORAGE");
+        capacityNames.put(CAPACITY_TYPE_GPU, "GPU");
+        capacityNames.put(CAPACITY_TYPE_CPU_CORE, "CPU_CORE");
+    }
+
+    public static String getCapacityName (Short capacityType) {
+        return capacityNames.get(capacityType);
     }
 }

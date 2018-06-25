@@ -35,6 +35,11 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.ca.SetupCertificateAnswer;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.ca.SetupKeyStoreCommand;
+import org.apache.cloudstack.ca.SetupKeystoreAnswer;
+import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.Answer;
@@ -108,6 +113,14 @@ public class VirtualRoutingResource {
                 return executeQueryCommand(cmd);
             }
 
+            if (cmd instanceof SetupKeyStoreCommand) {
+                return execute((SetupKeyStoreCommand) cmd);
+            }
+
+            if (cmd instanceof SetupCertificateCommand) {
+                return execute((SetupCertificateCommand) cmd);
+            }
+
             if (cmd instanceof AggregationControlCommand) {
                 return execute((AggregationControlCommand)cmd);
             }
@@ -137,6 +150,37 @@ public class VirtualRoutingResource {
                 }
             }
         }
+    }
+
+    private Answer execute(final SetupKeyStoreCommand cmd) {
+        final String args = String.format("/usr/local/cloud/systemvm/conf/agent.properties " +
+                        "/usr/local/cloud/systemvm/conf/%s " +
+                        "%s %d " +
+                        "/usr/local/cloud/systemvm/conf/%s",
+                KeyStoreUtils.KS_FILENAME,
+                cmd.getKeystorePassword(),
+                cmd.getValidityDays(),
+                KeyStoreUtils.CSR_FILENAME);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), KeyStoreUtils.KS_SETUP_SCRIPT, args);
+        return new SetupKeystoreAnswer(result.getDetails());
+    }
+
+    private Answer execute(final SetupCertificateCommand cmd) {
+        final String args = String.format("/usr/local/cloud/systemvm/conf/agent.properties " +
+                        "/usr/local/cloud/systemvm/conf/%s %s " +
+                        "/usr/local/cloud/systemvm/conf/%s \"%s\" " +
+                        "/usr/local/cloud/systemvm/conf/%s \"%s\" " +
+                        "/usr/local/cloud/systemvm/conf/%s \"%s\"",
+                KeyStoreUtils.KS_FILENAME,
+                KeyStoreUtils.SSH_MODE,
+                KeyStoreUtils.CERT_FILENAME,
+                cmd.getEncodedCertificate(),
+                KeyStoreUtils.CACERT_FILENAME,
+                cmd.getEncodedCaCertificates(),
+                KeyStoreUtils.PKEY_FILENAME,
+                cmd.getEncodedPrivateKey());
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), KeyStoreUtils.KS_IMPORT_SCRIPT, args);
+        return new SetupCertificateAnswer(result.isSuccess());
     }
 
     private Answer executeQueryCommand(NetworkElementCommand cmd) {
@@ -182,7 +226,7 @@ public class VirtualRoutingResource {
         boolean finalResult = false;
         for (ConfigItem configItem : cfg) {
             long startTimestamp = System.currentTimeMillis();
-            ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), configItem);
+            ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), configItem, VRScripts.VR_SCRIPT_EXEC_TIMEOUT);
             if (s_logger.isDebugEnabled()) {
                 long elapsed = System.currentTimeMillis() - startTimestamp;
                 s_logger.debug("Processing " + configItem + " took " + elapsed + "ms");
@@ -394,7 +438,7 @@ public class VirtualRoutingResource {
                     s_logger.debug("Aggregate action timeout in seconds is " + timeout.getStandardSeconds());
                 }
 
-                ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), fileConfigItem);
+                ExecutionResult result = applyConfigToVR(cmd.getRouterAccessIp(), fileConfigItem, timeout);
                 if (!result.isSuccess()) {
                     return new Answer(cmd, false, result.getDetails());
                 }

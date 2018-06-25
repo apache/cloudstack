@@ -674,7 +674,7 @@ public class HighAvailabilityManagerImpl extends ManagerBase implements HighAvai
             }
 
             if (vm.getHostId() != null) {
-                _itMgr.destroy(vm.getUuid());
+                _itMgr.destroy(vm.getUuid(), false);
                 s_logger.info("Successfully destroy " + vm);
                 return null;
             } else {

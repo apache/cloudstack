@@ -94,7 +94,7 @@ public class RegisterIsoCmd extends BaseCmd {
     @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "an optional account name. Must be used with domainId.")
     private String accountName;
 
-    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the MD5 checksum value of this ISO")
+    @Parameter(name = ApiConstants.CHECKSUM, type = CommandType.STRING, description = "the checksum value of this ISO. " + ApiConstants.CHECKSUM_PARAMETER_PREFIX_DESCRIPTION)
     private String checksum;
 
     @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Register ISO for the project")
@@ -107,6 +107,11 @@ public class RegisterIsoCmd extends BaseCmd {
                type = CommandType.BOOLEAN,
                description = "true if ISO contains XS/VMWare tools inorder to support dynamic scaling of VM CPU/memory")
     protected Boolean isDynamicallyScalable;
+
+    @Parameter(name=ApiConstants.DIRECT_DOWNLOAD,
+            type = CommandType.BOOLEAN,
+            description = "true if ISO should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
+    private Boolean directDownload;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -166,6 +171,10 @@ public class RegisterIsoCmd extends BaseCmd {
 
     public Boolean isDynamicallyScalable() {
         return isDynamicallyScalable ==  null ? Boolean.FALSE : isDynamicallyScalable;
+    }
+
+    public boolean isDirectDownload() {
+        return directDownload == null ? false : directDownload;
     }
 
     /////////////////////////////////////////////////////

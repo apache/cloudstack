@@ -56,12 +56,12 @@ public class NioClient extends NioConnection {
             _clientConnection.connect(peerAddr);
             _clientConnection.configureBlocking(false);
 
-            final SSLContext sslContext = Link.initSSLContext(true);
+            final SSLContext sslContext = Link.initClientSSLContext();
             SSLEngine sslEngine = sslContext.createSSLEngine(_host, _port);
             sslEngine.setUseClientMode(true);
             sslEngine.setEnabledProtocols(SSLUtils.getSupportedProtocols(sslEngine.getEnabledProtocols()));
             sslEngine.beginHandshake();
-            if (!Link.doHandshake(_clientConnection, sslEngine, true)) {
+            if (!Link.doHandshake(_clientConnection, sslEngine)) {
                 s_logger.error("SSL Handshake failed while connecting to host: " + _host + " port: " + _port);
                 _selector.close();
                 throw new IOException("SSL Handshake failed while connecting to host: " + _host + " port: " + _port);

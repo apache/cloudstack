@@ -49,5 +49,6 @@ public interface DomainManager extends DomainService {
     Domain updateDomain(UpdateDomainCmd cmd);
 
     public static final String MESSAGE_ADD_DOMAIN_EVENT = "Message.AddDomain.Event";
+    public static final String MESSAGE_PRE_REMOVE_DOMAIN_EVENT = "Message.PreRemoveDomain.Event";
     public static final String MESSAGE_REMOVE_DOMAIN_EVENT = "Message.RemoveDomain.Event";
 }

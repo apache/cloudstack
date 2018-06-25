@@ -18,22 +18,31 @@ package com.cloud.cluster;
 
 import static org.junit.Assert.assertTrue;
 
+import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.utils.component.ComponentLifecycle;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ClusterServiceServletAdapterTest {
 
+    @Mock
+    private ClusterManager _manager;
+    @Mock
+    private ManagementServerHostDao _mshostDao;
+    @Mock
+    protected ConfigDepot _configDepot;
+
     ClusterServiceServletAdapter clusterServiceServletAdapter;
     ClusterManagerImpl clusterManagerImpl;
 
     @Before
-    public void setup() throws IllegalArgumentException,
-            IllegalAccessException, NoSuchFieldException, SecurityException {
+    public void setup() throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException, SecurityException {
         clusterServiceServletAdapter = new ClusterServiceServletAdapter();
         clusterManagerImpl = new ClusterManagerImpl();
     }

@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.vm;
 
+import com.cloud.storage.Snapshot;
+
 public class VmWorkTakeVolumeSnapshot extends VmWork {
 
     private static final long serialVersionUID = 341816293003023823L;
@@ -24,14 +26,18 @@ public class VmWorkTakeVolumeSnapshot extends VmWork {
     private Long policyId;
     private Long snapshotId;
     private boolean quiesceVm;
+    private Snapshot.LocationType locationType;
+    private boolean asyncBackup;
 
     public VmWorkTakeVolumeSnapshot(long userId, long accountId, long vmId, String handlerName,
-            Long volumeId, Long policyId, Long snapshotId, boolean quiesceVm) {
+            Long volumeId, Long policyId, Long snapshotId, boolean quiesceVm, Snapshot.LocationType locationType, boolean asyncBackup) {
         super(userId, accountId, vmId, handlerName);
         this.volumeId = volumeId;
         this.policyId = policyId;
         this.snapshotId = snapshotId;
         this.quiesceVm = quiesceVm;
+        this.locationType = locationType;
+        this.asyncBackup = asyncBackup;
     }
 
     public Long getVolumeId() {
@@ -48,5 +54,11 @@ public class VmWorkTakeVolumeSnapshot extends VmWork {
 
     public boolean isQuiesceVm() {
         return quiesceVm;
+    }
+
+    public Snapshot.LocationType getLocationType() { return locationType; }
+
+    public boolean isAsyncBackup() {
+        return asyncBackup;
     }
 }

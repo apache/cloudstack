@@ -17,6 +17,26 @@
 
 package com.cloud.user;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.region.RegionManager;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Matchers;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.Spy;
+import org.mockito.runners.MockitoJUnitRunner;
+
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.Resource.ResourceOwnerType;
 import com.cloud.configuration.dao.ResourceCountDao;
@@ -26,6 +46,8 @@ import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.PermissionDeniedException;
 import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectDao;
@@ -35,23 +57,9 @@ import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.db.Filter;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.SearchCriteria;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.region.RegionManager;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-
-import javax.inject.Inject;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.UUID;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(MockitoJUnitRunner.class)
 public class DomainManagerImplTest {
@@ -86,23 +94,42 @@ public class DomainManagerImplTest {
     @Mock
     ConfigurationManager _configMgr;
 
-    DomainManagerImpl domainManager;
+    @Spy
+    @InjectMocks
+    DomainManagerImpl domainManager = new DomainManagerImpl();
+
+    @Mock
+    DomainVO domain;
+    @Mock
+    Account adminAccount;
+    @Mock
+    GlobalLock lock;
+
+    List<AccountVO> domainAccountsForCleanup;
+    List<Long> domainNetworkIds;
+    List<DedicatedResourceVO> domainDedicatedResources;
+
+    private static final long DOMAIN_ID = 3l;
+    private static final long ACCOUNT_ID = 1l;
+
+    private static boolean testDomainCleanup = false;
 
     @Before
     public void setup() throws NoSuchFieldException, SecurityException,
             IllegalArgumentException, IllegalAccessException {
-        domainManager = new DomainManagerImpl();
-        for (Field field : DomainManagerImpl.class.getDeclaredFields()) {
-            if (field.getAnnotation(Inject.class) != null) {
-                field.setAccessible(true);
-                try {
-                    Field mockField = this.getClass().getDeclaredField(
-                            field.getName());
-                    field.set(domainManager, mockField.get(this));
-                } catch (Exception ignored) {
-                }
-            }
-        }
+        Mockito.doReturn(adminAccount).when(domainManager).getCaller();
+        Mockito.doReturn(lock).when(domainManager).getGlobalLock("AccountCleanup");
+        Mockito.when(lock.lock(Mockito.anyInt())).thenReturn(true);
+        Mockito.when(_domainDao.findById(DOMAIN_ID)).thenReturn(domain);
+        Mockito.when(domain.getAccountId()).thenReturn(ACCOUNT_ID);
+        Mockito.when(domain.getId()).thenReturn(DOMAIN_ID);
+        Mockito.when(_domainDao.remove(DOMAIN_ID)).thenReturn(true);
+        domainAccountsForCleanup = new ArrayList<AccountVO>();
+        domainNetworkIds = new ArrayList<Long>();
+        domainDedicatedResources = new ArrayList<DedicatedResourceVO>();
+        Mockito.when(_accountDao.findCleanupsForRemovedAccounts(DOMAIN_ID)).thenReturn(domainAccountsForCleanup);
+        Mockito.when(_networkDomainDao.listNetworkIdsByDomain(DOMAIN_ID)).thenReturn(domainNetworkIds);
+        Mockito.when(_dedicatedDao.listByDomainId(DOMAIN_ID)).thenReturn(domainDedicatedResources);
     }
 
     @Test
@@ -145,6 +172,67 @@ public class DomainManagerImplTest {
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(1L, " "));
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(1L, "       "));
         Assert.assertEquals(domain, domainManager.findDomainByIdOrPath(1L, "/validDomain/"));
+    }
+
+    @Test(expected=InvalidParameterValueException.class)
+    public void testDeleteDomainNullDomain() {
+        Mockito.when(_domainDao.findById(DOMAIN_ID)).thenReturn(null);
+        domainManager.deleteDomain(DOMAIN_ID, testDomainCleanup);
+    }
+
+    @Test(expected=PermissionDeniedException.class)
+    public void testDeleteDomainRootDomain() {
+        Mockito.when(_domainDao.findById(Domain.ROOT_DOMAIN)).thenReturn(domain);
+        domainManager.deleteDomain(Domain.ROOT_DOMAIN, testDomainCleanup);
+    }
+
+    @Test
+    public void testDeleteDomainNoCleanup() {
+        Mockito.when(_configMgr.releaseDomainSpecificVirtualRanges(Mockito.anyLong())).thenReturn(true);
+        domainManager.deleteDomain(DOMAIN_ID, testDomainCleanup);
+        Mockito.verify(domainManager).deleteDomain(domain, testDomainCleanup);
+        Mockito.verify(domainManager).removeDomainWithNoAccountsForCleanupNetworksOrDedicatedResources(domain);
+        Mockito.verify(domainManager).cleanupDomainOfferings(DOMAIN_ID);
+        Mockito.verify(lock).unlock();
+    }
+
+    @Test
+    public void testRemoveDomainWithNoAccountsForCleanupNetworksOrDedicatedResourcesRemoveDomain() {
+        domainManager.removeDomainWithNoAccountsForCleanupNetworksOrDedicatedResources(domain);
+        Mockito.verify(domainManager).publishRemoveEventsAndRemoveDomain(domain);
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void testRemoveDomainWithNoAccountsForCleanupNetworksOrDedicatedResourcesDontRemoveDomain() {
+        domainNetworkIds.add(2l);
+        domainManager.removeDomainWithNoAccountsForCleanupNetworksOrDedicatedResources(domain);
+        Mockito.verify(domainManager).failRemoveOperation(domain, domainAccountsForCleanup, domainNetworkIds, false);
+    }
+
+    @Test
+    public void testPublishRemoveEventsAndRemoveDomainSuccessfulDelete() {
+        domainManager.publishRemoveEventsAndRemoveDomain(domain);
+        Mockito.verify(_messageBus).publish(Mockito.anyString(), Matchers.eq(DomainManager.MESSAGE_PRE_REMOVE_DOMAIN_EVENT),
+                Matchers.eq(PublishScope.LOCAL), Matchers.eq(domain));
+        Mockito.verify(_messageBus).publish(Mockito.anyString(), Matchers.eq(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT),
+                Matchers.eq(PublishScope.LOCAL), Matchers.eq(domain));
+        Mockito.verify(_domainDao).remove(DOMAIN_ID);
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void testPublishRemoveEventsAndRemoveDomainExceptionDelete() {
+        Mockito.when(_domainDao.remove(DOMAIN_ID)).thenReturn(false);
+        domainManager.publishRemoveEventsAndRemoveDomain(domain);
+        Mockito.verify(_messageBus).publish(Mockito.anyString(), Matchers.eq(DomainManager.MESSAGE_PRE_REMOVE_DOMAIN_EVENT),
+                Matchers.eq(PublishScope.LOCAL), Matchers.eq(domain));
+        Mockito.verify(_messageBus, Mockito.never()).publish(Mockito.anyString(), Matchers.eq(DomainManager.MESSAGE_REMOVE_DOMAIN_EVENT),
+                Matchers.eq(PublishScope.LOCAL), Matchers.eq(domain));
+        Mockito.verify(_domainDao).remove(DOMAIN_ID);
+    }
+
+    @Test(expected=CloudRuntimeException.class)
+    public void testFailRemoveOperation() {
+        domainManager.failRemoveOperation(domain, domainAccountsForCleanup, domainNetworkIds, true);
     }
 
     @Test

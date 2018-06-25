@@ -19,13 +19,22 @@
 
 package org.apache.cloudstack;
 
-import com.cloud.utils.HttpUtils;
+import java.lang.reflect.Field;
+import java.net.InetAddress;
+import java.security.KeyPair;
+import java.security.cert.X509Certificate;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.auth.APIAuthenticationType;
 import org.apache.cloudstack.api.command.GetServiceProviderMetaDataCmd;
 import org.apache.cloudstack.saml.SAML2AuthManager;
 import org.apache.cloudstack.saml.SAMLProviderMetadata;
 import org.apache.cloudstack.saml.SAMLUtils;
+import org.apache.cloudstack.utils.security.CertUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -33,20 +42,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.lang.reflect.Field;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.SignatureException;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateParsingException;
-import java.security.cert.X509Certificate;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import com.cloud.utils.HttpUtils;
 
 @RunWith(MockitoJUnitRunner.class)
 public class GetServiceProviderMetaDataCmdTest {
@@ -67,7 +63,7 @@ public class GetServiceProviderMetaDataCmdTest {
     HttpServletRequest req;
 
     @Test
-    public void testAuthenticate() throws NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException, CertificateParsingException, CertificateEncodingException, NoSuchAlgorithmException, InvalidKeyException, NoSuchProviderException, SignatureException, UnknownHostException {
+    public void testAuthenticate() throws Exception {
         GetServiceProviderMetaDataCmd cmd = new GetServiceProviderMetaDataCmd();
 
         Field apiServerField = GetServiceProviderMetaDataCmd.class.getDeclaredField("_apiServer");
@@ -80,7 +76,7 @@ public class GetServiceProviderMetaDataCmdTest {
 
         String spId = "someSPID";
         String url = "someUrl";
-        KeyPair kp = SAMLUtils.generateRandomKeyPair();
+        KeyPair kp = CertUtils.generateRandomKeyPair(4096);
         X509Certificate cert = SAMLUtils.generateRandomX509Certificate(kp);
 
         SAMLProviderMetadata providerMetadata = new SAMLProviderMetadata();

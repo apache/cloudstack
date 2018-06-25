@@ -174,7 +174,7 @@ public class ApiServletTest {
     public void processRequestInContextUnauthorizedGET() {
         Mockito.when(request.getMethod()).thenReturn("GET");
         Mockito.when(
-                apiServer.verifyRequest(Mockito.anyMap(), Mockito.anyLong()))
+                apiServer.verifyRequest(Mockito.anyMap(), Mockito.anyLong(), Mockito.any(InetAddress.class)))
         .thenReturn(false);
         servlet.processRequestInContext(request, response);
         Mockito.verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
@@ -188,7 +188,7 @@ public class ApiServletTest {
     public void processRequestInContextAuthorizedGet() {
         Mockito.when(request.getMethod()).thenReturn("GET");
         Mockito.when(
-                apiServer.verifyRequest(Mockito.anyMap(), Mockito.anyLong()))
+                apiServer.verifyRequest(Mockito.anyMap(), Mockito.anyLong(), Mockito.any(InetAddress.class)))
         .thenReturn(true);
         servlet.processRequestInContext(request, response);
         Mockito.verify(response).setStatus(HttpServletResponse.SC_OK);
@@ -242,33 +242,33 @@ public class ApiServletTest {
     }
 
     @Test
-    public void getClientAddressWithXForwardedFor() {
+    public void getClientAddressWithXForwardedFor() throws UnknownHostException {
         Mockito.when(request.getHeader(Mockito.eq("X-Forwarded-For"))).thenReturn("192.168.1.1");
-        Assert.assertEquals("192.168.1.1", ApiServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), ApiServlet.getClientAddress(request));
     }
 
     @Test
-    public void getClientAddressWithHttpXForwardedFor() {
+    public void getClientAddressWithHttpXForwardedFor() throws UnknownHostException {
         Mockito.when(request.getHeader(Mockito.eq("HTTP_X_FORWARDED_FOR"))).thenReturn("192.168.1.1");
-        Assert.assertEquals("192.168.1.1", ApiServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), ApiServlet.getClientAddress(request));
     }
 
     @Test
-    public void getClientAddressWithXRemoteAddr() {
+    public void getClientAddressWithXRemoteAddr() throws UnknownHostException {
         Mockito.when(request.getHeader(Mockito.eq("Remote_Addr"))).thenReturn("192.168.1.1");
-        Assert.assertEquals("192.168.1.1", ApiServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), ApiServlet.getClientAddress(request));
     }
 
     @Test
-    public void getClientAddressWithHttpClientIp() {
+    public void getClientAddressWithHttpClientIp() throws UnknownHostException {
         Mockito.when(request.getHeader(Mockito.eq("HTTP_CLIENT_IP"))).thenReturn("192.168.1.1");
-        Assert.assertEquals("192.168.1.1", ApiServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("192.168.1.1"), ApiServlet.getClientAddress(request));
     }
 
     @Test
-    public void getClientAddressDefault() {
+    public void getClientAddressDefault() throws UnknownHostException {
         Mockito.when(request.getRemoteAddr()).thenReturn("127.0.0.1");
-        Assert.assertEquals("127.0.0.1", ApiServlet.getClientAddress(request));
+        Assert.assertEquals(InetAddress.getByName("127.0.0.1"), ApiServlet.getClientAddress(request));
     }
 
 }

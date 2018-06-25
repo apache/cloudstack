@@ -25,9 +25,15 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
+
+import com.cloud.vm.dao.UserVmDetailsDao;
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
@@ -44,13 +50,13 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetGPUStatsAnswer;
 import com.cloud.agent.api.GetGPUStatsCommand;
 import com.cloud.agent.api.GetHostStatsAnswer;
@@ -249,6 +255,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private ConfigurationManager _configMgr;
     @Inject
     private ClusterVSMMapDao _clusterVSMMapDao;
+    @Inject
+    private UserVmDetailsDao userVmDetailsDao;
 
     private final long _nodeId = ManagementServerNode.getManagementServerId();
 
@@ -676,6 +684,12 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 } catch (final URISyntaxException e) {
                     throw new InvalidParameterValueException(url + " is not a valid uri");
                 }
+            }
+        }
+
+        if ((hypervisorType.equalsIgnoreCase(HypervisorType.BareMetal.toString()))) {
+            if (hostTags.isEmpty()) {
+                throw new InvalidParameterValueException("hosttag is mandatory while adding host of type Baremetal");
             }
         }
 
@@ -1278,6 +1292,68 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         }
     }
 
+    /**
+     * Add VNC details as user VM details for each VM in 'vms' (KVM hosts only)
+     */
+    protected void setKVMVncAccess(long hostId, List<VMInstanceVO> vms) {
+        for (VMInstanceVO vm : vms) {
+            GetVncPortAnswer vmVncPortAnswer = (GetVncPortAnswer) _agentMgr.easySend(hostId, new GetVncPortCommand(vm.getId(), vm.getInstanceName()));
+            if (vmVncPortAnswer != null) {
+                userVmDetailsDao.addDetail(vm.getId(), "kvm.vnc.address", vmVncPortAnswer.getAddress(), true);
+                userVmDetailsDao.addDetail(vm.getId(), "kvm.vnc.port", String.valueOf(vmVncPortAnswer.getPort()), true);
+            }
+        }
+    }
+
+    /**
+     * Configure VNC access for host VMs which have failed migrating to another host while trying to enter Maintenance mode
+     */
+    protected void configureVncAccessForKVMHostFailedMigrations(HostVO host, List<VMInstanceVO> failedMigrations) {
+        if (host.getHypervisorType().equals(HypervisorType.KVM)) {
+            _agentMgr.pullAgentOutMaintenance(host.getId());
+            setKVMVncAccess(host.getId(), failedMigrations);
+            _agentMgr.pullAgentToMaintenance(host.getId());
+        }
+    }
+
+    /**
+     * Set host into ErrorInMaintenance state, as errors occurred during VM migrations. Do the following:
+     * - Cancel scheduled migrations for those which have already failed
+     * - Configure VNC access for VMs (KVM hosts only)
+     */
+    protected boolean setHostIntoErrorInMaintenance(HostVO host, List<VMInstanceVO> failedMigrations) throws NoTransitionException {
+        s_logger.debug("Unable to migrate " + failedMigrations.size() + " VM(s) from host " + host.getUuid());
+        _haMgr.cancelScheduledMigrations(host);
+        configureVncAccessForKVMHostFailedMigrations(host, failedMigrations);
+        resourceStateTransitTo(host, ResourceState.Event.UnableToMigrate, _nodeId);
+        return false;
+    }
+
+    /**
+     * Safely transit host into Maintenance mode
+     */
+    protected boolean setHostIntoMaintenance(HostVO host) throws NoTransitionException {
+        s_logger.debug("Host " + host.getUuid() + " entering in Maintenance");
+        resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
+        ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(),
+                EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE,
+                "completed maintenance for host " + host.getId(), 0);
+        return true;
+    }
+
+    /**
+     * Return true if host goes into Maintenance mode, only when:
+     * - No Running, Migrating or Failed migrations (host_id = last_host_id) for the host
+     */
+    protected boolean isHostInMaintenance(HostVO host, List<VMInstanceVO> runningVms, List<VMInstanceVO> migratingVms, List<VMInstanceVO> failedMigrations) throws NoTransitionException {
+        if (CollectionUtils.isEmpty(runningVms) && CollectionUtils.isEmpty(migratingVms)) {
+            return CollectionUtils.isEmpty(failedMigrations) ?
+                    setHostIntoMaintenance(host) :
+                    setHostIntoErrorInMaintenance(host, failedMigrations);
+        }
+        return false;
+    }
+
     @Override
     public boolean checkAndMaintain(final long hostId) {
         boolean hostInMaintenance = false;
@@ -1287,11 +1363,9 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             if (host.getType() != Host.Type.Storage) {
                 final List<VMInstanceVO> vos = _vmDao.listByHostId(hostId);
                 final List<VMInstanceVO> vosMigrating = _vmDao.listVmsMigratingFromHost(hostId);
-                if (vos.isEmpty() && vosMigrating.isEmpty()) {
-                    resourceStateTransitTo(host, ResourceState.Event.InternalEnterMaintenance, _nodeId);
-                    hostInMaintenance = true;
-                    ActionEventUtils.onCompletedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventVO.LEVEL_INFO, EventTypes.EVENT_MAINTENANCE_PREPARE, "completed maintenance for host " + hostId, 0);
-                }
+                final List<VMInstanceVO> failedVmMigrations = _vmDao.listNonMigratingVmsByHostEqualsLastHost(hostId);
+
+                hostInMaintenance = isHostInMaintenance(host, vos, vosMigrating, failedVmMigrations);
             }
         } catch (final NoTransitionException e) {
             s_logger.debug("Cannot transmit host " + host.getId() + "to Maintenance state", e);
@@ -2172,7 +2246,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 final List<VMInstanceVO> vmsOnLocalStorage = _storageMgr.listByStoragePool(storagePool.getId());
                 for (final VMInstanceVO vm : vmsOnLocalStorage) {
                     try {
-                        _vmMgr.destroy(vm.getUuid());
+                        _vmMgr.destroy(vm.getUuid(), false);
                     } catch (final Exception e) {
                         final String errorMsg = "There was an error Destory the vm: " + vm + " as a part of hostDelete id=" + host.getId();
                         s_logger.debug(errorMsg, e);
@@ -2266,7 +2340,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                 }
 
                 try {
-                    SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart");
+                    SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart");
+                    s_logger.debug("cloudstack-agent restart result: " + result.toString());
                 } catch (final SshException e) {
                     return false;
                 }
@@ -2511,6 +2586,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     }
 
     @Override
+    public List<HostVO> listAllUpHosts(Type type, Long clusterId, Long podId, long dcId) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        if (type != null) {
+            sc.and(sc.entity().getType(), Op.EQ, type);
+        }
+        if (clusterId != null) {
+            sc.and(sc.entity().getClusterId(), Op.EQ, clusterId);
+        }
+        if (podId != null) {
+            sc.and(sc.entity().getPodId(), Op.EQ, podId);
+        }
+        sc.and(sc.entity().getDataCenterId(), Op.EQ, dcId);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        return sc.list();
+    }
+
+    @Override
     public List<HostVO> listAllUpAndEnabledNonHAHosts(final Type type, final Long clusterId, final Long podId, final long dcId) {
         final String haTag = _haMgr.getHaTag();
         return _hostDao.listAllUpAndEnabledNonHAHosts(type, clusterId, podId, dcId, haTag);
@@ -2731,8 +2823,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     @Override
     public GPUDeviceTO getGPUDevice(final long hostId, final String groupName, final String vgpuType) {
-        final HostGpuGroupsVO gpuDevice = listAvailableGPUDevice(hostId, groupName, vgpuType).get(0);
-        return new GPUDeviceTO(gpuDevice.getGroupName(), vgpuType, null);
+        final List<HostGpuGroupsVO> gpuDeviceList = listAvailableGPUDevice(hostId, groupName, vgpuType);
+
+        if (CollectionUtils.isEmpty(gpuDeviceList)) {
+            final String errorMsg = "Host " + hostId + " does not have required GPU device or out of capacity. GPU group: " + groupName + ", vGPU Type: " + vgpuType;
+            s_logger.error(errorMsg);
+            throw new CloudRuntimeException(errorMsg);
+        }
+
+        return new GPUDeviceTO(gpuDeviceList.get(0).getGroupName(), vgpuType, null);
     }
 
     @Override
@@ -2762,6 +2861,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
         return null;
+    }
+
+    @Override
+    public HostVO findOneRandomRunningHostByHypervisor(HypervisorType type) {
+        final QueryBuilder<HostVO> sc = QueryBuilder.create(HostVO.class);
+        sc.and(sc.entity().getHypervisorType(), Op.EQ, type);
+        sc.and(sc.entity().getType(),Op.EQ, Type.Routing);
+        sc.and(sc.entity().getStatus(), Op.EQ, Status.Up);
+        sc.and(sc.entity().getResourceState(), Op.EQ, ResourceState.Enabled);
+        sc.and(sc.entity().getRemoved(), Op.NULL);
+        List<HostVO> hosts = sc.list();
+        if (CollectionUtils.isEmpty(hosts)) {
+            return null;
+        } else {
+            Collections.shuffle(hosts, new Random(System.currentTimeMillis()));
+            return hosts.get(0);
+        }
     }
 
     @Override

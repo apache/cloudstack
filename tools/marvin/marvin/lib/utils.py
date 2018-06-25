@@ -293,7 +293,7 @@ def is_snapshot_on_nfs(apiclient, dbconn, config, zoneid, snapshotid):
     # snapshot extension to be appended to the snapshot path obtained from db
     snapshot_extensions = {"vmware": ".ovf",
                             "kvm": "",
-                            "xenserver": ".vhd",
+                            "xenserver": "",
                             "simulator":""}
 
     qresultset = dbconn.execute(

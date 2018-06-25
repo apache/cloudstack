@@ -19,6 +19,7 @@ package com.cloud.api;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URLDecoder;
+import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -132,9 +133,21 @@ public class ApiServlet extends HttpServlet {
     }
 
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
-        final String remoteAddress = getClientAddress(req);
+        InetAddress remoteAddress = null;
+        try {
+            remoteAddress = getClientAddress(req);
+        } catch (UnknownHostException e) {
+            s_logger.warn("UnknownHostException when trying to lookup remote IP-Address. This should never happen. Blocking request.", e);
+            final String response = apiServer.getSerializedApiError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    "UnknownHostException when trying to lookup remote IP-Address", null,
+                    HttpUtils.RESPONSE_TYPE_XML);
+            HttpUtils.writeHttpResponse(resp, response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
+                    HttpUtils.RESPONSE_TYPE_XML, ApiServer.JSONcontentType.value());
+            return;
+        }
+
         final StringBuilder auditTrailSb = new StringBuilder(128);
-        auditTrailSb.append(" ").append(remoteAddress);
+        auditTrailSb.append(" ").append(remoteAddress.getHostAddress());
         auditTrailSb.append(" -- ").append(req.getMethod()).append(' ');
         // get the response format since we'll need it in a couple of places
         String responseType = HttpUtils.RESPONSE_TYPE_XML;
@@ -158,7 +171,7 @@ public class ApiServlet extends HttpServlet {
         try {
 
             if (HttpUtils.RESPONSE_TYPE_JSON.equalsIgnoreCase(responseType)) {
-                resp.setContentType(apiServer.getJSONContentType());
+                resp.setContentType(ApiServer.JSONcontentType.value());
             } else if (HttpUtils.RESPONSE_TYPE_XML.equalsIgnoreCase(responseType)){
                 resp.setContentType(HttpUtils.XML_CONTENT_TYPE);
             }
@@ -189,18 +202,16 @@ public class ApiServlet extends HttpServlet {
                             }
                         }
                         session = req.getSession(true);
-                        if (apiServer.isSecureSessionCookieEnabled()) {
+                        if (ApiServer.EnableSecureSessionCookie.value()) {
                             resp.setHeader("SET-COOKIE", String.format("JSESSIONID=%s;Secure;HttpOnly;Path=/client", session.getId()));
                             if (s_logger.isDebugEnabled()) {
-                                if (s_logger.isDebugEnabled()) {
-                                    s_logger.debug("Session cookie is marked secure!");
-                                }
+                                s_logger.debug("Session cookie is marked secure!");
                             }
                         }
                     }
 
                     try {
-                        responseString = apiAuthenticator.authenticate(command, params, session, InetAddress.getByName(remoteAddress), responseType, auditTrailSb, req, resp);
+                        responseString = apiAuthenticator.authenticate(command, params, session, remoteAddress, responseType, auditTrailSb, req, resp);
                         if (session != null && session.getAttribute(ApiConstants.SESSIONKEY) != null) {
                             resp.addHeader("SET-COOKIE", String.format("%s=%s;HttpOnly", ApiConstants.SESSIONKEY, session.getAttribute(ApiConstants.SESSIONKEY)));
                         }
@@ -231,7 +242,7 @@ public class ApiServlet extends HttpServlet {
                         sessionKeyCookie.setMaxAge(0);
                         resp.addCookie(sessionKeyCookie);
                     }
-                    HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, apiServer.getJSONContentType());
+                    HttpUtils.writeHttpResponse(resp, responseString, httpResponseCode, responseType, ApiServer.JSONcontentType.value());
                     return;
                 }
             }
@@ -256,7 +267,7 @@ public class ApiServlet extends HttpServlet {
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
                     final String serializedResponse =
                             apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
-                    HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, apiServer.getJSONContentType());
+                    HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
                     return;
                 }
 
@@ -267,7 +278,7 @@ public class ApiServlet extends HttpServlet {
                         s_logger.info("missing command, ignoring request...");
                         auditTrailSb.append(" " + HttpServletResponse.SC_BAD_REQUEST + " " + "no command specified");
                         final String serializedResponse = apiServer.getSerializedApiError(HttpServletResponse.SC_BAD_REQUEST, "no command specified", params, responseType);
-                        HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, apiServer.getJSONContentType());
+                        HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_BAD_REQUEST, responseType, ApiServer.JSONcontentType.value());
                         return;
                     }
                     final User user = entityMgr.findById(User.class, userId);
@@ -283,21 +294,21 @@ public class ApiServlet extends HttpServlet {
                     auditTrailSb.append(" " + HttpServletResponse.SC_UNAUTHORIZED + " " + "unable to verify user credentials");
                     final String serializedResponse =
                             apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials", params, responseType);
-                    HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, apiServer.getJSONContentType());
+                    HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
                     return;
                 }
             } else {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
             }
 
-            if (apiServer.verifyRequest(params, userId)) {
+            if (apiServer.verifyRequest(params, userId, remoteAddress)) {
                 auditTrailSb.insert(0, "(userId=" + CallContext.current().getCallingUserId() + " accountId=" + CallContext.current().getCallingAccount().getId() +
                         " sessionId=" + (session != null ? session.getId() : null) + ")");
 
                 // Add the HTTP method (GET/POST/PUT/DELETE) as well into the params map.
-                params.put("httpmethod", new String[] {req.getMethod()});
+                params.put("httpmethod", new String[]{req.getMethod()});
                 final String response = apiServer.handleRequest(params, responseType, auditTrailSb);
-                HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, apiServer.getJSONContentType());
+                HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
             } else {
                 if (session != null) {
                     try {
@@ -310,13 +321,13 @@ public class ApiServlet extends HttpServlet {
                 final String serializedResponse =
                         apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature", params,
                                 responseType);
-                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, apiServer.getJSONContentType());
+                HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
 
             }
         } catch (final ServerApiException se) {
             final String serializedResponseText = apiServer.getSerializedApiError(se, params, responseType);
             resp.setHeader("X-Description", se.getDescription());
-            HttpUtils.writeHttpResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType, apiServer.getJSONContentType());
+            HttpUtils.writeHttpResponse(resp, serializedResponseText, se.getErrorCode().getHttpCode(), responseType, ApiServer.JSONcontentType.value());
             auditTrailSb.append(" " + se.getErrorCode() + " " + se.getDescription());
         } catch (final Exception ex) {
             s_logger.error("unknown exception writing api response", ex);
@@ -332,29 +343,29 @@ public class ApiServlet extends HttpServlet {
     }
 
     //This method will try to get login IP of user even if servlet is behind reverseProxy or loadBalancer
-    static String getClientAddress(final HttpServletRequest request) {
+    static InetAddress getClientAddress(final HttpServletRequest request) throws UnknownHostException {
         for(final String header : s_clientAddressHeaders) {
             final String ip = getCorrectIPAddress(request.getHeader(header));
             if (ip != null) {
-                return ip;
+                return InetAddress.getByName(ip);
             }
         }
 
-        return request.getRemoteAddr();
+        return InetAddress.getByName(request.getRemoteAddr());
     }
 
     private static String getCorrectIPAddress(String ip) {
         if(ip == null || ip.length() == 0 || "unknown".equalsIgnoreCase(ip)) {
             return null;
         }
-        if(NetUtils.isValidIp(ip) || NetUtils.isValidIpv6(ip)) {
+        if(NetUtils.isValidIp4(ip) || NetUtils.isValidIp6(ip)) {
             return ip;
         }
         //it could be possible to have multiple IPs in HTTP header, this happens if there are multiple proxy in between
         //the client and the servlet, so parse the client IP
         String[] ips = ip.split(",");
         for(String i : ips) {
-            if(NetUtils.isValidIp(i.trim()) || NetUtils.isValidIpv6(i.trim())) {
+            if(NetUtils.isValidIp4(i.trim()) || NetUtils.isValidIp6(i.trim())) {
                 return i.trim();
             }
         }

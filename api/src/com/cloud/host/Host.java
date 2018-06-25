@@ -16,22 +16,22 @@
 // under the License.
 package com.cloud.host;
 
-import java.util.Date;
-
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.api.InternalIdentity;
-
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState;
 import com.cloud.utils.fsm.StateObject;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.ha.HAResource;
+import org.apache.cloudstack.kernel.Partition;
+
+import java.util.Date;
 
 /**
  *  Host represents one particular host server.
  */
-public interface Host extends StateObject<Status>, Identity, InternalIdentity {
+public interface Host extends StateObject<Status>, Identity, Partition, HAResource {
     public enum Type {
         Storage(false), Routing(false), SecondaryStorage(false), SecondaryStorageCmdExecutor(false), ConsoleProxy(true), ExternalFirewall(false), ExternalLoadBalancer(
-                false), ExternalVirtualSwitchSupervisor(false), PxeServer(false), BaremetalPxe(false), BaremetalDhcp(false), TrafficMonitor(false),
+                false), ExternalVirtualSwitchSupervisor(false), PxeServer(false), BaremetalPxe(false), BaremetalDhcp(false), TrafficMonitor(false), NetScalerControlCenter(false),
 
         ExternalDhcp(false), SecondaryStorageVM(true), LocalSecondaryStorage(false), L2Networking(false);
         boolean _virtual;
@@ -201,6 +201,8 @@ public interface Host extends StateObject<Status>, Identity, InternalIdentity {
     String getHypervisorVersion();
 
     boolean isInMaintenanceStates();
+
+    boolean isDisabled();
 
     ResourceState getResourceState();
 }

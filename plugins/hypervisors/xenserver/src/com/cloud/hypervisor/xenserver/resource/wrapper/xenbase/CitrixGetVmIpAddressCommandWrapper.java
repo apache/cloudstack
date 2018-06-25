@@ -56,7 +56,7 @@ public final class CitrixGetVmIpAddressCommandWrapper extends CommandWrapper<Get
             Map<String, String> vmIpsMap = rec.networks;
 
             for (String ipAddr: vmIpsMap.values()) {
-                if (NetUtils.isIpWithtInCidrRange(ipAddr, networkCidr)) {
+                if (NetUtils.isIpWithInCidrRange(ipAddr, networkCidr)) {
                     vmIp = ipAddr;
                     break;
                 }

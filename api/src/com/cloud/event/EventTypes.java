@@ -16,6 +16,9 @@
 // under the License.
 package com.cloud.event;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -54,10 +57,10 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
 import com.cloud.server.ResourceTag;
-import com.cloud.storage.StoragePool;
 import com.cloud.storage.GuestOS;
 import com.cloud.storage.GuestOSHypervisor;
 import com.cloud.storage.Snapshot;
+import com.cloud.storage.StoragePool;
 import com.cloud.storage.Volume;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.template.VirtualMachineTemplate;
@@ -68,11 +71,10 @@ import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.Role;
 import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.annotation.Annotation;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.ha.HAConfig;
 import org.apache.cloudstack.usage.Usage;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class EventTypes {
 
@@ -128,6 +130,7 @@ public class EventTypes {
     public static final String EVENT_NETWORK_CREATE = "NETWORK.CREATE";
     public static final String EVENT_NETWORK_DELETE = "NETWORK.DELETE";
     public static final String EVENT_NETWORK_UPDATE = "NETWORK.UPDATE";
+    public static final String EVENT_NETWORK_MIGRATE = "NETWORK.MIGRATE";
     public static final String EVENT_FIREWALL_OPEN = "FIREWALL.OPEN";
     public static final String EVENT_FIREWALL_CLOSE = "FIREWALL.CLOSE";
     public static final String EVENT_FIREWALL_UPDATE = "FIREWALL.UPDATE";
@@ -176,6 +179,11 @@ public class EventTypes {
     public static final String EVENT_ROLE_PERMISSION_UPDATE = "ROLE.PERMISSION.UPDATE";
     public static final String EVENT_ROLE_PERMISSION_DELETE = "ROLE.PERMISSION.DELETE";
 
+    // CA events
+    public static final String EVENT_CA_CERTIFICATE_ISSUE = "CA.CERTIFICATE.ISSUE";
+    public static final String EVENT_CA_CERTIFICATE_REVOKE = "CA.CERTIFICATE.REVOKE";
+    public static final String EVENT_CA_CERTIFICATE_PROVISION = "CA.CERTIFICATE.PROVISION";
+
     // Account events
     public static final String EVENT_ACCOUNT_ENABLE = "ACCOUNT.ENABLE";
     public static final String EVENT_ACCOUNT_DISABLE = "ACCOUNT.DISABLE";
@@ -190,6 +198,7 @@ public class EventTypes {
     public static final String EVENT_USER_CREATE = "USER.CREATE";
     public static final String EVENT_USER_DELETE = "USER.DELETE";
     public static final String EVENT_USER_DISABLE = "USER.DISABLE";
+    public static final String EVENT_USER_MOVE = "USER.MOVE";
     public static final String EVENT_USER_UPDATE = "USER.UPDATE";
     public static final String EVENT_USER_ENABLE = "USER.ENABLE";
     public static final String EVENT_USER_LOCK = "USER.LOCK";
@@ -233,6 +242,8 @@ public class EventTypes {
 
     // Snapshots
     public static final String EVENT_SNAPSHOT_CREATE = "SNAPSHOT.CREATE";
+    public static final String EVENT_SNAPSHOT_ON_PRIMARY = "SNAPSHOT.ON_PRIMARY";
+    public static final String EVENT_SNAPSHOT_OFF_PRIMARY = "SNAPSHOT.OFF_PRIMARY";
     public static final String EVENT_SNAPSHOT_DELETE = "SNAPSHOT.DELETE";
     public static final String EVENT_SNAPSHOT_REVERT = "SNAPSHOT.REVERT";
     public static final String EVENT_SNAPSHOT_POLICY_CREATE = "SNAPSHOTPOLICY.CREATE";
@@ -289,6 +300,9 @@ public class EventTypes {
     public static final String EVENT_VLAN_IP_RANGE_DEDICATE = "VLAN.IP.RANGE.DEDICATE";
     public static final String EVENT_VLAN_IP_RANGE_RELEASE = "VLAN.IP.RANGE.RELEASE";
 
+    public static final String EVENT_MANAGEMENT_IP_RANGE_CREATE = "MANAGEMENT.IP.RANGE.CREATE";
+    public static final String EVENT_MANAGEMENT_IP_RANGE_DELETE = "MANAGEMENT.IP.RANGE.DELETE";
+
     public static final String EVENT_STORAGE_IP_RANGE_CREATE = "STORAGE.IP.RANGE.CREATE";
     public static final String EVENT_STORAGE_IP_RANGE_DELETE = "STORAGE.IP.RANGE.DELETE";
     public static final String EVENT_STORAGE_IP_RANGE_UPDATE = "STORAGE.IP.RANGE.UPDATE";
@@ -316,6 +330,12 @@ public class EventTypes {
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION = "HOST.OOBM.ACTION";
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_CHANGE_PASSWORD = "HOST.OOBM.CHANGEPASSWORD";
     public static final String EVENT_HOST_OUTOFBAND_MANAGEMENT_POWERSTATE_TRANSITION = "HOST.OOBM.POWERSTATE.TRANSITION";
+
+    // HA
+    public static final String EVENT_HA_RESOURCE_ENABLE = "HA.RESOURCE.ENABLE";
+    public static final String EVENT_HA_RESOURCE_DISABLE = "HA.RESOURCE.DISABLE";
+    public static final String EVENT_HA_RESOURCE_CONFIGURE = "HA.RESOURCE.CONFIGURE";
+    public static final String EVENT_HA_STATE_TRANSITION = "HA.STATE.TRANSITION";
 
     // Maintenance
     public static final String EVENT_MAINTENANCE_CANCEL = "MAINT.CANCEL";
@@ -391,6 +411,10 @@ public class EventTypes {
     public static final String EVENT_EXTERNAL_LB_DEVICE_DELETE = "PHYSICAL.LOADBALANCER.DELETE";
     public static final String EVENT_EXTERNAL_LB_DEVICE_CONFIGURE = "PHYSICAL.LOADBALANCER.CONFIGURE";
 
+    // external NCC device events
+    public static final String EVENT_EXTERNAL_NCC_DEVICE_ADD = "PHYSICAL.NCC.ADD";
+    public static final String EVENT_EXTERNAL_NCC_DEVICE_DELETE = "PHYSICAL.NCC.DELETE";
+
     // external switch management device events (E.g.: Cisco Nexus 1000v Virtual Supervisor Module.
     public static final String EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_ADD = "SWITCH.MGMT.ADD";
     public static final String EVENT_EXTERNAL_SWITCH_MGMT_DEVICE_DELETE = "SWITCH.MGMT.DELETE";
@@ -441,6 +465,8 @@ public class EventTypes {
     // vm snapshot events
     public static final String EVENT_VM_SNAPSHOT_CREATE = "VMSNAPSHOT.CREATE";
     public static final String EVENT_VM_SNAPSHOT_DELETE = "VMSNAPSHOT.DELETE";
+    public static final String EVENT_VM_SNAPSHOT_ON_PRIMARY = "VMSNAPSHOT.ON_PRIMARY";
+    public static final String EVENT_VM_SNAPSHOT_OFF_PRIMARY = "VMSNAPSHOT.OFF_PRIMARY";
     public static final String EVENT_VM_SNAPSHOT_REVERT = "VMSNAPSHOT.REVERTTO";
 
     // external network device events
@@ -544,6 +570,19 @@ public class EventTypes {
 
     //Usage related events
     public static final String EVENT_USAGE_REMOVE_USAGE_RECORDS = "USAGE.REMOVE.USAGE.RECORDS";
+
+    // Netscaler Service Package events
+    public static final String EVENT_NETSCALER_SERVICEPACKAGE_ADD = "NETSCALER.SERVICEPACKAGE.ADD";
+    public static final String EVENT_NETSCALER_SERVICEPACKAGE_DELETE = "NETSCALER.SERVICEPACKAGE.DELETE";
+
+    public static final String EVENT_NETSCALER_VM_START = "NETSCALERVM.START";
+    public static final String EVENT_NETSCALER_VM_STOP = "NETSCALERVM.STOP";
+
+    public static final String EVENT_ANNOTATION_CREATE = "ANNOTATION.CREATE";
+    public static final String EVENT_ANNOTATION_REMOVE = "ANNOTATION.REMOVE";
+
+    public static final String EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE = "TEMPLATE.DIRECT.DOWNLOAD.FAILURE";
+    public static final String EVENT_ISO_DIRECT_DOWNLOAD_FAILURE = "ISO.DIRECT.DOWNLOAD.FAILURE";
 
     static {
 
@@ -679,6 +718,8 @@ public class EventTypes {
         // Snapshots
         entityEventDetails.put(EVENT_SNAPSHOT_CREATE, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_DELETE, Snapshot.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_ON_PRIMARY, Snapshot.class);
+        entityEventDetails.put(EVENT_SNAPSHOT_OFF_PRIMARY, Snapshot.class);
         entityEventDetails.put(EVENT_SNAPSHOT_POLICY_CREATE, SnapshotPolicy.class);
         entityEventDetails.put(EVENT_SNAPSHOT_POLICY_UPDATE, SnapshotPolicy.class);
         entityEventDetails.put(EVENT_SNAPSHOT_POLICY_DELETE, SnapshotPolicy.class);
@@ -733,6 +774,9 @@ public class EventTypes {
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_DEDICATE, Vlan.class);
         entityEventDetails.put(EVENT_VLAN_IP_RANGE_RELEASE, Vlan.class);
 
+        entityEventDetails.put(EVENT_MANAGEMENT_IP_RANGE_CREATE, Pod.class);
+        entityEventDetails.put(EVENT_MANAGEMENT_IP_RANGE_DELETE, Pod.class);
+
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_CREATE, StorageNetworkIpRange.class);
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_DELETE, StorageNetworkIpRange.class);
         entityEventDetails.put(EVENT_STORAGE_IP_RANGE_UPDATE, StorageNetworkIpRange.class);
@@ -760,6 +804,12 @@ public class EventTypes {
         entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_ACTION, Host.class);
         entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_CHANGE_PASSWORD, Host.class);
         entityEventDetails.put(EVENT_HOST_OUTOFBAND_MANAGEMENT_POWERSTATE_TRANSITION, Host.class);
+
+        // HA
+        entityEventDetails.put(EVENT_HA_RESOURCE_ENABLE, HAConfig.class);
+        entityEventDetails.put(EVENT_HA_RESOURCE_DISABLE, HAConfig.class);
+        entityEventDetails.put(EVENT_HA_RESOURCE_CONFIGURE, HAConfig.class);
+        entityEventDetails.put(EVENT_HA_STATE_TRANSITION, HAConfig.class);
 
         // Maintenance
         entityEventDetails.put(EVENT_MAINTENANCE_CANCEL, Host.class);
@@ -918,6 +968,15 @@ public class EventTypes {
 
         //Usage
         entityEventDetails.put(EVENT_USAGE_REMOVE_USAGE_RECORDS, Usage.class);
+        // Netscaler Service Packages
+        entityEventDetails.put(EVENT_NETSCALER_SERVICEPACKAGE_ADD, "NETSCALER.SERVICEPACKAGE.CREATE");
+        entityEventDetails.put(EVENT_NETSCALER_SERVICEPACKAGE_DELETE, "NETSCALER.SERVICEPACKAGE.DELETE");
+
+        entityEventDetails.put(EVENT_ANNOTATION_CREATE, Annotation.class);
+        entityEventDetails.put(EVENT_ANNOTATION_REMOVE, Annotation.class);
+
+        entityEventDetails.put(EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE, VirtualMachineTemplate.class);
+        entityEventDetails.put(EVENT_ISO_DIRECT_DOWNLOAD_FAILURE, "Iso");
     }
 
     public static String getEntityForEvent(String eventName) {

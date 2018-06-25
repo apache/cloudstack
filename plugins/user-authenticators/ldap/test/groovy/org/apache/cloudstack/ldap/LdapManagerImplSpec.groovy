@@ -52,7 +52,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapContextFactory.createBindContext() >> { throw new NoLdapUserMatchingQueryException() }
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "We search for a user but there is a bind issue"
-        ldapManager.getUser("rmurphy")
+        ldapManager.getUser("rmurphy", null)
         then: "an exception is thrown"
         thrown NoLdapUserMatchingQueryException
     }
@@ -68,7 +68,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapContextFactory.createBindContext() >> { throw new NamingException() }
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "We search for a group of users but there is a bind issue"
-        ldapManager.getUsers()
+        ldapManager.getUsers(null)
         then: "An exception is thrown"
         thrown NoLdapUserMatchingQueryException
     }
@@ -116,7 +116,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "A ldap user response is generated"
         def result = ldapManager.createLdapUserResponse(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org",
-                "engineering", false))
+                "engineering", false, null))
         then: "The result of the response should match the given ldap user"
         result.username == "rmurphy"
         result.email == "rmurphy@test.com"
@@ -136,11 +136,11 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapUserManagerFactory.getInstance(_) >> ldapUserManager
         ldapContextFactory.createBindContext() >> null
         List<LdapUser> users = new ArrayList<>();
-        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false))
+        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null))
         ldapUserManager.getUsers(_) >> users;
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "We search for a group of users"
-        def result = ldapManager.getUsers()
+        def result = ldapManager.getUsers(null)
         then: "A list greater than 0 is returned"
         result.size() > 0;
     }
@@ -154,10 +154,10 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapConfiguration = Mock(LdapConfiguration)
         ldapUserManagerFactory.getInstance(_) >> ldapUserManager
         ldapContextFactory.createBindContext() >> null
-        ldapUserManager.getUser(_, _) >> new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false)
+        ldapUserManager.getUser(_, _, _) >> new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null, false, null)
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "We search for a user"
-        def result = ldapManager.getUser("rmurphy")
+        def result = ldapManager.getUser("rmurphy", null)
         then: "The user is returned"
         result.username == "rmurphy"
         result.email == "rmurphy@test.com"
@@ -192,9 +192,9 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapUserManagerFactory.getInstance(_) >> ldapUserManager
         def ldapConfiguration = Mock(LdapConfiguration)
         def ldapManager = Spy(LdapManagerImpl, constructorArgs: [ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration])
-        ldapManager.getUser(_) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null) }
+        ldapManager.getUser(_, null) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null) }
         when: "The user attempts to authenticate with a bad password"
-        def result = ldapManager.canAuthenticate("rmurphy", "password")
+        def result = ldapManager.canAuthenticate("rmurphy", "password", null)
         then: "The authentication fails"
         result == false
     }
@@ -210,7 +210,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapConfigurationDao.findByHostname(_) >> null
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "A ldap configuration that doesn't exist is deleted"
-        ldapManager.deleteConfiguration("localhost")
+        ldapManager.deleteConfiguration("localhost", 0, null)
         then: "A exception is thrown"
         thrown InvalidParameterValueException
     }
@@ -242,9 +242,9 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def ldapConfiguration = Mock(LdapConfiguration)
         ldapUserManagerFactory.getInstance(_) >> ldapUserManager
         def ldapManager = Spy(LdapManagerImpl, constructorArgs: [ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration])
-        ldapManager.getUser(_) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null) }
+        ldapManager.getUser(_, null) >> { new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", null) }
         when: "A user authenticates"
-        def result = ldapManager.canAuthenticate("rmurphy", "password")
+        def result = ldapManager.canAuthenticate("rmurphy", "password", null)
         then: "The result is true"
         result == true
     }
@@ -265,7 +265,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapConfigurationDao.remove(_) >> null
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "A ldap configuration is deleted"
-        def result = ldapManager.deleteConfiguration("localhost")
+        def result = ldapManager.deleteConfiguration("localhost", 0, null)
         then: "The deleted configuration is returned"
         result.hostname == "localhost"
         result.port == 389
@@ -282,7 +282,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapContextFactory.createBindContext() >> null;
 
         List<LdapUser> users = new ArrayList<LdapUser>();
-        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false))
+        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,ou=engineering,dc=cloudstack,dc=org", "engineering", false, null))
         ldapUserManager.getUsers(_, _) >> users;
 
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
@@ -424,11 +424,11 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         ldapUserManagerFactory.getInstance(_) >> ldapUserManager
         ldapContextFactory.createBindContext() >> null
         List<LdapUser> users = new ArrayList<>();
-        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", "engineering", false))
+        users.add(new LdapUser("rmurphy", "rmurphy@test.com", "Ryan", "Murphy", "cn=rmurphy,dc=cloudstack,dc=org", "engineering", false, null))
         ldapUserManager.getUsersInGroup("engineering", _) >> users;
         def ldapManager = new LdapManagerImpl(ldapConfigurationDao, ldapContextFactory, ldapUserManagerFactory, ldapConfiguration)
         when: "We search for a group of users"
-        def result = ldapManager.getUsersInGroup("engineering")
+        def result = ldapManager.getUsersInGroup("engineering", null)
         then: "A list greater of size one is returned"
         result.size() == 1;
     }
@@ -524,7 +524,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def type = "GROUP"
         def name = "CN=test,DC=citrix,DC=com"
 
-        ldapUserManager.getUser(username, type, name, _) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", true)
+        ldapUserManager.getUser(username, type, name, _) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", true, null)
 
         when:
             LdapUser user = ldapManager.getUser(username, type, name)
@@ -574,7 +574,7 @@ class LdapManagerImplSpec extends spock.lang.Specification {
         def type = "GROUP"
         def name = "CN=test,DC=citrix,DC=com"
 
-        ldapUserManager.getUser(username, type, name, _) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false)
+        ldapUserManager.getUser(username, type, name, _) >> new LdapUser(username, "email", "firstname", "lastname", "principal", "domain", false, null)
 
         when:
         LdapUser user = ldapManager.getUser(username, type, name)

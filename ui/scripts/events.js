@@ -46,11 +46,11 @@
                             label: 'label.type',
                             truncate: true
                         },
-                        domain: {
-                            label: 'label.domain'
-                        },
                         account: {
                             label: 'label.account'
+                        },
+                        domain: {
+                            label: 'label.domain'
                         },
                         created: {
                             label: 'label.date',
@@ -338,6 +338,14 @@
                         var data = {};
                         listViewDataProvider(args, data);
 
+                        if ("events" in args.context) {
+                            var startId = args.context.events[0].parentid;
+                            if (!startId) {
+                                startId = args.context.events[0].id;
+                            }
+                            data.startid = startId;
+                        }
+
                         $.ajax({
                             url: createURL('listEvents'),
                             data: data,
@@ -357,8 +365,12 @@
                     },
                     detailView: {
                         name: 'label.details',
-                        actions: {
+                        viewAll: {
+                            path: 'events',
+                            label: 'label.event.timeline',
+                        },
 
+                        actions: {
                             // Remove single event
                             remove: {
                                 label: 'label.delete',

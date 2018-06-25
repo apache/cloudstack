@@ -102,4 +102,6 @@ public interface VMSnapshot extends ControlledEntity, Identity, InternalIdentity
 
     @Override
     public long getAccountId();
+
+    public long getServiceOfferingId();
 }

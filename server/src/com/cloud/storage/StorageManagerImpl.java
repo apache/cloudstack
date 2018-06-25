@@ -32,19 +32,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
-import javax.naming.ConfigurationException;
 
-import com.cloud.hypervisor.Hypervisor;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.api.command.admin.storage.CancelPrimaryStorageMaintenanceCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateSecondaryStagingStoreCmd;
 import org.apache.cloudstack.api.command.admin.storage.CreateStoragePoolCmd;
@@ -65,11 +59,13 @@ import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
 import org.apache.cloudstack.engine.subsystem.api.storage.HypervisorHostListener;
 import org.apache.cloudstack.engine.subsystem.api.storage.ImageStoreProvider;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreLifeCycle;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotService;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
@@ -84,6 +80,7 @@ import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.command.DettachCommand;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
@@ -98,10 +95,14 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
+import com.cloud.agent.api.DeleteStoragePoolCommand;
 import com.cloud.agent.api.StoragePoolInfo;
 import com.cloud.agent.api.to.DataTO;
 import com.cloud.agent.api.to.DiskTO;
@@ -141,6 +142,7 @@ import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.Status;
 import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.offering.DiskOffering;
@@ -157,6 +159,7 @@ import com.cloud.storage.Volume.Type;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.StoragePoolHostDao;
+import com.cloud.storage.dao.StoragePoolTagsDao;
 import com.cloud.storage.dao.StoragePoolWorkDao;
 import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
@@ -173,7 +176,6 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.UriUtils;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.component.ManagerBase;
@@ -290,6 +292,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     ResourceLimitService _resourceLimitMgr;
     @Inject
     EntityManager _entityMgr;
+    @Inject
+    SnapshotService _snapshotService;
+    @Inject
+    StoragePoolTagsDao _storagePoolTagsDao;
 
     protected List<StoragePoolDiscoverer> _discoverers;
 
@@ -307,7 +313,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     protected SearchBuilder<StoragePoolVO> LocalStorageSearch;
 
     ScheduledExecutorService _executor = null;
-    boolean _templateCleanupEnabled = true;
     int _storagePoolAcquisitionWaitSeconds = 1800; // 30 minutes
     int _downloadUrlCleanupInterval;
     int _downloadUrlExpirationInterval;
@@ -461,7 +466,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
+    public boolean configure(String name, Map<String, Object> params) {
 
         Map<String, String> configs = _configDao.getConfiguration("management-server", params);
 
@@ -470,11 +475,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         _agentMgr.registerForHostEvents(new StoragePoolMonitor(this, _storagePoolDao, _dataStoreProviderMgr), true, false, true);
 
-        String value = _configDao.getValue(Config.StorageTemplateCleanupEnabled.key());
-        _templateCleanupEnabled = (value == null ? true : Boolean.parseBoolean(value));
-
-        s_logger.info("Storage cleanup enabled: " + StorageCleanupEnabled.value() + ", interval: " + StorageCleanupInterval.value() + ", delay: " + StorageCleanupDelay.value()  +
-                ", template cleanup enabled: " + _templateCleanupEnabled);
+        s_logger.info("Storage cleanup enabled: " + StorageCleanupEnabled.value() + ", interval: " + StorageCleanupInterval.value() + ", delay: " + StorageCleanupDelay.value()
+        + ", template cleanup enabled: " + TemplateCleanupEnabled.value());
 
         String cleanupInterval = configs.get("extract.url.cleanup.interval");
         _downloadUrlCleanupInterval = NumbersUtil.parseInt(cleanupInterval, 7200);
@@ -522,7 +524,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public String getStoragePoolTags(long poolId) {
-        return StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolDetails(poolId, "true"));
+        return com.cloud.utils.StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolTags(poolId));
     }
 
     @Override
@@ -583,8 +585,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
             if (pool == null) {
                 //the path can be different, but if they have the same uuid, assume they are the same storage
-                pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), hostAddress, null,
-                        pInfo.getUuid());
+                pool = _storagePoolDao.findPoolByHostPath(host.getDataCenterId(), host.getPodId(), hostAddress, null, pInfo.getUuid());
                 if (pool != null) {
                     s_logger.debug("Found a storage pool: " + pInfo.getUuid() + ", but with different hostpath " + pInfo.getHostPath() + ", still treat it as the same pool");
                 }
@@ -625,8 +626,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException,
-    ResourceUnavailableException {
+    public PrimaryDataStoreInfo createPool(CreateStoragePoolCmd cmd) throws ResourceInUseException, IllegalArgumentException, UnknownHostException, ResourceUnavailableException {
         String providerName = cmd.getStorageProviderName();
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
@@ -672,7 +672,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 throw new InvalidParameterValueException("Missing parameter hypervisor. Hypervisor type is required to create zone wide primary storage.");
             }
-            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Hyperv && hypervisorType != HypervisorType.LXC && hypervisorType != HypervisorType.Any) {
+            if (hypervisorType != HypervisorType.KVM && hypervisorType != HypervisorType.VMware && hypervisorType != HypervisorType.Hyperv && hypervisorType != HypervisorType.LXC
+                    && hypervisorType != HypervisorType.Any) {
                 throw new InvalidParameterValueException("zone wide storage pool is not supported for hypervisor type " + hypervisor);
             }
         }
@@ -713,7 +714,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 lifeCycle.attachZone(store, zoneScope, hypervisorType);
             }
         } catch (Exception e) {
-            s_logger.debug("Failed to add data store: "+e.getMessage(), e);
+            s_logger.debug("Failed to add data store: " + e.getMessage(), e);
             try {
                 // clean up the db, just absorb the exception thrown in deletion with error logged, so that user can get error for adding data store
                 // not deleting data store.
@@ -723,7 +724,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } catch (Exception ex) {
                 s_logger.debug("Failed to clean up storage pool: " + ex.getMessage());
             }
-            throw new CloudRuntimeException("Failed to add data store: "+e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to add data store: " + e.getMessage(), e);
         }
 
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.Primary);
@@ -749,8 +750,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @ActionEvent(eventType = EventTypes.EVENT_DISABLE_PRIMARY_STORAGE, eventDescription = "disable storage pool")
     private void disablePrimaryStoragePool(StoragePoolVO primaryStorage) {
         if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up)) {
-            throw new InvalidParameterValueException("Primary storage with id " + primaryStorage.getId() + " cannot be disabled. Storage pool state : " +
-                    primaryStorage.getStatus().toString());
+            throw new InvalidParameterValueException("Primary storage with id " + primaryStorage.getId() + " cannot be disabled. Storage pool state : " + primaryStorage.getStatus().toString());
         }
 
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
@@ -762,8 +762,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     @ActionEvent(eventType = EventTypes.EVENT_ENABLE_PRIMARY_STORAGE, eventDescription = "enable storage pool")
     private void enablePrimaryStoragePool(StoragePoolVO primaryStorage) {
         if (!primaryStorage.getStatus().equals(StoragePoolStatus.Disabled)) {
-            throw new InvalidParameterValueException("Primary storage with id " + primaryStorage.getId() + " cannot be enabled. Storage pool state : " +
-                    primaryStorage.getStatus().toString());
+            throw new InvalidParameterValueException("Primary storage with id " + primaryStorage.getId() + " cannot be enabled. Storage pool state : " + primaryStorage.getStatus().toString());
         }
 
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
@@ -776,51 +775,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public PrimaryDataStoreInfo updateStoragePool(UpdateStoragePoolCmd cmd) throws IllegalArgumentException {
         // Input validation
         Long id = cmd.getId();
-        List<String> tags = cmd.getTags();
 
         StoragePoolVO pool = _storagePoolDao.findById(id);
         if (pool == null) {
             throw new IllegalArgumentException("Unable to find storage pool with ID: " + id);
         }
 
-        Map<String, String> updatedDetails = new HashMap<String, String>();
-
-        if (tags != null) {
-            Map<String, String> existingDetails = _storagePoolDetailsDao.listDetailsKeyPairs(id);
-            Set<String> existingKeys = existingDetails.keySet();
-
-            Map<String, String> existingDetailsToKeep = new HashMap<String, String>();
-
-            for (String existingKey : existingKeys) {
-                String existingValue = existingDetails.get(existingKey);
-
-                if (!Boolean.TRUE.toString().equalsIgnoreCase(existingValue)) {
-                    existingDetailsToKeep.put(existingKey, existingValue);
-                }
+        final List<String> storagePoolTags = cmd.getTags();
+        if (storagePoolTags != null) {
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("Updating Storage Pool Tags to :" + storagePoolTags);
             }
-
-            Map<String, String> details = new HashMap<String, String>();
-            for (String tag : tags) {
-                tag = tag.trim();
-                if (tag.length() > 0 && !details.containsKey(tag)) {
-                    details.put(tag, "true");
-                }
-            }
-
-            Set<String> existingKeysToKeep = existingDetailsToKeep.keySet();
-
-            for (String existingKeyToKeep : existingKeysToKeep) {
-                String existingValueToKeep = existingDetailsToKeep.get(existingKeyToKeep);
-
-                if (details.containsKey(existingKeyToKeep)) {
-                    throw new CloudRuntimeException("Storage tag '" + existingKeyToKeep +
-                            "' conflicts with a stored property of this primary storage. No changes were made.");
-                }
-
-                details.put(existingKeyToKeep, existingValueToKeep);
-            }
-
-            updatedDetails.putAll(details);
+            _storagePoolTagsDao.persist(pool.getId(), storagePoolTags);
         }
 
         Long updatedCapacityBytes = null;
@@ -863,8 +829,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             } else {
                 disablePrimaryStoragePool(pool);
             }
-        } else if (updatedDetails.size() >= 0) {
-            _storagePoolDao.updateDetails(id, updatedDetails);
         }
 
         if (updatedCapacityBytes != null) {
@@ -876,6 +840,31 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(pool.getId(), DataStoreRole.Primary);
+    }
+
+    @Override
+    public void removeStoragePoolFromCluster(long hostId, String iScsiName, StoragePool storagePool) {
+        final Map<String, String> details = new HashMap<>();
+
+        details.put(DeleteStoragePoolCommand.DATASTORE_NAME, iScsiName);
+        details.put(DeleteStoragePoolCommand.IQN, iScsiName);
+        details.put(DeleteStoragePoolCommand.STORAGE_HOST, storagePool.getHostAddress());
+        details.put(DeleteStoragePoolCommand.STORAGE_PORT, String.valueOf(storagePool.getPort()));
+
+        final DeleteStoragePoolCommand cmd = new DeleteStoragePoolCommand();
+
+        cmd.setDetails(details);
+        cmd.setRemoveDatastore(true);
+
+        final Answer answer = _agentMgr.easySend(hostId, cmd);
+
+        if (answer == null || !answer.getResult()) {
+            String errMsg = "Error interacting with host (related to DeleteStoragePoolCommand)" + (StringUtils.isNotBlank(answer.getDetails()) ? ": " + answer.getDetails() : "");
+
+            s_logger.error(errMsg);
+
+            throw new CloudRuntimeException(errMsg);
+        }
     }
 
     @Override
@@ -892,10 +881,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (sPool.getStatus() != StoragePoolStatus.Maintenance) {
             s_logger.warn("Unable to delete storage id: " + id + " due to it is not in Maintenance state");
             throw new InvalidParameterValueException("Unable to delete storage due to it is not in Maintenance state, id: " + id);
-        }
-        if (sPool.isLocal()) {
-            s_logger.warn("Unable to delete local storage id:" + id);
-            throw new InvalidParameterValueException("Unable to delete local storage id: " + id);
         }
 
         Pair<Long, Long> vlms = _volsDao.getCountAndTotalByPool(id);
@@ -971,12 +956,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         List<CapacityVO> capacities = _capacityDao.search(capacitySC, null);
 
         long totalOverProvCapacity;
-        if (storagePool.getPoolType() == StoragePoolType.NetworkFilesystem || storagePool.getPoolType() == StoragePoolType.VMFS) {
+        if (storagePool.getPoolType().supportsOverProvisioning()) {
             // All this is for the inaccuracy of floats for big number multiplication.
             BigDecimal overProvFactor = getStorageOverProvisioningFactor(storagePool.getId());
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(storagePool.getCapacityBytes())).longValue();
-            s_logger.debug("Found storage pool " + storagePool.getName() + " of type " + storagePool.getPoolType().toString() + " with overprovisioning factor "
-                    + overProvFactor.toString());
+            s_logger.debug("Found storage pool " + storagePool.getName() + " of type " + storagePool.getPoolType().toString() + " with overprovisioning factor " + overProvFactor.toString());
             s_logger.debug("Total over provisioned capacity calculated is " + overProvFactor + " * " + storagePool.getCapacityBytes());
         } else {
             s_logger.debug("Found storage pool " + storagePool.getName() + " of type " + storagePool.getPoolType().toString());
@@ -1002,19 +986,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         if (storagePool.getScope() == ScopeType.HOST) {
             List<StoragePoolHostVO> stoargePoolHostVO = _storagePoolHostDao.listByPoolId(storagePool.getId());
 
-            if(stoargePoolHostVO != null && !stoargePoolHostVO.isEmpty()){
+            if (stoargePoolHostVO != null && !stoargePoolHostVO.isEmpty()) {
                 HostVO host = _hostDao.findById(stoargePoolHostVO.get(0).getHostId());
 
-                if(host != null){
+                if (host != null) {
                     capacityState = (host.getResourceState() == ResourceState.Disabled) ? CapacityState.Disabled : CapacityState.Enabled;
                 }
             }
         }
 
         if (capacities.size() == 0) {
-            CapacityVO capacity =
-                    new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, totalOverProvCapacity,
-                            capacityType);
+            CapacityVO capacity = new CapacityVO(storagePool.getId(), storagePool.getDataCenterId(), storagePool.getPodId(), storagePool.getClusterId(), allocated, totalOverProvCapacity,
+                    capacityType);
             capacity.setCapacityState(capacityState);
             _capacityDao.persist(capacity);
         } else {
@@ -1026,8 +1009,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 _capacityDao.update(capacity.getId(), capacity);
             }
         }
-        s_logger.debug("Successfully set Capacity - " + totalOverProvCapacity + " for capacity type - " + capacityType + " , DataCenterId - " +
-                storagePool.getDataCenterId() + ", HostOrPoolId - " + storagePool.getId() + ", PodId " + storagePool.getPodId());
+        s_logger.debug("Successfully set Capacity - " + totalOverProvCapacity + " for capacity type - " + capacityType + " , DataCenterId - " + storagePool.getDataCenterId() + ", HostOrPoolId - "
+                + storagePool.getId() + ", PodId " + storagePool.getPodId());
     }
 
     @Override
@@ -1055,8 +1038,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             hostIds.removeAll(hostIdsToAvoid);
         }
         if (hostIds == null || hostIds.isEmpty()) {
-            throw new StorageUnavailableException("Unable to send command to the pool " + pool.getId() + " due to there is no enabled hosts up in this cluster",
-                    pool.getId());
+            throw new StorageUnavailableException("Unable to send command to the pool " + pool.getId() + " due to there is no enabled hosts up in this cluster", pool.getId());
         }
         for (Long hostId : hostIds) {
             try {
@@ -1064,7 +1046,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 Command[] cmdArray = cmds.toCommands();
                 for (Command cmd : cmdArray) {
                     long targetHostId = _hvGuruMgr.getGuruProcessedCommandTargetHost(hostId, cmd);
-
                     answers.add(_agentMgr.send(targetHostId, cmd));
                 }
                 return new Pair<Long, Answer[]>(hostId, answers.toArray(new Answer[answers.size()]));
@@ -1093,26 +1074,25 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (scanLock.lock(3)) {
                 try {
                     // Cleanup primary storage pools
-                    if (_templateCleanupEnabled) {
+                    if (TemplateCleanupEnabled.value()) {
                         List<StoragePoolVO> storagePools = _storagePoolDao.listAll();
                         for (StoragePoolVO pool : storagePools) {
                             try {
 
                                 List<VMTemplateStoragePoolVO> unusedTemplatesInPool = _tmpltMgr.getUnusedTemplatesInPool(pool);
-                                s_logger.debug("Storage pool garbage collector found " + unusedTemplatesInPool.size() + " templates to clean up in storage pool: " +
-                                        pool.getName());
+                                s_logger.debug("Storage pool garbage collector found " + unusedTemplatesInPool.size() + " templates to clean up in storage pool: " + pool.getName());
                                 for (VMTemplateStoragePoolVO templatePoolVO : unusedTemplatesInPool) {
                                     if (templatePoolVO.getDownloadState() != VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
-                                        s_logger.debug("Storage pool garbage collector is skipping template with ID: " + templatePoolVO.getTemplateId() +
-                                               " on pool " +  templatePoolVO.getPoolId() +  " because it is not completely downloaded.");
+                                        s_logger.debug("Storage pool garbage collector is skipping template with ID: " + templatePoolVO.getTemplateId() + " on pool " + templatePoolVO.getPoolId()
+                                        + " because it is not completely downloaded.");
                                         continue;
                                     }
 
                                     if (!templatePoolVO.getMarkedForGC()) {
                                         templatePoolVO.setMarkedForGC(true);
                                         _vmTemplatePoolDao.update(templatePoolVO.getId(), templatePoolVO);
-                                        s_logger.debug("Storage pool garbage collector has marked template with ID: " + templatePoolVO.getTemplateId() +
-                                               " on pool " +  templatePoolVO.getPoolId() +  " for garbage collection.");
+                                        s_logger.debug("Storage pool garbage collector has marked template with ID: " + templatePoolVO.getTemplateId() + " on pool " + templatePoolVO.getPoolId()
+                                        + " for garbage collection.");
                                         continue;
                                     }
 
@@ -1124,12 +1104,35 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                         }
                     }
 
+                    //destroy snapshots in destroying state in snapshot_store_ref
+                    List<SnapshotDataStoreVO> ssSnapshots = _snapshotStoreDao.listByState(ObjectInDataStoreStateMachine.State.Destroying);
+                    for (SnapshotDataStoreVO ssSnapshotVO : ssSnapshots) {
+                        try {
+                            _snapshotService.deleteSnapshot(snapshotFactory.getSnapshot(ssSnapshotVO.getSnapshotId(), DataStoreRole.Image));
+                        } catch (Exception e) {
+                            s_logger.debug("Failed to delete snapshot: " + ssSnapshotVO.getId() + " from storage");
+                        }
+                    }
+
                     cleanupSecondaryStorage(recurring);
 
-                    List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long) StorageCleanupDelay.value() << 10)));
+                    List<VolumeVO> vols = _volsDao.listVolumesToBeDestroyed(new Date(System.currentTimeMillis() - ((long)StorageCleanupDelay.value() << 10)));
                     for (VolumeVO vol : vols) {
                         try {
-                            volService.expungeVolumeAsync(volFactory.getVolume(vol.getId()));
+                            // If this fails, just log a warning. It's ideal if we clean up the host-side clustered file
+                            // system, but not necessary.
+                            handleManagedStorage(vol);
+                        } catch (Exception e) {
+                            s_logger.warn("Unable to destroy host-side clustered file system " + vol.getUuid(), e);
+                        }
+
+                        try {
+                            VolumeInfo volumeInfo = volFactory.getVolume(vol.getId());
+                            if (volumeInfo != null) {
+                                volService.expungeVolumeAsync(volumeInfo);
+                            } else {
+                                s_logger.debug("Volume " + vol.getUuid() + " is already destroyed");
+                            }
                         } catch (Exception e) {
                             s_logger.warn("Unable to destroy volume " + vol.getUuid(), e);
                         }
@@ -1167,10 +1170,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                             Host host = _hostDao.findById(ep.getId());
                             if (host != null && host.getManagementServerId() != null) {
                                 if (_serverId == host.getManagementServerId().longValue()) {
-                                    if (!volService.destroyVolume(volume.getId())) {
-                                        s_logger.warn("Unable to destroy uploaded volume " + volume.getUuid());
-                                        continue;
-                                    }
+                                    volService.destroyVolume(volume.getId());
                                     // decrement volume resource count
                                     _resourceLimitMgr.decrementResourceCount(volume.getAccountId(), ResourceType.volume, volume.isDisplayVolume());
                                     // expunge volume from secondary if volume is on image store
@@ -1247,6 +1247,59 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
     }
 
+    /**
+     * This method only applies for managed storage.
+     *
+     * For XenServer and vSphere, see if we need to remove an SR or a datastore, then remove the underlying volume
+     * from any applicable access control list (before other code attempts to delete the volume that supports it).
+     *
+     * For KVM, just tell the underlying storage plug-in to remove the volume from any applicable access control list
+     * (before other code attempts to delete the volume that supports it).
+     */
+    private void handleManagedStorage(Volume volume) {
+        Long instanceId = volume.getInstanceId();
+
+        if (instanceId != null) {
+            StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
+
+            if (storagePool != null && storagePool.isManaged()) {
+                VMInstanceVO vmInstanceVO = _vmInstanceDao.findById(instanceId);
+
+                Long lastHostId = vmInstanceVO.getLastHostId();
+
+                if (lastHostId != null) {
+                    HostVO host = _hostDao.findById(lastHostId);
+                    ClusterVO cluster = _clusterDao.findById(host.getClusterId());
+                    VolumeInfo volumeInfo = volFactory.getVolume(volume.getId());
+
+                    if (cluster.getHypervisorType() == HypervisorType.KVM) {
+                        volService.revokeAccess(volumeInfo, host, volumeInfo.getDataStore());
+                    } else {
+                        DataTO volTO = volFactory.getVolume(volume.getId()).getTO();
+                        DiskTO disk = new DiskTO(volTO, volume.getDeviceId(), volume.getPath(), volume.getVolumeType());
+
+                        DettachCommand cmd = new DettachCommand(disk, null);
+
+                        cmd.setManaged(true);
+
+                        cmd.setStorageHost(storagePool.getHostAddress());
+                        cmd.setStoragePort(storagePool.getPort());
+
+                        cmd.set_iScsiName(volume.get_iScsiName());
+
+                        Answer answer = _agentMgr.easySend(lastHostId, cmd);
+
+                        if (answer != null && answer.getResult()) {
+                            volService.revokeAccess(volumeInfo, host, volumeInfo.getDataStore());
+                        } else {
+                            s_logger.warn("Unable to remove host-side clustered file system for the following volume: " + volume.getUuid());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     @DB
     List<Long> findAllVolumeIdInSnapshotTable(Long storeId) {
         String sql = "SELECT volume_id from snapshots, snapshot_store_ref WHERE snapshots.id = snapshot_store_ref.snapshot_id and store_id=? GROUP BY volume_id";
@@ -1301,8 +1354,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 try {
                     long storeId = store.getId();
                     List<TemplateDataStoreVO> destroyedTemplateStoreVOs = _templateStoreDao.listDestroyed(storeId);
-                    s_logger.debug("Secondary storage garbage collector found " + destroyedTemplateStoreVOs.size() +
-                            " templates to cleanup on template_store_ref for store: " + store.getName());
+                    s_logger.debug("Secondary storage garbage collector found " + destroyedTemplateStoreVOs.size() + " templates to cleanup on template_store_ref for store: " + store.getName());
                     for (TemplateDataStoreVO destroyedTemplateStoreVO : destroyedTemplateStoreVOs) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Deleting template store DB entry: " + destroyedTemplateStoreVO);
@@ -1318,8 +1370,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             for (DataStore store : imageStores) {
                 try {
                     List<SnapshotDataStoreVO> destroyedSnapshotStoreVOs = _snapshotStoreDao.listDestroyed(store.getId());
-                    s_logger.debug("Secondary storage garbage collector found " + destroyedSnapshotStoreVOs.size() +
-                            " snapshots to cleanup on snapshot_store_ref for store: " + store.getName());
+                    s_logger.debug("Secondary storage garbage collector found " + destroyedSnapshotStoreVOs.size() + " snapshots to cleanup on snapshot_store_ref for store: " + store.getName());
                     for (SnapshotDataStoreVO destroyedSnapshotStoreVO : destroyedSnapshotStoreVOs) {
                         // check if this snapshot has child
                         SnapshotInfo snap = snapshotFactory.getSnapshot(destroyedSnapshotStoreVO.getSnapshotId(), store);
@@ -1350,8 +1401,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             for (DataStore store : imageStores) {
                 try {
                     List<VolumeDataStoreVO> destroyedStoreVOs = _volumeStoreDao.listDestroyed(store.getId());
-                    s_logger.debug("Secondary storage garbage collector found " + destroyedStoreVOs.size() + " volumes to cleanup on volume_store_ref for store: " +
-                            store.getName());
+                    s_logger.debug("Secondary storage garbage collector found " + destroyedStoreVOs.size() + " volumes to cleanup on volume_store_ref for store: " + store.getName());
                     for (VolumeDataStoreVO destroyedStoreVO : destroyedStoreVOs) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Deleting volume store DB entry: " + destroyedStoreVO);
@@ -1393,8 +1443,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         if (!primaryStorage.getStatus().equals(StoragePoolStatus.Up) && !primaryStorage.getStatus().equals(StoragePoolStatus.ErrorInMaintenance)) {
-            throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" +
-                    primaryStorage.getStatus().toString());
+            throw new InvalidParameterValueException("Primary storage with id " + primaryStorageId + " is not ready for migration, as the status is:" + primaryStorage.getStatus().toString());
         }
 
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
@@ -1420,8 +1469,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         if (primaryStorage.getStatus().equals(StoragePoolStatus.Up) || primaryStorage.getStatus().equals(StoragePoolStatus.PrepareForMaintenance)) {
-            throw new StorageUnavailableException("Primary storage with id " + primaryStorageId + " is not ready to complete migration, as the status is:" +
-                    primaryStorage.getStatus().toString(), primaryStorageId);
+            throw new StorageUnavailableException("Primary storage with id " + primaryStorageId + " is not ready to complete migration, as the status is:" + primaryStorage.getStatus().toString(),
+                    primaryStorageId);
         }
 
         DataStoreProvider provider = _dataStoreProviderMgr.getDataStoreProvider(primaryStorage.getStorageProviderName());
@@ -1431,7 +1480,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         return (PrimaryDataStoreInfo)_dataStoreMgr.getDataStore(primaryStorage.getId(), DataStoreRole.Primary);
     }
-
 
     protected class StorageGarbageCollector extends ManagedContextRunnable {
 
@@ -1467,9 +1515,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     for (Long poolId : poolIds) {
                         StoragePoolVO pool = _storagePoolDao.findById(poolId);
                         // check if pool is in an inconsistent state
-                        if (pool != null &&
-                                (pool.getStatus().equals(StoragePoolStatus.ErrorInMaintenance) || pool.getStatus().equals(StoragePoolStatus.PrepareForMaintenance) || pool.getStatus()
-                                        .equals(StoragePoolStatus.CancelMaintenance))) {
+                        if (pool != null && (pool.getStatus().equals(StoragePoolStatus.ErrorInMaintenance) || pool.getStatus().equals(StoragePoolStatus.PrepareForMaintenance)
+                                || pool.getStatus().equals(StoragePoolStatus.CancelMaintenance))) {
                             _storagePoolWorkDao.removePendingJobsOnMsRestart(vo.getMsid(), poolId);
                             pool.setStatus(StoragePoolStatus.ErrorInMaintenance);
                             _storagePoolDao.update(poolId, pool);
@@ -1658,6 +1705,11 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     private boolean checkUsagedSpace(StoragePool pool) {
+        // Managed storage does not currently deal with accounting for physically used space (only provisioned space). Just return true if "pool" is managed.
+        if (pool.isManaged()) {
+            return true;
+        }
+
         StatsCollector sc = StatsCollector.getInstance();
         double storageUsedThreshold = CapacityManager.StorageCapacityDisableThreshold.valueIn(pool.getDataCenterId());
         if (sc != null) {
@@ -1669,13 +1721,13 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             if (stats != null) {
                 double usedPercentage = ((double)stats.getByteUsed() / (double)totalSize);
                 if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Checking pool " + pool.getId() + " for storage, totalSize: " + pool.getCapacityBytes() + ", usedBytes: " + stats.getByteUsed() +
-                            ", usedPct: " + usedPercentage + ", disable threshold: " + storageUsedThreshold);
+                    s_logger.debug("Checking pool " + pool.getId() + " for storage, totalSize: " + pool.getCapacityBytes() + ", usedBytes: " + stats.getByteUsed() + ", usedPct: " + usedPercentage
+                            + ", disable threshold: " + storageUsedThreshold);
                 }
                 if (usedPercentage >= storageUsedThreshold) {
                     if (s_logger.isDebugEnabled()) {
-                        s_logger.debug("Insufficient space on pool: " + pool.getId() + " since its usage percentage: " + usedPercentage +
-                                " has crossed the pool.storage.capacity.disablethreshold: " + storageUsedThreshold);
+                        s_logger.debug("Insufficient space on pool: " + pool.getId() + " since its usage percentage: " + usedPercentage + " has crossed the pool.storage.capacity.disablethreshold: "
+                                + storageUsedThreshold);
                     }
                     return false;
                 }
@@ -1733,9 +1785,10 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         // allocated space includes templates
-        if(s_logger.isDebugEnabled()) {
+        if (s_logger.isDebugEnabled()) {
             s_logger.debug("Destination pool id: " + pool.getId());
         }
+
         StoragePoolVO poolVO = _storagePoolDao.findById(pool.getId());
         long allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, null);
         long totalAskingSize = 0;
@@ -1763,68 +1816,99 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                     allocatedSizeWithTemplate = _capacityMgr.getAllocatedPoolCapacity(poolVO, tmpl);
                 }
             }
-            // A ready state volume is already allocated in a pool. so the asking size is zero for it.
-            // In case the volume is moving across pools or is not ready yet, the asking size has to be computed
+
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug("pool id for the volume with id: " + volumeVO.getId() + " is " + volumeVO.getPoolId());
+                s_logger.debug("Pool ID for the volume with ID " + volumeVO.getId() + " is " + volumeVO.getPoolId());
             }
+
+            // A ready-state volume is already allocated in a pool, so the asking size is zero for it.
+            // In case the volume is moving across pools or is not ready yet, the asking size has to be computed.
             if ((volumeVO.getState() != Volume.State.Ready) || (volumeVO.getPoolId() != pool.getId())) {
-                if (ScopeType.ZONE.equals(poolVO.getScope()) && volumeVO.getTemplateId() != null) {
-                    VMTemplateVO tmpl = _templateDao.findByIdIncludingRemoved(volumeVO.getTemplateId());
+                totalAskingSize += getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeVO, poolVO);
 
-                    if (tmpl != null && !ImageFormat.ISO.equals(tmpl.getFormat())) {
-                        // Storage plug-ins for zone-wide primary storage can be designed in such a way as to store a template on the
-                        // primary storage once and make use of it in different clusters (via cloning).
-                        // This next call leads to CloudStack asking how many more bytes it will need for the template (if the template is
-                        // already stored on the primary storage, then the answer is 0).
-
-                        if (clusterId != null && _clusterDao.getSupportsResigning(clusterId)) {
-                            totalAskingSize += getBytesRequiredForTemplate(tmpl, pool);
-                        }
-                    }
-                }
+                totalAskingSize += getAskingSizeForTemplateBasedOnClusterAndStoragePool(volumeVO.getTemplateId(), clusterId, poolVO);
             }
         }
 
         long totalOverProvCapacity;
-        if (pool.getPoolType() == StoragePoolType.NetworkFilesystem || pool.getPoolType() == StoragePoolType.VMFS || pool.getPoolType() == StoragePoolType.Filesystem) {
+
+        if (pool.getPoolType().supportsOverProvisioning()) {
             BigDecimal overProvFactor = getStorageOverProvisioningFactor(pool.getId());
             totalOverProvCapacity = overProvFactor.multiply(new BigDecimal(pool.getCapacityBytes())).longValue();
-            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with overprovisioning factor "
-                    + overProvFactor.toString());
+
+            s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString() + " with overprovisioning factor " + overProvFactor.toString());
             s_logger.debug("Total over provisioned capacity calculated is " + overProvFactor + " * " + pool.getCapacityBytes());
         } else {
             totalOverProvCapacity = pool.getCapacityBytes();
+
             s_logger.debug("Found storage pool " + poolVO.getName() + " of type " + pool.getPoolType().toString());
         }
 
-        s_logger.debug("Total capacity of the pool " + poolVO.getName() + " id: " + pool.getId() + " is " + totalOverProvCapacity);
+        s_logger.debug("Total capacity of the pool " + poolVO.getName() + " with ID " + pool.getId() + " is " + totalOverProvCapacity);
+
         double storageAllocatedThreshold = CapacityManager.StorageAllocatedCapacityDisableThreshold.valueIn(pool.getDataCenterId());
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Checking pool: " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize : " + totalOverProvCapacity +
-                    ", totalAllocatedSize : " + allocatedSizeWithTemplate + ", askingSize : " + totalAskingSize + ", allocated disable threshold: " +
-                    storageAllocatedThreshold);
-        }
+
+        s_logger.debug("Checking pool: " + pool.getId() + " for volume allocation " + volumes.toString() + ", maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : "
+                + allocatedSizeWithTemplate + ", askingSize : " + totalAskingSize + ", allocated disable threshold: " + storageAllocatedThreshold);
 
         double usedPercentage = (allocatedSizeWithTemplate + totalAskingSize) / (double)(totalOverProvCapacity);
+
         if (usedPercentage > storageAllocatedThreshold) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for volume allocation: " + volumes.toString() +
-                        " since its allocated percentage: " + usedPercentage + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " +
-                        storageAllocatedThreshold + ", skipping this pool");
-            }
+            s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for volume allocation: " + volumes.toString() + " since its allocated percentage: " + usedPercentage
+                    + " has crossed the allocated pool.storage.allocated.capacity.disablethreshold: " + storageAllocatedThreshold + ", skipping this pool");
             return false;
         }
 
         if (totalOverProvCapacity < (allocatedSizeWithTemplate + totalAskingSize)) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for volume allocation: " + volumes.toString() +
-                        ", not enough storage, maxSize : " + totalOverProvCapacity + ", totalAllocatedSize : " + allocatedSizeWithTemplate + ", askingSize : " +
-                        totalAskingSize);
-            }
+            s_logger.debug("Insufficient un-allocated capacity on: " + pool.getId() + " for volume allocation: " + volumes.toString() + ", not enough storage, maxSize : " + totalOverProvCapacity
+                    + ", totalAllocatedSize : " + allocatedSizeWithTemplate + ", askingSize : " + totalAskingSize);
             return false;
         }
+
         return true;
+    }
+
+    /**
+     * Storage plug-ins for managed storage can be designed in such a way as to store a template on the primary storage once and
+     * make use of it via storage-side cloning.
+     *
+     * This method determines how many more bytes it will need for the template (if the template is already stored on the primary storage,
+     * then the answer is 0).
+     */
+    private long getAskingSizeForTemplateBasedOnClusterAndStoragePool(Long templateId, Long clusterId, StoragePoolVO storagePoolVO) {
+        if (templateId == null || clusterId == null || storagePoolVO == null || !storagePoolVO.isManaged()) {
+            return 0;
+        }
+
+        VMTemplateVO tmpl = _templateDao.findByIdIncludingRemoved(templateId);
+
+        if (tmpl == null || ImageFormat.ISO.equals(tmpl.getFormat())) {
+            return 0;
+        }
+
+        HypervisorType hypervisorType = tmpl.getHypervisorType();
+
+        // The getSupportsResigning method is applicable for XenServer as a UUID-resigning patch may or may not be installed on those hypervisor hosts.
+        if (_clusterDao.getSupportsResigning(clusterId) || HypervisorType.VMware.equals(hypervisorType) || HypervisorType.KVM.equals(hypervisorType)) {
+            return getBytesRequiredForTemplate(tmpl, storagePoolVO);
+        }
+
+        return 0;
+    }
+
+    private long getDataObjectSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
+        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
+        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
+
+        if (storeDriver instanceof PrimaryDataStoreDriver) {
+            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
+
+            VolumeInfo volumeInfo = volFactory.getVolume(volume.getId());
+
+            return primaryStoreDriver.getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeInfo, pool);
+        }
+
+        return volume.getSize();
     }
 
     private DiskOfferingVO getDiskOfferingVO(Volume volume) {
@@ -1843,21 +1927,6 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         }
 
         return null;
-    }
-
-    private long getDataObjectSizeIncludingHypervisorSnapshotReserve(Volume volume, StoragePool pool) {
-        DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(pool.getStorageProviderName());
-        DataStoreDriver storeDriver = storeProvider.getDataStoreDriver();
-
-        if (storeDriver instanceof PrimaryDataStoreDriver) {
-            PrimaryDataStoreDriver primaryStoreDriver = (PrimaryDataStoreDriver)storeDriver;
-
-            VolumeInfo volumeInfo = volFactory.getVolume(volume.getId());
-
-            return primaryStoreDriver.getDataObjectSizeIncludingHypervisorSnapshotReserve(volumeInfo, pool);
-        }
-
-        return volume.getSize();
     }
 
     private long getBytesRequiredForTemplate(VMTemplateVO tmpl, StoragePool pool) {
@@ -1906,8 +1975,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public ImageStore discoverImageStore(String name, String url, String providerName, Long zoneId, Map details) throws IllegalArgumentException, DiscoveryException,
-    InvalidParameterValueException {
+    public ImageStore discoverImageStore(String name, String url, String providerName, Long zoneId, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         DataStoreProvider storeProvider = _dataStoreProviderMgr.getDataStoreProvider(providerName);
 
         if (storeProvider == null) {
@@ -1955,10 +2023,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             }
 
             Account account = CallContext.current().getCallingAccount();
-            if (Grouping.AllocationState.Disabled == zone.getAllocationState()
-                    && !_accountMgr.isRootAdmin(account.getId())) {
-                PermissionDeniedException ex = new PermissionDeniedException(
-                        "Cannot perform this operation, Zone with specified id is currently disabled");
+            if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
+                PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone with specified id is currently disabled");
                 ex.addProxyObject(zone.getUuid(), "dcId");
                 throw ex;
             }
@@ -1979,7 +2045,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         try {
             store = lifeCycle.initialize(params);
         } catch (Exception e) {
-            if(s_logger.isDebugEnabled()) {
+            if (s_logger.isDebugEnabled()) {
                 s_logger.debug("Failed to add data store: " + e.getMessage(), e);
             }
             throw new CloudRuntimeException("Failed to add data store: " + e.getMessage(), e);
@@ -2005,8 +2071,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public ImageStore migrateToObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException,
-    InvalidParameterValueException {
+    public ImageStore migrateToObjectStore(String name, String url, String providerName, Map details) throws IllegalArgumentException, DiscoveryException, InvalidParameterValueException {
         // check if current cloud is ready to migrate, we only support cloud with only NFS secondary storages
         List<ImageStoreVO> imgStores = _imageStoreDao.listImageStores();
         List<ImageStoreVO> nfsStores = new ArrayList<ImageStoreVO>();
@@ -2160,8 +2225,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         Account account = CallContext.current().getCallingAccount();
         if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !_accountMgr.isRootAdmin(account.getId())) {
-            PermissionDeniedException ex = new PermissionDeniedException(
-                    "Cannot perform this operation, Zone with specified id is currently disabled");
+            PermissionDeniedException ex = new PermissionDeniedException("Cannot perform this operation, Zone with specified id is currently disabled");
             ex.addProxyObject(zone.getUuid(), "dcId");
             throw ex;
         }
@@ -2180,8 +2244,8 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
         try {
             store = lifeCycle.initialize(params);
         } catch (Exception e) {
-            s_logger.debug("Failed to add data store: "+e.getMessage(), e);
-            throw new CloudRuntimeException("Failed to add data store: "+e.getMessage(), e);
+            s_logger.debug("Failed to add data store: " + e.getMessage(), e);
+            throw new CloudRuntimeException("Failed to add data store: " + e.getMessage(), e);
         }
 
         return (ImageStore)_dataStoreMgr.getDataStore(store.getId(), DataStoreRole.ImageCache);
@@ -2250,18 +2314,18 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     }
 
     @Override
-    public void cleanupDownloadUrls(){
+    public void cleanupDownloadUrls() {
 
         // Cleanup expired volume URLs
         List<VolumeDataStoreVO> volumesOnImageStoreList = _volumeStoreDao.listVolumeDownloadUrls();
         HashSet<Long> expiredVolumeIds = new HashSet<Long>();
         HashSet<Long> activeVolumeIds = new HashSet<Long>();
-        for(VolumeDataStoreVO volumeOnImageStore : volumesOnImageStoreList){
+        for (VolumeDataStoreVO volumeOnImageStore : volumesOnImageStoreList) {
 
             long volumeId = volumeOnImageStore.getVolumeId();
             try {
                 long downloadUrlCurrentAgeInSecs = DateUtil.getTimeDifference(DateUtil.now(), volumeOnImageStore.getExtractUrlCreated());
-                if(downloadUrlCurrentAgeInSecs < _downloadUrlExpirationInterval){  // URL hasnt expired yet
+                if (downloadUrlCurrentAgeInSecs < _downloadUrlExpirationInterval) {  // URL hasnt expired yet
                     activeVolumeIds.add(volumeId);
                     continue;
                 }
@@ -2269,19 +2333,17 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
                 s_logger.debug("Removing download url " + volumeOnImageStore.getExtractUrl() + " for volume id " + volumeId);
 
                 // Remove it from image store
-                ImageStoreEntity secStore = (ImageStoreEntity) _dataStoreMgr.getDataStore(volumeOnImageStore.getDataStoreId(), DataStoreRole.Image);
+                ImageStoreEntity secStore = (ImageStoreEntity)_dataStoreMgr.getDataStore(volumeOnImageStore.getDataStoreId(), DataStoreRole.Image);
                 secStore.deleteExtractUrl(volumeOnImageStore.getInstallPath(), volumeOnImageStore.getExtractUrl(), Upload.Type.VOLUME);
 
-                 // Now expunge it from DB since this entry was created only for download purpose
+                // Now expunge it from DB since this entry was created only for download purpose
                 _volumeStoreDao.expunge(volumeOnImageStore.getId());
-            }catch(Throwable th){
-                s_logger.warn("Caught exception while deleting download url " +volumeOnImageStore.getExtractUrl() +
-                        " for volume id " + volumeOnImageStore.getVolumeId(), th);
+            } catch (Throwable th) {
+                s_logger.warn("Caught exception while deleting download url " + volumeOnImageStore.getExtractUrl() + " for volume id " + volumeOnImageStore.getVolumeId(), th);
             }
         }
-        for(Long volumeId : expiredVolumeIds)
-        {
-            if(activeVolumeIds.contains(volumeId)) {
+        for (Long volumeId : expiredVolumeIds) {
+            if (activeVolumeIds.contains(volumeId)) {
                 continue;
             }
             Volume volume = _volumeDao.findById(volumeId);
@@ -2292,31 +2354,28 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
         // Cleanup expired template URLs
         List<TemplateDataStoreVO> templatesOnImageStoreList = _templateStoreDao.listTemplateDownloadUrls();
-        for(TemplateDataStoreVO templateOnImageStore : templatesOnImageStoreList){
+        for (TemplateDataStoreVO templateOnImageStore : templatesOnImageStoreList) {
 
             try {
                 long downloadUrlCurrentAgeInSecs = DateUtil.getTimeDifference(DateUtil.now(), templateOnImageStore.getExtractUrlCreated());
-                if(downloadUrlCurrentAgeInSecs < _downloadUrlExpirationInterval){  // URL hasnt expired yet
+                if (downloadUrlCurrentAgeInSecs < _downloadUrlExpirationInterval) {  // URL hasnt expired yet
                     continue;
                 }
 
                 s_logger.debug("Removing download url " + templateOnImageStore.getExtractUrl() + " for template id " + templateOnImageStore.getTemplateId());
 
                 // Remove it from image store
-                ImageStoreEntity secStore = (ImageStoreEntity) _dataStoreMgr.getDataStore(templateOnImageStore.getDataStoreId(), DataStoreRole.Image);
+                ImageStoreEntity secStore = (ImageStoreEntity)_dataStoreMgr.getDataStore(templateOnImageStore.getDataStoreId(), DataStoreRole.Image);
                 secStore.deleteExtractUrl(templateOnImageStore.getInstallPath(), templateOnImageStore.getExtractUrl(), Upload.Type.TEMPLATE);
 
                 // Now remove download details from DB.
                 templateOnImageStore.setExtractUrl(null);
                 templateOnImageStore.setExtractUrlCreated(null);
                 _templateStoreDao.update(templateOnImageStore.getId(), templateOnImageStore);
-            }catch(Throwable th){
-                s_logger.warn("caught exception while deleting download url " +templateOnImageStore.getExtractUrl() +
-                        " for template id " +templateOnImageStore.getTemplateId(), th);
+            } catch (Throwable th) {
+                s_logger.warn("caught exception while deleting download url " + templateOnImageStore.getExtractUrl() + " for template id " + templateOnImageStore.getTemplateId(), th);
             }
         }
-
-
     }
 
     // get bytesReadRate from service_offering, disk_offering and vm.disk.throttling.bytes_read_rate
@@ -2390,7 +2449,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {StorageCleanupInterval, StorageCleanupDelay, StorageCleanupEnabled};
+        return new ConfigKey<?>[] {StorageCleanupInterval, StorageCleanupDelay, StorageCleanupEnabled, TemplateCleanupEnabled};
     }
 
     @Override
@@ -2405,7 +2464,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
     public DiskTO getDiskWithThrottling(final DataTO volTO, final Volume.Type volumeType, final long deviceId, final String path, final long offeringId, final long diskOfferingId) {
         DiskTO disk = null;
         if (volTO != null && volTO instanceof VolumeObjectTO) {
-            VolumeObjectTO volumeTO = (VolumeObjectTO) volTO;
+            VolumeObjectTO volumeTO = (VolumeObjectTO)volTO;
             ServiceOffering offering = _entityMgr.findById(ServiceOffering.class, offeringId);
             DiskOffering diskOffering = _entityMgr.findById(DiskOffering.class, diskOfferingId);
             if (volumeType == Volume.Type.ROOT) {

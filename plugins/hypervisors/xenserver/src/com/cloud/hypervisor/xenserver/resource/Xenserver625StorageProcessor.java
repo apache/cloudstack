@@ -18,25 +18,6 @@
  */
 package com.cloud.hypervisor.xenserver.resource;
 
-import java.io.File;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-
-import org.apache.cloudstack.storage.command.CopyCmdAnswer;
-import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
-import org.apache.cloudstack.storage.to.SnapshotObjectTO;
-import org.apache.cloudstack.storage.to.TemplateObjectTO;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.apache.xmlrpc.XmlRpcException;
-
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.to.DataObjectType;
 import com.cloud.agent.api.to.DataStoreTO;
@@ -58,6 +39,24 @@ import com.xensource.xenapi.Types;
 import com.xensource.xenapi.Types.BadServerResponse;
 import com.xensource.xenapi.Types.XenAPIException;
 import com.xensource.xenapi.VDI;
+import org.apache.cloudstack.storage.command.CopyCmdAnswer;
+import org.apache.cloudstack.storage.command.CopyCommand;
+import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.SnapshotObjectTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.apache.xmlrpc.XmlRpcException;
+
+import java.io.File;
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
     private static final Logger s_logger = Logger.getLogger(XenServerStorageProcessor.class);
@@ -414,7 +413,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
 
         final SnapshotObjectTO snapshotTO = (SnapshotObjectTO) srcData;
         final SnapshotObjectTO snapshotOnImage = (SnapshotObjectTO) destData;
-        final String snapshotUuid = snapshotTO.getPath();
+        String snapshotUuid = snapshotTO.getPath();
 
         final String prevBackupUuid = snapshotOnImage.getParentSnapshotPath();
         final String prevSnapshotUuid = snapshotTO.getParentSnapshotPath();
@@ -422,10 +421,35 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         // By default assume failure
         String details = null;
         String snapshotBackupUuid = null;
-        final boolean fullbackup = Boolean.parseBoolean(options.get("fullSnapshot"));
+        boolean fullbackup = Boolean.parseBoolean(options.get("fullSnapshot"));
         Long physicalSize = null;
         try {
-            final SR primaryStorageSR = hypervisorResource.getSRByNameLabelandHost(conn, primaryStorageNameLabel);
+
+            SR primaryStorageSR = null;
+            if (primaryStore.isManaged()) {
+                fullbackup = true; // currently, managed storage only supports full backup
+
+                final Map<String, String> srcDetails = cmd.getOptions();
+
+                final String iScsiName = srcDetails.get(DiskTO.IQN);
+                final String storageHost = srcDetails.get(DiskTO.STORAGE_HOST);
+                final String chapInitiatorUsername = srcDetails.get(DiskTO.CHAP_INITIATOR_USERNAME);
+                final String chapInitiatorSecret = srcDetails.get(DiskTO.CHAP_INITIATOR_SECRET);
+                final String srType = CitrixResourceBase.SRType.LVMOISCSI.toString();
+
+                primaryStorageSR = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName,
+                        chapInitiatorUsername, chapInitiatorSecret, false, srType, true);
+
+                final VDI srcVdi = primaryStorageSR.getVDIs(conn).iterator().next();
+                if (srcVdi == null) {
+                    throw new InternalErrorException("Could not Find a VDI on the SR: " + primaryStorageSR.getNameLabel(conn));
+                }
+                snapshotUuid = srcVdi.getUuid(conn);
+
+            } else {
+                primaryStorageSR = hypervisorResource.getSRByNameLabelandHost(conn, primaryStorageNameLabel);
+            }
+
             if (primaryStorageSR == null) {
                 throw new InternalErrorException("Could not backup snapshot because the primary Storage SR could not be created from the name label: " + primaryStorageNameLabel);
             }
@@ -433,7 +457,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final Boolean isISCSI = IsISCSI(primaryStorageSR.getType(conn));
 
             final VDI snapshotVdi = getVDIbyUuid(conn, snapshotUuid);
-            final String snapshotPaUuid = null;
+            final String snapshotPaUuid = snapshotVdi.getUuid(conn);
 
             final URI uri = new URI(secondaryStorageUrl);
             final String secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
@@ -496,7 +520,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                         // finalPath = folder + File.separator +
                         // snapshotBackupUuid;
                     } else {
-                        finalPath = folder + File.separator + snapshotBackupUuid;
+                        finalPath = folder + File.separator + snapshotBackupUuid + ".vhd";
                     }
 
                 } finally {
@@ -509,6 +533,10 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     }
                     if (snapshotSr != null) {
                         hypervisorResource.removeSR(conn, snapshotSr);
+                    }
+
+                    if (primaryStore.isManaged()) {
+                        hypervisorResource.removeSR(conn, primaryStorageSR);
                     }
                 }
             } else {
@@ -529,9 +557,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
                     final String[] tmp = result.split("#");
                     snapshotBackupUuid = tmp[0];
                     physicalSize = Long.parseLong(tmp[1]);
-                    finalPath = folder + File.separator + snapshotBackupUuid;
+                    finalPath = folder + File.separator + snapshotBackupUuid + ".vhd";
                 }
             }
+
+            // remove every snapshot except this one from primary storage
             final String volumeUuid = snapshotTO.getVolume().getPath();
             destroySnapshotOnPrimaryStorageExceptThis(conn, volumeUuid, snapshotUuid);
 
@@ -547,12 +577,13 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             s_logger.info("New snapshot physical utilization: "+physicalSize);
 
             return new CopyCmdAnswer(newSnapshot);
-        } catch (final Types.XenAPIException e) {
-            details = "BackupSnapshot Failed due to " + e.toString();
-            s_logger.warn(details, e);
         } catch (final Exception e) {
-            details = "BackupSnapshot Failed due to " + e.getMessage();
+            final String reason = e instanceof Types.XenAPIException ? e.toString() : e.getMessage();
+            details = "BackupSnapshot Failed due to " + reason;
             s_logger.warn(details, e);
+
+            // remove last bad primary snapshot when exception happens
+            destroySnapshotOnPrimaryStorage(conn, snapshotUuid);
         }
 
         return new CopyCmdAnswer(details);
@@ -689,12 +720,31 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         }
         SR srcSr = null;
         VDI destVdi = null;
+
+        SR primaryStorageSR = null;
+
         try {
-            final SR primaryStorageSR = hypervisorResource.getSRByNameLabelandHost(conn, primaryStorageNameLabel);
+            if (pool.isManaged()) {
+                Map<String,String> destDetails = cmd.getOptions2();
+
+                final String iScsiName = destDetails.get(DiskTO.IQN);
+                final String storageHost = destDetails.get(DiskTO.STORAGE_HOST);
+                final String chapInitiatorUsername = destDetails.get(DiskTO.CHAP_INITIATOR_USERNAME);
+                final String chapInitiatorSecret = destDetails.get(DiskTO.CHAP_INITIATOR_SECRET);
+                final String srType = CitrixResourceBase.SRType.LVMOISCSI.toString();
+
+                primaryStorageSR = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName,
+                        chapInitiatorUsername, chapInitiatorSecret, false, srType, true);
+
+            } else {
+                primaryStorageSR = hypervisorResource.getSRByNameLabelandHost(conn, primaryStorageNameLabel);
+            }
+
             if (primaryStorageSR == null) {
                 throw new InternalErrorException("Could not create volume from snapshot because the primary Storage SR could not be created from the name label: "
                         + primaryStorageNameLabel);
             }
+
             final String nameLabel = "cloud-" + UUID.randomUUID().toString();
             destVdi = createVdi(conn, nameLabel, primaryStorageSR, volume.getSize());
             volumeUUID = destVdi.getUuid(conn);
@@ -734,6 +784,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final VolumeObjectTO newVol = new VolumeObjectTO();
             newVol.setPath(volumeUUID);
             newVol.setSize(vdir.virtualSize);
+
             return new CopyCmdAnswer(newVol);
         } catch (final Types.XenAPIException e) {
             details += " due to " + e.toString();
@@ -745,6 +796,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             if (srcSr != null) {
                 hypervisorResource.skipOrRemoveSR(conn, srcSr);
             }
+
+            if (pool.isManaged()) {
+                hypervisorResource.removeSR(conn, primaryStorageSR);
+            }
+
             if (!result && destVdi != null) {
                 try {
                     destVdi.destroy(conn);
@@ -1024,7 +1080,7 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         }
     }
 
-    public Answer createTemplateFromSnapshot2(final CopyCommand cmd) {
+    private Answer createTemplateFromSnapshot2(final CopyCommand cmd) {
         final Connection conn = hypervisorResource.getConnection();
 
         final SnapshotObjectTO snapshotObjTO = (SnapshotObjectTO) cmd.getSrcTO();
@@ -1034,12 +1090,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             return null;
         }
 
-        NfsTO destStore = null;
-        URI destUri = null;
+        NfsTO destStore;
+        URI destUri;
 
         try {
-            destStore = (NfsTO) templateObjTO.getDataStore();
-
+            destStore = (NfsTO)templateObjTO.getDataStore();
             destUri = new URI(destStore.getUrl());
         } catch (final Exception ex) {
             s_logger.debug("Invalid URI", ex);
@@ -1062,8 +1117,11 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             final String storageHost = srcDetails.get(DiskTO.STORAGE_HOST);
             final String chapInitiatorUsername = srcDetails.get(DiskTO.CHAP_INITIATOR_USERNAME);
             final String chapInitiatorSecret = srcDetails.get(DiskTO.CHAP_INITIATOR_SECRET);
+            String srType;
 
-            srcSr = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, true);
+            srType = CitrixResourceBase.SRType.LVMOISCSI.toString();
+
+            srcSr = hypervisorResource.getIscsiSR(conn, iScsiName, storageHost, iScsiName, chapInitiatorUsername, chapInitiatorSecret, false, srType, true);
 
             final String destNfsPath = destUri.getHost() + ":" + destUri.getPath();
             final String localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(destNfsPath.getBytes());
@@ -1114,13 +1172,6 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
             result = true;
 
             return new CopyCmdAnswer(newTemplate);
-            // } catch (Exception ex) {
-            // s_logger.error("Failed to create a template from a snapshot",
-            // ex);
-            //
-            // return new
-            // CopyCmdAnswer("Failed to create a template from a snapshot: " +
-            // ex.toString());
         } catch (final BadServerResponse e) {
             s_logger.error("Failed to create a template from a snapshot due to incomprehensible server response", e);
 

@@ -26,13 +26,19 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.ca.SetupKeyStoreCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
 import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DownloadProgressCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.command.UploadStatusCommand;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.AttachIsoCommand;
@@ -58,6 +64,8 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.GetStorageStatsCommand;
 import com.cloud.agent.api.GetVmStatsCommand;
 import com.cloud.agent.api.GetVncPortCommand;
+import com.cloud.agent.api.GetVolumeStatsCommand;
+import com.cloud.agent.api.HandleConfigDriveIsoCommand;
 import com.cloud.agent.api.MaintainCommand;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateCommand;
@@ -69,6 +77,7 @@ import com.cloud.agent.api.PlugNicCommand;
 import com.cloud.agent.api.PrepareForMigrationCommand;
 import com.cloud.agent.api.PvlanSetupCommand;
 import com.cloud.agent.api.RebootCommand;
+import com.cloud.agent.api.ReplugNicCommand;
 import com.cloud.agent.api.RevertToVMSnapshotCommand;
 import com.cloud.agent.api.ScaleVmCommand;
 import com.cloud.agent.api.SecStorageFirewallCfgCommand;
@@ -110,6 +119,8 @@ import com.cloud.agent.api.storage.ListVolumeCommand;
 import com.cloud.agent.api.storage.PrimaryStorageDownloadCommand;
 import com.cloud.api.commands.CleanupSimulatorMockCmd;
 import com.cloud.api.commands.ConfigureSimulatorCmd;
+import com.cloud.api.commands.ConfigureSimulatorHAProviderState;
+import com.cloud.api.commands.ListSimulatorHAStateTransitions;
 import com.cloud.api.commands.QuerySimulatorMockCmd;
 import com.cloud.resource.SimulatorStorageProcessor;
 import com.cloud.serializer.GsonHelper;
@@ -127,8 +138,6 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine.PowerState;
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
 
 @Component
 public class SimulatorManagerImpl extends ManagerBase implements SimulatorManager, PluggableService {
@@ -191,12 +200,15 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
         cmdList.add(ConfigureSimulatorCmd.class);
         cmdList.add(QuerySimulatorMockCmd.class);
         cmdList.add(CleanupSimulatorMockCmd.class);
+        cmdList.add(ConfigureSimulatorHAProviderState.class);
+        cmdList.add(ListSimulatorHAStateTransitions.class);
         return cmdList;
     }
 
     @DB
     @Override
     public Answer simulate(final Command cmd, final String hostGuid) {
+        s_logger.debug("Simulate command " + cmd);
         Answer answer = null;
         Exception exception = null;
         TransactionLegacy txn = TransactionLegacy.open(TransactionLegacy.SIMULATOR_DB);
@@ -280,6 +292,10 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockAgentMgr.checkHealth((CheckHealthCommand)cmd);
                 } else if (cmd instanceof PingTestCommand) {
                     answer = _mockAgentMgr.pingTest((PingTestCommand)cmd);
+                } else if (cmd instanceof SetupKeyStoreCommand) {
+                    answer = _mockAgentMgr.setupKeyStore((SetupKeyStoreCommand)cmd);
+                } else if (cmd instanceof SetupCertificateCommand) {
+                    answer = _mockAgentMgr.setupCertificate((SetupCertificateCommand)cmd);
                 } else if (cmd instanceof PrepareForMigrationCommand) {
                     answer = _mockVmMgr.prepareForMigrate((PrepareForMigrationCommand)cmd);
                 } else if (cmd instanceof MigrateCommand) {
@@ -350,6 +366,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockStorageMgr.Download((DownloadCommand)cmd);
                 } else if (cmd instanceof GetStorageStatsCommand) {
                     answer = _mockStorageMgr.GetStorageStats((GetStorageStatsCommand)cmd);
+                } else if (cmd instanceof GetVolumeStatsCommand) {
+                    answer = _mockStorageMgr.getVolumeStats((GetVolumeStatsCommand)cmd);
                 } else if (cmd instanceof ManageSnapshotCommand) {
                     answer = _mockStorageMgr.ManageSnapshot((ManageSnapshotCommand)cmd);
                 } else if (cmd instanceof BackupSnapshotCommand) {
@@ -382,6 +400,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = _mockNetworkMgr.plugNic((PlugNicCommand)cmd);
                 } else if (cmd instanceof UnPlugNicCommand) {
                     answer = _mockNetworkMgr.unplugNic((UnPlugNicCommand)cmd);
+                } else if (cmd instanceof ReplugNicCommand) {
+                    answer = _mockNetworkMgr.replugNic((ReplugNicCommand)cmd);
                 } else if (cmd instanceof IpAssocVpcCommand) {
                     answer = _mockNetworkMgr.ipAssoc((IpAssocVpcCommand)cmd);
                 } else if (cmd instanceof SetSourceNatCommand) {
@@ -416,8 +436,14 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     answer = storageHandler.handleStorageCommands((StorageSubSystemCommand)cmd);
                 } else if (cmd instanceof FenceCommand) {
                     answer = _mockVmMgr.fence((FenceCommand)cmd);
-                } else if (cmd instanceof GetRouterAlertsCommand || cmd instanceof VpnUsersCfgCommand || cmd instanceof RemoteAccessVpnCfgCommand || cmd instanceof SetMonitorServiceCommand || cmd instanceof AggregationControlCommand ||
-                        cmd instanceof SecStorageFirewallCfgCommand) {
+                } else if (cmd instanceof HandleConfigDriveIsoCommand) {
+                    answer = _mockStorageMgr.handleConfigDriveIso((HandleConfigDriveIsoCommand)cmd);
+                } else if (cmd instanceof GetRouterAlertsCommand
+                        || cmd instanceof VpnUsersCfgCommand
+                        || cmd instanceof RemoteAccessVpnCfgCommand
+                        || cmd instanceof SetMonitorServiceCommand
+                        || cmd instanceof AggregationControlCommand
+                        || cmd instanceof SecStorageFirewallCfgCommand) {
                     answer = new Answer(cmd);
                 } else {
                     s_logger.error("Simulator does not implement command of type " + cmd.toString());
@@ -431,6 +457,8 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                     _mockConfigDao.update(config.getId(), config);
                 }
             }
+
+            s_logger.debug("Finished simulate command " + cmd);
 
             return answer;
         } catch (final Exception e) {
