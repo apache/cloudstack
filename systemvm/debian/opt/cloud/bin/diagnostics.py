@@ -36,7 +36,7 @@ def run_cmd(command):
         finally:
             print('%s&&' % stdout.strip())
             print('%s&&' % stderr.strip())
-            print('%s' %return_code)
+            print('%s' % return_code)
 
 
 def get_command():
