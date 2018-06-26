@@ -15,7 +15,7 @@
   <parent>
     <groupId>org.apache.cloudstack</groupId>
     <artifactId>cloud-engine</artifactId>
-    <version>4.11.1.0</version>
+    <version>4.11.2-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
   <dependencies>

@@ -27,7 +27,7 @@
 4.11.2-SNAPSHOT        raise RuntimeError("python setuptools is required to build Marvin")
 4.11.2-SNAPSHOT
 4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTVERSION = "4.11.1.0"
+4.11.2-SNAPSHOTVERSION = "4.11.2-SNAPSHOT"
 4.11.2-SNAPSHOT
 4.11.2-SNAPSHOTsetup(name="Marvin",
 4.11.2-SNAPSHOT      version=VERSION,

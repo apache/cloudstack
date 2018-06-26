@@ -23,7 +23,7 @@
 4.11.2-SNAPSHOT  <parent>
 4.11.2-SNAPSHOT    <groupId>org.apache.cloudstack</groupId>
 4.11.2-SNAPSHOT    <artifactId>cloudstack-service-iam</artifactId>
-4.11.2-SNAPSHOT    <version>4.11.1.0</version>
+4.11.2-SNAPSHOT    <version>4.11.2-SNAPSHOT</version>
 4.11.2-SNAPSHOT    <relativePath>../pom.xml</relativePath>
 4.11.2-SNAPSHOT  </parent>
 4.11.2-SNAPSHOT  <dependencies>
