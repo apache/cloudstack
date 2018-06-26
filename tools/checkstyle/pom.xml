@@ -1,44 +1,44 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
-  ~ Licensed to the Apache Software Foundation (ASF) under one
-  ~ or more contributor license agreements.  See the NOTICE file
-  ~ distributed with this work for additional information
-  ~ regarding copyright ownership.  The ASF licenses this file
-  ~ to you under the Apache License, Version 2.0 (the
-  ~ "License"); you may not use this file except in compliance
-  ~ with the License.  You may obtain a copy of the License at
-  ~
-  ~   http://www.apache.org/licenses/LICENSE-2.0
-  ~
-  ~ Unless required by applicable law or agreed to in writing,
-  ~ software distributed under the License is distributed on an
-  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  ~ KIND, either express or implied.  See the License for the
-  ~ specific language governing permissions and limitations
-  ~ under the License.
-  -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-
-    <name>Apache CloudStack Developer Tools - Checkstyle Configuration</name>
-    <groupId>org.apache.cloudstack</groupId>
-    <artifactId>checkstyle</artifactId>
-    <version>4.11.1.0</version>
-
-    <build>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>2.13</version>
-          <executions>
-            <execution>
-              <phase>none</phase>
-            </execution>
-          </executions>
-        </plugin>
-      </plugins>
-    </build>
-
-</project>
+4.11.2-SNAPSHOT<?xml version="1.0" encoding="UTF-8"?>
+4.11.2-SNAPSHOT<!--
+4.11.2-SNAPSHOT  ~ Licensed to the Apache Software Foundation (ASF) under one
+4.11.2-SNAPSHOT  ~ or more contributor license agreements.  See the NOTICE file
+4.11.2-SNAPSHOT  ~ distributed with this work for additional information
+4.11.2-SNAPSHOT  ~ regarding copyright ownership.  The ASF licenses this file
+4.11.2-SNAPSHOT  ~ to you under the Apache License, Version 2.0 (the
+4.11.2-SNAPSHOT  ~ "License"); you may not use this file except in compliance
+4.11.2-SNAPSHOT  ~ with the License.  You may obtain a copy of the License at
+4.11.2-SNAPSHOT  ~
+4.11.2-SNAPSHOT  ~   http://www.apache.org/licenses/LICENSE-2.0
+4.11.2-SNAPSHOT  ~
+4.11.2-SNAPSHOT  ~ Unless required by applicable law or agreed to in writing,
+4.11.2-SNAPSHOT  ~ software distributed under the License is distributed on an
+4.11.2-SNAPSHOT  ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+4.11.2-SNAPSHOT  ~ KIND, either express or implied.  See the License for the
+4.11.2-SNAPSHOT  ~ specific language governing permissions and limitations
+4.11.2-SNAPSHOT  ~ under the License.
+4.11.2-SNAPSHOT  -->
+4.11.2-SNAPSHOT<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+4.11.2-SNAPSHOT         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+4.11.2-SNAPSHOT    <modelVersion>4.0.0</modelVersion>
+4.11.2-SNAPSHOT
+4.11.2-SNAPSHOT    <name>Apache CloudStack Developer Tools - Checkstyle Configuration</name>
+4.11.2-SNAPSHOT    <groupId>org.apache.cloudstack</groupId>
+4.11.2-SNAPSHOT    <artifactId>checkstyle</artifactId>
+4.11.2-SNAPSHOT    <version>4.11.1.0</version>
+4.11.2-SNAPSHOT
+4.11.2-SNAPSHOT    <build>
+4.11.2-SNAPSHOT      <plugins>
+4.11.2-SNAPSHOT        <plugin>
+4.11.2-SNAPSHOT          <groupId>org.apache.maven.plugins</groupId>
+4.11.2-SNAPSHOT          <artifactId>maven-checkstyle-plugin</artifactId>
+4.11.2-SNAPSHOT          <version>2.13</version>
+4.11.2-SNAPSHOT          <executions>
+4.11.2-SNAPSHOT            <execution>
+4.11.2-SNAPSHOT              <phase>none</phase>
+4.11.2-SNAPSHOT            </execution>
+4.11.2-SNAPSHOT          </executions>
+4.11.2-SNAPSHOT        </plugin>
+4.11.2-SNAPSHOT      </plugins>
+4.11.2-SNAPSHOT    </build>
+4.11.2-SNAPSHOT
+4.11.2-SNAPSHOT</project>
