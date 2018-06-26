@@ -258,7 +258,8 @@ class nuageTestCase(cloudstackTestCase):
             address=cls.nuage_vsp_device.hostname,
             user=cls.nuage_vsp_device.username,
             password=cls.nuage_vsp_device.password,
-            version=cls.nuage_vsp_device.apiversion[1] + "." + cls.nuage_vsp_device.apiversion[3]
+            version=cls.nuage_vsp_device.apiversion[1] +
+            "." + cls.nuage_vsp_device.apiversion[3]
         )
         vsd_api_client.new_session()
         cls.vsd = VSDHelpers(vsd_api_client)
@@ -358,7 +359,7 @@ class nuageTestCase(cloudstackTestCase):
 
     # create_Vpc - Creates VPC with the given VPC offering
     @needscleanup
-    def create_Vpc(cls, vpc_offering, cidr='10.1.0.0/16', testdata=None,
+    def create_vpc(cls, vpc_offering, cidr='10.1.0.0/16', testdata=None,
                    account=None, networkDomain=None):
         """Creates VPC with the given VPC offering
         :param vpc_offering: vpc offering
@@ -433,7 +434,8 @@ class nuageTestCase(cloudstackTestCase):
     @needscleanup
     def create_Network(cls, nw_off, gateway="10.1.1.1",
                        netmask="255.255.255.0", vpc=None, acl_list=None,
-                       testdata=None, account=None, vlan=None, externalid=None):
+                       testdata=None, account=None, vlan=None,
+                       externalid=None):
         """Creates Network with the given Network offering
         :param nw_off: Network offering
         :type nw_off: NetworkOffering
@@ -469,7 +471,7 @@ class nuageTestCase(cloudstackTestCase):
                                  vlan=vlan,
                                  externalid=externalid,
                                  vpcid=vpc.id if vpc else cls.vpc.id
-                                 if hasattr(cls, "vpc") else None,
+                                 if hasattr(cls, "vpc") and cls.vpc else None,
                                  aclid=acl_list.id if acl_list else None
                                  )
         cls.debug("Created network with ID - %s" % network.id)
@@ -480,12 +482,14 @@ class nuageTestCase(cloudstackTestCase):
         if not hasattr(nw_off, "id"):
             nw_off = self.create_NetworkOffering(nw_off)
         self.debug("Updating Network with ID - %s" % network.id)
-        network.update(self.api_client,
-                       networkofferingid=nw_off.id,
-                       changecidr=False,
-                       forced=forced
-                       )
+        updated_network =\
+            network.update(self.api_client,
+                           networkofferingid=nw_off.id,
+                           changecidr=False,
+                           forced=forced
+                           )
         self.debug("Updated network with ID - %s" % network.id)
+        return updated_network
 
     # delete_Network - Deletes the given network
     def delete_Network(self, network):
@@ -607,7 +611,8 @@ class nuageTestCase(cloudstackTestCase):
                                            networkid=network.id
                                            if vpc is None else None,
                                            vpcid=vpc.id if vpc else self.vpc.id
-                                           if hasattr(self, "vpc") else None
+                                           if hasattr(self, "vpc") and self.vpc
+                                           else None
                                            )
         self.debug("Associated public IP address - %s with network with ID - "
                    "%s" % (public_ip.ipaddress.ipaddress, network.id))
@@ -700,7 +705,8 @@ class nuageTestCase(cloudstackTestCase):
                                      traffictype=traffic_type
                                      )
 
-    def ssh_into_VM(self, vm, public_ip, reconnect=True, negative_test=False, keypair=None):
+    def ssh_into_VM(self, vm, public_ip, reconnect=True, negative_test=False,
+                    keypair=None):
         """Creates a SSH connection to the VM
 
         :returns: the SSH connection
@@ -720,7 +726,8 @@ class nuageTestCase(cloudstackTestCase):
                 ipaddress=public_ip.ipaddress.ipaddress,
                 reconnect=reconnect,
                 retries=3 if negative_test else 30,
-                keyPairFileLocation=keypair.private_key_file if keypair else None
+                keyPairFileLocation=keypair.private_key_file
+                if keypair else None
             )
             self.debug("Successful to SSH into VM with ID - %s on "
                        "public IP address - %s" %
@@ -747,7 +754,6 @@ class nuageTestCase(cloudstackTestCase):
         else:
             self.debug("SSH client executed command result is None")
         return ret_data
-
 
     def wget_from_server(self, public_ip, port=80, file_name="index.html",
                          disable_system_proxies=True):
@@ -793,9 +799,8 @@ class nuageTestCase(cloudstackTestCase):
             physicalnetworkid=self.vsp_physical_network.id
         )
         self.assertIsInstance(providers, list,
-                         "List Network Service Provider should return a "
-                         "valid list"
-                         )
+                              "List Network Service Provider should return a "
+                              "valid list")
         self.assertEqual(provider_name, providers[0].name,
                          "Name of the Network Service Provider should match "
                          "with the returned list data"
@@ -840,7 +845,7 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully validated the creation and state of VPC "
                    "offering - %s" % vpc_offering.name)
 
-    def validate_Vpc(self, vpc, state=None):
+    def validate_vpc(self, vpc, state=None):
         """Validates the VPC
 
         Fetches the vpc by id,
@@ -956,7 +961,7 @@ class nuageTestCase(cloudstackTestCase):
         self.debug("Successfully validated the deployment and state of VM - %s"
                    % vm.name)
 
-    def check_Router_state(self, router, state=None):
+    def check_Router_state(self, router=None, network=None, state=None):
         """Validates the Router state
             :param router: cs object
             :type router: Router
@@ -964,12 +969,17 @@ class nuageTestCase(cloudstackTestCase):
             :raise AssertionError when router isn't found,
                 or has an incorrect state."""
 
-        self.debug("Validating the deployment and state of Router - %s" %
-                   router.name)
-        routers = Router.list(self.api_client,
-                              id=router.id,
-                              listall=True
-                              )
+        if router:
+            self.debug("Validating the deployment and state of Router - %s" %
+                       router.name)
+            routers = Router.list(self.api_client, id=router.id,
+                                  listall=True)
+        elif network:
+            routers = Router.list(self.api_client, networkid=network.id,
+                                  listall=True)
+        else:
+            raise AttributeError("Either router or network "
+                                 "has to be specified")
         self.assertEqual(isinstance(routers, list), True,
                          "List router should return a valid list"
                          )
@@ -978,7 +988,9 @@ class nuageTestCase(cloudstackTestCase):
                              "Virtual router is not in the expected state"
                              )
         self.debug("Successfully validated the deployment and state of Router "
-                   "- %s" % router.name)
+                   "- %s" % routers[0].name)
+
+        return routers[0]
 
     def validate_PublicIPAddress(self, public_ip, network, static_nat=False,
                                  vm=None):
@@ -1211,7 +1223,6 @@ class nuageTestCase(cloudstackTestCase):
         except Exception as e:
             self.debug("Failed to get the subnet id due to %s" % e)
             self.fail("Unable to get the subnet id, failing the test case")
-
 
     def verify_vsd_shared_network(self, domain_id, network,
                                   gateway="10.1.1.1"):

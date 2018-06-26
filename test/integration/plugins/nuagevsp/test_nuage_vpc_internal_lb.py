@@ -375,25 +375,25 @@ class TestNuageInternalLb(nuageTestCase):
         # Creating VPCs
         self.debug("Creating a VPC with LB service provider as "
                    "InternalLbVm...")
-        vpc_1 = self.create_Vpc(vpc_off_1, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc_1, state="Enabled")
+        vpc_1 = self.create_vpc(vpc_off_1, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc_1, state="Enabled")
 
         self.debug("Creating a VPC with LB service provider as "
                    "VpcVirtualRouter...")
         with self.assertRaises(Exception):
-            self.create_Vpc(vpc_off_2, cidr='10.1.0.0/16')
+            self.create_vpc(vpc_off_2, cidr='10.1.0.0/16')
         self.debug("Nuage VSP does not support provider VpcVirtualRouter for "
                    "service LB for VPCs")
 
         self.debug("Creating a VPC with LB service provider as Netscaler...")
         with self.assertRaises(Exception):
-            self.create_Vpc(vpc_off_3, cidr='10.1.0.0/16')
+            self.create_vpc(vpc_off_3, cidr='10.1.0.0/16')
         self.debug("Nuage VSP does not support provider Netscaler for service "
                    "LB for VPCs")
 
         self.debug("Creating a VPC without LB service...")
-        vpc_2 = self.create_Vpc(vpc_off_4, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc_2, state="Enabled")
+        vpc_2 = self.create_vpc(vpc_off_4, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc_2, state="Enabled")
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_02_nuage_internallb_vpc_network_offering(self):
@@ -438,8 +438,8 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Creating VPC
         self.debug("Creating a VPC with Internal LB service...")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating network offerings
         self.debug("Creating Nuage VSP VPC Network offering with LB Service "
@@ -594,12 +594,12 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Creating VPCs
         self.debug("Creating a VPC with Internal LB service...")
-        vpc_1 = self.create_Vpc(vpc_off_1, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc_1, state="Enabled")
+        vpc_1 = self.create_vpc(vpc_off_1, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc_1, state="Enabled")
 
         self.debug("Creating a VPC without Internal LB service...")
-        vpc_2 = self.create_Vpc(vpc_off_2, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc_2, state="Enabled")
+        vpc_2 = self.create_vpc(vpc_off_2, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc_2, state="Enabled")
 
         # Creating network offerings
         self.debug("Creating Nuage VSP VPC Network offering with Internal LB "
@@ -794,8 +794,8 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Creating a VPC
         self.debug("Creating a VPC with Internal LB service...")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating network offerings
         self.debug("Creating Nuage VSP VPC Network offering with Internal LB "
@@ -1148,8 +1148,8 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Creating a VPC
         self.debug("Creating a VPC with Internal LB service...")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating network offerings
         self.debug("Creating Nuage VSP VPC Network offering with Internal LB "
@@ -1477,8 +1477,8 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Creating a VPC
         self.debug("Creating a VPC with Internal LB service...")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating network offerings
         self.debug("Creating Nuage VSP VPC Network offering with Internal LB "
@@ -1742,8 +1742,8 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Creating a VPC
         self.debug("Creating a VPC with Internal LB service...")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating network offerings
         self.debug("Creating Nuage VSP VPC Network offering with Internal LB "
@@ -1881,8 +1881,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_firewall_rule(public_ssh_rule)
 
         # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm)
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm)
 
         # Restart Internal tier (cleanup = false)
         # InternalLbVm gets destroyed and deployed again in the Internal tier
@@ -1921,8 +1922,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm)
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm)
         # Restart Internal tier (cleanup = true)
         # InternalLbVm gets destroyed and deployed again in the Internal tier
         self.debug("Restarting the Internal tier with cleanup...")
@@ -1961,8 +1963,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm)
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm)
 
         # Restart Public tier (cleanup = false)
         # This restart has no effect on the InternalLbVm functionality
@@ -2042,8 +2045,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm)
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm)
 
         # Stopping VMs in the Internal tier
         # wget traffic test fails as all the VMs in the Internal tier are in
@@ -2074,8 +2078,10 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_lb_device(int_lb_vm)
 
         # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm, should_fail=True)
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm,
+                                             should_fail=True)
 
         # Starting VMs in the Internal tier
         # wget traffic test succeeds as all the VMs in the Internal tier are
@@ -2114,8 +2120,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm)
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm)
 
         # Restarting VPC (cleanup = false)
         # VPC VR gets destroyed and deployed again in the VPC
@@ -2162,8 +2169,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm)
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm)
 
         # Restarting VPC (cleanup = true)
         # VPC VR gets destroyed and deployed again in the VPC
@@ -2219,9 +2227,13 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_lb_wget_file(
             wget_file, [internal_vm, internal_vm_1, internal_vm_2])
 
-    def verify_internal_lb_wget_traffic(self, int_lb_rule_1, internal_vm, internal_vm_1, internal_vm_2, public_ip, public_vm, should_fail=False):
+    def verify_internal_lb_wget_traffic(self, int_lb_rule_1, internal_vm,
+                                        internal_vm_1, internal_vm_2,
+                                        public_ip, public_vm,
+                                        should_fail=False):
         if self.isSimulator:
-            self.debug("Simulator Environment: not running wget traffic tests.")
+            self.debug("Simulator Environment: "
+                       "not running wget traffic tests.")
             return
         ssh_client = self.ssh_into_VM(public_vm, public_ip)
         tries = 0
@@ -2242,8 +2254,8 @@ class TestNuageInternalLb(nuageTestCase):
             with self.assertRaises(Exception):
                 self.verify_lb_wget_file(
                     wget_file, [internal_vm, internal_vm_1, internal_vm_2])
-            self.debug("Failed to wget file as all the VMs in the Internal tier "
-                       "are in stopped state")
+            self.debug("Failed to wget file as all the VMs in the Internal "
+                       "tier are in stopped state")
         else:
             self.verify_lb_wget_file(
                 wget_file, [internal_vm, internal_vm_1, internal_vm_2])
@@ -2280,8 +2292,8 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Creating a VPC
         self.debug("Creating a VPC with Internal LB service...")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating network offerings
         self.debug("Creating Nuage VSP VPC Network offering with Internal LB "
@@ -2431,8 +2443,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vsd_firewall_rule(public_ssh_rule)
 
         # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm)
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm)
 
         # # Stopping the InternalLbVm when the VPC VR is in Stopped state
         self.stop_InternalLbVm(int_lb_vm)
@@ -2451,8 +2464,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm,
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm,
                                              should_fail=True)
 
         # # Starting the InternalLbVm when the VPC VR is in Stopped state
@@ -2473,8 +2487,9 @@ class TestNuageInternalLb(nuageTestCase):
 
         # Internal LB (wget) traffic test
         # Bug CLOUDSTACK-9837
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm)
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm)
 
         # Starting the VPC VR
         # VPC VR has no effect on the InternalLbVm functionality
@@ -2505,48 +2520,9 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm, should_fail=True)
-
-        # # Starting the InternalLbVm when the VPC VR is in Running state
-        self.start_InternalLbVm(int_lb_vm)
-        self.check_InternalLbVm_state(
-            internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
-
-        # VSD Verification
-        self.verify_vsd_lb_device(int_lb_vm)
-
-        # Verifying Internal Load Balanced VMs ingress traffic
-        # (SSH into VM via Static NAT rule)
-        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
-                   "(SSH into VM via Static NAT rule)...")
-        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
-        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
-        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
-
-        # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm)
-
-        # # Force Stopping the InternalLbVm when the VPC VR is in Running state
-        self.stop_InternalLbVm(int_lb_vm, force=True)
-        self.check_InternalLbVm_state(
-            internal_tier, int_lb_rule_1.sourceipaddress, state="Stopped")
-
-        # VSD Verification
-        self.verify_vsd_lb_device(int_lb_vm, stopped=True)
-
-        # Verifying Internal Load Balanced VMs ingress traffic
-        # (SSH into VM via Static NAT rule)
-        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
-                   "(SSH into VM via Static NAT rule)...")
-        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
-        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
-        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
-
-        # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm,
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm,
                                              should_fail=True)
 
         # # Starting the InternalLbVm when the VPC VR is in Running state
@@ -2566,5 +2542,49 @@ class TestNuageInternalLb(nuageTestCase):
         self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
 
         # Internal LB (wget) traffic test
-        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm, internal_vm_1,
-                                             internal_vm_2, public_ip, public_vm)
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm)
+
+        # # Force Stopping the InternalLbVm when the VPC VR is in Running state
+        self.stop_InternalLbVm(int_lb_vm, force=True)
+        self.check_InternalLbVm_state(
+            internal_tier, int_lb_rule_1.sourceipaddress, state="Stopped")
+
+        # VSD Verification
+        self.verify_vsd_lb_device(int_lb_vm, stopped=True)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
+
+        # Internal LB (wget) traffic test
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm,
+                                             should_fail=True)
+
+        # # Starting the InternalLbVm when the VPC VR is in Running state
+        self.start_InternalLbVm(int_lb_vm)
+        self.check_InternalLbVm_state(
+            internal_tier, int_lb_rule_1.sourceipaddress, state="Running")
+
+        # VSD Verification
+        self.verify_vsd_lb_device(int_lb_vm)
+
+        # Verifying Internal Load Balanced VMs ingress traffic
+        # (SSH into VM via Static NAT rule)
+        self.debug("Verifying Internal Load Balanced VMs ingress traffic "
+                   "(SSH into VM via Static NAT rule)...")
+        self.verify_vpc_vm_ingress_traffic(internal_vm, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_1, internal_tier, vpc)
+        self.verify_vpc_vm_ingress_traffic(internal_vm_2, internal_tier, vpc)
+
+        # Internal LB (wget) traffic test
+        self.verify_internal_lb_wget_traffic(int_lb_rule_1, internal_vm,
+                                             internal_vm_1, internal_vm_2,
+                                             public_ip, public_vm)

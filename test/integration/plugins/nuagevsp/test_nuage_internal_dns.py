@@ -23,7 +23,6 @@ from marvin.cloudstackAPI import updateZone
 from marvin.lib.base import Account, Network
 # Import System Modules
 from nose.plugins.attrib import attr
-import time
 
 UPDATED_DOMAIN_NAME = "update.com"
 
@@ -124,7 +123,8 @@ class TestNuageInternalDns(nuageTestCase):
         self.debug("command is executed properly " + cmd)
         completeoutput = str(outputlist).strip('[]')
         self.debug("complete output is " + completeoutput)
-        expectedlist = ['2 received', dst_vm.name + '.' + domain_name, dst_vm.ipaddress]
+        expectedlist = ['2 received', dst_vm.name + '.' + domain_name,
+                        dst_vm.ipaddress]
         for item in expectedlist:
             if item in completeoutput:
                 self.debug("excepted value found in vm: " + item)
@@ -163,7 +163,8 @@ class TestNuageInternalDns(nuageTestCase):
 
         # Internal DNS check point on VSD
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
-        self.verify_vsd_dhcp_option(self.DOMAINNAME, ISOLATED_DOMAIN_NAME, network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, ISOLATED_DOMAIN_NAME,
+                                    network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
@@ -204,7 +205,8 @@ class TestNuageInternalDns(nuageTestCase):
 
         # Internal DNS check point on VSD
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
-        self.verify_vsd_dhcp_option(self.DOMAINNAME, ISOLATED_DOMAIN_NAME, network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, ISOLATED_DOMAIN_NAME,
+                                    network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
@@ -264,7 +266,8 @@ class TestNuageInternalDns(nuageTestCase):
 
         # Internal DNS check point on VSD
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
-        self.verify_vsd_dhcp_option(self.DOMAINNAME, ISOLATED_DOMAIN_NAME, network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, ISOLATED_DOMAIN_NAME,
+                                    network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
@@ -373,7 +376,8 @@ class TestNuageInternalDns(nuageTestCase):
                          "Network Domain is not updated as expected"
                          )
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
-        self.verify_vsd_dhcp_option(self.DOMAINNAME, UPDATED_DOMAIN_NAME, network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, UPDATED_DOMAIN_NAME,
+                                    network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
@@ -432,7 +436,8 @@ class TestNuageInternalDns(nuageTestCase):
                          "Network Domain is not updated as expected"
                          )
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
-        self.verify_vsd_dhcp_option(self.DOMAINNAME, UPDATED_DOMAIN_NAME, network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, UPDATED_DOMAIN_NAME,
+                                    network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
             self.verify_vsd_dhcp_option(
@@ -484,7 +489,7 @@ class TestNuageInternalDns(nuageTestCase):
         vpc_off = self.create_VpcOffering(self.dnsdata["vpc_offering"])
         self.validate_VpcOffering(vpc_off, state="Enabled")
 
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16', cleanup=False)
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16', cleanup=False)
 
         self.debug("Creating Nuage Vsp VPC Network offering...")
         network_offering = self.create_NetworkOffering(
@@ -501,10 +506,12 @@ class TestNuageInternalDns(nuageTestCase):
 
         # Internal DNS check point on VSD
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
-        self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME,
+                                    network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
-            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, nic, True)
+            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME,
+                                        nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
 
     @attr(tags=["advanced", "nuagevsp"], required_hardware="true")
@@ -527,7 +534,7 @@ class TestNuageInternalDns(nuageTestCase):
 
         vpc_off = self.create_VpcOffering(self.dnsdata["vpc_offering"])
         self.validate_VpcOffering(vpc_off, state="Enabled")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16', cleanup=False)
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16', cleanup=False)
 
         self.debug("Creating Nuage Vsp VPC Network offering...")
         network_offering = self.create_NetworkOffering(
@@ -546,7 +553,8 @@ class TestNuageInternalDns(nuageTestCase):
         self.verify_vsd_dhcp_option(self.DOMAINNAME, "vpc.com", network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
-            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, nic, True)
+            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME,
+                                        nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
 
         self.test_data["virtual_machine"]["displayname"] = "vm2"
@@ -557,7 +565,8 @@ class TestNuageInternalDns(nuageTestCase):
         self.verify_vsd_vm(vm_2)
         for nic in vm_2.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
-            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, nic, True)
+            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME,
+                                        nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm2", nic, True)
 
         public_ip_1 = self.acquire_PublicIPAddress(network_1, vpc)
@@ -594,7 +603,7 @@ class TestNuageInternalDns(nuageTestCase):
 
         vpc_off = self.create_VpcOffering(self.dnsdata["vpc_offering"])
         self.validate_VpcOffering(vpc_off, state="Enabled")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16', cleanup=False)
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16', cleanup=False)
 
         self.debug("Creating Nuage Vsp VPC Network offering...")
         network_offering = self.create_NetworkOffering(
@@ -610,10 +619,12 @@ class TestNuageInternalDns(nuageTestCase):
         self.verify_vsd_vm(vm_1)
         # Internal DNS check point on VSD
         self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", network_1)
-        self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, network_1)
+        self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME,
+                                    network_1)
         for nic in vm_1.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
-            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, nic, True)
+            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME,
+                                        nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm1", nic, True)
 
         self.test_data["virtual_machine"]["displayname"] = "vm2"
@@ -624,7 +635,8 @@ class TestNuageInternalDns(nuageTestCase):
         self.verify_vsd_vm(vm_2)
         for nic in vm_2.nic:
             self.verify_vsd_dhcp_option(self.DNS, "10.1.1.2", nic, True)
-            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME, nic, True)
+            self.verify_vsd_dhcp_option(self.DOMAINNAME, VPC_DOMAIN_NAME,
+                                        nic, True)
             self.verify_vsd_dhcp_option(self.HOSTNAME, "vm2", nic, True)
 
         public_ip_1 = self.acquire_PublicIPAddress(network_1, vpc)

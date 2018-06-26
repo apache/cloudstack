@@ -48,6 +48,19 @@ class MySSHKeyPair:
         apiclient.deleteSSHKeyPair(cmd)
 
 
+class GherkinMetaClass(type):
+    def __new__(mcs, name, bases, namespace):
+        namespace = {
+            k: gherkin(v)
+            if k.startswith('given_') or
+            k.startswith('when_') or
+            k.startswith('then_')
+            else v for k, v in namespace.items()
+        }
+        return super(GherkinMetaClass, mcs)\
+            .__new__(mcs, name, bases, namespace)
+
+
 class gherkin(object):
     """Decorator to mark a method as Gherkin style.
        Add extra colored logging
@@ -66,7 +79,12 @@ class gherkin(object):
     def __get__(self, obj=None, objtype=None):
         @functools.wraps(self.method)
         def _wrapper(*args, **kwargs):
-            gherkin_step = self.method.__name__.replace("_", " ").capitalize()
+            if self.method.__doc__:
+                gherkin_step = self.method.__doc__.format(*args, **kwargs)
+            else:
+                gherkin_step = self.method.__name__\
+                    .replace("_", " ")\
+                    .capitalize()
             obj.info("=G= %s%s%s" % (self.BOLDBLUE, gherkin_step, self.NORMAL))
             try:
                 result = self.method(obj, *args, **kwargs)

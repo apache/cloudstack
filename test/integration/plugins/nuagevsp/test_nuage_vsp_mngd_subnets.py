@@ -343,8 +343,8 @@ class TestNuageManagedSubnets(nuageTestCase):
         self.api_client.updateZone(cmd)
         self.debug("Creating a VPC with Static NAT service provider as "
                    "VpcVirtualRouter")
-        vpc = self.create_Vpc(self.nuage_vpc_offering, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(self.nuage_vpc_offering, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
         acl_list = self.create_NetworkAclList(
             name="acl", description="acl", vpc=vpc)
         self.create_NetworkAclRule(
@@ -354,8 +354,8 @@ class TestNuageManagedSubnets(nuageTestCase):
 
         self.debug("Creating another VPC with Static NAT service provider "
                    "as VpcVirtualRouter")
-        vpc2 = self.create_Vpc(self.nuage_vpc_offering, cidr='10.2.0.0/16')
-        self.validate_Vpc(vpc2, state="Enabled")
+        vpc2 = self.create_vpc(self.nuage_vpc_offering, cidr='10.2.0.0/16')
+        self.validate_vpc(vpc2, state="Enabled")
         acl_list2 = self.create_NetworkAclList(
                 name="acl", description="acl", vpc=vpc2)
         self.create_NetworkAclRule(
@@ -447,8 +447,8 @@ class TestNuageManagedSubnets(nuageTestCase):
 
             self.debug("Creating another VPC with Static NAT service provider "
                        "as VpcVirtualRouter With same CIDR")
-            vpc3 = self.create_Vpc(self.nuage_vpc_offering, cidr='10.1.0.0/16')
-            self.validate_Vpc(vpc3, state="Enabled")
+            vpc3 = self.create_vpc(self.nuage_vpc_offering, cidr='10.1.0.0/16')
+            self.validate_vpc(vpc3, state="Enabled")
             acl_list3 = self.create_NetworkAclList(
                     name="acl", description="acl", vpc=vpc3)
             self.create_NetworkAclRule(

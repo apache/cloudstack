@@ -20,11 +20,10 @@ Nuage VSP SDN plugin
 """
 # Import Local Modules
 from nuageTestCase import (nuageTestCase)
-from plugins.nuagevsp.nuage_lib import gherkin
+from nuage_lib import gherkin
 from marvin.cloudstackAPI import updateVirtualMachine, updateZone
 from marvin.lib.base import (Account,
                              Network,
-                             VirtualMachine,
                              Configurations,
                              NetworkOffering)
 # Import System Modules
@@ -57,7 +56,7 @@ class TestNuageExtraDhcp(nuageTestCase):
         cls.api_client.updateZone(cmd)
         cls.vpc_offering = cls.create_VpcOffering(
             cls.test_data["nuagevsp"]["vpc_offering_nuage_dhcp"])
-        cls.vpc1 = cls.create_Vpc(cls.vpc_offering, cidr="10.0.0.0/16",
+        cls.vpc1 = cls.create_vpc(cls.vpc_offering, cidr="10.0.0.0/16",
                                   networkDomain="testvpc.com")
 
         cls.vpc_network_offering = cls.create_NetworkOffering(
@@ -424,7 +423,8 @@ class TestNuageExtraDhcp(nuageTestCase):
     def verify_dhcp_on_vm(
             self, dhcpleasefile, dhcp_option_map, ssh_client, cleanlease=True):
         if self.isSimulator:
-            self.debug("Simulator Environment: Skipping VM DHCP option verification")
+            self.debug("Simulator Environment: "
+                       "Skipping VM DHCP option verification")
             return
 
         cmd = 'cat /var/lib/dhclient/'+dhcpleasefile
@@ -492,7 +492,7 @@ class TestNuageExtraDhcp(nuageTestCase):
 
     def validate_vpc(self, vpc, vpc_offering):
         self.debug("Validating vpc...")
-        self.validate_Vpc(vpc)
+        self.validate_vpc(vpc)
         self.validate_VpcOffering(vpc_offering)
 
     def verify_dhcp_options_on_vm(
@@ -591,18 +591,18 @@ class TestNuageExtraDhcp(nuageTestCase):
         self.validate_NetworkOffering(network_offering, state="Enabled")
         return network_offering
 
-    def create_vpc(self, vpc_offering, cidr="10.0.0.0/16"):
+    def create_and_validate_vpc(self, vpc_offering, cidr="10.0.0.0/16"):
         # Creating a VPC
         self.debug("Creating a VPC with Nuage VSP VPC offering...")
-        vpc = self.create_Vpc(vpc_offering, cidr=cidr,
+        vpc = self.create_vpc(vpc_offering, cidr=cidr,
                               networkDomain="testvpc.com")
-        self.validate_Vpc(vpc, state="Enabled")
+        self.validate_vpc(vpc, state="Enabled")
 
         return vpc
 
     def create_vpc_with_tier(self, domain_name="testvpc.com"):
         vpc_offering = self.create_vpc_offering_with_nuage_dhcp()
-        vpc = self.create_vpc(vpc_offering)
+        vpc = self.create_and_validate_vpc(vpc_offering)
 
         vpc_network_offering = self.create_vpc_network_offering()
         acl_list = self.create_acl_list_with_item(vpc)

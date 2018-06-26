@@ -139,8 +139,8 @@ class TestNuagePasswordReset(nuageTestCase):
     # (SSH client)
     def install_cloud_set_guest_password_script(self, ssh_client):
         if self.isSimulator:
-            self.debug( "Simulator Environment: Skipping installing"
-                        " cloud-set-guest-password script")
+            self.debug("Simulator Environment: Skipping installing"
+                       " cloud-set-guest-password script")
             return
         self.debug("Installing cloud-set-guest-password script")
         cmd = "cd /etc/init.d;wget http://people.apache.org/~tsp/" \
@@ -268,8 +268,7 @@ class TestNuagePasswordReset(nuageTestCase):
             self.debug("Actual user data - " + actual_user_data +
                        ", Expected user data - " + expected_user_data)
             self.assertEqual(actual_user_data, expected_user_data,
-                             "Un-expected VM (VM_1) user data"
-                         )
+                             "Un-expected VM (VM_1) user data")
 
             self.debug("Checking for cloud-set-guest-password script in the "
                        "VM for testing password reset functionality...")

@@ -1154,7 +1154,7 @@ class TestNuageMigration(nuageTestCase):
     @attr(tags=["migrateACS", "vpcnovms"],
           required_hardware="false")
     def test_10_migrate_native_vpc(self):
-        vpc = self.create_Vpc(self.native_vpc_offering)
+        vpc = self.create_vpc(self.native_vpc_offering)
         network = self.create_Network(self.native_vpc_network_offering,
                                       vpc=vpc)
         self.create_VM(network)
@@ -1222,8 +1222,8 @@ class TestNuageMigration(nuageTestCase):
 
         self.debug("Creating a VPC with Static NAT service provider as "
                    "VpcVirtualRouter")
-        vpc = self.create_Vpc(native_vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(native_vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         self.debug("Creating native VPC Network Tier offering "
                    "with Static NAT service provider as VPCVR")
@@ -1484,8 +1484,8 @@ class TestNuageMigration(nuageTestCase):
 
         self.debug("Creating a VPC with Static NAT service provider as "
                    "VpcVirtualRouter")
-        vpc = self.create_Vpc(native_vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(native_vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         self.debug("Creating native VPC Network Tier offering "
                    "with Static NAT service provider as VPCVR")
@@ -1802,8 +1802,8 @@ class TestNuageMigration(nuageTestCase):
 
         self.debug("Creating a VPC with Static NAT service provider as "
                    "VpcVirtualRouter")
-        vpc = self.create_Vpc(native_vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(native_vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         self.debug("Creating native VPC Network Tier offering "
                    "with Static NAT service provider as VPCVR")
@@ -1922,8 +1922,8 @@ class TestNuageMigration(nuageTestCase):
 
         self.debug("Creating a VPC with Static NAT service provider as "
                    "VpcVirtualRouter")
-        vpc = self.create_Vpc(native_vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(native_vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         self.debug("Creating native VPC Network Tier offering "
                    "with Static NAT service provider as VPCVR")
