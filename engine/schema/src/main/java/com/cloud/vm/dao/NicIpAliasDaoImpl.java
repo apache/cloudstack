@@ -113,6 +113,7 @@ public class NicIpAliasDaoImpl extends GenericDaoBase<NicIpAliasVO, Long> implem
         List<String> ips = new ArrayList<String>(results.size());
         for (NicIpAliasVO result : results) {
             ips.add(result.getIp4Address());
+            ips.add(result.getIp6Address());
         }
         return ips;
     }

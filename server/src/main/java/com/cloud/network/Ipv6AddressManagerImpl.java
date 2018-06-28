@@ -23,9 +23,8 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.log4j.Logger;
 
 import com.cloud.configuration.Config;
 import com.cloud.dc.DataCenter;
@@ -35,13 +34,21 @@ import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.VlanDao;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.network.IpAddress.State;
+import com.cloud.network.Network.IpAddresses;
+import com.cloud.network.dao.IPAddressDao;
+import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.user.Account;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.dao.NicSecondaryIpDao;
+import com.cloud.vm.dao.NicSecondaryIpVO;
 
 public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressManager {
     public static final Logger s_logger = Logger.getLogger(Ipv6AddressManagerImpl.class.getName());
@@ -61,6 +68,12 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
     NetworkDao _networkDao;
     @Inject
     ConfigurationDao _configDao;
+    @Inject
+    IpAddressManager ipAddressManager;
+    @Inject
+    NicSecondaryIpDao nicSecondaryIpDao;
+    @Inject
+    IPAddressDao ipAddressDao;
 
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
@@ -84,7 +97,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
         String ip = null;
         Vlan ipVlan = null;
         if (requestedIp6 == null) {
-            if (!_networkModel.isIP6AddressAvailableInNetwork(networkId)) {
+            if (!_networkModel.areThereIPv6AddressAvailableInNetwork(networkId)) {
                 throw new InsufficientAddressCapacityException("There is no more address available in the network " + network.getName(), DataCenter.class,
                     network.getDataCenterId());
             }
@@ -132,7 +145,7 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
         dc.setMacAddress(nextMac);
         _dcDao.update(dc.getId(), dc);
 
-        String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(mac,NetworkModel.MACIdentifier.value()));
+        String macAddress = NetUtils.long2Mac(NetUtils.createSequenceBasedMacAddress(mac, NetworkModel.MACIdentifier.value()));
         UserIpv6AddressVO ipVO = new UserIpv6AddressVO(ip, dcId, macAddress, ipVlan.getId());
         ipVO.setPhysicalNetworkId(network.getPhysicalNetworkId());
         ipVO.setSourceNetworkId(networkId);
@@ -150,4 +163,101 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
             _ipv6Dao.remove(ip.getId());
         }
     }
+
+    /**
+     * Executes method {@link #acquireGuestIpv6Address(Network, String)} and returns the requested IPv6 (String) in case of successfully allocating the guest IPv6 address.
+     */
+    @Override
+    public String allocateGuestIpv6(Network network, String requestedIpv6) throws InsufficientAddressCapacityException {
+        return acquireGuestIpv6Address(network, requestedIpv6);
+    }
+
+    /**
+     * Allocates a guest IPv6 address for the guest NIC. It will throw exceptions in the following cases:
+     * <ul>
+     *    <li>there is no IPv6 address available in the network;</li>
+     *    <li>IPv6 address is equals to the Gateway;</li>
+     *    <li>the network offering is empty;</li>
+     *    <li>the IPv6 address is not in the network;</li>
+     *    <li>the requested IPv6 address is already in use in the network.</li>
+     * </ul>
+     */
+    @Override
+    @DB
+    public String acquireGuestIpv6Address(Network network, String requestedIpv6) throws InsufficientAddressCapacityException {
+        if (!_networkModel.areThereIPv6AddressAvailableInNetwork(network.getId())) {
+            throw new InsufficientAddressCapacityException(
+                    String.format("There is no IPv6 address available in the network [name=%s, network id=%s]", network.getName(), network.getId()), DataCenter.class,
+                    network.getDataCenterId());
+        }
+
+        checkIfCanAllocateIpv6Address(network, requestedIpv6);
+
+        IpAddresses requestedIpPair = new IpAddresses(null, requestedIpv6);
+        _networkModel.checkRequestedIpAddresses(network.getId(), requestedIpPair);
+
+        IPAddressVO ip = ipAddressDao.findByIpAndSourceNetworkId(network.getId(), requestedIpv6);
+        if (ip != null) {
+            State ipState = ip.getState();
+            if (ipState != State.Free) {
+                throw new InsufficientAddressCapacityException(String.format("Requested ip address [%s] is not free [ip state=%]", requestedIpv6, ipState), DataCenter.class,
+                        network.getDataCenterId());
+            }
+        }
+        return requestedIpv6;
+    }
+
+    /**
+     * Allocates a public IPv6 address for the guest NIC. It will throw exceptions in the following cases:
+     * <ul>
+     *    <li>the the requested IPv6 address is already in use in the network;</li>
+     *    <li>IPv6 address is equals to the Gateway;</li>
+     *    <li>the network offering is empty;</li>
+     *    <li>the IPv6 address is not in the network.</li>
+     * </ul>
+     */
+    @Override
+    public String allocatePublicIp6ForGuestNic(Network network, Long podId, Account owner, String requestedIpv6) throws InsufficientAddressCapacityException {
+        checkIfCanAllocateIpv6Address(network, requestedIpv6);
+
+        return requestedIpv6;
+    }
+
+    /**
+     * Performs some checks on the given IPv6 address. It will throw exceptions in the following cases:
+     * <ul>
+     *    <li>the the requested IPv6 address is already in use in the network;</li>
+     *    <li>IPv6 address is equals to the Gateway;</li>
+     *    <li>the network offering is empty;</li>
+     *    <li>the IPv6 address is not in the network.</li>
+     * </ul>
+     */
+    protected void checkIfCanAllocateIpv6Address(Network network, String ipv6) throws InsufficientAddressCapacityException {
+        if (isIp6Taken(network, ipv6)) {
+            throw new InsufficientAddressCapacityException(
+                    String.format("The IPv6 address [%s] is already in use in the network [id=%s, name=%s]", ipv6, network.getId(), network.getName()), Network.class,
+                    network.getId());
+        }
+
+        if (ipAddressManager.isIpEqualsGatewayOrNetworkOfferingsEmpty(network, ipv6)) {
+            throw new InvalidParameterValueException(
+                    String.format("The network [id=%s] offering is empty or the requested IP address [%s] is equals to the Gateway", network.getId(), ipv6));
+        }
+
+        String networkIp6Cidr = network.getIp6Cidr();
+        if (!NetUtils.isIp6InNetwork(ipv6, networkIp6Cidr)) {
+            throw new InvalidParameterValueException(
+                    String.format("The IPv6 address [%s] is not in the network [id=%s, name=%s, ipv6cidr=%s]", ipv6, network.getId(), network.getName(), network.getIp6Cidr()));
+        }
+    }
+
+    /**
+     * Returns false if the requested ipv6 address is taken by some VM, checking on the 'user_ipv6_address' table or 'nic_secondary_ips' table.
+     */
+    protected boolean isIp6Taken(Network network, String requestedIpv6) {
+        UserIpv6AddressVO ip6Vo = _ipv6Dao.findByNetworkIdAndIp(network.getId(), requestedIpv6);
+        NicSecondaryIpVO nicSecondaryIpVO = nicSecondaryIpDao.findByIp6AddressAndNetworkId(requestedIpv6, network.getId());
+        return ip6Vo != null || nicSecondaryIpVO != null;
+    }
+
 }

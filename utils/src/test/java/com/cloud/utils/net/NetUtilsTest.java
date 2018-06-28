@@ -678,4 +678,20 @@ public class NetUtilsTest {
         assertFalse(NetUtils.isValidPort(-1));
         assertFalse(NetUtils.isValidPort(65536));
     }
+
+    @Test
+    public void testIsIpv4() {
+        assertTrue(NetUtils.isIpv4("192.168.1.1"));
+        assertFalse(NetUtils.isIpv4("2a01:4f8:130:2192::2"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIsIpv4ExpectException() {
+        NetUtils.isIpv4("test");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIsIpv4ExpectException2() {
+        NetUtils.isIpv4("2001:db8:300::/64");
+    }
 }

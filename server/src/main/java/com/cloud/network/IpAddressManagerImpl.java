@@ -179,25 +179,25 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     private static final Logger s_logger = Logger.getLogger(IpAddressManagerImpl.class);
 
     @Inject
-    NetworkOrchestrationService _networkMgr = null;
+    NetworkOrchestrationService _networkMgr;
     @Inject
-    EntityManager _entityMgr = null;
+    EntityManager _entityMgr;
     @Inject
-    DataCenterDao _dcDao = null;
+    DataCenterDao _dcDao;
     @Inject
-    VlanDao _vlanDao = null;
+    VlanDao _vlanDao;
     @Inject
-    IPAddressDao _ipAddressDao = null;
+    IPAddressDao _ipAddressDao;
     @Inject
-    AccountDao _accountDao = null;
+    AccountDao _accountDao;
     @Inject
-    DomainDao _domainDao = null;
+    DomainDao _domainDao;
     @Inject
-    UserDao _userDao = null;
+    UserDao _userDao;
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    UserVmDao _userVmDao = null;
+    UserVmDao _userVmDao;
     @Inject
     AlertManager _alertMgr;
     @Inject
@@ -209,11 +209,11 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Inject
     DomainVlanMapDao _domainVlanMapDao;
     @Inject
-    NetworkOfferingDao _networkOfferingDao = null;
+    NetworkOfferingDao _networkOfferingDao;
     @Inject
-    NetworkDao _networksDao = null;
+    NetworkDao _networksDao;
     @Inject
-    NicDao _nicDao = null;
+    NicDao _nicDao;
     @Inject
     RulesManager _rulesMgr;
     @Inject
@@ -299,6 +299,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     private static final ConfigKey<Boolean> SystemVmPublicIpReservationModeStrictness = new ConfigKey<Boolean>("Advanced",
             Boolean.class, "system.vm.public.ip.reservation.mode.strictness", "false",
             "If enabled, the use of System VMs public IP reservation is strict, preferred if not.", false, ConfigKey.Scope.Global);
+
+    private Random rand = new Random(System.currentTimeMillis());
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
@@ -1840,10 +1842,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
             return requestedIp;
         }
 
-        return NetUtils.long2Ip(array[_rand.nextInt(array.length)]);
+        return NetUtils.long2Ip(array[rand.nextInt(array.length)]);
     }
-
-    Random _rand = new Random(System.currentTimeMillis());
 
     /**
      * Get the list of public IPs that need to be applied for a static NAT enable/disable operation.
@@ -2183,5 +2183,19 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {UseSystemPublicIps, RulesContinueOnError, SystemVmPublicIpReservationModeStrictness};
+    }
+
+    /**
+     * Returns true if the given IP address is equals the gateway or there is no network offerrings for the given network
+     */
+    @Override
+    public boolean isIpEqualsGatewayOrNetworkOfferingsEmpty(Network network, String requestedIp) {
+        if (requestedIp.equals(network.getGateway()) || requestedIp.equals(network.getIp6Gateway())) {
+            return true;
+        }
+        if (_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty() && network.getCidr() == null) {
+            return true;
+        }
+        return false;
     }
 }

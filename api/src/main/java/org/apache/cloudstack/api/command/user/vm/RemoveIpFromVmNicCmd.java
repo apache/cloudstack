@@ -147,10 +147,15 @@ public class RemoveIpFromVmNicCmd extends BaseAsyncCmd {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Invalid IP id is passed");
         }
 
+        String secIp = nicSecIp.getIp4Address();
+        if (secIp == null) {
+            secIp = nicSecIp.getIp6Address();
+        }
+
         if (isZoneSGEnabled()) {
             //remove the security group rules for this secondary ip
             boolean success = false;
-            success = _securityGroupService.securityGroupRulesForVmSecIp(nicSecIp.getNicId(), nicSecIp.getIp4Address(), false);
+            success = _securityGroupService.securityGroupRulesForVmSecIp(nicSecIp.getNicId(), secIp, false);
             if (success == false) {
                 throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Failed to set security group rules for the secondary ip");
             }

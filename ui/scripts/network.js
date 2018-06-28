@@ -1782,7 +1782,7 @@
                                         label: 'label.ip.address',
                                         validation: {
                                             required: false,
-                                            ipv4: true
+                                            ipv46address: true
                                         }
                                     }
                                 }

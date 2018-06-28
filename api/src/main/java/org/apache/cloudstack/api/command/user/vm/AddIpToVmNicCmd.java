@@ -29,7 +29,6 @@ import org.apache.cloudstack.context.CallContext;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
-import com.cloud.dc.DataCenter.NetworkType;
 import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientAddressCapacityException;
@@ -38,6 +37,7 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.network.Network;
+import com.cloud.network.Network.IpAddresses;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
@@ -76,20 +76,6 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
 
     public long getNicId() {
         return nicId;
-    }
-
-    private String getIpaddress() {
-        if (ipAddr != null) {
-            return ipAddr;
-        } else {
-            return null;
-        }
-    }
-
-    private NetworkType getNetworkType() {
-        Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
-        DataCenter dc = _entityMgr.findById(DataCenter.class, ntwk.getDataCenterId());
-        return dc.getNetworkType();
     }
 
     private boolean isZoneSGEnabled() {
@@ -144,7 +130,6 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
         }
     }
 
-
     @Override
     public Long getSyncObjId() {
         return getNetworkId();
@@ -169,17 +154,15 @@ public class AddIpToVmNicCmd extends BaseAsyncCreateCmd {
 
     @Override
     public void create() throws ResourceAllocationException {
-        String ip;
         NicSecondaryIp result;
-        String secondaryIp = null;
-        if ((ip = getIpaddress()) != null) {
-            if (!NetUtils.isValidIp4(ip)) {
-                throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Invalid ip address " + ip);
-            }
+
+        IpAddresses requestedIpPair = new IpAddresses(ipAddr, null);
+        if (!NetUtils.isIpv4(ipAddr)) {
+            requestedIpPair = new IpAddresses(null, ipAddr);
         }
 
         try {
-            result = _networkService.allocateSecondaryGuestIP(getNicId(), getIpaddress());
+            result = _networkService.allocateSecondaryGuestIP(getNicId(), requestedIpPair);
             if (result != null) {
                 setEntityId(result.getId());
                 setEntityUuid(result.getUuid());
