@@ -1,204 +1,210 @@
-4.11.2-SNAPSHOTcloudstack (4.11.2-SNAPSHOT) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Update the version to 4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- the Apache CloudStack project <dev@cloudstack.apache.org>  Thu, 21 Jun 2018 15:52:43 +0100
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.11.2-SNAPSHOT-SNAPSHOT) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Update the version to 4.11.2-SNAPSHOT-SNAPSHOT
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 05 Feb 2018 11:10:37 +0100
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.11.0.0) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Update the version to 4.11.0.0
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- the Apache CloudStack project <dev@cloudstack.apache.org>  Fri, 26 Jan 2018 13:13:37 +0100
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.11.0.0-SNAPSHOT) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Update the version to 4.11.0.0-SNAPSHOT
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 03 Jul 2017 10:06:42 +0530
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.11.0.0-SNAPSHOT-SNAPSHOT) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Update the version to 4.10.0.snapshot
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 08 Aug 2016 11:22:34 +0530
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.9.0) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  [ Remi Bergsma ]
-4.11.2-SNAPSHOT  * Update the version to 4.9.0.snapshot
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- the Apache CloudStack project <dev@cloudstack.apache.org>  Wed, 20 Jan 2016 23:43:35 +0100
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.8.0-SNAPSHOT) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  [ Remi Bergsma ]
-4.11.2-SNAPSHOT  * Update the version to 4.8.0.snapshot
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- the Apache CloudStack project <dev@cloudstack.apache.org>  Sun, 21 Dec 2015 22:11:55 +0100
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.7.0-SNAPSHOT) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  [ Remi Bergsma ]
-4.11.2-SNAPSHOT  * Update the version to 4.7.0.snapshot
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- the Apache CloudStack project <dev@cloudstack.apache.org>  Sun, 15 Nov 2015 21:28:33 +0100
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.6.0-SNAPSHOT) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  [ Hugo Trippaers ]
-4.11.2-SNAPSHOT  * Update the version to 4.6.0.snapshot
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  [ Rafael da Fonseca ]
-4.11.2-SNAPSHOT  * Switch to dpkg-source 3.0 (native) format
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- the Apache CloudStack project <dev@cloudstack.apache.org>  Thu, 18 Jun 2015 11:17:09 +0200
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.5.0-snapshot) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Update the version to 4.5.0.snapshot
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Hugo Trippaers <hugo@apache.org>  Thu, 21 Nov 2013 12:00:00 -0400
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.4.0-snapshot) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Update the version to 4.4.0.snapshot
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Hugo Trippaers <hugo@apache.org>  Thu, 21 Nov 2013 12:00:00 -0400
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.3.0-snapshot) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Update the version to 4.3.0.snapshot
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Chip Childers <chipchilders@apache.org>  Thu, 1 Aug 2013 12:00:00 -0400
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.2.0) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Update the version to 4.2.0 to be in sync with Maven (again)
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Wido den Hollander <wido@widodh.nl>  Tue, 14 May 2013 15:56:42 +0200
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.2.0-incubating-0.0.snapshot) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Update the version to 4.2.0 to be in sync with Maven
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Wido den Hollander <wido@widodh.nl>  Wed, 13 Mar 2013 19:15:00 +0100
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloudstack (4.1.0-incubating-0.0.snapshot) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Incorporate incubating into version, remove epoch
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Noa Resare <noa@spotify.com>  Tue, 05 Feb 2013 18:05:28 +0000
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (1:4.0.0-1) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping the version to 4.0.0
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Chip Childers <chipchilders@apache.org>  Fri, 5 Oct 2012 16:00:00 -0500
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (1:4.0.0-beta6) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping the version to 4.0 Beta 6
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Wido den Hollander <wido@widodh.nl>  Fri, 5 Oct 2012 11:41:17 +0200
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (1:4.0.0-beta1) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping the version to 4.0 Beta 1
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Wido den Hollander <wido@widodh.nl>  Wed, 26 Sep 2012 21:14:48 +0200
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (4.0.0-rc2) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping the version to 4.0 RC2
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Wido den Hollander <wido@widodh.nl>  Mon, 24 Sep 2012 11:30:29 +0200
-4.11.2-SNAPSHOT 
-4.11.2-SNAPSHOTcloud (4.0.0-rc1) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping the version to 4.0 RC1
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Wido den Hollander <wido@widodh.nl>  Fri, 17 Aug 2012 11:10:41 +0200
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (3.0.2) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping the package version to the latest release.
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Wido den Hollander <wido@widodh.nl>  Wed, 25 Jul 2012 14:53:31 +0200
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (2.2.2) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping version number for next CloudStack release
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Engineering <info@cloud.com>  Mon, 7 Mar 2011 11:19:34 -0700
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (2.1.97) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping version number for next CloudStack release
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Rudd-O <manuel@cloud.com>  Sat, 31 Jul 2010 19:09:54 -0700
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (2.0.97) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping version number for next CloudStack release
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Rudd-O <manuel@cloud.com>  Mon, 12 Jul 2010 14:01:41 -0700
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (2.0.2) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping version number for next CloudStack release
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Rudd-O <manuel@cloud.com>  Fri, 2 Jul 2010 19:55:41 -0700
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (2.0.0) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping version number for next CloudStack release
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Rudd-O <manuel@cloud.com>  Tue, 15 Jun 2010 12:10:05 -0700
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (1.9.14) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping version number for next CloudStack release
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Rudd-O <manuel@cloud.com>  Tue, 11 May 2010 14:46:14 -0700
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (1.9.12) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping version number for CloudStack RC4 release
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Rudd-O <manuel@cloud.com>  Mon, 3 May 2010 14:46:14 -0700
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (1.9.11) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping version number for CloudStack release
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Rudd-O <manuel@cloud.com>  Fri, 30 Apr 2010 15:08:38 -0700
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (1.9.10) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping version number for FOSS release
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Rudd-O <manuel@vmops.com>  Wed, 28 Apr 2010 22:09:48 -0700
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (1.9.9) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Bumping version number for new build prereleases
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Rudd-O <manuel@vmops.com>  Mon, 12 Apr 2010 17:39:44 -0700
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (1.9.8) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Branching RC3
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Rudd-O <manuel@vmops.com>  Mon, 05 Apr 2010 12:46:06 -0700
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOTcloud (1.9.7) unstable; urgency=low
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT  * Initial Release.
-4.11.2-SNAPSHOT
-4.11.2-SNAPSHOT -- Rudd-O <manuel@vmops.com>  Thu, 25 Mar 2010 15:12:06 -0700
+cloudstack (4.11.2-SNAPSHOT) unstable; urgency=low
+
+  * Update the version to 4.11.2-SNAPSHOT
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Thu, 26 Jun 2018 18:24:36 +0100
+
+cloudstack (4.11.1.0) unstable; urgency=low
+
+  * Update the version to 4.11.1.0
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Thu, 21 Jun 2018 15:52:43 +0100
+
+cloudstack (4.11.1.0-SNAPSHOT) unstable; urgency=low
+
+  * Update the version to 4.11.1.0-SNAPSHOT
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 05 Feb 2018 11:10:37 +0100
+
+cloudstack (4.11.0.0) unstable; urgency=low
+
+  * Update the version to 4.11.0.0
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Fri, 26 Jan 2018 13:13:37 +0100
+
+cloudstack (4.11.0.0-SNAPSHOT) unstable; urgency=low
+
+  * Update the version to 4.11.0.0-SNAPSHOT
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 03 Jul 2017 10:06:42 +0530
+
+cloudstack (4.11.0.0-SNAPSHOT-SNAPSHOT) unstable; urgency=low
+
+  * Update the version to 4.10.0.snapshot
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Mon, 08 Aug 2016 11:22:34 +0530
+
+cloudstack (4.9.0) unstable; urgency=low
+
+  [ Remi Bergsma ]
+  * Update the version to 4.9.0.snapshot
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Wed, 20 Jan 2016 23:43:35 +0100
+
+cloudstack (4.8.0-SNAPSHOT) unstable; urgency=low
+
+  [ Remi Bergsma ]
+  * Update the version to 4.8.0.snapshot
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Sun, 21 Dec 2015 22:11:55 +0100
+
+cloudstack (4.7.0-SNAPSHOT) unstable; urgency=low
+
+  [ Remi Bergsma ]
+  * Update the version to 4.7.0.snapshot
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Sun, 15 Nov 2015 21:28:33 +0100
+
+cloudstack (4.6.0-SNAPSHOT) unstable; urgency=low
+
+  [ Hugo Trippaers ]
+  * Update the version to 4.6.0.snapshot
+
+  [ Rafael da Fonseca ]
+  * Switch to dpkg-source 3.0 (native) format
+
+ -- the Apache CloudStack project <dev@cloudstack.apache.org>  Thu, 18 Jun 2015 11:17:09 +0200
+
+cloudstack (4.5.0-snapshot) unstable; urgency=low
+
+  * Update the version to 4.5.0.snapshot
+
+ -- Hugo Trippaers <hugo@apache.org>  Thu, 21 Nov 2013 12:00:00 -0400
+
+cloudstack (4.4.0-snapshot) unstable; urgency=low
+
+  * Update the version to 4.4.0.snapshot
+
+ -- Hugo Trippaers <hugo@apache.org>  Thu, 21 Nov 2013 12:00:00 -0400
+
+cloudstack (4.3.0-snapshot) unstable; urgency=low
+
+  * Update the version to 4.3.0.snapshot
+
+ -- Chip Childers <chipchilders@apache.org>  Thu, 1 Aug 2013 12:00:00 -0400
+
+cloudstack (4.2.0) unstable; urgency=low
+
+  * Update the version to 4.2.0 to be in sync with Maven (again)
+
+ -- Wido den Hollander <wido@widodh.nl>  Tue, 14 May 2013 15:56:42 +0200
+
+cloudstack (4.2.0-incubating-0.0.snapshot) unstable; urgency=low
+
+  * Update the version to 4.2.0 to be in sync with Maven
+
+ -- Wido den Hollander <wido@widodh.nl>  Wed, 13 Mar 2013 19:15:00 +0100
+
+cloudstack (4.1.0-incubating-0.0.snapshot) unstable; urgency=low
+
+  * Incorporate incubating into version, remove epoch
+
+ -- Noa Resare <noa@spotify.com>  Tue, 05 Feb 2013 18:05:28 +0000
+
+cloud (1:4.0.0-1) unstable; urgency=low
+
+  * Bumping the version to 4.0.0
+
+ -- Chip Childers <chipchilders@apache.org>  Fri, 5 Oct 2012 16:00:00 -0500
+
+cloud (1:4.0.0-beta6) unstable; urgency=low
+
+  * Bumping the version to 4.0 Beta 6
+
+ -- Wido den Hollander <wido@widodh.nl>  Fri, 5 Oct 2012 11:41:17 +0200
+
+cloud (1:4.0.0-beta1) unstable; urgency=low
+
+  * Bumping the version to 4.0 Beta 1
+
+ -- Wido den Hollander <wido@widodh.nl>  Wed, 26 Sep 2012 21:14:48 +0200
+
+cloud (4.0.0-rc2) unstable; urgency=low
+
+  * Bumping the version to 4.0 RC2
+
+ -- Wido den Hollander <wido@widodh.nl>  Mon, 24 Sep 2012 11:30:29 +0200
+ 
+cloud (4.0.0-rc1) unstable; urgency=low
+
+  * Bumping the version to 4.0 RC1
+
+ -- Wido den Hollander <wido@widodh.nl>  Fri, 17 Aug 2012 11:10:41 +0200
+
+cloud (3.0.2) unstable; urgency=low
+
+  * Bumping the package version to the latest release.
+
+ -- Wido den Hollander <wido@widodh.nl>  Wed, 25 Jul 2012 14:53:31 +0200
+
+cloud (2.2.2) unstable; urgency=low
+
+  * Bumping version number for next CloudStack release
+
+ -- Engineering <info@cloud.com>  Mon, 7 Mar 2011 11:19:34 -0700
+
+cloud (2.1.97) unstable; urgency=low
+
+  * Bumping version number for next CloudStack release
+
+ -- Rudd-O <manuel@cloud.com>  Sat, 31 Jul 2010 19:09:54 -0700
+
+cloud (2.0.97) unstable; urgency=low
+
+  * Bumping version number for next CloudStack release
+
+ -- Rudd-O <manuel@cloud.com>  Mon, 12 Jul 2010 14:01:41 -0700
+
+cloud (2.0.2) unstable; urgency=low
+
+  * Bumping version number for next CloudStack release
+
+ -- Rudd-O <manuel@cloud.com>  Fri, 2 Jul 2010 19:55:41 -0700
+
+cloud (2.0.0) unstable; urgency=low
+
+  * Bumping version number for next CloudStack release
+
+ -- Rudd-O <manuel@cloud.com>  Tue, 15 Jun 2010 12:10:05 -0700
+
+cloud (1.9.14) unstable; urgency=low
+
+  * Bumping version number for next CloudStack release
+
+ -- Rudd-O <manuel@cloud.com>  Tue, 11 May 2010 14:46:14 -0700
+
+cloud (1.9.12) unstable; urgency=low
+
+  * Bumping version number for CloudStack RC4 release
+
+ -- Rudd-O <manuel@cloud.com>  Mon, 3 May 2010 14:46:14 -0700
+
+cloud (1.9.11) unstable; urgency=low
+
+  * Bumping version number for CloudStack release
+
+ -- Rudd-O <manuel@cloud.com>  Fri, 30 Apr 2010 15:08:38 -0700
+
+cloud (1.9.10) unstable; urgency=low
+
+  * Bumping version number for FOSS release
+
+ -- Rudd-O <manuel@vmops.com>  Wed, 28 Apr 2010 22:09:48 -0700
+
+cloud (1.9.9) unstable; urgency=low
+
+  * Bumping version number for new build prereleases
+
+ -- Rudd-O <manuel@vmops.com>  Mon, 12 Apr 2010 17:39:44 -0700
+
+cloud (1.9.8) unstable; urgency=low
+
+  * Branching RC3
+
+ -- Rudd-O <manuel@vmops.com>  Mon, 05 Apr 2010 12:46:06 -0700
+
+cloud (1.9.7) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Rudd-O <manuel@vmops.com>  Thu, 25 Mar 2010 15:12:06 -0700
