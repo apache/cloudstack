@@ -35,3 +35,49 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`,
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'moveNetworkAclItem', 'ALLOW', 260) ON DUPLICATE KEY UPDATE rule=rule;
 
 UPDATE `cloud`.`async_job` SET `removed` = now() WHERE `removed` IS NULL;
+
+-- Backup and Recovery
+
+CREATE TABLE IF NOT EXISTS `cloud`.`backup_policy` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40) NOT NULL,
+  `name` varchar(255) NOT NULL COMMENT 'backup policy name',
+  `description` varchar(255) NOT NULL COMMENT 'backup policy description',
+  `external_id` varchar(80) NOT NULL COMMENT 'backup policy ID on provider side',
+  `zone_id` bigint(20) unsigned NOT NULL COMMENT 'zone id',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uuid` (`uuid`),
+  CONSTRAINT `fk_backup_policy__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`backup_policy_vm_map` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `policy_id` bigint(20) unsigned NOT NULL,
+  `vm_id` bigint(20) unsigned NOT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_backup_policy_vm_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `backup_policy` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_backup_policy_vm_map__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_backup_policy_vm_map__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud`.`backup` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(40) NOT NULL,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `external_id` varchar(80) NOT NULL COMMENT 'backup ID on provider side',
+  `name` varchar(255) NOT NULL COMMENT 'backup name',
+  `description` varchar(255) COMMENT 'backup description',
+  `parent_id` bigint(20) unsigned COMMENT 'backup parent id',
+  `vm_id` bigint(20) unsigned NOT NULL,
+  `volumes` varchar(100),
+  `status` varchar(20) NOT NULL,
+  `start` datetime DEFAULT NULL,
+  `removed` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  CONSTRAINT `fk_backup__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_backup__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_backup__parent_id` FOREIGN KEY (`parent_id`) REFERENCES `backup` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `fk_backup__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -584,6 +584,15 @@ public class EventTypes {
     public static final String EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE = "TEMPLATE.DIRECT.DOWNLOAD.FAILURE";
     public static final String EVENT_ISO_DIRECT_DOWNLOAD_FAILURE = "ISO.DIRECT.DOWNLOAD.FAILURE";
 
+    // Backup and Recovery events
+    public static final String EVENT_ADD_VM_TO_BACKUP_POLICY = "ADD.VM.TO.BACKUP.POLICY";
+    public static final String EVENT_REMOVE_VM_FROM_BACKUP_POLICY = "REMOVE.VM.FROM.BACKUP.POLICY";
+    public static final String EVENT_IMPORT_BACKUP_POLICY = "IMPORT.BACKUP.POLICY";
+    public static final String EVENT_CREATE_VM_BACKUP = "CREATE.VM.BACKUP";
+    public static final String EVENT_DELETE_VM_BACKUP = "DELETE.VM.BACKUP";
+    public static final String EVENT_RESTORE_VM_FROM_BACKUP = "RESTORE.VM.FROM.BACKUP";
+    public static final String EVENT_RESTORE_VOLUME_FROM_BACKUP_AND_ATTACH_TO_VM = "RESTORE.VOLUME.FROM.BACKUP.AND.ATTACH.TO.VM";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking

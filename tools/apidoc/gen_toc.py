@@ -191,7 +191,8 @@ known_categories = {
     'listElastistorInterface': 'Misc',
     'cloudian': 'Cloudian',
     'Sioc' : 'Sioc',
-    'Diagnostics': 'Diagnostics'
+    'Diagnostics': 'Diagnostics',
+    'Backup' : 'Backup'
     }
 
 

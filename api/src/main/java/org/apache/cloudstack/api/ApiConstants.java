@@ -121,6 +121,7 @@ public class ApiConstants {
     public static final String EXTRA_DHCP_OPTION_NAME = "extradhcpoptionname";
     public static final String EXTRA_DHCP_OPTION_CODE = "extradhcpoptioncode";
     public static final String EXTRA_DHCP_OPTION_VALUE = "extradhcpvalue";
+    public static final String EXTERNAL = "external";
     public static final String FENCE = "fence";
     public static final String FETCH_LATEST = "fetchlatest";
     public static final String FIRSTNAME = "firstname";
@@ -336,6 +337,7 @@ public class ApiConstants {
     public static final String VNET = "vnet";
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
+    public static final String VOLUME_IDS = "volumeids";
     public static final String ZONE_ID = "zoneid";
     public static final String ZONE_NAME = "zonename";
     public static final String NETWORK_TYPE = "networktype";

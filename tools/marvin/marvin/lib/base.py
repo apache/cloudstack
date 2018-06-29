@@ -5375,3 +5375,127 @@ class ResourceDetails:
         cmd.resourceid = resourceid
         cmd.resourcetype = resourcetype
         return (apiclient.removeResourceDetail(cmd))
+
+# Backup and Recovery
+
+class BackupPolicy:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def importExisting(self, apiclient, zoneid, externalid, name, description):
+        """Import existing backup policy from the provider"""
+
+        cmd = importBackupPolicy.importBackupPolicyCmd()
+        cmd.zoneid = zoneid
+        cmd.externalid = externalid
+        cmd.name = name
+        cmd.description = description
+        return BackupPolicy(apiclient.importBackupPolicy(cmd).__dict__)
+
+    @classmethod
+    def listInternalById(self, apiclient, id):
+        """List imported backup policies by id"""
+
+        cmd = listBackupPolicies.listBackupPoliciesCmd()
+        cmd.id = id
+        return (apiclient.listBackupPolicies(cmd))
+
+    @classmethod
+    def listInternal(self, apiclient, zoneid):
+        """List imported backup policies"""
+
+        cmd = listBackupPolicies.listBackupPoliciesCmd()
+        cmd.zoneid = zoneid
+        return (apiclient.listBackupPolicies(cmd))
+
+    @classmethod
+    def listExternal(self, apiclient, zoneid):
+        """List external backup policies"""
+
+        cmd = listBackupPolicies.listBackupPoliciesCmd()
+        cmd.zoneid = zoneid
+        cmd.external = True
+        return (apiclient.listBackupPolicies(cmd))
+
+    def delete(self, apiclient):
+        """Delete an imported backup policy"""
+
+        cmd = deleteBackupPolicy.deleteBackupPolicyCmd()
+        cmd.id = self.id
+        return (apiclient.deleteBackupPolicy(cmd))
+
+    def addVM(self, apiclient, vmid):
+        """Add a VM to a backup policy"""
+
+        cmd = addVMToBackupPolicy.addVMToBackupPolicyCmd()
+        cmd.policyid = self.id
+        cmd.virtualmachineid = vmid
+        return (apiclient.addVMToBackupPolicy(cmd))
+
+    def removeVM(self, apiclient, vmid):
+        """Remove a VM from a backup policy"""
+
+        cmd = removeVMFromBackupPolicy.removeVMFromBackupPolicyCmd()
+        cmd.policyid = self.id
+        cmd.virtualmachineid = vmid
+        return (apiclient.removeVMFromBackupPolicy(cmd))
+
+    @classmethod
+    def listVMMappings(self, apiclient, policyid=None, vmid=None, zoneid=None):
+        """List VM - Backup policies mappings"""
+
+        cmd = listBackupPolicyVMMappings.listBackupPolicyVMMappingsCmd()
+        if vmid:
+            cmd.virtualmachineid = vmid
+        if zoneid:
+            cmd.zoneid = zoneid
+        if policyid:
+            cmd.policyid = policyid
+        return (apiclient.listBackupPolicyVMMappings(cmd))
+
+class VMBackup:
+
+    def __init__(self, items):
+        self.__dict__.update(items)
+
+    @classmethod
+    def create(self, apiclient, vmid):
+        """Create VM backup"""
+
+        cmd = createVMBackup.createVMBackupCmd()
+        cmd.virtualmachineid = vmid
+        return (apiclient.createVMBackup(cmd))
+
+    @classmethod
+    def delete(self, apiclient, id):
+        """Delete VM backup"""
+
+        cmd = deleteVMBackup.deleteVMBackupCmd()
+        cmd.id = id
+        return (apiclient.deleteVMBackup(cmd))
+
+    @classmethod
+    def list(self, apiclient, vmid):
+        """List VM backups"""
+
+        cmd = listVMBackups.listVMBackupsCmd()
+        cmd.virtualmachineid = vmid
+        return (apiclient.listVMBackups(cmd))
+
+    def restoreVM(self, apiclient):
+        """Restore VM from backup"""
+
+        cmd = restoreVMFromBackup.restoreVMFromBackupCmd()
+        cmd.id = self.id
+        return (apiclient.restoreVMFromBackup(cmd))
+
+    def restoreVolumeAndAttachToVM(self, apiclient, volumeid, vmid):
+        """Restore volume from backup and attach it to VM"""
+
+        cmd = restoreVolumeFromBackupAndAttachToVM.restoreVolumeFromBackupAndAttachToVMCmd()
+        cmd.id = self.id
+        cmd.volumeid = volumeid
+        cmd.virtualmachineid = vmid
+        return (apiclient.restoreVolumeFromBackupAndAttachToVM(cmd))

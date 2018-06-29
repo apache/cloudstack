@@ -34,6 +34,9 @@ import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.api.response.BackupPolicyVMMapResponse;
+import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
@@ -116,7 +119,10 @@ import org.apache.cloudstack.api.response.VpcOfferingResponse;
 import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.backup.BackupPolicy;
+import org.apache.cloudstack.backup.BackupPolicyVMMap;
 import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -462,4 +468,10 @@ public interface ResponseGenerator {
     ListResponse<UpgradeRouterTemplateResponse> createUpgradeRouterTemplateResponse(List<Long> jobIds);
 
     SSHKeyPairResponse createSSHKeyPairResponse(SSHKeyPair sshkeyPair, boolean privatekey);
+
+    BackupResponse createBackupResponse(Backup backup);
+
+    BackupPolicyResponse createBackupPolicyResponse(BackupPolicy policy);
+
+    BackupPolicyVMMapResponse createBackupPolicyVMMappingResponse(BackupPolicyVMMap map);
 }
