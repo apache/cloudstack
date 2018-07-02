@@ -57,4 +57,6 @@ public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> 
     ServiceOfferingVO getcomputeOffering(ServiceOfferingVO serviceOffering, Map<String, String> customParameters);
 
     ServiceOfferingVO findDefaultSystemOffering(String offeringName, Boolean useLocalStorage);
+
+    List<ServiceOfferingVO> listPublicByCpuAndMemory(Integer cpus, Integer memory);
 }

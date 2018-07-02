@@ -40,8 +40,6 @@ import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.AsyncJobResponse;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
-import org.apache.cloudstack.api.response.BackupPolicyVMMapResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.DomainRouterResponse;
@@ -62,17 +60,16 @@ import org.apache.cloudstack.api.response.StorageTagResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VMBackupResponse;
 import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupPolicy;
-import org.apache.cloudstack.backup.BackupPolicyVMMap;
-import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.backup.VMBackup;
+import org.apache.cloudstack.backup.dao.VMBackupDao;
 import org.apache.cloudstack.backup.dao.BackupPolicyDao;
-import org.apache.cloudstack.backup.dao.BackupPolicyVMMapDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobManager;
@@ -194,6 +191,7 @@ import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.FirewallRulesDcidrsDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -286,6 +284,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
@@ -321,8 +320,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.cloud.user.AccountManager;
-import com.cloud.network.dao.FirewallRulesDcidrsDao;
 
 public class ApiDBUtils {
     private static ManagementServer s_ms;
@@ -443,9 +440,8 @@ public class ApiDBUtils {
     static ResourceMetaDataService s_resourceDetailsService;
     static HostGpuGroupsDao s_hostGpuGroupsDao;
     static VGPUTypesDao s_vgpuTypesDao;
-    static BackupDao s_backupDao;
+    static VMBackupDao s_backupDao;
     static BackupPolicyDao s_backupPolicyDao;
-    static BackupPolicyVMMapDao s_backupPolicyVMMapDao;
 
     @Inject
     private ManagementServer ms;
@@ -679,11 +675,9 @@ public class ApiDBUtils {
     @Inject
     private VGPUTypesDao vgpuTypesDao;
     @Inject
-    private BackupDao backupDao;
+    private VMBackupDao backupDao;
     @Inject
     private BackupPolicyDao backupPolicyDao;
-    @Inject
-    private BackupPolicyVMMapDao backupPolicyVMMapDao;
 
     @PostConstruct
     void init() {
@@ -805,7 +799,6 @@ public class ApiDBUtils {
         s_vgpuTypesDao = vgpuTypesDao;
         s_backupDao = backupDao;
         s_backupPolicyDao = backupPolicyDao;
-        s_backupPolicyVMMapDao = backupPolicyVMMapDao;
     }
 
     // ///////////////////////////////////////////////////////////
@@ -2022,15 +2015,11 @@ public class ApiDBUtils {
         return s_tagJoinDao.listBy(resourceUUID, resourceType);
     }
 
-    public static BackupResponse newBackupResponse(Backup backup) {
+    public static VMBackupResponse newBackupResponse(VMBackup backup) {
         return s_backupDao.newBackupResponse(backup);
     }
 
     public static BackupPolicyResponse newBackupPolicyResponse(BackupPolicy policy) {
         return s_backupPolicyDao.newBackupPolicyResponse(policy);
-    }
-
-    public static BackupPolicyVMMapResponse newBackupPolicyVMMappingResponse(BackupPolicyVMMap map) {
-        return s_backupPolicyVMMapDao.newBackupPolicyVMMappingResponse(map);
     }
 }

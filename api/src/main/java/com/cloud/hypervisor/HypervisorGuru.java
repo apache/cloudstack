@@ -19,6 +19,7 @@ package com.cloud.hypervisor;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.cloudstack.backup.VMBackup;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Command;
@@ -84,4 +85,10 @@ public interface HypervisorGuru extends Adapter {
     List<Command> finalizeExpungeVolumes(VirtualMachine vm);
 
     Map<String, String> getClusterSettings(long vmId);
+
+    VirtualMachine importVirtualMachine(long zoneId, long domainId, long accountId, long userId,
+                                        String vmInternalName, VMBackup backup) throws Exception;
+
+    boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, VMBackup.VolumeInfo volumeInfo,
+                                                 VirtualMachine vm, long poolId) throws Exception;
 }

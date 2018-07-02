@@ -17,9 +17,19 @@
 
 package org.apache.cloudstack.backup.dao;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
+import org.apache.cloudstack.api.response.VMBackupResponse;
+import org.apache.cloudstack.backup.VMBackup;
+import org.apache.cloudstack.backup.VMBackupVO;
+import org.apache.commons.collections.CollectionUtils;
+
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.user.AccountVO;
 import com.cloud.user.dao.AccountDao;
@@ -28,19 +38,8 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.backup.BackupTO;
-import org.apache.cloudstack.backup.BackupVO;
-import org.apache.cloudstack.backup.Backup;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
 
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-
-public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements BackupDao {
+public class VMBackupDaoImpl extends GenericDaoBase<VMBackupVO, Long> implements VMBackupDao {
 
     @Inject
     AccountDao accountDao;
@@ -54,9 +53,9 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
     @Inject
     VolumeDao volumeDao;
 
-    private SearchBuilder<BackupVO> backupSearch;
+    private SearchBuilder<VMBackupVO> backupSearch;
 
-    public BackupDaoImpl() {
+    public VMBackupDaoImpl() {
     }
 
     @PostConstruct
@@ -65,88 +64,88 @@ public class BackupDaoImpl extends GenericDaoBase<BackupVO, Long> implements Bac
         backupSearch.and("vm_id", backupSearch.entity().getVmId(), SearchCriteria.Op.EQ);
         backupSearch.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         backupSearch.and("external_id", backupSearch.entity().getExternalId(), SearchCriteria.Op.EQ);
+        backupSearch.and("status", backupSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         backupSearch.done();
     }
     @Override
-    public List<Backup> listByVmId(Long zoneId, Long vmId) {
-        SearchCriteria<BackupVO> sc = backupSearch.create();
+    public List<VMBackup> listByVmId(Long zoneId, Long vmId) {
+        SearchCriteria<VMBackupVO> sc = backupSearch.create();
         sc.setParameters("vm_id", vmId);
         sc.setParameters("zone_id", zoneId);
         return new ArrayList<>(listBy(sc));
     }
 
-    private Backup findByExternalId(Long zoneId, String externalId) {
-        SearchCriteria<BackupVO> sc = backupSearch.create();
+    private VMBackup findByExternalId(Long zoneId, String externalId) {
+        SearchCriteria<VMBackupVO> sc = backupSearch.create();
         sc.setParameters("external_id", externalId);
         sc.setParameters("zone_id", zoneId);
         return findOneBy(sc);
     }
 
-    public BackupVO getBackupVO(Backup backup) {
-        BackupVO backupVO = new BackupVO();
+    public VMBackupVO getBackupVO(VMBackup backup) {
+        VMBackupVO backupVO = new VMBackupVO();
         backupVO.setZoneId(backup.getZoneId());
         backupVO.setAccountId(backup.getAccountId());
         backupVO.setExternalId(backup.getExternalId());
         backupVO.setName(backup.getName());
         backupVO.setDescription(backup.getDescription());
-        if (backup instanceof BackupTO) {
-            String parentExternalId = ((BackupTO) backup).getParentExternalId();
-            if (StringUtils.isNotBlank(parentExternalId)) {
-                Backup parent = findByExternalId(backup.getZoneId(), parentExternalId);
-                backupVO.setParentId(parent.getId());
-            }
-        }
         backupVO.setVmId(backup.getVmId());
-        backupVO.setVolumeIds(backup.getVolumeIds());
         backupVO.setStatus(backup.getStatus());
-        backupVO.setStartTime(backup.getStartTime());
+        backupVO.setCreated(backup.getCreated());
         return backupVO;
     }
 
     public void removeExistingVMBackups(Long zoneId, Long vmId) {
-        SearchCriteria<BackupVO> sc = backupSearch.create();
+        SearchCriteria<VMBackupVO> sc = backupSearch.create();
         sc.setParameters("vm_id", vmId);
         sc.setParameters("zone_id", zoneId);
         expunge(sc);
     }
 
     @Override
-    public List<Backup> syncVMBackups(Long zoneId, Long vmId, List<Backup> externalBackups) {
-        for (Backup backup : externalBackups) {
-            BackupVO backupVO = getBackupVO(backup);
+    public List<VMBackup> syncVMBackups(Long zoneId, Long vmId, List<VMBackup> externalBackups) {
+        for (VMBackup backup : externalBackups) {
+            VMBackupVO backupVO = getBackupVO(backup);
             persist(backupVO);
         }
         return listByVmId(zoneId, vmId);
     }
 
     @Override
-    public BackupResponse newBackupResponse(Backup backup) {
+    public List<VMBackup> listByZoneAndState(Long zoneId, VMBackup.Status state) {
+        SearchCriteria<VMBackupVO> sc = backupSearch.create();
+        sc.setParameters("zone_id", zoneId);
+        if (state != null) {
+            sc.setParameters("status", state);
+        }
+        return new ArrayList<>(listIncludingRemovedBy(sc));
+    }
+
+    @Override
+    public VMBackupResponse newBackupResponse(VMBackup backup) {
         AccountVO account = accountDao.findById(backup.getAccountId());
-        BackupVO parent = findById(backup.getParentId());
         VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
         DataCenterVO zone = dataCenterDao.findById(backup.getZoneId());
 
-        BackupResponse backupResponse = new BackupResponse();
+        VMBackupResponse backupResponse = new VMBackupResponse();
         backupResponse.setZoneId(zone.getUuid());
         backupResponse.setId(backup.getUuid());
         backupResponse.setAccountId(account.getUuid());
         backupResponse.setExternalId(backup.getExternalId());
         backupResponse.setName(backup.getName());
         backupResponse.setDescription(backup.getDescription());
-        if (parent != null) {
-            backupResponse.setParentId(parent.getUuid());
-        }
         backupResponse.setVmId(vm.getUuid());
-        if (CollectionUtils.isNotEmpty(backup.getVolumeIds())) {
+        if (CollectionUtils.isNotEmpty(backup.getBackedUpVolumes())) {
             List<String> volIds = new ArrayList<>();
-            for (Long volId : backup.getVolumeIds()) {
-                VolumeVO volume = volumeDao.findById(volId);
-                volIds.add(volume.getUuid());
+            for (VMBackup.VolumeInfo volInfo : backup.getBackedUpVolumes()) {
+                volIds.add(volInfo.toString());
             }
             backupResponse.setVolumeIds(volIds);
         }
         backupResponse.setStatus(backup.getStatus());
-        backupResponse.setStartDate(backup.getStartTime());
+        backupResponse.setSize(backup.getSize());
+        backupResponse.setProtectedSize(backup.getProtectedSize());
+        backupResponse.setCreatedDate(backup.getCreated());
         backupResponse.setObjectName("backup");
         return backupResponse;
     }

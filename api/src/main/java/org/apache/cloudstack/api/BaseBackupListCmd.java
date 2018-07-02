@@ -17,17 +17,16 @@
 
 package org.apache.cloudstack.api;
 
-import org.apache.cloudstack.api.response.BackupPolicyResponse;
-import org.apache.cloudstack.api.response.BackupPolicyVMMapResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.backup.BackupPolicyVMMap;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.backup.Backup;
-import org.apache.cloudstack.backup.BackupPolicy;
-
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.VMBackupResponse;
+import org.apache.cloudstack.api.response.VMBackupRestorePointResponse;
+import org.apache.cloudstack.backup.BackupPolicy;
+import org.apache.cloudstack.backup.VMBackup;
+import org.apache.cloudstack.context.CallContext;
 
 public abstract class BaseBackupListCmd extends BaseListCmd {
 
@@ -46,14 +45,14 @@ public abstract class BaseBackupListCmd extends BaseListCmd {
         setResponseObject(response);
     }
 
-    protected void setupResponseBackupList(final List<Backup> backups) {
-        final ListResponse<BackupResponse> response = new ListResponse<>();
-        final List<BackupResponse> responses = new ArrayList<>();
-        for (Backup backup : backups) {
+    protected void setupResponseBackupList(final List<VMBackup> backups) {
+        final ListResponse<VMBackupResponse> response = new ListResponse<>();
+        final List<VMBackupResponse> responses = new ArrayList<>();
+        for (VMBackup backup : backups) {
             if (backup == null) {
                 continue;
             }
-            BackupResponse backupResponse = _responseGenerator.createBackupResponse(backup);
+            VMBackupResponse backupResponse = _responseGenerator.createBackupResponse(backup);
             responses.add(backupResponse);
         }
         response.setResponses(responses);
@@ -61,15 +60,19 @@ public abstract class BaseBackupListCmd extends BaseListCmd {
         setResponseObject(response);
     }
 
-    protected void setupResponseBackupPolicyVMMappings(final List<BackupPolicyVMMap> mappings) {
-        final ListResponse<BackupPolicyVMMapResponse> response = new ListResponse<>();
-        final List<BackupPolicyVMMapResponse> responses = new ArrayList<>();
-        for (BackupPolicyVMMap map : mappings) {
-            if (map == null) {
+    protected void setupResponseRestorePointsList(final List<VMBackup.RestorePoint> restorePoints) {
+        final ListResponse<VMBackupRestorePointResponse> response = new ListResponse<>();
+        final List<VMBackupRestorePointResponse> responses = new ArrayList<>();
+        for (VMBackup.RestorePoint rp : restorePoints) {
+            if (rp == null) {
                 continue;
             }
-            BackupPolicyVMMapResponse resp = _responseGenerator.createBackupPolicyVMMappingResponse(map);
-            responses.add(resp);
+            VMBackupRestorePointResponse rpResponse = new VMBackupRestorePointResponse();
+            rpResponse.setId(rp.getId());
+            rpResponse.setCreated(rp.getCreated());
+            rpResponse.setType(rp.getType());
+            rpResponse.setObjectName("vmbackuprestorepoint");
+            responses.add(rpResponse);
         }
         response.setResponses(responses);
         response.setResponseName(getCommandName());

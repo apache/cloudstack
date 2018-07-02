@@ -35,7 +35,7 @@ public class Ref {
     private String href;
 
     @JacksonXmlProperty(localName = "Type", isAttribute = true)
-    private VeeamObjectType type;
+    private String type;
 
     @JacksonXmlProperty(localName = "Link")
     @JacksonXmlElementWrapper(localName = "Links")
@@ -73,11 +73,11 @@ public class Ref {
         this.href = href;
     }
 
-    public VeeamObjectType getType() {
+    public String getType() {
         return type;
     }
 
     public void setType(String type) {
-        this.type = VeeamObjectType.valueOf(type);
+        this.type = type;
     }
 }

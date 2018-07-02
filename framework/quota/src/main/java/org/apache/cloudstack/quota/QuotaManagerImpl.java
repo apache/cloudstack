@@ -158,7 +158,8 @@ public class QuotaManagerImpl extends ManagerBase implements QuotaManager {
             case QuotaTypes.ISO:
             case QuotaTypes.VOLUME:
             case QuotaTypes.VM_SNAPSHOT:
-                qu = updateQuotaDiskUsage(usageRecord, aggregationRatio, usageRecord.getUsageType());
+            case QuotaTypes.VM_BACKUP:
+                    qu = updateQuotaDiskUsage(usageRecord, aggregationRatio, usageRecord.getUsageType());
                 if (qu != null) {
                     quotaListForAccount.add(qu);
                 }

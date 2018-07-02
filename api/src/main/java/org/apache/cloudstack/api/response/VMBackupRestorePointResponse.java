@@ -17,50 +17,49 @@
 
 package org.apache.cloudstack.api.response;
 
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.backup.BackupPolicyVMMap;
+import org.apache.cloudstack.backup.VMBackup;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
+@EntityReference(value = VMBackup.RestorePoint.class)
+public class VMBackupRestorePointResponse extends BaseResponse {
 
-@EntityReference(value = BackupPolicyVMMap.class)
-public class BackupPolicyVMMapResponse extends BaseResponse {
+    @SerializedName(ApiConstants.ID)
+    @Param(description = "external id of the restore point")
+    private String id;
 
-    @SerializedName(ApiConstants.ZONE_ID)
-    @Param(description = "zone id")
-    private String zoneId;
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "created time")
+    private String created;
 
-    @SerializedName(ApiConstants.POLICY_ID)
-    @Param(description = "backup policy id")
-    private String backupPolicyId;
+    @SerializedName(ApiConstants.TYPE)
+    @Param(description = "restore point type")
+    private String type;
 
-    @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
-    @Param(description = "virtual machine id")
-    private String vmId;
-
-    public String getZoneId() {
-        return zoneId;
+    public String getId() {
+        return id;
     }
 
-    public void setZoneId(String zoneId) {
-        this.zoneId = zoneId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public String getBackupPolicyId() {
-        return backupPolicyId;
+    public String getCreated() {
+        return created;
     }
 
-    public void setBackupPolicyId(String backupPolicyId) {
-        this.backupPolicyId = backupPolicyId;
+    public void setCreated(String created) {
+        this.created = created;
     }
 
-    public String getVmId() {
-        return vmId;
+    public String getType() {
+        return type;
     }
 
-    public void setVmId(String vmId) {
-        this.vmId = vmId;
+    public void setType(String type) {
+        this.type = type;
     }
 }

@@ -26,6 +26,51 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
+import com.cloud.hypervisor.vmware.mo.DatacenterMO;
+import com.cloud.hypervisor.vmware.mo.NetworkMO;
+import com.cloud.hypervisor.vmware.mo.VirtualDiskManagerMO;
+import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
+import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.network.Network;
+import com.cloud.network.Networks;
+import com.cloud.network.dao.PhysicalNetworkDao;
+import com.cloud.network.dao.PhysicalNetworkVO;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.utils.UuidUtils;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionStatus;
+import com.cloud.vm.Nic;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.UserVmDao;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.VirtualDevice;
+import com.vmware.vim25.VirtualDeviceBackingInfo;
+import com.vmware.vim25.VirtualDeviceConnectInfo;
+import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
+import com.vmware.vim25.VirtualE1000;
+import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
+import com.vmware.vim25.VirtualMachineConfigSummary;
+import com.vmware.vim25.VirtualMachineRuntimeInfo;
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.backup.VMBackup;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -38,7 +83,9 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.agent.api.BackupSnapshotCommand;
@@ -144,6 +191,22 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     PrimaryDataStoreDao _storagePoolDao;
     @Inject
     VolumeDataFactory _volFactory;
+    @Inject
+    private VmwareDatacenterDao vmwareDatacenterDao;
+    @Inject
+    private VmwareDatacenterZoneMapDao vmwareDatacenterZoneMapDao;
+    @Inject
+    private ServiceOfferingDao serviceOfferingDao;
+    @Inject
+    private VMTemplatePoolDao templateStoragePoolDao;
+    @Inject
+    private VMTemplateDao vmTemplateDao;
+    @Inject
+    private UserVmDao userVmDao;
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
+    @Inject
+    private PhysicalNetworkDao physicalNetworkDao;
 
     protected VMwareGuru() {
         super();
@@ -639,5 +702,664 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         details.put(VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
         details.put(VmwareReserveMemory.key(), VmwareReserveMemory.valueIn(clusterId).toString());
         return details;
+    }
+
+    /**
+     * Get vmware datacenter mapped to the zoneId
+     */
+    private VmwareDatacenterVO getVmwareDatacenter(long zoneId) {
+        VmwareDatacenterZoneMapVO zoneMap = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
+        long vmwareDcId = zoneMap.getVmwareDcId();
+        return vmwareDatacenterDao.findById(vmwareDcId);
+    }
+
+    /**
+     * Get Vmware datacenter MO
+     */
+    private DatacenterMO getDatacenterMO(long zoneId) throws Exception {
+        VmwareDatacenterVO vmwareDatacenter = getVmwareDatacenter(zoneId);
+        VmwareContext context = VmwareContextFactory.getContext(vmwareDatacenter.getVcenterHost(),
+                vmwareDatacenter.getUser(), vmwareDatacenter.getPassword());
+        DatacenterMO dcMo = new DatacenterMO(context, vmwareDatacenter.getVmwareDatacenterName());
+        ManagedObjectReference dcMor = dcMo.getMor();
+        if (dcMor == null) {
+            String msg = "Error while getting Vmware datacenter " + vmwareDatacenter.getVmwareDatacenterName();
+            s_logger.error(msg);
+            throw new InvalidParameterValueException(msg);
+        }
+        return dcMo;
+    }
+
+    /**
+     * Get guest OS ID for VM being imported.
+     * If it cannot be found it is mapped to: "Other (64-bit)" ID
+     */
+    private Long getImportingVMGuestOs(VirtualMachineConfigSummary configSummary) {
+        String guestFullName = configSummary.getGuestFullName();
+        GuestOSVO os = _guestOsDao.listByDisplayName(guestFullName);
+        return os != null ? os.getId() : _guestOsDao.listByDisplayName("Other (64-bit)").getId();
+    }
+
+    /**
+     * Create and persist service offering
+     */
+    private ServiceOfferingVO createServiceOfferingForVMImporting(Integer cpus, Integer memory, Integer maxCpuUsage) {
+        String name = "Imported-" + cpus + "-" + memory;
+        ServiceOfferingVO vo = new ServiceOfferingVO(name, cpus, memory, maxCpuUsage, null, null,
+                false, name, Storage.ProvisioningType.THIN, false, false,
+                null, false, Type.User, false);
+        return serviceOfferingDao.persist(vo);
+    }
+
+    /**
+     * Get service offering ID for VM being imported.
+     * If it cannot be found it creates one and returns its ID
+     */
+    private Long getImportingVMServiceOffering(VirtualMachineConfigSummary configSummary,
+                                               VirtualMachineRuntimeInfo runtimeInfo) {
+        Integer numCpu = configSummary.getNumCpu();
+        Integer memorySizeMB = configSummary.getMemorySizeMB();
+        Integer maxCpuUsage = runtimeInfo.getMaxCpuUsage();
+        List<ServiceOfferingVO> offerings = serviceOfferingDao.listPublicByCpuAndMemory(numCpu, memorySizeMB);
+        return CollectionUtils.isEmpty(offerings) ?
+                createServiceOfferingForVMImporting(numCpu, memorySizeMB, maxCpuUsage).getId() :
+                offerings.get(0).getId();
+    }
+
+    /**
+     * Check if disk is ROOT disk
+     */
+    private boolean isRootDisk(VirtualDisk disk, Map<VirtualDisk, VolumeVO> disksMapping) {
+        if (!disksMapping.containsKey(disk)) {
+            return false;
+        }
+        VolumeVO volumeVO = disksMapping.get(disk);
+        return volumeVO != null && volumeVO.getVolumeType().equals(Volume.Type.ROOT);
+    }
+
+    /**
+     * Check backing info
+     */
+    private void checkBackingInfo(VirtualDeviceBackingInfo backingInfo) {
+        if (! (backingInfo instanceof VirtualDiskFlatVer2BackingInfo)) {
+            throw new CloudRuntimeException("Unsopported backing, expected " + VirtualDiskFlatVer2BackingInfo.class.getSimpleName());
+        }
+    }
+
+    /**
+     * Get pool ID from datastore UUID
+     */
+    private Long getPoolIdFromDatastoreUuid(String datastoreUuid) {
+        String poolUuid = UuidUtils.normalize(datastoreUuid);
+        StoragePoolVO pool = _storagePoolDao.findByUuid(poolUuid);
+        if (pool == null) {
+            throw new CloudRuntimeException("Couldn't find storage pool " + poolUuid);
+        }
+        return pool.getId();
+    }
+
+    /**
+     * Get pool ID for disk
+     */
+    private Long getPoolId(VirtualDisk disk) {
+        VirtualDeviceBackingInfo backing = disk.getBacking();
+        checkBackingInfo(backing);
+        VirtualDiskFlatVer2BackingInfo info = (VirtualDiskFlatVer2BackingInfo) backing;
+        String[] fileNameParts = info.getFileName().split(" ");
+        String datastoreUuid = StringUtils.substringBetween(fileNameParts[0], "[", "]");
+        return getPoolIdFromDatastoreUuid(datastoreUuid);
+    }
+
+    /**
+     * Get pool ID for VM being imported
+     */
+    private Long getImportingVMPoolId(List<VirtualDisk> disks, Map<VirtualDisk, VolumeVO> disksMapping) {
+        for (VirtualDisk disk : disks) {
+            if (isRootDisk(disk, disksMapping)) {
+                return getPoolId(disk);
+            }
+        }
+        throw new CloudRuntimeException("No ROOT disk found");
+    }
+
+    /**
+     * Get volume name from filename
+     */
+    private String getVolumeNameFromFileName(String fileName) {
+        String[] fileNameParts = fileName.split(" ");
+        String volumePath = fileNameParts[1];
+        return volumePath.split("/")[1].replaceFirst(".vmdk", "");
+    }
+
+    /**
+     * Get root disk template path
+     */
+    private String getRootDiskTemplatePath(VirtualDisk rootDisk) {
+        VirtualDeviceBackingInfo backing = rootDisk.getBacking();
+        checkBackingInfo(backing);
+        VirtualDiskFlatVer2BackingInfo info = (VirtualDiskFlatVer2BackingInfo) backing;
+        VirtualDiskFlatVer2BackingInfo parent = info.getParent();
+        return (parent != null) ? getVolumeNameFromFileName(parent.getFileName()) : getVolumeNameFromFileName(info.getFileName());
+    }
+
+    /**
+     * Get template MO
+     */
+    private VirtualMachineMO getTemplate(DatacenterMO dcMo, String templatePath) throws Exception {
+        VirtualMachineMO template = dcMo.findVm(templatePath);
+        if (!template.isTemplate()) {
+            throw new CloudRuntimeException(templatePath + " is not a template");
+        }
+        return template;
+    }
+
+    /**
+     * Get template pool ID
+     */
+    private Long getTemplatePoolId(VirtualMachineMO template) throws Exception {
+        VirtualMachineConfigSummary configSummary = template.getConfigSummary();
+        String vmPathName = configSummary.getVmPathName();
+        String[] pathParts = vmPathName.split(" ");
+        String dataStoreUuid = pathParts[0].replace("[", "").replace("]", "");
+        return getPoolIdFromDatastoreUuid(dataStoreUuid);
+    }
+
+    /**
+     * Get template size
+     */
+    private Long getTemplateSize(VirtualMachineMO template, String vmInternalName,
+                                 Map<VirtualDisk, VolumeVO> disksMapping) throws Exception {
+        List<VirtualDisk> disks = template.getVirtualDisks();
+        for (VirtualDisk disk : disks) {
+            if (isRootDisk(disk, disksMapping)) {
+                return disk.getCapacityInBytes();
+            }
+        }
+        throw new CloudRuntimeException("Could not find ROOT disk for VM: " + vmInternalName);
+    }
+
+    /**
+     * Create a VM Template record on DB
+     */
+    private VMTemplateVO createVMTemplateRecord(String vmInternalName, long guestOsId, long accountId) {
+        Long nextTemplateId = vmTemplateDao.getNextInSequence(Long.class, "id");
+        VMTemplateVO templateVO = new VMTemplateVO(nextTemplateId, "Imported-from-" + vmInternalName,
+                Storage.ImageFormat.OVA,false, false, false, Storage.TemplateType.USER,
+                null, false, 64, accountId, null, "Template imported from VM " + vmInternalName,
+                false, guestOsId, false, HypervisorType.VMware, null, null,
+                false, false, false);
+        return vmTemplateDao.persist(templateVO);
+    }
+
+    /**
+     * Retrieve the template ID matching the template on templatePath. There are 2 cases:
+     * - There are no references on DB for primary storage -> create a template DB record and return its ID
+     * - There are references on DB for primary storage -> return template ID for any of those references
+     */
+    private long getTemplateId(String templatePath, String vmInternalName, Long guestOsId, long accountId) {
+        List<VMTemplateStoragePoolVO> poolRefs = templateStoragePoolDao.listByTemplatePath(templatePath);
+        return CollectionUtils.isNotEmpty(poolRefs) ?
+                poolRefs.get(0).getTemplateId() :
+                createVMTemplateRecord(vmInternalName, guestOsId, accountId).getId();
+    }
+
+    /**
+     * Update template reference on primary storage, if needed
+     */
+    private void updateTemplateRef(long templateId, Long poolId, String templatePath, Long templateSize) {
+        VMTemplateStoragePoolVO templateRef = templateStoragePoolDao.findByPoolPath(poolId, templatePath);
+        if (templateRef == null) {
+            templateRef = new VMTemplateStoragePoolVO(poolId, templateId, null, 100,
+                    VMTemplateStorageResourceAssoc.Status.DOWNLOADED, templatePath, null,
+                    null, templatePath, templateSize);
+            templateRef.setState(ObjectInDataStoreStateMachine.State.Ready);
+            templateStoragePoolDao.persist(templateRef);
+        }
+    }
+
+    /**
+     * Get template ID for VM being imported. If it is not found, it is created
+     */
+    private Long getImportingVMTemplate(List<VirtualDisk> virtualDisks, DatacenterMO dcMo, String vmInternalName,
+                                        Long guestOsId, long accountId, Map<VirtualDisk, VolumeVO> disksMapping) throws Exception {
+        for (VirtualDisk disk : virtualDisks) {
+            if (isRootDisk(disk, disksMapping)) {
+                VolumeVO volumeVO = disksMapping.get(disk);
+                if (volumeVO == null) {
+                    String templatePath = getRootDiskTemplatePath(disk);
+                    VirtualMachineMO template = getTemplate(dcMo, templatePath);
+                    Long poolId = getTemplatePoolId(template);
+                    Long templateSize = getTemplateSize(template, vmInternalName, disksMapping);
+                    long templateId = getTemplateId(templatePath, vmInternalName, guestOsId, accountId);
+                    updateTemplateRef(templateId, poolId, templatePath, templateSize);
+                    return templateId;
+                } else {
+                    return volumeVO.getTemplateId();
+                }
+            }
+        }
+        throw new CloudRuntimeException("Could not find ROOT disk for VM " + vmInternalName);
+    }
+
+    /**
+     * If VM does not exist: create and persist VM
+     * If VM exists: update VM
+     */
+    private VMInstanceVO getVM(String vmInternalName, long templateId, long guestOsId,
+                               long serviceOfferingId, long zoneId, long accountId, long userId,
+                               long domainId) {
+        VMInstanceVO existingVM = _vmDao.findVMByInstanceName(vmInternalName);
+        if (existingVM != null) {
+            existingVM.setTemplateId(templateId);
+            existingVM.setGuestOSId(guestOsId);
+            existingVM.setServiceOfferingId(serviceOfferingId);
+            return _vmDao.persist(existingVM);
+        } else {
+            long id = userVmDao.getNextInSequence(Long.class, "id");
+            UserVmVO vmInstanceVO = new UserVmVO(id, vmInternalName, vmInternalName, templateId, HypervisorType.VMware,
+                    guestOsId, false, false, domainId, accountId, userId, serviceOfferingId,
+                    null, vmInternalName, null);
+            vmInstanceVO.setDataCenterId(zoneId);
+            return userVmDao.persist(vmInstanceVO);
+        }
+    }
+
+    /**
+     * Create and persist volume
+     */
+    private VolumeVO createVolumeRecord(Volume.Type type, String volumeName, long zoneId, long domainId,
+                                        long accountId, long diskOfferingId, Storage.ProvisioningType provisioningType,
+                                        Long size, long instanceId, Long poolId, long templateId, Integer unitNumber) {
+        VolumeVO volumeVO = new VolumeVO(type, volumeName, zoneId, domainId, accountId, diskOfferingId,
+                provisioningType, size, null, null, null);
+        volumeVO.setFormat(Storage.ImageFormat.OVA);
+        volumeVO.setPath(volumeName);
+        volumeVO.setState(Volume.State.Ready);
+        volumeVO.setInstanceId(instanceId);
+        volumeVO.setPoolId(poolId);
+        volumeVO.setTemplateId(templateId);
+        if (unitNumber != null) {
+            volumeVO.setDeviceId(unitNumber.longValue());
+        }
+        return _volumeDao.persist(volumeVO);
+    }
+
+    /**
+     * Get volume name from VM disk
+     */
+    private String getVolumeName(VirtualDisk disk, VirtualMachineMO vmToImport) throws Exception {
+        return vmToImport.getVmdkFileBaseName(disk);
+    }
+
+    /**
+     * Get provisioning type for VM disk info
+     */
+    private Storage.ProvisioningType getProvisioningType(VirtualDiskFlatVer2BackingInfo backing) {
+        Boolean thinProvisioned = backing.isThinProvisioned();
+        if (BooleanUtils.isTrue(thinProvisioned)) {
+            return Storage.ProvisioningType.THIN;
+        }
+        return Storage.ProvisioningType.SPARSE;
+    }
+
+    /**
+     * Get disk offering ID for volume being imported. If it is not found it is mapped to "Custom" ID
+     */
+    private long getDiskOfferingId(long size, Storage.ProvisioningType provisioningType, long domainId) {
+        List<DiskOfferingVO> offerings = diskOfferingDao.listAllBySizeAndProvisioningType(size, provisioningType, domainId);
+        return CollectionUtils.isNotEmpty(offerings) ?
+                offerings.get(0).getId() :
+                diskOfferingDao.findByUniqueName("Cloud.Com-Custom").getId();
+    }
+
+    protected VolumeVO updateVolume(VirtualDisk disk, Map<VirtualDisk, VolumeVO> disksMapping, VirtualMachineMO vmToImport, Long poolId) throws Exception {
+        VolumeVO volumeVO = disksMapping.get(disk);
+        String volumeName = getVolumeName(disk, vmToImport);
+        volumeVO.setName(volumeName);
+        volumeVO.setPath(volumeName);
+        volumeVO.setPoolId(poolId);
+        _volumeDao.update(volumeVO.getId(), volumeVO);
+        return volumeVO;
+    }
+
+    /**
+     * Get volumes for VM being imported
+     */
+    private void importVMVolumes(VMInstanceVO vmInstanceVO, Long poolId, List<VirtualDisk> virtualDisks,
+                                 Map<VirtualDisk, VolumeVO> disksMapping, VirtualMachineMO vmToImport) throws Exception {
+        long zoneId = vmInstanceVO.getDataCenterId();
+        long accountId = vmInstanceVO.getAccountId();
+        long domainId = vmInstanceVO.getDomainId();
+        long templateId = vmInstanceVO.getTemplateId();
+        long instanceId = vmInstanceVO.getId();
+
+        List<VolumeVO> vols = new ArrayList<>();
+        for (VirtualDisk disk : virtualDisks) {
+            VolumeVO volumeVO;
+            if (disksMapping.containsKey(disk)) {
+                volumeVO = updateVolume(disk, disksMapping, vmToImport, poolId);
+            } else {
+                volumeVO = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId);
+            }
+            vols.add(volumeVO);
+        }
+        removeUnusedVolumes(vols, vmInstanceVO);
+    }
+
+    private void removeUnusedVolumes(List<VolumeVO> vols, VMInstanceVO vmInstanceVO) {
+        List<VolumeVO> existingVolumes = _volumeDao.findByInstance(vmInstanceVO.getId());
+        if (existingVolumes.size() != vols.size()) {
+            for (VolumeVO existingVol : existingVolumes) {
+                if (!vols.contains(existingVol)) {
+                    _volumeDao.remove(existingVol.getId());
+                }
+            }
+        }
+    }
+
+    private VolumeVO createVolume(VirtualDisk disk, VirtualMachineMO vmToImport, long domainId, long zoneId,
+                                  long accountId, long instanceId, Long poolId, long templateId) throws Exception {
+        Long size = disk.getCapacityInBytes();
+        VirtualDeviceBackingInfo backing = disk.getBacking();
+        checkBackingInfo(backing);
+        VirtualDiskFlatVer2BackingInfo info = (VirtualDiskFlatVer2BackingInfo) backing;
+        String volumeName = getVolumeName(disk, vmToImport);
+        Storage.ProvisioningType provisioningType = getProvisioningType(info);
+        long diskOfferingId = getDiskOfferingId(size, provisioningType, domainId);
+        Volume.Type type = Volume.Type.DATADISK;
+        Integer unitNumber = disk.getUnitNumber();
+        return createVolumeRecord(type, volumeName, zoneId, domainId, accountId, diskOfferingId,
+                provisioningType, size, instanceId, poolId, templateId, unitNumber);
+    }
+
+    /**
+     * Get physical network ID from zoneId and Vmware label
+     */
+    private long getPhysicalNetworkId(Long zoneId, String tag) {
+        List<PhysicalNetworkVO> physicalNetworks = physicalNetworkDao.listByZone(zoneId);
+        for (PhysicalNetworkVO physicalNetwork : physicalNetworks) {
+            PhysicalNetworkTrafficTypeVO vo = _physicalNetworkTrafficTypeDao.findBy(physicalNetwork.getId(), TrafficType.Guest);
+            if (vo == null) {
+                continue;
+            }
+            String vmwareNetworkLabel = vo.getVmwareNetworkLabel();
+            if (!vmwareNetworkLabel.startsWith(tag)) {
+                throw new CloudRuntimeException("Vmware network label does not start with: " + tag);
+            }
+            return physicalNetwork.getId();
+        }
+        throw new CloudRuntimeException("Could not find guest physical network matching tag: " + tag + " on zone " + zoneId);
+    }
+
+    /**
+     * Create and persist network
+     */
+    private NetworkVO createNetworkRecord(Long zoneId, String tag, String vlan, long accountId, long domainId) {
+        Long physicalNetworkId = getPhysicalNetworkId(zoneId, tag);
+        final long id = _networkDao.getNextInSequence(Long.class, "id");
+        NetworkVO networkVO = new NetworkVO(id, TrafficType.Guest, Networks.Mode.Dhcp, BroadcastDomainType.Vlan, 9L,
+                domainId, accountId, id, "Imported-network-" + id, "Imported-network-" + id, null, Network.GuestType.Isolated,
+                zoneId, physicalNetworkId, ControlledEntity.ACLType.Account, false, null, false);
+        networkVO.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan));
+        networkVO.setGuruName("ExternalGuestNetworkGuru");
+        networkVO.setState(Network.State.Implemented);
+        return _networkDao.persist(networkVO);
+    }
+
+    /**
+     * Get network from VM network name
+     */
+    private NetworkVO getGuestNetworkFromNetworkMorName(String name, long accountId, Long zoneId, long domainId) {
+        String prefix = "cloud.guest.";
+        String nameWithoutPrefix = name.replace(prefix, "");
+        String[] parts = nameWithoutPrefix.split("\\.");
+        String vlan = parts[0];
+        String tag = parts[parts.length - 1];
+        String[] tagSplit = tag.split("-");
+        tag = tagSplit[tagSplit.length - 1];
+        NetworkVO networkVO = _networkDao.findByVlan(vlan);
+        if (networkVO == null) {
+            networkVO = createNetworkRecord(zoneId, tag, vlan, accountId, domainId);
+        }
+        return networkVO;
+    }
+
+    /**
+     * Get map between VM networks and its IDs on CloudStack
+     */
+    private Map<String, NetworkVO> getNetworksMapping(String[] vmNetworkNames, long accountId, long zoneId, long domainId) {
+        Map<String, NetworkVO> mapping = new HashMap<>();
+        for (String networkName : vmNetworkNames) {
+            NetworkVO networkVO = getGuestNetworkFromNetworkMorName(networkName, accountId, zoneId, domainId);
+            mapping.put(networkName, networkVO);
+        }
+        return mapping;
+    }
+
+    /**
+     * Get network MO from VM NIC
+     */
+    private NetworkMO getNetworkMO(VirtualE1000 nic, VmwareContext context) {
+        VirtualDeviceConnectInfo connectable = nic.getConnectable();
+        VirtualEthernetCardNetworkBackingInfo info = (VirtualEthernetCardNetworkBackingInfo) nic.getBacking();
+        ManagedObjectReference networkMor = info.getNetwork();
+        if (networkMor == null) {
+            throw new CloudRuntimeException("Could not find network for NIC on: " + nic.getMacAddress());
+        }
+        return new NetworkMO(context, networkMor);
+    }
+
+    /**
+     * Create and persist NIC
+     */
+    private NicVO createNicRecord(String macAddress, Long networkId, VMInstanceVO vmInstanceVO) {
+        NicVO nicVO = new NicVO("ExternalGuestNetworkGuru", vmInstanceVO.getId(), networkId, vmInstanceVO.getType());
+        nicVO.setMacAddress(macAddress);
+        nicVO.setAddressFormat(Networks.AddressFormat.Ip4);
+        nicVO.setReservationStrategy(Nic.ReservationStrategy.Start);
+        nicVO.setState(Nic.State.Reserved);
+        nicVO.setDefaultNic(true);
+        return _nicDao.persist(nicVO);
+    }
+
+    /**
+     * Remove volumes and nics if the VM already existed on CloudStack. No action performed if not existing
+     */
+    private Pair<List<VolumeVO>, List<VolumeVO>> cleanupExistingVMVolumesAndNics(String vmInternalName) {
+        VMInstanceVO existingVm = _vmDao.findVMByInstanceName(vmInternalName);
+        if (existingVm != null) {
+            List<VolumeVO> rootDisks = _volumeDao.findReadyRootVolumesByInstance(existingVm.getId());
+            List<VolumeVO> datadisks = _volumeDao.findByInstanceAndType(existingVm.getId(), Volume.Type.DATADISK);
+            _volumeDao.deleteVolumesByInstance(existingVm.getId());
+            _nicDao.removeNicsForInstance(existingVm.getId());
+            return new Pair<>(rootDisks, datadisks);
+        }
+        return new Pair<>(null, null);
+    }
+
+    private Pair<String, String> getNicMacAddressAndNetworkName(VirtualDevice nicDevice, VmwareContext context) throws Exception {
+        VirtualE1000 nic = (VirtualE1000) nicDevice;
+        String macAddress = nic.getMacAddress();
+        NetworkMO networkMO = getNetworkMO(nic, context);
+        String networkName = networkMO.getName();
+        return new Pair<>(macAddress, networkName);
+    }
+
+    private void importVMNics(VirtualDevice[] nicDevices, DatacenterMO dcMo, Map<String, NetworkVO> networksMapping,
+                              VMInstanceVO vmInstanceVO) throws Exception {
+        VmwareContext context = dcMo.getContext();
+        List<NicVO> nics = new ArrayList<>();
+        for (VirtualDevice nicDevice : nicDevices) {
+            Pair<String, String> pair = getNicMacAddressAndNetworkName(nicDevice, context);
+            String macAddress = pair.first();
+            String networkName = pair.second();
+            NetworkVO networkVO = networksMapping.get(networkName);
+            NicVO nicVO = _nicDao.findByNetworkIdAndMacAddress(networkVO.getId(), macAddress);
+            if (nicVO == null) {
+                nicVO = createNicRecord(macAddress, networkVO.getId(), vmInstanceVO);
+            }
+            nics.add(nicVO);
+        }
+        removeUnusedNics(nics, vmInstanceVO);
+    }
+
+    private void removeUnusedNics(List<NicVO> nics, VMInstanceVO vmInstanceVO) {
+        List<NicVO> existingVMNics = _nicDao.listByVmId(vmInstanceVO.getId());
+        if (nics.size() != existingVMNics.size()) {
+            for (NicVO existingNic : existingVMNics) {
+                if (!nics.contains(existingNic)) {
+                    _nicDao.remove(existingNic.getId());
+                }
+            }
+        }
+    }
+
+    private Map<VirtualDisk, VolumeVO> getDisksMapping(VMBackup backup, List<VirtualDisk> virtualDisks) {
+        Map<VirtualDisk, VolumeVO> map = new HashMap<>();
+        List<VMBackup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
+        for (VMBackup.VolumeInfo backedUpVol : backedUpVolumes) {
+            for (VirtualDisk disk : virtualDisks) {
+                if (backedUpVol.getSize().equals(disk.getCapacityInBytes())) {
+                    String volId = backedUpVol.getUuid();
+                    VolumeVO vol = _volumeDao.findByUuid(volId);
+                    map.put(disk, vol);
+                }
+            }
+        }
+        return map;
+    }
+
+    /**
+     * Find VM on datacenter
+     */
+    private VirtualMachineMO findVM(DatacenterMO dcMo, String path) throws Exception {
+        VirtualMachineMO vm = dcMo.findVm(path);
+        if (vm == null) {
+            throw new CloudRuntimeException("Error finding VM: " + path);
+        }
+        return vm;
+    }
+
+    /**
+     * Find restored volume based on volume info
+     */
+    private VirtualDisk findRestoredVolume(VMBackup.VolumeInfo volumeInfo, VirtualMachineMO vm) throws Exception {
+        List<VirtualDisk> virtualDisks = vm.getVirtualDisks();
+        for (VirtualDisk disk: virtualDisks) {
+            if (disk.getCapacityInBytes().equals(volumeInfo.getSize())) {
+                return disk;
+            }
+        }
+        throw new CloudRuntimeException("Volume to restore could not be found");
+    }
+
+    /**
+     * Get volume full path
+     */
+    private String getVolumeFullPath(VirtualDisk disk) {
+        VirtualDeviceBackingInfo backing = disk.getBacking();
+        checkBackingInfo(backing);
+        VirtualDiskFlatVer2BackingInfo info = (VirtualDiskFlatVer2BackingInfo) backing;
+        return info.getFileName();
+    }
+
+    /**
+     * Get dest volume full path
+     */
+    private String getDestVolumeFullPath(VirtualDisk restoredDisk, VirtualMachineMO restoredVm,
+                                         VirtualMachineMO vmMo) throws Exception {
+        VirtualDisk vmDisk = vmMo.getVirtualDisks().get(0);
+        String vmDiskPath = vmMo.getVmdkFileBaseName(vmDisk);
+        String vmDiskFullPath = getVolumeFullPath(vmMo.getVirtualDisks().get(0));
+        String restoredVolumePath = restoredVm.getVmdkFileBaseName(restoredDisk);
+        return vmDiskFullPath.replace(vmDiskPath, restoredVolumePath);
+    }
+
+    /**
+     * Get dest datastore mor
+     */
+    private ManagedObjectReference getDestStoreMor(VirtualMachineMO vmMo) throws Exception {
+        VirtualDisk vmDisk = vmMo.getVirtualDisks().get(0);
+        VirtualDeviceBackingInfo backing = vmDisk.getBacking();
+        checkBackingInfo(backing);
+        VirtualDiskFlatVer2BackingInfo info = (VirtualDiskFlatVer2BackingInfo) backing;
+        return info.getDatastore();
+    }
+
+    @Override
+    public VirtualMachine importVirtualMachine(long zoneId, long domainId, long accountId, long userId,
+                                               String vmInternalName, VMBackup backup) throws Exception {
+        DatacenterMO dcMo = getDatacenterMO(zoneId);
+        VirtualMachineMO vmToImport = dcMo.findVm(vmInternalName);
+        if (vmToImport == null) {
+            throw new CloudRuntimeException("Error finding VM: " + vmInternalName);
+        }
+        VirtualMachineConfigSummary configSummary = vmToImport.getConfigSummary();
+        VirtualMachineRuntimeInfo runtimeInfo = vmToImport.getRuntimeInfo();
+        List<VirtualDisk> virtualDisks = vmToImport.getVirtualDisks();
+        String[] vmNetworkNames = vmToImport.getNetworks();
+        VirtualDevice[] nicDevices = vmToImport.getNicDevices();
+
+        return Transaction.execute(new TransactionCallbackWithException<VMInstanceVO, Exception>() {
+            @Override
+            public VMInstanceVO doInTransaction(TransactionStatus status) throws Exception {
+                Map<VirtualDisk, VolumeVO> disksMapping = getDisksMapping(backup, virtualDisks);
+                Map<String, NetworkVO> networksMapping = getNetworksMapping(vmNetworkNames, accountId, zoneId, domainId);
+
+                long guestOsId = getImportingVMGuestOs(configSummary);
+                long serviceOfferingId = getImportingVMServiceOffering(configSummary, runtimeInfo);
+                long poolId = getImportingVMPoolId(virtualDisks, disksMapping);
+                long templateId = getImportingVMTemplate(virtualDisks, dcMo, vmInternalName, guestOsId, accountId, disksMapping);
+
+                VMInstanceVO vmInstanceVO = getVM(vmInternalName, templateId, guestOsId,
+                        serviceOfferingId, zoneId, accountId, userId, domainId);
+
+                importVMNics(nicDevices, dcMo, networksMapping, vmInstanceVO);
+                importVMVolumes(vmInstanceVO, poolId, virtualDisks, disksMapping, vmToImport);
+                return vmInstanceVO;
+            }
+        });
+    }
+
+    @Override
+    public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, VMBackup.VolumeInfo volumeInfo,
+                                                        VirtualMachine vm, long poolId) throws Exception {
+        DatacenterMO dcMo = getDatacenterMO(zoneId);
+        VirtualMachineMO vmRestored = findVM(dcMo, location);
+        VirtualMachineMO vmMo = findVM(dcMo, vm.getInstanceName());
+        VirtualDisk restoredDisk = findRestoredVolume(volumeInfo, vmRestored);
+        String diskPath = vmRestored.getVmdkFileBaseName(restoredDisk);
+
+        //Detach restored VM disks
+        vmRestored.detachAllDisks();
+
+        String srcPath = getVolumeFullPath(restoredDisk);
+        String destPath = getDestVolumeFullPath(restoredDisk, vmRestored, vmMo);
+
+        VirtualDiskManagerMO virtualDiskManagerMO = new VirtualDiskManagerMO(dcMo.getContext());
+
+        //Copy volume to the VM folder
+        virtualDiskManagerMO.moveVirtualDisk(srcPath, dcMo.getMor(), destPath, dcMo.getMor(), true);
+
+        //Attach volume to VM
+        vmMo.attachDisk(new String[] {destPath}, getDestStoreMor(vmMo));
+
+        //Destroy restored VM
+        vmRestored.destroy();
+
+        VirtualDisk attachedDisk = getAttachedDisk(vmMo, diskPath);
+        createVolume(attachedDisk, vmMo, vm.getDomainId(), vm.getDataCenterId(), vm.getAccountId(), vm.getId(),
+                poolId, vm.getTemplateId());
+
+        return true;
+    }
+
+    private VirtualDisk getAttachedDisk(VirtualMachineMO vmMo, String diskPath) throws Exception {
+        for (VirtualDisk disk : vmMo.getVirtualDisks()) {
+            if (vmMo.getVmdkFileBaseName(disk).equals(diskPath)) {
+                return disk;
+            }
+        }
+        return null;
     }
 }

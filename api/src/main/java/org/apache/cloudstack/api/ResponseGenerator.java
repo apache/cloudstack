@@ -35,8 +35,6 @@ import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
 import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
-import org.apache.cloudstack.api.response.BackupPolicyVMMapResponse;
-import org.apache.cloudstack.api.response.BackupResponse;
 import org.apache.cloudstack.api.response.CapacityResponse;
 import org.apache.cloudstack.api.response.ClusterResponse;
 import org.apache.cloudstack.api.response.ConditionResponse;
@@ -111,6 +109,7 @@ import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
 import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.UserResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VMBackupResponse;
 import org.apache.cloudstack.api.response.VMSnapshotResponse;
 import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
 import org.apache.cloudstack.api.response.VlanIpRangeResponse;
@@ -120,9 +119,8 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupPolicy;
-import org.apache.cloudstack.backup.BackupPolicyVMMap;
+import org.apache.cloudstack.backup.VMBackup;
 import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.backup.Backup;
 import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
 import org.apache.cloudstack.region.PortableIp;
 import org.apache.cloudstack.region.PortableIpRange;
@@ -469,9 +467,7 @@ public interface ResponseGenerator {
 
     SSHKeyPairResponse createSSHKeyPairResponse(SSHKeyPair sshkeyPair, boolean privatekey);
 
-    BackupResponse createBackupResponse(Backup backup);
+    VMBackupResponse createBackupResponse(VMBackup backup);
 
     BackupPolicyResponse createBackupPolicyResponse(BackupPolicy policy);
-
-    BackupPolicyVMMapResponse createBackupPolicyVMMappingResponse(BackupPolicyVMMap map);
 }

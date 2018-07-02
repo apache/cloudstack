@@ -17,27 +17,26 @@
 package org.apache.cloudstack.backup;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
-
-import org.apache.cloudstack.backup.dao.BackupDao;
-import org.apache.log4j.Logger;
-
-import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Volume;
-import com.cloud.utils.component.AdapterBase;
-import com.cloud.vm.VirtualMachine;
+import java.util.Map;
 
 import javax.inject.Inject;
+
+import com.cloud.utils.Pair;
+import org.apache.cloudstack.backup.dao.VMBackupDao;
+import org.apache.log4j.Logger;
+
+import com.cloud.utils.component.AdapterBase;
+import com.cloud.vm.VirtualMachine;
 
 public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     private static final Logger s_logger = Logger.getLogger(DummyBackupProvider.class);
 
     @Inject
-    private BackupDao backupDao;
+    private VMBackupDao backupDao;
 
     @Override
     public String getName() {
@@ -52,79 +51,78 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
     @Override
     public List<BackupPolicy> listBackupPolicies(Long zoneId) {
         s_logger.debug("Listing backup policies on Dummy B&R Plugin");
-        BackupPolicy policy1 = new BackupPolicyTO("aaaa-aaaa", "Golden Policy", "Gold description");
-        BackupPolicy policy2 = new BackupPolicyTO("bbbb-bbbb", "Silver Policy", "Silver description");
+        BackupPolicy policy1 = new BackupPolicyVO("aaaa-aaaa", "Golden Policy", "Gold description");
+        BackupPolicy policy2 = new BackupPolicyVO("bbbb-bbbb", "Silver Policy", "Silver description");
         return Arrays.asList(policy1, policy2);
     }
 
     @Override
     public boolean isBackupPolicy(Long zoneId, String uuid) {
-        s_logger.debug("Checking if backup policy exists on the Dummy Backup Provider");
+        s_logger.debug("Checking if backup policy exists on the Dummy VMBackup Provider");
         return true;
     }
 
     @Override
-    public boolean addVMToBackupPolicy(BackupPolicy policy, VirtualMachine vm) {
-        s_logger.debug("Assigning VM " + vm.getInstanceName() + " to backup policy " + policy.getName());
-        return true;
-    }
-
-    @Override
-    public boolean removeVMFromBackupPolicy(BackupPolicy policy, VirtualMachine vm) {
-        s_logger.debug("Removing VM " + vm.getInstanceName() + " from backup policy " + policy.getName());
-        return true;
-    }
-
-    @Override
-    public Backup createVMBackup(BackupPolicy policy, VirtualMachine vm) {
+    public VMBackup createVMBackup(BackupPolicy policy, VirtualMachine vm, VMBackup backup) {
         s_logger.debug("Creating VM backup for VM " + vm.getInstanceName() + " from backup policy " + policy.getName());
 
-        List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
-        String backupNumber = String.valueOf(backups.size() + 1);
-        Backup lastBackup = null;
-        if (backups.size() > 0) {
-            backups.sort(Comparator.comparing(Backup::getStartTime));
-            lastBackup = backups.get(backups.size() - 1);
-        }
-        BackupTO newBackup = new BackupTO(vm.getDataCenterId(), vm.getAccountId(),
-                "xxxx-xxxx-" + vm.getUuid() + "-" + backupNumber, "Backup-" + vm.getUuid() + backupNumber,
-                "VM-" + vm.getInstanceName() + "-backup-" + backupNumber,
-                lastBackup != null ? lastBackup.getExternalId() : null, vm.getId(), null,
-                Backup.Status.BackedUp, new Date());
-        backups.add(newBackup);
-
-        return newBackup;
+        List<VMBackup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        VMBackupVO dummyBackup = (VMBackupVO) backup;
+        dummyBackup.setStatus(VMBackup.Status.BackedUp);
+        dummyBackup.setCreated(new Date());
+        backups.add(dummyBackup);
+        return dummyBackup;
     }
 
     @Override
-    public boolean restoreVMFromBackup(String vmUuid, String backupUuid) {
-        s_logger.debug("Restoring vm " + vmUuid + "from backup " + backupUuid + " on the Dummy Backup Provider");
+    public boolean restoreVMFromBackup(VirtualMachine vm, String backupUuid, String restorePointId) {
+        s_logger.debug("Restoring vm " + vm.getUuid() + "from backup " + backupUuid + " on the Dummy Backup Provider");
         return true;
     }
 
     @Override
-    public VolumeTO restoreVolumeFromBackup(String volumeUuid, String backupUuid) {
-        s_logger.debug("Restoring volume " + volumeUuid + "from backup " + backupUuid + " on the Dummy Backup Provider");
-        return new VolumeTO(0L, Volume.Type.DATADISK, Storage.StoragePoolType.NetworkFilesystem, "pool-aaaa", "volumeTest",
-                "/test", "volTest", 1024L, "", "");
+    public Pair<Boolean, String> restoreBackedUpVolume(long zoneId, String backupUuid, String restorePointId, String volumeUuid,
+                                                       String hostIp, String dataStoreUuid) {
+        s_logger.debug("Restoring volume " + volumeUuid + "from backup " + backupUuid + " on the Dummy VMBackup Provider");
+        return null;
     }
 
     @Override
-    public List<Backup> listVMBackups(Long zoneId, VirtualMachine vm) {
-        s_logger.debug("Listing VM " + vm.getInstanceName() + "backups on the Dummy Backup Provider");
+    public List<VMBackup> listVMBackups(Long zoneId, VirtualMachine vm) {
+        s_logger.debug("Listing VM " + vm.getInstanceName() + "backups on the Dummy VMBackup Provider");
         return backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
     }
 
     @Override
-    public boolean removeVMBackup(VirtualMachine vm, String backupId) {
-        s_logger.debug("Removing VM backup " + backupId + " for VM " + vm.getInstanceName() + " on the Dummy Backup Provider");
+    public Map<VMBackup, VMBackup.Metric> getBackupMetrics(Long zoneId, List<VMBackup> backupList) {
+        final Map<VMBackup, VMBackup.Metric> metrics = new HashMap<>();
+        final VMBackup.Metric metric = new VMBackup.Metric(1000L, 100L);
+        for (VMBackup backup : backupList) {
+            metrics.put(backup, metric);
+        }
+        return metrics;
+    }
 
-        List<Backup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
-        for (Backup backup : backups) {
-            if (backup.getExternalId().equals(backupId)) {
+    @Override
+    public boolean removeVMBackup(VirtualMachine vm, VMBackup backup) {
+        s_logger.debug("Removing VM backup " + backup.getUuid() + " for VM " + vm.getInstanceName() + " on the Dummy Backup Provider");
+
+        List<VMBackup> backups = backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+        for (VMBackup vmBackup : backups) {
+            if (vmBackup.getExternalId().equals(backup.getExternalId())) {
                 return true;
             }
         }
         return false;
+    }
+
+    @Override
+    public boolean startBackup(VMBackup vmBackup) {
+        return true;
+    }
+
+    @Override
+    public List<VMBackup.RestorePoint> listVMBackupRestorePoints(String backupUuid, VirtualMachine vm) {
+        return null;
     }
 }

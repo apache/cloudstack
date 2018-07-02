@@ -28,7 +28,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.VMBackupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
@@ -56,10 +56,16 @@ public class RestoreVMFromBackupCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.ID,
             type = CommandType.UUID,
-            entityType = BackupResponse.class,
+            entityType = VMBackupResponse.class,
             required = true,
             description = "id of the backup")
     private Long backupId;
+
+    @Parameter(name = ApiConstants.RESTORE_POINT_ID,
+            type = CommandType.STRING,
+            required = true,
+            description = "external id of the restore point")
+    private String restorePointId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -69,6 +75,10 @@ public class RestoreVMFromBackupCmd extends BaseAsyncCmd {
         return backupId;
     }
 
+    public String getRestorePointId() {
+        return restorePointId;
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -76,7 +86,7 @@ public class RestoreVMFromBackupCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreVMFromBackup(backupId);
+            boolean result = backupManager.restoreVMFromBackup(backupId, restorePointId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
@@ -101,11 +111,11 @@ public class RestoreVMFromBackupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_RESTORE_VM_FROM_BACKUP;
+        return EventTypes.EVENT_VM_BACKUP_RESTORE;
     }
 
     @Override
     public String getEventDescription() {
-        return "Restoring VM from backup " + backupId;
+        return "Restoring VM from restore point: " + restorePointId + " on backup: " + backupId;
     }
 }

@@ -25,39 +25,55 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.event.ActionEvent;
-import com.cloud.event.EventTypes;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Volume;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.admin.backup.DeleteBackupPolicyCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupPolicyCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListBackupProvidersCmd;
-import org.apache.cloudstack.api.command.user.backup.AddVMToBackupPolicyCmd;
+import org.apache.cloudstack.api.command.admin.vm.ImportVMCmdByAdmin;
 import org.apache.cloudstack.api.command.user.backup.CreateVMBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.DeleteVMBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupPoliciesCmd;
-import org.apache.cloudstack.api.command.user.backup.ListBackupPolicyVMMappingsCmd;
+import org.apache.cloudstack.api.command.user.backup.ListVMBackupRestorePoints;
 import org.apache.cloudstack.api.command.user.backup.ListVMBackupsCmd;
-import org.apache.cloudstack.api.command.user.backup.RemoveVMFromBackupPolicyCmd;
-import org.apache.cloudstack.api.command.user.backup.RestoreVolumeFromBackupAndAttachToVMCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreVMFromBackupCmd;
-import org.apache.cloudstack.backup.dao.BackupDao;
+import org.apache.cloudstack.api.command.user.backup.RestoreVolumeFromBackupAndAttachToVMCmd;
+import org.apache.cloudstack.api.command.user.backup.StartVMBackupCmd;
 import org.apache.cloudstack.backup.dao.BackupPolicyDao;
-import org.apache.cloudstack.backup.dao.BackupPolicyVMMapDao;
+import org.apache.cloudstack.backup.dao.VMBackupDao;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.poll.BackgroundPollManager;
+import org.apache.cloudstack.poll.BackgroundPollTask;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
-import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.PermissionDeniedException;
-import com.cloud.storage.VolumeApiService;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.hypervisor.HypervisorGuru;
+import com.cloud.hypervisor.HypervisorGuruManager;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.usage.dao.UsageVMBackupDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
 
@@ -67,31 +83,36 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Inject
     private BackupPolicyDao backupPolicyDao;
-
     @Inject
     private VMInstanceDao vmInstanceDao;
-
     @Inject
     private AccountService accountService;
-
     @Inject
-    private BackupPolicyVMMapDao backupPolicyVMMapDao;
-
+    private VMBackupDao backupDao;
     @Inject
-    private BackupDao backupDao;
-
+    private UsageVMBackupDao usageVMBackupDao;
     @Inject
     private VolumeDao volumeDao;
-
     @Inject
-    private VolumeApiService volumeApiService;
+    private DataCenterDao dataCenterDao;
+    @Inject
+    private BackgroundPollManager backgroundPollManager;
+    @Inject
+    private HostDao hostDao;
+    @Inject
+    private HypervisorGuruManager hypervisorGuruManager;
+    @Inject
+    private PrimaryDataStoreDao primaryDataStoreDao;
+    @Inject
+    private DiskOfferingDao diskOfferingDao;
 
     private static Map<String, BackupProvider> backupProvidersMap = new HashMap<>();
     private List<BackupProvider> backupProviders;
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_IMPORT_BACKUP_POLICY, eventDescription = "importing backup policy", async = true)
-    public BackupPolicy importBackupPolicy(Long zoneId, String policyExternalId, String policyName, String policyDescription) {
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_IMPORT_POLICY, eventDescription = "importing backup policy", async = true)
+    public BackupPolicy importBackupPolicy(final Long zoneId, final String policyExternalId,
+                                           final String policyName, final String policyDescription) {
         final BackupProvider provider = getBackupProvider(zoneId);
         if (!provider.isBackupPolicy(zoneId, policyExternalId)) {
             throw new CloudRuntimeException("Policy " + policyExternalId + " does not exist on provider " + provider.getName() + " on zone " + zoneId);
@@ -104,86 +125,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         LOG.debug("Successfully created backup policy " + policyName + " mapped to backup provider policy " + policyExternalId);
         return savedPolicy;
-    }
-
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_ADD_VM_TO_BACKUP_POLICY, eventDescription = "adding VM to backup policy", async = true)
-    public boolean addVMToBackupPolicy(Long policyId, Long virtualMachineId) {
-        VMInstanceVO vm = vmInstanceDao.findById(virtualMachineId);
-        if (vm == null) {
-            throw new CloudRuntimeException("VM " + virtualMachineId + " does not exist");
-        }
-        // FIXME: check if VM is already assigned to a policy?
-        BackupPolicyVO policy = backupPolicyDao.findById(policyId);
-        if (policy == null) {
-            throw new CloudRuntimeException("Policy " + policy + " does not exist");
-        }
-        BackupProvider backupProvider = getBackupProvider(vm.getDataCenterId());
-        boolean result = backupProvider.addVMToBackupPolicy(policy, vm);
-        if (result) {
-            BackupPolicyVMMapVO map = backupPolicyVMMapDao.findByVMId(virtualMachineId);
-            if (map != null) {
-                backupPolicyVMMapDao.expunge(map.getId());
-            }
-            map = new BackupPolicyVMMapVO(vm.getDataCenterId(), policy.getId(), virtualMachineId);
-            backupPolicyVMMapDao.persist(map);
-            LOG.debug("Successfully assigned VM " + virtualMachineId + " to backup policy " + policy.getName());
-        } else {
-            LOG.debug("Could not assign VM " + virtualMachineId + " to backup policy " + policyId);
-        }
-        return result;
-    }
-
-    @Override
-    @ActionEvent(eventType = EventTypes.EVENT_REMOVE_VM_FROM_BACKUP_POLICY, eventDescription = "removing VM from backup policy", async = true)
-    public boolean removeVMFromBackupPolicy(Long policyId, Long vmId) {
-        BackupPolicyVO policy = backupPolicyDao.findById(policyId);
-        if (policy == null) {
-            throw new CloudRuntimeException("Policy " + policyId + " does not exist");
-        }
-        VMInstanceVO vm = vmInstanceDao.findById(vmId);
-        if (vm == null) {
-            throw new CloudRuntimeException("VM " + vmId + " does not exist");
-        }
-        BackupProvider backupProvider = getBackupProvider(vm.getDataCenterId());
-        boolean result = backupProvider.removeVMFromBackupPolicy(policy, vm);
-        if (result) {
-            List<BackupPolicyVMMapVO> map = backupPolicyVMMapDao.listByPolicyIdAndVMId(policyId, vmId);
-            if (map.size() > 1) {
-                throw new CloudRuntimeException("More than one mapping between VM " + vmId + " and policy " + policyId);
-            }
-            backupPolicyVMMapDao.expunge(map.get(0).getId());
-            LOG.debug("Successfully removed VM " + vmId + " from backup policy " + policy.getName());
-        } else {
-            LOG.debug("Could not remove VM " + vmId + " from backup policy " + policyId);
-        }
-        return result;
-    }
-
-    @Override
-    public List<BackupPolicyVMMap> listBackupPolicyVMMappings(Long vmId, Long zoneId, Long policyId) {
-        if (vmId != null) {
-            return Collections.singletonList(backupPolicyVMMapDao.findByVMId(vmId));
-        }
-        if (zoneId != null) {
-            return new ArrayList<>(backupPolicyVMMapDao.listByZoneId(zoneId));
-        }
-        if (policyId != null) {
-            return new ArrayList<>(backupPolicyVMMapDao.listByPolicyId(policyId));
-        }
-        return new ArrayList<>(backupPolicyVMMapDao.listAll());
-    }
-
-    @Override
-    //TODO: Add background job to sync VM backups from the provider
-    public List<Backup> listVMBackups(Long vmId) {
-        VMInstanceVO vm = vmInstanceDao.findById(vmId);
-        if (vm == null) {
-            throw new CloudRuntimeException("VM " + vmId + " does not exist");
-        }
-        Long zoneId = vm.getDataCenterId();
-        BackupProvider backupProvider = getBackupProvider(zoneId);
-        return backupDao.listByVmId(zoneId, vmId);
     }
 
     /**
@@ -220,7 +161,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    public List<BackupPolicy> listBackupPolicies(Long zoneId, Boolean external, Long policyId) {
+    public List<BackupPolicy> listBackupPolicies(final Long zoneId, final Boolean external, final Long policyId) {
         if (policyId != null) {
             return listInternalPolicyById(policyId);
         } else {
@@ -229,55 +170,112 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_CREATE_VM_BACKUP, eventDescription = "creating VM backup", async = true)
-    public Backup createBackup(Long vmId) {
-        VMInstanceVO vm = vmInstanceDao.findById(vmId);
+    public List<VMBackup> listVMBackups(final Long vmId) {
+        final VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        if (vm == null) {
+            return new ArrayList<>(backupDao.listAll());
+        }
+        return backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_CREATE, eventDescription = "creating VM backup", async = true)
+    public VMBackup createBackup(final String name, final String description, final Long vmId, final Long policyId) {
+        final VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("VM does not exist");
         }
-        BackupPolicyVMMap vmMap = backupPolicyVMMapDao.findByVMId(vmId);
-        if (vmMap == null) {
-            throw new CloudRuntimeException("VM " + vmId + " is not assigned to any backup policy");
-        }
-        BackupPolicyVO policy = backupPolicyDao.findById(vmMap.getPolicyId());
+        final BackupPolicyVO policy = backupPolicyDao.findById(policyId);
         if (policy == null) {
             throw new CloudRuntimeException("Policy does not exist");
         }
-        BackupProvider backupProvider = getBackupProvider(vm.getDataCenterId());
-
-        Backup vmBackup = backupProvider.createVMBackup(policy, vm);
-        if (vmBackup == null) {
-            return null;
+        VMBackupVO backup = new VMBackupVO(name, description, policyId, vmId, VMBackup.Status.Allocated, vm.getAccountId(), vm.getDataCenterId());
+        setBackupVolumes(backup, vm);
+        backup = backupDao.persist(backup);
+        if (backup == null) {
+            throw new CloudRuntimeException("Failed to save backup object in database");
         }
-        BackupVO backupVO = backupDao.getBackupVO(vmBackup);
-        return backupDao.persist(backupVO);
+        final BackupProvider backupProvider = getBackupProvider(vm.getDataCenterId());
+        backup = (VMBackupVO) backupProvider.createVMBackup(policy, vm, backup);
+        if (backup == null) {
+            throw new CloudRuntimeException("Backup provider failed to create backup for VM: " + vm.getUuid());
+        }
+        if (backupDao.update(backup.getId(), backup)) {
+            UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_CREATE, vm.getAccountId(), vm.getDataCenterId(), backup.getId(),
+                    vm.getUuid(), backup.getPolicyId(), backup.getVmId(), null,
+                    VMBackup.class.getSimpleName(), backup.getUuid());
+        }
+        return backup;
+    }
+
+    private void setBackupVolumes(VMBackupVO backup, VMInstanceVO vm) {
+        List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
+        backup.setBackedUpVolumes(vmVolumes);
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_DELETE_VM_BACKUP, eventDescription = "deleting VM backup", async = true)
-    public boolean deleteBackup(Long backupId) {
-        BackupVO backup = backupDao.findById(backupId);
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_START, eventDescription = "starting VM backup", async = true)
+    public boolean startVMBackup(final Long vmBackupId) {
+        final VMBackup vmBackup = backupDao.findById(vmBackupId);
+        if (vmBackup == null) {
+            throw new CloudRuntimeException("VM Backup id " + vmBackupId + " does not exist");
+        }
+        final BackupProvider backupProvider = getBackupProvider(vmBackup.getZoneId());
+        return backupProvider.startBackup(vmBackup);
+    }
+
+    @Override
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_DELETE, eventDescription = "deleting VM backup", async = true)
+    public boolean deleteBackup(final Long backupId) {
+        final VMBackupVO backup = backupDao.findByIdIncludingRemoved(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
         }
-        Long zoneId = backup.getZoneId();
-        Long vmId = backup.getVmId();
-        VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        final Long vmId = backup.getVmId();
+        final VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }
-        BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
-        boolean result = backupProvider.removeVMBackup(vm, backup.getExternalId());
+
+        final BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
+        boolean result = backupProvider.removeVMBackup(vm, backup);
         if (result) {
-            backupDao.remove(backupId);
+            backup.setStatus(VMBackup.Status.Expunged);
+            if (backupDao.update(backup.getId(), backup)) {
+                backupDao.remove(backup.getId());
+                UsageEventUtils.publishUsageEvent(EventTypes.EVENT_VM_BACKUP_DELETE, vm.getAccountId(), vm.getDataCenterId(), backup.getId(),
+                        vm.getUuid(), backup.getPolicyId(), backup.getVmId(), null,
+                        VMBackup.class.getSimpleName(), backup.getUuid());
+                return true;
+            }
         }
+        // FIXME: fsm to deal with GC+deletion
+        backup.setStatus(VMBackup.Status.Removed);
+        if (backupDao.update(backup.getId(), backup)) {
+            backupDao.remove(backupId);
+            return true;
+        }
+
         return result;
     }
 
+    public boolean importVM(long zoneId, long domainId, long accountId, long userId,
+                            String vmInternalName, Hypervisor.HypervisorType hypervisorType, VMBackup backup) {
+        //TODO: Remove it from the backup manager interface
+        HypervisorGuru guru = hypervisorGuruManager.getGuru(hypervisorType);
+        try {
+            guru.importVirtualMachine(zoneId, domainId, accountId, userId, vmInternalName, backup);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new CloudRuntimeException("Error during vm import: " + e.getMessage());
+        }
+        return true;
+    }
+
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_RESTORE_VM_FROM_BACKUP, eventDescription = "restoring VM from backup", async = true)
-    public boolean restoreVMFromBackup(Long backupId) {
-        BackupVO backup = backupDao.findById(backupId);
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_RESTORE, eventDescription = "restoring VM from backup", async = true)
+    public boolean restoreVMFromBackup(final Long backupId, final String restorePointId) {
+        VMBackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
         }
@@ -287,13 +285,30 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }
-        return backupProvider.restoreVMFromBackup(vm.getUuid(), backup.getUuid());
+        if (!vm.getState().equals(VirtualMachine.State.Stopped)) {
+            throw new CloudRuntimeException("VM should be stopped before being restored from backup");
+        }
+        if (!backupProvider.restoreVMFromBackup(vm, backup.getExternalId(), restorePointId)) {
+            throw new CloudRuntimeException("Error restoring VM " + vm.getId() + " from backup " + backup.getId());
+        }
+        importVM(vm.getDataCenterId(), vm.getDomainId(), vm.getAccountId(), vm.getUserId(),
+                vm.getInstanceName(), vm.getHypervisorType(), backup);
+        return true;
+    }
+
+    private VMBackup.VolumeInfo getVolumeInfo(List<VMBackup.VolumeInfo> backedUpVolumes, String volumeUuid) {
+        for (VMBackup.VolumeInfo volInfo : backedUpVolumes) {
+            if (volInfo.getUuid().equals(volumeUuid)) {
+                return volInfo;
+            }
+        }
+        return null;
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_RESTORE_VM_FROM_BACKUP, eventDescription = "restoring VM from backup", async = true)
-    public boolean restoreBackupVolumeAndAttachToVM(Long volumeId, Long vmId, Long backupId) {
-        BackupVO backup = backupDao.findById(backupId);
+    @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_RESTORE, eventDescription = "restoring VM from backup", async = true)
+    public boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long vmId, final Long backupId, final String restorePointId) throws Exception {
+        VMBackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
         }
@@ -303,26 +318,72 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }
-        VolumeVO volume = volumeDao.findByIdIncludingRemoved(volumeId);
-        if (volume == null) {
-            throw new CloudRuntimeException("Volume " + volumeId + " could not be found");
+
+        Pair<String, String> restoreInfo = getRestoreVolumeHostAndDatastore(vm);
+        String hostIp = restoreInfo.first();
+        String datastoreUuid = restoreInfo.second();
+
+        LOG.debug("Asking provider to restore volume " + backedUpVolumeUuid + " from backup " + backupId +
+                " and restore point " + restorePointId + " and attach it to VM: " + vm.getUuid());
+        Pair<Boolean, String> result = backupProvider.restoreBackedUpVolume(backup.getZoneId(), backup.getUuid(),
+                                                        restorePointId, backedUpVolumeUuid, hostIp, datastoreUuid);
+        if (!result.first()) {
+            throw new CloudRuntimeException("Error restoring volume " + backedUpVolumeUuid);
         }
-        LOG.debug("Asking provider to restore volume " + volumeId + " from backup " + backupId);
-        VolumeTO restoredVolume = backupProvider.restoreVolumeFromBackup(backup.getUuid(), volume.getUuid());
-        attachVolumeToVM(restoredVolume, vm);
-        return false;
+        if (!attachVolumeToVM(backup.getZoneId(), result.second(), backup.getBackedUpVolumes(),
+                            backedUpVolumeUuid, vm, datastoreUuid)) {
+            throw new CloudRuntimeException("Error attaching volume " + backedUpVolumeUuid + " to VM " + vm.getUuid());
+        }
+        return true;
+    }
+
+    /**
+     * Get the pair: hostIp, datastoreUuid in which to restore the volume, based on the VM to be attached information
+     */
+    private Pair<String, String> getRestoreVolumeHostAndDatastore(VMInstanceVO vm) {
+        List<VolumeVO> rootVmVolume = volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
+        Long poolId = rootVmVolume.get(0).getPoolId();
+        StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
+        String datastoreUuid = storagePoolVO.getUuid();
+        String hostIp = vm.getHostId() == null ?
+                            getHostIp(storagePoolVO) :
+                            hostDao.findById(vm.getHostId()).getPrivateIpAddress();
+        return new Pair<>(hostIp, datastoreUuid);
+    }
+
+    /**
+     * Find a host IP from storage pool access
+     */
+    private String getHostIp(StoragePoolVO storagePoolVO) {
+        List<HostVO> hosts = null;
+        if (storagePoolVO.getScope().equals(ScopeType.CLUSTER)) {
+            hosts = hostDao.findByClusterId(storagePoolVO.getClusterId());
+
+        } else if (storagePoolVO.getScope().equals(ScopeType.ZONE)) {
+            hosts = hostDao.findByDataCenterId(storagePoolVO.getDataCenterId());
+        }
+        return hosts.get(0).getPrivateIpAddress();
     }
 
     /**
      * Attach volume to VM
      */
-    private void attachVolumeToVM(VolumeTO restoredVolume, VMInstanceVO vm) {
+    private boolean attachVolumeToVM(Long zoneId, String restoredVolumeLocation, List<VMBackup.VolumeInfo> backedUpVolumes,
+                                     String volumeUuid, VMInstanceVO vm, String datastoreUuid) throws Exception {
+        HypervisorGuru guru = hypervisorGuruManager.getGuru(vm.getHypervisorType());
+        VMBackup.VolumeInfo volumeInfo = getVolumeInfo(backedUpVolumes, volumeUuid);
+        StoragePoolVO pool = primaryDataStoreDao.findByUuid(datastoreUuid);
+
         LOG.debug("Attaching the restored volume to VM " + vm.getId());
-        volumeDao.attachVolume(restoredVolume.getId(), vm.getId(), restoredVolume.getDeviceId());
+        try {
+            return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, volumeInfo, vm, pool.getId());
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Error attach restored volume to VM " + vm.getUuid());
+        }
     }
 
     @Override
-    public boolean deleteBackupPolicy(Long policyId) {
+    public boolean deleteBackupPolicy(final Long policyId) {
         BackupPolicyVO policy = backupPolicyDao.findById(policyId);
         if (policy == null) {
             throw new CloudRuntimeException("Could not find a backup policy with id: " + policyId);
@@ -331,8 +392,23 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     }
 
     @Override
+    public List<VMBackup.RestorePoint> listVMBackupRestorePoints(final Long backupId) {
+        VMBackupVO backup = backupDao.findById(backupId);
+        if (backup == null) {
+            throw new CloudRuntimeException("Could not find backup " + backupId);
+        }
+        VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
+        if (vm == null) {
+            throw new CloudRuntimeException("Could not find VM: " + backup.getVmId());
+        }
+        BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
+        return backupProvider.listVMBackupRestorePoints(backup.getUuid(), vm);
+    }
+
+    @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
+        backgroundPollManager.submitTask(new BackupSyncTask(this));
         return true;
     }
 
@@ -360,23 +436,20 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
-
-        // Backup Policy APIs
+        // VM Backup Policy APIs
         cmdList.add(ListBackupProvidersCmd.class);
         cmdList.add(ListBackupPoliciesCmd.class);
         cmdList.add(ImportBackupPolicyCmd.class);
         cmdList.add(DeleteBackupPolicyCmd.class);
-        cmdList.add(AddVMToBackupPolicyCmd.class);
-        cmdList.add(RemoveVMFromBackupPolicyCmd.class);
-        cmdList.add(ListBackupPolicyVMMappingsCmd.class);
-
-        // Backup and Restore APIs
+        // VM Backup APIs
         cmdList.add(ListVMBackupsCmd.class);
         cmdList.add(CreateVMBackupCmd.class);
+        cmdList.add(StartVMBackupCmd.class);
         cmdList.add(DeleteVMBackupCmd.class);
         cmdList.add(RestoreVMFromBackupCmd.class);
         cmdList.add(RestoreVolumeFromBackupAndAttachToVMCmd.class);
-
+        cmdList.add(ImportVMCmdByAdmin.class);
+        cmdList.add(ListVMBackupRestorePoints.class);
         return cmdList;
     }
 
@@ -387,7 +460,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey[]{BackupFrameworkEnabled, BackupProviderPlugin};
+        return new ConfigKey[]{
+                BackupFrameworkEnabled,
+                BackupProviderPlugin,
+                BackupSyncPollingInterval
+        };
     }
 
     public void setBackupProviders(final List<BackupProvider> backupProviders) {
@@ -405,6 +482,65 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             for (final BackupProvider backupProvider : backupProviders) {
                 backupProvidersMap.put(backupProvider.getName().toLowerCase(), backupProvider);
             }
+        }
+    }
+
+    ////////////////////////////////////////////////////
+    /////////////// Background Tasks ///////////////////
+    ////////////////////////////////////////////////////
+
+    /**
+     * This background task syncs backups from providers side in CloudStack db
+     * along with creation of usage records
+     */
+    private final class BackupSyncTask extends ManagedContextRunnable implements BackgroundPollTask {
+        private BackupManager backupManager;
+
+        public BackupSyncTask(final BackupManager backupManager) {
+            this.backupManager = backupManager;
+        }
+
+        @Override
+        protected void runInContext() {
+            try {
+                if (LOG.isTraceEnabled()) {
+                    LOG.trace("Backup sync background task is running...");
+                }
+                for (final DataCenter dataCenter : dataCenterDao.listAllZones()) {
+                    if (dataCenter == null || !isEnabled(dataCenter.getId())) {
+                        continue;
+                    }
+
+                    // GC and expunge removed backups
+                    for (final VMBackup backup : backupDao.listByZoneAndState(dataCenter.getId(), VMBackup.Status.Removed)) {
+                        backupManager.deleteBackup(backup.getId());
+                    }
+
+                    // Sync backup size usages
+                    final List<VMBackup> backups = backupDao.listByZoneAndState(dataCenter.getId(), null);
+                    if (backups.isEmpty()) {
+                        continue;
+                    }
+                    final BackupProvider backupProvider = getBackupProvider(dataCenter.getId());
+                    final Map<VMBackup, VMBackup.Metric> metrics = backupProvider.getBackupMetrics(dataCenter.getId(), backups);
+                    for (final VMBackup backup : metrics.keySet()) {
+                        final VMBackup.Metric metric = metrics.get(backup);
+                        final VMBackupVO backupVO = (VMBackupVO) backup;
+                        backupVO.setSize(metric.getBackupSize());
+                        backupVO.setProtectedSize(metric.getDataSize());
+                        if (backupDao.update(backupVO.getId(), backupVO)) {
+                            usageVMBackupDao.updateMetrics(backup);
+                        }
+                    }
+                }
+            } catch (final Throwable t) {
+                LOG.error("Error trying to run backup-sync background task", t);
+            }
+        }
+
+        @Override
+        public Long getDelay() {
+            return BackupSyncPollingInterval.value() * 1000L;
         }
     }
 }

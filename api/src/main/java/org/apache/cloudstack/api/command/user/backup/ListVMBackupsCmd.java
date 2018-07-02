@@ -29,9 +29,9 @@ import org.apache.cloudstack.api.BaseBackupListCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.VMBackupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.VMBackup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -43,7 +43,7 @@ import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = ListVMBackupsCmd.APINAME,
         description = "Lists VM backups",
-        responseObject = BackupResponse.class, since = "4.12.0",
+        responseObject = VMBackupResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListVMBackupsCmd extends BaseBackupListCmd {
     public static final String APINAME = "listVMBackups";
@@ -76,7 +76,7 @@ public class ListVMBackupsCmd extends BaseBackupListCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try{
-            List<Backup> backups = backupManager.listVMBackups(getVmId());
+            List<VMBackup> backups = backupManager.listVMBackups(getVmId());
             setupResponseBackupList(backups);
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());

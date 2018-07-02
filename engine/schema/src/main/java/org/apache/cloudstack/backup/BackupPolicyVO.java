@@ -17,6 +17,7 @@
 
 package org.apache.cloudstack.backup;
 
+import java.util.Date;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -25,6 +26,8 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 @Entity
 @Table(name = "backup_policy")
@@ -49,6 +52,14 @@ public class BackupPolicyVO implements BackupPolicy {
     @Column(name = "zone_id")
     private long zoneId;
 
+    @Column(name = "created")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date created;
+
+    @Column(name = "removed")
+    @Temporal(value = TemporalType.TIMESTAMP)
+    private Date removed;
+
     public BackupPolicyVO() {
         this.uuid = UUID.randomUUID().toString();
     }
@@ -59,8 +70,15 @@ public class BackupPolicyVO implements BackupPolicy {
         this.name = name;
         this.description = description;
         this.externalId = externalId;
+        this.created = new Date();
     }
 
+    public BackupPolicyVO(final String externalId, final String name, final String description) {
+        this.name = name;
+        this.description = description;
+        this.externalId = externalId;
+        this.created = new Date();
+    }
 
     public String getUuid() {
         return uuid;

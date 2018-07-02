@@ -291,6 +291,7 @@
   <bean id="usageVPNUserDaoImpl" class="com.cloud.usage.dao.UsageVPNUserDaoImpl" />
   <bean id="usageVolumeDaoImpl" class="com.cloud.usage.dao.UsageVolumeDaoImpl" />
   <bean id="usageVmDiskDaoImpl" class="com.cloud.usage.dao.UsageVmDiskDaoImpl" />
+  <bean id="usageVmBackupDaoImpl" class="com.cloud.usage.dao.UsageVMBackupDaoImpl" />
   <bean id="userAccountDaoImpl" class="com.cloud.user.dao.UserAccountDaoImpl" />
   <bean id="userAccountJoinDaoImpl" class="com.cloud.api.query.dao.UserAccountJoinDaoImpl" />
   <bean id="userIpv6AddressDaoImpl" class="com.cloud.network.dao.UserIpv6AddressDaoImpl" />
@@ -357,6 +358,5 @@
   <bean id="GuestOsDetailsDaoImpl" class="org.apache.cloudstack.resourcedetail.dao.GuestOsDetailsDaoImpl" />
   <bean id="annotationDaoImpl" class="org.apache.cloudstack.annotation.dao.AnnotationDaoImpl" />
   <bean id="backupPolicyDaoImpl" class="org.apache.cloudstack.backup.dao.BackupPolicyDaoImpl" />
-  <bean id="backupPolicyVMMapDaoImpl" class="org.apache.cloudstack.backup.dao.BackupPolicyVMMapDaoImpl" />
-  <bean id="backupDaoImpl" class="org.apache.cloudstack.backup.dao.BackupDaoImpl" />
+  <bean id="backupDaoImpl" class="org.apache.cloudstack.backup.dao.VMBackupDaoImpl" />
 </beans>

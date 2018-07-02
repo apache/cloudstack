@@ -17,8 +17,9 @@
 package org.apache.cloudstack.backup;
 
 import java.util.List;
+import java.util.Map;
 
-import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 
 public interface BackupProvider {
@@ -47,41 +48,46 @@ public interface BackupProvider {
     boolean isBackupPolicy(Long zoneId, String uuid);
 
     /**
-     * Assign VM to backup policy
-     * @return true if VM is successfully assigned, false if not
-     */
-    boolean addVMToBackupPolicy(BackupPolicy policy, VirtualMachine vm);
-
-    /**
-     * Remove a VM form a backup policy
-     */
-    boolean removeVMFromBackupPolicy(BackupPolicy policy, VirtualMachine vm);
-
-    /**
-     * Starts ad-hoc backup of a VM assigned to a policy
+     * Creates backup of a VM assigned to a policy
      * @param policy
      * @param vm
      * @return true if backup successfully starts
      */
-    Backup createVMBackup(BackupPolicy policy, VirtualMachine vm);
+    VMBackup createVMBackup(BackupPolicy policy, VirtualMachine vm, VMBackup backup);
+
+    /**
+     * Removes a VM backup
+     * @param vm
+     * @param backup
+     * @return
+     */
+    boolean removeVMBackup(VirtualMachine vm, VMBackup backup);
+
+    /**
+     * Starts and creates an adhoc backup process
+     * for a previously registered VM backup
+     * @param vmBackup
+     * @return
+     */
+    boolean startBackup(VMBackup vmBackup);
 
     /**
      * Restore VM from backup
      */
-    boolean restoreVMFromBackup(String vmUuid, String backupUuid);
+    boolean restoreVMFromBackup(VirtualMachine vm, String backupUuid, String restorePointId);
 
     /**
      * Restore a volume from a backup
      */
-    VolumeTO restoreVolumeFromBackup(String volumeUuid, String backupUuid);
+    Pair<Boolean, String> restoreBackedUpVolume(long zoneId, String backupUuid, String restorePointId, String volumeUuid,
+                                                String hostIp, String dataStoreUuid);
 
     /**
      * List VM Backups
      */
-    List<Backup> listVMBackups(Long zoneId, VirtualMachine vm);
+    List<VMBackup> listVMBackups(Long zoneId, VirtualMachine vm);
 
-    /**
-     * Remove a VM backup
-     */
-    boolean removeVMBackup(VirtualMachine vm, String backupId);
+    Map<VMBackup, VMBackup.Metric> getBackupMetrics(Long zoneId, List<VMBackup> backupList);
+
+    List<VMBackup.RestorePoint> listVMBackupRestorePoints(String backupUuid, VirtualMachine vm);
 }

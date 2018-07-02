@@ -17,33 +17,32 @@
 
 package org.apache.cloudstack.api.command.user.backup;
 
-import javax.inject.Inject;
-
-import org.apache.cloudstack.acl.RoleType;
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.ApiErrorCode;
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.cloudstack.api.Parameter;
-import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.VMBackupResponse;
-import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.cloudstack.backup.BackupManager;
-import org.apache.cloudstack.context.CallContext;
-
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.utils.exception.CloudRuntimeException;
+import org.apache.cloudstack.acl.RoleType;
+import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.ApiErrorCode;
+import org.apache.cloudstack.api.BaseBackupListCmd;
+import org.apache.cloudstack.api.BaseCmd;
+import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.VMBackupResponse;
+import org.apache.cloudstack.backup.BackupManager;
+import org.apache.cloudstack.backup.VMBackup;
 
-@APICommand(name = DeleteVMBackupCmd.APINAME,
-        description = "Delete VM backup",
-        responseObject = SuccessResponse.class, since = "4.12.0",
+import javax.inject.Inject;
+import java.util.List;
+
+@APICommand(name = ListVMBackupRestorePoints.APINAME,
+        description = "Lists VM backup restore points",
+        responseObject = VMBackupResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class DeleteVMBackupCmd extends BaseCmd {
-    public static final String APINAME = "deleteVMBackup";
+public class ListVMBackupRestorePoints extends BaseBackupListCmd {
+    public static final String APINAME = "listVMBackupRestorePoints";
 
     @Inject
     private BackupManager backupManager;
@@ -63,7 +62,7 @@ public class DeleteVMBackupCmd extends BaseCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getId() {
+    public Long getBackupId() {
         return backupId;
     }
 
@@ -74,15 +73,8 @@ public class DeleteVMBackupCmd extends BaseCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.deleteBackup(backupId);
-            // FIXME: the response type?
-            if (result) {
-                SuccessResponse response = new SuccessResponse(getCommandName());
-                response.setResponseName(getCommandName());
-                setResponseObject(response);
-            } else {
-                throw new CloudRuntimeException("Error while deleting backup of VM");
-            }
+            List<VMBackup.RestorePoint> restorePoints = backupManager.listVMBackupRestorePoints(backupId);
+            setupResponseRestorePointsList(restorePoints);
         } catch (Exception e) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -91,10 +83,5 @@ public class DeleteVMBackupCmd extends BaseCmd {
     @Override
     public String getCommandName() {
         return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
-    }
-
-    @Override
-    public long getEntityOwnerId() {
-        return CallContext.current().getCallingAccount().getId();
     }
 }

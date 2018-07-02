@@ -19,6 +19,13 @@ package com.cloud.event;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.cloudstack.acl.Role;
+import org.apache.cloudstack.acl.RolePermission;
+import org.apache.cloudstack.annotation.Annotation;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.ha.HAConfig;
+import org.apache.cloudstack.usage.Usage;
+
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.Pod;
 import com.cloud.dc.StorageNetworkIpRange;
@@ -69,12 +76,6 @@ import com.cloud.user.User;
 import com.cloud.vm.Nic;
 import com.cloud.vm.NicSecondaryIp;
 import com.cloud.vm.VirtualMachine;
-import org.apache.cloudstack.acl.Role;
-import org.apache.cloudstack.acl.RolePermission;
-import org.apache.cloudstack.annotation.Annotation;
-import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.ha.HAConfig;
-import org.apache.cloudstack.usage.Usage;
 
 public class EventTypes {
 
@@ -469,6 +470,14 @@ public class EventTypes {
     public static final String EVENT_VM_SNAPSHOT_OFF_PRIMARY = "VMSNAPSHOT.OFF_PRIMARY";
     public static final String EVENT_VM_SNAPSHOT_REVERT = "VMSNAPSHOT.REVERTTO";
 
+    // VM VMBackup and Recovery events
+    public static final String EVENT_VM_BACKUP_IMPORT_POLICY = "VMBACKUP.IMPORT.POLICY";
+    public static final String EVENT_VM_BACKUP_CREATE = "VMBACKUP.CREATE";
+    public static final String EVENT_VM_BACKUP_START = "VMBACKUP.START";
+    public static final String EVENT_VM_BACKUP_RESTORE = "VMBACKUP.RESTORE";
+    public static final String EVENT_VM_BACKUP_DELETE = "VMBACKUP.DELETE";
+    public static final String EVENT_VM_BACKUP_RESTORE_VOLUME_TO_VM = "VMBACKUP.RESTORE.VOLUME.TO.VM";
+
     // external network device events
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_ADD = "PHYSICAL.NVPCONTROLLER.ADD";
     public static final String EVENT_EXTERNAL_NVP_CONTROLLER_DELETE = "PHYSICAL.NVPCONTROLLER.DELETE";
@@ -583,15 +592,6 @@ public class EventTypes {
 
     public static final String EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE = "TEMPLATE.DIRECT.DOWNLOAD.FAILURE";
     public static final String EVENT_ISO_DIRECT_DOWNLOAD_FAILURE = "ISO.DIRECT.DOWNLOAD.FAILURE";
-
-    // Backup and Recovery events
-    public static final String EVENT_ADD_VM_TO_BACKUP_POLICY = "ADD.VM.TO.BACKUP.POLICY";
-    public static final String EVENT_REMOVE_VM_FROM_BACKUP_POLICY = "REMOVE.VM.FROM.BACKUP.POLICY";
-    public static final String EVENT_IMPORT_BACKUP_POLICY = "IMPORT.BACKUP.POLICY";
-    public static final String EVENT_CREATE_VM_BACKUP = "CREATE.VM.BACKUP";
-    public static final String EVENT_DELETE_VM_BACKUP = "DELETE.VM.BACKUP";
-    public static final String EVENT_RESTORE_VM_FROM_BACKUP = "RESTORE.VM.FROM.BACKUP";
-    public static final String EVENT_RESTORE_VOLUME_FROM_BACKUP_AND_ATTACH_TO_VM = "RESTORE.VOLUME.FROM.BACKUP.AND.ATTACH.TO.VM";
 
     static {
 

@@ -254,6 +254,7 @@ public class ApiConstants {
     public static final String RESOURCE_TYPE = "resourcetype";
     public static final String RESOURCE_TYPE_NAME = "resourcetypename";
     public static final String RESPONSE = "response";
+    public static final String RESTORE_POINT_ID = "restorepointid";
     public static final String REVERTABLE = "revertable";
     public static final String REGISTERED = "registered";
     public static final String QUERY_FILTER = "queryfilter";
@@ -615,6 +616,7 @@ public class ApiConstants {
     public static final String EXCLUSIVE_GSLB_PROVIDER = "isexclusivegslbprovider";
     public static final String GSLB_PROVIDER_PUBLIC_IP = "gslbproviderpublicip";
     public static final String GSLB_PROVIDER_PRIVATE_IP = "gslbproviderprivateip";
+    public static final String VM_BACKUP_ID = "vmbackupid";
     public static final String VM_SNAPSHOT_DESCRIPTION = "description";
     public static final String VM_SNAPSHOT_DISPLAYNAME = "name";
     public static final String VM_SNAPSHOT_ID = "vmsnapshotid";

@@ -17,18 +17,20 @@
 
 package org.apache.cloudstack.backup.dao;
 
-import com.cloud.utils.db.GenericDao;
-import org.apache.cloudstack.api.response.BackupResponse;
-import org.apache.cloudstack.backup.BackupVO;
-import org.apache.cloudstack.backup.Backup;
-
 import java.util.List;
 
-public interface BackupDao extends GenericDao<BackupVO, Long> {
+import org.apache.cloudstack.api.response.VMBackupResponse;
+import org.apache.cloudstack.backup.VMBackup;
+import org.apache.cloudstack.backup.VMBackupVO;
 
-    List<Backup> listByVmId(Long zoneId, Long vmId);
-    List<Backup> syncVMBackups(Long zoneId, Long vmId, List<Backup> externalBackups);
+import com.cloud.utils.db.GenericDao;
 
-    BackupResponse newBackupResponse(Backup backup);
-    BackupVO getBackupVO(Backup backup);
+public interface VMBackupDao extends GenericDao<VMBackupVO, Long> {
+
+    List<VMBackup> listByVmId(Long zoneId, Long vmId);
+    List<VMBackup> syncVMBackups(Long zoneId, Long vmId, List<VMBackup> externalBackups);
+    List<VMBackup> listByZoneAndState(Long zoneId, VMBackup.Status state);
+
+    VMBackupResponse newBackupResponse(VMBackup backup);
+    VMBackupVO getBackupVO(VMBackup backup);
 }

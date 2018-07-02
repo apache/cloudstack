@@ -17,8 +17,11 @@
 
 package org.apache.cloudstack.backup;
 
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.StringJoiner;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -29,21 +32,14 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.StringJoiner;
-import java.util.UUID;
+
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import org.apache.commons.lang.StringUtils;
 
 @Entity
-@Table(name = "backup")
-public class BackupVO implements Backup {
-
-    public BackupVO() {
-        this.uuid = UUID.randomUUID().toString();
-        volumeIds = new ArrayList<>();
-    }
-
+@Table(name = "vm_backup")
+public class VMBackupVO implements VMBackup {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -52,23 +48,17 @@ public class BackupVO implements Backup {
     @Column(name = "uuid")
     private String uuid;
 
-    @Column(name = "account_id")
-    private long accountId;
-
-    @Column(name = "zone_id")
-    private Long zoneId;
-
-    @Column(name = "external_id")
-    private String externalId;
-
     @Column(name = "name")
     private String name;
 
     @Column(name = "description")
     private String description;
 
-    @Column(name = "parent_id")
-    private Long parentId;
+    @Column(name = "external_id")
+    private String externalId;
+
+    @Column(name = "policy_id")
+    private long policyId;
 
     @Column(name = "vm_id")
     private Long vmId;
@@ -76,12 +66,24 @@ public class BackupVO implements Backup {
     @Column(name = "volumes")
     private String volumes;
 
+    @Column(name = "size")
+    private Long size;
+
+    @Column(name = "protected_size")
+    private Long protectedSize;
+
     @Column(name = "status")
     private Status status;
 
-    @Column(name = "start")
+    @Column(name = "account_id")
+    private long accountId;
+
+    @Column(name = "zone_id")
+    private Long zoneId;
+
+    @Column(name = "created")
     @Temporal(value = TemporalType.TIMESTAMP)
-    private Date startTime;
+    private Date created;
 
     @Column(name = "removed")
     @Temporal(value = TemporalType.TIMESTAMP)
@@ -89,6 +91,25 @@ public class BackupVO implements Backup {
 
     @Transient
     private List<Long> volumeIds;
+
+    public VMBackupVO() {
+        this.uuid = UUID.randomUUID().toString();
+        this.created = new Date();
+        volumeIds = new ArrayList<>();
+    }
+
+    public VMBackupVO(final String name, final String description, final long policyId, final Long vmId,
+                      final Status status, final long accountId, final Long zoneId) {
+        this.uuid = UUID.randomUUID().toString();
+        this.name = name;
+        this.description = description;
+        this.policyId = policyId;
+        this.vmId = vmId;
+        this.status = status;
+        this.accountId = accountId;
+        this.zoneId = zoneId;
+        this.created = new Date();
+    }
 
     @Override
     public long getId() {
@@ -134,11 +155,6 @@ public class BackupVO implements Backup {
     }
 
     @Override
-    public Long getParentId() {
-        return parentId;
-    }
-
-    @Override
     public Long getVmId() {
         return vmId;
     }
@@ -148,9 +164,17 @@ public class BackupVO implements Backup {
         return status;
     }
 
+    public Long getSize() {
+        return size;
+    }
+
+    public Long getProtectedSize() {
+        return protectedSize;
+    }
+
     @Override
-    public Date getStartTime() {
-        return startTime;
+    public Date getCreated() {
+        return created;
     }
 
     public void setId(long id) {
@@ -173,10 +197,6 @@ public class BackupVO implements Backup {
         this.description = description;
     }
 
-    public void setParentId(Long parentId) {
-        this.parentId = parentId;
-    }
-
     public void setVmId(Long vmId) {
         this.vmId = vmId;
     }
@@ -185,47 +205,41 @@ public class BackupVO implements Backup {
         this.status = status;
     }
 
-    public void setStartTime(Date start) {
-        this.startTime = start;
+    public void setSize(Long size) {
+        this.size = size;
     }
 
-    protected void convertVolumeStringToList() {
-        volumeIds = new ArrayList<>();
-        if (StringUtils.isNotBlank(volumes)) {
-            String[] strIds = StringUtils.substringBetween(volumes,"[", "]").split(",");
-            for (String strId: strIds) {
-                if (StringUtils.isNotBlank(strId)) {
-                    volumeIds.add(Long.valueOf(strId));
-                }
-            }
-        }
+    public void setProtectedSize(Long protectedSize) {
+        this.protectedSize = protectedSize;
+    }
+
+    public void setCreated(Date start) {
+        this.created = start;
     }
 
     @Override
-    public List<Long> getVolumeIds() {
-        convertVolumeStringToList();
-        return volumeIds;
-    }
-
-    public void setVolumeIds(List<Long> volumes) {
-        if (CollectionUtils.isEmpty(volumes)) {
-            volumeIds = new ArrayList<>();
-        } else {
-            volumeIds = new ArrayList<>(volumes);
-        }
-        convertVolumeIdsToString();
-    }
-
-    private void convertVolumeIdsToString() {
-        StringJoiner stringJoiner = new StringJoiner(",", "[", "]");
-        if (CollectionUtils.isNotEmpty(volumeIds)) {
-            for (Long volId : volumeIds) {
-                stringJoiner.add(String.valueOf(volId));
+    public List<VolumeInfo> getBackedUpVolumes() {
+        List<VolumeInfo> info = new ArrayList<>();
+        if (StringUtils.isNotBlank(this.volumes)) {
+            String[] volumes = StringUtils.substringBetween(this.volumes,"[", "]").split(",");
+            for (String vol : volumes) {
+                String[] volParts = vol.split(":");
+                VMBackup.VolumeInfo volumeInfo = new VolumeInfo(volParts[0], volParts[1],
+                        Volume.Type.valueOf(volParts[2]), Long.valueOf(volParts[3]));
+                info.add(volumeInfo);
             }
-            volumes = stringJoiner.toString();
-        } else {
-            volumes = null;
         }
+        return info;
+    }
+
+    public void setBackedUpVolumes(List<VolumeVO> volumes) {
+        StringJoiner stringJoiner = new StringJoiner(",", "[", "]");
+        for (VolumeVO volume : volumes) {
+            String volTag = volume.getUuid() + ":" + volume.getPath() + ":" +
+                    volume.getVolumeType().toString() + ":" + volume.getSize();
+            stringJoiner.add(volTag);
+        }
+        this.volumes = stringJoiner.toString();
     }
 
     public Date getRemoved() {
@@ -242,5 +256,13 @@ public class BackupVO implements Backup {
 
     protected void setVolumes(String volumes) {
         this.volumes = volumes;
+    }
+
+    public long getPolicyId() {
+        return policyId;
+    }
+
+    public void setPolicyId(long policyId) {
+        this.policyId = policyId;
     }
 }

@@ -44,6 +44,22 @@
       <version>${cs.commons-lang3.version}</version>
     </dependency>
     <dependency>
+      <groupId>io.cloudsoft.windows</groupId>
+      <artifactId>winrm4j-client</artifactId>
+      <version>${cs.winrm4j.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>io.cloudsoft.windows</groupId>
+        <artifactId>winrm4j-service</artifactId>
+        <version>${cs.winrm4j.version}</version>
+        <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.cloudsoft.windows</groupId>
+      <artifactId>winrm4j</artifactId>
+      <version>${cs.winrm4j.version}</version>
+    </dependency>
+    <dependency>
       <groupId>com.github.tomakehurst</groupId>
       <artifactId>wiremock-standalone</artifactId>
       <version>${cs.wiremock.version}</version>

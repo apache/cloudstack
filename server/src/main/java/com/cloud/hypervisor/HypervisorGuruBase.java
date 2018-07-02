@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.backup.VMBackup;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.log4j.Logger;
 
@@ -224,4 +225,15 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         return null;
     }
 
+    @Override
+    public VirtualMachine importVirtualMachine(long zoneId, long domainId, long accountId, long userId,
+                                               String vmInternalName, VMBackup backup) throws Exception {
+        return null;
+    }
+
+    @Override
+    public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, VMBackup.VolumeInfo volumeInfo,
+                                                        VirtualMachine vm, long poolId) throws Exception {
+        return false;
+    }
 }

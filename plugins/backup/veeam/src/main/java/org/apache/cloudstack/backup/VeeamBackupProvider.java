@@ -20,17 +20,22 @@ package org.apache.cloudstack.backup;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.backup.veeam.VeeamClient;
+import org.apache.cloudstack.backup.veeam.api.Job;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
-import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.vmware.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
@@ -43,19 +48,20 @@ import com.cloud.vm.VirtualMachine;
 public class VeeamBackupProvider extends AdapterBase implements BackupProvider, Configurable {
 
     private static final Logger LOG = Logger.getLogger(VeeamBackupProvider.class);
+    public static final String BACKUP_IDENTIFIER = "-CSBKP-";
 
-    private ConfigKey<String> VeeamUrl = new ConfigKey<>("Advanced", String.class,
+    public ConfigKey<String> VeeamUrl = new ConfigKey<>("Advanced", String.class,
             "backup.plugin.veeam.url",
             "http://localhost:9399/api/",
             "The Veeam backup and recovery URL.", true, ConfigKey.Scope.Zone);
 
     private ConfigKey<String> VeeamUsername = new ConfigKey<>("Advanced", String.class,
-            "backup.plugin.veeam.username",
+            "backup.plugin.veeam.host.username",
             "administrator",
             "The Veeam backup and recovery username.", true, ConfigKey.Scope.Zone);
 
     private ConfigKey<String> VeeamPassword = new ConfigKey<>("Advanced", String.class,
-            "backup.plugin.veeam.password",
+            "backup.plugin.veeam.host.password",
             "P@ssword123",
             "The Veeam backup and recovery password.", true, ConfigKey.Scope.Zone);
 
@@ -83,7 +89,13 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     }
 
     public List<BackupPolicy> listBackupPolicies(final Long zoneId) {
-        return getClient(zoneId).listBackupPolicies();
+        List<BackupPolicy> policies = new ArrayList<>();
+        for (final BackupPolicy policy : getClient(zoneId).listJobs()) {
+            if (!policy.getName().contains(BACKUP_IDENTIFIER)) {
+                policies.add(policy);
+            }
+        }
+        return policies;
     }
 
     @Override
@@ -115,47 +127,98 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
         return vmwareDatacenter;
     }
 
-    @Override
     public boolean addVMToBackupPolicy(final BackupPolicy policy, final VirtualMachine vm) {
-        final VmwareDatacenter vmwareDatacenter = findVmwareDatacenterForVM(vm);
-        return getClient(vm.getDataCenterId()).addVMToVeeamJob(policy.getExternalId(), vm.getInstanceName(), vmwareDatacenter.getVcenterHost());
-    }
-
-    @Override
-    public boolean removeVMFromBackupPolicy(final BackupPolicy policy, final VirtualMachine vm) {
         final VmwareDatacenter vmwareDatacenter = findVmwareDatacenterForVM(vm);
         return getClient(vm.getDataCenterId()).removeVMFromVeeamJob(policy.getExternalId(), vm.getInstanceName(), vmwareDatacenter.getVcenterHost());
     }
 
-    @Override
-    public Backup createVMBackup(BackupPolicy policy, VirtualMachine vm) {
-        //TODO: Return backup
-        getClient(vm.getDataCenterId()).startBackupJob(policy.getExternalId());
-        return null;
+    private String getGuestBackupName(final String instanceName, final String uuid) {
+        return String.format("%s%s%s", instanceName, BACKUP_IDENTIFIER, uuid);
     }
 
     @Override
-    public boolean restoreVMFromBackup(String vmUuid, String backupUuid) {
-        //TODO
-        return false;
+    public VMBackup createVMBackup(final BackupPolicy policy, final VirtualMachine vm, final VMBackup backup) {
+        final VeeamClient client = getClient(vm.getDataCenterId());
+        final Job parentJob = client.listJob(policy.getExternalId());
+        final String clonedJobName = getGuestBackupName(vm.getInstanceName(), backup.getUuid());
+        if (client.cloneVeeamJob(parentJob, clonedJobName)) {
+            for (BackupPolicy job : client.listJobs()) {
+                if (job.getName().equals(clonedJobName)) {
+                    final Job clonedJob = client.listJob(job.getExternalId());
+                    if (clonedJob.getScheduleConfigured() && !clonedJob.getScheduleEnabled()) {
+                        client.toggleJobSchedule(clonedJob.getId());
+                    }
+                    final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
+                    if (client.addVMToVeeamJob(job.getExternalId(), vm.getInstanceName(), vmwareDC.getVcenterHost())) {
+                        VMBackupVO vmBackup = ((VMBackupVO) backup);
+                        vmBackup.setStatus(VMBackup.Status.Queued);
+                        vmBackup.setExternalId(job.getExternalId());
+                        vmBackup.setCreated(new Date());
+                        if (!startBackup(vmBackup)) {
+                            LOG.warn("Veeam provider failed to start backup job after creating a new backup for VM id: " + vm.getId());
+                        }
+                        return vmBackup;
+                    }
+                }
+            }
+        } else {
+            LOG.error("Failed to clone pre-defined Veeam job (backup policy) for policy id: " + policy.getExternalId());
+        }
+        ((VMBackupVO) backup).setStatus(VMBackup.Status.Error);
+        return backup;
     }
 
     @Override
-    public VolumeTO restoreVolumeFromBackup(String volumeUuid, String backupUuid) {
-        //TODO
-        return null;
+    public boolean removeVMBackup(final VirtualMachine vm, final VMBackup backup) {
+        final VeeamClient client = getClient(vm.getDataCenterId());
+        final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
+        if (!client.removeVMFromVeeamJob(backup.getExternalId(), vm.getInstanceName(), vmwareDC.getVcenterHost())) {
+            LOG.warn("Failed to remove VM from Veeam Job id: " + backup.getExternalId());
+        }
+        final String clonedJobName = getGuestBackupName(vm.getInstanceName(), backup.getUuid());
+        return client.deleteJobAndBackup(clonedJobName) && client.listJob(clonedJobName) == null;
     }
 
     @Override
-    public List<Backup> listVMBackups(Long zoneId, VirtualMachine vm) {
+    public boolean startBackup(final VMBackup vmBackup) {
+        final VeeamClient client = getClient(vmBackup.getZoneId());
+        return client.startBackupJob(vmBackup.getExternalId());
+    }
+
+    @Override
+    public boolean restoreVMFromBackup(VirtualMachine vm, String backupUuid, String restorePointId) {
+        return getClient(vm.getDataCenterId()).restoreFullVM(vm.getInstanceName(), restorePointId);
+    }
+
+    @Override
+    public Pair<Boolean, String> restoreBackedUpVolume(long zoneId, String backupUuid, String restorePointId,
+                                                       String volumeUuid, String hostIp, String dataStoreUuid) {
+        return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, hostIp, dataStoreUuid);
+    }
+
+    @Override
+    public List<VMBackup> listVMBackups(Long zoneId, VirtualMachine vm) {
         //return getClient(zoneId).listAllBackups();
         return null;
     }
 
     @Override
-    public boolean removeVMBackup(VirtualMachine vm, String backupId) {
-        //TODO: Implement
-        return false;
+    public Map<VMBackup, VMBackup.Metric> getBackupMetrics(final Long zoneId, final List<VMBackup> backupList) {
+        final Map<VMBackup, VMBackup.Metric> metrics = new HashMap<>();
+        final Map<String, VMBackup.Metric> backendMetrics = getClient(zoneId).getBackupMetrics();
+        for (final VMBackup backup : backupList) {
+            if (!backendMetrics.containsKey(backup.getUuid())) {
+                continue;
+            }
+            metrics.put(backup, backendMetrics.get(backup.getUuid()));
+        }
+        return metrics;
+    }
+
+    @Override
+    public List<VMBackup.RestorePoint> listVMBackupRestorePoints(String backupUuid, VirtualMachine vm) {
+        String backupName = getGuestBackupName(vm.getInstanceName(), backupUuid);
+        return getClient(vm.getDataCenterId()).listRestorePoints(backupName, vm.getInstanceName());
     }
 
     @Override

@@ -54,6 +54,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     protected final SearchBuilder<ServiceOfferingVO> SystemServiceOffering;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
     protected final SearchBuilder<ServiceOfferingVO> PublicServiceOfferingSearch;
+    protected final SearchBuilder<ServiceOfferingVO> PublicCpuRamSearch;
 
     public ServiceOfferingDaoImpl() {
         super();
@@ -84,6 +85,12 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         ServiceOfferingsByKeywordSearch.or("name", ServiceOfferingsByKeywordSearch.entity().getName(), SearchCriteria.Op.EQ);
         ServiceOfferingsByKeywordSearch.or("displayText", ServiceOfferingsByKeywordSearch.entity().getDisplayText(), SearchCriteria.Op.EQ);
         ServiceOfferingsByKeywordSearch.done();
+
+        PublicCpuRamSearch = createSearchBuilder();
+        PublicCpuRamSearch.and("cpu", PublicCpuRamSearch.entity().getCpu(), SearchCriteria.Op.EQ);
+        PublicCpuRamSearch.and("ram", PublicCpuRamSearch.entity().getRamSize(), SearchCriteria.Op.EQ);
+        PublicCpuRamSearch.and("system_use", PublicCpuRamSearch.entity().getSystemUse(), SearchCriteria.Op.EQ);
+        PublicCpuRamSearch.done();
     }
 
     @Override
@@ -288,5 +295,14 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             throw new CloudRuntimeException(message);
         }
         return serviceOffering;
+    }
+
+    @Override
+    public List<ServiceOfferingVO> listPublicByCpuAndMemory(Integer cpus, Integer memory) {
+        SearchCriteria<ServiceOfferingVO> sc = PublicCpuRamSearch.create();
+        sc.setParameters("cpu", cpus);
+        sc.setParameters("ram", memory);
+        sc.setParameters("system_use", false);
+        return listBy(sc);
     }
 }

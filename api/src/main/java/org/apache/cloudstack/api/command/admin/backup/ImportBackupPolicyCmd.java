@@ -127,7 +127,7 @@ public class ImportBackupPolicyCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_IMPORT_BACKUP_POLICY;
+        return EventTypes.EVENT_VM_BACKUP_IMPORT_POLICY;
     }
 
     @Override

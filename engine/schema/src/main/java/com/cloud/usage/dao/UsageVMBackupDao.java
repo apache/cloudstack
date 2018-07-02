@@ -15,21 +15,18 @@
 // specific language governing permissions and limitations
 // under the License.
 
-package org.apache.cloudstack.backup.veeam.api;
+package com.cloud.usage.dao;
 
-public enum VeeamObjectType {
-    HierarchyRoot,
-    HierarchyRootReference,
+import java.util.Date;
+import java.util.List;
 
-    Job,
-    JobReference,
+import org.apache.cloudstack.backup.VMBackup;
 
-    Backup,
-    BackupReference,
-    BackupJobSessionReferenceList,
-    BackupServerReference,
-    BackupFileReferenceList,
+import com.cloud.usage.UsageVMBackupVO;
+import com.cloud.utils.db.GenericDao;
 
-    RestorePointReferenceList,
-    RepositoryReference,
+public interface UsageVMBackupDao extends GenericDao<UsageVMBackupVO, Long> {
+    void updateMetrics(VMBackup backup);
+    void removeUsage(Long accountId, Long zoneId, Long backupId);
+    List<UsageVMBackupVO> getUsageRecords(Long accountId, Date startDate, Date endDate);
 }

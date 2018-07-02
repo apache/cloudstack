@@ -19,7 +19,6 @@ package org.apache.cloudstack.api.command.user.backup;
 
 import javax.inject.Inject;
 
-import com.cloud.event.EventTypes;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -28,12 +27,14 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.BackupPolicyResponse;
+import org.apache.cloudstack.api.response.VMBackupResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.VMBackup;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
+import com.cloud.event.EventTypes;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.NetworkRuleConflictException;
@@ -43,7 +44,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 @APICommand(name = CreateVMBackupCmd.APINAME,
         description = "Create VM backup",
-        responseObject = BackupResponse.class, since = "4.12.0",
+        responseObject = VMBackupResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class CreateVMBackupCmd extends BaseAsyncCmd {
     public static final String APINAME = "createVMBackup";
@@ -55,6 +56,17 @@ public class CreateVMBackupCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
+    @Parameter(name = ApiConstants.NAME,
+            type = CommandType.STRING,
+            required = true,
+            description = "Name of the VM Backup")
+    private String name;
+
+    @Parameter(name = ApiConstants.DESCRIPTION,
+            type = CommandType.STRING,
+            description = "The description of the snapshot")
+    private String description;
+
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
@@ -62,14 +74,32 @@ public class CreateVMBackupCmd extends BaseAsyncCmd {
             description = "id of the VM")
     private Long vmId;
 
-    //FIXME: add name, description etc.?
+    @Parameter(name = ApiConstants.POLICY_ID,
+            type = CommandType.UUID,
+            entityType = BackupPolicyResponse.class,
+            required = true,
+            description = "id of the backup policy")
+    private Long policyId;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
     public Long getVmId() {
         return vmId;
+    }
+
+    public Long getPolicyId() {
+        return policyId;
     }
 
     /////////////////////////////////////////////////////
@@ -79,9 +109,9 @@ public class CreateVMBackupCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            Backup backup = backupManager.createBackup(vmId);
+            VMBackup backup = backupManager.createBackup(name, description, vmId, policyId);
             if (backup != null) {
-                BackupResponse response = _responseGenerator.createBackupResponse(backup);
+                VMBackupResponse response = _responseGenerator.createBackupResponse(backup);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
@@ -104,7 +134,7 @@ public class CreateVMBackupCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_CREATE_VM_BACKUP;
+        return EventTypes.EVENT_VM_BACKUP_CREATE;
     }
 
     @Override

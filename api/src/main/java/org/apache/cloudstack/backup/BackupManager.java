@@ -19,6 +19,7 @@ package org.apache.cloudstack.backup;
 
 import java.util.List;
 
+import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
@@ -40,6 +41,10 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
             "dummy",
             "The backup and recovery provider plugin.", true, ConfigKey.Scope.Zone);
 
+    ConfigKey<Long> BackupSyncPollingInterval = new ConfigKey<>("Advanced", Long.class,
+            "backup.framework.sync.interval",
+            "300",
+            "The backup and recovery background sync task polling interval in seconds.", true);
     /**
      * Add a new Backup and Recovery policy to CloudStack by mapping an existing external backup policy to a name and description
      * @param zoneId zone id
@@ -47,27 +52,8 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @param policyName internal name for the backup policy
      * @param policyDescription internal description for the backup policy
      */
-    BackupPolicy importBackupPolicy(Long zoneId, String policyExternalId, String policyName, String policyDescription);
-
-    /**
-     * Assign VM to existing backup policy
-     */
-    boolean addVMToBackupPolicy(Long policyId, Long virtualMachineId);
-
-    /**
-     * Remove a VM from a backup policy
-     */
-    boolean removeVMFromBackupPolicy(Long policyId, Long vmId);
-
-    /**
-     * Return mappings between backup policy and VMs
-     */
-    List<BackupPolicyVMMap> listBackupPolicyVMMappings(Long vmId, Long zoneId, Long policyId);
-
-    /**
-     * List existing backups for a VM
-     */
-    List<Backup> listVMBackups(Long vmId);
+    BackupPolicy importBackupPolicy(final Long zoneId, final String policyExternalId,
+                                    final String policyName, final String policyDescription);
 
     /**
      * List backup policies
@@ -75,33 +61,48 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
      * @param external if true, only external backup policies are listed
      * @param policyId if not null, only the policy with this id is listed
      */
-    List<BackupPolicy> listBackupPolicies(Long zoneId, Boolean external, Long policyId);
+    List<BackupPolicy> listBackupPolicies(final Long zoneId, final Boolean external, final Long policyId);
+
+    /**
+     * Deletes a backup policy
+     */
+    boolean deleteBackupPolicy(final Long policyId);
+
+    /**
+     * List existing backups for a VM
+     */
+    List<VMBackup> listVMBackups(final Long vmId);
 
     /**
      * Creates backup of a VM
      * @param vmId Virtual Machine ID
      * @return returns operation success
      */
-    Backup createBackup(Long vmId);
+    VMBackup createBackup(final String name, final String description, final Long vmId, final Long policyId);
+
+    /**
+     * Assign VM to existing backup policy
+     */
+    boolean startVMBackup(final Long vmBackupId);
 
     /**
      * Deletes a backup
      * @return returns operation success
      */
-    boolean deleteBackup(Long backupId);
+    boolean deleteBackup(final Long backupId);
 
     /**
      * Restore a full VM from backup
      */
-    boolean restoreVMFromBackup(Long backupId);
+    boolean restoreVMFromBackup(final Long backupId, final String restorePointId);
 
     /**
      * Restore a backed up volume and attach it to a VM
      */
-    boolean restoreBackupVolumeAndAttachToVM(Long volumeId, Long vmId, Long backupId);
+    boolean restoreBackupVolumeAndAttachToVM(final String backedUpVolumeUuid, final Long vmId, final Long backupId, final String restorePointId) throws Exception;
 
-    /**
-     * Deletes a backup policy
-     */
-    boolean deleteBackupPolicy(Long policyId);
+    boolean importVM(long zoneId, long domainId, long accountId, long userId,
+                     String vmInternalName, Hypervisor.HypervisorType hypervisorType, VMBackup backup);
+
+    List<VMBackup.RestorePoint> listVMBackupRestorePoints(final Long backupId);
 }

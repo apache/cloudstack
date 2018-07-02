@@ -16,11 +16,18 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
 import javax.persistence.EntityExistsException;
 
+import com.cloud.storage.Storage;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.springframework.stereotype.Component;
 
 import com.cloud.storage.DiskOfferingVO;
@@ -38,7 +45,11 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     private final SearchBuilder<DiskOfferingVO> PrivateDiskOfferingSearch;
     private final SearchBuilder<DiskOfferingVO> PublicDiskOfferingSearch;
     protected final SearchBuilder<DiskOfferingVO> UniqueNameSearch;
+    private final String SizeDiskOfferingSearch = "SELECT * FROM disk_offering WHERE " +
+            "disk_size = ? AND provisioning_type = ? AND (domain_id IS NULL OR domain_id = ?) AND removed IS NULL";
+
     private final Attribute _typeAttr;
+    protected final static long GB_UNIT_BYTES = 1024 * 1024 * 1024;
 
     protected DiskOfferingDaoImpl() {
         DomainIdSearch = createSearchBuilder();
@@ -135,6 +146,39 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         } catch (EntityExistsException e) {
             // Assume it's conflict on unique name
             return findByUniqueName(offering.getUniqueName());
+        }
+    }
+
+    protected long getClosestDiskSizeInGB(long sizeInBytes) {
+        if (sizeInBytes < 0) {
+            throw new CloudRuntimeException("Disk size should be greater than 0 bytes, received: " + sizeInBytes + " bytes");
+        }
+        long div = sizeInBytes / GB_UNIT_BYTES;
+        long rest = sizeInBytes % GB_UNIT_BYTES;
+        return rest == 0L ? div : div + 1;
+    }
+
+    @Override
+    public List<DiskOfferingVO> listAllBySizeAndProvisioningType(long size, Storage.ProvisioningType provisioningType, long domainId) {
+        StringBuilder sql = new StringBuilder(SizeDiskOfferingSearch);
+        TransactionLegacy txn = TransactionLegacy.currentTxn();
+        List<DiskOfferingVO> offerings = new ArrayList<>();
+        try(PreparedStatement pstmt = txn.prepareStatement(sql.toString());){
+            if(pstmt != null) {
+                pstmt.setLong(1, size);
+                pstmt.setString(2, provisioningType.toString());
+                pstmt.setLong(3, domainId);
+                try(ResultSet rs = pstmt.executeQuery();) {
+                    while (rs.next()) {
+                        offerings.add(toEntityBean(rs, false));
+                    }
+                }catch (SQLException e) {
+                    throw new CloudRuntimeException("Exception while listing disk offerings by size: " + e.getMessage(), e);
+                }
+            }
+            return offerings;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("Exception while listing disk offerings by size: " + e.getMessage(), e);
         }
     }
 

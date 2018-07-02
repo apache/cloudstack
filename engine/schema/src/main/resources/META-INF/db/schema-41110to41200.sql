@@ -45,39 +45,46 @@ CREATE TABLE IF NOT EXISTS `cloud`.`backup_policy` (
   `description` varchar(255) NOT NULL COMMENT 'backup policy description',
   `external_id` varchar(80) NOT NULL COMMENT 'backup policy ID on provider side',
   `zone_id` bigint(20) unsigned NOT NULL COMMENT 'zone id',
+  `created` datetime DEFAULT NULL,
+  `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uuid` (`uuid`),
   CONSTRAINT `fk_backup_policy__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `cloud`.`backup_policy_vm_map` (
-  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
-  `zone_id` bigint(20) unsigned NOT NULL,
-  `policy_id` bigint(20) unsigned NOT NULL,
-  `vm_id` bigint(20) unsigned NOT NULL,
-  PRIMARY KEY (`id`),
-  CONSTRAINT `fk_backup_policy_vm_map__policy_id` FOREIGN KEY (`policy_id`) REFERENCES `backup_policy` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_backup_policy_vm_map__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_backup_policy_vm_map__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS `cloud`.`backup` (
+CREATE TABLE IF NOT EXISTS `cloud`.`vm_backup` (
   `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
   `uuid` varchar(40) NOT NULL,
-  `account_id` bigint(20) unsigned NOT NULL,
-  `zone_id` bigint(20) unsigned NOT NULL,
-  `external_id` varchar(80) NOT NULL COMMENT 'backup ID on provider side',
   `name` varchar(255) NOT NULL COMMENT 'backup name',
   `description` varchar(255) COMMENT 'backup description',
-  `parent_id` bigint(20) unsigned COMMENT 'backup parent id',
+  `external_id` varchar(80) COMMENT 'backup ID on provider side',
+  `policy_id` bigint(20) unsigned NOT NULL,
   `vm_id` bigint(20) unsigned NOT NULL,
-  `volumes` varchar(100),
+  `volumes` varchar(5100),
   `status` varchar(20) NOT NULL,
-  `start` datetime DEFAULT NULL,
+  `size` bigint(20) DEFAULT 0,
+  `protected_size` bigint(20) DEFAULT 0,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `created` datetime DEFAULT NULL,
   `removed` datetime DEFAULT NULL,
   PRIMARY KEY (`id`),
   CONSTRAINT `fk_backup__account_id` FOREIGN KEY (`account_id`) REFERENCES `account` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_backup__zone_id` FOREIGN KEY (`zone_id`) REFERENCES `data_center` (`id`) ON DELETE CASCADE,
-  CONSTRAINT `fk_backup__parent_id` FOREIGN KEY (`parent_id`) REFERENCES `backup` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_backup__vm_id` FOREIGN KEY (`vm_id`) REFERENCES `vm_instance` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `cloud_usage`.`usage_vm_backup` (
+  `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+  `zone_id` bigint(20) unsigned NOT NULL,
+  `account_id` bigint(20) unsigned NOT NULL,
+  `domain_id` bigint(20) unsigned NOT NULL,
+  `backup_id` bigint(20) unsigned NOT NULL,
+  `vm_id` bigint(20) unsigned NOT NULL,
+  `size` bigint(20) DEFAULT 0,
+  `protected_size` bigint(20) DEFAULT 0,
+  `created` datetime NOT NULL,
+  `removed` datetime,
+  PRIMARY KEY (`id`),
+  INDEX `i_usage_vmbackup` (`zone_id`,`account_id`,`backup_id`,`vm_id`,`created`)
+) ENGINE=InnoDB CHARSET=utf8;

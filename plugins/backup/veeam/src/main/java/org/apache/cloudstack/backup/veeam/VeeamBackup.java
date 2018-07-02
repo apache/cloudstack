@@ -20,9 +20,9 @@ package org.apache.cloudstack.backup.veeam;
 import java.util.Date;
 import java.util.List;
 
-import org.apache.cloudstack.backup.Backup;
+import org.apache.cloudstack.backup.VMBackup;
 
-public class VeeamBackup implements Backup {
+public class VeeamBackup implements VMBackup {
 
     private String name;
     private String uid;
@@ -58,17 +58,12 @@ public class VeeamBackup implements Backup {
     }
 
     @Override
-    public Long getParentId() {
-        return null;
-    }
-
-    @Override
     public Long getVmId() {
         return null;
     }
 
     @Override
-    public List<Long> getVolumeIds() {
+    public List<VolumeInfo> getBackedUpVolumes() {
         return null;
     }
 
@@ -78,7 +73,17 @@ public class VeeamBackup implements Backup {
     }
 
     @Override
-    public Date getStartTime() {
+    public Long getSize() {
+        return null;
+    }
+
+    @Override
+    public Long getProtectedSize() {
+        return null;
+    }
+
+    @Override
+    public Date getCreated() {
         return null;
     }
 

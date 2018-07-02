@@ -17,18 +17,19 @@
 
 package org.apache.cloudstack.api.response;
 
-import com.cloud.serializer.Param;
-import com.google.gson.annotations.SerializedName;
-import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
-import org.apache.cloudstack.api.EntityReference;
-import org.apache.cloudstack.backup.Backup;
-
 import java.util.Date;
 import java.util.List;
 
-@EntityReference(value = Backup.class)
-public class BackupResponse extends BaseResponse {
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.EntityReference;
+import org.apache.cloudstack.backup.VMBackup;
+
+import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
+
+@EntityReference(value = VMBackup.class)
+public class VMBackupResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.ID)
     @Param(description = "internal id of the backup")
@@ -54,10 +55,6 @@ public class BackupResponse extends BaseResponse {
     @Param(description = "backup description")
     private String description;
 
-    @SerializedName(ApiConstants.PARENT_ID)
-    @Param(description = "backup parent id")
-    private String parentId;
-
     @SerializedName(ApiConstants.VIRTUAL_MACHINE_ID)
     @Param(description = "backup vm id")
     private String vmId;
@@ -68,11 +65,19 @@ public class BackupResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.STATUS)
     @Param(description = "backup volume ids")
-    private Backup.Status status;
+    private VMBackup.Status status;
 
-    @SerializedName(ApiConstants.START_DATE)
-    @Param(description = "backup start date")
-    private Date startDate;
+    @SerializedName(ApiConstants.SIZE)
+    @Param(description = "backup size in bytes")
+    private Long size;
+
+    @SerializedName(ApiConstants.VIRTUAL_SIZE)
+    @Param(description = "backup protected (virtual) size in bytes")
+    private Long protectedSize;
+
+    @SerializedName(ApiConstants.CREATED)
+    @Param(description = "backup creation date")
+    private Date createdDate;
 
     public String getId() {
         return id;
@@ -122,14 +127,6 @@ public class BackupResponse extends BaseResponse {
         this.description = description;
     }
 
-    public String getParentId() {
-        return parentId;
-    }
-
-    public void setParentId(String parentId) {
-        this.parentId = parentId;
-    }
-
     public String getVmId() {
         return vmId;
     }
@@ -138,12 +135,28 @@ public class BackupResponse extends BaseResponse {
         this.vmId = vmId;
     }
 
-    public Backup.Status getStatus() {
+    public VMBackup.Status getStatus() {
         return status;
     }
 
-    public void setStatus(Backup.Status status) {
+    public void setStatus(VMBackup.Status status) {
         this.status = status;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
+    }
+
+    public Long getProtectedSize() {
+        return protectedSize;
+    }
+
+    public void setProtectedSize(Long protectedSize) {
+        this.protectedSize = protectedSize;
     }
 
     public List<String> getVolumeIds() {
@@ -154,11 +167,11 @@ public class BackupResponse extends BaseResponse {
         this.volumeIds = volumeIds;
     }
 
-    public Date getStartDate() {
-        return startDate;
+    public Date getCreatedDate() {
+        return createdDate;
     }
 
-    public void setStartDate(Date startDate) {
-        this.startDate = startDate;
+    public void setCreatedDate(Date createdDate) {
+        this.createdDate = createdDate;
     }
 }

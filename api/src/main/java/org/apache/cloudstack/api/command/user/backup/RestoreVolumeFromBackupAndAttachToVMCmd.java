@@ -28,10 +28,9 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
-import org.apache.cloudstack.api.response.BackupResponse;
+import org.apache.cloudstack.api.response.VMBackupResponse;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.context.CallContext;
 
@@ -56,23 +55,25 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    //FIXME: discuss on simplification
-    @Parameter(name = ApiConstants.ID,
+    @Parameter(name = ApiConstants.VM_BACKUP_ID,
             type = CommandType.UUID,
-            entityType = BackupResponse.class,
+            entityType = VMBackupResponse.class,
             required = true,
             description = "id of the backup")
     private Long backupId;
 
-    //FIXME: is this necessary when backup id is known? unless we want to restore to a different volume?
-    @Parameter(name = ApiConstants.VOLUME_ID,
-            type = CommandType.UUID,
-            entityType = VolumeResponse.class,
+    @Parameter(name = ApiConstants.RESTORE_POINT_ID,
+            type = CommandType.STRING,
             required = true,
-            description = "id of the volume to restore and to be attached to the vm")
-    private Long volumeId;
+            description = "id of the backup restore point")
+    private String restorePointId;
 
-    //FIXME: is this necessary when backup id is known? unless we want to restore to a different VM?
+    @Parameter(name = ApiConstants.VOLUME_ID,
+            type = CommandType.STRING,
+            required = true,
+            description = "id of the volume backed up")
+    private String volumeUuid;
+
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
             type = CommandType.UUID,
             entityType = UserVmResponse.class,
@@ -84,8 +85,8 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
 
-    public Long getVolumeId() {
-        return volumeId;
+    public String getVolumeUuid() {
+        return volumeUuid;
     }
 
     public Long getVmId() {
@@ -94,6 +95,10 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
 
     public Long getBackupId() {
         return backupId;
+    }
+
+    public String getRestorePointId() {
+        return restorePointId;
     }
 
     @Override
@@ -113,7 +118,7 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreBackupVolumeAndAttachToVM(volumeId, vmId, backupId);
+            boolean result = backupManager.restoreBackupVolumeAndAttachToVM(volumeUuid, vmId, backupId, restorePointId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());
@@ -128,11 +133,11 @@ public class RestoreVolumeFromBackupAndAttachToVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        return EventTypes.EVENT_RESTORE_VOLUME_FROM_BACKUP_AND_ATTACH_TO_VM;
+        return EventTypes.EVENT_VM_BACKUP_RESTORE_VOLUME_TO_VM;
     }
 
     @Override
     public String getEventDescription() {
-        return "Restoring volume "+ volumeId + " from backup " + backupId + " and attaching it to VM " + vmId;
+        return "Restoring volume "+ volumeUuid + " from backup " + backupId + " and attaching it to VM " + vmId;
     }
 }

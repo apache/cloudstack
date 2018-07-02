@@ -57,6 +57,7 @@ import com.cloud.usage.dao.UsageNetworkDao;
 import com.cloud.usage.dao.UsageNetworkOfferingDao;
 import com.cloud.usage.dao.UsagePortForwardingRuleDao;
 import com.cloud.usage.dao.UsageSecurityGroupDao;
+import com.cloud.usage.dao.UsageVMBackupDao;
 import com.cloud.usage.dao.UsageVMSnapshotOnPrimaryDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
@@ -71,12 +72,13 @@ import com.cloud.usage.parser.NetworkUsageParser;
 import com.cloud.usage.parser.PortForwardingUsageParser;
 import com.cloud.usage.parser.SecurityGroupUsageParser;
 import com.cloud.usage.parser.StorageUsageParser;
+import com.cloud.usage.parser.VMBackupUsageParser;
 import com.cloud.usage.parser.VMInstanceUsageParser;
+import com.cloud.usage.parser.VMSanpshotOnPrimaryParser;
 import com.cloud.usage.parser.VMSnapshotUsageParser;
 import com.cloud.usage.parser.VPNUserUsageParser;
 import com.cloud.usage.parser.VmDiskUsageParser;
 import com.cloud.usage.parser.VolumeUsageParser;
-import com.cloud.usage.parser.VMSanpshotOnPrimaryParser;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
@@ -149,6 +151,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private UsageVMSnapshotDao _usageVMSnapshotDao;
     @Inject
     private UsageVMSnapshotOnPrimaryDao _usageSnapshotOnPrimaryDao;
+    @Inject
+    private UsageVMBackupDao usageVMBackupDao;
     @Inject
     private QuotaManager _quotaManager;
     @Inject
@@ -956,6 +960,12 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 s_logger.debug("VM Snapshot on primary usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
             }
         }
+        parsed = VMBackupUsageParser.parse(account, currentStartDate, currentEndDate);
+        if (s_logger.isDebugEnabled()) {
+            if (!parsed) {
+                s_logger.debug("VM Backup usage successfully parsed? " + parsed + " (for account: " + account.getAccountName() + ", id: " + account.getId() + ")");
+            }
+        }
         return parsed;
     }
 
@@ -987,6 +997,8 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             createVMSnapshotEvent(event);
         } else if (isVmSnapshotOnPrimaryEvent(eventType)) {
             createVmSnapshotOnPrimaryEvent(event);
+        } else if (isVMBackupEvent(eventType)) {
+            createVMBackupEvent(event);
         }
     }
 
@@ -1066,6 +1078,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         if (eventType == null)
             return false;
         return (eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_ON_PRIMARY) || eventType.equals(EventTypes.EVENT_VM_SNAPSHOT_OFF_PRIMARY));
+    }
+
+    private boolean isVMBackupEvent(String eventType) {
+        return eventType != null && (eventType.equals(EventTypes.EVENT_VM_BACKUP_CREATE) || eventType.equals(EventTypes.EVENT_VM_BACKUP_DELETE));
     }
 
     private void createVMHelperEvent(UsageEventVO event) {
@@ -1866,6 +1882,24 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
                 _usageSnapshotOnPrimaryDao.updateDeleted(vmsnap);
             }
         }
+    }
+
+    private void createVMBackupEvent(final UsageEventVO event) {
+        Long backupId = event.getResourceId();
+        Long vmId = event.getTemplateId();
+        Long zoneId = event.getZoneId();
+        Long accountId = event.getAccountId();
+        Date created = event.getCreateDate();
+        Account account = _accountDao.findByIdIncludingRemoved(event.getAccountId());
+        Long domainId = account.getDomainId();
+
+        if (EventTypes.EVENT_VM_BACKUP_CREATE.equals(event.getType())) {
+            final UsageVMBackupVO vmBackupVO = new UsageVMBackupVO(zoneId, accountId, domainId, backupId, vmId, created);
+            usageVMBackupDao.persist(vmBackupVO);
+        } else if (EventTypes.EVENT_VM_BACKUP_DELETE.equals(event.getType())) {
+            usageVMBackupDao.removeUsage(accountId, zoneId, backupId);
+        }
+
     }
 
     private class Heartbeat extends ManagedContextRunnable {

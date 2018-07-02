@@ -26,8 +26,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
 import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.cloudstack.backup.BackupPolicy;
+import org.apache.cloudstack.backup.VMBackup;
+import org.apache.cloudstack.backup.veeam.api.Job;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Rule;
@@ -77,9 +80,26 @@ public class VeeamClientTest {
                                 "        </Links>\n" +
                                 "    </Ref>\n" +
                                 "</EntityReferences>")));
-        List<BackupPolicy> policies = client.listBackupPolicies();
+        List<BackupPolicy> policies = client.listJobs();
         verify(getRequestedFor(urlMatching(".*/jobs")));
         Assert.assertEquals(policies.size(), 1);
         Assert.assertEquals(policies.get(0).getName(), "ZONE1-GOLD");
+    }
+
+    public void testJob() throws Exception {
+        VeeamClient client = new VeeamClient("http://10.2.2.89:9399/api/", adminUsername, adminPassword, true, 30);
+        Job j = client.listJob("8acac50d-3711-4c99-bf7b-76fe9c7e39c3");
+        boolean result = client.cloneVeeamJob(j, "some-uuid-12345");
+    }
+
+    public void testVeeamPS() throws Exception {
+        VeeamClient client = new VeeamClient("http://10.2.2.89:9399/api/", adminUsername, adminPassword, true, 30);
+        Map<String, VMBackup.Metric> sizes = client.getBackupMetrics();
+        Job j = client.listJob("ZONE1-GOLD_clone1");
+    }
+    @Test
+    public void test() {
+        String a = "Id           :asdasd";
+        System.out.println(a.matches("Id(/s)*"));
     }
 }

@@ -19,12 +19,10 @@ package org.apache.cloudstack.backup.veeam;
 
 import java.util.List;
 
-import org.apache.cloudstack.backup.veeam.api.VeeamObjectType;
-
 public interface VeeamObject {
     String getUuid();
     String getName();
     String getHref();
-    VeeamObjectType getType();
+    String getType();
     List<VeeamObject> getLinks();
 }

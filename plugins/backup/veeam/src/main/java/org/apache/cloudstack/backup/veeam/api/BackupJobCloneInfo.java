@@ -20,50 +20,39 @@ package org.apache.cloudstack.backup.veeam.api;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 
-@JacksonXmlRootElement(localName = "Link")
-public class Link {
+@JacksonXmlRootElement(localName = "BackupJobCloneInfo")
+public class BackupJobCloneInfo {
 
-    @JacksonXmlProperty(localName = "Name", isAttribute = true)
-    private String name;
+    @JacksonXmlProperty(localName = "JobName")
+    private String jobName;
 
-    @JacksonXmlProperty(localName = "Href", isAttribute = true)
-    private String href;
+    @JacksonXmlProperty(localName = "FolderName")
+    private String folderName;
 
-    @JacksonXmlProperty(localName = "Type", isAttribute = true)
-    private String type;
+    @JacksonXmlProperty(localName = "RepositoryUid")
+    private String repositoryUid;
 
-    @JacksonXmlProperty(localName = "Rel", isAttribute = true)
-    private String rel;
-
-    public String getName() {
-        return name;
+    public String getJobName() {
+        return jobName;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setJobName(String jobName) {
+        this.jobName = jobName;
     }
 
-    public String getHref() {
-        return href;
+    public String getFolderName() {
+        return folderName;
     }
 
-    public void setHref(String href) {
-        this.href = href;
+    public void setFolderName(String folderName) {
+        this.folderName = folderName;
     }
 
-    public String getType() {
-        return type;
+    public String getRepositoryUid() {
+        return repositoryUid;
     }
 
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public String getRel() {
-        return rel;
-    }
-
-    public void setRel(String rel) {
-        this.rel = rel;
+    public void setRepositoryUid(String repositoryUid) {
+        this.repositoryUid = repositoryUid;
     }
 }

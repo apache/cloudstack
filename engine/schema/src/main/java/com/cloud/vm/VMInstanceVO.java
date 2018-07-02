@@ -573,4 +573,8 @@ public class VMInstanceVO implements VirtualMachine, FiniteStateObject<State, Vi
     public PartitionType partitionType() {
         return PartitionType.VM;
     }
+
+    public long getUserId() {
+        return userId;
+    }
 }
