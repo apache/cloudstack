@@ -31,25 +31,13 @@ public interface SnapshotDao extends GenericDao<SnapshotVO, Long>, StateDao<Snap
 
     List<SnapshotVO> listByVolumeId(Filter filter, long volumeId);
 
-    SnapshotVO findNextSnapshot(long parentSnapId);
-
     long getLastSnapshot(long volumeId, DataStoreRole role);
-
-    List<SnapshotVO> listByVolumeIdType(long volumeId, Type type);
 
     List<SnapshotVO> listByVolumeIdTypeNotDestroyed(long volumeId, Type type);
 
     List<SnapshotVO> listByVolumeIdIncludingRemoved(long volumeId);
 
-    List<SnapshotVO> listByBackupUuid(long volumeId, String backupUuid);
-
-    long updateSnapshotVersion(long volumeId, String from, String to);
-
     List<SnapshotVO> listByVolumeIdVersion(long volumeId, String version);
-
-    Long getSecHostId(long volumeId);
-
-    long updateSnapshotSecHost(long dcId, long secHostId);
 
     public Long countSnapshotsForAccount(long accountId);
 
