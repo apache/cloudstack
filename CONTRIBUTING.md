@@ -24,6 +24,15 @@ Send a PR(steps below) to get it into master (2x LGTM applies).
 PR will only be merged when master is open, will be held otherwise until master is open again. 
 No back porting / cherry-picking features to existing branches!
 
+PendingReleaseNotes file
+------------------------
+When developing a new feature or making a (major) change to a existing feature you are encouraged to append this to the PendingReleaseNotes file so that the Release Manager can
+use this file as a source of information when compiling the Release Notes for a new release.
+
+When adding information to the PendingReleaseNotes file make sure that you write a good and understandable description of the new feature or change which you have developed.
+
+Updating the PendingReleaseNotes file is preferably a part of the original Pull Request, but that is up to the developers' discretion.
+
 Fork the code 
 -------------
 

@@ -1,0 +1,41 @@
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+#
+# PENDING RELEASE NOTES
+#
+# WHEN DEVELOPING A NEW FEATURE OR MAKING A (MAJOR) CHANGE TO
+# AN EXISTING FEATURE DEVELOPERS ARE ENCOURAGED TO UPDATED THIS
+# FILE WITH THE CHANGES THEY MADE.
+#
+# THE RELEASE MANAGER CAN USE THIS FILE AS A SOURCE OF INFORMATION
+# WHEN COMPILING THE RELEASE NOTES FOR A NEW RELEASE.
+#
+# THIS FILE IS TRUNCATED AFTER THE RELEASE OF THE NEW VERSION
+#
+#
+
+
+example.ver.1 > example.ver.2:
+  * VirtualRouters are now deployed with the latest version of ExampleLinux
+    and wil also use a new MyFirstDHCPServer instead of dnsmasq to provide
+    faster and more robust deployment of new Instances
+
+  * ISOs are no longer supported and will be replaced by 2.88MB Floppy Drives
+    which can now be attached to Instances. This is to prevent the Secondary
+    Storage to grow to enormous sizes as Linux Distributions keep growing in
+    size while a stripped down Linux should fit on a 2.88MB floppy.
