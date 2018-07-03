@@ -17,10 +17,12 @@
 package org.apache.cloudstack.framework.jobs.dao;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
 
@@ -34,6 +36,8 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.TransactionLegacy;
+
+import javax.persistence.EmbeddedId;
 
 public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements AsyncJobDao {
     private static final Logger s_logger = Logger.getLogger(AsyncJobDaoImpl.class.getName());
@@ -94,6 +98,26 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         failureMsidAsyncJobSearch.and("job_cmd", failureMsidAsyncJobSearch.entity().getCmd(), Op.IN);
         failureMsidAsyncJobSearch.done();
 
+    }
+
+    @Override
+    public AsyncJobVO findById(Long id) {
+        final StringBuilder sql = new StringBuilder(_selectByIdSql);
+        final TransactionLegacy txn = TransactionLegacy.currentTxn();
+
+        PreparedStatement pstmt = null;
+        try {
+            pstmt = txn.prepareAutoCloseStatement(sql.toString());
+
+            if (_idField.getAnnotation(EmbeddedId.class) == null) {
+                prepareAttribute(1, pstmt, _idAttributes.get(_table)[0], id);
+            }
+
+            final ResultSet rs = pstmt.executeQuery();
+            return rs.next() ? toEntityBean(rs, true) : null;
+        } catch (SQLException e) {
+            throw new CloudRuntimeException("DB Exception on: " + pstmt, e);
+        }
     }
 
     @Override

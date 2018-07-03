@@ -75,7 +75,7 @@ public class AsyncJobResponse extends BaseResponse {
     @Param(description = "  the created date of the job")
     private Date created;
 
-    @SerializedName(ApiConstants.END_TIME)
+    @SerializedName(ApiConstants.COMPLETED)
     @Param(description = "  the removed date of the job")
     private Date removed;
 

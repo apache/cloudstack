@@ -161,7 +161,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public AsyncJobVO getAsyncJob(long jobId) {
-        return _jobDao.findByIdIncludingRemoved(jobId);
+        return _jobDao.findById(jobId);
     }
 
     @Override
@@ -448,7 +448,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public AsyncJob queryJob(final long jobId, final boolean updatePollTime) {
-        final AsyncJobVO job = _jobDao.findByIdIncludingRemoved(jobId);
+        final AsyncJobVO job = _jobDao.findById(jobId);
 
         if (updatePollTime) {
             job.setLastPolled(DateUtil.currentGMTTime());
