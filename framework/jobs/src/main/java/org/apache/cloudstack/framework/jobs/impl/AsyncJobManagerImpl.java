@@ -161,7 +161,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public AsyncJobVO getAsyncJob(long jobId) {
-        return _jobDao.findById(jobId);
+        return _jobDao.findByIdIncludingRemoved(jobId);
     }
 
     @Override
