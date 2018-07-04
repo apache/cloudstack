@@ -1811,7 +1811,7 @@ public class ApiResponseHelper implements ResponseGenerator {
     public AsyncJobResponse queryJobResult(final QueryAsyncJobResultCmd cmd) {
         final Account caller = CallContext.current().getCallingAccount();
 
-        final AsyncJob job = _entityMgr.findByIdIncludingRemoved(AsyncJob.class, cmd.getId());
+        final AsyncJob job = _entityMgr.findById(AsyncJob.class, cmd.getId());
         if (job == null) {
             throw new InvalidParameterValueException("Unable to find a job by id " + cmd.getId());
         }
