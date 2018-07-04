@@ -161,7 +161,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public AsyncJobVO getAsyncJob(long jobId) {
-        return _jobDao.findById(jobId);
+        return _jobDao.findByIdIncludingRemoved(jobId);
     }
 
     @Override
@@ -448,7 +448,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public AsyncJob queryJob(final long jobId, final boolean updatePollTime) {
-        final AsyncJobVO job = _jobDao.findById(jobId);
+        final AsyncJobVO job = _jobDao.findByIdIncludingRemoved(jobId);
 
         if (updatePollTime) {
             job.setLastPolled(DateUtil.currentGMTTime());
@@ -1036,13 +1036,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
                         job.setResult("job cancelled because of management server restart or shutdown");
                         job.setCompleteMsid(msid);
-                        job.setRemoved(DateUtil.currentGMTTime());
+                        final Date currentGMTTime = DateUtil.currentGMTTime();
+                        job.setLastUpdated(currentGMTTime);
+                        job.setRemoved(currentGMTTime);
                         _jobDao.update(job.getId(), job);
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Purge queue item for cancelled job-" + job.getId());
                         }
                         _queueMgr.purgeAsyncJobQueueItemId(job.getId());
-                        if (job.getInstanceType().equals(ApiCommandJobType.Volume.toString())) {
+                        if (job.getInstanceType() != null && job.getInstanceType().equals(ApiCommandJobType.Volume.toString())) {
 
                             try {
                                 _volumeDetailsDao.removeDetail(job.getInstanceId(), "SNAPSHOT_ID");

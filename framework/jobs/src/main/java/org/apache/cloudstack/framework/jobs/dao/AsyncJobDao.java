@@ -25,9 +25,6 @@ import com.cloud.utils.db.GenericDao;
 
 public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
 
-    @Override
-    AsyncJobVO findById(Long id);
-
     AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
 
     List<AsyncJobVO> findInstancePendingAsyncJobs(String instanceType, Long accountId);
