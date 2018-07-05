@@ -44,12 +44,10 @@ CloudStack is built using Java and Python.  To make selection of these tools ver
 
 Following installation, execute the following commands to configure jenv and pyenv for use with CloudStack development:
 
-'''
-  # pyenv install 2.7.11                                          # Install Python 2.7.11
-  # pyenv virtualenv 2.7.11 cloudstack                            # Create a cloidstack virtualenv using Python 2.7.11
-  # pip install -r <root CloudStack source tree>/requirements.txt # Install cloudstack Python dependencies
-  # jenv add <path to JDK 1.7 installation>                       # Add Java7 to jenv
-'''
+    # pyenv install 2.7.11                                          ## Install Python 2.7.11
+    # pyenv virtualenv 2.7.11 cloudstack                            ## Create a cloudstack virtualenv using Python 2.7.11
+    # pip install -r <root CloudStack source tree>/requirements.txt ## Install cloudstack Python dependencies
+    # jenv add <path to JDK 1.7 installation>                       ## Add Java7 to jenv
 
 *N.B.* If you are running Linux, you may need to install additional packages to allow pyenv to build Python.
 
