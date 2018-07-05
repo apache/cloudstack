@@ -61,7 +61,7 @@ def execute(cmd):
     try:
         return check_output(cmd, shell=True)
     except CalledProcessError as e:
-        logging.exception('Failed to execute: %s', e.cmd)
+        pass
 
 
 def can_bridge_firewall(privnic):
@@ -1151,8 +1151,8 @@ def getvmId(vmName):
 
 def getBrfw(brname):
     cmd = "iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' | grep -w " + brname  + "|awk '{print $9}' | head -1"
-    brfwname = bash("-c", cmd).stdout.strip()
-    if brfwname == "":
+    brfwname = execute(cmd).strip()
+    if not brfwname:
         brfwname = "BF-" + brname
     return brfwname
 
