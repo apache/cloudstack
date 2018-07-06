@@ -52,6 +52,7 @@ override_dh_auto_install:
 	install -D agent/target/transformed/cloud-ssh $(DESTDIR)/usr/bin/cloudstack-ssh
 	install -D agent/target/transformed/cloudstack-agent-profile.sh $(DESTDIR)/$(SYSCONFDIR)/profile.d/cloudstack-agent-profile.sh
 	install -D agent/target/transformed/cloudstack-agent-upgrade $(DESTDIR)/usr/bin/cloudstack-agent-upgrade
+	install -D agent/target/transformed/cloud-guest-tool $(DESTDIR)/usr/bin/cloudstack-guest-tool
 	install -D agent/target/transformed/libvirtqemuhook $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D agent/target/transformed/* $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/agent
 
