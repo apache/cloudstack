@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.framework.jobs.dao;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.Date;
@@ -161,19 +162,19 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
                 sc.setParameters("msid", msid);
 
                 expunge(sc);
-        */
+*/
         Transaction.execute(new TransactionCallbackNoReturn() {
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 TransactionLegacy txn = TransactionLegacy.currentTxn();
 
-                try (
-                        PreparedStatement pstmt = txn
-                                .prepareAutoCloseStatement(
-                            "DELETE FROM vm_work_job WHERE id IN (SELECT id FROM async_job WHERE (job_dispatcher='VmWorkJobPlaceHolder' OR job_dispatcher='VmWorkJobDispatcher') AND job_init_msid=?)");
-                ) {
+                try {
+                    PreparedStatement pstmt = txn
+                            .prepareAutoCloseStatement(
+                                    "DELETE FROM vm_work_job WHERE id IN (SELECT id FROM async_job WHERE (job_dispatcher='VmWorkJobPlaceHolder' OR job_dispatcher='VmWorkJobDispatcher') AND job_init_msid=?)");
+                    Connection currentConnection = txn.getCurrentConnection();
+                    s_logger.info("Connection: " + (currentConnection.isClosed() ? "closed" : "open"));
                     pstmt.setLong(1, msid);
-
                     pstmt.execute();
                 } catch (SQLException e) {
                     s_logger.info("[ignored]"
@@ -183,12 +184,12 @@ public class VmWorkJobDaoImpl extends GenericDaoBase<VmWorkJobVO, Long> implemen
                             + "caught an error during delete vm work job: " + e.getLocalizedMessage());
                 }
 
-                try (
-                        PreparedStatement pstmt = txn.prepareAutoCloseStatement(
+                try {
+                    PreparedStatement pstmt = txn.prepareAutoCloseStatement(
                             "DELETE FROM async_job WHERE (job_dispatcher='VmWorkJobPlaceHolder' OR job_dispatcher='VmWorkJobDispatcher') AND job_init_msid=?");
-                ) {
+                    Connection currentConnection = txn.getCurrentConnection();
+                    s_logger.info("Connection: " + (currentConnection.isClosed() ? "closed" : "open"));
                     pstmt.setLong(1, msid);
-
                     pstmt.execute();
                 } catch (SQLException e) {
                     s_logger.info("[ignored]"

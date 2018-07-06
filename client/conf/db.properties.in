@@ -101,3 +101,6 @@ db.usage.autoReconnectForPools=true
 db.usage.secondsBeforeRetryMaster=3600
 db.usage.queriesBeforeRetryMaster=5000
 db.usage.initialTimeout=3600
+
+# Connection Pool - Valid options: dbcp, hikari
+db.cloud.connPool=hikari
