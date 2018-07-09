@@ -433,6 +433,68 @@
                             );
                         });
 
+                    } else if (field.multiDataArray) {
+
+                        $input = $('<div>');
+
+                        multiArgs = {
+                            context: args.context,
+                            response: {
+                                success: function(args) {
+                                    if (args.data == undefined || args.data.length == 0) {
+
+                                        var label = field.emptyMessage != null ? field.emptyMessage : 'No data available';
+
+                                        $input
+                                            .addClass('value')
+                                            .appendTo($value)
+                                            .append(
+                                                $('<label>').html(_l(label))
+                                            );
+
+                                    } else {
+
+                                        $input.addClass('multi-array').addClass(key).appendTo($value);
+
+                                        $(args.data).each(function() {
+
+                                            var id;
+                                            if (field.valueField)
+                                                id = this[field.valueField];
+                                             else
+                                                id = this.id !== undefined ? this.id : this.name;
+
+                                            var desc;
+                                            if (args.descriptionField)
+                                                desc = this[args.descriptionField];
+                                            else
+                                                desc = _l(this.description);
+
+                                            $input.append(
+                                                $('<div>')
+                                                    .addClass('item')
+                                                    .append(
+                                                        $.merge(
+                                                            $('<div>').addClass('name').html(_l(desc)),
+                                                            $('<div>').addClass('value').append(
+                                                                $('<input>').attr({
+                                                                    name: id,
+                                                                    type: 'checkbox'
+                                                                })
+                                                                .data('json-obj', this)
+                                                                .appendTo($value)
+                                                            )
+                                                        )
+                                                    )
+                                            );
+                                        });
+                                    }
+                                }
+                            }
+                        }
+
+                        multiFn = field.multiData;
+                        multiFn(multiArgs);
                     } else {
                         $input = $('<input>').attr({
                             name: key,

@@ -31,6 +31,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
 import org.apache.cloudstack.context.CallContext;
 
 import com.cloud.event.EventTypes;
@@ -63,6 +64,14 @@ public class DestroyVMCmd extends BaseAsyncCmd {
                since = "4.2.1")
     private Boolean expunge;
 
+    @Parameter( name = ApiConstants.VOLUME_IDS,
+                type = CommandType.LIST,
+                collectionType = CommandType.UUID,
+                entityType = VolumeResponse.class,
+                description = "Comma separated list of UUIDs for volumes that will be deleted",
+                since = "4.12.0")
+    private List<Long> volumeIds;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -76,6 +85,10 @@ public class DestroyVMCmd extends BaseAsyncCmd {
             return false;
         }
         return expunge;
+    }
+
+    public List<Long> getVolumeIds() {
+        return volumeIds;
     }
 
     /////////////////////////////////////////////////////

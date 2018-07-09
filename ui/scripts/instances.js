@@ -112,6 +112,34 @@
                         label: 'label.expunge',
                         isBoolean: true,
                         isChecked: false
+                    },
+                    volumes: {
+                        label: 'label.delete.volumes',
+                        isBoolean: true,
+                        isChecked: false
+                    },
+                    volumeids: {
+                        label: 'label.volume.ids',
+                        dependsOn: 'volumes',
+                        isBoolean: true,
+                        isHidden: true,
+                        emptyMessage: 'label.volume.empty',
+                        multiDataArray: true,
+                        multiData: function(args) {
+                            $.ajax({
+                                url: createURL("listVolumes&virtualMachineId=" + args.context.instances[0].id) + "&type=DATADISK",
+                                  dataType: "json",
+                                  async: true,
+                                  success: function(json) {
+                                    var volumes = json.listvolumesresponse.volume;
+                                    args.response.success({
+                                        descriptionField: 'name',
+                                        valueField: 'id',
+                                        data: volumes
+                                    });
+                                  }
+                            });
+                        }
                     }
                 }
             },
@@ -124,6 +152,26 @@
                     if (args.data.expunge == 'on') {
                         $.extend(data, {
                             expunge: true
+                        });
+                    }
+                    if (args.data.volumes == 'on') {
+
+                        var regex = RegExp('[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+
+                        var selectedVolumes = [];
+
+                        for (var key in args.data) {
+                            var matches = key.match(regex);
+
+                            if (matches != null) {
+                                selectedVolumes.push(key);
+                            }
+                        }
+
+                        $.extend(data, {
+                            volumeids: $(selectedVolumes).map(function(index, volume) {
+                                return volume;
+                            }).toArray().join(',')
                         });
                     }
                     $.ajax({

@@ -79,6 +79,8 @@ public interface VolumeApiService {
 
     Volume attachVolumeToVM(AttachVolumeCmd command);
 
+    Volume detachVolumeViaDestroyVM(long vmId, long volumeId);
+
     Volume detachVolumeFromVM(DetachVolumeCmd cmd);
 
     Snapshot takeSnapshot(Long volumeId, Long policyId, Long snapshotId, Account account, boolean quiescevm, Snapshot.LocationType locationType, boolean asyncBackup)

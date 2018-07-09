@@ -1857,8 +1857,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
     }
 
-    private Volume orchestrateDetachVolumeFromVM(long vmId, long volumeId) {
+    @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume")
+    public Volume detachVolumeViaDestroyVM(long vmId, long volumeId) {
+        Volume result = orchestrateDetachVolumeFromVM(vmId, volumeId);
+        return result;
+    }
 
+    private Volume orchestrateDetachVolumeFromVM(long vmId, long volumeId) {
         Volume volume = _volsDao.findById(volumeId);
         VMInstanceVO vm = _vmInstanceDao.findById(vmId);
 
@@ -1869,7 +1874,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (hostId == null) {
             hostId = vm.getLastHostId();
-
             HostVO host = _hostDao.findById(hostId);
 
             if (host != null && host.getHypervisorType() == HypervisorType.VMware) {
