@@ -131,5 +131,10 @@ class TestAsyncJob(cloudstackTestCase):
         removed = removed.strftime("%Y-%m-%dT%H:%M:%S%z")
         self.assertEqual(completed, removed, "Expected 'completed' tag value to be equal to 'removed' db column value.")
 
+        # verify that api job_status value equals db job_status value
+        jobstatus_api = cmd_response.jobstatus
+        jobstatus_db = result[0][8]
+        self.assertEqual(jobstatus_api, jobstatus_db, "Expected 'jobstatus' tag value to be equal to 'job_status' db column value.")
+
         return
 
