@@ -20,6 +20,7 @@ from marvin.cloudstackTestCase import *
 from marvin.lib.utils import *
 from marvin.lib.base import *
 from marvin.lib.common import *
+from pytz import timezone
 
 
 class TestAsyncJob(cloudstackTestCase):
@@ -117,44 +118,18 @@ class TestAsyncJob(cloudstackTestCase):
             VirtualMachine.RUNNING)
         self.assertEqual(response[0], PASS, response[1])
 
+        result = self.dbclient.execute("select * from async_job where uuid='%s'" % self.virtual_machine.jobid)
+
         cmd = queryAsyncJobResult.queryAsyncJobResultCmd()
         cmd.jobid = self.virtual_machine.jobid
         cmd_response = self.apiclient.queryAsyncJobResult(cmd)
-        endtime = cmd_response.endtime
-        self.assertIsNotNone(endtime, "Expected 'endtime' field of queryAsyncJobResult to have a timestamp of when the job finished.")
-        return
 
-    @attr(
-        tags=[
-            "advanced",
-            "eip",
-            "advancedns",
-            "basic",
-            "sg"],
-        required_hardware="true")
-    def test_async_job_table_values(self):
-        """
-        Test async job db table for valid values
-        """
-        self.debug("Deploying instance in the account: %s" %
-                   self.account.name)
-        self.virtual_machine = VirtualMachine.create(
-            self.apiclient,
-            self.testdata["virtual_machine"],
-            accountid=self.account.name,
-            domainid=self.account.domainid,
-            serviceofferingid=self.service_offering.id,
-            diskofferingid=self.disk_offering.id,
-            hypervisor=self.hypervisor
-        )
+        # verify that 'completed' value from api equals 'removed' db column value
+        completed = cmd_response.completed
+        removed = timezone('UTC').localize(result[0][17])
+        removed = removed.astimezone(timezone('CET'))
+        removed = removed.strftime("%Y-%m-%dT%H:%M:%S%z")
+        self.assertEqual(completed, removed, "Expected 'completed' tag value to be equal to 'removed' db column value.")
 
-        response = self.virtual_machine.getState(
-            self.apiclient,
-            VirtualMachine.RUNNING)
-        self.assertEqual(response[0], PASS, response[1])
-
-        result = self.dbclient.execute("select * from async_job where uuid='%s'" % self.virtual_machine.jobid)
-        removed = result[0][17]
-        self.assertIsNotNone(removed, "Expected 'removed' column of async_job table to return a timestamp of when the job finished.")
         return
 
