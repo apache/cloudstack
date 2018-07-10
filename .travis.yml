@@ -34,6 +34,8 @@ env:
   matrix:
     # Keep the TESTS sorted by name and grouped by type
     - TESTS="smoke/test_certauthority_root"
+
+    - TESTS="smoke/test_diagnostics"
     
     - TESTS="smoke/test_accounts
              smoke/test_affinity_groups

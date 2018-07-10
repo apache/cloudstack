@@ -26,6 +26,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -293,7 +294,9 @@ public class SimulatorManagerImpl extends ManagerBase implements SimulatorManage
                 } else if (cmd instanceof PingTestCommand) {
                     answer = _mockAgentMgr.pingTest((PingTestCommand)cmd);
                 } else if (cmd instanceof SetupKeyStoreCommand) {
-                    answer = _mockAgentMgr.setupKeyStore((SetupKeyStoreCommand)cmd);
+                    answer = _mockAgentMgr.setupKeyStore((SetupKeyStoreCommand) cmd);
+                }else if (cmd instanceof DiagnosticsCommand) {
+                    answer = _mockAgentMgr.runDiagnostics((DiagnosticsCommand)cmd);
                 } else if (cmd instanceof SetupCertificateCommand) {
                     answer = _mockAgentMgr.setupCertificate((SetupCertificateCommand)cmd);
                 } else if (cmd instanceof PrepareForMigrationCommand) {

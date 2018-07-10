@@ -41,12 +41,14 @@ public class DiagnosticsAnswer extends Answer {
                 executionDetailsMap.put(ApiConstants.STDOUT, parseDetails[0].trim());
                 executionDetailsMap.put(ApiConstants.STDERR, parseDetails[1].trim());
                 executionDetailsMap.put(ApiConstants.EXITCODE, String.valueOf(parseDetails[2]).trim());
-                return executionDetailsMap;
             } else {
                 throw new CloudRuntimeException("Unsupported diagnostics command type supplied");
             }
         } else {
-            throw new CloudRuntimeException("Command execution failed: " + details);
+            executionDetailsMap.put(ApiConstants.STDOUT, "");
+            executionDetailsMap.put(ApiConstants.STDERR, details );
+            executionDetailsMap.put(ApiConstants.EXITCODE, "-1");
         }
+        return executionDetailsMap;
     }
 }

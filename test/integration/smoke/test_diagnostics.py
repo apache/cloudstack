@@ -143,6 +143,9 @@ class TestRemoteDiagnostics(cloudstackTestCase):
         # 1. Ping command is executed remotely on VR
         # 2. Validate Ping command execution with a non-existent/pingable IP address
 
+        if (self.hypervisor.lower() == 'simulator'):
+            raise self.skipTest("Skipping negative test case for Simulator hypervisor")
+
         list_router_response = list_routers(
             self.apiclient,
             account=self.account.name,
@@ -212,6 +215,9 @@ class TestRemoteDiagnostics(cloudstackTestCase):
         # Validate the following:
         # 1. Ping command is executed remotely on SSVM
         # 2. Validate Ping command execution with a non-existent/pingable IP address
+
+        if (self.hypervisor.lower() == 'simulator'):
+            raise self.skipTest("Skipping negative test case for Simulator hypervisor")
 
         list_ssvm_response = list_ssvms(
             self.apiclient,
@@ -285,6 +291,9 @@ class TestRemoteDiagnostics(cloudstackTestCase):
         # Validate the following:
         # 1. Ping command is executed remotely on CPVM
         # 2. Validate Ping command execution with a non-existent/pingable IP address
+
+        if (self.hypervisor.lower() == 'simulator'):
+            raise self.skipTest("Skipping negative test case for Simulator hypervisor")
 
         list_ssvm_response = list_ssvms(
             self.apiclient,

@@ -16,29 +16,6 @@
 // under the License.
 package com.cloud.agent.manager;
 
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
-import java.util.regex.PatternSyntaxException;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.ca.SetupCertificateAnswer;
-import org.apache.cloudstack.ca.SetupCertificateCommand;
-import org.apache.cloudstack.ca.SetupKeyStoreCommand;
-import org.apache.cloudstack.ca.SetupKeystoreAnswer;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.CheckHealthCommand;
@@ -49,6 +26,7 @@ import com.cloud.agent.api.GetHostStatsCommand;
 import com.cloud.agent.api.HostStatsEntry;
 import com.cloud.agent.api.MaintainAnswer;
 import com.cloud.agent.api.PingTestCommand;
+import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.api.commands.SimulatorAddSecondaryAgent;
 import com.cloud.dc.dao.HostPodDao;
 import com.cloud.exception.DiscoveryException;
@@ -73,6 +51,29 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
+import org.apache.cloudstack.ca.SetupCertificateAnswer;
+import org.apache.cloudstack.ca.SetupCertificateCommand;
+import org.apache.cloudstack.ca.SetupKeyStoreCommand;
+import org.apache.cloudstack.ca.SetupKeystoreAnswer;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.diagnostics.DiagnosticsAnswer;
+import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.PatternSyntaxException;
 
 @Component
 public class MockAgentManagerImpl extends ManagerBase implements MockAgentManager {
@@ -481,6 +482,7 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
         return new SetupCertificateAnswer(true);
     }
 
+
     @Override
     public boolean start() {
         for (Discoverer discoverer : discoverers) {
@@ -518,6 +520,14 @@ public class MockAgentManagerImpl extends ManagerBase implements MockAgentManage
             s_logger.debug("Checking if network name setup is done on the resource");
         }
         return new CheckNetworkAnswer(cmd, true, "Network Setup check by names is done");
+    }
+
+    @Override
+    public Answer runDiagnostics(final DiagnosticsCommand cmd) {
+        final String vmInstance = cmd.getAccessDetail(NetworkElementCommand.ROUTER_NAME);
+        final String[] args = cmd.getSrciptArguments().split(" ");
+        final String mockAnswer = String.format("%s %s executed in %s &&  && 0", args[0].toUpperCase(), args[1], vmInstance);
+        return new DiagnosticsAnswer(cmd, true, mockAnswer);
     }
 
     public List<Discoverer> getDiscoverers() {
