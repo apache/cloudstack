@@ -33,13 +33,14 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.sql.DataSource;
 
-import org.apache.commons.dbcp.ConnectionFactory;
-import org.apache.commons.dbcp.DriverManagerConnectionFactory;
-import org.apache.commons.dbcp.PoolableConnectionFactory;
-import org.apache.commons.dbcp.PoolingDataSource;
-import org.apache.commons.pool.KeyedObjectPoolFactory;
-import org.apache.commons.pool.impl.GenericObjectPool;
-import org.apache.commons.pool.impl.StackKeyedObjectPoolFactory;
+import org.apache.commons.dbcp2.ConnectionFactory;
+import org.apache.commons.dbcp2.DriverManagerConnectionFactory;
+import org.apache.commons.dbcp2.PoolableConnection;
+import org.apache.commons.dbcp2.PoolableConnectionFactory;
+import org.apache.commons.dbcp2.PoolingDataSource;
+import org.apache.commons.pool2.ObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.log4j.Logger;
 
 import com.cloud.utils.Pair;
@@ -1079,24 +1080,15 @@ public class TransactionLegacy implements Closeable {
                 System.setProperty("javax.net.ssl.trustStorePassword", dbProps.getProperty("db.cloud.trustStorePassword"));
             }
 
-            final GenericObjectPool cloudConnectionPool =
-                    new GenericObjectPool(null, cloudMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, cloudMaxWait, cloudMaxIdle, cloudTestOnBorrow, false,
-                            cloudTimeBtwEvictionRunsMillis, 1, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle);
-
             final String cloudConnectionUri = cloudDriver + "://" + cloudHost + (s_dbHAEnabled ? "," + cloudSlaves : "") + ":" + cloudPort + "/" + cloudDbName +
                     "?autoReconnect=" + cloudAutoReconnect + (url != null ? "&" + url : "") + (useSSL ? "&useSSL=true" : "") +
                     (s_dbHAEnabled ? "&" + cloudDbHAParams : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
             DriverLoader.loadDriver(cloudDriver);
 
-            final ConnectionFactory cloudConnectionFactory = new DriverManagerConnectionFactory(cloudConnectionUri, cloudUsername, cloudPassword);
-
-            final KeyedObjectPoolFactory poolableObjFactory = (cloudPoolPreparedStatements ? new StackKeyedObjectPoolFactory() : null);
-
-            final PoolableConnectionFactory cloudPoolableConnectionFactory =
-                    new PoolableConnectionFactory(cloudConnectionFactory, cloudConnectionPool, poolableObjFactory, cloudValidationQuery, false, false, isolationLevel);
-
             // Default Data Source for CloudStack
-            s_ds = new PoolingDataSource(cloudPoolableConnectionFactory.getPool());
+            s_ds = createDataSource(cloudConnectionUri, cloudUsername, cloudPassword, cloudMaxActive, cloudMaxIdle, cloudMaxWait,
+                    cloudTimeBtwEvictionRunsMillis, cloudMinEvcitableIdleTimeMillis, cloudTestWhileIdle, cloudTestOnBorrow,
+                    cloudValidationQuery, isolationLevel);
 
             // Configure the usage db
             final int usageMaxActive = Integer.parseInt(dbProps.getProperty("db.usage.maxActive"));
@@ -1111,21 +1103,15 @@ public class TransactionLegacy implements Closeable {
             final boolean usageAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.usage.autoReconnect"));
             final String usageUrl = dbProps.getProperty("db.usage.url.params");
 
-            final GenericObjectPool usageConnectionPool =
-                    new GenericObjectPool(null, usageMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, usageMaxWait, usageMaxIdle);
-
             final String usageConnectionUri = usageDriver + "://" + usageHost + (s_dbHAEnabled ? "," + dbProps.getProperty("db.cloud.slaves") : "") + ":" + usagePort +
                     "/" + usageDbName + "?autoReconnect=" + usageAutoReconnect + (usageUrl != null ? "&" + usageUrl : "") +
                     (s_dbHAEnabled ? "&" + getDBHAParams("usage", dbProps) : "") + (s_dbHAEnabled ? "&loadBalanceStrategy=" + loadBalanceStrategy : "");
             DriverLoader.loadDriver(usageDriver);
 
-            final ConnectionFactory usageConnectionFactory = new DriverManagerConnectionFactory(usageConnectionUri, usageUsername, usagePassword);
-
-            final PoolableConnectionFactory usagePoolableConnectionFactory =
-                    new PoolableConnectionFactory(usageConnectionFactory, usageConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
-
             // Data Source for usage server
-            s_usageDS = new PoolingDataSource(usagePoolableConnectionFactory.getPool());
+            s_usageDS = createDataSource(usageConnectionUri, usageUsername, usagePassword,
+                    usageMaxActive, usageMaxIdle, usageMaxWait, null, null, null, null,
+                    null, isolationLevel);
 
             try {
                 // Configure the simulator db
@@ -1140,18 +1126,12 @@ public class TransactionLegacy implements Closeable {
                 final String simulatorDbName = dbProps.getProperty("db.simulator.name");
                 final boolean simulatorAutoReconnect = Boolean.parseBoolean(dbProps.getProperty("db.simulator.autoReconnect"));
 
-                final GenericObjectPool simulatorConnectionPool =
-                        new GenericObjectPool(null, simulatorMaxActive, GenericObjectPool.DEFAULT_WHEN_EXHAUSTED_ACTION, simulatorMaxWait, simulatorMaxIdle);
-
                 final String simulatorConnectionUri = simulatorDriver + "://" + simulatorHost + ":" + simulatorPort + "/" + simulatorDbName + "?autoReconnect=" +
                         simulatorAutoReconnect;
                 DriverLoader.loadDriver(simulatorDriver);
 
-                final ConnectionFactory simulatorConnectionFactory = new DriverManagerConnectionFactory(simulatorConnectionUri, simulatorUsername, simulatorPassword);
-
-                final PoolableConnectionFactory simulatorPoolableConnectionFactory =
-                        new PoolableConnectionFactory(simulatorConnectionFactory, simulatorConnectionPool, new StackKeyedObjectPoolFactory(), null, false, false);
-                s_simulatorDS = new PoolingDataSource(simulatorPoolableConnectionFactory.getPool());
+                s_simulatorDS = createDataSource(simulatorConnectionUri, simulatorUsername, simulatorPassword,
+                        simulatorMaxActive, simulatorMaxIdle, simulatorMaxWait, null, null, null, null, cloudValidationQuery, isolationLevel);
             } catch (Exception e) {
                 s_logger.debug("Simulator DB properties are not available. Not initializing simulator DS");
             }
@@ -1163,6 +1143,54 @@ public class TransactionLegacy implements Closeable {
                     "Unable to load db configuration, using defaults with 5 connections. Falling back on assumed datasource on localhost:3306 using username:password=cloud:cloud. Please check your configuration",
                     e);
         }
+    }
+
+    /**
+     * Creates a data source
+     */
+    private static DataSource createDataSource(String uri, String username, String password,
+                                               Integer maxActive, Integer maxIdle, Long maxWait,
+                                               Long timeBtwnEvictionRuns, Long minEvictableIdleTime,
+                                               Boolean testWhileIdle, Boolean testOnBorrow,
+                                               String validationQuery, Integer isolationLevel) {
+        ConnectionFactory connectionFactory = new DriverManagerConnectionFactory(uri, username, password);
+        PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
+        GenericObjectPoolConfig config = createPoolConfig(maxActive, maxIdle, maxWait, timeBtwnEvictionRuns, minEvictableIdleTime, testWhileIdle, testOnBorrow);
+        ObjectPool<PoolableConnection> connectionPool = new GenericObjectPool<>(poolableConnectionFactory, config);
+        poolableConnectionFactory.setPool(connectionPool);
+        if (validationQuery != null) {
+            poolableConnectionFactory.setValidationQuery(validationQuery);
+        }
+        if (isolationLevel != null) {
+            poolableConnectionFactory.setDefaultTransactionIsolation(isolationLevel);
+        }
+        return new PoolingDataSource<>(connectionPool);
+    }
+
+    /**
+     * Return a GenericObjectPoolConfig configuration usable on connection pool creation
+     */
+    private static GenericObjectPoolConfig createPoolConfig(Integer maxActive, Integer maxIdle, Long maxWait,
+                                                            Long timeBtwnEvictionRuns, Long minEvictableIdleTime,
+                                                            Boolean testWhileIdle, Boolean testOnBorrow) {
+        GenericObjectPoolConfig config = new GenericObjectPoolConfig();
+        config.setMaxTotal(maxActive);
+        config.setMaxIdle(maxIdle);
+        config.setMaxWaitMillis(maxWait);
+
+        if (timeBtwnEvictionRuns != null) {
+            config.setTimeBetweenEvictionRunsMillis(timeBtwnEvictionRuns);
+        }
+        if (minEvictableIdleTime != null) {
+            config.setMinEvictableIdleTimeMillis(minEvictableIdleTime);
+        }
+        if (testWhileIdle != null) {
+            config.setTestWhileIdle(testWhileIdle);
+        }
+        if (testOnBorrow != null) {
+            config.setTestOnBorrow(testOnBorrow);
+        }
+        return config;
     }
 
     private static String getDBHAParams(String dbName, Properties dbProps) {
@@ -1178,11 +1206,10 @@ public class TransactionLegacy implements Closeable {
 
     @SuppressWarnings({"unchecked", "rawtypes"})
     private static DataSource getDefaultDataSource(final String database) {
-        final GenericObjectPool connectionPool = new GenericObjectPool(null, 5);
         final ConnectionFactory connectionFactory = new DriverManagerConnectionFactory("jdbc:mysql://localhost:3306/" + database, "cloud", "cloud");
-        final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, connectionPool, null, null, false, true);
-        return new PoolingDataSource(
-                /* connectionPool */poolableConnectionFactory.getPool());
+        final PoolableConnectionFactory poolableConnectionFactory = new PoolableConnectionFactory(connectionFactory, null);
+        final GenericObjectPool connectionPool = new GenericObjectPool(poolableConnectionFactory);
+        return new PoolingDataSource(connectionPool);
     }
 
     /**

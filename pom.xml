@@ -50,8 +50,8 @@
     <cs.log4j.version>1.2.17</cs.log4j.version>
     <cs.log4j.extras.version>1.2.17</cs.log4j.extras.version>
     <cs.cglib.version>3.2.5</cs.cglib.version>
-    <cs.dbcp.version>1.4</cs.dbcp.version>
-    <cs.pool.version>1.6</cs.pool.version>
+    <cs.dbcp.version>2.2.0</cs.dbcp.version>
+    <cs.pool.version>2.4.3</cs.pool.version>
     <cs.codec.version>1.11</cs.codec.version>
     <cs.configuration.version>1.10</cs.configuration.version>
     <cs.logging.version>1.1.1</cs.logging.version>
@@ -271,13 +271,13 @@
         <version>${cs.cglib.version}</version>
       </dependency>
       <dependency>
-        <groupId>commons-dbcp</groupId>
-        <artifactId>commons-dbcp</artifactId>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-dbcp2</artifactId>
         <version>${cs.dbcp.version}</version>
         <exclusions>
           <exclusion>
-            <artifactId>commons-pool</artifactId>
-            <groupId>commons-pool</groupId>
+            <artifactId>org.apache.commons</artifactId>
+            <groupId>commons-pool2</groupId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -297,8 +297,8 @@
         <version>${cs.commons-fileupload.version}</version>
       </dependency>
       <dependency>
-        <groupId>commons-pool</groupId>
-        <artifactId>commons-pool</artifactId>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-pool2</artifactId>
         <version>${cs.pool.version}</version>
       </dependency>
       <dependency>
