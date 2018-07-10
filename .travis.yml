@@ -35,8 +35,6 @@ env:
     # Keep the TESTS sorted by name and grouped by type
     - TESTS="smoke/test_certauthority_root"
 
-    - TESTS="smoke/test_diagnostics"
-    
     - TESTS="smoke/test_accounts
              smoke/test_affinity_groups
              smoke/test_affinity_groups_projects
@@ -76,7 +74,8 @@ env:
     
     - TESTS="smoke/test_primary_storage"
     
-    - TESTS="smoke/test_privategw_acl
+    - TESTS="smoke/test_diagnostics
+             smoke/test_privategw_acl
              smoke/test_projects
              smoke/test_public_ip_range
              smoke/test_pvlan

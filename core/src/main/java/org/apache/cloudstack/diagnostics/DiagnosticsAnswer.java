@@ -46,7 +46,7 @@ public class DiagnosticsAnswer extends Answer {
             }
         } else {
             executionDetailsMap.put(ApiConstants.STDOUT, "");
-            executionDetailsMap.put(ApiConstants.STDERR, details );
+            executionDetailsMap.put(ApiConstants.STDERR, details);
             executionDetailsMap.put(ApiConstants.EXITCODE, "-1");
         }
         return executionDetailsMap;
