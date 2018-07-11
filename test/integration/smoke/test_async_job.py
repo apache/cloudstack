@@ -1,3 +1,6 @@
+"""
+Integration Test
+"""
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -16,15 +19,18 @@
 # under the License.
 
 from nose.plugins.attrib import attr
-from marvin.cloudstackTestCase import *
-from marvin.lib.utils import *
-from marvin.lib.base import *
-from marvin.lib.common import *
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.lib.utils import cleanup_resources
+from marvin.lib.base import ServiceOffering, DiskOffering, Account, VirtualMachine,\
+    queryAsyncJobResult, PASS
+from marvin.lib.common import get_domain, get_zone, get_test_template
 from pytz import timezone
 
 
 class TestAsyncJob(cloudstackTestCase):
-
+    """
+    Test queryAsyncJobResult
+    """
     @classmethod
     def setUpClass(cls):
         cls.testClient = super(TestAsyncJob, cls).getClsTestClient()
@@ -62,8 +68,8 @@ class TestAsyncJob(cloudstackTestCase):
     def tearDownClass(cls):
         try:
             cleanup_resources(cls.api_client, cls._cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
+        except Exception as exception:
+            raise Exception("Warning: Exception during cleanup : %s" % exception)
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
@@ -84,17 +90,17 @@ class TestAsyncJob(cloudstackTestCase):
             self.debug("Cleaning up the resources")
             cleanup_resources(self.apiclient, self.cleanup)
             self.debug("Cleanup complete!")
-        except Exception as e:
-            self.debug("Warning! Exception in tearDown: %s" % e)
+        except Exception as exception:
+            self.debug("Warning! Exception in tearDown: %s" % exception)
 
     @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
-    def test_queryAsyncJobResult(self):
+    def test_query_async_job_result(self):
         """
         Test queryAsyncJobResult API for expected values
         """
         self.debug("Deploying instance in the account: %s" %
                    self.account.name)
-        self.virtual_machine = VirtualMachine.create(
+        virtual_machine = VirtualMachine.create(
             self.apiclient,
             self.testdata["virtual_machine"],
             accountid=self.account.name,
@@ -104,25 +110,30 @@ class TestAsyncJob(cloudstackTestCase):
             hypervisor=self.hypervisor
         )
 
-        response = self.virtual_machine.getState(
+        response = virtual_machine.getState(
             self.apiclient,
             VirtualMachine.RUNNING)
         self.assertEqual(response[0], PASS, response[1])
 
         cmd = queryAsyncJobResult.queryAsyncJobResultCmd()
-        cmd.jobid = self.virtual_machine.jobid
+        cmd.jobid = virtual_machine.jobid
         cmd_response = self.apiclient.queryAsyncJobResult(cmd)
 
-        db_result = self.dbclient.execute("select * from async_job where uuid='%s'" % self.virtual_machine.jobid)
+        db_result = self.dbclient.execute("select * from async_job where uuid='%s'" %
+                                          virtual_machine.jobid)
 
         # verify that 'completed' value from api equals 'removed' db column value
         completed = cmd_response.completed
         removed = timezone('UTC').localize(db_result[0][17])
         removed = removed.astimezone(timezone('CET'))
         removed = removed.strftime("%Y-%m-%dT%H:%M:%S%z")
-        self.assertEqual(completed, removed, "Expected 'completed' timestamp value to be equal to 'removed' db column value.")
+        self.assertEqual(completed, removed,
+                         "Expected 'completed' timestamp value to be equal to "
+                         "'removed' db column value.")
 
         # verify that api job_status value equals db job_status value
         jobstatus_db = db_result[0][8]
         jobstatus_api = cmd_response.jobstatus
-        self.assertEqual(jobstatus_api, jobstatus_db, "Expected 'jobstatus' api value to be equal to 'job_status' db column value.")
+        self.assertEqual(jobstatus_api, jobstatus_db,
+                         "Expected 'jobstatus' api value to be equal to "
+                         "'job_status' db column value.")
