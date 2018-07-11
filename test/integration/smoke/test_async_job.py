@@ -57,7 +57,6 @@ class TestAsyncJob(cloudstackTestCase):
             cls.service_offering,
             cls.disk_offering
         ]
-        return
 
     @classmethod
     def tearDownClass(cls):
@@ -79,7 +78,6 @@ class TestAsyncJob(cloudstackTestCase):
             domainid=self.domain.id
         )
         self.cleanup = [self.account]
-        return
 
     def tearDown(self):
         try:
@@ -89,14 +87,7 @@ class TestAsyncJob(cloudstackTestCase):
         except Exception as e:
             self.debug("Warning! Exception in tearDown: %s" % e)
 
-    @attr(
-        tags=[
-            "advanced",
-            "eip",
-            "advancedns",
-            "basic",
-            "sg"],
-        required_hardware="true")
+    @attr(tags=["advanced", "eip", "advancedns", "basic", "sg"], required_hardware="false")
     def test_queryAsyncJobResult(self):
         """
         Test queryAsyncJobResult API for expected values
@@ -118,23 +109,20 @@ class TestAsyncJob(cloudstackTestCase):
             VirtualMachine.RUNNING)
         self.assertEqual(response[0], PASS, response[1])
 
-        result = self.dbclient.execute("select * from async_job where uuid='%s'" % self.virtual_machine.jobid)
-
         cmd = queryAsyncJobResult.queryAsyncJobResultCmd()
         cmd.jobid = self.virtual_machine.jobid
         cmd_response = self.apiclient.queryAsyncJobResult(cmd)
 
+        db_result = self.dbclient.execute("select * from async_job where uuid='%s'" % self.virtual_machine.jobid)
+
         # verify that 'completed' value from api equals 'removed' db column value
         completed = cmd_response.completed
-        removed = timezone('UTC').localize(result[0][17])
+        removed = timezone('UTC').localize(db_result[0][17])
         removed = removed.astimezone(timezone('CET'))
         removed = removed.strftime("%Y-%m-%dT%H:%M:%S%z")
-        self.assertEqual(completed, removed, "Expected 'completed' tag value to be equal to 'removed' db column value.")
+        self.assertEqual(completed, removed, "Expected 'completed' timestamp value to be equal to 'removed' db column value.")
 
         # verify that api job_status value equals db job_status value
+        jobstatus_db = db_result[0][8]
         jobstatus_api = cmd_response.jobstatus
-        jobstatus_db = result[0][8]
-        self.assertEqual(jobstatus_api, jobstatus_db, "Expected 'jobstatus' tag value to be equal to 'job_status' db column value.")
-
-        return
-
+        self.assertEqual(jobstatus_api, jobstatus_db, "Expected 'jobstatus' api value to be equal to 'job_status' db column value.")
