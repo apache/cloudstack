@@ -1572,7 +1572,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
 
             volumeMgr.release(profile);
-            s_logger.debug("Successfully cleanued up resources for the vm " + vm + " in " + state + " state");
+            s_logger.debug(String.format("Successfully cleaned up resources for the VM %s in %s state", vm, state));
         }
 
         return true;
