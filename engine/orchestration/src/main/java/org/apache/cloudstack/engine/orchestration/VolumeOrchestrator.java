@@ -30,6 +30,10 @@ import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.VolumeApiService;
+import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
+import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -953,10 +957,29 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
         }
     }
 
+    private void checkConcurrentJobsPerDatastoreThreshhold(final StoragePool destPool) {
+        final Long threshold = VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value();
+        if (threshold != null && threshold > 0) {
+            long count = _jobMgr.countPendingJobs("\"storageid\":\"" + destPool.getUuid() + "\"", MigrateVMCmd.class.getName(), MigrateVolumeCmd.class.getName(), MigrateVolumeCmdByAdmin.class.getName());
+            if (count > threshold) {
+                throw new CloudRuntimeException("Number of concurrent migration jobs per datastore exceeded the threshold: " + threshold.toString() + ". Please try again after some time.");
+            }
+        }
+    }
+
+
     @Override
     @DB
     public Volume migrateVolume(Volume volume, StoragePool destPool) throws StorageUnavailableException {
         VolumeInfo vol = volFactory.getVolume(volume.getId());
+        if (vol == null){
+            throw new CloudRuntimeException("Migrate volume failed because volume object of volume " + volume.getName()+ "is null");
+        }
+        if (destPool == null) {
+            throw new CloudRuntimeException("Migrate volume failed because destination storage pool is not available!!");
+        }
+
+        checkConcurrentJobsPerDatastoreThreshhold(destPool);
 
         DataStore dataStoreTarget = dataStoreMgr.getDataStore(destPool.getId(), DataStoreRole.Primary);
         AsyncCallFuture<VolumeApiResult> future = volService.copyVolume(vol, dataStoreTarget);
@@ -1062,6 +1085,10 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
             return true;
         }
 
+        // OfflineVmwareMigration: in case we can (vmware?) don't itterate over volumes but tell the hypervisor to do the thing
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug("Offline vm migration was not done up the stack in VirtualMachineManager so trying here.");
+        }
         for (Volume vol : volumesNeedToMigrate) {
             Volume result = migrateVolume(vol, destPool);
             if (result == null) {

@@ -26,6 +26,11 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.api.MigrateVmToPoolCommand;
+import com.cloud.agent.api.UnregisterVMCommand;
+import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.dc.ClusterDetailsDao;
+import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -115,11 +120,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     @Inject
     private GuestOSDao _guestOsDao;
     @Inject
-    GuestOSHypervisorDao _guestOsHypervisorDao;
+    private GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
     private HostDao _hostDao;
     @Inject
     private HostDetailsDao _hostDetailsDao;
+    @Inject
+    private ClusterDetailsDao _clusterDetailsDao;
     @Inject
     private CommandExecLogDao _cmdExecLogDao;
     @Inject
@@ -639,5 +646,36 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         details.put(VmwareReserveCpu.key(), VmwareReserveCpu.valueIn(clusterId).toString());
         details.put(VmwareReserveMemory.key(), VmwareReserveMemory.valueIn(clusterId).toString());
         return details;
+    }
+
+    @Override
+    public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination) {
+        List<Command> commands = new ArrayList<Command>();
+
+        // OfflineVmwareMigration: specialised migration command
+        List<VolumeVO> volumes = _volumeDao.findByInstance(vm.getId());
+        List<VolumeTO> vols = new ArrayList<>();
+        for (Volume volume : volumes) {
+            VolumeTO vol = new VolumeTO(volume,destination);
+            vols.add(vol);
+        }
+        MigrateVmToPoolCommand migrateVmToPoolCommand = new MigrateVmToPoolCommand(vm.getInstanceName(), vols, destination.getUuid(), true);
+        commands.add(migrateVmToPoolCommand);
+
+        // OfflineVmwareMigration: cleanup if needed
+        final Long destClusterId = destination.getClusterId();
+        final Long srcClusterId = getClusterId(vm.getId());
+
+        if (srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId)) {
+            final String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
+            final String destDcName = _clusterDetailsDao.getVmwareDcName(destClusterId);
+            if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {
+                final UnregisterVMCommand unregisterVMCommand = new UnregisterVMCommand(vm.getInstanceName(), true);
+                unregisterVMCommand.setCleanupVmFiles(true);
+
+                commands.add(unregisterVMCommand);
+            }
+        }
+        return commands;
     }
 }

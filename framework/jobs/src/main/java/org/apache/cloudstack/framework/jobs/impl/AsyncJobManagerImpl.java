@@ -1122,4 +1122,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     public List<AsyncJobVO> findFailureAsyncJobs(String... cmds) {
         return _jobDao.getFailureJobsSinceLastMsStart(getMsid(), cmds);
     }
+
+    @Override
+    public long countPendingJobs(String havingInfo, String... cmds) {
+        return _jobDao.countPendingJobs(havingInfo, cmds);
+    }
 }

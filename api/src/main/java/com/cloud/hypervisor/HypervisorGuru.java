@@ -19,6 +19,7 @@ package com.cloud.hypervisor;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.storage.StoragePool;
 import org.apache.cloudstack.framework.config.ConfigKey;
 
 import com.cloud.agent.api.Command;
@@ -84,4 +85,13 @@ public interface HypervisorGuru extends Adapter {
     List<Command> finalizeExpungeVolumes(VirtualMachine vm);
 
     Map<String, String> getClusterSettings(long vmId);
+
+    /**
+     * will generate commands to migrate a vm to a pool. For now this will ony work for stopped VMs on Vmware.
+     *
+     * @param vm the stopped vm to migrate
+     * @param destination the primary storage pool to migrate to
+     * @return a list of commands to perform for a successful migration
+     */
+    List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination);
 }

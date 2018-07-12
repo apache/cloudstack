@@ -566,7 +566,6 @@ public enum Config {
             "The interval (in milliseconds) when host stats are retrieved from agents.",
             null),
     HostRetry("Advanced", AgentManager.class, Integer.class, "host.retry", "2", "Number of times to retry hosts for creating a volume", null),
-    IntegrationAPIPort("Advanced", ManagementServer.class, Integer.class, "integration.api.port", null, "Default API port. To disable set it to 0 or negative.", null),
     InvestigateRetryInterval(
             "Advanced",
             HighAvailabilityManager.class,
@@ -1439,7 +1438,6 @@ public enum Config {
             "true",
             "Allow subdomains to use networks dedicated to their parent domain(s)",
             null),
-    EncodeApiResponse("Advanced", ManagementServer.class, Boolean.class, "encode.api.response", "false", "Do URL encoding for the api response, false by default", null),
     DnsBasicZoneUpdates(
             "Advanced",
             NetworkOrchestrationService.class,
@@ -1693,14 +1691,6 @@ public enum Config {
             null),
     VpcMaxNetworks("Advanced", ManagementServer.class, Integer.class, "vpc.max.networks", "3", "Maximum number of networks per vpc", null),
     DetailBatchQuerySize("Advanced", ManagementServer.class, Integer.class, "detail.batch.query.size", "2000", "Default entity detail batch query size for listing", null),
-    ConcurrentSnapshotsThresholdPerHost(
-            "Advanced",
-            ManagementServer.class,
-            Long.class,
-            "concurrent.snapshots.threshold.perhost",
-            null,
-            "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited",
-            null),
     NetworkIPv6SearchRetryMax(
             "Network",
             ManagementServer.class,

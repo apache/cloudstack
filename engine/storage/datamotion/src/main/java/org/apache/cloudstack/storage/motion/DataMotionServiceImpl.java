@@ -18,12 +18,17 @@
  */
 package org.apache.cloudstack.storage.motion;
 
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
@@ -40,10 +45,15 @@ import com.cloud.host.Host;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+
 @Component
 public class DataMotionServiceImpl implements DataMotionService {
+    private static final Logger LOGGER = Logger.getLogger(DataMotionServiceImpl.class);
+
     @Inject
     StorageStrategyFactory storageStrategyFactory;
+    @Inject
+    VolumeDao volDao;
 
     @Override
     public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
@@ -61,11 +71,31 @@ public class DataMotionServiceImpl implements DataMotionService {
 
         DataMotionStrategy strategy = storageStrategyFactory.getDataMotionStrategy(srcData, destData);
         if (strategy == null) {
+            // OfflineVmware volume migration
+            // Cleanup volumes from target and reset the state of volume at source
+            cleanUpVolumesForFailedMigrations(srcData, destData);
             throw new CloudRuntimeException("Can't find strategy to move data. " + "Source: " + srcData.getType().name() + " '" + srcData.getUuid() + ", Destination: " +
-                destData.getType().name() + " '" + destData.getUuid() + "'");
+                    destData.getType().name() + " '" + destData.getUuid() + "'");
         }
 
         strategy.copyAsync(srcData, destData, destHost, callback);
+    }
+
+    /**
+     * Offline Vmware volume migration
+     * Cleanup volumes after failed migrations and reset state of source volume
+     *
+     * @param srcData
+     * @param destData
+     */
+    private void cleanUpVolumesForFailedMigrations(DataObject srcData, DataObject destData) {
+        VolumeVO destinationVO = volDao.findById(destData.getId());
+        VolumeVO sourceVO = volDao.findById(srcData.getId());
+        sourceVO.setState(Volume.State.Ready);
+        volDao.update(sourceVO.getId(), sourceVO);
+        destinationVO.setState(Volume.State.Expunged);
+        destinationVO.setRemoved(new Date());
+        volDao.update(destinationVO.getId(), destinationVO);
     }
 
     @Override
@@ -84,7 +114,7 @@ public class DataMotionServiceImpl implements DataMotionService {
             }
 
             throw new CloudRuntimeException("Can't find strategy to move data. " + "Source Host: " + srcHost.getName() + ", Destination Host: " + destHost.getName() +
-                ", Volume UUIDs: " + StringUtils.join(volumeIds, ","));
+                    ", Volume UUIDs: " + StringUtils.join(volumeIds, ","));
         }
 
         strategy.copyAsync(volumeMap, vmTo, srcHost, destHost, callback);
