@@ -309,6 +309,9 @@ class ConfigDriveUtils:
     def validate_network_networking(self, network, vpc):
         pass
 
+    def validate_shared_networking(self, network, vm):
+        pass
+
     def validate_StaticNat_rule_For_VM(self, public_ip, network, vm):
         self.validate_PublicIPAddress(
             public_ip, network, static_nat=True, vm=vm)
@@ -699,7 +702,10 @@ class ConfigDriveUtils:
 
         for network in network_list:
             self.validate_Network(network, state="Implemented")
-            self.validate_network_networking(network, self.vpc)
+            if network.type == "Shared":
+                self.validate_shared_networking(network, self.vpc)
+            else:
+                self.validate_network_networking(network, self.vpc)
 
         if self.vpc_acl_rule is not None:
             self.validate_acl_rule(self.vpc_acl_rule)
@@ -906,6 +912,10 @@ class ConfigDriveUtils:
     def _find_nic(self, vm, network):
         vm = VirtualMachine.list(self.api_client, id=vm.id)[0]
         return next(nic for nic in vm.nic if nic.networkid == network.id)
+
+    def get_public_shared_ip(self, vm, network):
+        nic = self._find_nic(vm, network)
+        return PublicIPAddress({"ipaddress": nic})
 
     def plug_nic(self, vm, network):
         vm.add_nic(self.api_client, network.id)

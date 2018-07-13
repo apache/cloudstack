@@ -205,6 +205,15 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
     def validate_network_networking(self, network, vpc):
         self.verify_vsd_network(self.domain.id, network, vpc=vpc)
 
+    def validate_shared_networking(self, network, vm):
+        # Verify shared Network and VM in VSD
+        subnet_id = self.get_subnet_id(network.id, network.gateway)
+
+        self.verify_vsd_shared_network(self.domain.id, network,
+                                       gateway=network.gateway)
+        self.verify_vsd_enterprise_vm(self.domain.id, network, vm,
+                                      sharedsubnetid=subnet_id)
+
     def _get_test_data(self, key):
         return self.test_data["nuagevsp"][key]
 
@@ -987,7 +996,9 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
                         'Network found success = %s, expected success = %s'
                         % (str(shared_network.success), 'True'))
 
-        self.validate_Network(shared_network.network, state="Allocated")
+        shared_nw_1 = shared_network.network
+
+        self.validate_Network(shared_nw_1, state="Allocated")
 
         shared_test_data2 = self.test_data["nuagevsp"]["network_all2"]
         shared_network2 = self.verify_network_creation(
@@ -997,7 +1008,10 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
                         'Network found success = %s, expected success = %s'
                         % (str(shared_network2.success), 'True'))
 
-        self.validate_Network(shared_network2.network, state="Allocated")
+        shared_nw_1 = shared_network.network
+        shared_nw_2 = shared_network2.network
+        shared_nw_ids = [shared_nw_1.id, shared_nw_2.id]
+        self.validate_Network(shared_nw_2, state="Allocated")
 
         self.debug("+++Test user data & password reset functionality "
                    "using configdrive in an Isolated network without VR")
@@ -1005,12 +1019,8 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
         self.given_template_password_enabled_is(True)
         public_ip_ranges = PublicIpRange.list(self.api_client)
         for ip_range in public_ip_ranges:
-            if shared_network.network.id == ip_range.networkid \
-                    or shared_network2.network.id == ip_range.networkid:
+            if ip_range.networkid in shared_nw_ids:
                 self.enable_NuageUnderlayPublicIpRange(ip_range.id)
-
-        self.generate_ssh_keys()
-        self.debug("keypair name %s " % self.keypair.name)
 
         self.debug("+++Deploy of a VM on a shared network with multiple "
                    "ip ranges, all should have the same value for the "
@@ -1019,7 +1029,7 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
         self.debug("+++ Adding subnet of different gateway")
 
         subnet = self.add_subnet_to_shared_network_and_verify(
-            shared_network.network,
+            shared_nw_1,
             self.test_data["nuagevsp"]["publiciprange2"])
         tmp_test_data = copy.deepcopy(
             self.test_data["virtual_machine"])
@@ -1028,213 +1038,138 @@ class TestNuageConfigDrive(nuageTestCase, ConfigDriveUtils):
             self.test_data["nuagevsp"]["network_all"]["endip"]
 
         with self.assertRaises(Exception):
-            self.create_VM(
-                [shared_network.network],
-                testdata=tmp_test_data)
+            self.create_VM([shared_nw_1], testdata=tmp_test_data)
 
         self.debug("+++ In a shared network with multiple ip ranges, "
                    "userdata with config drive must be allowed.")
 
         self.enable_NuageUnderlayPublicIpRange(subnet.vlan.id)
 
-        vm1 = self.create_VM(
-            [shared_network.network],
-            testdata=self.test_data["virtual_machine_userdata"],
-            keypair=self.keypair.name)
-        # Check VM
-        self.check_VM_state(vm1, state="Running")
-        # Verify shared Network and VM in VSD
-        self.verify_vsd_shared_network(
-            self.domain.id,
-            shared_network.network,
-            gateway=self.test_data["nuagevsp"]["network_all"]["gateway"])
-        subnet_id = self.get_subnet_id(
-            shared_network.network.id,
-            self.test_data["nuagevsp"]["network_all"]["gateway"])
-        self.verify_vsd_enterprise_vm(
-            self.domain.id,
-            shared_network.network, vm1,
-            sharedsubnetid=subnet_id)
+        vm1 = self.when_I_deploy_a_vm_with_keypair_in([shared_nw_1])
 
-        with self.assertRaises(Exception):
-            self.get_Router(shared_network)
-        self.debug("+++ Verified no VR is spawned for this network ")
-        # We need to have the vm password
-        self.when_I_reset_the_password(vm1)
-        self.debug("Password reset to - %s" % vm1.password)
-        self.debug("VM - %s password - %s !" %
-                   (vm1.name, vm1.password))
-        public_ip = PublicIPAddress({"ipaddress": vm1})
-        self.then_config_drive_is_as_expected(
-            vm1, public_ip,
-            metadata=True)
-        expected_user_data = self.update_and_validate_userdata(vm1,
-                                                               "helloworldvm1",
-                                                               public_ip)
-        self.then_config_drive_is_as_expected(
-            vm1, public_ip)
+        self.then_vr_is_as_expected(shared_nw_1)
+
+        public_ip = self.get_public_shared_ip(vm1, shared_nw_1)
+        self.then_config_drive_is_as_expected(vm1, public_ip, metadata=True)
+
+        self.update_and_validate_userdata(vm1, "helloworld vm1", public_ip)
+        self.then_config_drive_is_as_expected(vm1, public_ip)
+
+        # =====================================================================
+        # Test using network2 as default network
+        # =====================================================================
 
         self.debug("+++ Adding a non-default nic to the VM "
                    "making it a multi-nic VM...")
-        self.nic_operation_VM(vm1, shared_network2.network,
-                              operation="add")
-        self.then_config_drive_is_as_expected(vm1, public_ip,
-                                              metadata=True)
-        self.when_I_reset_the_password(vm1)
-        self.debug("Password reset to - %s" % vm1.password)
-        self.debug("VM - %s password - %s !" %
-                   (vm1.name, vm1.password))
+        self.plug_nic(vm1, shared_nw_2)
+        self.then_config_drive_is_as_expected(vm1, public_ip, metadata=True)
 
-        expected_user_data1 = self.update_and_validate_userdata(vm1,
-                                                                "himultinicvm",
-                                                                public_ip)
-        self.then_config_drive_is_as_expected(vm1, public_ip)
+        self.when_I_reset_the_password(vm1)
+        self.update_and_validate_userdata(vm1, "hellomultinicvm1", public_ip)
 
         self.debug("+++ Updating non-default nic as the default nic "
                    "of the multi-nic VM...")
-        self.nic_operation_VM(vm1,
-                              shared_network2.network, operation="update")
-        vm1.stop(self.api_client)
-        vm1.start(self.api_client)
+        self.update_default_nic(vm1, shared_nw_2)
+        self.stop_and_start_vm(vm1)
 
-        public_ip_2 = PublicIPAddress(
-            {"ipaddress": VirtualMachine.list(self.api_client,
-                                              id=vm1.id)[0].nic[1]})
-        self.then_config_drive_is_as_expected(vm1, public_ip_2,
-                                              metadata=True)
+        public_ip_2 = self.get_public_shared_ip(vm1, shared_nw_2)
+        self.then_config_drive_is_as_expected(vm1, public_ip_2, metadata=True)
+
         self.when_I_reset_the_password(vm1)
-        self.debug("Password reset to - %s" % vm1.password)
-        self.debug("VM - %s password - %s !" %
-                   (vm1.name, vm1.password))
         self.then_config_drive_is_as_expected(vm1, public_ip_2)
-        expected_user_data1 = self.update_and_validate_userdata(vm1,
-                                                                "himultinicvm",
-                                                                public_ip)
-        self.then_config_drive_is_as_expected(vm1, public_ip_2)
+
+        self.update_and_validate_userdata(vm1, "hellomultinicvm1again",
+                                          public_ip_2)
 
         self.debug("+++ Updating the default nic of the multi-nic VM, "
                    "deleting the non-default nic...")
-        self.nic_operation_VM(vm1,
-                              shared_network.network, operation="update")
-        vm1.stop(self.api_client)
-        vm1.start(self.api_client)
-        public_ip = PublicIPAddress({"ipaddress": vm1})
-        self.then_config_drive_is_as_expected(vm1, public_ip,
-                                              metadata=True)
+        self.update_default_nic(vm1, shared_nw_1)
+        self.stop_and_start_vm(vm1)
+        self.then_config_drive_is_as_expected(vm1, public_ip, metadata=True)
 
-        self.nic_operation_VM(vm1,
-                              shared_network2.network, operation="remove")
+        self.unplug_nic(vm1, shared_nw_2)
 
-        multinicvm1 = self.create_VM([shared_network2.network,
-                                      shared_network.network])
-        multinicvm1.password = multinicvm1.resetPassword(self.api_client)
-        self.debug("+++ MultiNICVM Password reset to - %s"
-                   % multinicvm1.password)
-        self.debug("MultiNICVM - %s password - %s !"
-                   % (multinicvm1.name, multinicvm1.password))
-        public_ip_3 = \
-            PublicIPAddress(
-                {"ipaddress": VirtualMachine.list(
-                    self.api_client, id=multinicvm1.id)[0].nic[0]})
+        # =====================================================================
+        # Another Multinic VM
+        # =====================================================================
+
+        multinicvm1 = self.when_I_deploy_a_vm([shared_nw_2, shared_nw_1])
+        public_ip_3 = self.get_public_shared_ip(multinicvm1, shared_nw_2)
         self.then_config_drive_is_as_expected(
             multinicvm1, public_ip_3,
             metadata=True)
-        expected_user_data2 = self.update_and_validate_userdata(
-            multinicvm1, "hello multinicvm1", public_ip)
+        self.update_and_validate_userdata(multinicvm1, "hello multinicvm1",
+                                          public_ip)
         self.then_config_drive_is_as_expected(multinicvm1, public_ip_3)
         multinicvm1.delete(self.api_client, expunge=True)
+        shared_nw_2.delete(self.api_client)
 
-        shared_network2.network.delete(self.api_client)
-        # We need to have the vm password
-        self.when_I_reset_the_password(vm1)
-        self.debug("Password reset to - %s" % vm1.password)
-        self.debug("VM - %s password - %s !" %
-                   (vm1.name, vm1.password))
-        public_ip = PublicIPAddress({"ipaddress": vm1})
+        # =====================================================================
 
-        self.debug("+++ Verifying userdata after rebootVM - %s" % vm1.name)
+        self.debug("+++ Scenario: "
+                   "update userdata and reset password after reboot")
         vm1.reboot(self.api_client)
-        self.then_config_drive_is_as_expected(vm1, public_ip,
-                                              metadata=True)
-
-        self.debug("Updating userdata for VM - %s" % vm1.name)
-        expected_user_data1 = self.update_and_validate_userdata(vm1,
-                                                                "hiafterboot",
-                                                                public_ip)
-        self.then_config_drive_is_as_expected(vm1, public_ip)
-        self.debug("Resetting password for VM - %s" % vm1.name)
+        self.then_config_drive_is_as_expected(vm1, public_ip, metadata=True)
+        self.update_and_validate_userdata(vm1, "hello afterboot", public_ip)
         self.when_I_reset_the_password(vm1)
-        self.debug("SSHing into the VM for verifying its new password "
-                   "after its password reset...")
         self.then_config_drive_is_as_expected(vm1, public_ip)
 
-        self.debug("+++ Migrating one of the VMs in the created Isolated "
-                   "network to another host, if available...")
+        # =====================================================================
+        self.debug("+++ Scenario: "
+                   "update userdata and reset password after migrate")
         self.migrate_VM(vm1)
-        self.then_config_drive_is_as_expected(vm1, public_ip,
-                                              metadata=True)
-
-        self.debug("Updating userdata after migrating VM - %s" % vm1.name)
-        expected_user_data1 = self.update_and_validate_userdata(vm1,
-                                                                "aftermigrate",
-                                                                public_ip)
-        self.then_config_drive_is_as_expected(vm1, public_ip)
-        self.debug("Resetting password for VM - %s" % vm1.name)
+        self.then_config_drive_is_as_expected(vm1, public_ip, metadata=True)
+        self.update_and_validate_userdata(vm1, "hello after migrate",
+                                          public_ip)
         self.when_I_reset_the_password(vm1)
-        self.debug("SSHing into the VM for verifying its new password "
-                   "after its password reset...")
         self.then_config_drive_is_as_expected(vm1, public_ip)
 
-        self.debug("+++ Verify userdata after stopstartVM - %s" % vm1.name)
-        vm1.stop(self.api_client)
-        vm1.start(self.api_client)
-        self.then_config_drive_is_as_expected(vm1, public_ip,
-                                              metadata=True)
+        # =====================================================================
+        self.debug("+++ Scenario: "
+                   "update userdata and reset password after stop/start")
+        self.stop_and_start_vm(vm1)
+        self.then_config_drive_is_as_expected(vm1, public_ip, metadata=True)
 
-        self.debug("Updating userdata for VM - %s" % vm1.name)
-        expected_user_data1 = self.update_and_validate_userdata(vm1,
-                                                                "stopstart",
+        self.update_and_validate_userdata(vm1, "hello afterstopstart",
                                                                 public_ip)
-        self.then_config_drive_is_as_expected(vm1, public_ip)
-        self.debug("Resetting password for VM - %s" % vm1.name)
         self.when_I_reset_the_password(vm1)
-        self.debug("SSHing into the VM for verifying its new password "
-                   "after its password reset...")
         self.then_config_drive_is_as_expected(vm1, public_ip)
 
-        self.debug("+++ Verify userdata after VM recover- %s" % vm1.name)
-        vm1.delete(self.api_client, expunge=False)
-        self.debug("Recover VM - %s" % vm1.name)
-        vm1.recover(self.api_client)
-        vm1.start(self.api_client)
+        # =====================================================================
+        self.debug("+++ Scenario: "
+                   "verify config drive after delete/recover")
+        self.delete_and_recover_vm(vm1)
         self.then_config_drive_is_as_expected(vm1, public_ip,
                                               metadata=True)
+
+        # =====================================================================
+        self.debug("+++ Scenario: "
+                   "Start VM fails when ConfigDrive provider is disabled")
         self.given_config_drive_provider_is("Disabled")
-        expected_user_data1 = self.update_and_validate_userdata(vm1,
-                                                                "afterrecover",
-                                                                public_ip)
-        self.then_config_drive_is_as_expected(vm1, public_ip,
-                                              metadata=True)
-
-        self.debug("+++ When template is not password enabled, "
-                   "verify configdrive of VM - %s" % vm1.name)
-        vm1.delete(self.api_client, expunge=True)
+        with self.assertRaises(Exception):
+            self.when_I_update_userdata(vm1, "hi with provider state Disabled")
         self.given_config_drive_provider_is("Enabled")
+
+        self.delete(vm1, expunge=True)
+
+        # =====================================================================
+        self.debug("+++ Scenario: "
+                   "Update Userdata on a VM that is not password enabled")
         self.update_template(passwordenabled=False)
-        self.generate_ssh_keys()
-        self.debug("keypair name %s " % self.keypair.name)
+
         vm1 = self.create_VM(
-            [shared_network.network],
+            [shared_nw_1],
             testdata=self.test_data["virtual_machine_userdata"],
             keypair=self.keypair.name)
-        expected_user_data1 = self.update_and_validate_userdata(vm1,
-                                                                "sample data",
-                                                                public_ip)
+
+        self.update_and_validate_userdata(vm1, "This is sample data",
+                                          public_ip)
         public_ip = PublicIPAddress({"ipaddress": vm1})
         self.then_config_drive_is_as_expected(vm1, public_ip,
                                               metadata=True)
-        vm1.delete(self.api_client, expunge=True)
-        shared_network.network.delete(self.api_client)
+
+        self.delete(vm1, expunge=True)
+        self.delete(shared_nw_1)
 
     @attr(tags=["advanced", "nuagevsp", "endurance"], required_hardware="true")
     def test_nuage_configdrive_endurance(self):

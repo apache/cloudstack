@@ -1302,6 +1302,8 @@ class nuageTestCase(cloudstackTestCase):
                             )
         vm_info = VirtualMachine.list(self.api_client, id=vm.id)[0]
         for nic in vm_info.nic:
+            if nic.type == "Shared":
+                continue
             vsd_subnet = self.vsd.get_subnet(
                 filter=self.get_externalID_filter(nic.networkid))
             vsd_vport = self.vsd.get_vport(
