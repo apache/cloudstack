@@ -22,6 +22,9 @@ package com.cloud.agent.resource.virtualnetwork;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
+
+import org.apache.cloudstack.diagnostics.DiagnosticsAnswer;
+import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
 import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -189,9 +192,11 @@ public class VirtualRoutingResource {
         } else if (cmd instanceof GetDomRVersionCmd) {
             return execute((GetDomRVersionCmd)cmd);
         } else if (cmd instanceof CheckS2SVpnConnectionsCommand) {
-            return execute((CheckS2SVpnConnectionsCommand) cmd);
+            return execute((CheckS2SVpnConnectionsCommand)cmd);
         } else if (cmd instanceof GetRouterAlertsCommand) {
             return execute((GetRouterAlertsCommand)cmd);
+        } else if (cmd instanceof DiagnosticsCommand) {
+            return execute((DiagnosticsCommand)cmd);
         } else {
             s_logger.error("Unknown query command in VirtualRoutingResource!");
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -290,6 +295,15 @@ public class VirtualRoutingResource {
             return new CheckRouterAnswer(cmd, result.getDetails());
         }
         return new CheckRouterAnswer(cmd, result.getDetails(), true);
+    }
+
+    private Answer execute(DiagnosticsCommand cmd) {
+        _eachTimeout = Duration.standardSeconds(NumbersUtil.parseInt("60", 60));
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.DIAGNOSTICS, cmd.getSrciptArguments(), _eachTimeout);
+        if (!result.isSuccess()) {
+            return new DiagnosticsAnswer(cmd, false, result.getDetails());
+        }
+        return new DiagnosticsAnswer(cmd, result.isSuccess(), result.getDetails());
     }
 
     private Answer execute(GetDomRVersionCmd cmd) {
@@ -454,6 +468,6 @@ public class VirtualRoutingResource {
                 _vrAggregateCommandsSet.remove(routerName);
             }
         }
-        return new Answer(cmd, false, "Fail to recongize aggregation action " + action.toString());
+        return new Answer(cmd, false, "Fail to recognize aggregation action " + action.toString());
     }
 }

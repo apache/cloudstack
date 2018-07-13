@@ -38,7 +38,7 @@ env:
   matrix:
     # Keep the TESTS sorted by name and grouped by type
     - TESTS="smoke/test_certauthority_root"
-    
+
     - TESTS="smoke/test_accounts
              smoke/test_affinity_groups
              smoke/test_affinity_groups_projects
@@ -47,6 +47,7 @@ env:
              smoke/test_deploy_vm_root_resize
              smoke/test_deploy_vm_with_userdata
              smoke/test_deploy_vms_with_varied_deploymentplanners
+             smoke/test_diagnostics
              smoke/test_disk_offerings
              smoke/test_dynamicroles
              smoke/test_global_settings

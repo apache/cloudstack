@@ -33,6 +33,7 @@ import com.cloud.agent.api.PingTestCommand;
 import com.cloud.resource.AgentResourceBase;
 import com.cloud.simulator.MockHost;
 import com.cloud.utils.component.Manager;
+import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
 
 public interface MockAgentManager extends Manager {
     public static final long DEFAULT_HOST_MEM_SIZE = 8 * 1024 * 1024 * 1024L; // 8G, unit of Mbytes
@@ -64,4 +65,6 @@ public interface MockAgentManager extends Manager {
     Answer maintain(MaintainCommand cmd);
 
     Answer checkNetworkCommand(CheckNetworkCommand cmd);
+
+    Answer runDiagnostics(DiagnosticsCommand cmd);
 }
