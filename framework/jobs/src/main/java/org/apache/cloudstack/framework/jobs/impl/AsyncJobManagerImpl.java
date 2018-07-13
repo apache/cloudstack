@@ -1044,7 +1044,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             s_logger.debug("Purge queue item for cancelled job-" + job.getId());
                         }
                         _queueMgr.purgeAsyncJobQueueItemId(job.getId());
-                        if (job.getInstanceType() != null && job.getInstanceType().equals(ApiCommandJobType.Volume.toString())) {
+                        if (ApiCommandJobType.Volume.toString().equals(job.getInstanceType())) {
 
                             try {
                                 _volumeDetailsDao.removeDetail(job.getInstanceId(), "SNAPSHOT_ID");
