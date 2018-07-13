@@ -78,9 +78,6 @@
         <cs.logging.version>1.1.1</cs.logging.version>
 
         <!-- Apache Commons versions -->
-        <cs.daemon.version>1.1.0</cs.daemon.version>
-        <cs.dbcp.version>1.4</cs.dbcp.version>
-        <cs.discovery.version>0.5</cs.discovery.version>
         <cs.codec.version>1.11</cs.codec.version>
         <cs.commons-collections.version>4.1</cs.commons-collections.version>
         <cs.commons-compress.version>1.15</cs.commons-compress.version>
@@ -92,8 +89,11 @@
         <cs.commons-net.version>3.6</cs.commons-net.version>
         <cs.commons-validator.version>1.6</cs.commons-validator.version>
         <cs.configuration.version>1.10</cs.configuration.version>
+        <cs.daemon.version>1.1.0</cs.daemon.version>
+        <cs.dbcp.version>2.2.0</cs.dbcp.version>
+        <cs.discovery.version>0.5</cs.discovery.version>
         <cs.lang.version>2.6</cs.lang.version>
-        <cs.pool.version>1.6</cs.pool.version>
+        <cs.pool.version>2.4.3</cs.pool.version>
 
         <!-- Testing versions -->
         <!-- do not forget to also upgrade hamcrest library with junit -->
@@ -337,13 +337,13 @@
                 <version>${cs.daemon.version}</version>
             </dependency>
             <dependency>
-                <groupId>commons-dbcp</groupId>
-                <artifactId>commons-dbcp</artifactId>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-dbcp2</artifactId>
                 <version>${cs.dbcp.version}</version>
                 <exclusions>
                     <exclusion>
-                        <artifactId>commons-pool</artifactId>
-                        <groupId>commons-pool</groupId>
+                        <artifactId>org.apache.commons</artifactId>
+                        <groupId>commons-pool2</groupId>
                     </exclusion>
                 </exclusions>
             </dependency>
@@ -373,8 +373,8 @@
                 <version>${cs.commons-net.version}</version>
             </dependency>
             <dependency>
-                <groupId>commons-pool</groupId>
-                <artifactId>commons-pool</artifactId>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
                 <version>${cs.pool.version}</version>
             </dependency>
             <dependency>
