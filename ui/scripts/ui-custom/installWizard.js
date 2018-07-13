@@ -324,7 +324,7 @@
                 var $advanced = elems.nextButton(_l('label.skip.guide')).addClass('advanced-installation');
 
                 $continue.click(function() {
-                    goTo('changeUser');
+                    goTo('warnBasicNetworkEol');
 
                     return false;
                 });
@@ -405,7 +405,19 @@
 
                 return $changeUser;
             },
-
+            
+            /**
+             * Warns Basic network end of life
+             */
+            warnBasicNetworkEol: elems.stepIntro({
+                title: _l('label.installWizard.addZoneIntro.title'),
+                subtitle: _l('label.basic.warn.eol'),
+                copyID: 'warnBasicNetworkEol',
+                prevStepID: 'intro',
+                nextStepID: 'changeUser',
+                diagram: '.part.zone'
+            }),
+            
             /**
              * Add zone intro text
              * @param args

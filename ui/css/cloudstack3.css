@@ -13360,3 +13360,9 @@ div.panel.copy-template-destination-list div.list-view div.fixed-header{
     left: 310px;
 }
 
+.basic-zone-alert {
+    padding: 5px;
+    background-color: #f44336;
+    color: white;
+    visibility: visible;
+}

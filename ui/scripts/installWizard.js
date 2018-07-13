@@ -215,6 +215,12 @@
                     text: 'message.installWizard.copy.whatIsAZone'
                 });
             },
+            
+            warnBasicNetworkEol: function(args) {
+                args.response.success({
+                    text: 'label.basic.warn.eol.intro'
+                });
+            },
 
             whatIsAPod: function(args) {
                 args.response.success({

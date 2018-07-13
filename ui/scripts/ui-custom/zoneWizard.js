@@ -1303,10 +1303,14 @@
                         var $selectArea = $target.closest('.select-area');
 
                         if ($target.val() == 'Advanced') {
+                            $(".basic-zone-alert").css( "visibility", "hidden");
+
                             $inputs.attr('disabled', false);
                             $selectArea.removeClass('disabled')
                                 .find('.isolation-mode input').attr('disabled', false);
                         } else if ($target.val() == 'Basic') {
+                            $(".basic-zone-alert").css( "visibility", "visible");
+
                             $selectArea.siblings('.advanced-zone').addClass('disabled')
                                 .find('.isolation-mode input').attr('disabled', 'disabled');
                         }

@@ -465,6 +465,7 @@ var dictionary = {
     "label.baremetal.pxe.provider": "Provedor PXE Baremetal",
     "label.baremetal.rack.configuration": "Configuração do Rack de Baremetal",
     "label.basic": "Básico",
+    "label.basic.warn.eol":"Redes do tipo Básico não serão mais suportadas pelo Apache CloudStack 5.0",
     "label.basic.mode": "Modo Básico",
     "label.bigswitch.bcf.details": "Detalhes do BigSwitch BCF",
     "label.bigswitch.bcf.nat": "Habilitar BigSwitch BCF NAT",
