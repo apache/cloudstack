@@ -38,8 +38,8 @@
       "disk_interface": "virtio",
       "net_device": "virtio-net",
 
-      "iso_url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.4.0-amd64-netinst.iso",
-      "iso_checksum": "345c4e674dc10476e8c4f1571fbcdba4ce9788aa5584c5e2590ab3e89e7bb9acb370536f41a3ac740eb92b6aebe3cb8eb9734874dd1658c68875981b8351bc38",
+      "iso_url": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-9.5.0-amd64-netinst.iso",
+      "iso_checksum": "efe75000c066506326c74a97257163b3050d656a5be8708a6826b0f810208d0a58f413c446de09919c580de8fac6d0a47774534725dd9fdd00c94859e370f373",
       "iso_checksum_type": "sha512",
 
       "vm_name": "systemvmtemplate",
