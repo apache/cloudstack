@@ -328,7 +328,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
                 dataStore = getPlannedDataStore(dest, dataStore);
             }
             if (dataStore == null) {
-                dataStore = savelyPickExistingRootVolumeDataStore(profile, dataStore);
+                dataStore = pickExistingRootVolumeFromDataStore(profile, dataStore);
             }
         } else {
             dataStore = _dataStoreMgr.getImageStore(dest.getDataCenter().getId());
@@ -347,7 +347,7 @@ public class ConfigDriveNetworkElement extends AdapterBase implements NetworkEle
         return dataStore;
     }
 
-    private DataStore savelyPickExistingRootVolumeDataStore(VirtualMachineProfile profile, DataStore dataStore) {
+    private DataStore pickExistingRootVolumeFromDataStore(VirtualMachineProfile profile, DataStore dataStore) {
         final List<VolumeVO> volumes = _volumeDao.findByInstanceAndType(profile.getVirtualMachine().getId(), Volume.Type.ROOT);
         if (CollectionUtils.isNotEmpty(volumes)) {
             dataStore = pickDataStoreFromVolumes(volumes);
