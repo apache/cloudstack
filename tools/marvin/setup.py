@@ -54,7 +54,7 @@ setup(name="Marvin",
           "pyvmomi >= 5.5.0",
           "netaddr >= 0.7.14",
           "dnspython",
-          "ipmisim >= 0.7"
+          "ipmisim >= 0.7",
           "pytz"
       ],
       extras_require={
