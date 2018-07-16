@@ -51,7 +51,8 @@ from marvin.lib.utils import cleanup_resources
 #  If using XenServer, change the "supports_cloning" variable to True or False as desired.
 #
 # Note:
-#  If you do have more than one cluster, you might need to change this line: cls.cluster = list_clusters(cls.apiClient)[0]
+#  If you do have more than one cluster, you might need to change this line: cls.cluster = list_clusters(cls.apiClient)[0] and
+#   this variable's value: TestData.clusterId.
 
 
 class TestData():
@@ -79,6 +80,7 @@ class TestData():
     tags = "tags"
     templateCacheNameKvm = "centos55-x86-64"
     templateCacheNameXenServer = "centos56-x86-64-xen"
+    # templateCacheNameXenServer = "centos65-x86-64-XenServer"
     testAccount = "testaccount"
     url = "url"
     user = "user"
@@ -91,17 +93,17 @@ class TestData():
     zoneId = "zoneId"
 
     # modify to control which hypervisor type to test
-    hypervisor_type = kvm
+    hypervisor_type = xenServer
     xen_server_hostname = "XenServer-6.5-1"
 
     def __init__(self):
         self.testdata = {
             TestData.solidFire: {
-                TestData.mvip: "10.117.40.120",
+                TestData.mvip: "10.117.78.225",
                 TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
-                TestData.url: "https://10.117.40.120:443"
+                TestData.url: "https://10.117.78.225:443"
             },
             TestData.kvm: {
                 TestData.username: "root",
@@ -135,7 +137,7 @@ class TestData():
             TestData.primaryStorage: {
                 "name": "SolidFire-%d" % random.randint(0, 100),
                 TestData.scope: "ZONE",
-                "url": "MVIP=10.117.40.120;SVIP=10.117.41.120;" +
+                "url": "MVIP=10.117.78.225;SVIP=10.117.94.225;" +
                        "clusterAdminUsername=admin;clusterAdminPassword=admin;" +
                        "clusterDefaultMinIops=10000;clusterDefaultMaxIops=15000;" +
                        "clusterDefaultBurstIopsPercentOfMaxIops=1.5;",

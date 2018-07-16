@@ -16,8 +16,8 @@
 // under the License.
 package org.apache.cloudstack.solidfire;
 
-import com.cloud.dc.ClusterDetailsDao;
-import com.cloud.dc.ClusterDetailsVO;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
 import com.cloud.storage.VolumeDetailVO;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
@@ -26,18 +26,21 @@ import com.cloud.user.AccountDetailVO;
 import com.cloud.user.AccountDetailsDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+import org.apache.cloudstack.storage.datastore.db.StoragePoolDetailsDao;
 import org.apache.cloudstack.storage.datastore.util.SolidFireUtil;
 import org.apache.cloudstack.util.solidfire.SolidFireIntegrationTestUtil;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import javax.inject.Inject;
 
 @Component
 public class SolidFireIntegrationTestManagerImpl implements SolidFireIntegrationTestManager {
-
     @Inject private AccountDetailsDao accountDetailsDao;
-    @Inject private ClusterDetailsDao clusterDetailsDao;
+    @Inject private HostDao hostDao;
     @Inject private SolidFireIntegrationTestUtil util;
+    @Inject private StoragePoolDetailsDao storagePoolDetailsDao;
     @Inject private VolumeDao volumeDao;
     @Inject private VolumeDetailsDao volumeDetailsDao;
 
@@ -48,7 +51,7 @@ public class SolidFireIntegrationTestManagerImpl implements SolidFireIntegration
 
         AccountDetailVO accountDetail = accountDetailsDao.findDetail(csAccountId, SolidFireUtil.getAccountKey(storagePoolId));
 
-        if (accountDetail == null){
+        if (accountDetail == null) {
             throw new CloudRuntimeException("Unable to find SF account for storage " + storagePoolUuid + " for CS account " + csAccountUuid);
         }
 
@@ -58,14 +61,35 @@ public class SolidFireIntegrationTestManagerImpl implements SolidFireIntegration
     }
 
     @Override
-    public long getSolidFireVolumeAccessGroupId(String csClusterUuid, String storagePoolUuid) {
-        long csClusterId = util.getClusterIdForClusterUuid(csClusterUuid);
+    public long[] getSolidFireVolumeAccessGroupIds(String csClusterUuid, String storagePoolUuid) {
         long storagePoolId = util.getStoragePoolIdForStoragePoolUuid(storagePoolUuid);
 
-        ClusterDetailsVO clusterDetails = clusterDetailsDao.findDetail(csClusterId, SolidFireUtil.getVagKey(storagePoolId));
-        String sfVagId = clusterDetails.getValue();
+        SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);
 
-        return Long.parseLong(sfVagId);
+        List<SolidFireUtil.SolidFireVag> sfVags = SolidFireUtil.getAllVags(sfConnection);
+
+        long csClusterId = util.getClusterIdForClusterUuid(csClusterUuid);
+        List<HostVO> hosts = hostDao.findByClusterId(csClusterId);
+
+        if (hosts == null) {
+            return new long[0];
+        }
+
+        List<Long> vagIds = new ArrayList<>(hosts.size());
+
+        for (HostVO host : hosts) {
+            String iqn = host.getStorageUrl();
+
+            SolidFireUtil.SolidFireVag sfVag = SolidFireUtil.getVolumeAccessGroup(iqn, sfVags);
+
+            if (sfVag != null) {
+                if (!vagIds.contains(sfVag.getId())) {
+                    vagIds.add(sfVag.getId());
+                }
+            }
+        }
+
+        return vagIds.stream().mapToLong(l -> l).toArray();
     }
 
     @Override

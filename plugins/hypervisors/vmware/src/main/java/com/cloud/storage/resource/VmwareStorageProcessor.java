@@ -145,6 +145,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     private static final Logger s_logger = Logger.getLogger(VmwareStorageProcessor.class);
     private static final int DEFAULT_NFS_PORT = 2049;
+    private static final int SECONDS_TO_WAIT_FOR_DATASTORE = 120;
 
     private final VmwareHostService hostService;
     private boolean _fullCloneFlag;
@@ -2602,8 +2603,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private void waitForAllHostsToSeeDatastore(List<Pair<ManagedObjectReference, String>> lstHosts, DatastoreMO dsMO) throws Exception {
-        long secondsToWait = 120;
-        long endWaitTime = System.currentTimeMillis() + secondsToWait * 1000;
+        long endWaitTime = System.currentTimeMillis() + SECONDS_TO_WAIT_FOR_DATASTORE * 1000;
 
         boolean isConditionMet = false;
 
@@ -2621,7 +2621,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     private boolean verifyAllHostsSeeDatastore(List<Pair<ManagedObjectReference, String>> lstHosts, DatastoreMO dsMO) throws Exception {
         int numHostsChecked = 0;
 
-        for (Pair<ManagedObjectReference, String> host: lstHosts) {
+        for (Pair<ManagedObjectReference, String> host : lstHosts) {
             ManagedObjectReference morHostToMatch = host.first();
             HostMO hostToMatchMO = new HostMO(dsMO.getContext(), morHostToMatch);
 
@@ -2641,8 +2641,7 @@ public class VmwareStorageProcessor implements StorageProcessor {
     }
 
     private void waitForAllHostsToMountDatastore(List<Pair<ManagedObjectReference, String>> lstHosts, DatastoreMO dsMO) throws Exception {
-        long secondsToWait = 120;
-        long endWaitTime = System.currentTimeMillis() + secondsToWait * 1000;
+        long endWaitTime = System.currentTimeMillis() + SECONDS_TO_WAIT_FOR_DATASTORE * 1000;
 
         boolean isConditionMet = false;
 
@@ -2657,13 +2656,39 @@ public class VmwareStorageProcessor implements StorageProcessor {
         }
     }
 
-    private boolean verifyAllHostsMountedDatastore(List<Pair<ManagedObjectReference, String>> lstHosts, DatastoreMO dsMO) throws Exception {
-        int numHostsChecked = 0;
+    private void waitForAllHostsToMountDatastore2(List<HostMO> lstHosts, DatastoreMO dsMO) throws Exception {
+        long endWaitTime = System.currentTimeMillis() + SECONDS_TO_WAIT_FOR_DATASTORE * 1000;
 
-        for (Pair<ManagedObjectReference, String> host: lstHosts) {
+        boolean isConditionMet = false;
+
+        while (System.currentTimeMillis() < endWaitTime && !isConditionMet) {
+            Thread.sleep(5000);
+
+            isConditionMet = verifyAllHostsMountedDatastore2(lstHosts, dsMO);
+        }
+
+        if (!isConditionMet) {
+            throw new CloudRuntimeException("Not all hosts mounted the datastore");
+        }
+    }
+
+    private boolean verifyAllHostsMountedDatastore(List<Pair<ManagedObjectReference, String>> lstHosts, DatastoreMO dsMO) throws Exception {
+        List<HostMO> hostMOs = new ArrayList<>(lstHosts.size());
+
+        for (Pair<ManagedObjectReference, String> host : lstHosts) {
             ManagedObjectReference morHostToMatch = host.first();
             HostMO hostToMatchMO = new HostMO(dsMO.getContext(), morHostToMatch);
 
+            hostMOs.add(hostToMatchMO);
+        }
+
+        return verifyAllHostsMountedDatastore2(hostMOs, dsMO);
+    }
+
+    private boolean verifyAllHostsMountedDatastore2(List<HostMO> lstHosts, DatastoreMO dsMO) throws Exception {
+        int numHostsChecked = 0;
+
+        for (HostMO hostToMatchMO : lstHosts) {
             List<DatastoreHostMount> datastoreHostMounts = dsMO.getHostMounts();
 
             for (DatastoreHostMount datastoreHostMount : datastoreHostMounts) {
@@ -2753,6 +2778,16 @@ public class VmwareStorageProcessor implements StorageProcessor {
         for (Pair<ManagedObjectReference, String> host : hosts) {
             HostMO hostMO = new HostMO(dsMO.getContext(), host.first());
 
+            List<HostMO> hostMOs = new ArrayList<>(1);
+
+            hostMOs.add(hostMO);
+
+            mountVmfsDatastore2(dsMO, hostMOs);
+        }
+    }
+
+    private void mountVmfsDatastore2(DatastoreMO dsMO, List<HostMO> hosts) throws Exception {
+        for (HostMO hostMO : hosts) {
             if (!isDatastoreMounted(dsMO, hostMO)) {
                 HostStorageSystemMO hostStorageSystemMO = hostMO.getHostStorageSystemMO();
 
@@ -2760,11 +2795,15 @@ public class VmwareStorageProcessor implements StorageProcessor {
                     hostStorageSystemMO.mountVmfsVolume(getDatastoreUuid(dsMO, hostMO));
                 }
                 catch (InvalidStateFaultMsg ex) {
-                    List<Pair<ManagedObjectReference, String>> currentHosts = new ArrayList<>(1);
+                    s_logger.trace("'" + ex.getClass().getName() + "' exception thrown: " + ex.getMessage());
 
-                    currentHosts.add(host);
+                    List<HostMO> currentHosts = new ArrayList<>(1);
 
-                    waitForAllHostsToMountDatastore(currentHosts, dsMO);
+                    currentHosts.add(hostMO);
+
+                    s_logger.trace("Waiting for host " + hostMO.getHostName() + " to mount datastore " + dsMO.getName());
+
+                    waitForAllHostsToMountDatastore2(currentHosts, dsMO);
                 }
             }
         }
@@ -2772,12 +2811,29 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
     private void unmountVmfsDatastore(VmwareContext context, VmwareHypervisorHost hyperHost, String datastoreName,
                                       List<Pair<ManagedObjectReference, String>> hosts) throws Exception {
-        ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, datastoreName);
-        DatastoreMO dsMO = new DatastoreMO(context, morDs);
-
         for (Pair<ManagedObjectReference, String> host : hosts) {
             HostMO hostMO = new HostMO(context, host.first());
 
+            List<HostMO> hostMOs = new ArrayList<>(1);
+
+            hostMOs.add(hostMO);
+
+            unmountVmfsDatastore2(context, hyperHost, datastoreName, hostMOs);
+        }
+    }
+
+    private void unmountVmfsDatastore2(VmwareContext context, VmwareHypervisorHost hyperHost, String datastoreName,
+                                       List<HostMO> hosts) throws Exception {
+        ManagedObjectReference morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, datastoreName);
+        DatastoreMO dsMO = new DatastoreMO(context, morDs);
+
+        for (HostMO hostMO : hosts) {
+            unmountVmfsVolume(dsMO, hostMO);
+        }
+    }
+
+    private void unmountVmfsVolume(DatastoreMO dsMO, HostMO hostMO) throws Exception {
+        if (isDatastoreMounted(dsMO, hostMO)) {
             HostStorageSystemMO hostStorageSystemMO = hostMO.getHostStorageSystemMO();
 
             hostStorageSystemMO.unmountVmfsVolume(getDatastoreUuid(dsMO, hostMO));
@@ -2902,6 +2958,20 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                         if (rescan) {
                             rescanAllHosts(hosts, true, false);
+
+                            List<HostInternetScsiHbaStaticTarget> targetsToAdd = new ArrayList<>();
+
+                            targetsToAdd.addAll(getTargets(staticTargetsForHost));
+                            targetsToAdd.addAll(getTargets(dynamicTargetsForHost));
+
+                            for (HostInternetScsiHbaStaticTarget targetToAdd : targetsToAdd) {
+                                HostDatastoreSystemMO hostDatastoreSystemMO = host.getHostDatastoreSystemMO();
+                                String datastoreName = waitForDatastoreName(hostDatastoreSystemMO, targetToAdd.getIScsiName());
+                                ManagedObjectReference morDs = hostDatastoreSystemMO.findDatastoreByName(datastoreName);
+                                DatastoreMO datastoreMO = new DatastoreMO(host.getContext(), morDs);
+
+                                mountVmfsDatastore2(datastoreMO, hosts);
+                            }
                         }
                     }
                     catch (Exception ex) {
@@ -2924,26 +2994,9 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
                 if (targetsToRemove.size() > 0) {
                     if (isRemoveAsync) {
-                        new Thread(() -> {
-                            try {
-                                addRemoveInternetScsiTargetsToAllHosts(false, targetsToRemove, hosts);
-
-                                rescanAllHosts(hosts, true, false);
-                            } catch (Exception ex) {
-                                s_logger.warn(ex.getMessage());
-                            }
-                        }).start();
+                        new Thread(() -> handleRemove(targetsToRemove, host, hosts)).start();
                     } else {
-                        executorService.submit(new Thread(() -> {
-                            try {
-                                addRemoveInternetScsiTargetsToAllHosts(false, targetsToRemove, hosts);
-
-                                rescanAllHosts(hosts, true, false);
-                            }
-                            catch (Exception ex) {
-                                s_logger.warn(ex.getMessage());
-                            }
-                        }));
+                        executorService.submit(new Thread(() -> handleRemove(targetsToRemove, host, hosts)));
                     }
                 }
             }
@@ -2953,6 +3006,60 @@ public class VmwareStorageProcessor implements StorageProcessor {
 
         if (!executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.MINUTES)) {
             throw new Exception("The system timed out before completing the task 'handleTargets'.");
+        }
+    }
+
+    private String waitForDatastoreName(HostDatastoreSystemMO hostDatastoreSystemMO, String iqn) throws Exception {
+        long endWaitTime = System.currentTimeMillis() + SECONDS_TO_WAIT_FOR_DATASTORE * 1000;
+
+        do {
+            String datastoreName = getDatastoreName(hostDatastoreSystemMO, iqn);
+
+            if (datastoreName != null) {
+                return datastoreName;
+            }
+
+            Thread.sleep(5000);
+        }
+        while (System.currentTimeMillis() < endWaitTime);
+
+        throw new CloudRuntimeException("Could not find the datastore name");
+    }
+
+    private String getDatastoreName(HostDatastoreSystemMO hostDatastoreSystemMO, String iqn) throws Exception {
+        String datastoreName = "-" + iqn + "-0";
+
+        ManagedObjectReference morDs = hostDatastoreSystemMO.findDatastoreByName(datastoreName);
+
+        if (morDs != null) {
+            return datastoreName;
+        }
+
+        datastoreName = "_" + iqn + "_0";
+
+        morDs = hostDatastoreSystemMO.findDatastoreByName(datastoreName);
+
+        if (morDs != null) {
+            return datastoreName;
+        }
+
+        return null;
+    }
+
+    private void handleRemove(List<HostInternetScsiHbaStaticTarget> targetsToRemove, HostMO host, List<HostMO> hosts) {
+        try {
+            for (HostInternetScsiHbaStaticTarget target : targetsToRemove) {
+                String datastoreName = waitForDatastoreName(host.getHostDatastoreSystemMO(), target.getIScsiName());
+
+                unmountVmfsDatastore2(host.getContext(), host, datastoreName, hosts);
+            }
+
+            addRemoveInternetScsiTargetsToAllHosts(false, targetsToRemove, hosts);
+
+            rescanAllHosts(hosts, true, false);
+        }
+        catch (Exception ex) {
+            s_logger.warn(ex.getMessage());
         }
     }
 

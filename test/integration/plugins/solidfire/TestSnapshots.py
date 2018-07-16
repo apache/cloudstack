@@ -35,7 +35,7 @@ from nose.plugins.attrib import attr
 from marvin.lib.base import Account, DiskOffering, ServiceOffering, Snapshot, StoragePool, Template, User, VirtualMachine, Volume
 
 # common - commonly used methods for all tests are listed here
-from marvin.lib.common import get_domain, get_template, get_zone, list_clusters, list_volumes, list_snapshots
+from marvin.lib.common import get_domain, get_template, get_zone, list_volumes, list_snapshots
 
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources, wait_until
@@ -87,16 +87,16 @@ class TestData():
     def __init__(self):
         self.testdata = {
             TestData.solidFire: {
-                TestData.mvip: "10.117.40.120",
+                TestData.mvip: "10.117.78.225",
                 TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
-                TestData.url: "https://10.117.40.120:443"
+                TestData.url: "https://10.117.78.225:443"
             },
             TestData.primaryStorage: {
                 "name": "SolidFire-%d" % random.randint(0, 100),
                 TestData.scope: "ZONE",
-                "url": "MVIP=10.117.40.120;SVIP=10.117.41.120;" +
+                "url": "MVIP=10.117.78.225;SVIP=10.117.94.225;" +
                        "clusterAdminUsername=admin;clusterAdminPassword=admin;" +
                        "clusterDefaultMinIops=10000;clusterDefaultMaxIops=15000;" +
                        "clusterDefaultBurstIopsPercentOfMaxIops=1.5;",
@@ -155,7 +155,6 @@ class TestData():
                 TestData.diskName: "test-volume-2",
             },
             TestData.zoneId: 1,
-            TestData.clusterId: 1,
             TestData.domainId: 1,
             TestData.url: "10.117.40.114"
         }
@@ -198,7 +197,6 @@ class TestSnapshots(cloudstackTestCase):
 
         # Get Resources from Cloud Infrastructure
         cls.zone = get_zone(cls.apiClient, zone_id=cls.testdata[TestData.zoneId])
-        cls.cluster = list_clusters(cls.apiClient)[0]
         cls.template = get_template(cls.apiClient, cls.zone.id, hypervisor=TestData.hypervisor_type)
         cls.domain = get_domain(cls.apiClient, cls.testdata[TestData.domainId])
 

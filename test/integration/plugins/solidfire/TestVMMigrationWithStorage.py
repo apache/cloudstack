@@ -40,6 +40,9 @@ from marvin.lib.utils import cleanup_resources
 #  Only one zone
 #  Only one pod
 #  Two clusters (have system VMs (including the VR) running on local or NFS storage)
+#
+# Running the tests:
+#  Verify the "xen_server_hostname_src" and "xen_server_hostname_dest" variables are correct.
 
 
 class TestData():
@@ -80,6 +83,9 @@ class TestData():
     volume_1 = "volume_1"
     xenServer = "xenserver"
     zoneId = "zoneid"
+
+    xen_server_hostname_src = "XenServer-6.5-1"
+    xen_server_hostname_dest = "XenServer-6.5-3"
 
     def __init__(self):
         self.testdata = {
@@ -233,7 +239,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
 
         # Set up xenAPI connection
         host_ip = "https://" + \
-                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId1], name="XenServer-6.5-1")[0].ipaddress
+                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId1], name=TestData.xen_server_hostname_src)[0].ipaddress
 
         # Set up XenAPI connection
         cls.xen_session_1 = XenAPI.Session(host_ip)
@@ -242,7 +248,7 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
 
         # Set up xenAPI connection
         host_ip = "https://" + \
-                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId2], name="XenServer-6.5-3")[0].ipaddress
+                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId2], name=TestData.xen_server_hostname_dest)[0].ipaddress
 
         # Set up XenAPI connection
         cls.xen_session_2 = XenAPI.Session(host_ip)
@@ -532,9 +538,9 @@ class TestVMMigrationWithStorage(cloudstackTestCase):
         hosts = list_hosts(self.apiClient)
 
         for host in hosts:
-            if host.name == "XenServer-6.5-1":
+            if host.name == TestData.xen_server_hostname_src:
                 src_host = host
-            elif host.name == "XenServer-6.5-3":
+            elif host.name == TestData.xen_server_hostname_dest:
                 dest_host = host
 
         self.assertIsNotNone(src_host, "Could not locate the source host")
