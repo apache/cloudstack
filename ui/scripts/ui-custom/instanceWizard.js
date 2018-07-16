@@ -1359,15 +1359,18 @@
                     $wizard.find('div.data-disk-offering span.custom-disk-size').html(_s(old));
                 });
 
-
-                return $wizard.dialog({
+                
+                var wizardDialog = $wizard.dialog({
                     title: _l('label.vm.add'),
                     width: 896,
                     height: 570,
-                    closeOnEscape: false,
-                    zIndex: 5000
-                })
-                    .closest('.ui-dialog').overlay();
+                    closeOnEscape: false
+                });
+                var wizardDialogDiv = wizardDialog.closest('.ui-dialog');
+                wizardDialogDiv.css('z-index', 5001);
+                
+                $('button.ui-dialog-titlebar-close').remove()
+                return wizardDialogDiv.overlay();
             };
 
             instanceWizard(args);

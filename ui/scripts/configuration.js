@@ -2557,7 +2557,7 @@
                                             $conservemode.find("input[type=checkbox]").removeAttr("disabled");
                                         }
 
-                                        $(':ui-dialog').dialog('option', 'position', 'center');
+                                        $('div.ui-dialog').css('top', '24px');
 
                                         //CS-16612 show all services regardless of guestIpType(Shared/Isolated)
                                         /*

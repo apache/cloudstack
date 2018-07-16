@@ -70,7 +70,7 @@
                 listView: listView
             }).dialog({
                 dialogClass: 'multi-edit-add-list panel',
-                width: 825,
+                width: 875,
                 title: _l('label.select.vm.for.static.nat'),
                 buttons: [{
                     text: _l('label.apply'),
@@ -138,7 +138,9 @@
                         });
                     }
                 }]
-            }).parent('.ui-dialog').overlay();
+            });
+            
+            cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dataList);
 
             // Add tier select dialog
             if (tierSelect) {

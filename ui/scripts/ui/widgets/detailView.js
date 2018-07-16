@@ -1569,17 +1569,27 @@
         return $detailView;
     };
 
-    // Setup tab events
-    $(document).bind('tabsshow', function(event, ui) {
+    var manageTabsContent = function(event, ui){
         var $target = $(event.target);
 
         if (!$target.hasClass('detail-view') || $target.hasClass('detail-view ui-state-active')) return true;
 
-        var $targetDetailGroup = $(ui.panel);
+        var $targetDetailGroup = undefined;
+        if(ui.panel){
+            $targetDetailGroup = $(ui.panel);
+        }else{
+            $targetDetailGroup = $(ui.newPanel);
+        }
+        if(!$targetDetailGroup){
+            throw 'Could not find a panel to load tab\'s data';
+        }
         loadTabContent($targetDetailGroup, $target.data('view-args'));
 
         return true;
-    });
+    };
+
+    $(document).bind('tabscreate',manageTabsContent);
+    $(document).bind('tabsactivate',manageTabsContent);
 
     // View all links
     $('a').live('click', function(event) {

@@ -242,52 +242,6 @@
                         <Component Id="cmpB896F9C9402F7ED2A5A73E7E72AA47EC" Guid="{09161858-B862-4F63-BFC7-29D987F979B2}">
                             <File Id="fil6294934093F183677F1A4AD751513E3B" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\index.html" />
                         </Component>
-                        <Directory Id="dirC806E0BA40BBC0495FCEC8FB488812B0" Name="css">
-                            <Component Id="cmp6BEE710358ED5D0560BAEA9B4BF6830C" Guid="{B59E38D3-875C-4C3A-9F41-15C47EBF5C6B}">
-                                <File Id="filB6CF9EFD6D31DAC31A5451BB68BE7976" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\jquery-ui.css" />
-                            </Component>
-                            <Directory Id="dir40F32B62EF8F8E3765CBA3DB53D9A606" Name="images">
-                                <Component Id="cmp21F37DDAADFFEE972EF4291DE2C0E6CB" Guid="{A149C437-AD9B-40B9-A412-A2084F45E412}">
-                                    <File Id="fil68FD224A3F75BC3917D7BBF14493A630" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-bg_flat_0_aaaaaa_40x100.png" />
-                                </Component>
-                                <Component Id="cmpE4F2B110A7EFD179E687179AE1AA86A2" Guid="{FCD6DE81-D3CE-40F2-AB20-434DEDC45BCD}">
-                                    <File Id="fil1A31F18ECF985E67CA819DC857FD25FA" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-bg_flat_75_ffffff_40x100.png" />
-                                </Component>
-                                <Component Id="cmp818FCCB7641D478456749FAA06AE6D5C" Guid="{5104511A-8782-4EF0-B083-7FC82B07E213}">
-                                    <File Id="filFC158394112CF07E1C65BD8482D95187" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-bg_glass_55_fbf9ee_1x400.png" />
-                                </Component>
-                                <Component Id="cmp44E96AA22DDD71CB6D2AF9F0E94D900A" Guid="{5B9702D4-0326-4ED1-90BD-6DE0D572B506}">
-                                    <File Id="filB158DA221A80AE27D2DF51185F7C9537" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-bg_glass_65_ffffff_1x400.png" />
-                                </Component>
-                                <Component Id="cmp9F07D2C402E481C9A32B832E9767F54A" Guid="{3797F95D-F296-4278-8FEB-EF443DE4C810}">
-                                    <File Id="fil06B08BFD4F535FE76C3945549BF4A68E" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-bg_glass_75_dadada_1x400.png" />
-                                </Component>
-                                <Component Id="cmp4F8EE7EF5CC235B975A88C5F5F7EADB1" Guid="{70337B38-CAEC-4C93-9943-B361AAA5D4A9}">
-                                    <File Id="filEC3A72A46009E27C908675849A49A348" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-bg_glass_75_e6e6e6_1x400.png" />
-                                </Component>
-                                <Component Id="cmp0BF64BE05CC2A27F7E3AA10F198E7258" Guid="{65206B31-FC9C-4FD0-81F6-8A9F444DE240}">
-                                    <File Id="fil7278C7C5E3D8DB4F98F167E48B415041" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-bg_highlight-hard_75_a7c1d2_1x100.png" />
-                                </Component>
-                                <Component Id="cmp097C9AEBBD0BB12A63B41A5505EABF92" Guid="{633B153D-494E-400A-95D5-6AD2013821FE}">
-                                    <File Id="filAD6FE25F6623292C5FAA1833EB693EC8" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-bg_inset-soft_95_fef1ec_1x100.png" />
-                                </Component>
-                                <Component Id="cmpF4E73A2FE6A8101861EBB6248B78CDB9" Guid="{B3F937A5-DFB3-429B-89F7-FF6E59DA6926}">
-                                    <File Id="fil56EC5C018E24F998AEB81B9F6D01019D" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-icons_222222_256x240.png" />
-                                </Component>
-                                <Component Id="cmp17CF84538B1BCD9FF96FBD0F636410B1" Guid="{69B11891-9B51-457B-BEFC-2E361D8FA5AA}">
-                                    <File Id="fil6C4C42211A7E622A380F15EF4FD8F691" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-icons_2e83ff_256x240.png" />
-                                </Component>
-                                <Component Id="cmp27075FFB9AF246A5F27D1B07E59E4807" Guid="{35C7E5C3-5EF9-44CC-958D-4E5E0E03DD68}">
-                                    <File Id="fil7DBFF6F1A5CCF82626E9D02C5E85FBE0" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-icons_454545_256x240.png" />
-                                </Component>
-                                <Component Id="cmp23B407781C5AA7099F7779F0EC9E5239" Guid="{333E199D-F898-4E7E-8F7D-2C6C6BA41EE0}">
-                                    <File Id="filB4656FAE675473310875665E6BE9A9C0" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-icons_888888_256x240.png" />
-                                </Component>
-                                <Component Id="cmpC00F3D14E656727772C11FADE4C236B2" Guid="{650C3EA7-58A2-406F-92FA-633F4D89AD1E}">
-                                    <File Id="fil267CDE35AFF0624F5FAC1FEC6C53ECE5" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\css\images\ui-icons_cd0a0a_256x240.png" />
-                                </Component>
-                            </Directory>
-                        </Directory>
                         <Directory Id="dir8BD83F54792BF112293F68228061B997" Name="js">
                             <Component Id="cmpA0734BF7F3979F291D1861DF998DADA5" Guid="{7D82D9A4-D927-4B70-88F3-BB727880B0B8}">
                                 <File Id="fil2785FBE05BDB131F0F6415B8F155621B" KeyPath="yes" Source="!(wix.SourceClient)\lib\jquery-ui\js\jquery-ui.js" />
@@ -1889,20 +1843,6 @@
             <ComponentRef Id="cmpB1A795AD8630C8AA4ACBCA057CADD8F9" />
             <ComponentRef Id="cmp5C4C9F9823053BCD798D1613E8B706F9" />
             <ComponentRef Id="cmpB896F9C9402F7ED2A5A73E7E72AA47EC" />
-            <ComponentRef Id="cmp6BEE710358ED5D0560BAEA9B4BF6830C" />
-            <ComponentRef Id="cmp21F37DDAADFFEE972EF4291DE2C0E6CB" />
-            <ComponentRef Id="cmpE4F2B110A7EFD179E687179AE1AA86A2" />
-            <ComponentRef Id="cmp818FCCB7641D478456749FAA06AE6D5C" />
-            <ComponentRef Id="cmp44E96AA22DDD71CB6D2AF9F0E94D900A" />
-            <ComponentRef Id="cmp9F07D2C402E481C9A32B832E9767F54A" />
-            <ComponentRef Id="cmp4F8EE7EF5CC235B975A88C5F5F7EADB1" />
-            <ComponentRef Id="cmp0BF64BE05CC2A27F7E3AA10F198E7258" />
-            <ComponentRef Id="cmp097C9AEBBD0BB12A63B41A5505EABF92" />
-            <ComponentRef Id="cmpF4E73A2FE6A8101861EBB6248B78CDB9" />
-            <ComponentRef Id="cmp17CF84538B1BCD9FF96FBD0F636410B1" />
-            <ComponentRef Id="cmp27075FFB9AF246A5F27D1B07E59E4807" />
-            <ComponentRef Id="cmp23B407781C5AA7099F7779F0EC9E5239" />
-            <ComponentRef Id="cmpC00F3D14E656727772C11FADE4C236B2" />
             <ComponentRef Id="cmpA0734BF7F3979F291D1861DF998DADA5" />
             <ComponentRef Id="cmp9F3BE4D0A2BC109FDC307245FD9C487F" />
             <ComponentRef Id="cmpA3E293FCC7C5356BDED5B30A37517512" />

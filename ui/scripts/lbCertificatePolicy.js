@@ -51,6 +51,13 @@
                                 async: false,
                                 data: item,
                                 success: function(json) {
+                                    if(!json.listsslcertsresponse || !json.listsslcertsresponse.sslcert){
+                                        args.response.success({
+                                            data: {id: 'No certificates ID', 
+                                                    description: 'No certificates found'}
+                                        });
+                                        return;
+                                    }
                                     var items = json.listsslcertsresponse.sslcert;
                                     args.response.success({
                                         data: $.map(items, function(item) {

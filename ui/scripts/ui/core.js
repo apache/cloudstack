@@ -329,7 +329,8 @@
                     var $logo = $('<div>').addClass('logo').text(_l('label.app.name')),
                         $version = $('<div>').addClass('version').text(g_cloudstackversion),
                         $about = $('<div>').addClass('about').append($logo).append($version);
-                    $about.dialog({
+                    
+                    var $aboutDialog = $about.dialog({
                         modal: true,
                         width: 300,
                         title: _l('label.about.app'),
@@ -341,8 +342,8 @@
                                 $(':ui-dialog, .overlay').remove();
                             }
                         }
-                    }).closest('.ui-dialog').overlay();
-
+                    });
+                    cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($aboutDialog);
                     return false;
                 });
             }

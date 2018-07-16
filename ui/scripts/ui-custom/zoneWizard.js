@@ -1421,14 +1421,15 @@
 
             showStep(1);
 
-            return $wizard.dialog({
+            var $dialog = $wizard.dialog({
                 title: _l('label.installWizard.addZone.title'),
                 closeOnEscape: false,
                 width: 750,
                 height: 665,
-                zIndex: 5000,
                 resizable: false
-            }).closest('.ui-dialog').overlay();
+            });
+            
+            return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
         };
     };
 })(jQuery, cloudStack);
