@@ -122,15 +122,14 @@ class TestAsyncJob(cloudstackTestCase):
         # verify that 'completed' value from api equals 'removed' db column value
         completed = cmd_response.completed
         removed = timezone('UTC').localize(db_result[0][17])
-        removed = removed.astimezone(timezone('CET'))
         removed = removed.strftime("%Y-%m-%dT%H:%M:%S%z")
         self.assertEqual(completed, removed,
-                         "Expected 'completed' timestamp value to be equal to "
-                         "'removed' db column value.")
+                         "Expected 'completed' timestamp value %s to be equal to "
+                         "'removed' db column value %s." % (completed, removed))
 
         # verify that api job_status value equals db job_status value
         jobstatus_db = db_result[0][8]
         jobstatus_api = cmd_response.jobstatus
         self.assertEqual(jobstatus_api, jobstatus_db,
-                         "Expected 'jobstatus' api value to be equal to "
-                         "'job_status' db column value.")
+                         "Expected 'jobstatus' api value %s to be equal to "
+                         "'job_status' db column value %s." % (jobstatus_api, jobstatus_db))
