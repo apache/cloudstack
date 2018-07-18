@@ -48,7 +48,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.StoragePoolAllocator;
 import org.apache.cloudstack.framework.ca.Certificate;
-import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -132,7 +131,6 @@ import com.cloud.deploy.DeploymentPlan;
 import com.cloud.deploy.DeploymentPlanner;
 import com.cloud.deploy.DeploymentPlanner.ExcludeList;
 import com.cloud.deploy.DeploymentPlanningManager;
-import com.cloud.domain.dao.DomainDao;
 import com.cloud.event.EventTypes;
 import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.AffinityConflictException;
@@ -147,7 +145,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.StorageUnavailableException;
-import com.cloud.gpu.dao.VGPUTypesDao;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.ha.HighAvailabilityManager.WorkType;
 import com.cloud.host.Host;
@@ -162,7 +159,6 @@ import com.cloud.network.NetworkModel;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.router.VirtualRouter;
-import com.cloud.network.rules.RulesManager;
 import com.cloud.offering.DiskOffering;
 import com.cloud.offering.DiskOfferingInfo;
 import com.cloud.offering.ServiceOffering;
@@ -246,8 +242,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected VMTemplateDao _templateDao;
     @Inject
-    protected DomainDao _domainDao;
-    @Inject
     protected ItWorkDao _workDao;
     @Inject
     protected UserVmDao _userVmDao;
@@ -286,11 +280,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected VMSnapshotDao _vmSnapshotDao;
     @Inject
-    protected RulesManager rulesMgr;
-    @Inject
     protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
-    @Inject
-    protected VGPUTypesDao _vgpuTypesDao;
     @Inject
     protected EntityManager _entityMgr;
     @Inject
@@ -298,14 +288,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected GuestOSDao _guestOSDao = null;
     @Inject
-    protected UserVmDetailsDao _vmDetailsDao;
-    @Inject
     protected ServiceOfferingDao _serviceOfferingDao = null;
     @Inject
     protected CAManager caManager;
-
-    @Inject
-    ConfigDepot _configDepot;
 
     protected List<HostAllocator> hostAllocators;
 
@@ -327,7 +312,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Inject
     protected ClusterDetailsDao _clusterDetailsDao;
     @Inject
-    protected UserVmDetailsDao _uservmDetailsDao;
+    protected UserVmDetailsDao userVmDetailsDao;
 
     @Inject
     protected ConfigurationDao _configDao;
@@ -578,8 +563,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         final VirtualMachineGuru guru = getVmGuru(vm);
         guru.finalizeExpunge(vm);
-        //remove the overcommit detials from the uservm details
-        _uservmDetailsDao.removeDetails(vm.getId());
+        //remove the overcommit details from the uservm details
+        userVmDetailsDao.removeDetails(vm.getId());
 
         // send hypervisor-dependent commands before removing
         final List<Command> finalizeExpungeCommands = hvGuru.finalizeExpunge(vm);
@@ -1087,13 +1072,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 final ClusterDetailsVO cluster_detail_cpu = _clusterDetailsDao.findDetail(cluster_id, "cpuOvercommitRatio");
                 final ClusterDetailsVO cluster_detail_ram = _clusterDetailsDao.findDetail(cluster_id, "memoryOvercommitRatio");
                 //storing the value of overcommit in the vm_details table for doing a capacity check in case the cluster overcommit ratio is changed.
-                if (_uservmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio") == null &&
+                if (userVmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio") == null &&
                         (Float.parseFloat(cluster_detail_cpu.getValue()) > 1f || Float.parseFloat(cluster_detail_ram.getValue()) > 1f)) {
-                    _uservmDetailsDao.addDetail(vm.getId(), "cpuOvercommitRatio", cluster_detail_cpu.getValue(), true);
-                    _uservmDetailsDao.addDetail(vm.getId(), "memoryOvercommitRatio", cluster_detail_ram.getValue(), true);
-                } else if (_uservmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio") != null) {
-                    _uservmDetailsDao.addDetail(vm.getId(), "cpuOvercommitRatio", cluster_detail_cpu.getValue(), true);
-                    _uservmDetailsDao.addDetail(vm.getId(), "memoryOvercommitRatio", cluster_detail_ram.getValue(), true);
+                    userVmDetailsDao.addDetail(vm.getId(), "cpuOvercommitRatio", cluster_detail_cpu.getValue(), true);
+                    userVmDetailsDao.addDetail(vm.getId(), "memoryOvercommitRatio", cluster_detail_ram.getValue(), true);
+                } else if (userVmDetailsDao.findDetail(vm.getId(), "cpuOvercommitRatio") != null) {
+                    userVmDetailsDao.addDetail(vm.getId(), "cpuOvercommitRatio", cluster_detail_cpu.getValue(), true);
+                    userVmDetailsDao.addDetail(vm.getId(), "memoryOvercommitRatio", cluster_detail_ram.getValue(), true);
                 }
 
                 vmProfile.setCpuOvercommitRatio(Float.parseFloat(cluster_detail_cpu.getValue()));
@@ -1173,8 +1158,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                             // Remove the information on whether it was a deploy vm request.The deployvm=true information
                             // is set only when the vm is being deployed. When a vm is started from a stop state the
                             // information isn't set,
-                            if (_uservmDetailsDao.findDetail(vm.getId(), "deployvm") != null) {
-                                _uservmDetailsDao.removeDetail(vm.getId(), "deployvm");
+                            if (userVmDetailsDao.findDetail(vm.getId(), "deployvm") != null) {
+                                userVmDetailsDao.removeDetail(vm.getId(), "deployvm");
                             }
 
                             startedVm = vm;
@@ -2545,7 +2530,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             List<String[]> vmData = null;
             if (defaultNic != null) {
                 UserVmVO userVm = _userVmDao.findById(vm.getId());
-                Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
+                Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vm.getId());
                 userVm.setDetails(details);
 
                 Network network = _networkModel.getNetwork(defaultNic.getNetworkId());
