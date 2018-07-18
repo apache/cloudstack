@@ -226,110 +226,93 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private static final String VM_SYNC_ALERT_SUBJECT = "VM state sync alert";
 
     @Inject
-    DataStoreManager dataStoreMgr;
+    private DataStoreManager dataStoreMgr;
     @Inject
-    protected NetworkOrchestrationService _networkMgr;
+    private NetworkOrchestrationService _networkMgr;
     @Inject
-    protected NetworkModel _networkModel;
+    private NetworkModel _networkModel;
     @Inject
-    protected AgentManager _agentMgr;
+    private AgentManager _agentMgr;
     @Inject
-    protected VMInstanceDao _vmDao;
+    private VMInstanceDao _vmDao;
     @Inject
-    protected ServiceOfferingDao _offeringDao;
+    private ServiceOfferingDao _offeringDao;
     @Inject
-    protected DiskOfferingDao _diskOfferingDao;
+    private DiskOfferingDao _diskOfferingDao;
     @Inject
-    protected VMTemplateDao _templateDao;
+    private VMTemplateDao _templateDao;
     @Inject
-    protected ItWorkDao _workDao;
+    private ItWorkDao _workDao;
     @Inject
-    protected UserVmDao _userVmDao;
+    private UserVmDao _userVmDao;
     @Inject
-    protected UserVmService _userVmService;
+    private UserVmService _userVmService;
     @Inject
-    protected CapacityManager _capacityMgr;
+    private CapacityManager _capacityMgr;
     @Inject
-    protected NicDao _nicsDao;
+    private NicDao _nicsDao;
     @Inject
-    protected HostDao _hostDao;
+    private HostDao _hostDao;
     @Inject
-    protected AlertManager _alertMgr;
+    private AlertManager _alertMgr;
     @Inject
-    protected GuestOSCategoryDao _guestOsCategoryDao;
+    private GuestOSCategoryDao _guestOsCategoryDao;
     @Inject
-    protected GuestOSDao _guestOsDao;
+    private GuestOSDao _guestOsDao;
     @Inject
-    protected VolumeDao _volsDao;
+    private VolumeDao _volsDao;
     @Inject
-    protected HighAvailabilityManager _haMgr;
+    private HighAvailabilityManager _haMgr;
     @Inject
-    protected HostPodDao _podDao;
+    private HostPodDao _podDao;
     @Inject
-    protected DataCenterDao _dcDao;
+    private DataCenterDao _dcDao;
     @Inject
-    protected ClusterDao _clusterDao;
+    private ClusterDao _clusterDao;
     @Inject
-    protected PrimaryDataStoreDao _storagePoolDao;
+    private PrimaryDataStoreDao _storagePoolDao;
     @Inject
-    protected HypervisorGuruManager _hvGuruMgr;
+    private HypervisorGuruManager _hvGuruMgr;
     @Inject
-    protected NetworkDao _networkDao;
+    private NetworkDao _networkDao;
     @Inject
-    protected StoragePoolHostDao _poolHostDao;
+    private StoragePoolHostDao _poolHostDao;
     @Inject
-    protected VMSnapshotDao _vmSnapshotDao;
+    private VMSnapshotDao _vmSnapshotDao;
     @Inject
-    protected AffinityGroupVMMapDao _affinityGroupVMMapDao;
+    private AffinityGroupVMMapDao _affinityGroupVMMapDao;
     @Inject
-    protected EntityManager _entityMgr;
+    private EntityManager _entityMgr;
     @Inject
-    protected GuestOSCategoryDao _guestOSCategoryDao;
+    private GuestOSCategoryDao _guestOSCategoryDao;
     @Inject
-    protected GuestOSDao _guestOSDao = null;
+    private GuestOSDao _guestOSDao;
     @Inject
-    protected ServiceOfferingDao _serviceOfferingDao = null;
+    private ServiceOfferingDao _serviceOfferingDao;
     @Inject
-    protected CAManager caManager;
-
-    protected List<HostAllocator> hostAllocators;
-
-    public List<HostAllocator> getHostAllocators() {
-        return hostAllocators;
-    }
-
-    public void setHostAllocators(final List<HostAllocator> hostAllocators) {
-        this.hostAllocators = hostAllocators;
-    }
-
-    protected List<StoragePoolAllocator> _storagePoolAllocators;
-
+    private CAManager caManager;
     @Inject
-    protected ResourceManager _resourceMgr;
-
+    private ResourceManager _resourceMgr;
     @Inject
-    protected VMSnapshotManager _vmSnapshotMgr = null;
+    private VMSnapshotManager _vmSnapshotMgr;
     @Inject
-    protected ClusterDetailsDao _clusterDetailsDao;
+    private ClusterDetailsDao _clusterDetailsDao;
     @Inject
-    protected UserVmDetailsDao userVmDetailsDao;
-
+    private UserVmDetailsDao userVmDetailsDao;
     @Inject
-    protected ConfigurationDao _configDao;
+    private ConfigurationDao _configDao;
     @Inject
-    VolumeOrchestrationService volumeMgr;
-
+    private VolumeOrchestrationService volumeMgr;
     @Inject
-    DeploymentPlanningManager _dpMgr;
-
+    private DeploymentPlanningManager _dpMgr;
     @Inject
-    protected MessageBus _messageBus;
+    private MessageBus _messageBus;
     @Inject
-    protected VirtualMachinePowerStateSync _syncMgr;
+    private VirtualMachinePowerStateSync _syncMgr;
     @Inject
-    protected VmWorkJobDao _workJobDao;
+    private VmWorkJobDao _workJobDao;
     @Inject
-    protected AsyncJobManager _jobMgr;
+    private AsyncJobManager _jobMgr;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -372,7 +355,19 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
     ScheduledExecutorService _executor = null;
 
-    protected long _nodeId;
+    private long _nodeId;
+
+    private List<StoragePoolAllocator> _storagePoolAllocators;
+
+    private List<HostAllocator> hostAllocators;
+
+    public List<HostAllocator> getHostAllocators() {
+        return hostAllocators;
+    }
+
+    public void setHostAllocators(final List<HostAllocator> hostAllocators) {
+        this.hostAllocators = hostAllocators;
+    }
 
     @Override
     public void registerGuru(final VirtualMachine.Type type, final VirtualMachineGuru guru) {
