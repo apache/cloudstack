@@ -368,9 +368,10 @@ public class ClusteredAgentManagerImpl extends AgentManagerImpl implements Clust
         if (result == null) {
             super.reconnect(hostId);
 
-        }
-        if (!result) {
-            throw new CloudRuntimeException("Failed to propagating agent change request event:" + Event.ShutdownRequested + " to host:" + hostId);
+        } else {
+            if (!result) {
+                throw new CloudRuntimeException("Failed to propagating agent change request event:" + Event.ShutdownRequested + " to host:" + hostId);
+            }
         }
     }
 
