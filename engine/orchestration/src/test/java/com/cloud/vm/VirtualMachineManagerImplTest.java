@@ -74,7 +74,7 @@ public class VirtualMachineManagerImplTest {
 
     @Before
     public void setup() {
-        virtualMachineManagerImpl.hostAllocators = new ArrayList<>();
+        virtualMachineManagerImpl.setHostAllocators(new ArrayList<>());
 
         when(vmInstanceMock.getId()).thenReturn(1L);
         when(vmInstanceMock.getServiceOfferingId()).thenReturn(2L);
