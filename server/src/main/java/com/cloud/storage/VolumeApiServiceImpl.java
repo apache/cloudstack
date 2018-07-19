@@ -2176,7 +2176,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if ((destPool.isShared() && newDiskOffering.getUseLocalStorage()) || destPool.isLocal() && newDiskOffering.isShared()) {
             throw new InvalidParameterValueException("You cannot move the volume to a shared storage and assing a disk offering for local storage and vice versa.");
         }
-        if (!doesTargetStorageSupportNewDiskOffering(destPool, newDiskOffering)) {
+        if (!doesTargetStorageSupportDiskOffering(destPool, newDiskOffering)) {
             throw new InvalidParameterValueException(String.format("Target Storage [id=%s] tags [%s] does not match new disk offering [id=%s] tags [%s].", destPool.getUuid(),
                     getStoragePoolTags(destPool), newDiskOffering.getUuid(), newDiskOffering.getTags()));
         }
@@ -2221,7 +2221,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *      </body>
      *   </table>
      */
-    protected boolean doesTargetStorageSupportNewDiskOffering(StoragePool destPool, DiskOfferingVO newDiskOffering) {
+    public boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, DiskOfferingVO newDiskOffering) {
         String newDiskOfferingTags = newDiskOffering.getTags();
         if (org.apache.commons.lang.StringUtils.isBlank(newDiskOfferingTags)) {
             return true;
