@@ -56,6 +56,7 @@ import com.cloud.network.vpc.NetworkACLItem.TrafficType;
 import com.cloud.network.vpc.dao.NetworkACLDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
+import com.cloud.user.User;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -113,10 +114,15 @@ public class NetworkACLServiceImplTest {
     private NetworkACLItemVO nextAclRuleMock;
     private String nextAclRuleUuid = "uuidNextAclRule";
 
+    @Mock
+    private CallContext callContextMock;
+
     @Before
     public void befoteTest() {
         PowerMockito.mockStatic(CallContext.class);
-        PowerMockito.when(CallContext.current()).thenReturn(Mockito.mock(CallContext.class));
+        PowerMockito.when(CallContext.current()).thenReturn(callContextMock);
+        Mockito.doReturn(Mockito.mock(User.class)).when(callContextMock).getCallingUser();
+        Mockito.doReturn(Mockito.mock(Account.class)).when(callContextMock).getCallingAccount();
 
         Mockito.when(networkAclDaoMock.findById(networkAclListId)).thenReturn(networkACLVOMock);
         Mockito.when(createNetworkAclCmdMock.getNetworkId()).thenReturn(1L);
@@ -936,6 +942,8 @@ public class NetworkACLServiceImplTest {
         Mockito.verify(networkAclServiceImpl, Mockito.times(0)).moveRuleToTheBottom(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyListOf(NetworkACLItemVO.class));
         Mockito.verify(networkAclServiceImpl, Mockito.times(0)).moveRuleBetweenAclRules(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyListOf(NetworkACLItemVO.class), Mockito.eq(previousAclRuleMock),
                 Mockito.eq(nextAclRuleMock));
+        Mockito.verify(networkAclServiceImpl, Mockito.times(1)).validateAclConsistency(Mockito.any(MoveNetworkAclItemCmd.class), Mockito.any(NetworkACLVO.class),
+                Mockito.anyListOf(NetworkACLItemVO.class));
     }
 
     @Test
@@ -957,6 +965,8 @@ public class NetworkACLServiceImplTest {
         Mockito.verify(networkAclServiceImpl, Mockito.times(1)).moveRuleToTheBottom(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyListOf(NetworkACLItemVO.class));
         Mockito.verify(networkAclServiceImpl, Mockito.times(0)).moveRuleBetweenAclRules(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyListOf(NetworkACLItemVO.class), Mockito.eq(previousAclRuleMock),
                 Mockito.eq(nextAclRuleMock));
+        Mockito.verify(networkAclServiceImpl, Mockito.times(1)).validateAclConsistency(Mockito.any(MoveNetworkAclItemCmd.class), Mockito.any(NetworkACLVO.class),
+                Mockito.anyListOf(NetworkACLItemVO.class));
     }
 
     @Test
@@ -978,11 +988,17 @@ public class NetworkACLServiceImplTest {
         Mockito.verify(networkAclServiceImpl, Mockito.times(0)).moveRuleToTheBottom(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyListOf(NetworkACLItemVO.class));
         Mockito.verify(networkAclServiceImpl, Mockito.times(1)).moveRuleBetweenAclRules(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyListOf(NetworkACLItemVO.class), Mockito.eq(previousAclRuleMock),
                 Mockito.eq(nextAclRuleMock));
+        Mockito.verify(networkAclServiceImpl, Mockito.times(1)).validateAclConsistency(Mockito.any(MoveNetworkAclItemCmd.class), Mockito.any(NetworkACLVO.class),
+                Mockito.anyListOf(NetworkACLItemVO.class));
     }
 
     private void configureMoveMethodsToDoNothing() {
-        Mockito.doReturn(new ArrayList<>()).when(networkAclServiceImpl).getAllAclRulesSortedByNumber(networkAclMockId);
+        Mockito.doReturn(networkACLVOMock).when(networkAclDaoMock).acquireInLockTable(Mockito.anyLong());
+        Mockito.doReturn(true).when(networkAclDaoMock).releaseFromLockTable(Mockito.anyLong());
 
+        Mockito.doNothing().when(networkAclServiceImpl).validateAclConsistency(Mockito.any(MoveNetworkAclItemCmd.class), Mockito.any(NetworkACLVO.class), Mockito.anyListOf(NetworkACLItemVO.class));
+
+        Mockito.doReturn(new ArrayList<>()).when(networkAclServiceImpl).getAllAclRulesSortedByNumber(networkAclMockId);
         Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclServiceImpl).moveRuleToTheTop(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyListOf(NetworkACLItemVO.class));
         Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclServiceImpl).moveRuleToTheBottom(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyListOf(NetworkACLItemVO.class));
         Mockito.doReturn(aclRuleBeingMovedMock).when(networkAclServiceImpl).moveRuleBetweenAclRules(Mockito.eq(aclRuleBeingMovedMock), Mockito.anyListOf(NetworkACLItemVO.class),
@@ -1280,5 +1296,74 @@ public class NetworkACLServiceImplTest {
         Assert.assertEquals(13, networkACLItemVO12.getNumber());
         Assert.assertEquals(14, networkACLItemVO13.getNumber());
         Assert.assertEquals(15, networkACLItemVO14.getNumber());
+    }
+
+    @Test
+    public void validateAclConsistencyTestRuleListEmpty() {
+        networkAclServiceImpl.validateAclConsistency(moveNetworkAclItemCmdMock, networkACLVOMock, new ArrayList<>());
+
+        Mockito.verify(moveNetworkAclItemCmdMock, Mockito.times(0)).getAclConsistencyHash();
+    }
+
+    @Test
+    public void validateAclConsistencyTestRuleListNull() {
+        networkAclServiceImpl.validateAclConsistency(moveNetworkAclItemCmdMock, networkACLVOMock, null);
+
+        Mockito.verify(moveNetworkAclItemCmdMock, Mockito.times(0)).getAclConsistencyHash();
+    }
+
+    @Test
+    public void validateAclConsistencyTestAclConsistencyHashIsNull() {
+        Mockito.doReturn(null).when(moveNetworkAclItemCmdMock).getAclConsistencyHash();
+
+        validateAclConsistencyTestAclConsistencyHashBlank();
+    }
+
+    @Test
+    public void validateAclConsistencyTestAclConsistencyHashIsEmpty() {
+        Mockito.doReturn("").when(moveNetworkAclItemCmdMock).getAclConsistencyHash();
+
+        validateAclConsistencyTestAclConsistencyHashBlank();
+    }
+
+    @Test
+    public void validateAclConsistencyTestAclConsistencyHashIsBlank() {
+        Mockito.doReturn("            ").when(moveNetworkAclItemCmdMock).getAclConsistencyHash();
+
+        validateAclConsistencyTestAclConsistencyHashBlank();
+    }
+
+    private void validateAclConsistencyTestAclConsistencyHashBlank() {
+        ArrayList<NetworkACLItemVO> allAclRules = new ArrayList<>();
+        allAclRules.add(networkAclItemVoMock);
+
+        networkAclServiceImpl.validateAclConsistency(moveNetworkAclItemCmdMock, networkACLVOMock, allAclRules);
+
+        Mockito.verify(moveNetworkAclItemCmdMock, Mockito.times(1)).getAclConsistencyHash();
+        Mockito.verify(callContextMock, Mockito.times(1)).getCallingAccount();
+        Mockito.verify(callContextMock, Mockito.times(1)).getCallingUser();
+    }
+
+    @Test(expected = InvalidParameterValueException.class)
+    public void validateAclConsistencyTestAclConsistencyHashIsNotEqualsToDatabaseHash() {
+        Mockito.doReturn("differentHash").when(moveNetworkAclItemCmdMock).getAclConsistencyHash();
+
+        ArrayList<NetworkACLItemVO> allAclRules = new ArrayList<>();
+        allAclRules.add(networkAclItemVoMock);
+
+        networkAclServiceImpl.validateAclConsistency(moveNetworkAclItemCmdMock, networkACLVOMock, allAclRules);
+    }
+
+    @Test
+    public void validateAclConsistencyTest() {
+        Mockito.doReturn("eac527fe45c77232ef06d9c7eb8abd94").when(moveNetworkAclItemCmdMock).getAclConsistencyHash();
+
+        ArrayList<NetworkACLItemVO> allAclRules = new ArrayList<>();
+        allAclRules.add(networkAclItemVoMock);
+
+        Mockito.doReturn("someUuid").when(networkAclItemVoMock).getUuid();
+        networkAclServiceImpl.validateAclConsistency(moveNetworkAclItemCmdMock, networkACLVOMock, allAclRules);
+
+        Mockito.verify(moveNetworkAclItemCmdMock, Mockito.times(1)).getAclConsistencyHash();
     }
 }
