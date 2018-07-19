@@ -878,7 +878,7 @@ class TestVolumes(cloudstackTestCase):
         return response
 
 
-    @attr(tags=["boris", "advancedns", "smoke", "basic"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "basic"], required_hardware="true")
     def test_11_migrate_volume_and_change_offering(self):
 
     # Validates the following
