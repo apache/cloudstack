@@ -87,8 +87,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
         cls.apiclient = testClient.getApiClient()
         cls.services = cls.testClient.getParsedTestDataConfig()
 
-        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][
-            0].__dict__
+        cls.hostConfig = cls.config.__dict__["zones"][0].__dict__["pods"][0].__dict__["clusters"][0].__dict__["hosts"][0].__dict__
         cls.hypervisorNotSupported = False
         cls.hypervisor = testClient.getHypervisorInfo()
 
@@ -177,7 +176,6 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
