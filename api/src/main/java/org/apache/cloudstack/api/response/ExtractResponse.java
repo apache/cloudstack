@@ -66,9 +66,6 @@ public class ExtractResponse extends BaseResponse {
     @Param(description = "type of the storage")
     private String storageType;
 
-    @SerializedName("storage")
-    private String storage;
-
     @SerializedName(ApiConstants.ZONE_ID)
     @Param(description = "zone ID the object was extracted from")
     private String zoneId;
@@ -174,14 +171,6 @@ public class ExtractResponse extends BaseResponse {
 
     public void setStorageType(String storageType) {
         this.storageType = storageType;
-    }
-
-    public String getStorage() {
-        return storage;
-    }
-
-    public void setStorage(String storage) {
-        this.storage = storage;
     }
 
     public String getZoneId() {

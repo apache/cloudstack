@@ -73,10 +73,6 @@ public class ZoneResponse extends BaseResponse {
     @Param(description = "the guest CIDR address for the Zone")
     private String guestCidrAddress;
 
-    //TODO - generate description
-    @SerializedName("status")
-    private String status;
-
     @SerializedName(ApiConstants.DISPLAY_TEXT)
     @Param(description = "the display text of the zone")
     private String displayText;
@@ -163,10 +159,6 @@ public class ZoneResponse extends BaseResponse {
 
     public void setGuestCidrAddress(String guestCidrAddress) {
         this.guestCidrAddress = guestCidrAddress;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 
     public void setDisplayText(String displayText) {
@@ -270,10 +262,6 @@ public class ZoneResponse extends BaseResponse {
 
     public String getGuestCidrAddress() {
         return guestCidrAddress;
-    }
-
-    public String getStatus() {
-        return status;
     }
 
     public String getDisplayText() {
