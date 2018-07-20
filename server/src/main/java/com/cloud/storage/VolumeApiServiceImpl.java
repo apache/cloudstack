@@ -2176,7 +2176,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if ((destPool.isShared() && newDiskOffering.getUseLocalStorage()) || destPool.isLocal() && newDiskOffering.isShared()) {
             throw new InvalidParameterValueException("You cannot move the volume to a shared storage and assing a disk offering for local storage and vice versa.");
         }
-        if (!doesTargetStorageSupportDiskOffering(destPool, newDiskOffering)) {
+        if (!doesTargetStorageSupportNewDiskOffering(destPool, newDiskOffering)) {
             throw new InvalidParameterValueException(String.format("Target Storage [id=%s] tags [%s] does not match new disk offering [id=%s] tags [%s].", destPool.getUuid(),
                     getStoragePoolTags(destPool), newDiskOffering.getUuid(), newDiskOffering.getTags()));
         }
@@ -2221,9 +2221,14 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *      </body>
      *   </table>
      */
-    public boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, DiskOfferingVO newDiskOffering) {
+    protected boolean doesTargetStorageSupportNewDiskOffering(StoragePool destPool, DiskOfferingVO newDiskOffering) {
         String newDiskOfferingTags = newDiskOffering.getTags();
-        if (org.apache.commons.lang.StringUtils.isBlank(newDiskOfferingTags)) {
+        return doesTargetStorageSupportDiskOffering(destPool, newDiskOfferingTags);
+    }
+
+    @Override
+    public boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, String diskOfferingTags) {
+        if (org.apache.commons.lang.StringUtils.isBlank(diskOfferingTags)) {
             return true;
         }
         String storagePoolTags = getStoragePoolTags(destPool);
@@ -2231,7 +2236,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             return false;
         }
         String[] storageTagsAsStringArray = org.apache.commons.lang.StringUtils.split(storagePoolTags, ",");
-        String[] newDiskOfferingTagsAsStringArray = org.apache.commons.lang.StringUtils.split(newDiskOfferingTags, ",");
+        String[] newDiskOfferingTagsAsStringArray = org.apache.commons.lang.StringUtils.split(diskOfferingTags, ",");
 
         return CollectionUtils.isSubCollection(Arrays.asList(newDiskOfferingTagsAsStringArray), Arrays.asList(storageTagsAsStringArray));
     }
