@@ -267,7 +267,7 @@
                                                     $form.find('.form-item[rel=keyboardType]').hide();
                                                     $form.find('.form-item[rel=xenserverToolsVersion61plus]').hide();
                                                     $form.find('.form-item[rel=rootDiskControllerTypeKVM]').css('display', 'inline-block');
-                                                    $form.find('.form-item[rel=xenserverToolsVersion61plus]').css('display', 'inline-block');
+                                                    $('#label_root_disk_controller').prop('selectedIndex', 2);
                                                     if (isAdmin()) {
                                                       $form.find('.form-item[rel=directdownload]').css('display', 'inline-block');
                                                     }
