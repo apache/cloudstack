@@ -102,4 +102,37 @@ public interface VolumeApiService {
     void updateDisplay(Volume volume, Boolean displayVolume);
 
     Snapshot allocSnapshotForVm(Long vmId, Long volumeId, String snapshotName) throws ResourceAllocationException;
+
+    /**
+     *  Checks if the target storage supports the disk offering.
+     *  This validation is consistent with the mechanism used to select a storage pool to deploy a volume when a virtual machine is deployed or when a data disk is allocated.
+     *
+     *  The scenarios when this method returns true or false is presented in the following table.
+     *   <table border="1">
+     *      <tr>
+     *          <th>#</th><th>Disk offering tags</th><th>Storage tags</th><th>Does the storage support the disk offering?</th>
+     *      </tr>
+     *      <body>
+     *      <tr>
+     *          <td>1</td><td>A,B</td><td>A</td><td>NO</td>
+     *      </tr>
+     *      <tr>
+     *          <td>2</td><td>A,B,C</td><td>A,B,C,D,X</td><td>YES</td>
+     *      </tr>
+     *      <tr>
+     *          <td>3</td><td>A,B,C</td><td>X,Y,Z</td><td>NO</td>
+     *      </tr>
+     *      <tr>
+     *          <td>4</td><td>null</td><td>A,S,D</td><td>YES</td>
+     *      </tr>
+     *      <tr>
+     *          <td>5</td><td>A</td><td>null</td><td>NO</td>
+     *      </tr>
+     *      <tr>
+     *          <td>6</td><td>null</td><td>null</td><td>YES</td>
+     *      </tr>
+     *      </body>
+     *   </table>
+     */
+    boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, String diskOfferingTags);
 }
