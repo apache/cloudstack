@@ -66,6 +66,7 @@ public class ServerDaemon implements Daemon {
     private static final String BIND_INTERFACE = "bind.interface";
     private static final String CONTEXT_PATH = "context.path";
     private static final String SESSION_TIMEOUT = "session.timeout";
+    private static final String HTTP_ENABLE = "http.enable";
     private static final String HTTP_PORT = "http.port";
     private static final String HTTPS_ENABLE = "https.enable";
     private static final String HTTPS_PORT = "https.port";
@@ -80,6 +81,7 @@ public class ServerDaemon implements Daemon {
 
     private Server server;
 
+    private boolean httpEnable = true;
     private int httpPort = 8080;
     private int httpsPort = 8443;
     private int sessionTimeout = 30;
@@ -105,8 +107,8 @@ public class ServerDaemon implements Daemon {
     public void init(final DaemonContext context) {
         final File confFile = PropertiesUtil.findConfigFile("server.properties");
         if (confFile == null) {
-            LOG.warn(String.format("Server configuration file not found. Initializing server daemon on %s:%s, with https.enabled=%s, https.port=%s, context.path=%s",
-                    bindInterface, httpPort, httpsEnable, httpsPort, contextPath));
+            LOG.warn(String.format("Server configuration file not found. Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
+                    bindInterface, httpEnable, httpPort, httpsEnable, httpsPort, contextPath));
             return;
         }
 
@@ -119,6 +121,7 @@ public class ServerDaemon implements Daemon {
             }
             setBindInterface(properties.getProperty(BIND_INTERFACE, ""));
             setContextPath(properties.getProperty(CONTEXT_PATH, "/client"));
+            setHttpEnable(Boolean.valueOf(properties.getProperty(HTTP_ENABLE, "true")));
             setHttpPort(Integer.valueOf(properties.getProperty(HTTP_PORT, "8080")));
             setHttpsEnable(Boolean.valueOf(properties.getProperty(HTTPS_ENABLE, "false")));
             setHttpsPort(Integer.valueOf(properties.getProperty(HTTPS_PORT, "8443")));
@@ -129,9 +132,15 @@ public class ServerDaemon implements Daemon {
             setSessionTimeout(Integer.valueOf(properties.getProperty(SESSION_TIMEOUT, "30")));
         } catch (final IOException e) {
             LOG.warn("Failed to load configuration from server.properties file", e);
+        } finally {
+            // make sure that at least HTTP is enabled if both of them are set to false (misconfiguration)
+            if (!httpEnable && !httpsEnable) {
+                setHttpEnable(true);
+                LOG.warn("Server configuration malformed, neither http nor https is enabled, http will be enabled.");
+            }
         }
-        LOG.info(String.format("Initializing server daemon on %s:%s, with https.enabled=%s, https.port=%s, context.path=%s",
-                bindInterface, httpPort, httpsEnable, httpsPort, contextPath));
+        LOG.info(String.format("Initializing server daemon on %s, with http.enable=%s, http.port=%s, https.enable=%s, https.port=%s, context.path=%s",
+                bindInterface, httpEnable, httpPort, httpsEnable, httpsPort, contextPath));
     }
 
     @Override
@@ -163,11 +172,7 @@ public class ServerDaemon implements Daemon {
         httpConfig.setSendDateHeader(false);
 
         // HTTP Connector
-        final ServerConnector httpConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
-        httpConnector.setPort(httpPort);
-        httpConnector.setHost(bindInterface);
-        httpConnector.setIdleTimeout(30000);
-        server.addConnector(httpConnector);
+        createHttpConnector(httpConfig);
 
         // Setup handlers
         server.setHandler(createHandlers());
@@ -175,27 +180,8 @@ public class ServerDaemon implements Daemon {
         // Extra config options
         server.setStopAtShutdown(true);
 
-        // Configure SSL
-        if (httpsEnable && !Strings.isNullOrEmpty(keystoreFile) && new File(keystoreFile).exists()) {
-            // SSL Context
-            final SslContextFactory sslContextFactory = new SslContextFactory();
-            // Define keystore path and passwords
-            sslContextFactory.setKeyStorePath(keystoreFile);
-            sslContextFactory.setKeyStorePassword(keystorePassword);
-            sslContextFactory.setKeyManagerPassword(keystorePassword);
-
-            // HTTPS config
-            final HttpConfiguration httpsConfig = new HttpConfiguration(httpConfig);
-            httpsConfig.addCustomizer(new SecureRequestCustomizer());
-
-            // HTTPS connector
-            final ServerConnector sslConnector = new ServerConnector(server,
-                    new SslConnectionFactory(sslContextFactory, "http/1.1"),
-                    new HttpConnectionFactory(httpsConfig));
-            sslConnector.setPort(httpsPort);
-            sslConnector.setHost(bindInterface);
-            server.addConnector(sslConnector);
-        }
+        // HTTPS Connector
+        createHttpsConnector(httpConfig);
 
         server.start();
         server.join();
@@ -214,6 +200,41 @@ public class ServerDaemon implements Daemon {
     ///////////////////////////////////////////////////
     /////////////// Private methods ///////////////////
     ///////////////////////////////////////////////////
+
+    private void createHttpConnector(final HttpConfiguration httpConfig) {
+        if (httpEnable) {
+            final ServerConnector httpConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
+            httpConnector.setPort(httpPort);
+            httpConnector.setHost(bindInterface);
+            httpConnector.setIdleTimeout(30000);
+            server.addConnector(httpConnector);
+        }
+    }
+
+    private void createHttpsConnector(final HttpConfiguration httpConfig) {
+        // Configure SSL
+        if (httpsEnable && !Strings.isNullOrEmpty(keystoreFile) && new File(keystoreFile).exists()) {
+            // SSL Context
+            final SslContextFactory sslContextFactory = new SslContextFactory();
+
+            // Define keystore path and passwords
+            sslContextFactory.setKeyStorePath(keystoreFile);
+            sslContextFactory.setKeyStorePassword(keystorePassword);
+            sslContextFactory.setKeyManagerPassword(keystorePassword);
+
+            // HTTPS config
+            final HttpConfiguration httpsConfig = new HttpConfiguration(httpConfig);
+            httpsConfig.addCustomizer(new SecureRequestCustomizer());
+
+            // HTTPS Connector
+            final ServerConnector sslConnector = new ServerConnector(server,
+                    new SslConnectionFactory(sslContextFactory, "http/1.1"),
+                    new HttpConnectionFactory(httpsConfig));
+            sslConnector.setPort(httpsPort);
+            sslConnector.setHost(bindInterface);
+            server.addConnector(sslConnector);
+        }
+    }
 
     private HandlerCollection createHandlers() {
         final WebAppContext webApp = new WebAppContext();
@@ -281,6 +302,10 @@ public class ServerDaemon implements Daemon {
 
     public void setHttpPort(int httpPort) {
         this.httpPort = httpPort;
+    }
+
+    public void setHttpEnable(boolean httpEnable) {
+        this.httpEnable = httpEnable;
     }
 
     public void setHttpsPort(int httpsPort) {
