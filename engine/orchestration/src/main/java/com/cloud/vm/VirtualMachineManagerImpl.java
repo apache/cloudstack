@@ -2282,7 +2282,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * Create the mapping of volumes and storage pools. If the user did not enter a mapping on her/his own, we create one using {@link #getDefaultMappingOfVolumesAndStoragePoolForMigration(VirtualMachineProfile, Host)}.
      * If the user provided a mapping, we use whatever the user has provided (check the method {@link #createMappingVolumeAndStoragePoolEnteredByUser(VirtualMachineProfile, Host, Map)}).
      */
-    private Map<Volume, StoragePool> getPoolListForVolumesForMigration(VirtualMachineProfile profile, Host targetHost, Map<Long, Long> volumeToPool) {
+    protected Map<Volume, StoragePool> getPoolListForVolumesForMigration(VirtualMachineProfile profile, Host targetHost, Map<Long, Long> volumeToPool) {
         if (MapUtils.isEmpty(volumeToPool)) {
             return getDefaultMappingOfVolumesAndStoragePoolForMigration(profile, targetHost);
         }
@@ -2293,7 +2293,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     /**
      * We create the mapping of volumes and storage pool to migrate the VMs according to the information sent by the user.
      */
-    private Map<Volume, StoragePool> createMappingVolumeAndStoragePoolEnteredByUser(VirtualMachineProfile profile, Host host, Map<Long, Long> volumeToPool) {
+    protected Map<Volume, StoragePool> createMappingVolumeAndStoragePoolEnteredByUser(VirtualMachineProfile profile, Host targetHost, Map<Long, Long> volumeToPool) {
         Map<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<Volume, StoragePool>();
         for(Long volumeId: volumeToPool.keySet()) {
             VolumeVO volume = _volsDao.findById(volumeId);
@@ -2302,8 +2302,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             StoragePoolVO targetPool = _storagePoolDao.findById(poolId);
             StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
 
-            if (_poolHostDao.findByPoolHost(targetPool.getId(), host.getId()) == null) {
-                throw new CloudRuntimeException(String.format("Cannot migrate the volume [%s] to the storage pool [%s] while migrating VM [%s] to target host [%s]. The host does not have access to the storage pool entered.", volume.getUuid(), targetPool.getUuid(), profile.getUuid(), host.getUuid()));
+            executeManagedStorageChecks(targetHost, currentPool, volume);
+            if (_poolHostDao.findByPoolHost(targetPool.getId(), targetHost.getId()) == null) {
+                throw new CloudRuntimeException(
+                        String.format("Cannot migrate the volume [%s] to the storage pool [%s] while migrating VM [%s] to target host [%s]. The host does not have access to the storage pool entered.",
+                                volume.getUuid(), targetPool.getUuid(), profile.getUuid(), targetHost.getUuid()));
             }
             if (currentPool.getId() == targetPool.getId()) {
                 s_logger.info(String.format("The volume [%s] is already allocated in storage pool [%s].", volume.getUuid(), targetPool.getUuid()));
@@ -2314,16 +2317,20 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
-     * We create the default mapping of volumes and storage pools for the migration of the VM to the target host.
-     * If the current storage pool of one of the volumes is using local storage in the host, it then needs to be migrated to a local storage in the target host.
-     * Otherwise, we do not need to migrate, and the volume can be kept in its current storage pool.
+     * We create the default mapping of volumes and storage pools for the migration of the VM to the target host. We execute the following checks an operations according to some scenarios:
+     * <ul>
+     *  <li>If the current storage pool of one of the volumes is using local storage in the host, it then needs to be migrated to a local storage in the target host. Otherwise, we do not need to migrate, and the volume can be kept in its current storage pool.
+     *  <li>If the current storage pool cluster is different from the target host cluster, we need to migrate the volume to one storage pool at the target cluster where the target host resides on.
+     * </ul>
      */
-    private Map<Volume, StoragePool> getDefaultMappingOfVolumesAndStoragePoolForMigration(VirtualMachineProfile profile, Host targetHost) {
+    protected Map<Volume, StoragePool> getDefaultMappingOfVolumesAndStoragePoolForMigration(VirtualMachineProfile profile, Host targetHost) {
         Map<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<Volume, StoragePool>();
         List<VolumeVO> allVolumes = _volsDao.findUsableVolumesForInstance(profile.getId());
         for (VolumeVO volume : allVolumes) {
             StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
-            if (ScopeType.HOST.equals(currentPool.getScope())) {
+
+            executeManagedStorageChecks(targetHost, currentPool, volume);
+            if (ScopeType.HOST.equals(currentPool.getScope()) || isStorageCrossClusterMigration(targetHost, currentPool)) {
                 createVolumeToStoragePoolMappingIfNeeded(profile, targetHost, volumeToPoolObjectMap, volume, currentPool);
             } else {
                 volumeToPoolObjectMap.put(volume, currentPool);
@@ -2333,14 +2340,43 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
+     *  If we the volume is placed in a managed storage we execute the following checks:
+     *  <ul>
+     *      <li> If the volume is not placed in a managed storage, then we do not need to proceed with these checks
+     *      <li> Cross cluster migration with cluster-wide storage pool. Volumes in managed storage cannot be migrated out of their current pool. Therefore, an exception is thrown.
+     *  </ul>
+     */
+    protected void executeManagedStorageChecks(Host targetHost, StoragePoolVO currentPool, VolumeVO volume) {
+        if (!currentPool.isManaged()) {
+            return;
+        }
+        if (currentPool.getClusterId() == targetHost.getClusterId()) {
+            return;
+        }
+        if (ScopeType.ZONE.equals(currentPool.getScope())) {
+            return;
+        }
+        throw new CloudRuntimeException(String.format("Currently, a volume on managed storage can only be 'migrated' to itself [volumeId=%s, storageId=%s, targetHostId=%s].", volume.getUuid(),
+                currentPool.getUuid(), targetHost.getUuid()));
+    }
+
+    /**
+     *  Return true if the VM migration is a cross cluster migration. To execute that, we check if the volume current storage pool cluster is different from the target host cluster.
+     */
+    protected boolean isStorageCrossClusterMigration(Host targetHost, StoragePoolVO currentPool) {
+        return ScopeType.CLUSTER.equals(currentPool.getScope()) && currentPool.getClusterId() != targetHost.getClusterId();
+    }
+
+    /**
      * We will add a mapping of volume to storage pool if needed. The conditions to add a mapping are the following:
      * <ul>
-     *  <li> The current storage pool where the volume is allocated can be accessed by the target host
-     *  <li> If not storage pool is found to allocate the volume we throw an exception.
+     *  <li> The candidate storage pool where the volume is to be allocated can be accessed by the target host
+     *  <li> If no storage pool is found to allocate the volume we throw an exception.
      * </ul>
      *
      */
-    private void createVolumeToStoragePoolMappingIfNeeded(VirtualMachineProfile profile, Host targetHost, Map<Volume, StoragePool> volumeToPoolObjectMap, VolumeVO volume, StoragePoolVO currentPool) {
+    protected void createVolumeToStoragePoolMappingIfNeeded(VirtualMachineProfile profile, Host targetHost, Map<Volume, StoragePool> volumeToPoolObjectMap, VolumeVO volume,
+            StoragePoolVO currentPool) {
         List<StoragePool> poolList = getCandidateStoragePoolsToMigrateLocalVolume(profile, targetHost, volume);
 
         Collections.shuffle(poolList);
@@ -2385,7 +2421,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                 continue;
             }
             for (StoragePool pool : poolListFromAllocator) {
-                if (pool.isLocal()) {
+                if (pool.isLocal() || isStorageCrossClusterMigration(targetHost, volumeStoragePool)) {
                     poolList.add(pool);
                 }
             }
@@ -3964,8 +4000,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ClusterDeltaSyncInterval, StartRetry, VmDestroyForcestop, VmOpCancelInterval, VmOpCleanupInterval, VmOpCleanupWait,
-                VmOpLockStateRetry,
-                VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, HaVmRestartHostUp};
+            VmOpLockStateRetry,
+            VmOpWaitInterval, ExecuteInSequence, VmJobCheckInterval, VmJobTimeout, VmJobStateReportInterval, VmConfigDriveLabel, VmConfigDriveOnPrimaryPool, HaVmRestartHostUp};
     }
 
     public List<StoragePoolAllocator> getStoragePoolAllocators() {
