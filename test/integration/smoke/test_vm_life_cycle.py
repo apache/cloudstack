@@ -918,7 +918,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
             cmd = provisionCertificate.provisionCertificateCmd()
             cmd.hostid = host.id
             cmd.reconnect = True
-            self.apiclient.updateConfiguration(cmd)
+            self.apiclient.provisionCertificate(cmd)
 
         for host in self.hosts:
             self.check_connection(secured='true', host=host)
