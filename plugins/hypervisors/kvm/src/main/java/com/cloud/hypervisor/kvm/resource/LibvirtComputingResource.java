@@ -295,8 +295,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         s_powerStatesTable.put(DomainState.VIR_DOMAIN_SHUTDOWN, PowerState.PowerOff);
     }
 
-    protected List<String> _vmsKilled = new ArrayList<String>();
-
     private VirtualRoutingResource _virtRouterResource;
 
     private String _pingTestPath;
@@ -307,7 +305,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     private long _dom0OvercommitMem;
 
-    protected boolean _disconnected = true;
     protected int _cmdsTimeout;
     protected int _stopTimeout;
     protected CPUStat _cpuStat = new CPUStat();
