@@ -1,78 +1,83 @@
-<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
-	license agreements. See the NOTICE file distributed with this work for additional 
-	information regarding copyright ownership. The ASF licenses this file to 
-	you under the Apache License, Version 2.0 (the "License"); you may not use 
-	this file except in compliance with the License. You may obtain a copy of 
-	the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
-	by applicable law or agreed to in writing, software distributed under the 
-	License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
-	OF ANY KIND, either express or implied. See the License for the specific 
-	language governing permissions and limitations under the License. -->
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<artifactId>cloud-plugin-network-vcs</artifactId>
-	<name>Apache CloudStack Plugin - Network Brocade VCS</name>
-	<parent>
-		<groupId>org.apache.cloudstack</groupId>
-		<artifactId>cloudstack-plugins</artifactId>
-		<version>4.12.0.0-SNAPSHOT</version>
-		<relativePath>../../pom.xml</relativePath>
-	</parent>
-
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.jvnet.jaxb2.maven2</groupId>
-				<artifactId>maven-jaxb2-plugin</artifactId>
-				<version>0.7.1</version>
-				<executions>
-					<execution>
-						<id>interface</id>
-						<goals>
-							<goal>generate</goal>
-						</goals>
-						<configuration>
-							<generateDirectory>${project.build.directory}/generated-sources/xjc1</generateDirectory>
-							<schemaDirectory>${project.build.resources[0].directory}</schemaDirectory>
-							<schemaIncludes>
-								<include>BrocadeInterfaceSchema.xsd</include>
-							</schemaIncludes>
-							<generatePackage>com.cloud.network.schema.interfacevlan</generatePackage>
-						</configuration>
-					</execution>
-					<execution>
-						<id>portprofile</id>
-						<goals>
-							<goal>generate</goal>
-						</goals>
-						<configuration>
-							<generateDirectory>${project.build.directory}/generated-sources/xjc2</generateDirectory>
-							<schemaDirectory>${project.build.resources[0].directory}</schemaDirectory>
-							<schemaIncludes>
-								<include>BrocadePortProfileSchema.xsd</include>
-							</schemaIncludes>
-							<generatePackage>com.cloud.network.schema.portprofile</generatePackage>
-						</configuration>
-					</execution>
-					<execution>
-						<id>show-vcs</id>
-						<goals>
-							<goal>generate</goal>
-						</goals>
-						<configuration>
-							<generateDirectory>${project.build.directory}/generated-sources/xjc3</generateDirectory>
-							<schemaDirectory>${project.build.resources[0].directory}</schemaDirectory>
-							<schemaIncludes>
-								<include>BrocadeShowVcsSchema.xsd</include>
-							</schemaIncludes>
-							<generatePackage>com.cloud.network.schema.showvcs</generatePackage>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-		</plugins>
-	</build>
-
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>cloud-plugin-network-vcs</artifactId>
+    <name>Apache CloudStack Plugin - Network Brocade VCS</name>
+    <parent>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloudstack-plugins</artifactId>
+        <version>4.12.0.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.jvnet.jaxb2.maven2</groupId>
+                <artifactId>maven-jaxb2-plugin</artifactId>
+                <version>0.7.1</version>
+                <executions>
+                    <execution>
+                        <id>interface</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <generateDirectory>${project.build.directory}/generated-sources/xjc1</generateDirectory>
+                            <schemaDirectory>${project.build.resources[0].directory}</schemaDirectory>
+                            <schemaIncludes>
+                                <include>BrocadeInterfaceSchema.xsd</include>
+                            </schemaIncludes>
+                            <generatePackage>com.cloud.network.schema.interfacevlan</generatePackage>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>portprofile</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <generateDirectory>${project.build.directory}/generated-sources/xjc2</generateDirectory>
+                            <schemaDirectory>${project.build.resources[0].directory}</schemaDirectory>
+                            <schemaIncludes>
+                                <include>BrocadePortProfileSchema.xsd</include>
+                            </schemaIncludes>
+                            <generatePackage>com.cloud.network.schema.portprofile</generatePackage>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>show-vcs</id>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <generateDirectory>${project.build.directory}/generated-sources/xjc3</generateDirectory>
+                            <schemaDirectory>${project.build.resources[0].directory}</schemaDirectory>
+                            <schemaIncludes>
+                                <include>BrocadeShowVcsSchema.xsd</include>
+                            </schemaIncludes>
+                            <generatePackage>com.cloud.network.schema.showvcs</generatePackage>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

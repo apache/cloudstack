@@ -130,22 +130,26 @@ echo "found $currentversion"
 echo "setting new version numbers"
 mvn versions:set -DnewVersion=$version -P vmware -P developer -P systemvm -P simulator -Dnoredist versions:commit
 
-perl -pi -e "s/$currentversion/$version/" tools/apidoc/pom.xml
 perl -pi -e "s/$currentversion/$version/" debian/changelog
-perl -pi -e "s/$currentversion/$version/" tools/marvin/setup.py
 perl -pi -e "s/$currentversion/$version/" services/iam/plugin/pom.xml
 perl -pi -e "s/$currentversion/$version/" services/iam/pom.xml
 perl -pi -e "s/$currentversion/$version/" services/iam/server/pom.xml
+perl -pi -e "s/$currentversion/$version/" tools/apidoc/pom.xml
 perl -pi -e "s/$currentversion/$version/" tools/checkstyle/pom.xml
-perl -pi -e "s/$currentversion/$version/" services/console-proxy/plugin/pom.xml
+perl -pi -e "s/$currentversion/$version/" tools/marvin/setup.py
+
 # Dockerfiles
 perl -pi -e "s/Version=\"$currentversion\"/Version=\"$version\"/" tools/docker/Dockerfile
+
+# Marvin Dockerfiles
 perl -pi -e "s/Version=\"$currentversion\"/Version=\"$version\"/" tools/docker/Dockerfile.marvin
-# centos6 based dockerfile
+perl -pi -e "s/Marvin-(.*).tar.gz/Marvin-${version}.tar.gz/" tools/docker/Dockerfile.marvin
+
+# centos6 based Dockerfile
 perl -pi -e "s/Version=\"$currentversion\"/Version=\"$version\"/" tools/docker/Dockerfile.centos6
 perl -pi -e "s/cloudstack-common-(.*).el6.x86_64.rpm/cloudstack-common-${version}.el6.x86_64.rpm/" tools/docker/Dockerfile.centos6
 perl -pi -e "s/cloudstack-management-(.*)el6.x86_64.rpm/cloudstack-management-${version}.el6.x86_64.rpm/" tools/docker/Dockerfile.centos6
-perl -pi -e "s/Marvin-(.*).tar.gz/Marvin-${version}.tar.gz/" tools/docker/Dockerfile.marvin
+
 # systemtpl.sh:  system vm template version without -SNAPSHOT
 
 git clean -f

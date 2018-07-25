@@ -19,30 +19,34 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <artifactId>cloud-plugin-api-vmware-sioc</artifactId>
-    <name>Apache CloudStack Plugin - API VMware SIOC</name>
+    <groupId>rdpclient</groupId>
+    <artifactId>cloudstack-service-console-proxy-rdpclient</artifactId>
+    <packaging>jar</packaging>
+    <name>Apache CloudStack Console Proxy - RDP Client</name>
     <parent>
         <groupId>org.apache.cloudstack</groupId>
-        <artifactId>cloudstack-plugins</artifactId>
+        <artifactId>cloudstack-service-console-proxy</artifactId>
         <version>4.12.0.0-SNAPSHOT</version>
-        <relativePath>../../pom.xml</relativePath>
+        <relativePath>../pom.xml</relativePath>
     </parent>
     <dependencies>
         <dependency>
             <groupId>org.apache.cloudstack</groupId>
-            <artifactId>cloud-plugin-hypervisor-vmware</artifactId>
+            <artifactId>cloud-utils</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <!--
+            Apache Portable Runtime implementation of SSL protocol, which is compatible with broken MS RDP SSL suport.
+            NOTE: tomcat-native package with /usr/lib/libtcnative-1.so library is necessary for APR to work.
+        -->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-core</artifactId>
+        </dependency>
+        <!-- Another implementation of SSL protocol. Does not work with broken MS RDP SSL too. -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+        </dependency>
     </dependencies>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <configuration>
-                    <argLine>-Xmx1024m</argLine>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>

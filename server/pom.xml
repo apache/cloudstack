@@ -1,233 +1,239 @@
-<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
-  license agreements. See the NOTICE file distributed with this work for additional 
-  information regarding copyright ownership. The ASF licenses this file to you under 
-  the Apache License, Version 2.0 (the "License"); you may not use this file except 
-  in compliance with the License. You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0 
-  Unless required by applicable law or agreed to in writing, software distributed under 
-  the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
-  OF ANY KIND, either express or implied. See the License for the specific language 
-  governing permissions and limitations under the License. -->
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <artifactId>cloud-server</artifactId>
-  <name>Apache CloudStack Server</name>
-  <parent>
-    <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloudstack</artifactId>
-    <version>4.12.0.0-SNAPSHOT</version>
-  </parent>
-  <dependencies>
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>${cs.commons-io.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-web</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-framework-cluster</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-framework-security</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpcore</artifactId>
-      <version>${cs.httpcore.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-framework-ca</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-framework-jobs</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.thoughtworks.xstream</groupId>
-      <artifactId>xstream</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>javax.mail</groupId>
-      <artifactId>mail</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>commons-codec</groupId>
-      <artifactId>commons-codec</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-utils</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-      	<exclusion>
-      		<artifactId>xml-apis</artifactId>
-      		<groupId>xml-apis</groupId>
-      	</exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-api</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.reflections</groupId>
-      <artifactId>reflections</artifactId>
-      <exclusions>
-      	<exclusion>
-      		<artifactId>xml-apis</artifactId>
-      		<groupId>xml-apis</groupId>
-      	</exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-engine-schema</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-framework-ipc</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-framework-events</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-framework-config</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-engine-components-api</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-framework-agent-lb</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-engine-storage-configdrive</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.opensaml</groupId>
-      <artifactId>opensaml</artifactId>
-      <version>${cs.opensaml.version}</version>
-    </dependency>
-  </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-testCompile</id>
-            <phase>test-compile</phase>
-            <configuration>
-              <testExcludes>
-                <exclude>**/com/cloud/upgrade/*.java</exclude>
-                <exclude>**/com/cloud/async/*.java</exclude>
-              </testExcludes>
-            </configuration>
-            <goals>
-              <goal>testCompile</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <argLine>-Xmx2048m -XX:MaxPermSize=512m -Djava.security.egd=file:/dev/./urandom</argLine>
-          <excludes>
-            <exclude>%regex[.*[0-9]*To[0-9]*.*Test.*]</exclude>
-            <exclude>com/cloud/upgrade/AdvanceZone223To224UpgradeTest</exclude>
-            <exclude>com/cloud/upgrade/AdvanceZone217To224UpgradeTest</exclude>
-            <exclude>com/cloud/async/*</exclude>
-            <exclude>com/cloud/cluster/*</exclude>
-            <exclude>com/cloud/snapshot/*</exclude>
-            <exclude>com/cloud/storage/dao/*</exclude>
-            <exclude>com/cloud/vm/dao/*</exclude>
-            <exclude>com/cloud/api/ListPerfTest.java</exclude>
-            <exclude>com/cloud/network/security/SecurityGroupManagerImpl2Test.java</exclude>
-            <exclude>com/cloud/network/security/SecurityGroupManagerImpl2Test.java</exclude>
-            <exclude>com/cloud/vpc/VpcTestConfiguration.java</exclude>
-            <exclude>com/cloud/vpc/VpcApiUnitTest.java</exclude>
-            <exclude>com/cloud/vpc/VpcManagerTest.java</exclude>
-          </excludes>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>generate-resource</id>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <copy overwrite="true" todir="${basedir}/target/conf">
-                  <fileset dir="${basedir}/conf">
-                    <include name="*.in" />
-                  </fileset>
-                  <globmapper from="*.in" to="*" />
-                  <filterchain>
-                    <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile" value="${project.basedir}/../${cs.replace.properties}" />
-                    </filterreader>
-                  </filterchain>
-                </copy>
-                <copy todir="${basedir}/target/conf">
-                  <fileset dir="${basedir}/conf">
-                    <exclude name="*.in" />
-                  </fileset>
-                </copy>
-              </target>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>cloud-server</artifactId>
+    <name>Apache CloudStack Server</name>
+    <parent>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloudstack</artifactId>
+        <version>4.12.0.0-SNAPSHOT</version>
+    </parent>
+    <dependencies>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-cluster</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-security</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpcore</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-ca</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-jobs</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.thoughtworks.xstream</groupId>
+            <artifactId>xstream</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-utils</artifactId>
+            <version>${project.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>xml-apis</artifactId>
+                    <groupId>xml-apis</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-api</artifactId>
+            <version>${project.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>xml-apis</artifactId>
+                    <groupId>xml-apis</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-schema</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-ipc</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-events</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-config</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-components-api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-framework-agent-lb</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-engine-storage-configdrive</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.opensaml</groupId>
+            <artifactId>opensaml</artifactId>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-testCompile</id>
+                        <phase>test-compile</phase>
+                        <configuration>
+                            <testExcludes>
+                                <exclude>**/com/cloud/upgrade/*.java</exclude>
+                                <exclude>**/com/cloud/async/*.java</exclude>
+                            </testExcludes>
+                        </configuration>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <argLine>-Xmx2048m -XX:MaxPermSize=512m -Djava.security.egd=file:/dev/./urandom</argLine>
+                    <excludes>
+                        <exclude>%regex[.*[0-9]*To[0-9]*.*Test.*]</exclude>
+                        <exclude>com/cloud/upgrade/AdvanceZone223To224UpgradeTest</exclude>
+                        <exclude>com/cloud/upgrade/AdvanceZone217To224UpgradeTest</exclude>
+                        <exclude>com/cloud/async/*</exclude>
+                        <exclude>com/cloud/cluster/*</exclude>
+                        <exclude>com/cloud/snapshot/*</exclude>
+                        <exclude>com/cloud/storage/dao/*</exclude>
+                        <exclude>com/cloud/vm/dao/*</exclude>
+                        <exclude>com/cloud/api/ListPerfTest.java</exclude>
+                        <exclude>com/cloud/network/security/SecurityGroupManagerImpl2Test.java</exclude>
+                        <exclude>com/cloud/network/security/SecurityGroupManagerImpl2Test.java</exclude>
+                        <exclude>com/cloud/vpc/VpcTestConfiguration.java</exclude>
+                        <exclude>com/cloud/vpc/VpcApiUnitTest.java</exclude>
+                        <exclude>com/cloud/vpc/VpcManagerTest.java</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-resource</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <copy overwrite="true" todir="${basedir}/target/conf">
+                                    <fileset dir="${basedir}/conf">
+                                        <include name="*.in" />
+                                    </fileset>
+                                    <globmapper from="*.in" to="*" />
+                                    <filterchain>
+                                        <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+                                            <param type="propertiesfile" value="${project.basedir}/../${cs.replace.properties}" />
+                                        </filterreader>
+                                    </filterchain>
+                                </copy>
+                                <copy todir="${basedir}/target/conf">
+                                    <fileset dir="${basedir}/conf">
+                                        <exclude name="*.in" />
+                                    </fileset>
+                                </copy>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

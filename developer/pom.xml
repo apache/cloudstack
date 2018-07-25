@@ -1,280 +1,287 @@
-<!-- Licensed to the Apache Software Foundation (ASF) under one or more contributor 
-  license agreements. See the NOTICE file distributed with this work for additional 
-  information regarding copyright ownership. The ASF licenses this file to 
-  you under the Apache License, Version 2.0 (the "License"); you may not use 
-  this file except in compliance with the License. You may obtain a copy of 
-  the License at http://www.apache.org/licenses/LICENSE-2.0 Unless required 
-  by applicable law or agreed to in writing, software distributed under the 
-  License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS 
-  OF ANY KIND, either express or implied. See the License for the specific 
-  language governing permissions and limitations under the License. -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<!--
+  Licensed to the Apache Software Foundation (ASF) under one
+  or more contributor license agreements.  See the NOTICE file
+  distributed with this work for additional information
+  regarding copyright ownership.  The ASF licenses this file
+  to you under the Apache License, Version 2.0 (the
+  "License"); you may not use this file except in compliance
+  with the License.  You may obtain a copy of the License at
 
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <artifactId>cloud-developer</artifactId>
-  <name>Apache CloudStack Developer Mode</name>
-  <packaging>pom</packaging>
-  <parent>
-    <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloudstack</artifactId>
-    <version>4.12.0.0-SNAPSHOT</version>
-  </parent>
-  <dependencies>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-dbcp2</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.commons</groupId>
-      <artifactId>commons-pool2</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.jasypt</groupId>
-      <artifactId>jasypt</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-utils</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-server</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-  </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>properties-maven-plugin</artifactId>
-        <version>1.0-alpha-2</version>
-        <executions>
-          <execution>
-            <phase>initialize</phase>
-            <goals>
-              <goal>read-project-properties</goal>
-            </goals>
-            <configuration>
-              <files>
-                <file>${basedir}/../utils/conf/db.properties</file>
-                <file>${basedir}/../utils/conf/db.properties.override</file>
-              </files>
-              <quiet>true</quiet>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <filter token="VERSION" value="${project.version}"/>
-                <copy todir="${basedir}/target/db" filtering="true">
-                  <fileset dir="${basedir}/../setup/db/"/>
-                </copy>
-              </target>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-  <profiles>
-    <profile>
-      <!-- default deploydb property -->
-      <id>deploydb</id>
-      <activation>
-        <property>
-          <name>deploydb</name>
-        </property>
-      </activation>
-      <build>
+    http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing,
+  software distributed under the License is distributed on an
+  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+  KIND, either express or implied.  See the License for the
+  specific language governing permissions and limitations
+  under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>cloud-developer</artifactId>
+    <name>Apache CloudStack Developer Mode</name>
+    <packaging>pom</packaging>
+    <parent>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloudstack</artifactId>
+        <version>4.12.0.0-SNAPSHOT</version>
+    </parent>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-dbcp2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-pool2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jasypt</groupId>
+            <artifactId>jasypt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-utils</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-server</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+    </dependencies>
+    <build>
         <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <version>1.2.1</version>
-             <dependencies>
-              <!-- specify the dependent jdbc driver here -->
-              <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${cs.mysql.version}</version>
-              </dependency>
-            </dependencies>
-            <executions>
-              <execution>
-                <phase>process-resources</phase>
-                <id>create-schema</id>
-                <goals>
-                  <goal>java</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
-              <includePluginDependencies>true</includePluginDependencies>
-              <arguments>
-                <!-- db properties file -->
-                <argument>${basedir}/../utils/conf/db.properties</argument>
-                <argument>${basedir}/../utils/conf/db.properties.override</argument>
-                <!-- Create default schema and db table views -->
-                <argument>${basedir}/target/db/create-schema.sql</argument>
-                <argument>${basedir}/target/db/create-schema-premium.sql</argument>
-                <!-- Seed templates -->
-                <argument>${basedir}/target/db/templates.sql</argument>
-                <!-- Seed the database -->
-                <argument>${basedir}/developer-prefill.sql</argument>
-                <argument>${basedir}/developer-prefill.sql.override</argument>
-                <!-- Do database upgrade-->
-                <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
-                <argument>--database=cloud,usage</argument>
-                <argument>--rootpassword=${db.root.password}</argument>
-                <!-- Print help using -h or dash-dash-help -->
-                <!-- Do dry run using -d or dash-dash-dry -->
-                <!-- Enable verbosity by -v or dash-dash-verbose -->
-              </arguments>
-              <systemProperties>
-                <systemProperty>
-                  <key>catalina.home</key>
-                  <value>${basedir}/../utils</value>
-                </systemProperty>
-                <systemProperty>
-                  <key>paths.script</key>
-                  <value>${basedir}/target/db</value>
-                </systemProperty>
-              </systemProperties>
-            </configuration>
-          </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>properties-maven-plugin</artifactId>
+                <version>1.0-alpha-2</version>
+                <executions>
+                    <execution>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>read-project-properties</goal>
+                        </goals>
+                        <configuration>
+                            <files>
+                                <file>${basedir}/../utils/conf/db.properties</file>
+                                <file>${basedir}/../utils/conf/db.properties.override</file>
+                            </files>
+                            <quiet>true</quiet>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <filter token="VERSION" value="${project.version}" />
+                                <copy todir="${basedir}/target/db" filtering="true">
+                                    <fileset dir="${basedir}/../setup/db/" />
+                                </copy>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
-      </build>
-    </profile>
-    <profile>
-      <!-- saml deploydb property -->
-      <id>deploydb-saml</id>
-      <activation>
-        <property>
-          <name>deploydb-saml</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <dependencies>
-              <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${cs.mysql.version}</version>
-              </dependency>
-            </dependencies>
-            <version>1.2.1</version>
-            <executions>
-              <execution>
-                <phase>process-resources</phase>
-                <id>create-schema-simulator</id>
-                <goals>
-                  <goal>java</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
-              <includePluginDependencies>true</includePluginDependencies>
-              <arguments>
-                <!-- db properties file -->
-                <argument>${basedir}/../utils/conf/db.properties</argument>
-                <argument>${basedir}/../utils/conf/db.properties.override</argument>
-                <!-- simulator sql files -->
-                <argument>${basedir}/developer-saml.sql</argument>
-                <!-- upgrade -->
-                <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
-                <argument>--rootpassword=${db.root.password}</argument>
-              </arguments>
-              <systemProperties>
-                <systemProperty>
-                  <key>catalina.home</key>
-                  <value>${basedir}/../utils</value>
-                </systemProperty>
-                <systemProperty>
-                  <key>paths.script</key>
-                  <value>${basedir}/target/db</value>
-                </systemProperty>
-              </systemProperties>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-    <profile>
-      <!-- simulator deploydb property -->
-      <id>deploydb-simulator</id>
-      <activation>
-        <property>
-          <name>deploydb-simulator</name>
-        </property>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>exec-maven-plugin</artifactId>
-            <dependencies>
-              <dependency>
-                <groupId>mysql</groupId>
-                <artifactId>mysql-connector-java</artifactId>
-                <version>${cs.mysql.version}</version>
-              </dependency>
-	    </dependencies>
-            <version>1.2.1</version>
-            <executions>
-              <execution>
-                <phase>process-resources</phase>
-                <id>create-schema-simulator</id>
-                <goals>
-                  <goal>java</goal>
-                </goals>
-              </execution>
-            </executions>
-            <configuration>
-              <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
-              <includePluginDependencies>true</includePluginDependencies>
-              <arguments>
-                <!-- db properties file -->
-                <argument>${basedir}/../utils/conf/db.properties</argument>
-                <argument>${basedir}/../utils/conf/db.properties.override</argument>
-                <!-- simulator sql files -->
-                <argument>${basedir}/target/db/create-schema-simulator.sql</argument>
-                <argument>${basedir}/target/db/templates.simulator.sql</argument>
-                <argument>${basedir}/target/db/hypervisor_capabilities.simulator.sql</argument>
-                <!-- upgrade -->
-                <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
-                <argument>--database=simulator</argument>
-                <argument>--rootpassword=${db.root.password}</argument>
-              </arguments>
-              <systemProperties>
-                <systemProperty>
-                  <key>catalina.home</key>
-                  <value>${basedir}/../utils</value>
-                </systemProperty>
-                <systemProperty>
-                  <key>paths.script</key>
-                  <value>${basedir}/target/db</value>
-                </systemProperty>
-              </systemProperties>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
+    </build>
+    <profiles>
+        <profile>
+            <!-- default deploydb property -->
+            <id>deploydb</id>
+            <activation>
+                <property>
+                    <name>deploydb</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <dependencies>
+                            <!-- specify the dependent jdbc driver here -->
+                            <dependency>
+                                <groupId>mysql</groupId>
+                                <artifactId>mysql-connector-java</artifactId>
+                                <version>${cs.mysql.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <phase>process-resources</phase>
+                                <id>create-schema</id>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <arguments>
+                                <!-- db properties file -->
+                                <argument>${basedir}/../utils/conf/db.properties</argument>
+                                <argument>${basedir}/../utils/conf/db.properties.override</argument>
+                                <!-- Create default schema and db table views -->
+                                <argument>${basedir}/target/db/create-schema.sql</argument>
+                                <argument>${basedir}/target/db/create-schema-premium.sql</argument>
+                                <!-- Seed templates -->
+                                <argument>${basedir}/target/db/templates.sql</argument>
+                                <!-- Seed the database -->
+                                <argument>${basedir}/developer-prefill.sql</argument>
+                                <argument>${basedir}/developer-prefill.sql.override</argument>
+                                <!-- Do database upgrade -->
+                                <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
+                                <argument>--database=cloud,usage</argument>
+                                <argument>--rootpassword=${db.root.password}</argument>
+                                <!-- Print help using -h or dash-dash-help -->
+                                <!-- Do dry run using -d or dash-dash-dry -->
+                                <!-- Enable verbosity by -v or dash-dash-verbose -->
+                            </arguments>
+                            <systemProperties>
+                                <systemProperty>
+                                    <key>catalina.home</key>
+                                    <value>${basedir}/../utils</value>
+                                </systemProperty>
+                                <systemProperty>
+                                    <key>paths.script</key>
+                                    <value>${basedir}/target/db</value>
+                                </systemProperty>
+                            </systemProperties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!-- saml deploydb property -->
+            <id>deploydb-saml</id>
+            <activation>
+                <property>
+                    <name>deploydb-saml</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>mysql</groupId>
+                                <artifactId>mysql-connector-java</artifactId>
+                                <version>${cs.mysql.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <phase>process-resources</phase>
+                                <id>create-schema-simulator</id>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <arguments>
+                                <!-- db properties file -->
+                                <argument>${basedir}/../utils/conf/db.properties</argument>
+                                <argument>${basedir}/../utils/conf/db.properties.override</argument>
+                                <!-- simulator sql files -->
+                                <argument>${basedir}/developer-saml.sql</argument>
+                                <!-- upgrade -->
+                                <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
+                                <argument>--rootpassword=${db.root.password}</argument>
+                            </arguments>
+                            <systemProperties>
+                                <systemProperty>
+                                    <key>catalina.home</key>
+                                    <value>${basedir}/../utils</value>
+                                </systemProperty>
+                                <systemProperty>
+                                    <key>paths.script</key>
+                                    <value>${basedir}/target/db</value>
+                                </systemProperty>
+                            </systemProperties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <!-- simulator deploydb property -->
+            <id>deploydb-simulator</id>
+            <activation>
+                <property>
+                    <name>deploydb-simulator</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>1.2.1</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>mysql</groupId>
+                                <artifactId>mysql-connector-java</artifactId>
+                                <version>${cs.mysql.version}</version>
+                            </dependency>
+                        </dependencies>
+                        <executions>
+                            <execution>
+                                <phase>process-resources</phase>
+                                <id>create-schema-simulator</id>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <mainClass>com.cloud.upgrade.DatabaseCreator</mainClass>
+                            <includePluginDependencies>true</includePluginDependencies>
+                            <arguments>
+                                <!-- db properties file -->
+                                <argument>${basedir}/../utils/conf/db.properties</argument>
+                                <argument>${basedir}/../utils/conf/db.properties.override</argument>
+                                <!-- simulator sql files -->
+                                <argument>${basedir}/target/db/create-schema-simulator.sql</argument>
+                                <argument>${basedir}/target/db/templates.simulator.sql</argument>
+                                <argument>${basedir}/target/db/hypervisor_capabilities.simulator.sql</argument>
+                                <!-- upgrade -->
+                                <argument>com.cloud.upgrade.DatabaseUpgradeChecker</argument>
+                                <argument>--database=simulator</argument>
+                                <argument>--rootpassword=${db.root.password}</argument>
+                            </arguments>
+                            <systemProperties>
+                                <systemProperty>
+                                    <key>catalina.home</key>
+                                    <value>${basedir}/../utils</value>
+                                </systemProperty>
+                                <systemProperty>
+                                    <key>paths.script</key>
+                                    <value>${basedir}/target/db</value>
+                                </systemProperty>
+                            </systemProperties>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

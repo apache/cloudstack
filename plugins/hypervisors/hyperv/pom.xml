@@ -1,173 +1,173 @@
 <!--
   Licensed to the Apache Software Foundation (ASF) under one
-  or more contributor license agreements. See the NOTICE file
+  or more contributor license agreements.  See the NOTICE file
   distributed with this work for additional information
-  regarding copyright ownership. The ASF licenses this file
+  regarding copyright ownership.  The ASF licenses this file
   to you under the Apache License, Version 2.0 (the
   "License"); you may not use this file except in compliance
-  with the License. You may obtain a copy of the License at
+  with the License.  You may obtain a copy of the License at
 
-  http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
   Unless required by applicable law or agreed to in writing,
   software distributed under the License is distributed on an
   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-  KIND, either express or implied. See the License for the
+  KIND, either express or implied.  See the License for the
   specific language governing permissions and limitations
   under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <artifactId>cloud-plugin-hypervisor-hyperv</artifactId>
-  <name>Apache CloudStack Plugin - Hypervisor Hyper-V</name>
-  <parent>
-    <groupId>org.apache.cloudstack</groupId>
-    <artifactId>cloudstack-plugins</artifactId>
-    <version>4.12.0.0-SNAPSHOT</version>
-    <relativePath>../../pom.xml</relativePath>
-  </parent>
-  <properties>
-    <skipTests>false</skipTests>
-    <skipFunctionalTests>true</skipFunctionalTests>
-  </properties>
-  <dependencies>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-agent</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-core</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.cloudstack</groupId>
-      <artifactId>cloud-utils</artifactId>
-      <version>${project.version}</version>
-      <classifier>tests</classifier>
-      <scope>test</scope>
-    </dependency>
-  </dependencies>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.2.1</version>
-        <configuration>
-          <executable>java</executable>
-          <mainClass>com.cloud.agent.AgentShell</mainClass>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <goals>
-              <goal>test-jar</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-          <!-- Exclude tests that require an agent, they appear under a different profile -->
-            <excludes>
-              <exclude>**/HypervDirectConnectResourceTest.*</exclude>
-            </excludes>
-            <includes>
-              <include>none</include>
-            </includes>
-            <skipTests>${skipTests}</skipTests>
-        </configuration>
-      </plugin>
-      <plugin>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>generate-resource</id>
-            <phase>generate-resources</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <copy overwrite="true"
-                  todir="${basedir}/target/classes">
-                  <fileset dir="${basedir}/conf">
-                    <include name="*.in"/>
-                  </fileset>
-                  <filterchain>
-                    <filterreader
-                      classname="org.apache.tools.ant.filters.ReplaceTokens">
-                      <param type="propertiesfile"
-                        value="${project.basedir}/../../../${cs.replace.properties}" />
-                    </filterreader>
-                  </filterchain>
-                </copy>
-              </target>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
-  <profiles>
-    <!-- Hyper-V plugin is built using mono -->
-    <profile>
-      <id>hyperv-agent</id>
-      <activation>
-        <property>
-          <name>hyperv-agent</name>
-        </property>
-      </activation>
-<!--      <dependencies>
-          <dependency>
-              <groupId>org.apache.cloudstack</groupId>
-              <artifactId>cloud-plugin-hypervisor-hyperv</artifactId>
-              <version>${project.version}</version>
-          </dependency>
-      </dependencies> --> 
-      <build>
-      <plugins>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>compile</phase>
-            <goals>
-              <goal>exec</goal>
-            </goals>
-          </execution>
-        </executions>
-        <configuration>
-          <executable>bash</executable>
-          <arguments>
-            <argument>./buildagent.sh</argument>
-            <argument>${skipTests}</argument>
-          </arguments>
-        </configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <configuration>
-            <excludes>
-              <exclude>none</exclude>
-            </excludes>            
-            <includes>
-              <include>**/HypervDirectConnectResourceTest.java</include>
-            </includes>
-            <skipTests>${skipFunctionalTests}</skipTests>            
-        </configuration>
-      </plugin>
-      </plugins>
-      </build>
-    </profile>
-  </profiles>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>cloud-plugin-hypervisor-hyperv</artifactId>
+    <name>Apache CloudStack Plugin - Hypervisor Hyper-V</name>
+    <parent>
+        <groupId>org.apache.cloudstack</groupId>
+        <artifactId>cloudstack-plugins</artifactId>
+        <version>4.12.0.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+    <properties>
+        <skipTests>false</skipTests>
+        <skipFunctionalTests>true</skipFunctionalTests>
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-agent</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cloudstack</groupId>
+            <artifactId>cloud-utils</artifactId>
+            <version>${project.version}</version>
+            <classifier>tests</classifier>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>1.2.1</version>
+                <configuration>
+                    <executable>java</executable>
+                    <mainClass>com.cloud.agent.AgentShell</mainClass>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <!-- Exclude tests that require an agent, they appear under a different profile -->
+                    <excludes>
+                        <exclude>**/HypervDirectConnectResourceTest.*</exclude>
+                    </excludes>
+                    <includes>
+                        <include>none</include>
+                    </includes>
+                    <skipTests>${skipTests}</skipTests>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>generate-resource</id>
+                        <phase>generate-resources</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <target>
+                                <copy overwrite="true" todir="${basedir}/target/classes">
+                                    <fileset dir="${basedir}/conf">
+                                        <include name="*.in" />
+                                    </fileset>
+                                    <filterchain>
+                                        <filterreader classname="org.apache.tools.ant.filters.ReplaceTokens">
+                                            <param type="propertiesfile" value="${project.basedir}/../../../${cs.replace.properties}" />
+                                        </filterreader>
+                                    </filterchain>
+                                </copy>
+                            </target>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
+        <!-- Hyper-V plugin is built using mono -->
+        <profile>
+            <id>hyperv-agent</id>
+            <activation>
+                <property>
+                    <name>hyperv-agent</name>
+                </property>
+            </activation>
+<!--
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.cloudstack</groupId>
+                    <artifactId>cloud-plugin-hypervisor-hyperv</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+-->
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <phase>compile</phase>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <configuration>
+                            <executable>bash</executable>
+                            <arguments>
+                                <argument>./buildagent.sh</argument>
+                                <argument>${skipTests}</argument>
+                            </arguments>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>none</exclude>
+                            </excludes>
+                            <includes>
+                                <include>**/HypervDirectConnectResourceTest.java</include>
+                            </includes>
+                            <skipTests>${skipFunctionalTests}</skipTests>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

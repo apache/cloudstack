@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
-VERSION := $(shell grep '^  <version>' pom.xml| cut -d'>' -f2 |cut -d'<' -f1)
+VERSION := $(shell grep '<version>' pom.xml | head -2 | tail -1 | cut -d'>' -f2 |cut -d'<' -f1)
 PACKAGE = $(shell dh_listpackages|head -n 1|cut -d '-' -f 1)
 SYSCONFDIR = "/etc"
 DESTDIR = "debian/tmp"
