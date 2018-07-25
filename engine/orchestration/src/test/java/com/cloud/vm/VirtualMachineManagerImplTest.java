@@ -246,7 +246,7 @@ public class VirtualMachineManagerImplTest {
 
         Mockito.verify(storagePoolVoMock).isManaged();
         Mockito.verify(storagePoolVoMock, Mockito.times(1)).getClusterId();
-        Mockito.verify(storagePoolVoMock, Mockito.times(0)).getScope();
+        Mockito.verify(storagePoolVoMock, Mockito.times(1)).getScope();
     }
 
     @Test
@@ -259,7 +259,7 @@ public class VirtualMachineManagerImplTest {
         virtualMachineManagerImpl.executeManagedStorageChecks(hostMock, storagePoolVoMock, volumeVoMock);
 
         Mockito.verify(storagePoolVoMock).isManaged();
-        Mockito.verify(storagePoolVoMock, Mockito.times(1)).getClusterId();
+        Mockito.verify(storagePoolVoMock, Mockito.times(0)).getClusterId();
         Mockito.verify(storagePoolVoMock, Mockito.times(1)).getScope();
     }
 
@@ -308,7 +308,7 @@ public class VirtualMachineManagerImplTest {
 
     @Test
     public void getDefaultMappingOfVolumesAndStoragePoolForMigrationTestSharedStorageMigratingToHostOfSameCluster() {
-        Mockito.doNothing().when(virtualMachineManagerImpl).createVolumeToStoragePoolMappingIfNeeded(Mockito.any(VirtualMachineProfile.class), Mockito.any(Host.class),
+        Mockito.doNothing().when(virtualMachineManagerImpl).createVolumeToStoragePoolMappingIfPossible(Mockito.any(VirtualMachineProfile.class), Mockito.any(Host.class),
                 Mockito.anyMapOf(Volume.class, StoragePool.class), Mockito.any(VolumeVO.class), Mockito.any(StoragePoolVO.class));
 
         Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecks(Mockito.any(Host.class), Mockito.any(StoragePoolVO.class), Mockito.any(VolumeVO.class));
