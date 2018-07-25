@@ -3352,7 +3352,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         String isoFileName = isoUrl.substring(isoFileNameStartPos);
 
         int templateRootPos = isoUrl.indexOf("template/tmpl");
-        templateRootPos = (templateRootPos < 0 ? isoUrl.indexOf("ConfigDrive") : templateRootPos);
+        templateRootPos = (templateRootPos < 0 ? isoUrl.indexOf("configdrive") : templateRootPos);
         if (templateRootPos < 0 ) {
             throw new Exception("Invalid ISO path info");
         }
