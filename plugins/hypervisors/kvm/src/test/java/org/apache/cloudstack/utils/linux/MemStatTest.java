@@ -22,16 +22,16 @@ import org.junit.Test;
 import java.util.Scanner;
 
 public class MemStatTest {
+    final String memInfo = "MemTotal:        5830236 kB\n" +
+                           "MemFree:          156752 kB\n" +
+                           "Buffers:          326836 kB\n" +
+                           "Cached:          2606764 kB\n" +
+                           "SwapCached:            0 kB\n" +
+                           "Active:          4260808 kB\n" +
+                           "Inactive:         949392 kB\n";
+
     @Test
     public void getMemInfoParseTest() {
-        String memInfo = "MemTotal:        5830236 kB\n" +
-                         "MemFree:          156752 kB\n" +
-                         "Buffers:          326836 kB\n" +
-                         "Cached:          2606764 kB\n" +
-                         "SwapCached:            0 kB\n" +
-                         "Active:          4260808 kB\n" +
-                         "Inactive:         949392 kB\n";
-
         MemStat memStat = null;
         try {
             memStat = new MemStat();
@@ -46,9 +46,25 @@ public class MemStatTest {
         Scanner scanner = new Scanner(memInfo);
         memStat.parseFromScanner(scanner);
 
-        Assert.assertEquals(memStat.getTotal(), Double.valueOf(5830236));
-        Assert.assertEquals(memStat.getAvailable(), Double.valueOf(2763516));
-        Assert.assertEquals(memStat.getFree(), Double.valueOf(156752));
-        Assert.assertEquals(memStat.getCache(), Double.valueOf(2606764));
+        Assert.assertEquals(memStat.getTotal(), 5970161664L);
+        Assert.assertEquals(memStat.getAvailable(), 2829840384L);
+        Assert.assertEquals(memStat.getFree(), 160514048L);
+        Assert.assertEquals(memStat.getCache(), 2669326336L);
+    }
+
+    @Test
+    public void reservedMemoryTest() {
+        MemStat memStat = null;
+        try {
+            memStat = new MemStat(1024, 2048);
+        } catch (RuntimeException ex) {
+            if (memStat == null) {
+                throw ex;
+            }
+        }
+        Scanner scanner = new Scanner(memInfo);
+        memStat.parseFromScanner(scanner);
+
+        Assert.assertEquals(memStat.getTotal(), 5970162688L);
     }
 }
