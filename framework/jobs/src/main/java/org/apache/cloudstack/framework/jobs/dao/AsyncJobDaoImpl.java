@@ -21,6 +21,7 @@ import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
@@ -71,7 +72,7 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
         expiringUnfinishedAsyncJobSearch.done();
 
         expiringCompletedAsyncJobSearch = createSearchBuilder();
-        expiringCompletedAsyncJobSearch.and("created", expiringCompletedAsyncJobSearch.entity().getCreated(), SearchCriteria.Op.LTEQ);
+        expiringCompletedAsyncJobSearch.and(ApiConstants.REMOVED, expiringCompletedAsyncJobSearch.entity().getRemoved(), SearchCriteria.Op.LTEQ);
         expiringCompletedAsyncJobSearch.and("completeMsId", expiringCompletedAsyncJobSearch.entity().getCompleteMsid(), SearchCriteria.Op.NNULL);
         expiringCompletedAsyncJobSearch.and("jobStatus", expiringCompletedAsyncJobSearch.entity().getStatus(), SearchCriteria.Op.NEQ);
         expiringCompletedAsyncJobSearch.done();
@@ -168,11 +169,11 @@ public class AsyncJobDaoImpl extends GenericDaoBase<AsyncJobVO, Long> implements
     }
 
     @Override
-    public List<AsyncJobVO> getExpiredCompletedJobs(Date cutTime, int limit) {
-        SearchCriteria<AsyncJobVO> sc = expiringCompletedAsyncJobSearch.create();
-        sc.setParameters("created", cutTime);
+    public List<AsyncJobVO> getExpiredCompletedJobs(final Date cutTime, final int limit) {
+        final SearchCriteria<AsyncJobVO> sc = expiringCompletedAsyncJobSearch.create();
+        sc.setParameters(ApiConstants.REMOVED, cutTime);
         sc.setParameters("jobStatus", JobInfo.Status.IN_PROGRESS);
-        Filter filter = new Filter(AsyncJobVO.class, "created", true, 0L, (long)limit);
+        final Filter filter = new Filter(AsyncJobVO.class, ApiConstants.REMOVED, true, 0L, (long)limit);
         return listIncludingRemovedBy(sc, filter);
     }
 

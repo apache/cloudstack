@@ -75,6 +75,10 @@ public class AsyncJobResponse extends BaseResponse {
     @Param(description = "  the created date of the job")
     private Date created;
 
+    @SerializedName(ApiConstants.COMPLETED)
+    @Param(description = "  the completed date of the job")
+    private Date removed;
+
     public void setAccountId(String accountId) {
         this.accountId = accountId;
     }
@@ -118,5 +122,9 @@ public class AsyncJobResponse extends BaseResponse {
 
     public void setCreated(Date created) {
         this.created = created;
+    }
+
+    public void setRemoved(final Date removed) {
+        this.removed = removed;
     }
 }

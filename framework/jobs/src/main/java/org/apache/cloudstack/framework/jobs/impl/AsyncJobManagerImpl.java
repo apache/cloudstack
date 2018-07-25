@@ -161,7 +161,7 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
 
     @Override
     public AsyncJobVO getAsyncJob(long jobId) {
-        return _jobDao.findById(jobId);
+        return _jobDao.findByIdIncludingRemoved(jobId);
     }
 
     @Override
@@ -286,9 +286,9 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("Wake up jobs related to job-" + jobId);
         }
-        List<Long> wakeupList = Transaction.execute(new TransactionCallback<List<Long>>() {
+        final List<Long> wakeupList = Transaction.execute(new TransactionCallback<List<Long>>() {
             @Override
-            public List<Long> doInTransaction(TransactionStatus status) {
+            public List<Long> doInTransaction(final TransactionStatus status) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Update db status for job-" + jobId);
                 }
@@ -302,14 +302,16 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     job.setResult(null);
                 }
 
-                job.setLastUpdated(DateUtil.currentGMTTime());
+                final Date currentGMTTime = DateUtil.currentGMTTime();
+                job.setLastUpdated(currentGMTTime);
+                job.setRemoved(currentGMTTime);
                 job.setExecutingMsid(null);
                 _jobDao.update(jobId, job);
 
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Wake up jobs joined with job-" + jobId + " and disjoin all subjobs created from job- " + jobId);
                 }
-                List<Long> wakeupList = wakeupByJoinedJobCompletion(jobId);
+                final List<Long> wakeupList = wakeupByJoinedJobCompletion(jobId);
                 _joinMapDao.disjoinAllJobs(jobId);
 
                 // purge the job sync item from queue
@@ -445,8 +447,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     }
 
     @Override
-    public AsyncJob queryJob(long jobId, boolean updatePollTime) {
-        AsyncJobVO job = _jobDao.findById(jobId);
+    public AsyncJob queryJob(final long jobId, final boolean updatePollTime) {
+        final AsyncJobVO job = _jobDao.findByIdIncludingRemoved(jobId);
 
         if (updatePollTime) {
             job.setLastPolled(DateUtil.currentGMTTime());
@@ -1025,8 +1027,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                     // purge sync queue item running on this ms node
                     _queueMgr.cleanupActiveQueueItems(msid, true);
                     // reset job status for all jobs running on this ms node
-                    List<AsyncJobVO> jobs = _jobDao.getResetJobs(msid);
-                    for (AsyncJobVO job : jobs) {
+                    final List<AsyncJobVO> jobs = _jobDao.getResetJobs(msid);
+                    for (final AsyncJobVO job : jobs) {
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Cancel left-over job-" + job.getId());
                         }
@@ -1034,12 +1036,15 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                         job.setResultCode(ApiErrorCode.INTERNAL_ERROR.getHttpCode());
                         job.setResult("job cancelled because of management server restart or shutdown");
                         job.setCompleteMsid(msid);
+                        final Date currentGMTTime = DateUtil.currentGMTTime();
+                        job.setLastUpdated(currentGMTTime);
+                        job.setRemoved(currentGMTTime);
                         _jobDao.update(job.getId(), job);
                         if (s_logger.isDebugEnabled()) {
                             s_logger.debug("Purge queue item for cancelled job-" + job.getId());
                         }
                         _queueMgr.purgeAsyncJobQueueItemId(job.getId());
-                        if (job.getInstanceType().equals(ApiCommandJobType.Volume.toString())) {
+                        if (ApiCommandJobType.Volume.toString().equals(job.getInstanceType())) {
 
                             try {
                                 _volumeDetailsDao.removeDetail(job.getInstanceId(), "SNAPSHOT_ID");
@@ -1049,8 +1054,8 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
                             }
                         }
                     }
-                    List<SnapshotDetailsVO> snapshotList = _snapshotDetailsDao.findDetails(AsyncJob.Constants.MS_ID, Long.toString(msid), false);
-                    for (SnapshotDetailsVO snapshotDetailsVO : snapshotList) {
+                    final List<SnapshotDetailsVO> snapshotList = _snapshotDetailsDao.findDetails(AsyncJob.Constants.MS_ID, Long.toString(msid), false);
+                    for (final SnapshotDetailsVO snapshotDetailsVO : snapshotList) {
                         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotDetailsVO.getResourceId(), DataStoreRole.Primary);
                         snapshotSrv.processEventOnSnapshotObject(snapshot, Snapshot.Event.OperationFailed);
                         _snapshotDetailsDao.removeDetail(snapshotDetailsVO.getResourceId(), AsyncJob.Constants.MS_ID);

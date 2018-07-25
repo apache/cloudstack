@@ -24,6 +24,7 @@ import org.apache.cloudstack.framework.jobs.impl.AsyncJobVO;
 import com.cloud.utils.db.GenericDao;
 
 public interface AsyncJobDao extends GenericDao<AsyncJobVO, Long> {
+
     AsyncJobVO findInstancePendingAsyncJob(String instanceType, long instanceId);
 
     List<AsyncJobVO> findInstancePendingAsyncJobs(String instanceType, Long accountId);

@@ -549,6 +549,7 @@ public class ApiConstants {
     public static final String IPSEC_PSK = "ipsecpsk";
     public static final String GUEST_IP = "guestip";
     public static final String REMOVED = "removed";
+    public static final String COMPLETED = "completed";
     public static final String IKE_POLICY = "ikepolicy";
     public static final String ESP_POLICY = "esppolicy";
     public static final String IKE_LIFETIME = "ikelifetime";
