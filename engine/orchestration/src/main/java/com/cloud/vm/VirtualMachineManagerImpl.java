@@ -2279,24 +2279,12 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
-     * Create the mapping of volumes and storage pools. If the user did not enter a mapping on her/his own, we create one using {@link #getDefaultMappingOfVolumesAndStoragePoolForMigration(VirtualMachineProfile, Host)}.
-     * If the user provided a mapping, we use whatever the user has provided (check the method {@link #createMappingVolumeAndStoragePoolEnteredByUser(VirtualMachineProfile, Host, Map)}).
-     */
-    protected Map<Volume, StoragePool> getPoolListForVolumesForMigration(VirtualMachineProfile profile, Host targetHost, Map<Long, Long> volumeToPool) {
-        if (MapUtils.isEmpty(volumeToPool)) {
-            return getDefaultMappingOfVolumesAndStoragePoolForMigration(profile, targetHost);
-        }
-
-        return createMappingVolumeAndStoragePoolEnteredByUser(profile, targetHost, volumeToPool);
-    }
-
-    /**
      * We create the mapping of volumes and storage pool to migrate the VMs according to the information sent by the user.
      * If the user did not enter a complete mapping, the volumes that were left behind will be auto mapped using {@link #createStoragePoolMappingsForVolumes(VirtualMachineProfile, Host, Map, List)}
      */
-    protected Map<Volume, StoragePool> createMappingVolumeAndStoragePoolEnteredByUser(VirtualMachineProfile profile, Host targetHost, Map<Long, Long> volumeToPool) {
+    protected Map<Volume, StoragePool> createMappingVolumeAndStoragePool(VirtualMachineProfile profile, Host targetHost, Map<Long, Long> userDefinedMapOfVolumesAndStoragePools) {
         Map<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<Volume, StoragePool>();
-        buildMapUsingUserInformation(profile, targetHost, volumeToPool, volumeToPoolObjectMap);
+        buildMapUsingUserInformation(profile, targetHost, userDefinedMapOfVolumesAndStoragePools, volumeToPoolObjectMap);
 
         List<Volume> volumesNotMapped = findVolumesThatWereNotMappedByTheUser(profile, volumeToPoolObjectMap);
         createStoragePoolMappingsForVolumes(profile, targetHost, volumeToPoolObjectMap, volumesNotMapped);
@@ -2307,10 +2295,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      *  Given the map of volume to target storage pool entered by the user, we check for other volumes that the VM might have and were not configured.
      *  This map can be then used by CloudStack to find new target storage pools according to the target host.
      */
-    private List<Volume> findVolumesThatWereNotMappedByTheUser(VirtualMachineProfile profile, Map<Volume, StoragePool> volumeToPoolObjectMap) {
+    private List<Volume> findVolumesThatWereNotMappedByTheUser(VirtualMachineProfile profile, Map<Volume, StoragePool> volumeToStoragePoolObjectMap) {
         List<VolumeVO> allVolumes = _volsDao.findUsableVolumesForInstance(profile.getId());
         List<Volume> volumesNotMapped = new ArrayList<>();
-        for (Volume volume : volumeToPoolObjectMap.keySet()) {
+        for (Volume volume : volumeToStoragePoolObjectMap.keySet()) {
             if (!allVolumes.contains(volume)) {
                 volumesNotMapped.add(volume);
             }
@@ -2321,11 +2309,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     /**
      *  Builds the map of storage pools and volumes with the information entered by the user. Before creating the an entry we validate if the migration is feasible checking if the migration is allowed and if the target host can access the defined target storage pool.
      */
-    private void buildMapUsingUserInformation(VirtualMachineProfile profile, Host targetHost, Map<Long, Long> volumeToPool, Map<Volume, StoragePool> volumeToPoolObjectMap) {
-        for(Long volumeId: volumeToPool.keySet()) {
+    private void buildMapUsingUserInformation(VirtualMachineProfile profile, Host targetHost, Map<Long, Long> userDefinedVolumeToStoragePoolMap, Map<Volume, StoragePool> volumeToPoolObjectMap) {
+        if (MapUtils.isEmpty(userDefinedVolumeToStoragePoolMap)) {
+            return;
+        }
+        for(Long volumeId: userDefinedVolumeToStoragePoolMap.keySet()) {
             VolumeVO volume = _volsDao.findById(volumeId);
 
-            Long poolId = volumeToPool.get(volumeId);
+            Long poolId = userDefinedVolumeToStoragePoolMap.get(volumeId);
             StoragePoolVO targetPool = _storagePoolDao.findById(poolId);
             StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
 
@@ -2435,7 +2426,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
-     * We use {@link StoragePoolAllocator} objects to find local storage pools connected to the targetHost where we would be able to allocate the given volume.
+     * We use {@link StoragePoolAllocator} objects to find storage pools connected to the targetHost where we would be able to allocate the given volume.
      */
     private List<StoragePool> getCandidateStoragePoolsToMigrateLocalVolume(VirtualMachineProfile profile, Host targetHost, Volume volume) {
         List<StoragePool> poolList = new ArrayList<>();
@@ -2550,7 +2541,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         // Create a map of which volume should go in which storage pool.
         final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-        final Map<Volume, StoragePool> volumeToPoolMap = getPoolListForVolumesForMigration(profile, destHost, volumeToPool);
+        final Map<Volume, StoragePool> volumeToPoolMap = createMappingVolumeAndStoragePool(profile, destHost, volumeToPool);
 
         // If none of the volumes have to be migrated, fail the call. Administrator needs to make a call for migrating
         // a vm and not migrating a vm with storage.

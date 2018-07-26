@@ -24,7 +24,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -194,35 +193,6 @@ public class VirtualMachineManagerImplTest {
         when(serviceOfferingMock.getTags()).thenReturn("z,x,y");
 
         virtualMachineManagerImpl.checkIfCanUpgrade(vmInstanceMock, serviceOfferingMock);
-    }
-
-    @Test
-    public void getPoolListForVolumesForMigrationTestEmptyVolumeMap() {
-        Mockito.doReturn(new HashMap<>()).when(virtualMachineManagerImpl).getDefaultMappingOfVolumesAndStoragePoolForMigration(virtualMachineProfileMock, hostMock);
-        Mockito.doReturn(new HashMap<>()).when(virtualMachineManagerImpl).createMappingVolumeAndStoragePoolEnteredByUser(Mockito.eq(virtualMachineProfileMock), Mockito.eq(hostMock),
-                Mockito.anyMapOf(Long.class, Long.class));
-
-        virtualMachineManagerImpl.getPoolListForVolumesForMigration(virtualMachineProfileMock, hostMock, new HashMap<>());
-
-        Mockito.verify(virtualMachineManagerImpl, Mockito.times(1)).getDefaultMappingOfVolumesAndStoragePoolForMigration(virtualMachineProfileMock, hostMock);
-        Mockito.verify(virtualMachineManagerImpl, Mockito.times(0)).createMappingVolumeAndStoragePoolEnteredByUser(Mockito.eq(virtualMachineProfileMock), Mockito.eq(hostMock),
-                Mockito.anyMapOf(Long.class, Long.class));
-    }
-
-    @Test
-    public void getPoolListForVolumesForMigrationTestUserDefinedStoragePoolMigrationMap() {
-        Mockito.doReturn(new HashMap<>()).when(virtualMachineManagerImpl).getDefaultMappingOfVolumesAndStoragePoolForMigration(virtualMachineProfileMock, hostMock);
-        Mockito.doReturn(new HashMap<>()).when(virtualMachineManagerImpl).createMappingVolumeAndStoragePoolEnteredByUser(Mockito.eq(virtualMachineProfileMock), Mockito.eq(hostMock),
-                Mockito.anyMapOf(Long.class, Long.class));
-
-        HashMap<Long, Long> volumeToPool = new HashMap<>();
-        volumeToPool.put(1L, 1L);
-
-        virtualMachineManagerImpl.getPoolListForVolumesForMigration(virtualMachineProfileMock, hostMock, volumeToPool);
-
-        Mockito.verify(virtualMachineManagerImpl, Mockito.times(0)).getDefaultMappingOfVolumesAndStoragePoolForMigration(virtualMachineProfileMock, hostMock);
-        Mockito.verify(virtualMachineManagerImpl, Mockito.times(1)).createMappingVolumeAndStoragePoolEnteredByUser(Mockito.eq(virtualMachineProfileMock), Mockito.eq(hostMock),
-                Mockito.anyMapOf(Long.class, Long.class));
     }
 
     @Test
