@@ -35,38 +35,40 @@ public class ConsoleProxyInfo {
 
     public ConsoleProxyInfo(boolean sslEnabled, String proxyIpAddress, int port, int proxyUrlPort, String consoleProxyUrlDomain) {
         this.sslEnabled = sslEnabled;
+        this.proxyPort = port;
+        this.proxyUrlPort = proxyUrlPort;
+        this.proxyAddress = this.formatProxyAddress(consoleProxyUrlDomain, proxyIpAddress);
 
         if (sslEnabled) {
-            StringBuffer sb = new StringBuffer();
-            if (consoleProxyUrlDomain.startsWith("*")) {
-                sb.append(proxyIpAddress);
-                for (int i = 0; i < proxyIpAddress.length(); i++)
-                    if (sb.charAt(i) == '.')
-                        sb.setCharAt(i, '-');
-                sb.append(consoleProxyUrlDomain.substring(1));//skip the *
-            } else {
-                //LB address
-                sb.append(consoleProxyUrlDomain);
-            }
-            proxyAddress = sb.toString();
-            proxyPort = port;
-            this.proxyUrlPort = proxyUrlPort;
-
             proxyImageUrl = "https://" + proxyAddress;
-            if (proxyUrlPort != 443)
+            if (proxyUrlPort != 443) {
                 proxyImageUrl += ":" + this.proxyUrlPort;
-        } else {
-            proxyAddress = proxyIpAddress;
-            if (StringUtils.isNotBlank(consoleProxyUrlDomain)) {
-                proxyAddress = consoleProxyUrlDomain;
             }
-            proxyPort = port;
-            this.proxyUrlPort = proxyUrlPort;
 
+        } else {
             proxyImageUrl = "http://" + proxyAddress;
-            if (proxyUrlPort != 80)
+            if (proxyUrlPort != 80) {
                 proxyImageUrl += ":" + proxyUrlPort;
+            }
         }
+    }
+
+    private String formatProxyAddress(String consoleProxyUrlDomain, String proxyIpAddress) {
+        StringBuffer sb = new StringBuffer();
+        // Domain in format *.example.com, proxy IP is 1.2.3.4 --> 1-2-3-4.example.com
+        if (consoleProxyUrlDomain.startsWith("*")) {
+            sb.append(proxyIpAddress.replaceAll("\\.", "-"));
+            sb.append(consoleProxyUrlDomain.substring(1)); // skip the *
+
+        // Otherwise we assume a valid domain if config not blank
+        } else if (StringUtils.isNotBlank(consoleProxyUrlDomain)) {
+            sb.append(consoleProxyUrlDomain);
+
+        // Blank config, we use the proxy IP
+        } else {
+            sb.append(proxyIpAddress);
+        }
+        return sb.toString();
     }
 
     public String getProxyAddress() {

@@ -1180,7 +1180,9 @@
                         break;
 
                     case 'setupPhysicalNetwork':
-                        physicalNetwork.init($wizard);
+                        if(!goBack) {
+                            physicalNetwork.init($wizard);
+                        }
                 }
 
                 if ($uiCustom.size()) {
