@@ -24,8 +24,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -44,15 +42,12 @@ import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StopAnswer;
 import com.cloud.agent.api.StopCommand;
 import com.cloud.deploy.DeploymentPlanner;
-import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.ScopeType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -275,32 +270,4 @@ public class VirtualMachineManagerImplTest {
 
         Assert.assertFalse(returnedValue);
     }
-
-    @Test
-    public void getDefaultMappingOfVolumesAndStoragePoolForMigrationTestSharedStorageMigratingToHostOfSameCluster() {
-        Mockito.doNothing().when(virtualMachineManagerImpl).createVolumeToStoragePoolMappingIfPossible(Mockito.any(VirtualMachineProfile.class), Mockito.any(Host.class),
-                Mockito.anyMapOf(Volume.class, StoragePool.class), Mockito.any(VolumeVO.class), Mockito.any(StoragePoolVO.class));
-
-        Mockito.doNothing().when(virtualMachineManagerImpl).executeManagedStorageChecks(Mockito.any(Host.class), Mockito.any(StoragePoolVO.class), Mockito.any(VolumeVO.class));
-        Mockito.doReturn(false).when(virtualMachineManagerImpl).isStorageCrossClusterMigration(Mockito.any(Host.class), Mockito.any(StoragePoolVO.class));
-
-        Mockito.doReturn(ScopeType.CLUSTER).when(storagePoolVoMock).getScope();
-
-        List<VolumeVO> listOfVolumesForVm = new ArrayList<>();
-        listOfVolumesForVm.add(volumeVoMock);
-
-        Mockito.doReturn(listOfVolumesForVm).when(volumeDaoMock).findUsableVolumesForInstance(vmInstanceVoMockId);
-        Mockito.doReturn(storagePoolVoMock).when(storagePoolDaoMock).findById(storagePoolVoMockId);
-
-        Map<Volume, StoragePool> defaultMappingOfVolumesAndStoragePoolForMigration = virtualMachineManagerImpl.getDefaultMappingOfVolumesAndStoragePoolForMigration(virtualMachineProfileMock,
-                hostMock);
-
-        Assert.assertEquals(1, defaultMappingOfVolumesAndStoragePoolForMigration.size());
-        Assert.assertEquals(defaultMappingOfVolumesAndStoragePoolForMigration.get(volumeVoMock), storagePoolVoMock);
-
-        Mockito.verify(virtualMachineManagerImpl).executeManagedStorageChecks(hostMock, storagePoolVoMock, volumeVoMock);
-        Mockito.verify(virtualMachineManagerImpl).isStorageCrossClusterMigration(hostMock, storagePoolVoMock);
-
-    }
 }
-

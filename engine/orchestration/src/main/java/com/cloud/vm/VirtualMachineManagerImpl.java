@@ -2283,7 +2283,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * If the user did not enter a complete mapping, the volumes that were left behind will be auto mapped using {@link #createStoragePoolMappingsForVolumes(VirtualMachineProfile, Host, Map, List)}
      */
     protected Map<Volume, StoragePool> createMappingVolumeAndStoragePool(VirtualMachineProfile profile, Host targetHost, Map<Long, Long> userDefinedMapOfVolumesAndStoragePools) {
-        Map<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<Volume, StoragePool>();
+        Map<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<>();
         buildMapUsingUserInformation(profile, targetHost, userDefinedMapOfVolumesAndStoragePools, volumeToPoolObjectMap);
 
         List<Volume> volumesNotMapped = findVolumesThatWereNotMappedByTheUser(profile, volumeToPoolObjectMap);
@@ -2334,20 +2334,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
-     * We create the default mapping of volumes and storage pools for the migration of the VM to the target host. We execute the following checks an operations according to some scenarios:
-     * <ul>
-     *  <li>If the current storage pool of one of the volumes is using local storage in the host, it then needs to be migrated to a local storage in the target host. Otherwise, we do not need to migrate, and the volume can be kept in its current storage pool.
-     *  <li>If the current storage pool cluster is different from the target host cluster, we need to migrate the volume to one storage pool at the target cluster where the target host resides on.
-     * </ul>
-     */
-    protected Map<Volume, StoragePool> getDefaultMappingOfVolumesAndStoragePoolForMigration(VirtualMachineProfile profile, Host targetHost) {
-        Map<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<Volume, StoragePool>();
-        List<VolumeVO> allVolumes = _volsDao.findUsableVolumesForInstance(profile.getId());
-        createStoragePoolMappingsForVolumes(profile, targetHost, volumeToPoolObjectMap, new ArrayList<>(allVolumes));
-        return volumeToPoolObjectMap;
-    }
-
-    /**
      * For each one of the volumes we will map it to a storage pool that is available via the target host.
      * An exception is thrown if we cannot find a storage pool that is accessible in the target host to migrate the volume to.
      */
@@ -2381,8 +2367,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         if (currentPool.getClusterId() == targetHost.getClusterId()) {
             return;
         }
-        throw new CloudRuntimeException(String.format("Currently, a volume on managed storage can only be 'migrated' to itself [volumeId=%s, storageId=%s, targetHostId=%s].", volume.getUuid(),
-                currentPool.getUuid(), targetHost.getUuid()));
+        throw new CloudRuntimeException(String.format("Currently, you can only 'migrate' a volume on managed storage if its storage pool is zone wide " +
+                "[volumeId=%s, storageId=%s, targetHostId=%s].", volume.getUuid(), currentPool.getUuid(), targetHost.getUuid()));
     }
 
     /**
