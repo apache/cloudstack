@@ -3243,6 +3243,7 @@
             }
 
             allowedActions.push("viewConsole");
+            allowedActions.push("resetSSHKeyForVirtualMachine");
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("edit");
             if (isAdmin())
