@@ -2320,7 +2320,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             StoragePoolVO targetPool = _storagePoolDao.findById(poolId);
             StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
 
-            executeManagedStorageChecks(targetHost, currentPool, volume);
+            executeManagedStorageChecksWhenTargetStoragePoolProvided(currentPool, volume, targetPool);
             if (_poolHostDao.findByPoolHost(targetPool.getId(), targetHost.getId()) == null) {
                 throw new CloudRuntimeException(
                         String.format("Cannot migrate the volume [%s] to the storage pool [%s] while migrating VM [%s] to target host [%s]. The host does not have access to the storage pool entered.",
@@ -2341,7 +2341,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         for (Volume volume : allVolumes) {
             StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
 
-            executeManagedStorageChecks(targetHost, currentPool, volume);
+            executeManagedStorageChecksWhenTargetStoragePoolNotProvided(targetHost, currentPool, volume);
             if (ScopeType.HOST.equals(currentPool.getScope()) || isStorageCrossClusterMigration(targetHost, currentPool)) {
                 createVolumeToStoragePoolMappingIfPossible(profile, targetHost, volumeToPoolObjectMap, volume, currentPool);
             } else {
@@ -2357,18 +2357,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      *      <li> Cross cluster migration with cluster-wide storage pool. Volumes in managed storage cannot be migrated out of their current pool. Therefore, an exception is thrown.
      *  </ul>
      */
-    protected void executeManagedStorageChecks(Host targetHost, StoragePoolVO currentPool, Volume volume) {
+    protected void executeManagedStorageChecksWhenTargetStoragePoolProvided(StoragePoolVO currentPool, Volume volume, StoragePoolVO targetPool) {
+        if (!currentPool.isManaged()) {
+            return;
+        }
+        if (currentPool.getId() == targetPool.getId()) {
+            return;
+        }
+        throw new CloudRuntimeException(String.format("Currently, a volume on managed storage can only be 'migrated' to itself " + "[volumeId=%s, currentStoragePoolId=%s, targetStoragePoolId=%s].",
+                volume.getUuid(), currentPool.getUuid(), targetPool.getUuid()));
+    }
+
+    protected void executeManagedStorageChecksWhenTargetStoragePoolNotProvided(Host targetHost, StoragePoolVO currentPool, Volume volume) {
         if (!currentPool.isManaged()) {
             return;
         }
         if (ScopeType.ZONE.equals(currentPool.getScope())) {
             return;
         }
-        if (currentPool.getClusterId() == targetHost.getClusterId()) {
-            return;
-        }
-        throw new CloudRuntimeException(String.format("Currently, you can only 'migrate' a volume on managed storage if its storage pool is zone wide " +
-                "[volumeId=%s, storageId=%s, targetHostId=%s].", volume.getUuid(), currentPool.getUuid(), targetHost.getUuid()));
+        throw new CloudRuntimeException(
+                String.format("Currently, you can only 'migrate' a volume on managed storage if its storage pool is zone wide " + "[volumeId=%s, storageId=%s, targetHostId=%s].", volume.getUuid(),
+                        currentPool.getUuid(), targetHost.getUuid()));
     }
 
     /**
