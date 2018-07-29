@@ -20,6 +20,8 @@ import logging
 import os
 import re
 import subprocess
+import ifcfg
+import json
 
 class networkConfig:
     class devInfo:
@@ -137,20 +139,20 @@ class networkConfig:
         netmask = None
         ipAddr = None
         macAddr = None
+        bcastAddr = None
 
-        cmd = bash("ifconfig " + dev)
-        if not cmd.isSuccess():
-            logging.debug("Failed to get address from ifconfig")
-            raise CloudInternalException("Failed to get network info by ifconfig %s"%dev)
-
-        for line in cmd.getLines():
-            if line.find("HWaddr") != -1:
-                macAddr = line.split("HWaddr ")[1].strip(" ")
-            elif line.find("inet ") != -1:
-                m = re.search("addr:(.*)\ *Bcast:(.*)\ *Mask:(.*)", line)
-                if m is not None:
-                    ipAddr = m.group(1).rstrip(" ")
-                    netmask = m.group(3).rstrip(" ")
+        for name, interface in ifcfg.interfaces().items():
+            if interface['device'] == dev:
+                # do something with interface
+                ipAddr = interface['inet']         # First IPv4 found
+                netmask = interface['netmask']
+                bcastAddr = interface['broadcast']
+                macAddr = interface['ether']
+                
+                logging.debug("ipAddr: " + ipAddr)
+                logging.debug("netmask: " + netmask)
+                logging.debug("bcastAddr: " + bcastAddr)
+                logging.debug("macAddr: " + macAddr)
 
         if networkConfig.isBridgePort(dev):
             type = "brport"
