@@ -139,10 +139,9 @@ class networkConfig:
         netmask = None
         ipAddr = None
         macAddr = None
-        bcastAddr = None
 
         for name, interface in ifcfg.interfaces().items():
-            if interface['device'] == dev:
+            if interface['device'] == dev and interface['inet'] != None:
                 # do something with interface
                 ipAddr = interface['inet']         # First IPv4 found
                 netmask = interface['netmask']
@@ -151,7 +150,6 @@ class networkConfig:
                 
                 logging.debug("ipAddr: " + ipAddr)
                 logging.debug("netmask: " + netmask)
-                logging.debug("bcastAddr: " + bcastAddr)
                 logging.debug("macAddr: " + macAddr)
 
         if networkConfig.isBridgePort(dev):
