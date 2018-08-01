@@ -2372,24 +2372,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      *  Executes the managed storage checks for the volumes that the user has not entered a mapping of <volume, storage pool>. The following checks are performed.
      *   <ul>
      *      <li> If the current storage pool is not a managed storage, we do not need to proceed with this method;
-     *      <li> If the current storage pool is zone-wide, any migration is allowed and we do not need to proceed with the checks;
-     *      <li> If the current storage pool is not zone-wide, it means it is cluster-wide. Then, the target host must be in the same cluster of the current storage pool. This means, no migration will happen for the volume, only the VM will move to a different host.
+     *      <li> We check if the target host has access to the current managed storage pool. If it does not have an exception will be thrown.
      *   </ul>
-     *   If all of the checks fail, we throw an exception saying that volumes on managed storage pools cannot be migrated out of the storage pools they were initially placed.
      */
     private void executeManagedStorageChecksWhenTargetStoragePoolNotProvided(Host targetHost, StoragePoolVO currentPool, Volume volume) {
         if (!currentPool.isManaged()) {
             return;
         }
-        if (ScopeType.ZONE.equals(currentPool.getScope())) {
-            return;
+        if (_poolHostDao.findByPoolHost(currentPool.getId(), targetHost.getId()) == null) {
+            throw new CloudRuntimeException(String.format("The target host does not have access to the volume's managed storage pool. [volumeId=%s, storageId=%s, targetHostId=%s].", volume.getUuid(),
+                    currentPool.getUuid(), targetHost.getUuid()));
         }
-        if (targetHost.getClusterId() == currentPool.getClusterId()) {
-            return;
-        }
-        throw new CloudRuntimeException(
-                String.format("Currently, you can only 'migrate' a volume on managed storage if its storage pool is zone wide " + "[volumeId=%s, storageId=%s, targetHostId=%s].", volume.getUuid(),
-                        currentPool.getUuid(), targetHost.getUuid()));
     }
 
     /**
