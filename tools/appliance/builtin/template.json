@@ -23,9 +23,9 @@
       "disk_interface": "virtio",
       "net_device": "virtio-net",
 
-      "iso_url": "http://mirror.nbrc.ac.in/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1808.iso",
+      "iso_url": "http://mirror.nbrc.ac.in/centos/7/isos/x86_64/CentOS-7-x86_64-Minimal-1804.iso",
       "iso_checksum": "13675c6f74880e7ff3481b91bdaf925ce81bda8f",
-      "iso_checksum_type": "md5",
+      "iso_checksum_type": "sha1",
 
       "vm_name": "builtin",
       "output_directory": "../dist",
