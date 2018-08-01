@@ -2298,8 +2298,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private List<Volume> findVolumesThatWereNotMappedByTheUser(VirtualMachineProfile profile, Map<Volume, StoragePool> volumeToStoragePoolObjectMap) {
         List<VolumeVO> allVolumes = _volsDao.findUsableVolumesForInstance(profile.getId());
         List<Volume> volumesNotMapped = new ArrayList<>();
-        for (Volume volume : volumeToStoragePoolObjectMap.keySet()) {
-            if (!allVolumes.contains(volume)) {
+        for (Volume volume : allVolumes) {
+            if (!volumeToStoragePoolObjectMap.containsKey(volume)) {
                 volumesNotMapped.add(volume);
             }
         }
