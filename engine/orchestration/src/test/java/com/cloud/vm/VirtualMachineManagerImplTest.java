@@ -191,54 +191,6 @@ public class VirtualMachineManagerImplTest {
     }
 
     @Test
-    public void executeManagedStorageChecksTestNonManagedStorage() {
-        Mockito.doReturn(false).when(storagePoolVoMock).isManaged();
-
-        virtualMachineManagerImpl.executeManagedStorageChecks(hostMock, storagePoolVoMock, volumeVoMock);
-
-        Mockito.verify(storagePoolVoMock).isManaged();
-        Mockito.verify(storagePoolVoMock, Mockito.times(0)).getClusterId();
-        Mockito.verify(storagePoolVoMock, Mockito.times(0)).getScope();
-    }
-
-    @Test
-    public void executeManagedStorageChecksTestManagedStorageAndSameClusterAsTargetHost() {
-        Mockito.doReturn(true).when(storagePoolVoMock).isManaged();
-        Mockito.doReturn(1L).when(hostMock).getClusterId();
-        Mockito.doReturn(1L).when(storagePoolVoMock).getClusterId();
-
-        virtualMachineManagerImpl.executeManagedStorageChecks(hostMock, storagePoolVoMock, volumeVoMock);
-
-        Mockito.verify(storagePoolVoMock).isManaged();
-        Mockito.verify(storagePoolVoMock, Mockito.times(1)).getClusterId();
-        Mockito.verify(storagePoolVoMock, Mockito.times(1)).getScope();
-    }
-
-    @Test
-    public void executeManagedStorageChecksTestManagedStorageAndDifferentClusterAsTargetHostWithZoneWideStorage() {
-        Mockito.doReturn(true).when(storagePoolVoMock).isManaged();
-        Mockito.doReturn(1L).when(hostMock).getClusterId();
-        Mockito.doReturn(2L).when(storagePoolVoMock).getClusterId();
-        Mockito.doReturn(ScopeType.ZONE).when(storagePoolVoMock).getScope();
-
-        virtualMachineManagerImpl.executeManagedStorageChecks(hostMock, storagePoolVoMock, volumeVoMock);
-
-        Mockito.verify(storagePoolVoMock).isManaged();
-        Mockito.verify(storagePoolVoMock, Mockito.times(0)).getClusterId();
-        Mockito.verify(storagePoolVoMock, Mockito.times(1)).getScope();
-    }
-
-    @Test(expected = CloudRuntimeException.class)
-    public void executeManagedStorageChecksTestManagedStorageAndDifferentClusterAsTargetHostWithClusterWideStorage() {
-        Mockito.doReturn(true).when(storagePoolVoMock).isManaged();
-        Mockito.doReturn(1L).when(hostMock).getClusterId();
-        Mockito.doReturn(2L).when(storagePoolVoMock).getClusterId();
-        Mockito.doReturn(ScopeType.CLUSTER).when(storagePoolVoMock).getScope();
-
-        virtualMachineManagerImpl.executeManagedStorageChecks(hostMock, storagePoolVoMock, volumeVoMock);
-    }
-
-    @Test
     public void isStorageCrossClusterMigrationTestStorageTypeEqualsCluster() {
         Mockito.doReturn(1L).when(hostMock).getClusterId();
         Mockito.doReturn(2L).when(storagePoolVoMock).getClusterId();

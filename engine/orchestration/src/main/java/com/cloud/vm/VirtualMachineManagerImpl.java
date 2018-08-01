@@ -2320,7 +2320,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             StoragePoolVO targetPool = _storagePoolDao.findById(poolId);
             StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
 
-            executeManagedStorageChecks(targetHost, currentPool, volume);
+            executeManagedStorageChecksWhenTargetStoragePoolProvided(currentPool, volume, targetPool);
             if (_poolHostDao.findByPoolHost(targetPool.getId(), targetHost.getId()) == null) {
                 throw new CloudRuntimeException(
                         String.format("Cannot migrate the volume [%s] to the storage pool [%s] while migrating VM [%s] to target host [%s]. The host does not have access to the storage pool entered.",
@@ -2334,6 +2334,24 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
+     *  Executes the managed storage checks for the mapping<volume, storage pool> entered by the user. The checks execute by this method are the following.
+     *  <ul>
+     *      <li> If the current storage pool of the volume is not a managed storage, we do not need to validate anything here.
+     *      <li> If the current storage pool is a managed storage and the target storage pool ID is different from the current one, we throw an exception.
+     *  </ul>
+     */
+    private void executeManagedStorageChecksWhenTargetStoragePoolProvided(StoragePoolVO currentPool, VolumeVO volume, StoragePoolVO targetPool) {
+        if (!currentPool.isManaged()) {
+            return;
+        }
+        if (currentPool.getId() == targetPool.getId()) {
+            return;
+        }
+        throw new CloudRuntimeException(String.format("Currently, a volume on managed storage can only be 'migrated' to itself " + "[volumeId=%s, currentStoragePoolId=%s, targetStoragePoolId=%s].",
+                volume.getUuid(), currentPool.getUuid(), targetPool.getUuid()));
+    }
+
+    /**
      * For each one of the volumes we will map it to a storage pool that is available via the target host.
      * An exception is thrown if we cannot find a storage pool that is accessible in the target host to migrate the volume to.
      */
@@ -2341,7 +2359,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         for (Volume volume : allVolumes) {
             StoragePoolVO currentPool = _storagePoolDao.findById(volume.getPoolId());
 
-            executeManagedStorageChecks(targetHost, currentPool, volume);
+            executeManagedStorageChecksWhenTargetStoragePoolNotProvided(targetHost, currentPool, volume);
             if (ScopeType.HOST.equals(currentPool.getScope()) || isStorageCrossClusterMigration(targetHost, currentPool)) {
                 createVolumeToStoragePoolMappingIfPossible(profile, targetHost, volumeToPoolObjectMap, volume, currentPool);
             } else {
@@ -2351,24 +2369,27 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     }
 
     /**
-     *  If we the volume is placed in a managed storage we execute the following checks:
-     *  <ul>
-     *      <li> If the volume is not placed in a managed storage, then we do not need to proceed with these checks
-     *      <li> Cross cluster migration with cluster-wide storage pool. Volumes in managed storage cannot be migrated out of their current pool. Therefore, an exception is thrown.
-     *  </ul>
+     *  Executes the managed storage checks for the volumes that the user has not entered a mapping of <volume, storage pool>. The following checks are performed.
+     *   <ul>
+     *      <li> If the current storage pool is not a managed storage, we do not need to proceed with this method;
+     *      <li> If the current storage pool is zone-wide, any migration is allowed and we do not need to proceed with the checks;
+     *      <li> If the current storage pool is not zone-wide, it means it is cluster-wide. Then, the target host must be in the same cluster of the current storage pool. This means, no migration will happen for the volume, only the VM will move to a different host.
+     *   </ul>
+     *   If all of the checks fail, we throw an exception saying that volumes on managed storage pools cannot be migrated out of the storage pools they were initially placed.
      */
-    protected void executeManagedStorageChecks(Host targetHost, StoragePoolVO currentPool, Volume volume) {
+    private void executeManagedStorageChecksWhenTargetStoragePoolNotProvided(Host targetHost, StoragePoolVO currentPool, Volume volume) {
         if (!currentPool.isManaged()) {
             return;
         }
         if (ScopeType.ZONE.equals(currentPool.getScope())) {
             return;
         }
-        if (currentPool.getClusterId() == targetHost.getClusterId()) {
+        if (targetHost.getClusterId() == currentPool.getClusterId()) {
             return;
         }
-        throw new CloudRuntimeException(String.format("Currently, a volume on managed storage can only be 'migrated' to itself " + "[volumeId=%s, currentStoragePoolId=%s, targetHostID=%s].",
-                volume.getUuid(), currentPool.getUuid(), targetHost.getUuid()));
+        throw new CloudRuntimeException(
+                String.format("Currently, you can only 'migrate' a volume on managed storage if its storage pool is zone wide " + "[volumeId=%s, storageId=%s, targetHostId=%s].", volume.getUuid(),
+                        currentPool.getUuid(), targetHost.getUuid()));
     }
 
     /**
