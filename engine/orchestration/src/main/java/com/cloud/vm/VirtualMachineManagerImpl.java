@@ -2283,8 +2283,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
      * If the user did not enter a complete mapping, the volumes that were left behind will be auto mapped using {@link #createStoragePoolMappingsForVolumes(VirtualMachineProfile, Host, Map, List)}
      */
     protected Map<Volume, StoragePool> createMappingVolumeAndStoragePool(VirtualMachineProfile profile, Host targetHost, Map<Long, Long> userDefinedMapOfVolumesAndStoragePools) {
-        Map<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<>();
-        buildMapUsingUserInformation(profile, targetHost, userDefinedMapOfVolumesAndStoragePools, volumeToPoolObjectMap);
+        Map<Volume, StoragePool> volumeToPoolObjectMap = buildMapUsingUserInformation(profile, targetHost, userDefinedMapOfVolumesAndStoragePools);
 
         List<Volume> volumesNotMapped = findVolumesThatWereNotMappedByTheUser(profile, volumeToPoolObjectMap);
         createStoragePoolMappingsForVolumes(profile, targetHost, volumeToPoolObjectMap, volumesNotMapped);
@@ -2309,9 +2308,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     /**
      *  Builds the map of storage pools and volumes with the information entered by the user. Before creating the an entry we validate if the migration is feasible checking if the migration is allowed and if the target host can access the defined target storage pool.
      */
-    private void buildMapUsingUserInformation(VirtualMachineProfile profile, Host targetHost, Map<Long, Long> userDefinedVolumeToStoragePoolMap, Map<Volume, StoragePool> volumeToPoolObjectMap) {
+    private Map<Volume, StoragePool> buildMapUsingUserInformation(VirtualMachineProfile profile, Host targetHost, Map<Long, Long> userDefinedVolumeToStoragePoolMap) {
+        Map<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<>();
         if (MapUtils.isEmpty(userDefinedVolumeToStoragePoolMap)) {
-            return;
+            return volumeToPoolObjectMap;
         }
         for(Long volumeId: userDefinedVolumeToStoragePoolMap.keySet()) {
             VolumeVO volume = _volsDao.findById(volumeId);
@@ -2331,6 +2331,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             }
             volumeToPoolObjectMap.put(volume, targetPool);
         }
+        return volumeToPoolObjectMap;
     }
 
     /**
