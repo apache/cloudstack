@@ -1359,18 +1359,18 @@
                     $wizard.find('div.data-disk-offering span.custom-disk-size').html(_s(old));
                 });
 
+                var wizardWidth = 950;
+                if($.browser.mozilla){
+                    wizardWidth = 896;
+                }
                 
                 var wizardDialog = $wizard.dialog({
                     title: _l('label.vm.add'),
-                    width: 896,
+                    width: wizardWidth,
                     height: 570,
                     closeOnEscape: false
                 });
-                var wizardDialogDiv = wizardDialog.closest('.ui-dialog');
-                wizardDialogDiv.css('z-index', 5001);
-                
-                $('button.ui-dialog-titlebar-close').remove()
-                return wizardDialogDiv.overlay();
+                return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton(wizardDialog, 5001)
             };
 
             instanceWizard(args);
