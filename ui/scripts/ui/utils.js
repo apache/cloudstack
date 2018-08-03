@@ -149,7 +149,7 @@
     var applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton = function($dialog, customZindex){
         var defaultZindex = 5000;
         if(!customZindex){
-            var customZindex = defaultZindex;
+            customZindex = defaultZindex;
         }
         $('button.ui-dialog-titlebar-close').remove()
         
