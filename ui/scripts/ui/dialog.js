@@ -1046,7 +1046,7 @@
                     }]
                 });
                              
-                return cloudStack.cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog, 5001);
+                return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog, 5001);
             }
             return false;
         }
