@@ -30,7 +30,7 @@ logging.basicConfig(filename='/var/log/cloud.log', level=logging.INFO, format='%
 
 # first commandline argument should be the file to process
 if (len(sys.argv) != 2):
-    logging.error("Invalid usage, args passed: %" % sys.argv )
+    logging.error("Invalid usage, args passed: %" % sys.argv)
     sys.exit(1)
 
 # FIXME we should get this location from a configuration class
