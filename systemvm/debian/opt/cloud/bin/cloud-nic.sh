@@ -69,7 +69,7 @@ unplug_nic() {
 
 action=$1
 dev=$2
-tableNo=${dev:3}
+tableNo=$((100+${dev:3}))
 tableName="Table_$dev"
 
 if [ $action == 'add' ]

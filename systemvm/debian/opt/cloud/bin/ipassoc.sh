@@ -103,7 +103,7 @@ remove_routing() {
   logger -t cloud "$(basename $0):Remove routing $pubIp on interface $ethDev"
   local ipNoMask=$(echo $pubIp | awk -F'/' '{print $1}')
   local mask=$(echo $pubIp | awk -F'/' '{print $2}')
-  local tableNo=$(echo $ethDev | awk -F'eth' '{print $2}')
+  local tableNo=$((100+$(echo $ethDev | awk -F'eth' '{print $2}')))
 
   local tableName="Table_$ethDev"
   local remainip=`ip addr show $ethDev | grep "inet "`
@@ -149,7 +149,7 @@ add_routing() {
 
   local tableName="Table_$ethDev"
   local tablePresent=$(grep $tableName /etc/iproute2/rt_tables)
-  local tableNo=$(echo $ethDev | awk -F'eth' '{print $2}')
+  local tableNo=$((100+$(echo $ethDev | awk -F'eth' '{print $2}')))
   if [ "$tablePresent" == "" ]
   then
      if [ "$tableNo" == "" ]
