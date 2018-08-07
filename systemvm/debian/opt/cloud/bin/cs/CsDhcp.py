@@ -107,7 +107,7 @@ class CsDhcp(CsDataBag):
             if self.config.is_vpc():
                 netmask = gn.get_netmask()
             else:
-                netmask = self.config.address().get_guest_netmask()
+                netmask = str(i['network'].netmask)
             sline = "dhcp-option=tag:interface-%s-%s,1," % (device, idx)
             line = "dhcp-option=tag:interface-%s-%s,1,%s" % (device, idx, netmask)
             self.conf.search(sline, line)
