@@ -22126,6 +22126,10 @@
             allowedActions.push('upgradeRouterToUseNewerTemplate');
         }
 
+        if (isAdmin() || jsonObj.state == 'Running') {
+            allowedActions.push("viewConsole");
+        }
+
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
 
@@ -22136,7 +22140,6 @@
 
             allowedActions.push("restart");
             allowedActions.push("remove");
-            allowedActions.push("viewConsole");
 
             if (isAdmin())
             allowedActions.push("migrate");
@@ -22155,10 +22158,12 @@
         var jsonObj = args.context.item;
         var allowedActions =[];
 
+        if (isAdmin() || jsonObj.state == 'Running') {
+            allowedActions.push("viewConsole");
+        }
+
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
-
-            allowedActions.push("viewConsole");
             if (isAdmin())
             allowedActions.push("migrate");
         } else if (jsonObj.state == 'Stopped') {
@@ -22171,6 +22176,10 @@
         var jsonObj = args.context.item;
         var allowedActions =[];
 
+        if (isAdmin() || jsonObj.state == 'Running') {
+            allowedActions.push("viewConsole");
+        }
+
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
             allowedActions.push("restart");
@@ -22181,7 +22190,6 @@
                 allowedActions.push("scaleUp");
             }
 
-            allowedActions.push("viewConsole");
             if (isAdmin())
             allowedActions.push("migrate");
         } else if (jsonObj.state == 'Stopped') {
