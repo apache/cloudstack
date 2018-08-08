@@ -22126,10 +22126,6 @@
             allowedActions.push('upgradeRouterToUseNewerTemplate');
         }
 
-        if (isAdmin() || jsonObj.state == 'Running') {
-            allowedActions.push("viewConsole");
-        }
-
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
 
@@ -22140,9 +22136,14 @@
 
             allowedActions.push("restart");
             allowedActions.push("remove");
+            allowedActions.push("viewConsole");
 
             if (isAdmin())
             allowedActions.push("migrate");
+        } else if (jsonObj.state == 'Starting') {
+            if (isAdmin()) {
+                allowedActions.push("viewConsole");
+            }
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
 
@@ -22158,14 +22159,15 @@
         var jsonObj = args.context.item;
         var allowedActions =[];
 
-        if (isAdmin() || jsonObj.state == 'Running') {
-            allowedActions.push("viewConsole");
-        }
-
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
+            allowedActions.push("viewConsole");
             if (isAdmin())
             allowedActions.push("migrate");
+        } else if (jsonObj.state == 'Starting') {
+            if (isAdmin()) {
+                allowedActions.push("viewConsole");
+            }
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
         }
@@ -22175,10 +22177,6 @@
     var systemvmActionfilter = function (args) {
         var jsonObj = args.context.item;
         var allowedActions =[];
-
-        if (isAdmin() || jsonObj.state == 'Running') {
-            allowedActions.push("viewConsole");
-        }
 
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
@@ -22190,8 +22188,13 @@
                 allowedActions.push("scaleUp");
             }
 
+            allowedActions.push("viewConsole");
             if (isAdmin())
             allowedActions.push("migrate");
+        } else if (jsonObj.state == 'Starting') {
+            if (isAdmin()) {
+                allowedActions.push("viewConsole");
+            }
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
 
