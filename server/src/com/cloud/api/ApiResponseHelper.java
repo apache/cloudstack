@@ -501,7 +501,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 snapshotResponse.setZoneId(zone.getUuid());
             }
 
-            if (volume.getVolumeType() == Volume.Type.ROOT) {
+            if (volume.getVolumeType() == Volume.Type.ROOT && volume.getInstanceId() != null) {
                 //TODO combine lines and 489 into a join in the volume dao
                 VMInstanceVO instance = ApiDBUtils.findVMInstanceById(volume.getInstanceId());
                 if (instance != null) {

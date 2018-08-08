@@ -189,7 +189,8 @@ class CsNetfilters(object):
     def add_chain(self, rule):
         """ Add the given chain if it is not already present """
         if not self.has_chain(rule.get_table(), rule.get_chain()):
-            CsHelper.execute("iptables -t %s -N %s" % (rule.get_table(), rule.get_chain()))
+            if rule.get_chain():
+                CsHelper.execute("iptables -t %s -N %s" % (rule.get_table(), rule.get_chain()))
             self.chain.add(rule.get_table(), rule.get_chain())
 
     def del_standard(self):

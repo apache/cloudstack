@@ -25,34 +25,29 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 # base - contains all resources as entities and defines create, delete,
 # list operations on them
 from marvin.lib.base import (Account,
-                            VirtualMachine,
-                            ServiceOffering,
-                            NetworkOffering,
-                            Network,
-                            Template,
-                            DiskOffering,
-                            StoragePool,
-                            Volume,
-                            Host,
-                            GuestOs)
-
-
+                             VirtualMachine,
+                             ServiceOffering,
+                             Template,
+                             DiskOffering,
+                             Volume,
+                             Host,
+                             GuestOs)
 
 # utils - utility classes for common cleanup, external library wrappers etc
 from marvin.lib.utils import cleanup_resources, get_hypervisor_type, validateList
 
 # common - commonly used methods for all tests are listed here
-from marvin.lib.common import get_zone, get_domain, get_template, list_hosts, get_pod
+from marvin.lib.common import get_zone, get_domain, get_pod
 
 from marvin.sshClient import SshClient
 
-from marvin.codes import FAILED, PASS
+from marvin.codes import FAILED
 
 from nose.plugins.attrib import attr
 
 import xml.etree.ElementTree as ET
-import code
 import logging
+
 
 class Templates:
     """Test data for templates
@@ -75,11 +70,12 @@ class Templates:
             }
         }
 
-class TestDeployVirtioSCSIVM(cloudstackTestCase):
 
+class TestDeployVirtioSCSIVM(cloudstackTestCase):
     """
     Test deploy a kvm virtio scsi template
     """
+
     @classmethod
     def setUpClass(cls):
         cls.logger = logging.getLogger('TestDeployVirtioSCSIVM')
@@ -100,7 +96,6 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
-        cls._cleanup = []
         if cls.hypervisor.lower() not in ['kvm']:
             cls.hypervisorNotSupported = True
             return
@@ -153,41 +148,38 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
 
         cls.vmhost = hosts[0]
 
-
+        # Stop VM to reset password
+        cls.virtual_machine.stop(cls.apiclient)
 
         password = cls.virtual_machine.resetPassword(cls.apiclient)
         cls.virtual_machine.username = "ubuntu"
         cls.virtual_machine.password = password
-        cls._cleanup = [
+
+        # Start VM after password reset
+        cls.virtual_machine.start(cls.apiclient)
+
+        cls.cleanup = [
             cls.template,
             cls.service_offering,
             cls.sparse_disk_offering,
             cls.account
         ]
 
-
     @classmethod
     def tearDownClass(cls):
         try:
+            cls.apiclient = super(
+                TestDeployVirtioSCSIVM,
+                cls
+            ).getClsTestClient().getApiClient()
             # Cleanup resources used
-            cleanup_resources(cls.apiclient, cls._cleanup)
+            cleanup_resources(cls.apiclient, cls.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
-        self.cleanup = []
-        return
-
-    def tearDown(self):
-        try:
-            # Clean up, terminate the created instance, volumes and snapshots
-            cleanup_resources(self.apiclient, self.cleanup)
-        except Exception as e:
-            raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     def verifyVirshState(self, diskcount):
         host = self.vmhost.ipaddress
@@ -212,14 +204,14 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             for child in disk:
                 if child.tag.lower() == "target":
                     dev = child.get("dev")
-                    self.assert_(dev != None and dev.startswith("sd"), "disk dev is invalid")
+                    self.assert_(dev is not None and dev.startswith("sd"), "disk dev is invalid")
                 elif child.tag.lower() == "address":
                     con = child.get("controller")
                     self.assertEqual(con, scsiindex, "disk controller not equal to SCSI " \
-                                     "controller index")
+                                                     "controller index")
                 elif child.tag.lower() == "driver":
                     discard = child.get("discard")
-                    if discard: # may not be defined by older qemu/libvirt
+                    if discard:  # may not be defined by older qemu/libvirt
                         self.assertEqual(discard, "unmap", "discard settings not unmap")
 
     def verifyGuestState(self, diskcount):
@@ -234,21 +226,21 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
                          "Could not find appropriate number of scsi disks in guest")
 
     def getVirshXML(self, host, instancename):
-        if host == None:
+        if host is None:
             self.logger.debug("getVirshXML: host is none")
             return ""
         else:
             self.logger.debug("host is: " + host)
-        if instancename == None:
+        if instancename is None:
             self.logger.debug("getVirshXML: instancename is none")
             return ""
         else:
             self.logger.debug("instancename is: " + instancename)
         sshc = SshClient(
-                host=host,
-                port=self.services['configurableData']['host']["publicport"],
-                user=self.hostConfig['username'],
-                passwd=self.hostConfig['password'])
+            host=host,
+            port=self.services['configurableData']['host']["publicport"],
+            user=self.hostConfig['username'],
+            passwd=self.hostConfig['password'])
 
         ssh = sshc.ssh
 
@@ -354,9 +346,8 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
         self.assertIsNotNone(ostypeid,
                              "Could not find ostypeid for Ubuntu 16.0.4 (64-bit) mapped to kvm")
 
-
         self.virtual_machine.update(self.apiclient, ostypeid=ostypeid,
-                                    details=[{"rootDiskController":"scsi"}])
+                                    details=[{"rootDiskController": "scsi"}])
 
         self.virtual_machine.start(self.apiclient)
 
@@ -370,6 +361,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
             self.skipTest("Hypervisor not supported")
 
         self.verifyGuestState(3)
+
 
 class CommandNonzeroException(Exception):
     def __init__(self, code, stderr):

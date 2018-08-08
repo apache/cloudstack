@@ -30,7 +30,7 @@ class CsRoute:
         return self.table_prefix + name
 
     def add_table(self, devicename):
-        tablenumber = devicename[3:]
+        tablenumber = 100 + int(devicename[3:])
         tablename = self.get_tablename(devicename)
         str = "%s %s" % (tablenumber, tablename)
         filename = "/etc/iproute2/rt_tables"
