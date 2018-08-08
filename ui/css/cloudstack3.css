@@ -2075,6 +2075,7 @@ div.copypasteicon:hover {
 
 .detail-view .details.group-multiple {
   float: left;
+  height: 600px;
   width: 100%;
   margin-bottom: 30px;
 }
