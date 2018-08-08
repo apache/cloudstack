@@ -27,7 +27,7 @@ class CsRule:
 
     def __init__(self, dev):
         self.dev = dev
-        self.tableNo = int(dev[3:])
+        self.tableNo = 100 + int(dev[3:])
         self.table = "Table_%s" % (dev)
 
     def addRule(self, rule):

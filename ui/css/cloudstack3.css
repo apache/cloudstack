@@ -125,6 +125,7 @@ table thead th {
   text-shadow: 0px 1px 1px #FFFFFF;
   font-weight: bold;
   white-space: nowrap;
+  cursor: pointer;
 }
 
 table thead th.sorted {
@@ -243,10 +244,7 @@ table thead th.quick-view {
   height: 14px !important;
   text-indent: 2px;
   white-space: nowrap;
-}
-
-table tbody td.quick-view {
-  cursor: pointer;
+  cursor: default;
 }
 
 table tbody td.quick-view .icon {
@@ -2077,6 +2075,7 @@ div.copypasteicon:hover {
 
 .detail-view .details.group-multiple {
   float: left;
+  height: 600px;
   width: 100%;
   margin-bottom: 30px;
 }
@@ -4988,7 +4987,7 @@ textarea {
 
 .dashboard.user .status-lists ul li.events .content li {
   width: 97%;
-  cursor: pointer;
+  cursor: default;
   margin: 6px 11px 0 0;
   font-size: 11px;
   padding: 13px 0 12px 16px;

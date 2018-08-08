@@ -2635,16 +2635,29 @@
                                                     }
                                                 });
                                             }
+                                        },
+                                        ipaddress: {
+                                            label: 'label.ip.address',
+                                            validation: {
+                                                required: false,
+                                                ipv4: true
+                                            }
                                         }
                                     }
                                 },
                                 action: function(args) {
+                                    var dataObj = {
+                                        virtualmachineid: args.context.instances[0].id,
+                                        networkid: args.data.networkid,
+                                    };
+
+                                    if (args.data.ipaddress) {
+                                        dataObj.ipaddress = args.data.ipaddress;
+                                    }
+
                                     $.ajax({
                                         url: createURL('addNicToVirtualMachine'),
-                                        data: {
-                                            virtualmachineid: args.context.instances[0].id,
-                                            networkid: args.data.networkid
-                                        },
+                                        data: dataObj,
                                         success: function(json) {
                                             args.response.success({
                                                 _custom: {

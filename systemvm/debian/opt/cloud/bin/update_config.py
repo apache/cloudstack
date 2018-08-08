@@ -30,7 +30,7 @@ logging.basicConfig(filename='/var/log/cloud.log', level=logging.INFO, format='%
 
 # first commandline argument should be the file to process
 if (len(sys.argv) != 2):
-    print "[ERROR]: Invalid usage"
+    logging.error("Invalid usage, args passed: %s" % sys.argv)
     sys.exit(1)
 
 # FIXME we should get this location from a configuration class
@@ -47,7 +47,7 @@ def finish_config():
 
 
 def process_file():
-    print "[INFO] Processing JSON file %s" % sys.argv[1]
+    logging.info("Processing JSON file %s" % sys.argv[1])
     qf = QueueFile()
     qf.setFile(sys.argv[1])
     qf.load(None)
@@ -70,7 +70,7 @@ def is_guestnet_configured(guestnet_dict, keys):
         '''
         It seems all the interfaces have been removed. Let's allow a new configuration to come in.
         '''
-        print "[WARN] update_config.py :: Reconfiguring guest network..."
+        logging.warn("update_config.py :: Reconfiguring guest network...")
         return False
 
     file = open(jsonConfigFile)
@@ -80,7 +80,7 @@ def is_guestnet_configured(guestnet_dict, keys):
         '''
         Guest network has to be removed.
         '''
-        print "[INFO] update_config.py :: Removing guest network..."
+        logging.info("update_config.py :: Removing guest network...")
         return False
 
     '''
@@ -121,7 +121,10 @@ if jsonFilename != "cmd_line.json" and os.path.isfile(jsonPath % "cmd_line.json"
     qf.load(None)
 
 if not (os.path.isfile(jsonConfigFile) and os.access(jsonConfigFile, os.R_OK)):
-    print "[ERROR] update_config.py :: Unable to read and access %s to process it" % jsonConfigFile
+    # Ignore if file is already processed
+    if os.path.isfile(jsonPath % ("processed/" + jsonFilename + ".gz")):
+        sys.exit(0)
+    logging.error("update_config.py :: Unable to read and access %s to process it" % jsonConfigFile)
     sys.exit(1)
 
 # If the guest network is already configured and have the same IP, do not try to configure it again otherwise it will break
@@ -131,14 +134,14 @@ if jsonFilename.startswith("guest_network.json"):
         guestnet_dict = json.load(file)
 
         if not is_guestnet_configured(guestnet_dict, ['eth1', 'eth2', 'eth3', 'eth4', 'eth5', 'eth6', 'eth7', 'eth8', 'eth9']):
-            print "[INFO] update_config.py :: Processing Guest Network."
+            logging.info("update_config.py :: Processing Guest Network.")
             process_file()
         else:
-            print "[INFO] update_config.py :: No need to process Guest Network."
+            logging.info("update_config.py :: No need to process Guest Network.")
             finish_config()
     else:
-        print "[INFO] update_config.py :: No GuestNetwork configured yet. Configuring first one now."
+        logging.info("update_config.py :: No GuestNetwork configured yet. Configuring first one now.")
         process_file()
 else:
-    print "[INFO] update_config.py :: Processing incoming file => %s" % sys.argv[1]
+    logging.info("update_config.py :: Processing incoming file => %s" % sys.argv[1])
     process_file()
