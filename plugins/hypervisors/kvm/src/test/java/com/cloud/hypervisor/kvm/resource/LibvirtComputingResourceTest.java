@@ -5038,7 +5038,6 @@ public class LibvirtComputingResourceTest {
             when(conn.domainLookupByID(vmId)).thenReturn(dm);
             when(dm.getMaxMemory()).thenReturn(1024L);
             when(dm.getName()).thenReturn(vmName);
-            when(libvirtComputingResource.getTotalMemory()).thenReturn(2048*1024L);
             doNothing().when(libvirtComputingResource).createVbd(conn, vmSpec, vmName, vmDef);
         } catch (final LibvirtException e) {
             fail(e.getMessage());

@@ -277,7 +277,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _rngRateBytes = 2048;
     private File _qemuSocketsPath;
     private final String _qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
-    private long _totalMemory;
     protected WatchDogAction _watchDogAction = WatchDogAction.NONE;
     protected WatchDogModel _watchDogModel = WatchDogModel.I6300ESB;
 
@@ -2603,7 +2602,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public StartupCommand[] initialize() {
 
         final List<Object> info = getHostInfo();
-        _totalMemory = (Long)info.get(2);
 
         final StartupRoutingCommand cmd =
                 new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), _hypervisorType,
@@ -3790,10 +3788,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 continue;
             }
         }
-    }
-
-    public long getTotalMemory() {
-        return _totalMemory;
     }
 
     public String getHostDistro() {
