@@ -513,7 +513,7 @@ StaticNatServiceProvider, IpDeployer {
             final List<DomainRouterVO> routers = _routerDao.listByNetworkAndRole(
                     network.getId(), Role.VIRTUAL_ROUTER);
             if (routers == null || routers.isEmpty()) {
-                s_logger.debug("Virtual router elemnt doesn't need to apply firewall rules on the backend; virtual "
+                s_logger.debug("Virtual router elemnt doesn't need to apply load balancing rules on the backend; virtual "
                         + "router doesn't exist in the network "
                         + network.getId());
                 return true;
