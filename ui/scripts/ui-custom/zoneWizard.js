@@ -1423,10 +1423,14 @@
 
             showStep(1);
 
+            var wizardWidth = 850;
+            if($.browser.mozilla){
+                wizardWidth = 750;
+            }
             var $dialog = $wizard.dialog({
                 title: _l('label.installWizard.addZone.title'),
                 closeOnEscape: false,
-                width: 750,
+                width: wizardWidth,
                 height: 665,
                 resizable: false
             });
