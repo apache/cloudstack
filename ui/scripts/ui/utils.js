@@ -146,22 +146,17 @@
         });
     };
     
-    var applyZindexOnJqueryDialog = function($dialog){
-        var $dialogDiv = $dialog.closest('.ui-dialog');
-        $dialogDiv.css('z-index', 5000);
-        return $dialogDiv;
-    };
-    cloudStack.applyDefaultZindexOnJqueryDialog = applyZindexOnJqueryDialog;
-    
-    var applyZindexAndOverlayOnJqueryDialog = function($dialog){
-        var $dialogDiv = applyZindexOnJqueryDialog($dialog);
-        return $dialogDiv.overlay();
-    };
-    cloudStack.applyDefaultZindexAndOverlayOnJqueryDialog = applyZindexAndOverlayOnJqueryDialog;
-    
-    var applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton = function($dialog){
+    var applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton = function($dialog, customZindex){
+        var defaultZindex = 5000;
+        if(!customZindex){
+            customZindex = defaultZindex;
+        }
         $('button.ui-dialog-titlebar-close').remove()
-        return applyZindexAndOverlayOnJqueryDialog($dialog)
+        
+        var $dialogDiv = $dialog.closest('.ui-dialog');
+        $dialogDiv.css('z-index', customZindex);
+        
+        return $dialogDiv.overlay();
     };
     cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton = applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton;
 })(jQuery, cloudStack);

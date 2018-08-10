@@ -1045,11 +1045,9 @@
                         }
                     }]
                 });
-                
-                $('button.ui-dialog-titlebar-close').remove();
-                return cloudStack.applyDefaultZindexOnJqueryDialog($dialog);
+                             
+                return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog, 5001);
             }
-
             return false;
         }
     };
