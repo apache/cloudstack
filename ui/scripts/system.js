@@ -22096,6 +22096,10 @@
 
             if (isAdmin())
             allowedActions.push("migrate");
+        } else if (jsonObj.state == 'Starting') {
+            if (isAdmin()) {
+                allowedActions.push("viewConsole");
+            }
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
 
@@ -22113,10 +22117,13 @@
 
         if (jsonObj.state == 'Running') {
             allowedActions.push("stop");
-
             allowedActions.push("viewConsole");
             if (isAdmin())
             allowedActions.push("migrate");
+        } else if (jsonObj.state == 'Starting') {
+            if (isAdmin()) {
+                allowedActions.push("viewConsole");
+            }
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
         }
@@ -22140,6 +22147,10 @@
             allowedActions.push("viewConsole");
             if (isAdmin())
             allowedActions.push("migrate");
+        } else if (jsonObj.state == 'Starting') {
+            if (isAdmin()) {
+                allowedActions.push("viewConsole");
+            }
         } else if (jsonObj.state == 'Stopped') {
             allowedActions.push("start");
 

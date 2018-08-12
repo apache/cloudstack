@@ -61,6 +61,10 @@ setup_router() {
     then
       log_it "Reloading udev for new udev NIC assignment"
       udevadm control --reload-rules && udevadm trigger
+      if [ "$HYPERVISOR" == "vmware" ]; then
+          sync
+          reboot
+      fi
     fi
   fi
 

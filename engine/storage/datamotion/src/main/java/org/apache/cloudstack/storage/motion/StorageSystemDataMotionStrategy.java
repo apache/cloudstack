@@ -196,10 +196,16 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     private boolean isVolumeOnManagedStorage(VolumeInfo volumeInfo) {
-        long storagePooldId = volumeInfo.getDataStore().getId();
-        StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePooldId);
+        DataStore dataStore = volumeInfo.getDataStore();
 
-        return storagePoolVO.isManaged();
+        if (dataStore.getRole() == DataStoreRole.Primary) {
+            long storagePooldId = dataStore.getId();
+            StoragePoolVO storagePoolVO = _storagePoolDao.findById(storagePooldId);
+
+            return storagePoolVO.isManaged();
+        }
+
+        return false;
     }
 
     // canHandle returns true if the storage driver for the DataObject that's passed in can support certain features (what features we
