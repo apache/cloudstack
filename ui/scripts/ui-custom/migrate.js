@@ -121,7 +121,8 @@
                         });
                     }
                 }]
-            }).parent('.ui-dialog').overlay();
+            });
+            cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dataList);
         };
     };
 }(cloudStack, jQuery));
