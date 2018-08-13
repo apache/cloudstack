@@ -100,6 +100,7 @@
 
                             $('div.overlay').fadeOut(function() {
                                 $('div.overlay').remove();
+                                $(':ui-dialog').dialog('destroy');
                             });
                         }
                         else {
