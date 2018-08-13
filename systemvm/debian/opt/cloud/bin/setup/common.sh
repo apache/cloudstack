@@ -578,24 +578,13 @@ setup_ntp() {
 }
 
 routing_svcs() {
-   systemctl disable --now cloud
-   systemctl disable --now nfs-common
-   systemctl disable --now portmap
-   systemctl enable apache2
-   systemctl enable haproxy
    echo "haproxy apache2" > /var/cache/cloud/enabled_svcs
    echo "cloud nfs-common portmap" > /var/cache/cloud/disabled_svcs
    if [ "$RROUTER" -eq "1" ]
    then
-       systemctl disable --now dnsmasq
-       systemctl enable conntrackd
-       systemctl enable keepalived
        echo "keepalived conntrackd" >> /var/cache/cloud/enabled_svcs
        echo "dnsmasq" >> /var/cache/cloud/disabled_svcs
    else
-       systemctl disable --now conntrackd
-       systemctl disable --now keepalived
-       systemctl enable dnsmasq
        echo "dnsmasq" >> /var/cache/cloud/enabled_svcs
        echo "keepalived conntrackd " >> /var/cache/cloud/disabled_svcs
    fi

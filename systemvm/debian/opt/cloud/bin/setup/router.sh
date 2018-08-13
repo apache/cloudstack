@@ -19,9 +19,7 @@
 . /opt/cloud/bin/setup/common.sh
 
 setup_router() {
-  log_it "Setting up virtual router system vm"
-
-  #To save router public interface and gw ip information
+  # To save router public interface and gw ip information
   touch /var/cache/cloud/ifaceGwIp
 
   oldmd5=
@@ -82,11 +80,11 @@ setup_router() {
   cp /etc/iptables/iptables-router /etc/iptables/rules.v4
   setup_sshd $ETH1_IP "eth1"
 
-  #Only allow DNS service for current network
+  # Only allow DNS service for current network
   sed -i "s/-A INPUT -i eth0 -p udp -m udp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p udp -m udp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
   sed -i "s/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
 
-  #setup hourly logrotate
+  # Setup hourly logrotate
   mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
 }
 

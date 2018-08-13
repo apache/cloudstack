@@ -150,21 +150,6 @@ get_boot_params() {
   esac
 }
 
-get_systemvm_type() {
-  for str in $(cat $CMDLINE)
-    do
-      KEY=$(echo $str | cut -d= -f1)
-      VALUE=$(echo $str | cut -d= -f2)
-      case $KEY in
-        type)
-          export TYPE=$VALUE
-          ;;
-        *)
-          ;;
-      esac
-  done
-}
-
 patch() {
   local PATCH_MOUNT=/media/cdrom
   local patchfile=$PATCH_MOUNT/cloud-scripts.tgz
@@ -231,11 +216,11 @@ start() {
 
   config_guest
   get_boot_params
-  get_systemvm_type
   patch
   sync
   sysctl -p
 
+  export TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
   log_it "Configuring systemvm type=$TYPE"
 
   if [ -f "/opt/cloud/bin/setup/$TYPE.sh" ]; then
