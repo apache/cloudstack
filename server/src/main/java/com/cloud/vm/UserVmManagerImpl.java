@@ -396,7 +396,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Inject
     private SSHKeyPairDao _sshKeyPairDao;
     @Inject
-    private UserVmDetailsDao _vmDetailsDao;
+    private UserVmDetailsDao userVmDetailsDao;
     @Inject
     private HypervisorCapabilitiesDao _hypervisorCapabilitiesDao;
     @Inject
@@ -449,8 +449,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     private VolumeService _volService;
     @Inject
     private VolumeDataFactory volFactory;
-    @Inject
-    private UserVmDetailsDao _uservmDetailsDao;
     @Inject
     private UUIDManager _uuidMgr;
     @Inject
@@ -1842,7 +1840,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public void saveCustomOfferingDetails(long vmId, ServiceOffering serviceOffering) {
         //save the custom values to the database.
-        Map<String, String> details = _uservmDetailsDao.listDetailsKeyPairs(vmId);
+        Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vmId);
         details.put(UsageEventVO.DynamicParameters.cpuNumber.name(), serviceOffering.getCpu().toString());
         details.put(UsageEventVO.DynamicParameters.cpuSpeed.name(), serviceOffering.getSpeed().toString());
         details.put(UsageEventVO.DynamicParameters.memory.name(), serviceOffering.getRamSize().toString());
@@ -1851,12 +1849,12 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             UserVmDetailVO detailVO = new UserVmDetailVO(vmId, entry.getKey(), entry.getValue(), true);
             detailList.add(detailVO);
         }
-        _uservmDetailsDao.saveDetails(detailList);
+        userVmDetailsDao.saveDetails(detailList);
     }
 
     @Override
     public void removeCustomOfferingDetails(long vmId) {
-        Map<String, String> details = _uservmDetailsDao.listDetailsKeyPairs(vmId);
+        Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vmId);
         details.remove(UsageEventVO.DynamicParameters.cpuNumber.name());
         details.remove(UsageEventVO.DynamicParameters.cpuSpeed.name());
         details.remove(UsageEventVO.DynamicParameters.memory.name());
@@ -1865,7 +1863,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             UserVmDetailVO detailVO = new UserVmDetailVO(vmId, entry.getKey(), entry.getValue(), true);
             detailList.add(detailVO);
         }
-        _uservmDetailsDao.saveDetails(detailList);
+        userVmDetailsDao.saveDetails(detailList);
     }
 
     @Override
@@ -2400,7 +2398,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             updateDisplayVmFlag(isDisplayVm, id, vmInstance);
         }
         if (cleanupDetails){
-            _vmDetailsDao.removeDetails(id);
+            userVmDetailsDao.removeDetails(id);
         }
         else if (MapUtils.isNotEmpty(details)) {
             vmInstance.setDetails(details);
@@ -4105,7 +4103,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
     @Override
     public boolean finalizeVirtualMachineProfile(VirtualMachineProfile profile, DeployDestination dest, ReservationContext context) {
         UserVmVO vm = _vmDao.findById(profile.getId());
-        Map<String, String> details = _vmDetailsDao.listDetailsKeyPairs(vm.getId());
+        Map<String, String> details = userVmDetailsDao.listDetailsKeyPairs(vm.getId());
         vm.setDetails(details);
 
 
@@ -4506,7 +4504,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 vm.setPassword((String)vmParamPair.second().get(VirtualMachineProfile.Param.VmPassword));
                 vm.setUpdateParameters(false);
                 if (vm.getDetail("password") != null) {
-                    _vmDetailsDao.remove(_vmDetailsDao.findDetail(vm.getId(), "password").getId());
+                    userVmDetailsDao.remove(userVmDetailsDao.findDetail(vm.getId(), "password").getId());
                 }
                 _vmDao.update(vm.getId(), vm);
             }
@@ -6185,7 +6183,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                             vm.setUpdateParameters(false);
                             _vmDao.loadDetails(vm);
                             if (vm.getDetail("password") != null) {
-                                _vmDetailsDao.remove(_vmDetailsDao.findDetail(vm.getId(), "password").getId());
+                                userVmDetailsDao.remove(userVmDetailsDao.findDetail(vm.getId(), "password").getId());
                             }
                             _vmDao.update(vm.getId(), vm);
                         }
