@@ -141,6 +141,11 @@ enable_fwding() {
   [ -f /etc/iptables/iptables.conf ] && sed  -i "s/ENABLE_ROUTING=.*$/ENABLE_ROUTING=$enabled/" /etc/iptables/iptables.conf && return
 }
 
+enable_passive_ftp() {
+  log_it "cloud: enabling passive FTP for guest VMs"
+  echo "$1" > /proc/sys/net/netfilter/nf_conntrack_helper
+}
+
 disable_rpfilter() {
   log_it "cloud: disable rp_filter"
   log_it "disable rpfilter"
