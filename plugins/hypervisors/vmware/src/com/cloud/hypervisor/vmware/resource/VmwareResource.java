@@ -2954,7 +2954,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
-    private void checkAndDeleteDatastoreFile(String filePath, List<String> skipDatastores, DatastoreMO dsMo, DatacenterMO dcMo) {
+    private void checkAndDeleteDatastoreFile(String filePath, List<String> skipDatastores, DatastoreMO dsMo, DatacenterMO dcMo) throws Exception {
         if (dsMo != null && dcMo != null && (skipDatastores == null || !skipDatastores.contains(dsMo.getName()))) {
             s_logger.debug("Deleting file: " + filePath);
             dsMo.deleteFile(filePath, dcMo.getMor(), true);
