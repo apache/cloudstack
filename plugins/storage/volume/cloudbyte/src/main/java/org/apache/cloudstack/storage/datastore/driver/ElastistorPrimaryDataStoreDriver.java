@@ -321,6 +321,9 @@ public class ElastistorPrimaryDataStoreDriver extends CloudStackPrimaryDataStore
 
     }
 
+    @Override
+    public void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo, QualityOfServiceState qualityOfServiceState) {}
+
     //this method will utilize the volume details table to add third party volume properties
     public void updateVolumeDetails(VolumeVO volume, FileSystem esvolume) {
 

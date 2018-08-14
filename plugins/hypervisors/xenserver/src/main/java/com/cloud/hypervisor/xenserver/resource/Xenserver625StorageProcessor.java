@@ -787,8 +787,12 @@ public class Xenserver625StorageProcessor extends XenServerStorageProcessor {
         final VolumeObjectTO volume = (VolumeObjectTO)destData;
         final DataStoreTO imageStore = srcData.getDataStore();
 
-        if (srcData.getDataStore() instanceof PrimaryDataStoreTO && destData.getDataStore() instanceof PrimaryDataStoreTO) {
-            return createVolumeFromSnapshot2(cmd);
+        if (isCreateManagedVolumeFromManagedSnapshot(cmd.getOptions2(), cmd.getOptions())) {
+            return createManagedVolumeFromManagedSnapshot(cmd);
+        }
+
+        if (isCreateNonManagedVolumeFromManagedSnapshot(cmd.getOptions2(), cmd.getOptions())) {
+            return createNonManagedVolumeFromManagedSnapshot(cmd);
         }
 
         if (!(imageStore instanceof NfsTO)) {

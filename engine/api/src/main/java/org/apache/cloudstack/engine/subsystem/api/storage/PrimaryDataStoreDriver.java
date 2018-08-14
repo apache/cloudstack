@@ -25,9 +25,12 @@ import com.cloud.host.Host;
 import com.cloud.storage.StoragePool;
 
 public interface PrimaryDataStoreDriver extends DataStoreDriver {
+    enum QualityOfServiceState { MIGRATION, NO_MIGRATION }
+
     String BASIC_CREATE = "basicCreate";
     String BASIC_DELETE = "basicDelete";
     String BASIC_DELETE_FAILURE = "basicDeleteFailure";
+    String BASIC_DELETE_BY_FOLDER = "basicDeleteByFolder";
     String BASIC_GRANT_ACCESS = "basicGrantAccess";
     String BASIC_REVOKE_ACCESS = "basicRevokeAccess";
     String BASIC_IQN = "basicIqn";
@@ -67,4 +70,6 @@ public interface PrimaryDataStoreDriver extends DataStoreDriver {
     void takeSnapshot(SnapshotInfo snapshot, AsyncCompletionCallback<CreateCmdResult> callback);
 
     void revertSnapshot(SnapshotInfo snapshotOnImageStore, SnapshotInfo snapshotOnPrimaryStore, AsyncCompletionCallback<CommandResult> callback);
+
+    void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo, QualityOfServiceState qualityOfServiceState);
 }

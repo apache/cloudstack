@@ -97,8 +97,16 @@ public class MigrateVolumeCommand extends Command {
         return destData;
     }
 
+    public void setSrcDetails(Map<String, String> details) {
+        srcDetails = details;
+    }
+
     public Map<String, String> getSrcDetails() {
         return srcDetails;
+    }
+
+    public void setDestDetails(Map<String, String> details) {
+        destDetails = details;
     }
 
     public Map<String, String> getDestDetails() {

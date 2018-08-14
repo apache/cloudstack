@@ -91,6 +91,7 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
     private static final long MAX_IOPS_FOR_TEMPLATE_VOLUME = 20000L;
     private static final long MIN_IOPS_FOR_TEMP_VOLUME = 100L;
     private static final long MAX_IOPS_FOR_TEMP_VOLUME = 20000L;
+    private static final long MAX_IOPS_FOR_MIGRATING_VOLUME = 20000L;
     private static final long MIN_IOPS_FOR_SNAPSHOT_VOLUME = 100L;
     private static final long MAX_IOPS_FOR_SNAPSHOT_VOLUME = 20000L;
 
@@ -686,6 +687,10 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         return getBooleanValueFromVolumeDetails(volumeId, BASIC_DELETE_FAILURE);
     }
 
+    private boolean isBasicDeleteByFolder(long volumeId) {
+        return getBooleanValueFromVolumeDetails(volumeId, PrimaryDataStoreDriver.BASIC_DELETE_BY_FOLDER);
+    }
+
     private boolean isBasicGrantAccess(long volumeId) {
         return getBooleanValueFromVolumeDetails(volumeId, BASIC_GRANT_ACCESS);
     }
@@ -1218,13 +1223,30 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
         volumeDetailsDao.removeDetail(volumeId, BASIC_DELETE_FAILURE);
     }
 
+    private void performBasicDeleteByFolder(SolidFireUtil.SolidFireConnection sfConnection, long volumeId) {
+        VolumeVO volumeVO = volumeDao.findById(volumeId);
+
+        Preconditions.checkNotNull(volumeVO, "'volumeVO' should not be 'null'.");
+
+        String folder = volumeVO.getFolder();
+
+        Preconditions.checkNotNull(folder, "'folder' should not be 'null'.");
+
+        long sfVolumeId = Long.parseLong(folder);
+
+        SolidFireUtil.deleteVolume(sfConnection, sfVolumeId);
+    }
+
     private void deleteVolume(VolumeInfo volumeInfo, long storagePoolId) {
         try {
             long volumeId = volumeInfo.getId();
 
             SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(storagePoolId, storagePoolDetailsDao);
 
-            if (isBasicDelete(volumeId)) {
+            if (isBasicDeleteByFolder(volumeId)) {
+                performBasicDeleteByFolder(sfConnection, volumeId);
+            }
+            else if (isBasicDelete(volumeId)) {
                 performBasicDelete(sfConnection, volumeId);
             }
             else if (isBasicDeleteFailure(volumeId)) {
@@ -1434,6 +1456,21 @@ public class SolidFirePrimaryDataStoreDriver implements PrimaryDataStoreDriver {
 
             callback.complete(result);
         }
+    }
+
+    @Override
+    public void handleQualityOfServiceForVolumeMigration(VolumeInfo volumeInfo, QualityOfServiceState qualityOfServiceState) {
+        SolidFireUtil.SolidFireConnection sfConnection = SolidFireUtil.getSolidFireConnection(volumeInfo.getPoolId(), storagePoolDetailsDao);
+
+        Iops iops;
+
+        if (QualityOfServiceState.MIGRATION.equals(qualityOfServiceState)) {
+            iops = getIops(volumeInfo.getMinIops(), MAX_IOPS_FOR_MIGRATING_VOLUME, volumeInfo.getPoolId());
+        } else {
+            iops = getIops(volumeInfo.getMinIops(), volumeInfo.getMaxIops(), volumeInfo.getPoolId());
+        }
+
+        SolidFireUtil.modifyVolumeQoS(sfConnection, Long.parseLong(volumeInfo.getFolder()), iops.getMinIops(), iops.getMaxIops(), iops.getBurstIops());
     }
 
     private void verifySufficientBytesForStoragePool(long requestedBytes, long storagePoolId) {
