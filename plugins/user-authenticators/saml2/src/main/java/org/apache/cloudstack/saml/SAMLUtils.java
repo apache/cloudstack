@@ -295,7 +295,7 @@ public class SAMLUtils {
             X509EncodedKeySpec spec = keyFactory.getKeySpec(key, X509EncodedKeySpec.class);
             return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), Charset.forName("UTF-8"));
         } catch (InvalidKeySpecException e) {
-            s_logger.error("Unable to create KeyFactory:" + e.getMessage());
+            s_logger.error("Unable to get KeyFactory:" + e.getMessage());
         }
         return null;
     }
@@ -313,7 +313,7 @@ public class SAMLUtils {
                     PKCS8EncodedKeySpec.class);
             return new String(org.bouncycastle.util.encoders.Base64.encode(spec.getEncoded()), Charset.forName("UTF-8"));
         } catch (InvalidKeySpecException e) {
-            s_logger.error("Unable to create KeyFactory:" + e.getMessage());
+            s_logger.error("Unable to get KeyFactory:" + e.getMessage());
         }
         return null;
     }
@@ -332,7 +332,7 @@ public class SAMLUtils {
         try {
             return keyFactory.generatePublic(x509KeySpec);
         } catch (InvalidKeySpecException e) {
-            s_logger.error("Unable to create PrivateKey from privateKey string:" + e.getMessage());
+            s_logger.error("Unable to create PublicKey from PublicKey string:" + e.getMessage());
         }
         return null;
     }
