@@ -329,15 +329,15 @@ public class CAManagerImpl extends ManagerBase implements CAManager {
                     try {
                         certificate.checkValidity(now.plusDays(CertExpiryAlertPeriod.valueIn(host.getClusterId())).toDate());
                     } catch (final CertificateExpiredException | CertificateNotYetValidException e) {
-                        LOG.warn("Certificate is going to expire for " + hostDescription);
+                        LOG.warn("Certificate is going to expire for " + hostDescription, e);
                         if (AutomaticCertRenewal.valueIn(host.getClusterId())) {
                             try {
-                                LOG.debug("Attempting certificate auto-renewal for " + hostDescription);
+                                LOG.debug("Attempting certificate auto-renewal for " + hostDescription, e);
                                 boolean result = caManager.provisionCertificate(host, false, null);
                                 if (result) {
-                                    LOG.debug("Succeeded in auto-renewing certificate for " + hostDescription);
+                                    LOG.debug("Succeeded in auto-renewing certificate for " + hostDescription, e);
                                 } else {
-                                    LOG.debug("Failed in auto-renewing certificate for " + hostDescription);
+                                    LOG.debug("Failed in auto-renewing certificate for " + hostDescription, e);
                                 }
                             } catch (final Throwable ex) {
                                 LOG.warn("Failed to auto-renew certificate for " + hostDescription + ", with error=", ex);
