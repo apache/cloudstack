@@ -8857,6 +8857,49 @@
                                                         }
                                                     },
 
+                                                    diagnostics : {
+                                                        label: 'label.action.run.diagnostics',
+//                                                        messages: {
+//                                                            notification: function (args) {
+//                                                                return 'label.action.migrate.systemvm';
+//                                                            }
+//                                                        },
+//                                                        isHidden: function (args) {
+//                                                            return !isAdmin();
+//                                                        },
+                                                        createForm: {
+                                                            title: 'label.action.run.diagnostics',
+                                                            desc: '',
+                                                            fields: {
+                                                                type: {
+                                                                    label: 'label.run.diagnostics.type',
+                                                                    validation: {
+                                                                        required: true
+                                                                    },
+                                                                    select: function (args) {
+
+                                                                    }
+                                                                },
+                                                                destination: {
+                                                                    label: 'label.run.diagnostics.destination',
+                                                                    validation: {
+                                                                        required: true
+                                                                    }
+                                                                },
+                                                                extra: {
+                                                                    label: 'label.run.diagnostics.extra'
+                                                                }
+
+                                                            }
+                                                        },
+                                                        action: function (args) {
+                                                        //delete from here
+
+                                                            //delete until here
+                                                        }
+                                                        //notification?
+                                                    },
+
                                                     scaleUp: {
                                                         label: 'label.change.service.offering',
                                                         createForm: {
