@@ -105,6 +105,7 @@ public class EventTypes {
     public static final String EVENT_ROUTER_REBOOT = "ROUTER.REBOOT";
     public static final String EVENT_ROUTER_HA = "ROUTER.HA";
     public static final String EVENT_ROUTER_UPGRADE = "ROUTER.UPGRADE";
+    public static final String EVENT_ROUTER_DIAGNOSTICS = "ROUTER.DIAGNOSTICS";
 
     // Console proxy
     public static final String EVENT_PROXY_CREATE = "PROXY.CREATE";
@@ -113,6 +114,7 @@ public class EventTypes {
     public static final String EVENT_PROXY_STOP = "PROXY.STOP";
     public static final String EVENT_PROXY_REBOOT = "PROXY.REBOOT";
     public static final String EVENT_PROXY_HA = "PROXY.HA";
+    public static final String EVENT_PROXY_DIAGNOSTICS = "PROXY.DIAGNOSTICS";
 
     // VNC Console Events
     public static final String EVENT_VNC_CONNECT = "VNC.CONNECT";
@@ -266,6 +268,7 @@ public class EventTypes {
     public static final String EVENT_SSVM_STOP = "SSVM.STOP";
     public static final String EVENT_SSVM_REBOOT = "SSVM.REBOOT";
     public static final String EVENT_SSVM_HA = "SSVM.HA";
+    public static final String EVENT_SSVM_DIAGNOSTICS = "SSVM.DIAGNOSTICS";
 
     // Service Offerings
     public static final String EVENT_SERVICE_OFFERING_CREATE = "SERVICE.OFFERING.CREATE";
@@ -612,6 +615,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_ROUTER_REBOOT, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_HA, VirtualRouter.class);
         entityEventDetails.put(EVENT_ROUTER_UPGRADE, VirtualRouter.class);
+        entityEventDetails.put(EVENT_ROUTER_DIAGNOSTICS, VirtualRouter.class);
 
         entityEventDetails.put(EVENT_PROXY_CREATE, VirtualMachine.class);
         entityEventDetails.put(EVENT_PROXY_DESTROY, VirtualMachine.class);
@@ -620,6 +624,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_PROXY_REBOOT, VirtualMachine.class);
         entityEventDetails.put(EVENT_ROUTER_HA, VirtualMachine.class);
         entityEventDetails.put(EVENT_PROXY_HA, VirtualMachine.class);
+        entityEventDetails.put(EVENT_PROXY_DIAGNOSTICS, VirtualMachine.class);
 
         entityEventDetails.put(EVENT_VNC_CONNECT, "VNC");
         entityEventDetails.put(EVENT_VNC_DISCONNECT, "VNC");
@@ -740,6 +745,7 @@ public class EventTypes {
         entityEventDetails.put(EVENT_SSVM_STOP, VirtualMachine.class);
         entityEventDetails.put(EVENT_SSVM_REBOOT, VirtualMachine.class);
         entityEventDetails.put(EVENT_SSVM_HA, VirtualMachine.class);
+        entityEventDetails.put(EVENT_SSVM_DIAGNOSTICS, VirtualMachine.class);
 
         // Service Offerings
         entityEventDetails.put(EVENT_SERVICE_OFFERING_CREATE, ServiceOffering.class);
