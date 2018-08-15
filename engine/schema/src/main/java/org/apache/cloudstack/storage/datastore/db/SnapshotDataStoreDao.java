@@ -26,7 +26,7 @@ import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
 
 public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Long>,
-        StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
+StateDao<ObjectInDataStoreStateMachine.State, ObjectInDataStoreStateMachine.Event, DataObjectInStore> {
 
     List<SnapshotDataStoreVO> listByStoreId(long id, DataStoreRole role);
 
@@ -62,6 +62,11 @@ public interface SnapshotDataStoreDao extends GenericDao<SnapshotDataStoreVO, Lo
     void updateVolumeIds(long oldVolId, long newVolId);
 
     SnapshotDataStoreVO findByVolume(long volumeId, DataStoreRole role);
+
+    /**
+     * List all snapshots in 'snapshot_store_ref' by volume and data store role. Therefore, it is possible to list all snapshots that are in the primary storage or in the secondary storage.
+     */
+    List<SnapshotDataStoreVO> listAllByVolumeAndDataStore(long volumeId, DataStoreRole role);
 
     List<SnapshotDataStoreVO> listByState(ObjectInDataStoreStateMachine.State... states);
 }
