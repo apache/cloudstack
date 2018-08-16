@@ -24,33 +24,35 @@
         );
         var $label = $('<label>').html(_l('label.project'));
 
-        // Get project list
-        cloudStack.projects.dataProvider({
-            context: cloudStack.context,
-            response: {
-                success: function(args) {
-                    var projects = args.data;
-                    var arrayOfProjs = [];
+        var populateProjectSelect = function() {
+            // Get project list
+            cloudStack.projects.dataProvider({
+                context: cloudStack.context,
+                response: {
+                    success: function(args) {
+                        var projects = args.data;
+                        var arrayOfProjs = [];
 
-                    $(projects).map(function(index, project) {
-                        var proj = {id: _s(project.id), html: _s(project.displaytext ? project.displaytext : project.name)};
-                        arrayOfProjs.push(proj);
-                    });
+                        $(projects).map(function(index, project) {
+                            var proj = {id: _s(project.id), html: _s(project.displaytext ? project.displaytext : project.name)};
+                            arrayOfProjs.push(proj);
+                        });
 
-                    arrayOfProjs.sort(function(a,b) {
-                        return a.html.localeCompare(b.html);
-                    });
+                        arrayOfProjs.sort(function(a,b) {
+                            return a.html.localeCompare(b.html);
+                        });
 
-                    $(arrayOfProjs).map(function(index, project) {
-                        var $option = $('<option>').val(_s(project.id));
+                        $(arrayOfProjs).map(function(index, project) {
+                            var $option = $('<option>').val(_s(project.id));
 
-                        $option.html(_s(project.html));
-                        $option.appendTo($projectSelect);
-                    });
-                },
-                error: function() {}
-            }
-        });
+                            $option.html(_s(project.html));
+                            $option.appendTo($projectSelect);
+                        });
+                    },
+                    error: function() {}
+                }
+            });
+        }
 
         $projectSwitcher.append($label, $projectSelect);
         $projectSwitcher.insertBefore($header.find('.region-switcher'));
@@ -72,6 +74,13 @@
                 $('#cloudStack3-container').removeClass('project-view');
                 $('#navigation li.dashboard').click();
             }
+        });
+
+        $projectSelect.mousedown(function() {
+           var projectID = $projectSelect.val();
+           $('.project-switcher option:not(:first)').remove();
+           populateProjectSelect();
+           $projectSelect.val(projectID);
         });
     });
 }(jQuery, cloudStack));
