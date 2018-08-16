@@ -230,5 +230,6 @@ public class DatabaseCreator {
         } finally {
             txn.close();
         }
+        System.exit(0);
     }
 }
