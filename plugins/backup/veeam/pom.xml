@@ -28,6 +28,7 @@
   </parent>
 
   <dependencies>
+
     <dependency>
       <groupId>org.apache.cloudstack</groupId>
       <artifactId>cloud-plugin-hypervisor-vmware</artifactId>
@@ -42,22 +43,6 @@
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
       <version>${cs.commons-lang3.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.cloudsoft.windows</groupId>
-      <artifactId>winrm4j-client</artifactId>
-      <version>${cs.winrm4j.version}</version>
-    </dependency>
-    <dependency>
-        <groupId>io.cloudsoft.windows</groupId>
-        <artifactId>winrm4j-service</artifactId>
-        <version>${cs.winrm4j.version}</version>
-        <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.cloudsoft.windows</groupId>
-      <artifactId>winrm4j</artifactId>
-      <version>${cs.winrm4j.version}</version>
     </dependency>
     <dependency>
       <groupId>com.github.tomakehurst</groupId>

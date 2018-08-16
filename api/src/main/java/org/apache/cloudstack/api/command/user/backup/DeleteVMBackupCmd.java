@@ -42,6 +42,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
         description = "Delete VM backup",
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
+// FIXME: make this async command
 public class DeleteVMBackupCmd extends BaseCmd {
     public static final String APINAME = "deleteVMBackup";
 

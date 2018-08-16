@@ -28,6 +28,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.backup.BackupPolicy;
 import org.apache.cloudstack.backup.VMBackup;
 import org.apache.cloudstack.backup.veeam.api.Job;
@@ -89,7 +90,8 @@ public class VeeamClientTest {
     public void testJob() throws Exception {
         VeeamClient client = new VeeamClient("http://10.2.2.89:9399/api/", adminUsername, adminPassword, true, 30);
         Job j = client.listJob("8acac50d-3711-4c99-bf7b-76fe9c7e39c3");
-        boolean result = client.cloneVeeamJob(j, "some-uuid-12345");
+        boolean result = client.cloneVeeamJob(j, "some-uuid-cloned");
+        client.deleteJobAndBackup("some-uuid-cloned");
     }
 
     public void testVeeamPS() throws Exception {
@@ -97,9 +99,10 @@ public class VeeamClientTest {
         Map<String, VMBackup.Metric> sizes = client.getBackupMetrics();
         Job j = client.listJob("ZONE1-GOLD_clone1");
     }
-    @Test
-    public void test() {
-        String a = "Id           :asdasd";
-        System.out.println(a.matches("Id(/s)*"));
+
+    public void testRestoreVolume() {
+        client.setVeeamSshCredentials("10.2.2.89", "administrator", "P@ssword123");
+        Pair<Boolean, String> booleanStringPair = client.restoreVMToDifferentLocation("362fcba7-283b-4416-9763-55ec59bd1285", "10.2.2.9", "24abcb8f-4211-374f-a2e1-e5c0b7e88a2d");
+        booleanStringPair.first();
     }
 }

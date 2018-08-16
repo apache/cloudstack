@@ -27,16 +27,16 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.UUID;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509TrustManager;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.backup.BackupPolicy;
@@ -66,7 +66,6 @@ import org.apache.http.client.AuthCache;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.AuthSchemes;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
@@ -83,15 +82,14 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.nio.TrustAllManager;
+import com.cloud.utils.ssh.SshHelper;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 import com.fasterxml.jackson.dataformat.xml.ser.ToXmlGenerator;
-
-import io.cloudsoft.winrm4j.winrm.WinRmTool;
-import io.cloudsoft.winrm4j.winrm.WinRmToolResponse;
 
 public class VeeamClient {
     private static final Logger LOG = Logger.getLogger(VeeamClient.class);
@@ -101,7 +99,11 @@ public class VeeamClient {
     private final HttpClient httpClient;
     private final HttpClientContext httpContext = HttpClientContext.create();
     private final CookieStore httpCookieStore = new BasicCookieStore();
-    private final WinRmTool winRmTool;
+
+    private String veeamServerIp;
+    private String veeamServerUsername;
+    private String veeamServerPassword;
+    private final int veeamServerPort = 22;
 
     public VeeamClient(final String url, final String username, final String password, final boolean validateCertificate, final int timeout) throws URISyntaxException, NoSuchAlgorithmException, KeyManagementException {
         this.apiURI = new URI(url);
@@ -148,14 +150,13 @@ public class VeeamClient {
             throw new CloudRuntimeException("Failed to authenticate Veeam API service due to:" + e.getMessage());
         }
 
-        final WinRmTool.Builder builder = WinRmTool.Builder.builder(apiURI.getHost(), username, password);
-        builder.useHttps(true);
-        builder.disableCertificateChecks(true);
-        builder.setAuthenticationScheme(AuthSchemes.NTLM);
-        builder.port(WinRmTool.DEFAULT_WINRM_HTTPS_PORT);
-        winRmTool = builder.build();
-        winRmTool.setOperationTimeout(timeout * 1000L);
-        winRmTool.setRetriesForConnectionFailures(1);
+        setVeeamSshCredentials(this.apiURI.getHost(), username, password);
+    }
+
+    protected void setVeeamSshCredentials(String hostIp, String username, String password) {
+        this.veeamServerIp = hostIp;
+        this.veeamServerUsername = username;
+        this.veeamServerPassword = password;
     }
 
     private void checkAuthFailure(final HttpResponse response) {
@@ -278,9 +279,10 @@ public class VeeamClient {
         return objectMapper.readValue(response.getEntity().getContent(), RestoreSession.class);
     }
 
+    // FIXME: configure task timeout/limits
     private boolean checkTaskStatus(final HttpResponse response) throws IOException {
         final Task task = parseTaskResponse(response);
-        for (int i = 0; i < 20; i++) {
+        for (int i = 0; i < 60; i++) {
             final HttpResponse taskResponse = get("/tasks/" + task.getTaskId());
             final Task polledTask = parseTaskResponse(taskResponse);
             if (polledTask.getState().equals("Finished")) {
@@ -515,47 +517,73 @@ public class VeeamClient {
     //////////////// Public Veeam PS based APIs /////////////////////
     /////////////////////////////////////////////////////////////////
 
+    /**
+     * Generate a single command to be passed through SSH
+     */
+    protected String transformPowerShellCommandList(List<String> cmds) {
+        StringJoiner joiner = new StringJoiner(";");
+        joiner.add("PowerShell Add-PSSnapin VeeamPSSnapin");
+        for (String cmd : cmds) {
+            joiner.add(cmd);
+        }
+        return joiner.toString();
+    }
+
+    /**
+     * Execute a list of commands in a single call on PowerShell through SSH
+     */
+    protected Pair<Boolean, String> executePowerShellCommands(List<String> cmds) {
+        try {
+            // FIXME: make ssh timeouts configurable
+            Pair<Boolean, String> pairResult = SshHelper.sshExecute(veeamServerIp, veeamServerPort,
+                    veeamServerUsername, null, veeamServerPassword,
+                    transformPowerShellCommandList(cmds),
+                    120000, 120000, 900000);
+            return pairResult;
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Error while executing PowerShell commands due to: " + e.getMessage());
+        }
+    }
+
     public boolean deleteJobAndBackup(final String jobName) {
-        final WinRmToolResponse response = winRmTool.executePs(
-            Collections.singletonList(
-                String.format(
-                    "Add-PSSnapin VeeamPSSnapin\n" +
-                    "Get-VBRBackup -Name \"%s\" | Remove-VBRBackup -FromDisk -Confirm:$false\n" +
-                    "Get-VBRJob -Name \"%s\" | Remove-VBRJob -Confirm:$false\n" +
-                    "Get-VBRBackupRepository | Sync-VBRBackupRepository", jobName, jobName)
-            ));
-        return response.getStatusCode() == 0 && !response.getStdErr().contains("Failed to delete");
+        Pair<Boolean, String> result = executePowerShellCommands(Arrays.asList(
+                String.format("$job = Get-VBRJob -Name \"%s\"", jobName),
+                "Remove-VBRJob -Job $job -Confirm:$false",
+                String.format("$backup = Get-VBRBackup -Name \"%s\"", jobName),
+                "if ($backup) { Remove-VBRBackup -Backup $backup -FromDisk -Confirm:$false }",
+                "$repo = Get-VBRBackupRepository",
+                "Sync-VBRBackupRepository -Repository $repo"
+        ));
+        return result.first() && !result.second().contains("Failed to delete");
     }
 
     public Map<String, VMBackup.Metric> getBackupMetrics() {
-        final List<String> psScript = Collections.singletonList(
-            "Add-PSSnapin VeeamPSSnapin\n" +
-            "$backups = Get-VBRBackup\n" +
-            "foreach ($backup in $backups) {\n" +
-                "$backup.JobName\n" +
-                "$storageGroups = $backup.GetStorageGroups()\n" +
-                "foreach ($group in $storageGroups)\n" +
-                "{\n" +
-                "    $usedSize = 0\n" +
-                "    $dataSize = 0\n" +
-                "    $sizePerStorage = $group.GetStorages().Stats.BackupSize\n" +
-                "    $dataPerStorage = $group.GetStorages().Stats.DataSize\n" +
-                "    foreach ($size in $sizePerStorage)\n" +
-                "    {\n" +
-                "        $usedSize += $size\n" +
-                "    }\n" +
-                "    foreach ($size in $dataPerStorage)\n" +
-                "    {\n" +
-                "        $dataSize += $size\n" +
-                "    }\n" +
-                "    $usedSize\n" +
-                "    $dataSize\n" +
-                "}\n" +
-                "echo \";\"" +
-            "}\n");
-        final WinRmToolResponse response = winRmTool.executePs(psScript);
+        final String separator = "=====";
+        final List<String> cmds = Arrays.asList(
+            "$backups = Get-VBRBackup",
+            "foreach ($backup in $backups) {" +
+               "$backup.JobName;" +
+               "$storageGroups = $backup.GetStorageGroups();" +
+               "foreach ($group in $storageGroups) {" +
+                    "$usedSize = 0;" +
+                    "$dataSize = 0;" +
+                    "$sizePerStorage = $group.GetStorages().Stats.BackupSize;" +
+                    "$dataPerStorage = $group.GetStorages().Stats.DataSize;" +
+                    "foreach ($size in $sizePerStorage) {" +
+                        "$usedSize += $size;" +
+                    "}" +
+                    "foreach ($size in $dataPerStorage) {" +
+                        "$dataSize += $size;" +
+                    "}" +
+                    "$usedSize;" +
+                    "$dataSize;" +
+               "}" +
+               "echo \"" + separator + "\"" +
+            "}"
+        );
+        Pair<Boolean, String> response = executePowerShellCommands(cmds);
         final Map<String, VMBackup.Metric> sizes = new HashMap<>();
-        for (final String block : response.getStdOut().split(";\r\n")) {
+        for (final String block : response.second().split(separator + "\r\n")) {
             final String[] parts = block.split("\r\n");
             if (parts.length != 3) {
                 continue;
@@ -589,19 +617,16 @@ public class VeeamClient {
     }
 
     public List<VMBackup.RestorePoint> listRestorePoints(String backupName, String vmInternalName) {
-        final List<String> psScript = Collections.singletonList(
-                String.format(
-                        "Add-PSSnapin VeeamPSSnapin\n" +
-                                "$backup = Get-VBRBackup -Name \"%s\"\n" +
-                                "Get-VBRRestorePoint -Backup:$backup -Name \"%s\"",
-                        backupName, vmInternalName)
+        final List<String> cmds = Arrays.asList(
+                String.format("$backup = Get-VBRBackup -Name \"%s\"", backupName),
+                String.format("Get-VBRRestorePoint -Backup:$backup -Name \"%s\"", vmInternalName)
         );
-        final WinRmToolResponse response = winRmTool.executePs(psScript);
-        if (response == null) {
+        Pair<Boolean, String> response = executePowerShellCommands(cmds);
+        if (response == null || !response.first()) {
             throw new CloudRuntimeException("Failed to list restore points");
         }
         final List<VMBackup.RestorePoint> restorePoints = new ArrayList<>();
-        for (final String block : response.getStdOut().split("\r\n\r\n")) {
+        for (final String block : response.second().split("\r\n\r\n")) {
             if (block.isEmpty()) {
                 continue;
             }
@@ -614,19 +639,17 @@ public class VeeamClient {
     public Pair<Boolean, String> restoreVMToDifferentLocation(String restorePointId, String hostIp, String dataStoreUuid) {
         final String restoreLocation = "CS-RSTR-" + UUID.randomUUID().toString();
         final String datastoreId = dataStoreUuid.replace("-","");
-        final List<String> psScript = Collections.singletonList(
-                String.format(
-                        "Add-PSSnapin VeeamPSSnapin\n" +
-                                "$point = Get-VBRRestorePoint | where {$_.Id -eq \"%s\"}\n" +
-                                "$server = Get-VBRServer -Name \"%s\"\n" +
-                                "$ds = Find-VBRViDatastore -Server:$server -Name \"%s\"\n" +
-                                "Start-VBRRestoreVM -RestorePoint:$point -Server:$server -Datastore:$ds -VMName \"%s\"",
-                        restorePointId, hostIp, datastoreId, restoreLocation)
+        final List<String> cmds = Arrays.asList(
+                "$points = Get-VBRRestorePoint",
+                String.format("foreach($point in $points) { if ($point.Id -eq '%s') { break; } }",restorePointId),
+                String.format("$server = Get-VBRServer -Name \"%s\"", hostIp),
+                String.format("$ds = Find-VBRViDatastore -Server:$server -Name \"%s\"", datastoreId),
+                String.format("Start-VBRRestoreVM -RestorePoint:$point -Server:$server -Datastore:$ds -VMName \"%s\"", restoreLocation)
         );
-        final WinRmToolResponse response = winRmTool.executePs(psScript);
-        if (response == null) {
+        Pair<Boolean, String> result = executePowerShellCommands(cmds);
+        if (result == null || !result.first()) {
             throw new CloudRuntimeException("Failed to restore VM to location " + restoreLocation);
         }
-        return new Pair<>(response.getStatusCode() == 0, restoreLocation);
+        return new Pair<>(result.first(), restoreLocation);
     }
 }

@@ -122,7 +122,7 @@
         <cs.bcprov.version>1.59</cs.bcprov.version>
         <cs.cglib.version>3.2.5</cs.cglib.version>
         <cs.checkstyle-lib.version>8.7</cs.checkstyle-lib.version>
-        <cs.cxf.version>3.2.0</cs.cxf.version>
+        <cs.cxf.version>3.2.6</cs.cxf.version>
         <cs.ehcache.version>2.6.11</cs.ehcache.version>
         <cs.globodns-client.version>0.0.23</cs.globodns-client.version>
         <cs.groovy.version>2.4.12</cs.groovy.version>
@@ -130,7 +130,7 @@
         <cs.guava.version>23.6-jre</cs.guava.version>
         <cs.httpclient.version>4.5.4</cs.httpclient.version>
         <cs.httpcore.version>4.4.8</cs.httpcore.version>
-        <cs.jackson.version>2.9.5</cs.jackson.version>
+        <cs.jackson.version>2.9.6</cs.jackson.version>
         <cs.jasypt.version>1.9.2</cs.jasypt.version>
         <cs.java-ipv6.version>0.16</cs.java-ipv6.version>
         <cs.javassist.version>3.22.0-GA</cs.javassist.version>

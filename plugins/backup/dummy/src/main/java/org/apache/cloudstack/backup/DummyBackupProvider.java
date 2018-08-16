@@ -24,10 +24,10 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.backup.dao.VMBackupDao;
 import org.apache.log4j.Logger;
 
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.VirtualMachine;
 
@@ -45,7 +45,7 @@ public class DummyBackupProvider extends AdapterBase implements BackupProvider {
 
     @Override
     public String getDescription() {
-        return "Dummy B&R Plugin";
+        return "Dummy Backup Plugin";
     }
 
     @Override

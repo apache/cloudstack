@@ -28,7 +28,6 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.backup.veeam.VeeamClient;
 import org.apache.cloudstack.backup.veeam.api.Job;
 import org.apache.cloudstack.framework.config.ConfigKey;
@@ -41,6 +40,7 @@ import com.cloud.hypervisor.vmware.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
@@ -176,7 +176,10 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
             LOG.warn("Failed to remove VM from Veeam Job id: " + backup.getExternalId());
         }
         final String clonedJobName = getGuestBackupName(vm.getInstanceName(), backup.getUuid());
-        return client.deleteJobAndBackup(clonedJobName) && client.listJob(clonedJobName) == null;
+        if (!client.deleteJobAndBackup(clonedJobName)) {
+            LOG.warn("Failed to remove Veeam job and backup for job: " + clonedJobName);
+        }
+        return client.listJob(clonedJobName) == null;
     }
 
     @Override
@@ -193,6 +196,7 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
     @Override
     public Pair<Boolean, String> restoreBackedUpVolume(long zoneId, String backupUuid, String restorePointId,
                                                        String volumeUuid, String hostIp, String dataStoreUuid) {
+
         return getClient(zoneId).restoreVMToDifferentLocation(restorePointId, hostIp, dataStoreUuid);
     }
 
@@ -244,6 +248,6 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
 
     @Override
     public String getDescription() {
-        return "Veeam B&R Plugin";
+        return "Veeam Backup Plugin";
     }
 }
