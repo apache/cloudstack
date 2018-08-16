@@ -1003,7 +1003,7 @@ public class FirewallManagerImpl extends ManagerBase implements FirewallService,
             try {
                 success = success && applyIngressFirewallRules(ipId, _accountMgr.getSystemAccount());
             } catch (ResourceUnavailableException ex) {
-                s_logger.warn("Failed to apply port forwarding rules for ip id=" + ipId);
+                s_logger.warn("Failed to apply firewall rules for ip id=" + ipId);
                 success = false;
             }
         }

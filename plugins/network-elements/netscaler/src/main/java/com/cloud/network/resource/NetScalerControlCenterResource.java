@@ -389,7 +389,7 @@ public class NetScalerControlCenterResource implements ServerResource {
                 }
                 else {
                     if (shouldRetry(numRetries)) {
-                        s_logger.debug("Retrying the command NetScalerImplementNetworkCommand retry count: " + numRetries );
+                        s_logger.debug("Retrying the command NetScalerImplementNetworkCommand retry count: " + numRetries, e);
                         return retry(cmd, numRetries);
                     } else {
                         return new Answer(cmd, false, e.getMessage());
@@ -397,7 +397,7 @@ public class NetScalerControlCenterResource implements ServerResource {
                 }
             } catch (Exception e) {
                 if (shouldRetry(numRetries)) {
-                    s_logger.debug("Retrying the command NetScalerImplementNetworkCommand retry count: " + numRetries );
+                    s_logger.debug("Retrying the command NetScalerImplementNetworkCommand retry count: " + numRetries, e);
                     return retry(cmd, numRetries);
                 } else {
                     return new Answer(cmd, false, e.getMessage());

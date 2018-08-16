@@ -175,7 +175,7 @@ public abstract class Action {
                 String errorMessage = responseToErrorMessage(putMethod);
                 putMethod.releaseConnection();
                 s_logger.error("Failed to update object : " + errorMessage);
-                throw new NeutronRestApiException("Failed to create object : " + errorMessage);
+                throw new NeutronRestApiException("Failed to update object : " + errorMessage);
             }
         } catch (NeutronRestApiException e) {
             s_logger.error("NeutronRestApiException caught while trying to execute HTTP Method on the Neutron Controller", e);
@@ -207,7 +207,7 @@ public abstract class Action {
                 String errorMessage = responseToErrorMessage(putMethod);
                 putMethod.releaseConnection();
                 s_logger.error("Failed to update object : " + errorMessage);
-                throw new NeutronRestApiException("Failed to create object : " + errorMessage);
+                throw new NeutronRestApiException("Failed to update object : " + errorMessage);
             }
 
             return putMethod.getResponseBodyAsString();
@@ -244,8 +244,8 @@ public abstract class Action {
             if (deleteMethod.getStatusCode() != HttpStatus.SC_NO_CONTENT) {
                 String errorMessage = responseToErrorMessage(deleteMethod);
                 deleteMethod.releaseConnection();
-                s_logger.error("Failed to update object : " + errorMessage);
-                throw new NeutronRestApiException("Failed to create object : " + errorMessage);
+                s_logger.error("Failed to delete object : " + errorMessage);
+                throw new NeutronRestApiException("Failed to delete object : " + errorMessage);
             }
         } catch (NeutronRestApiException e) {
             s_logger.error("NeutronRestApiException caught while trying to execute HTTP Method on the Neutron Controller", e);

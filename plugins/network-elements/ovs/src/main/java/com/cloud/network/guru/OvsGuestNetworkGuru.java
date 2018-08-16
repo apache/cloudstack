@@ -132,7 +132,7 @@ public class OvsGuestNetworkGuru extends GuestNetworkGuru {
             .findById(physicalNetworkId);
 
         if (!canHandle(offering, nwType, physnet)) {
-            s_logger.debug("Refusing to design this network");
+            s_logger.debug("Refusing to implement this network");
             return null;
         }
         NetworkVO implemented = (NetworkVO)super.implement(network, offering,

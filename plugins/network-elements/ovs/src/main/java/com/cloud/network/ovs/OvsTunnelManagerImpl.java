@@ -576,7 +576,7 @@ public class OvsTunnelManagerImpl extends ManagerBase implements OvsTunnelManage
                 Answer[] answers = _agentMgr.send(hostId, cmds);
                 handleSetupBridgeAnswer(answers);
             } catch (OperationTimedoutException | AgentUnavailableException e) {
-                s_logger.warn("Ovs Tunnel network created tunnel failed", e);
+                s_logger.warn("Ovs Tunnel network created bridge failed", e);
             }
 
             // now that bridge is setup, populate network acl's before the VM gets created

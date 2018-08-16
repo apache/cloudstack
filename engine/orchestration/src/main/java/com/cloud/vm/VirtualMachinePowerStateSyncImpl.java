@@ -52,8 +52,7 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
     @Override
     public void processHostVmStateReport(long hostId, Map<String, HostVmStateReportEntry> report) {
-        if (s_logger.isDebugEnabled())
-            s_logger.debug("Process host VM state report from ping process. host: " + hostId);
+            s_logger.debug("Process host VM state report. host: " + hostId);
 
         Map<Long, VirtualMachine.PowerState> translatedInfo = convertVmStateReport(report);
         processReport(hostId, translatedInfo);

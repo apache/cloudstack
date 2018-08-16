@@ -375,8 +375,8 @@ public class XenServerStorageProcessor implements StorageProcessor {
             isoURL = iso.getName();
         } else {
             if (!(store instanceof NfsTO)) {
-                s_logger.debug("Can't attach a iso which is not created on nfs: ");
-                return new AttachAnswer("Can't attach a iso which is not created on nfs: ");
+                s_logger.debug("Can't detach a iso which is not created on nfs: ");
+                return new AttachAnswer("Can't detach a iso which is not created on nfs: ");
             }
             final NfsTO nfsStore = (NfsTO) store;
             isoURL = nfsStore.getUrl() + nfsStore.getPathSeparator() + data.getPath();
@@ -417,11 +417,11 @@ public class XenServerStorageProcessor implements StorageProcessor {
 
             return new DettachAnswer(disk);
         } catch (final XenAPIException e) {
-            final String msg = "Failed to dettach volume" + " for uuid: " + data.getPath() + "  due to " + e.toString();
+            final String msg = "Failed to detach volume" + " for uuid: " + data.getPath() + "  due to " + e.toString();
             s_logger.warn(msg, e);
             return new DettachAnswer(msg);
         } catch (final Exception e) {
-            final String msg = "Failed to dettach volume" + " for uuid: " + data.getPath() + "  due to " + e.getMessage();
+            final String msg = "Failed to detach volume" + " for uuid: " + data.getPath() + "  due to " + e.getMessage();
             s_logger.warn(msg, e);
             return new DettachAnswer(msg);
         }
@@ -1775,7 +1775,7 @@ public class XenServerStorageProcessor implements StorageProcessor {
             vdi.forget(conn);
             return new IntroduceObjectAnswer(cmd.getDataTO());
         } catch (final Exception e) {
-            s_logger.debug("Failed to introduce object", e);
+            s_logger.debug("Failed to forget object", e);
             return new Answer(cmd, false, e.toString());
         }
     }

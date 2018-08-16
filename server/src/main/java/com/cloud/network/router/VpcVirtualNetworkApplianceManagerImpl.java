@@ -770,8 +770,8 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
         } else if (router.getState() == State.Stopped) {
             s_logger.debug("Router " + router + " is in Stopped state, not sending deleteRemoteAccessVpn command to it");
         } else {
-            s_logger.warn("Failed to delete remote access VPN: domR " + router + " is not in right state " + router.getState());
-            throw new ResourceUnavailableException("Failed to delete remote access VPN: domR is not in right state " + router.getState(), DataCenter.class,
+            s_logger.warn("Failed to stop remote access VPN: domR " + router + " is not in right state " + router.getState());
+            throw new ResourceUnavailableException("Failed to stop remote access VPN: domR is not in right state " + router.getState(), DataCenter.class,
                     router.getDataCenterId());
         }
         return true;

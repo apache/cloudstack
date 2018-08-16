@@ -2496,9 +2496,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return null;
         }
 
-        if (s_logger.isDebugEnabled()) {
-            s_logger.debug("Propagating agent change request event:" + event.toString() + " to agent:" + agentId);
-        }
+            s_logger.debug("Propagating resource request event:" + event.toString() + " to agent:" + agentId);
         final Command[] cmds = new Command[1];
         cmds[0] = new PropagateResourceEventCommand(agentId, event);
 
