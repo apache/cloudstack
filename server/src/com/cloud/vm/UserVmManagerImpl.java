@@ -5058,7 +5058,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // check if migrating to same host
         long srcHostId = vm.getHostId();
         if (destinationHost.getId() == srcHostId) {
-            throw new InvalidParameterValueException("Cannot migrate VM, VM is already presnt on this host, please specify valid destination host to migrate the VM");
+            throw new InvalidParameterValueException("Cannot migrate VM, VM is already present on this host, please specify valid destination host to migrate the VM");
         }
 
         // check if host is UP
