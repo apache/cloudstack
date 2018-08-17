@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package src;
+package org.apache.cloudstack.storage.vmsnapshot;
 
 import java.io.IOException;
 import java.util.ArrayList;
