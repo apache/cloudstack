@@ -929,11 +929,16 @@ class TestVolumes(cloudstackTestCase):
             StoragePool.update(self.apiclient, id=pool.id, tags="")
 
         self.debug("Migrating Volume-ID: %s to Pool: %s" % (volume.id, pool.id))
+        livemigrate = False
+        if self.virtual_machine.hypervisor.lower() == "vmware" or self.virtual_machine.hypervisor.lower() == 'xenserver':
+            livemigrate = True
+
         Volume.migrate(
             self.apiclient,
             volumeid = volume.id,
             storageid = pool.id,
-            newdiskofferingid = large_offering.id
+            newdiskofferingid = large_offering.id,
+            livemigrate = livemigrate
         )
         if self.virtual_machine.hypervisor == "KVM":
             self.virtual_machine.start(self.apiclient
