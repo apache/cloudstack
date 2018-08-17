@@ -1759,7 +1759,7 @@
             // Translate labels on the fly
             $.each($.find('translate[key]'), function(idx, elem) {
                 var key = $(elem).attr('key');
-                $(elem).text(translate(key));
+                $(elem).html(translate(key));
             });
 
             // Translate element attributes
