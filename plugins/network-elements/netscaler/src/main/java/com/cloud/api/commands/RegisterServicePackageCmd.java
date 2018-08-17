@@ -69,7 +69,7 @@ public class RegisterServicePackageCmd extends BaseCmd {
         } catch (CloudRuntimeException runtimeExcp) {
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, runtimeExcp.getMessage());
         } catch (EntityExistsException runtimeExcp) {
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Service Pacakge Already Exists with Name " + getSpName());
+            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, "Service Package Already Exists with Name " + getSpName());
         }
 
     }
