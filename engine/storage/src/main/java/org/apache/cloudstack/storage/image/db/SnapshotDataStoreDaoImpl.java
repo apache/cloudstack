@@ -16,14 +16,17 @@
 // under the License.
 package org.apache.cloudstack.storage.image.db;
 
-import com.cloud.storage.DataStoreRole;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.GenericDaoBase;
-import com.cloud.utils.db.SearchBuilder;
-import com.cloud.utils.db.SearchCriteria;
-import com.cloud.utils.db.SearchCriteria.Op;
-import com.cloud.utils.db.TransactionLegacy;
-import com.cloud.utils.db.UpdateBuilder;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObjectInStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
@@ -33,19 +36,18 @@ import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
+import com.cloud.hypervisor.Hypervisor;
+import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
 import com.cloud.storage.dao.SnapshotDao;
-import javax.inject.Inject;
-import com.cloud.hypervisor.Hypervisor;
-import java.util.ArrayList;
+import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
-import javax.naming.ConfigurationException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import com.cloud.utils.db.GenericDaoBase;
+import com.cloud.utils.db.SearchBuilder;
+import com.cloud.utils.db.SearchCriteria;
+import com.cloud.utils.db.SearchCriteria.Op;
+import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.db.UpdateBuilder;
 
 @Component
 public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO, Long> implements SnapshotDataStoreDao {
@@ -176,33 +178,33 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
             if (dbVol != null) {
                 StringBuilder str = new StringBuilder("Unable to update ").append(dataObj.toString());
                 str.append(": DB Data={id=")
-                    .append(dbVol.getId())
-                    .append("; state=")
-                    .append(dbVol.getState())
-                    .append("; updatecount=")
-                    .append(dbVol.getUpdatedCount())
-                    .append(";updatedTime=")
-                    .append(dbVol.getUpdated());
+                .append(dbVol.getId())
+                .append("; state=")
+                .append(dbVol.getState())
+                .append("; updatecount=")
+                .append(dbVol.getUpdatedCount())
+                .append(";updatedTime=")
+                .append(dbVol.getUpdated());
                 str.append(": New Data={id=")
-                    .append(dataObj.getId())
-                    .append("; state=")
-                    .append(nextState)
-                    .append("; event=")
-                    .append(event)
-                    .append("; updatecount=")
-                    .append(dataObj.getUpdatedCount())
-                    .append("; updatedTime=")
-                    .append(dataObj.getUpdated());
+                .append(dataObj.getId())
+                .append("; state=")
+                .append(nextState)
+                .append("; event=")
+                .append(event)
+                .append("; updatecount=")
+                .append(dataObj.getUpdatedCount())
+                .append("; updatedTime=")
+                .append(dataObj.getUpdated());
                 str.append(": stale Data={id=")
-                    .append(dataObj.getId())
-                    .append("; state=")
-                    .append(currentState)
-                    .append("; event=")
-                    .append(event)
-                    .append("; updatecount=")
-                    .append(oldUpdated)
-                    .append("; updatedTime=")
-                    .append(oldUpdatedTime);
+                .append(dataObj.getId())
+                .append("; state=")
+                .append(currentState)
+                .append("; event=")
+                .append(event)
+                .append("; updatecount=")
+                .append(oldUpdated)
+                .append("; updatedTime=")
+                .append(oldUpdatedTime);
             } else {
                 s_logger.debug("Unable to update objectIndatastore: id=" + dataObj.getId() + ", as there is no such object exists in the database anymore");
             }
@@ -254,7 +256,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try (
                 PreparedStatement pstmt = txn.prepareStatement(findLatestSnapshot);
-            ){
+                ){
             pstmt.setString(1, role.toString());
             pstmt.setLong(2, volumeId);
             try (ResultSet rs = pstmt.executeQuery();) {
@@ -275,7 +277,7 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         TransactionLegacy txn = TransactionLegacy.currentTxn();
         try (
                 PreparedStatement pstmt = txn.prepareStatement(findOldestSnapshot);
-            ){
+                ){
             pstmt.setString(1, role.toString());
             pstmt.setLong(2, volumeId);
             try (ResultSet rs = pstmt.executeQuery();) {
@@ -316,6 +318,14 @@ public class SnapshotDataStoreDaoImpl extends GenericDaoBase<SnapshotDataStoreVO
         sc.setParameters("store_role", role);
         sc.setParameters("state", State.Ready);
         return findOneBy(sc);
+    }
+
+    @Override
+    public List<SnapshotDataStoreVO> listAllByVolumeAndDataStore(long volumeId, DataStoreRole role) {
+        SearchCriteria<SnapshotDataStoreVO> sc = volumeSearch.create();
+        sc.setParameters("volume_id", volumeId);
+        sc.setParameters("store_role", role);
+        return listBy(sc);
     }
 
     @Override

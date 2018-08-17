@@ -28,9 +28,9 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.SnapshotVO;
@@ -38,14 +38,13 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
+
     @Inject
-    SnapshotDao snapshotDao;
+    private SnapshotDao snapshotDao;
     @Inject
-    SnapshotDataStoreDao snapshotStoreDao;
+    private SnapshotDataStoreDao snapshotStoreDao;
     @Inject
-    DataStoreManager storeMgr;
-    @Inject
-    VolumeDataFactory volumeFactory;
+    private DataStoreManager storeMgr;
 
     @Override
     public SnapshotInfo getSnapshot(long snapshotId, DataStore store) {
@@ -66,16 +65,16 @@ public class SnapshotDataFactoryImpl implements SnapshotDataFactory {
 
     @Override
     public List<SnapshotInfo> getSnapshots(long volumeId, DataStoreRole role) {
-
-        SnapshotDataStoreVO snapshotStore = snapshotStoreDao.findByVolume(volumeId, role);
-        if (snapshotStore == null) {
+        List<SnapshotDataStoreVO> allSnapshotsFromVolumeAndDataStore = snapshotStoreDao.listAllByVolumeAndDataStore(volumeId, role);
+        if (CollectionUtils.isEmpty(allSnapshotsFromVolumeAndDataStore)) {
             return new ArrayList<>();
         }
-        DataStore store = storeMgr.getDataStore(snapshotStore.getDataStoreId(), role);
-        List<SnapshotVO> volSnapShots = snapshotDao.listByVolumeId(volumeId);
         List<SnapshotInfo> infos = new ArrayList<>();
-        for(SnapshotVO snapshot: volSnapShots) {
+        for (SnapshotDataStoreVO snapshotDataStoreVO : allSnapshotsFromVolumeAndDataStore) {
+            DataStore store = storeMgr.getDataStore(snapshotDataStoreVO.getDataStoreId(), role);
+            SnapshotVO snapshot = snapshotDao.findById(snapshotDataStoreVO.getSnapshotId());
             SnapshotObject info = SnapshotObject.getSnapshotObject(snapshot, store);
+
             infos.add(info);
         }
         return infos;
