@@ -46,7 +46,7 @@ Usage: ./build-deb.sh [OPTIONS]...
 Package CloudStack for Debian based distribution.
 
 If there's a "branding" string in the POM version (e.g. x.y.z.a-NAME[-SNAPSHOT]), the branding name will
-be used in the final generated pacakge like: cloudstack-management_x.y.z.a-NAME-SNAPSHOT~xenial_all.deb
+be used in the final generated package like: cloudstack-management_x.y.z.a-NAME-SNAPSHOT~xenial_all.deb
 note that you can override/provide "branding" string with "-b, --brand" flag as well.
 
 Optional arguments:

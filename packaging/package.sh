@@ -22,7 +22,7 @@ Usage: ./package.sh -d DISTRO [OPTIONS]...
 Package CloudStack for specific distribution and provided options.
 
 If there's a "branding" string in the POM version (e.g. x.y.z.a-NAME[-SNAPSHOT]), the branding name will
-be used in the final generated pacakge like: cloudstack-management-x.y.z.a-NAME.NUMBER.el7.centos.x86_64
+be used in the final generated package like: cloudstack-management-x.y.z.a-NAME.NUMBER.el7.centos.x86_64
 note that you can override/provide "branding" string with "-b, --brand" flag as well.
 
 Mandatory arguments:
