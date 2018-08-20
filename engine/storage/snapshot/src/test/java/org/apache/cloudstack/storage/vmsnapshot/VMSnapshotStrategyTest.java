@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package src;
+package org.apache.cloudstack.storage.vmsnapshot;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -25,8 +25,10 @@ import java.util.List;
 
 import javax.inject.Inject;
 
-import junit.framework.TestCase;
-
+import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.test.utils.SpringUtils;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -42,13 +44,6 @@ import org.springframework.core.type.filter.TypeFilter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
-
-import org.apache.cloudstack.engine.subsystem.api.storage.VMSnapshotStrategy;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.storage.to.VolumeObjectTO;
-import org.apache.cloudstack.storage.vmsnapshot.DefaultVMSnapshotStrategy;
-import org.apache.cloudstack.storage.vmsnapshot.VMSnapshotHelper;
-import org.apache.cloudstack.test.utils.SpringUtils;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Command;
@@ -75,6 +70,8 @@ import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.VMSnapshotVO;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
+
+import junit.framework.TestCase;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(loader = AnnotationConfigContextLoader.class)
@@ -245,9 +242,8 @@ public class VMSnapshotStrategyTest extends TestCase {
     }
 
     @Configuration
-    @ComponentScan(basePackageClasses = {NetUtils.class, DefaultVMSnapshotStrategy.class},
-                   includeFilters = {@ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)},
-                   useDefaultFilters = false)
+    @ComponentScan(basePackageClasses = {NetUtils.class, DefaultVMSnapshotStrategy.class}, includeFilters = {
+            @ComponentScan.Filter(value = TestConfiguration.Library.class, type = FilterType.CUSTOM)}, useDefaultFilters = false)
     public static class TestConfiguration extends SpringUtils.CloudStackTestConfiguration {
 
         public static class Library implements TypeFilter {
