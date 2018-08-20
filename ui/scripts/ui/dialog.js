@@ -1042,6 +1042,7 @@
                             $(this).dialog('destroy');
                             if (args.clickAction) args.clickAction();
                             $('.hovered-elem').hide();
+                            $('div.overlay').hide();
                         }
                     }]
                 });
