@@ -119,7 +119,8 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                     }
 
                     String result = null;
-                    for (int i = 0; i < 5; i++) {
+                    // Try multiple times, but sleep in between tries to ensure it isn't a short lived transient error
+                    for (int i = 1; i <= _heartBeatUpdateMaxTries; i++) {
                         Script cmd = new Script(s_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
                         cmd.add("-i", primaryStoragePool._poolIp);
                         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
@@ -127,14 +128,21 @@ public class KVMHAMonitor extends KVMHABase implements Runnable {
                         cmd.add("-h", _hostIP);
                         result = cmd.execute();
                         if (result != null) {
-                            s_logger.warn("write heartbeat failed: " + result + ", retry: " + i);
+                            s_logger.warn("write heartbeat failed: " + result + ", try: " + i + " of " + _heartBeatUpdateMaxTries);
+                            try {
+                                Thread.sleep(_heartBeatUpdateRetrySleep);
+                            } catch (InterruptedException e) {
+                                s_logger.debug("[ignored] interupted between heartbeat retries.");
+                            }
                         } else {
                             break;
                         }
                     }
 
                     if (result != null) {
-                        s_logger.warn("write heartbeat failed: " + result + "; reboot the host");
+                        // Stop cloudstack-agent if can't write to heartbeat file.
+                        // This will raise an alert on the mgmt server
+                        s_logger.warn("write heartbeat failed: " + result + "; stopping cloudstack-agent");
                         Script cmd = new Script(s_heartBeatPath, _heartBeatUpdateTimeout, s_logger);
                         cmd.add("-i", primaryStoragePool._poolIp);
                         cmd.add("-p", primaryStoragePool._poolMountSourcePath);
