@@ -1546,7 +1546,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             permit.put(ApiConstants.ENTITY_TYPE, VirtualMachineTemplate.class);
             permit.put(ApiConstants.ENTITY_ID, id);
             permit.put(ApiConstants.ACCESS_TYPE, AccessType.UseEntry);
-            permit.put(ApiConstants.IAM_ACTION, "listTemplates");
             permit.put(ApiConstants.ACCOUNTS, accountIds);
             _messageBus.publish(_name, EntityManager.MESSAGE_GRANT_ENTITY_EVENT, PublishScope.LOCAL, permit);
         } else if ("remove".equalsIgnoreCase(operation)) {
@@ -1563,7 +1562,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             permit.put(ApiConstants.ENTITY_TYPE, VirtualMachineTemplate.class);
             permit.put(ApiConstants.ENTITY_ID, id);
             permit.put(ApiConstants.ACCESS_TYPE, AccessType.UseEntry);
-            permit.put(ApiConstants.IAM_ACTION, "listTemplates");
             permit.put(ApiConstants.ACCOUNTS, accountIds);
             _messageBus.publish(_name, EntityManager.MESSAGE_REVOKE_ENTITY_EVENT, PublishScope.LOCAL, permit);
         } else if ("reset".equalsIgnoreCase(operation)) {
