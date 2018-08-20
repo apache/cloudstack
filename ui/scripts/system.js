@@ -8857,7 +8857,7 @@
                                                         }
                                                     },
 
-                                                    diagnostics : {
+                                                    diagnostics: {
                                                         label: 'label.action.run.diagnostics',
 //                                                        messages: {
 //                                                            notification: function (args) {
@@ -8877,7 +8877,22 @@
                                                                         required: true
                                                                     },
                                                                     select: function (args) {
-
+                                                                        var items = [];
+                                                                        items.push({
+                                                                            id: "ping",
+                                                                            description: "Ping"
+                                                                        });
+                                                                        items.push({
+                                                                            id: "traceroute",
+                                                                            description: "Traceroute"
+                                                                        });
+                                                                        items.push({
+                                                                            id: "arping",
+                                                                            description: "Arping"
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
                                                                     }
                                                                 },
                                                                 destination: {
@@ -8893,11 +8908,22 @@
                                                             }
                                                         },
                                                         action: function (args) {
-                                                        //delete from here
-
-                                                            //delete until here
+                                                            $.ajax({
+                                                                url: createURL("runDiagnostics&targetid=" + args.data.id + "&ipaddress=" + args.data.destination + "&type=" + args.data.type + "&params=" + args.data.extra),
+                                                                dataType: "json",
+                                                                async: false,
+                                                                success: function(json) {
+                                                                    var item = json.rundiagnosticsresponse.exitCode;
+                                                                    args.response.success({
+                                                                        data: item
+                                                                    });
+                                                                },
+                                                                error: function(json) {
+                                                                    args.response.error(parseXMLHttpResponse(json));
+                                                                }
+                                                            }); //end ajax
                                                         }
-                                                        //notification?
+                                                        //notification? nah
                                                     },
 
                                                     scaleUp: {
