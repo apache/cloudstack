@@ -155,10 +155,9 @@ then
   exit 0
 elif [ "$cflag" == "1" ]
 then
-  /usr/bin/logger -t heartbeat "kvmheartbeat.sh rebooted system because it was unable to write the heartbeat to the storage."
-  sync &
-  sleep 5
-  echo b > /proc/sysrq-trigger
+  pids=$(lsof | grep -F "$MountPoint" | awk '// { print $2 }')
+  /usr/bin/logger -t heartbeat "kvmheartbeat.sh terminated $pids because it was unable to write the heartbeat to the storage."
+  kill $pids
   exit $?
 else
   write_hbLog 
