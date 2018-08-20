@@ -297,7 +297,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru implements Networ
 
             implemented = new NetworkVO(network.getId(), network, network.getNetworkOfferingId(), network.getGuruName(), network.getDomainId(), network.getAccountId(),
                     network.getRelated(), network.getName(), network.getDisplayText(), network.getNetworkDomain(), network.getGuestType(), network.getDataCenterId(),
-                    physicalNetworkId, network.getAclType(), network.getSpecifyIpRanges(), network.getVpcId(), offering.getRedundantRouter(), network.getExternalId());
+                    physicalNetworkId, network.getAclType(), network.getSpecifyIpRanges(), network.getVpcId(), offering.isRedundantRouter(), network.getExternalId());
             implemented.setUuid(network.getUuid());
             implemented.setState(State.Allocated);
             if (network.getGateway() != null) {
@@ -652,7 +652,7 @@ public class NuageVspGuestNetworkGuru extends GuestNetworkGuru implements Networ
                 && isMyIsolationMethod(physicalNetwork)
                 && (offering.getGuestType() == GuestType.Isolated || offering.getGuestType() == GuestType.Shared)
                 && hasRequiredServices(offering)) {
-            if (_configMgr.isOfferingForVpc(offering) && !offering.getIsPersistent()) {
+            if (_configMgr.isOfferingForVpc(offering) && !offering.isPersistent()) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("NuageVsp can't handle VPC tiers which use a network offering which are not persistent");
                 }

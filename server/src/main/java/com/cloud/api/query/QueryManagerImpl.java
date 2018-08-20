@@ -2688,7 +2688,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
             sc.addAnd("id", SearchCriteria.Op.NEQ, currentVmOffering.getId());
 
             // 1. Only return offerings with the same storage type
-            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, currentVmOffering.getUseLocalStorage());
+            sc.addAnd("useLocalStorage", SearchCriteria.Op.EQ, currentVmOffering.isUseLocalStorage());
 
             // 2.In case vm is running return only offerings greater than equal to current offering compute.
             if (vmInstance.getState() == VirtualMachine.State.Running) {

@@ -133,22 +133,22 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
     public ServiceOfferingVO(ServiceOfferingVO offering) {
         super(offering.getId(), offering.getName(), offering.getDisplayText(), offering.getProvisioningType(), false, offering.getTags(), offering.isRecreatable(),
-                offering.getUseLocalStorage(), offering.getSystemUse(), true, offering.isCustomizedIops() == null ? false : offering.isCustomizedIops(), offering.getDomainId(),
+                offering.isUseLocalStorage(), offering.isSystemUse(), true, offering.isCustomizedIops() == null ? false : offering.isCustomizedIops(), offering.getDomainId(),
                 offering.getMinIops(), offering.getMaxIops());
         cpu = offering.getCpu();
         ramSize = offering.getRamSize();
         speed = offering.getSpeed();
         rateMbps = offering.getRateMbps();
         multicastRateMbps = offering.getMulticastRateMbps();
-        offerHA = offering.getOfferHA();
+        offerHA = offering.isOfferHA();
         limitCpuUse = offering.getLimitCpuUse();
-        volatileVm = offering.getVolatileVm();
+        volatileVm = offering.isVolatileVm();
         hostTag = offering.getHostTag();
         vmType = offering.getSystemVmType();
     }
 
     @Override
-    public boolean getOfferHA() {
+    public boolean isOfferHA() {
         return offerHA;
     }
 
@@ -251,7 +251,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     }
 
     @Override
-    public boolean getVolatileVm() {
+    public boolean isVolatileVm() {
         return volatileVm;
     }
 

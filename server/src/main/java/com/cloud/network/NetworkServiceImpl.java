@@ -928,7 +928,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 Network guestNetwork = getNetwork(networkId);
                 NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
                 Long vmId = ipVO.getAssociatedWithVmId();
-                if (offering.getElasticIp() && vmId != null) {
+                if (offering.isElasticIp() && vmId != null) {
                     _rulesMgr.getSystemIpAndEnableStaticNatForVm(_userVmDao.findById(vmId), true);
                     return true;
                 }
@@ -1233,7 +1233,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         // Don't allow to specify vlan if the caller is not ROOT admin
-        if (!_accountMgr.isRootAdmin(caller.getId()) && (ntwkOff.getSpecifyVlan() || vlanId != null || bypassVlanOverlapCheck)) {
+        if (!_accountMgr.isRootAdmin(caller.getId()) && (ntwkOff.isSpecifyVlan() || vlanId != null || bypassVlanOverlapCheck)) {
             throw new InvalidParameterValueException("Only ROOT admin is allowed to specify vlanId or bypass vlan overlap check");
         }
 
@@ -1287,7 +1287,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         // Can add vlan range only to the network which allows it
-        if (createVlan && !ntwkOff.getSpecifyIpRanges()) {
+        if (createVlan && !ntwkOff.isSpecifyIpRanges()) {
             throwInvalidIdException("Network offering with specified id doesn't support adding multiple ip ranges", ntwkOff.getUuid(), "networkOfferingId");
         }
 
@@ -1296,7 +1296,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 createVlan, externalId);
 
         // if the network offering has persistent set to true, implement the network
-        if (ntwkOff.getIsPersistent()) {
+        if (ntwkOff.isPersistent()) {
             try {
                 if (network.getState() == Network.State.Setup) {
                     s_logger.debug("Network id=" + network.getId() + " is already provisioned");
@@ -1376,7 +1376,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                         if (_configMgr.isOfferingForVpc(ntwkOff)) {
                             throw new InvalidParameterValueException("Network offering can be used for VPC networks only");
                         }
-                        if (ntwkOff.getInternalLb()) {
+                        if (ntwkOff.isInternalLb()) {
                             throw new InvalidParameterValueException("Internal Lb can be enabled on vpc networks only");
                         }
 
@@ -2085,7 +2085,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
                 networkOfferingChanged = true;
 
                 //Setting the new network's isReduntant to the new network offering's RedundantRouter.
-                network.setRedundant(_networkOfferingDao.findById(networkOfferingId).getRedundantRouter());
+                network.setRedundant(_networkOfferingDao.findById(networkOfferingId).isRedundantRouter());
             }
         }
 
@@ -2216,8 +2216,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         // 1) Shutdown all the elements and cleanup all the rules. Don't allow to shutdown network in intermediate
         // states - Shutdown and Implementing
         int resourceCount=1;
-        if (updateInSequence && restartNetwork && _networkOfferingDao.findById(network.getNetworkOfferingId()).getRedundantRouter()
-                && (networkOfferingId==null || _networkOfferingDao.findById(networkOfferingId).getRedundantRouter()) && network.getVpcId()==null) {
+        if (updateInSequence && restartNetwork && _networkOfferingDao.findById(network.getNetworkOfferingId()).isRedundantRouter()
+                && (networkOfferingId==null || _networkOfferingDao.findById(networkOfferingId).isRedundantRouter()) && network.getVpcId()==null) {
             _networkMgr.canUpdateInSequence(network, forced);
             NetworkDetailVO networkDetail =new NetworkDetailVO(network.getId(),Network.updatingInSequence,"true",true);
             _networkDetailsDao.persist(networkDetail);
@@ -2355,7 +2355,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
                 // 4) if network has been upgraded from a non persistent ntwk offering to a persistent ntwk offering,
                 // implement the network if its not already
-                if (networkOfferingChanged && !oldNtwkOff.getIsPersistent() && networkOffering.getIsPersistent()) {
+                if (networkOfferingChanged && !oldNtwkOff.isPersistent() && networkOffering.isPersistent()) {
                     if (network.getState() == Network.State.Allocated) {
                         try {
                             DeployDestination dest = new DeployDestination(_dcDao.findById(network.getDataCenterId()), null, null, null);
@@ -2469,7 +2469,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         DataCenter zone = _dcDao.findById(network.getDataCenterId());
         NetworkVO networkInOldPhysNet = _networksDao.findById(networkIdInOldPhysicalNet);
 
-        boolean shouldImplement = (newNtwkOff.getIsPersistent()
+        boolean shouldImplement = (newNtwkOff.isPersistent()
                     || networkInOldPhysNet.getState() == Network.State.Implemented)
                 && networkInNewPhysicalNet.getState() != Network.State.Implemented;
 
@@ -2737,7 +2737,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         // specify ipRanges should be the same
-        if (oldNetworkOffering.getSpecifyIpRanges() != newNetworkOffering.getSpecifyIpRanges()) {
+        if (oldNetworkOffering.isSpecifyIpRanges() != newNetworkOffering.isSpecifyIpRanges()) {
             s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different values for specifyIpRangess, can't upgrade");
             return false;
         }
@@ -2759,7 +2759,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         //can't update from internal LB to public LB
         if (areServicesSupportedByNetworkOffering(oldNetworkOfferingId, Service.Lb) && areServicesSupportedByNetworkOffering(newNetworkOfferingId, Service.Lb)) {
-            if (oldNetworkOffering.getPublicLb() != newNetworkOffering.getPublicLb() || oldNetworkOffering.getInternalLb() != newNetworkOffering.getInternalLb()) {
+            if (oldNetworkOffering.isPublicLb() != newNetworkOffering.isPublicLb() || oldNetworkOffering.isInternalLb() != newNetworkOffering.isInternalLb()) {
                 throw new InvalidParameterValueException("Original and new offerings support different types of LB - Internal vs Public," + " can't upgrade");
             }
         }
@@ -2791,7 +2791,7 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         }
 
         // specify vlan should be the same
-        if (oldNetworkOffering.getSpecifyVlan() != newNetworkOffering.getSpecifyVlan()) {
+        if (oldNetworkOffering.isSpecifyVlan() != newNetworkOffering.isSpecifyVlan()) {
             s_logger.debug("Network offerings " + newNetworkOfferingId + " and " + oldNetworkOfferingId + " have different values for specifyVlan, can't upgrade");
             return false;
         }

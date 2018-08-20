@@ -2395,7 +2395,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return diskOffering.getBytesReadRate();
         } else {
             Long bytesReadRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingBytesReadRate.key()));
-            if ((bytesReadRate > 0) && ((offering == null) || (!offering.getSystemUse()))) {
+            if ((bytesReadRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return bytesReadRate;
             }
         }
@@ -2411,7 +2411,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return diskOffering.getBytesWriteRate();
         } else {
             Long bytesWriteRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingBytesWriteRate.key()));
-            if ((bytesWriteRate > 0) && ((offering == null) || (!offering.getSystemUse()))) {
+            if ((bytesWriteRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return bytesWriteRate;
             }
         }
@@ -2427,7 +2427,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return diskOffering.getIopsReadRate();
         } else {
             Long iopsReadRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingIopsReadRate.key()));
-            if ((iopsReadRate > 0) && ((offering == null) || (!offering.getSystemUse()))) {
+            if ((iopsReadRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return iopsReadRate;
             }
         }
@@ -2443,7 +2443,7 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
             return diskOffering.getIopsWriteRate();
         } else {
             Long iopsWriteRate = Long.parseLong(_configDao.getValue(Config.VmDiskThrottlingIopsWriteRate.key()));
-            if ((iopsWriteRate > 0) && ((offering == null) || (!offering.getSystemUse()))) {
+            if ((iopsWriteRate > 0) && ((offering == null) || (!offering.isSystemUse()))) {
                 return iopsWriteRate;
             }
         }

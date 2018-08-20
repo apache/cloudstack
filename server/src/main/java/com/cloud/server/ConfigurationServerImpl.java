@@ -1234,7 +1234,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
                     if (broadcastDomainType != null) {
                         NetworkVO network =
                                 new NetworkVO(id, trafficType, mode, broadcastDomainType, networkOfferingId, domainId, accountId, related, null, null, networkDomain,
-                                        Network.GuestType.Shared, zoneId, null, null, specifyIpRanges, null, offering.getRedundantRouter());
+                                        Network.GuestType.Shared, zoneId, null, null, specifyIpRanges, null, offering.isRedundantRouter());
                         network.setGuruName(guruNames.get(network.getTrafficType()));
                         network.setDns1(zone.getDns1());
                         network.setDns2(zone.getDns2());

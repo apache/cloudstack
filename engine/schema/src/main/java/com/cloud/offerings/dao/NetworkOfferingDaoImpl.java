@@ -162,7 +162,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         sc.addAnd("state", SearchCriteria.Op.EQ, NetworkOffering.State.Enabled);
 
         //specify Vlan should be the same
-        sc.addAnd("specifyVlan", SearchCriteria.Op.EQ, originalOffering.getSpecifyVlan());
+        sc.addAnd("specifyVlan", SearchCriteria.Op.EQ, originalOffering.isSpecifyVlan());
 
         return customSearch(sc, null);
     }

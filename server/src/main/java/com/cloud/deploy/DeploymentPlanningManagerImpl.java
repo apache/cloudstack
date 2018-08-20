@@ -1206,7 +1206,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(toBeCreated.getDiskOfferingId());
 
             if (diskOffering != null) {
-                if (diskOffering.getUseLocalStorage()) {
+                if (diskOffering.isUseLocalStorage()) {
                     requiresLocal = true;
                 } else {
                     requiresShared = true;
@@ -1448,7 +1448,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                     s_logger.debug("System VMs will use " + (useLocalStorage ? "local" : "shared") + " storage for zone id=" + plan.getDataCenterId());
                 }
             } else {
-                useLocalStorage = diskOffering.getUseLocalStorage();
+                useLocalStorage = diskOffering.isUseLocalStorage();
 
                 // TODO: this is a hacking fix for the problem of deploy
                 // ISO-based VM on local storage
@@ -1457,7 +1457,7 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
                 // actually
                 // saved in service offering, override the flag from service
                 // offering when it is a ROOT disk
-                if (!useLocalStorage && vmProfile.getServiceOffering().getUseLocalStorage()) {
+                if (!useLocalStorage && vmProfile.getServiceOffering().isUseLocalStorage()) {
                     if (toBeCreated.getVolumeType() == Volume.Type.ROOT) {
                         useLocalStorage = true;
                     }

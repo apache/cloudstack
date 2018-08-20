@@ -224,7 +224,7 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
     @Test
     public void testDesign() {
         final NetworkOffering offering = mockNetworkOffering(false);
-        when(offering.getIsPersistent()).thenReturn(false);
+        when(offering.isPersistent()).thenReturn(false);
 
         final DeploymentPlan plan = mockDeploymentPlan();
         final Network network = mock(Network.class);
@@ -383,10 +383,10 @@ public class NuageVspGuestNetworkGuruTest extends NuageTest {
         when(offering.getUuid()).thenReturn(OFFERING_UUID);
         when(offering.getTrafficType()).thenReturn(TrafficType.Guest);
         when(offering.getGuestType()).thenReturn(GuestType.Isolated);
-        when(offering.getForVpc()).thenReturn(forVpc);
-        when(offering.getIsPersistent()).thenReturn(false);
+        when(offering.isForVpc()).thenReturn(forVpc);
+        when(offering.isPersistent()).thenReturn(false);
         when(offering.getTags()).thenReturn("aaaa");
-        when(offering.getEgressDefaultPolicy()).thenReturn(true);
+        when(offering.isEgressDefaultPolicy()).thenReturn(true);
 
         when(_networkOfferingDao.findById(OFFERING_ID)).thenReturn(offering);
 
