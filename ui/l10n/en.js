@@ -276,6 +276,7 @@ var dictionary = {
 "label.action.restore.instance.processing":"Restoring Instance....",
 "label.action.revert.snapshot":"Revert to Snapshot",
 "label.action.revert.snapshot.processing":"Reverting to Snapshot...",
+"label.action.run.diagnostics":"Run Diagnostics"
 "label.action.secure.host":"Provision Host Security Keys",
 "label.action.start.instance":"Start Instance",
 "label.action.start.instance.processing":"Starting Instance....",
@@ -1484,6 +1485,9 @@ var dictionary = {
 "label.rule.number":"Rule Number",
 "label.rule.number.short": "#Rule",
 "label.rules":"Rules",
+"label.run.diagnostics.type":"Type",
+"label.run.diagnostics.destination":"Destination",
+"label.run.diagnostics.extra":"Extra Args",
 "label.running.vms":"Running VMs",
 "label.s3.access_key":"Access Key",
 "label.s3.bucket":"Bucket",

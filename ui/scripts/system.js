@@ -8857,6 +8857,75 @@
                                                         }
                                                     },
 
+                                                    diagnostics: {
+                                                        label: 'label.action.run.diagnostics',
+//                                                        messages: {
+//                                                            notification: function (args) {
+//                                                                return 'label.action.migrate.systemvm';
+//                                                            }
+//                                                        },
+//                                                        isHidden: function (args) {
+//                                                            return !isAdmin();
+//                                                        },
+                                                        createForm: {
+                                                            title: 'label.action.run.diagnostics',
+                                                            desc: '',
+                                                            fields: {
+                                                                type: {
+                                                                    label: 'label.run.diagnostics.type',
+                                                                    validation: {
+                                                                        required: true
+                                                                    },
+                                                                    select: function (args) {
+                                                                        var items = [];
+                                                                        items.push({
+                                                                            id: "ping",
+                                                                            description: "Ping"
+                                                                        });
+                                                                        items.push({
+                                                                            id: "traceroute",
+                                                                            description: "Traceroute"
+                                                                        });
+                                                                        items.push({
+                                                                            id: "arping",
+                                                                            description: "Arping"
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
+                                                                    }
+                                                                },
+                                                                destination: {
+                                                                    label: 'label.run.diagnostics.destination',
+                                                                    validation: {
+                                                                        required: true
+                                                                    }
+                                                                },
+                                                                extra: {
+                                                                    label: 'label.run.diagnostics.extra'
+                                                                }
+
+                                                            }
+                                                        },
+                                                        action: function (args) {
+                                                            $.ajax({
+                                                                url: createURL("runDiagnostics&targetid=" + args.data.id + "&ipaddress=" + args.data.destination + "&type=" + args.data.type + "&params=" + args.data.extra),
+                                                                dataType: "json",
+                                                                async: false,
+                                                                success: function(json) {
+                                                                    var item = json.rundiagnosticsresponse.exitCode;
+                                                                    args.response.success({
+                                                                        data: item
+                                                                    });
+                                                                },
+                                                                error: function(json) {
+                                                                    args.response.error(parseXMLHttpResponse(json));
+                                                                }
+                                                            }); //end ajax
+                                                        }
+                                                        //notification? nah
+                                                    },
+
                                                     scaleUp: {
                                                         label: 'label.change.service.offering',
                                                         createForm: {
