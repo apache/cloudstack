@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.google.gson.Gson;
@@ -930,6 +931,38 @@ public class VirtualMachineMO extends BaseMO {
         }
 
         return networks;
+    }
+
+    public List<DatastoreMO> getAllDatastores() throws Exception {
+        PropertySpec pSpec = new PropertySpec();
+        pSpec.setType("Datastore");
+        pSpec.getPathSet().add("name");
+
+        TraversalSpec vmDatastoreTraversal = new TraversalSpec();
+        vmDatastoreTraversal.setType("VirtualMachine");
+        vmDatastoreTraversal.setPath("datastore");
+        vmDatastoreTraversal.setName("vmDatastoreTraversal");
+
+        ObjectSpec oSpec = new ObjectSpec();
+        oSpec.setObj(_mor);
+        oSpec.setSkip(Boolean.TRUE);
+        oSpec.getSelectSet().add(vmDatastoreTraversal);
+
+        PropertyFilterSpec pfSpec = new PropertyFilterSpec();
+        pfSpec.getPropSet().add(pSpec);
+        pfSpec.getObjectSet().add(oSpec);
+        List<PropertyFilterSpec> pfSpecArr = new ArrayList<PropertyFilterSpec>();
+        pfSpecArr.add(pfSpec);
+
+        List<ObjectContent> ocs = _context.getService().retrieveProperties(_context.getPropertyCollector(), pfSpecArr);
+
+        List<DatastoreMO> datastores = new ArrayList<DatastoreMO>();
+        if (CollectionUtils.isNotEmpty(ocs)) {
+            for (ObjectContent oc : ocs) {
+                datastores.add(new DatastoreMO(_context, oc.getObj()));
+            }
+        }
+        return datastores;
     }
 
     /**
