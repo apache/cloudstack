@@ -28,7 +28,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import java.util.List;
 import java.util.Map;
 
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.backup.BackupPolicy;
 import org.apache.cloudstack.backup.VMBackup;
 import org.apache.cloudstack.backup.veeam.api.Job;
@@ -37,6 +36,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+import com.cloud.utils.Pair;
 import com.github.tomakehurst.wiremock.client.BasicCredentials;
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 

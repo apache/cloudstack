@@ -17,11 +17,10 @@
 
 package org.apache.cloudstack.api.command.user.backup;
 
-import com.cloud.exception.ConcurrentOperationException;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.NetworkRuleConflictException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.exception.ResourceUnavailableException;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -34,8 +33,11 @@ import org.apache.cloudstack.api.response.VMBackupResponse;
 import org.apache.cloudstack.backup.BackupManager;
 import org.apache.cloudstack.backup.VMBackup;
 
-import javax.inject.Inject;
-import java.util.List;
+import com.cloud.exception.ConcurrentOperationException;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.NetworkRuleConflictException;
+import com.cloud.exception.ResourceAllocationException;
+import com.cloud.exception.ResourceUnavailableException;
 
 @APICommand(name = ListVMBackupRestorePoints.APINAME,
         description = "Lists VM backup restore points",
@@ -51,7 +53,7 @@ public class ListVMBackupRestorePoints extends BaseBackupListCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ID,
+    @Parameter(name = ApiConstants.VM_BACKUP_ID,
             type = CommandType.UUID,
             entityType = VMBackupResponse.class,
             required = true,

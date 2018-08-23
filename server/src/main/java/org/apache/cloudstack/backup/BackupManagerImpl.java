@@ -25,10 +25,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Volume;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.command.admin.backup.DeleteBackupPolicyCmd;
 import org.apache.cloudstack.api.command.admin.backup.ImportBackupPolicyCmd;
 import org.apache.cloudstack.api.command.admin.backup.ListBackupProvidersCmd;
@@ -65,11 +61,15 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruManager;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.usage.dao.UsageVMBackupDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
+import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
@@ -455,10 +455,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         cmdList.add(CreateVMBackupCmd.class);
         cmdList.add(StartVMBackupCmd.class);
         cmdList.add(DeleteVMBackupCmd.class);
+        cmdList.add(ListVMBackupRestorePoints.class);
         cmdList.add(RestoreVMFromBackupCmd.class);
         cmdList.add(RestoreVolumeFromBackupAndAttachToVMCmd.class);
         cmdList.add(ImportVMCmdByAdmin.class);
-        cmdList.add(ListVMBackupRestorePoints.class);
         return cmdList;
     }
 
