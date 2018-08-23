@@ -30,8 +30,8 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
 import com.cloud.dc.Vlan;
-import com.cloud.dc.VlanVO;
 import com.cloud.dc.Vlan.VlanType;
+import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.DataCenterDao;
 import com.cloud.dc.dao.PodVlanMapDao;
 import com.cloud.dc.dao.VlanDao;
@@ -44,10 +44,10 @@ import com.cloud.network.Network;
 import com.cloud.network.Networks.AddressFormat;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.IsolationType;
+import com.cloud.network.PhysicalNetwork;
 import com.cloud.network.addr.PublicIp;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
-import com.cloud.network.PhysicalNetwork;
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.utils.db.DB;
@@ -55,7 +55,6 @@ import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
-import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
@@ -104,10 +103,6 @@ public class DirectPodBasedNetworkGuru extends DirectNetworkGuru {
         String dhcpStrategy = dc.getDetail(ZoneConfig.DhcpStrategy.key());
         if ("external".equalsIgnoreCase(dhcpStrategy)) {
             rsStrategy = ReservationStrategy.Create;
-        }
-
-        if (nic != null && nic.getRequestedIPv4() != null) {
-            throw new CloudRuntimeException("Does not support custom ip allocation at this time: " + nic);
         }
 
         if (nic == null) {

@@ -231,27 +231,27 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Inject
     EntityManager _entityMgr;
     @Inject
-    DataCenterDao _dcDao = null;
+    DataCenterDao _dcDao;
     @Inject
-    VlanDao _vlanDao = null;
+    VlanDao _vlanDao;
     @Inject
-    IPAddressDao _ipAddressDao = null;
+    IPAddressDao _ipAddressDao;
     @Inject
-    AccountDao _accountDao = null;
+    AccountDao _accountDao;
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    UserVmDao _userVmDao = null;
+    UserVmDao _userVmDao;
     @Inject
     AlertManager _alertMgr;
     @Inject
     ConfigurationManager _configMgr;
     @Inject
-    NetworkOfferingDao _networkOfferingDao = null;
+    NetworkOfferingDao _networkOfferingDao;
     @Inject
-    NetworkDao _networksDao = null;
+    NetworkDao _networksDao;
     @Inject
-    NicDao _nicDao = null;
+    NicDao _nicDao;
     @Inject
     RulesManager _rulesMgr;
     @Inject
@@ -860,6 +860,11 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         NicVO vo = new NicVO(guru.getName(), vm.getId(), network.getId(), vm.getType());
 
+        DataCenterVO dcVo = _dcDao.findById(network.getDataCenterId());
+        if (dcVo.getNetworkType() == NetworkType.Basic) {
+            configureNicProfileBasedOnRequestedIp(requested, profile, network);
+        }
+
         deviceId = applyProfileToNic(vo, profile, deviceId);
 
         vo = _nicDao.persist(vo);
@@ -869,6 +874,85 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
 
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
+    }
+
+    /**
+     * If the requested IPv4 address from the NicProfile was configured then it configures the IPv4 address, Netmask and Gateway to deploy the VM with the requested IP.
+     */
+    protected void configureNicProfileBasedOnRequestedIp(NicProfile requestedNicProfile, NicProfile nicProfile, Network network) {
+        if (requestedNicProfile == null) {
+            return;
+        }
+        String requestedIpv4Address = requestedNicProfile.getRequestedIPv4();
+        if (requestedIpv4Address == null) {
+            return;
+        }
+        if (!NetUtils.isValidIp4(requestedIpv4Address)) {
+            throw new InvalidParameterValueException(String.format("The requested [IPv4 address='%s'] is not a valid IP address", requestedIpv4Address));
+        }
+
+        VlanVO vlanVo = _vlanDao.findByNetworkIdAndIpv4(network.getId(), requestedIpv4Address);
+        if (vlanVo == null) {
+            throw new InvalidParameterValueException(String.format("Trying to configure a Nic with the requested [IPv4='%s'] but cannot find a Vlan for the [network id='%s']",
+                    requestedIpv4Address, network.getId()));
+        }
+
+        String ipv4Gateway = vlanVo.getVlanGateway();
+        String ipv4Netmask = vlanVo.getVlanNetmask();
+
+        if (!NetUtils.isValidIp4(ipv4Gateway)) {
+            throw new InvalidParameterValueException(String.format("The [IPv4Gateway='%s'] from [VlanId='%s'] is not valid", ipv4Gateway, vlanVo.getId()));
+        }
+        if (!NetUtils.isValidIp4Netmask(ipv4Netmask)) {
+            throw new InvalidParameterValueException(String.format("The [IPv4Netmask='%s'] from [VlanId='%s'] is not valid", ipv4Netmask, vlanVo.getId()));
+        }
+
+        acquireLockAndCheckIfIpv4IsFree(network, requestedIpv4Address);
+
+        nicProfile.setIPv4Address(requestedIpv4Address);
+        nicProfile.setIPv4Gateway(ipv4Gateway);
+        nicProfile.setIPv4Netmask(ipv4Netmask);
+
+        if (nicProfile.getMacAddress() == null) {
+            try {
+                String macAddress = _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
+                nicProfile.setMacAddress(macAddress);
+            } catch (InsufficientAddressCapacityException e) {
+                throw new CloudRuntimeException(String.format("Cannot get next available mac address in [network id='%s']", network.getId()), e);
+            }
+        }
+    }
+
+    /**
+     *  Acquires lock in "user_ip_address" and checks if the requested IPv4 address is Free.
+     */
+    protected void acquireLockAndCheckIfIpv4IsFree(Network network, String requestedIpv4Address) {
+        IPAddressVO ipVO = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), requestedIpv4Address);
+        if (ipVO == null) {
+            throw new InvalidParameterValueException(
+                    String.format("Cannot find IPAddressVO for guest [IPv4 address='%s'] and [network id='%s']", requestedIpv4Address, network.getId()));
+        }
+        try {
+            IPAddressVO lockedIpVO = _ipAddressDao.acquireInLockTable(ipVO.getId());
+            validateLockedRequestedIp(ipVO, lockedIpVO);
+            lockedIpVO.setState(IPAddressVO.State.Allocated);
+            _ipAddressDao.update(lockedIpVO.getId(), lockedIpVO);
+        } finally {
+            _ipAddressDao.releaseFromLockTable(ipVO.getId());
+        }
+    }
+
+    /**
+     * Validates the locked IP, throwing an exeption if the locked IP is null or the locked IP is not in 'Free' state.
+     */
+    protected void validateLockedRequestedIp(IPAddressVO ipVO, IPAddressVO lockedIpVO) {
+        if (lockedIpVO == null) {
+            throw new InvalidParameterValueException(String.format("Cannot acquire guest [IPv4 address='%s'] as it was removed while acquiring lock", ipVO.getAddress()));
+        }
+        if (lockedIpVO.getState() != IPAddressVO.State.Free) {
+            throw new InvalidParameterValueException(
+                    String.format("Cannot acquire guest [IPv4 address='%s']; The Ip address is in [state='%s']", ipVO.getAddress(), lockedIpVO.getState().toString()));
+        }
     }
 
     protected Integer applyProfileToNic(final NicVO vo, final NicProfile profile, Integer deviceId) {
