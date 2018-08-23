@@ -18,7 +18,6 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-import java.util.List;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -59,9 +58,9 @@ public class VMBackupResponse extends BaseResponse {
     @Param(description = "backup vm id")
     private String vmId;
 
-    @SerializedName(ApiConstants.VOLUME_IDS)
-    @Param(description = "backup volume ids")
-    private List<String> volumeIds;
+    @SerializedName(ApiConstants.VOLUMES)
+    @Param(description = "backup volumes")
+    private String volumes;
 
     @SerializedName(ApiConstants.STATUS)
     @Param(description = "backup volume ids")
@@ -159,12 +158,12 @@ public class VMBackupResponse extends BaseResponse {
         this.protectedSize = protectedSize;
     }
 
-    public List<String> getVolumeIds() {
-        return volumeIds;
+    public String getVolumes() {
+        return volumes;
     }
 
-    public void setVolumeIds(List<String> volumeIds) {
-        this.volumeIds = volumeIds;
+    public void setVolumes(String volumes) {
+        this.volumes = volumes;
     }
 
     public Date getCreatedDate() {

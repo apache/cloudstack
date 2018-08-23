@@ -151,10 +151,11 @@ public class VeeamBackupProvider extends AdapterBase implements BackupProvider, 
                     final VmwareDatacenter vmwareDC = findVmwareDatacenterForVM(vm);
                     if (client.addVMToVeeamJob(job.getExternalId(), vm.getInstanceName(), vmwareDC.getVcenterHost())) {
                         VMBackupVO vmBackup = ((VMBackupVO) backup);
-                        vmBackup.setStatus(VMBackup.Status.Queued);
+                        vmBackup.setStatus(VMBackup.Status.BackedUp);
                         vmBackup.setExternalId(job.getExternalId());
                         vmBackup.setCreated(new Date());
                         if (!startBackup(vmBackup)) {
+                            vmBackup.setStatus(VMBackup.Status.Failed);
                             LOG.warn("Veeam provider failed to start backup job after creating a new backup for VM id: " + vm.getId());
                         }
                         return vmBackup;

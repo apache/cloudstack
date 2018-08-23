@@ -26,7 +26,6 @@ import javax.inject.Inject;
 import org.apache.cloudstack.api.response.VMBackupResponse;
 import org.apache.cloudstack.backup.VMBackup;
 import org.apache.cloudstack.backup.VMBackupVO;
-import org.apache.commons.collections.CollectionUtils;
 
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -135,13 +134,7 @@ public class VMBackupDaoImpl extends GenericDaoBase<VMBackupVO, Long> implements
         backupResponse.setName(backup.getName());
         backupResponse.setDescription(backup.getDescription());
         backupResponse.setVmId(vm.getUuid());
-        if (CollectionUtils.isNotEmpty(backup.getBackedUpVolumes())) {
-            List<String> volIds = new ArrayList<>();
-            for (VMBackup.VolumeInfo volInfo : backup.getBackedUpVolumes()) {
-                volIds.add(volInfo.toString());
-            }
-            backupResponse.setVolumeIds(volIds);
-        }
+        backupResponse.setVolumes(backup.getVolumes());
         backupResponse.setStatus(backup.getStatus());
         backupResponse.setSize(backup.getSize());
         backupResponse.setProtectedSize(backup.getProtectedSize());

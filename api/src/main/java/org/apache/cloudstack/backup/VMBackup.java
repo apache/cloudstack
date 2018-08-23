@@ -135,6 +135,7 @@ public interface VMBackup extends InternalIdentity, Identity {
     String getDescription();
     Long getVmId();
     List<VolumeInfo> getBackedUpVolumes();
+    String getVolumes();
     Status getStatus();
     Long getSize();
     Long getProtectedSize();

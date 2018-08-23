@@ -604,7 +604,7 @@ public class VeeamClient {
         for (String part : parts) {
             if (part.matches("Id(\\s)+:(.)*")) {
                 String[] split = part.split(":");
-                id = split[1];
+                id = split[1].trim();
             } else if (part.matches("CreationTime(\\s)+:(.)*")) {
                 String [] split = part.split(":", 2);
                 created = split[1].trim();

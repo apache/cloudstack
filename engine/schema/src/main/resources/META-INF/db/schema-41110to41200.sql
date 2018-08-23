@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS `cloud`.`vm_backup` (
   `external_id` varchar(80) COMMENT 'backup ID on provider side',
   `policy_id` bigint(20) unsigned NOT NULL,
   `vm_id` bigint(20) unsigned NOT NULL,
-  `volumes` varchar(5100),
+  `volumes` text,
   `status` varchar(20) NOT NULL,
   `size` bigint(20) DEFAULT 0,
   `protected_size` bigint(20) DEFAULT 0,

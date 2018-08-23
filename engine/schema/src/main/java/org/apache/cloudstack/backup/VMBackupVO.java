@@ -17,10 +17,9 @@
 
 package org.apache.cloudstack.backup;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.StringJoiner;
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -31,11 +30,8 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
-import javax.persistence.Transient;
 
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import org.apache.commons.lang.StringUtils;
+import com.google.gson.Gson;
 
 @Entity
 @Table(name = "vm_backup")
@@ -63,7 +59,7 @@ public class VMBackupVO implements VMBackup {
     @Column(name = "vm_id")
     private Long vmId;
 
-    @Column(name = "volumes")
+    @Column(name = "volumes", length = 65535)
     private String volumes;
 
     @Column(name = "size")
@@ -89,13 +85,9 @@ public class VMBackupVO implements VMBackup {
     @Temporal(value = TemporalType.TIMESTAMP)
     private Date removed;
 
-    @Transient
-    private List<Long> volumeIds;
-
     public VMBackupVO() {
         this.uuid = UUID.randomUUID().toString();
         this.created = new Date();
-        volumeIds = new ArrayList<>();
     }
 
     public VMBackupVO(final String name, final String description, final long policyId, final Long vmId,
@@ -219,27 +211,11 @@ public class VMBackupVO implements VMBackup {
 
     @Override
     public List<VolumeInfo> getBackedUpVolumes() {
-        List<VolumeInfo> info = new ArrayList<>();
-        if (StringUtils.isNotBlank(this.volumes)) {
-            String[] volumes = StringUtils.substringBetween(this.volumes,"[", "]").split(",");
-            for (String vol : volumes) {
-                String[] volParts = vol.split(":");
-                VMBackup.VolumeInfo volumeInfo = new VolumeInfo(volParts[0], volParts[1],
-                        Volume.Type.valueOf(volParts[2]), Long.valueOf(volParts[3]));
-                info.add(volumeInfo);
-            }
-        }
-        return info;
+        return Arrays.asList(new Gson().fromJson(this.volumes, VolumeInfo[].class));
     }
 
-    public void setBackedUpVolumes(List<VolumeVO> volumes) {
-        StringJoiner stringJoiner = new StringJoiner(",", "[", "]");
-        for (VolumeVO volume : volumes) {
-            String volTag = volume.getUuid() + ":" + volume.getPath() + ":" +
-                    volume.getVolumeType().toString() + ":" + volume.getSize();
-            stringJoiner.add(volTag);
-        }
-        this.volumes = stringJoiner.toString();
+    public void setBackedUpVolumes(List<VolumeInfo> volumes) {
+        this.volumes = new Gson().toJson(volumes);
     }
 
     public Date getRemoved() {
@@ -250,7 +226,7 @@ public class VMBackupVO implements VMBackup {
         this.removed = removed;
     }
 
-    protected String getVolumes() {
+    public String getVolumes() {
         return volumes;
     }
 

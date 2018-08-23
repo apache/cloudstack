@@ -68,6 +68,11 @@ public class VeeamBackup implements VMBackup {
     }
 
     @Override
+    public String getVolumes() {
+        return null;
+    }
+
+    @Override
     public Status getStatus() {
         return null;
     }

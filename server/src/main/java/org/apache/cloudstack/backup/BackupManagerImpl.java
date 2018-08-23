@@ -210,7 +210,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     private void setBackupVolumes(VMBackupVO backup, VMInstanceVO vm) {
         List<VolumeVO> vmVolumes = volumeDao.findByInstance(vm.getId());
-        backup.setBackedUpVolumes(vmVolumes);
+        List<VMBackup.VolumeInfo> volInfo = createVolumeInfoFromVolumes(vmVolumes);
+        backup.setBackedUpVolumes(volInfo);
+    }
+
+    private List<VMBackup.VolumeInfo> createVolumeInfoFromVolumes(List<VolumeVO> vmVolumes) {
+        List<VMBackup.VolumeInfo> list = new ArrayList<>();
+        for (VolumeVO vol : vmVolumes) {
+            list.add(new VMBackup.VolumeInfo(vol.getUuid(), vol.getPath(), vol.getVolumeType(), vol.getSize()));
+        }
+        return list;
     }
 
     @Override
