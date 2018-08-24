@@ -382,6 +382,30 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
     }
 
     @Override
+    public Snapshot archiveSnapshot(Long snapshotId) {
+        SnapshotInfo snapshotOnPrimary = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Primary);
+
+        if (snapshotOnPrimary == null || !snapshotOnPrimary.getStatus().equals(ObjectInDataStoreStateMachine.State.Ready)) {
+            throw new CloudRuntimeException("Can only archive snapshots present on primary storage. " +
+                    "Cannot find snapshot " + snapshotId + " on primary storage");
+        }
+
+        SnapshotInfo snapshotOnSecondary = snapshotSrv.backupSnapshot(snapshotOnPrimary);
+        SnapshotVO snapshotVO = _snapshotDao.findById(snapshotOnSecondary.getId());
+        snapshotVO.setLocationType(Snapshot.LocationType.SECONDARY);
+        _snapshotDao.persist(snapshotVO);
+
+        try {
+            snapshotSrv.deleteSnapshot(snapshotOnPrimary);
+        } catch (Exception e) {
+            throw new CloudRuntimeException("Snapshot archived to Secondary Storage but there was an error deleting " +
+                    " the snapshot on Primary Storage. Please manually delete the primary snapshot " + snapshotId, e);
+        }
+
+        return snapshotOnSecondary;
+    }
+
+    @Override
     public Snapshot backupSnapshot(Long snapshotId) {
         SnapshotInfo snapshot = snapshotFactory.getSnapshot(snapshotId, DataStoreRole.Image);
         if (snapshot != null) {
