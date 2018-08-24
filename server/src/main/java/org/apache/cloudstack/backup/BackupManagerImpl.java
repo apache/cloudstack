@@ -171,7 +171,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     public List<VMBackup> listVMBackups(final Long vmId) {
-        final VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        final VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
         if (vm == null) {
             return new ArrayList<>(backupDao.listAll());
         }
@@ -290,7 +290,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         Long vmId = backup.getVmId();
         BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
-        VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }
@@ -323,7 +323,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         }
         BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
 
-        VMInstanceVO vm = vmInstanceDao.findById(vmId);
+        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }

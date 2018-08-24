@@ -123,7 +123,7 @@ public class VMBackupDaoImpl extends GenericDaoBase<VMBackupVO, Long> implements
     @Override
     public VMBackupResponse newBackupResponse(VMBackup backup) {
         AccountVO account = accountDao.findById(backup.getAccountId());
-        VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
+        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         DataCenterVO zone = dataCenterDao.findById(backup.getZoneId());
 
         VMBackupResponse backupResponse = new VMBackupResponse();
