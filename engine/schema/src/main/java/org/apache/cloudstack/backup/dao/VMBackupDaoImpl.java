@@ -116,8 +116,9 @@ public class VMBackupDaoImpl extends GenericDaoBase<VMBackupVO, Long> implements
         sc.setParameters("zone_id", zoneId);
         if (state != null) {
             sc.setParameters("status", state);
+            return new ArrayList<>(listIncludingRemovedBy(sc));
         }
-        return new ArrayList<>(listIncludingRemovedBy(sc));
+        return new ArrayList<>(listBy(sc));
     }
 
     @Override

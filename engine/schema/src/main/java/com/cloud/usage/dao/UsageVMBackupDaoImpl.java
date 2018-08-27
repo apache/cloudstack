@@ -55,6 +55,9 @@ public class UsageVMBackupDaoImpl extends GenericDaoBase<UsageVMBackupVO, Long> 
                 qb.and(qb.entity().getZoneId(), SearchCriteria.Op.EQ, backup.getZoneId());
                 qb.and(qb.entity().getBackupId(), SearchCriteria.Op.EQ, backup.getId());
                 final UsageVMBackupVO entry = findOneBy(qb.create());
+                if (entry == null) {
+                    return false;
+                }
                 entry.setSize(backup.getSize());
                 entry.setProtectedSize(backup.getProtectedSize());
                 return update(entry.getId(), entry);
