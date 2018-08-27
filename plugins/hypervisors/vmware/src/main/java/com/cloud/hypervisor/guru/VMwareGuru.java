@@ -769,12 +769,22 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Check if disk is ROOT disk
      */
-    private boolean isRootDisk(VirtualDisk disk, Map<VirtualDisk, VolumeVO> disksMapping) {
+    private boolean isRootDisk(VirtualDisk disk, Map<VirtualDisk, VolumeVO> disksMapping, VMBackup backup) {
         if (!disksMapping.containsKey(disk)) {
             return false;
         }
         VolumeVO volumeVO = disksMapping.get(disk);
-        return volumeVO != null && volumeVO.getVolumeType().equals(Volume.Type.ROOT);
+        if (volumeVO == null) {
+            List<VMBackup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
+            for (VMBackup.VolumeInfo backedUpVolume : backedUpVolumes) {
+                if (backedUpVolume.getSize().equals(disk.getCapacityInBytes())) {
+                    return backedUpVolume.getType().equals(Volume.Type.ROOT);
+                }
+            }
+        } else {
+            return volumeVO.getVolumeType().equals(Volume.Type.ROOT);
+        }
+        throw new CloudRuntimeException("Could not determinate ROOT disk for VM to import");
     }
 
     /**
@@ -813,9 +823,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Get pool ID for VM being imported
      */
-    private Long getImportingVMPoolId(List<VirtualDisk> disks, Map<VirtualDisk, VolumeVO> disksMapping) {
+    private Long getImportingVMPoolId(List<VirtualDisk> disks, Map<VirtualDisk, VolumeVO> disksMapping, VMBackup backup) {
         for (VirtualDisk disk : disks) {
-            if (isRootDisk(disk, disksMapping)) {
+            if (isRootDisk(disk, disksMapping, backup)) {
                 return getPoolId(disk);
             }
         }
@@ -868,14 +878,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      * Get template size
      */
     private Long getTemplateSize(VirtualMachineMO template, String vmInternalName,
-                                 Map<VirtualDisk, VolumeVO> disksMapping) throws Exception {
+                                 Map<VirtualDisk, VolumeVO> disksMapping, VMBackup backup) throws Exception {
         List<VirtualDisk> disks = template.getVirtualDisks();
-        for (VirtualDisk disk : disks) {
-            if (isRootDisk(disk, disksMapping)) {
-                return disk.getCapacityInBytes();
-            }
+        if (CollectionUtils.isEmpty(disks)) {
+            throw new CloudRuntimeException("Couldn't find VM template size");
         }
-        throw new CloudRuntimeException("Could not find ROOT disk for VM: " + vmInternalName);
+        return disks.get(0).getCapacityInBytes();
     }
 
     /**
@@ -921,15 +929,15 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      * Get template ID for VM being imported. If it is not found, it is created
      */
     private Long getImportingVMTemplate(List<VirtualDisk> virtualDisks, DatacenterMO dcMo, String vmInternalName,
-                                        Long guestOsId, long accountId, Map<VirtualDisk, VolumeVO> disksMapping) throws Exception {
+                                        Long guestOsId, long accountId, Map<VirtualDisk, VolumeVO> disksMapping, VMBackup backup) throws Exception {
         for (VirtualDisk disk : virtualDisks) {
-            if (isRootDisk(disk, disksMapping)) {
+            if (isRootDisk(disk, disksMapping, backup)) {
                 VolumeVO volumeVO = disksMapping.get(disk);
                 if (volumeVO == null) {
                     String templatePath = getRootDiskTemplatePath(disk);
                     VirtualMachineMO template = getTemplate(dcMo, templatePath);
                     Long poolId = getTemplatePoolId(template);
-                    Long templateSize = getTemplateSize(template, vmInternalName, disksMapping);
+                    Long templateSize = getTemplateSize(template, vmInternalName, disksMapping, backup);
                     long templateId = getTemplateId(templatePath, vmInternalName, guestOsId, accountId);
                     updateTemplateRef(templateId, poolId, templatePath, templateSize);
                     return templateId;
@@ -1015,7 +1023,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     protected VolumeVO updateVolume(VirtualDisk disk, Map<VirtualDisk, VolumeVO> disksMapping, VirtualMachineMO vmToImport, Long poolId) throws Exception {
         VolumeVO volumeVO = disksMapping.get(disk);
         String volumeName = getVolumeName(disk, vmToImport);
-        volumeVO.setName(volumeName);
         volumeVO.setPath(volumeName);
         volumeVO.setPoolId(poolId);
         _volumeDao.update(volumeVO.getId(), volumeVO);
@@ -1026,7 +1033,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      * Get volumes for VM being imported
      */
     private void importVMVolumes(VMInstanceVO vmInstanceVO, Long poolId, List<VirtualDisk> virtualDisks,
-                                 Map<VirtualDisk, VolumeVO> disksMapping, VirtualMachineMO vmToImport) throws Exception {
+                                 Map<VirtualDisk, VolumeVO> disksMapping, VirtualMachineMO vmToImport, VMBackup backup) throws Exception {
         long zoneId = vmInstanceVO.getDataCenterId();
         long accountId = vmInstanceVO.getAccountId();
         long domainId = vmInstanceVO.getDomainId();
@@ -1036,10 +1043,10 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         List<VolumeVO> vols = new ArrayList<>();
         for (VirtualDisk disk : virtualDisks) {
             VolumeVO volumeVO;
-            if (disksMapping.containsKey(disk)) {
+            if (disksMapping.containsKey(disk) && disksMapping.get(disk) != null) {
                 volumeVO = updateVolume(disk, disksMapping, vmToImport, poolId);
             } else {
-                volumeVO = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId);
+                volumeVO = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup);
             }
             vols.add(volumeVO);
         }
@@ -1058,15 +1065,21 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     private VolumeVO createVolume(VirtualDisk disk, VirtualMachineMO vmToImport, long domainId, long zoneId,
-                                  long accountId, long instanceId, Long poolId, long templateId) throws Exception {
+                                  long accountId, long instanceId, Long poolId, long templateId, VMBackup backup) throws Exception {
         Long size = disk.getCapacityInBytes();
+        List<VMBackup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
+        Volume.Type type = Volume.Type.DATADISK;
+        for (VMBackup.VolumeInfo volumeInfo : backedUpVolumes) {
+            if (volumeInfo.getSize().equals(disk.getCapacityInBytes())) {
+                type = volumeInfo.getType();
+            }
+        }
         VirtualDeviceBackingInfo backing = disk.getBacking();
         checkBackingInfo(backing);
         VirtualDiskFlatVer2BackingInfo info = (VirtualDiskFlatVer2BackingInfo) backing;
         String volumeName = getVolumeName(disk, vmToImport);
         Storage.ProvisioningType provisioningType = getProvisioningType(info);
         long diskOfferingId = getDiskOfferingId(size, provisioningType, domainId);
-        Volume.Type type = Volume.Type.DATADISK;
         Integer unitNumber = disk.getUnitNumber();
         return createVolumeRecord(type, volumeName, zoneId, domainId, accountId, diskOfferingId,
                 provisioningType, size, instanceId, poolId, templateId, unitNumber);
@@ -1308,14 +1321,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
                 long guestOsId = getImportingVMGuestOs(configSummary);
                 long serviceOfferingId = getImportingVMServiceOffering(configSummary, runtimeInfo);
-                long poolId = getImportingVMPoolId(virtualDisks, disksMapping);
-                long templateId = getImportingVMTemplate(virtualDisks, dcMo, vmInternalName, guestOsId, accountId, disksMapping);
+                long poolId = getImportingVMPoolId(virtualDisks, disksMapping, backup);
+                long templateId = getImportingVMTemplate(virtualDisks, dcMo, vmInternalName, guestOsId, accountId, disksMapping, backup);
 
                 VMInstanceVO vmInstanceVO = getVM(vmInternalName, templateId, guestOsId,
                         serviceOfferingId, zoneId, accountId, userId, domainId);
 
                 importVMNics(nicDevices, dcMo, networksMapping, vmInstanceVO);
-                importVMVolumes(vmInstanceVO, poolId, virtualDisks, disksMapping, vmToImport);
+                importVMVolumes(vmInstanceVO, poolId, virtualDisks, disksMapping, vmToImport, backup);
                 return vmInstanceVO;
             }
         });
@@ -1323,7 +1336,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
     @Override
     public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, VMBackup.VolumeInfo volumeInfo,
-                                                        VirtualMachine vm, long poolId) throws Exception {
+                                                        VirtualMachine vm, long poolId, VMBackup backup) throws Exception {
         DatacenterMO dcMo = getDatacenterMO(zoneId);
         VirtualMachineMO vmRestored = findVM(dcMo, location);
         VirtualMachineMO vmMo = findVM(dcMo, vm.getInstanceName());
@@ -1349,7 +1362,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
         VirtualDisk attachedDisk = getAttachedDisk(vmMo, diskPath);
         createVolume(attachedDisk, vmMo, vm.getDomainId(), vm.getDataCenterId(), vm.getAccountId(), vm.getId(),
-                poolId, vm.getTemplateId());
+                poolId, vm.getTemplateId(), backup);
 
         return true;
     }

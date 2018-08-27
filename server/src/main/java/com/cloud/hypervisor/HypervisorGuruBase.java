@@ -233,7 +233,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
 
     @Override
     public boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, VMBackup.VolumeInfo volumeInfo,
-                                                        VirtualMachine vm, long poolId) throws Exception {
+                                                        VirtualMachine vm, long poolId, VMBackup backup) throws Exception {
         return false;
     }
 }

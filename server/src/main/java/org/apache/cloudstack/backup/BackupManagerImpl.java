@@ -292,10 +292,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
         if (vm == null) {
-            throw new CloudRuntimeException("VM " + vmId + " does not exist");
+            throw new CloudRuntimeException("VM " + vmId + " couldn't be found on existing or removed VMs");
         }
-        if (!vm.getState().equals(VirtualMachine.State.Stopped)) {
-            throw new CloudRuntimeException("VM should be stopped before being restored from backup");
+        if (vm.getRemoved() == null && !vm.getState().equals(VirtualMachine.State.Stopped)) {
+            throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
         }
         if (!backupProvider.restoreVMFromBackup(vm, backup.getExternalId(), restorePointId)) {
             throw new CloudRuntimeException("Error restoring VM " + vm.getId() + " from backup " + backup.getId());
@@ -340,7 +340,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("Error restoring volume " + backedUpVolumeUuid);
         }
         if (!attachVolumeToVM(backup.getZoneId(), result.second(), backup.getBackedUpVolumes(),
-                            backedUpVolumeUuid, vm, datastoreUuid)) {
+                            backedUpVolumeUuid, vm, datastoreUuid, backup)) {
             throw new CloudRuntimeException("Error attaching volume " + backedUpVolumeUuid + " to VM " + vm.getUuid());
         }
         return true;
@@ -378,14 +378,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
      * Attach volume to VM
      */
     private boolean attachVolumeToVM(Long zoneId, String restoredVolumeLocation, List<VMBackup.VolumeInfo> backedUpVolumes,
-                                     String volumeUuid, VMInstanceVO vm, String datastoreUuid) throws Exception {
+                                     String volumeUuid, VMInstanceVO vm, String datastoreUuid, VMBackup backup) throws Exception {
         HypervisorGuru guru = hypervisorGuruManager.getGuru(vm.getHypervisorType());
         VMBackup.VolumeInfo volumeInfo = getVolumeInfo(backedUpVolumes, volumeUuid);
         StoragePoolVO pool = primaryDataStoreDao.findByUuid(datastoreUuid);
 
         LOG.debug("Attaching the restored volume to VM " + vm.getId());
         try {
-            return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, volumeInfo, vm, pool.getId());
+            return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, volumeInfo, vm, pool.getId(), backup);
         } catch (Exception e) {
             throw new CloudRuntimeException("Error attach restored volume to VM " + vm.getUuid());
         }

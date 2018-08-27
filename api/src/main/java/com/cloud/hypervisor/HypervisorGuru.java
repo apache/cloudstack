@@ -90,5 +90,5 @@ public interface HypervisorGuru extends Adapter {
                                         String vmInternalName, VMBackup backup) throws Exception;
 
     boolean attachRestoredVolumeToVirtualMachine(long zoneId, String location, VMBackup.VolumeInfo volumeInfo,
-                                                 VirtualMachine vm, long poolId) throws Exception;
+                                                 VirtualMachine vm, long poolId, VMBackup backup) throws Exception;
 }
