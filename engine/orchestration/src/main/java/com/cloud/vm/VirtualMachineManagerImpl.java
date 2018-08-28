@@ -1123,6 +1123,9 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
                     vmGuru.finalizeDeployment(cmds, vmProfile, dest, ctx);
 
+                    // Get VM extraConfig from DB and set to VM TO
+                    addExtraConfig(vmTO);
+
                     work = _workDao.findById(work.getId());
                     if (work == null || work.getStep() != Step.Prepare) {
                         throw new ConcurrentOperationException("Work steps have been changed: " + work);
@@ -1284,6 +1287,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         if (startedVm == null) {
             throw new CloudRuntimeException("Unable to start instance '" + vm.getHostName() + "' (" + vm.getUuid() + "), see management server log for details");
+        }
+    }
+
+    // Add extra config data to the vmTO as a Map
+    private void addExtraConfig(VirtualMachineTO vmTO) {
+        Map<String, String> details = vmTO.getDetails();
+        for (String key : details.keySet()) {
+            if (key.startsWith(ApiConstants.EXTRA_CONFIG)) {
+                vmTO.addExtraConfig(key, details.get(key));
+            }
         }
     }
 
