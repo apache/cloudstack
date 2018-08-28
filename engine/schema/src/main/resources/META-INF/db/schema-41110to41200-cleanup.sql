@@ -18,3 +18,10 @@
 --;
 -- Schema upgrade cleanup from 4.11.1.0 to 4.12.0.0
 --;
+
+DROP TABLE IF EXISTS `cloud`.`iam_account_policy_map`;
+DROP TABLE IF EXISTS `cloud`.`iam_group_account_map`;
+DROP TABLE IF EXISTS `cloud`.`iam_group_policy_map`;
+DROP TABLE IF EXISTS `cloud`.`iam_group`;
+DROP TABLE IF EXISTS `cloud`.`iam_policy_permission`;
+DROP TABLE IF EXISTS `cloud`.`iam_policy`;
