@@ -17,16 +17,16 @@
 
 package org.apache.cloudstack.backup.dao;
 
+import java.util.List;
+
 import org.apache.cloudstack.api.response.BackupPolicyResponse;
 import org.apache.cloudstack.backup.BackupPolicy;
 import org.apache.cloudstack.backup.BackupPolicyVO;
 
 import com.cloud.utils.db.GenericDao;
 
-import java.util.List;
-
 public interface BackupPolicyDao extends GenericDao<BackupPolicyVO, Long> {
-
     BackupPolicyResponse newBackupPolicyResponse(BackupPolicy policy);
     List<BackupPolicy> listByZone(Long zoneId);
+    BackupPolicy listByExternalId(String externalId);
 }

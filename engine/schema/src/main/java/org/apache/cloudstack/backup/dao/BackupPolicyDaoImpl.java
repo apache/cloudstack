@@ -49,6 +49,7 @@ public class BackupPolicyDaoImpl extends GenericDaoBase<BackupPolicyVO, Long> im
     protected void init() {
         backupPoliciesSearch = createSearchBuilder();
         backupPoliciesSearch.and("zone_id", backupPoliciesSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
+        backupPoliciesSearch.and("external_id", backupPoliciesSearch.entity().getExternalId(), SearchCriteria.Op.EQ);
         backupPoliciesSearch.done();
     }
 
@@ -75,5 +76,12 @@ public class BackupPolicyDaoImpl extends GenericDaoBase<BackupPolicyVO, Long> im
             sc.setParameters("zone_id", zoneId);
         }
         return new ArrayList<>(listBy(sc));
+    }
+
+    @Override
+    public BackupPolicy listByExternalId(String externalId) {
+        SearchCriteria<BackupPolicyVO> sc = backupPoliciesSearch.create();
+        sc.setParameters("external_id", externalId);
+        return findOneBy(sc);
     }
 }

@@ -116,11 +116,14 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_IMPORT_POLICY, eventDescription = "importing backup policy", async = true)
     public BackupPolicy importBackupPolicy(final Long zoneId, final String policyExternalId,
                                            final String policyName, final String policyDescription) {
+        final BackupPolicy existingPolicy = backupPolicyDao.listByExternalId(policyExternalId);
+        if (existingPolicy != null) {
+            throw new CloudRuntimeException("A backup policy with external ID " + policyExternalId + " already exists");
+        }
         final BackupProvider provider = getBackupProvider(zoneId);
         if (!provider.isBackupPolicy(zoneId, policyExternalId)) {
             throw new CloudRuntimeException("Policy " + policyExternalId + " does not exist on provider " + provider.getName() + " on zone " + zoneId);
         }
-
         final BackupPolicyVO policy = new BackupPolicyVO(zoneId, policyExternalId, policyName, policyDescription);
         final BackupPolicyVO savedPolicy = backupPolicyDao.persist(policy);
         if (savedPolicy == null) {
@@ -147,7 +150,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
      * List imported backup policies in the zone zoneId
      */
     private List<BackupPolicy> listInternalPolicies(Long zoneId) {
-        LOG.debug("Listing imported backup policies on zone " + zoneId);
         return backupPolicyDao.listByZone(zoneId);
     }
 
@@ -159,7 +161,6 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (policy == null) {
             throw new CloudRuntimeException("Policy " + policyId + " does not exist");
         }
-        LOG.debug("Listing imported backup policy with id: " + policyId);
         return Collections.singletonList(policy);
     }
 
@@ -168,7 +169,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (policyId != null) {
             return listInternalPolicyById(policyId);
         } else {
-            return BooleanUtils.isTrue(external) ? listExternalPolicies(zoneId) : listInternalPolicies(zoneId);
+            if (BooleanUtils.isTrue(external) && accountService.isRootAdmin(CallContext.current().getCallingAccountId())) {
+                return listExternalPolicies(zoneId);
+            } else {
+                return listInternalPolicies(zoneId);
+            }
         }
     }
 
