@@ -19,10 +19,10 @@ package org.apache.cloudstack.backup;
 
 import java.util.List;
 
-import com.cloud.hypervisor.Hypervisor;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.component.Manager;
 import com.cloud.utils.component.PluggableService;
 
@@ -94,7 +94,7 @@ public interface BackupManager extends BackupService, Configurable, PluggableSer
     /**
      * Restore a full VM from backup
      */
-    boolean restoreVMFromBackup(final Long backupId, final String restorePointId);
+    boolean restoreVMBackup(final Long backupId, final String restorePointId);
 
     /**
      * Restore a backed up volume and attach it to a VM

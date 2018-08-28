@@ -27,6 +27,7 @@ import com.cloud.utils.db.GenericDao;
 
 public interface VMBackupDao extends GenericDao<VMBackupVO, Long> {
 
+    List<VMBackup> listByAccountId(Long accountId);
     List<VMBackup> listByVmId(Long zoneId, Long vmId);
     List<VMBackup> syncVMBackups(Long zoneId, Long vmId, List<VMBackup> externalBackups);
     List<VMBackup> listByZoneAndState(Long zoneId, VMBackup.Status state);

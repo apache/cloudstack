@@ -40,12 +40,12 @@ import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.utils.exception.CloudRuntimeException;
 
-@APICommand(name = RestoreVMFromBackupCmd.APINAME,
-        description = "Restore VM from backup",
+@APICommand(name = RestoreVMBackupCmd.APINAME,
+        description = "Restore a VM from a VM backup",
         responseObject = SuccessResponse.class, since = "4.12.0",
         authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
-public class RestoreVMFromBackupCmd extends BaseAsyncCmd {
-    public static final String APINAME = "restoreVMFromBackup";
+public class RestoreVMBackupCmd extends BaseAsyncCmd {
+    public static final String APINAME = "restoreVMBackup";
 
     @Inject
     private BackupManager backupManager;
@@ -86,7 +86,7 @@ public class RestoreVMFromBackupCmd extends BaseAsyncCmd {
     @Override
     public void execute() throws ResourceUnavailableException, InsufficientCapacityException, ServerApiException, ConcurrentOperationException, ResourceAllocationException, NetworkRuleConflictException {
         try {
-            boolean result = backupManager.restoreVMFromBackup(backupId, restorePointId);
+            boolean result = backupManager.restoreVMBackup(backupId, restorePointId);
             if (result) {
                 SuccessResponse response = new SuccessResponse(getCommandName());
                 response.setResponseName(getCommandName());

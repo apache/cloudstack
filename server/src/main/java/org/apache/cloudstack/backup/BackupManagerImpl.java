@@ -34,7 +34,7 @@ import org.apache.cloudstack.api.command.user.backup.DeleteVMBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.ListBackupPoliciesCmd;
 import org.apache.cloudstack.api.command.user.backup.ListVMBackupRestorePoints;
 import org.apache.cloudstack.api.command.user.backup.ListVMBackupsCmd;
-import org.apache.cloudstack.api.command.user.backup.RestoreVMFromBackupCmd;
+import org.apache.cloudstack.api.command.user.backup.RestoreVMBackupCmd;
 import org.apache.cloudstack.api.command.user.backup.RestoreVolumeFromBackupAndAttachToVMCmd;
 import org.apache.cloudstack.api.command.user.backup.StartVMBackupCmd;
 import org.apache.cloudstack.backup.dao.BackupPolicyDao;
@@ -68,6 +68,7 @@ import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.usage.dao.UsageVMBackupDao;
 import com.cloud.user.Account;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -87,6 +88,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     private VMInstanceDao vmInstanceDao;
     @Inject
     private AccountService accountService;
+    @Inject
+    private AccountManager accountManager;
     @Inject
     private VMBackupDao backupDao;
     @Inject
@@ -171,10 +174,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     public List<VMBackup> listVMBackups(final Long vmId) {
+        final Account callerAccount = CallContext.current().getCallingAccount();
         final VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
         if (vm == null) {
-            return new ArrayList<>(backupDao.listAll());
+            if (accountService.isRootAdmin(callerAccount.getId())) {
+                return new ArrayList<>(backupDao.listAll());
+            } else {
+                return new ArrayList<>(backupDao.listByAccountId(callerAccount.getId()));
+            }
         }
+        accountManager.checkAccess(callerAccount, null, true, vm);
         return backupDao.listByVmId(vm.getDataCenterId(), vm.getId());
     }
 
@@ -185,16 +194,19 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("VM does not exist");
         }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
         final BackupPolicyVO policy = backupPolicyDao.findById(policyId);
         if (policy == null) {
             throw new CloudRuntimeException("Policy does not exist");
         }
+
         VMBackupVO backup = new VMBackupVO(name, description, policyId, vmId, VMBackup.Status.Allocated, vm.getAccountId(), vm.getDataCenterId());
         setBackupVolumes(backup, vm);
         backup = backupDao.persist(backup);
         if (backup == null) {
             throw new CloudRuntimeException("Failed to save backup object in database");
         }
+
         final BackupProvider backupProvider = getBackupProvider(vm.getDataCenterId());
         backup = (VMBackupVO) backupProvider.createVMBackup(policy, vm, backup);
         if (backup == null) {
@@ -229,6 +241,10 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vmBackup == null) {
             throw new CloudRuntimeException("VM Backup id " + vmBackupId + " does not exist");
         }
+        final VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmBackup.getVmId());
+        if (vm != null) {
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
+        }
         final BackupProvider backupProvider = getBackupProvider(vmBackup.getZoneId());
         return backupProvider.startBackup(vmBackup);
     }
@@ -245,7 +261,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }
-
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
         final BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
         boolean result = backupProvider.removeVMBackup(vm, backup);
         if (result) {
@@ -283,7 +299,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_VM_BACKUP_RESTORE, eventDescription = "restoring VM from backup", async = true)
-    public boolean restoreVMFromBackup(final Long backupId, final String restorePointId) {
+    public boolean restoreVMBackup(final Long backupId, final String restorePointId) {
         VMBackupVO backup = backupDao.findById(backupId);
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
@@ -294,6 +310,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " couldn't be found on existing or removed VMs");
         }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
         if (vm.getRemoved() == null && !vm.getState().equals(VirtualMachine.State.Stopped)) {
             throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
         }
@@ -321,12 +338,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
         }
-        BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
-
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
         Pair<String, String> restoreInfo = getRestoreVolumeHostAndDatastore(vm);
         String hostIp = restoreInfo.first();
@@ -334,6 +350,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
         LOG.debug("Asking provider to restore volume " + backedUpVolumeUuid + " from backup " + backupId +
                 " and restore point " + restorePointId + " and attach it to VM: " + vm.getUuid());
+        BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
         Pair<Boolean, String> result = backupProvider.restoreBackedUpVolume(backup.getZoneId(), backup.getUuid(),
                                                         restorePointId, backedUpVolumeUuid, hostIp, datastoreUuid);
         if (!result.first()) {
@@ -406,10 +423,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (backup == null) {
             throw new CloudRuntimeException("Could not find backup " + backupId);
         }
-        VMInstanceVO vm = vmInstanceDao.findById(backup.getVmId());
+        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
         if (vm == null) {
             throw new CloudRuntimeException("Could not find VM: " + backup.getVmId());
         }
+        accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
         BackupProvider backupProvider = getBackupProvider(backup.getZoneId());
         return backupProvider.listVMBackupRestorePoints(backup.getUuid(), vm);
     }
@@ -445,18 +463,16 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
     @Override
     public List<Class<?>> getCommands() {
         final List<Class<?>> cmdList = new ArrayList<Class<?>>();
-        // VM Backup Policy APIs
         cmdList.add(ListBackupProvidersCmd.class);
         cmdList.add(ListBackupPoliciesCmd.class);
         cmdList.add(ImportBackupPolicyCmd.class);
         cmdList.add(DeleteBackupPolicyCmd.class);
-        // VM Backup APIs
         cmdList.add(ListVMBackupsCmd.class);
         cmdList.add(CreateVMBackupCmd.class);
         cmdList.add(StartVMBackupCmd.class);
         cmdList.add(DeleteVMBackupCmd.class);
         cmdList.add(ListVMBackupRestorePoints.class);
-        cmdList.add(RestoreVMFromBackupCmd.class);
+        cmdList.add(RestoreVMBackupCmd.class);
         cmdList.add(RestoreVolumeFromBackupAndAttachToVMCmd.class);
         cmdList.add(ImportVMCmdByAdmin.class);
         return cmdList;

@@ -61,11 +61,20 @@ public class VMBackupDaoImpl extends GenericDaoBase<VMBackupVO, Long> implements
     protected void init() {
         backupSearch = createSearchBuilder();
         backupSearch.and("vm_id", backupSearch.entity().getVmId(), SearchCriteria.Op.EQ);
+        backupSearch.and("account_id", backupSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         backupSearch.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         backupSearch.and("external_id", backupSearch.entity().getExternalId(), SearchCriteria.Op.EQ);
         backupSearch.and("status", backupSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         backupSearch.done();
     }
+
+    @Override
+    public List<VMBackup> listByAccountId(Long accountId) {
+        SearchCriteria<VMBackupVO> sc = backupSearch.create();
+        sc.setParameters("account_id", accountId);
+        return new ArrayList<>(listBy(sc));
+    }
+
     @Override
     public List<VMBackup> listByVmId(Long zoneId, Long vmId) {
         SearchCriteria<VMBackupVO> sc = backupSearch.create();
