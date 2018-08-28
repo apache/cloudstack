@@ -34,6 +34,7 @@ import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.NetworkMO;
 import com.cloud.hypervisor.vmware.mo.VirtualDiskManagerMO;
+import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
 import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
 import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
 import com.cloud.hypervisor.vmware.util.VmwareContext;
@@ -58,6 +59,7 @@ import com.cloud.vm.Nic;
 import com.cloud.vm.UserVmVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDao;
+import com.google.gson.Gson;
 import com.vmware.vim25.ManagedObjectReference;
 import com.vmware.vim25.VirtualDevice;
 import com.vmware.vim25.VirtualDeviceBackingInfo;
@@ -83,6 +85,7 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.cloudstack.utils.volume.VirtualMachineDiskInfo;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
@@ -977,7 +980,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
      */
     private VolumeVO createVolumeRecord(Volume.Type type, String volumeName, long zoneId, long domainId,
                                         long accountId, long diskOfferingId, Storage.ProvisioningType provisioningType,
-                                        Long size, long instanceId, Long poolId, long templateId, Integer unitNumber) {
+                                        Long size, long instanceId, Long poolId, long templateId, Integer unitNumber, VirtualMachineDiskInfo diskInfo) {
         VolumeVO volumeVO = new VolumeVO(type, volumeName, zoneId, domainId, accountId, diskOfferingId,
                 provisioningType, size, null, null, null);
         volumeVO.setFormat(Storage.ImageFormat.OVA);
@@ -986,6 +989,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         volumeVO.setInstanceId(instanceId);
         volumeVO.setPoolId(poolId);
         volumeVO.setTemplateId(templateId);
+        volumeVO.setChainInfo(new Gson().toJson(diskInfo));
         if (unitNumber != null) {
             volumeVO.setDeviceId(unitNumber.longValue());
         }
@@ -1025,6 +1029,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         String volumeName = getVolumeName(disk, vmToImport);
         volumeVO.setPath(volumeName);
         volumeVO.setPoolId(poolId);
+        VirtualMachineDiskInfo diskInfo = getDiskInfo(vmToImport, poolId, volumeName);
+        volumeVO.setChainInfo(new Gson().toJson(diskInfo));
         _volumeDao.update(volumeVO.getId(), volumeVO);
         return volumeVO;
     }
@@ -1064,6 +1070,12 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         }
     }
 
+    private VirtualMachineDiskInfo getDiskInfo(VirtualMachineMO vmMo, Long poolId, String volumeName) throws Exception {
+        VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+        String poolName = _storagePoolDao.findById(poolId).getUuid().replace("-", "");
+        return diskInfoBuilder.getDiskInfoByBackingFileBaseName(volumeName, poolName);
+    }
+
     private VolumeVO createVolume(VirtualDisk disk, VirtualMachineMO vmToImport, long domainId, long zoneId,
                                   long accountId, long instanceId, Long poolId, long templateId, VMBackup backup) throws Exception {
         Long size = disk.getCapacityInBytes();
@@ -1081,8 +1093,9 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         Storage.ProvisioningType provisioningType = getProvisioningType(info);
         long diskOfferingId = getDiskOfferingId(size, provisioningType, domainId);
         Integer unitNumber = disk.getUnitNumber();
+        VirtualMachineDiskInfo diskInfo = getDiskInfo(vmToImport, poolId, volumeName);
         return createVolumeRecord(type, volumeName, zoneId, domainId, accountId, diskOfferingId,
-                provisioningType, size, instanceId, poolId, templateId, unitNumber);
+                provisioningType, size, instanceId, poolId, templateId, unitNumber, diskInfo);
     }
 
     /**
@@ -1232,7 +1245,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         List<VMBackup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
         for (VMBackup.VolumeInfo backedUpVol : backedUpVolumes) {
             for (VirtualDisk disk : virtualDisks) {
-                if (backedUpVol.getSize().equals(disk.getCapacityInBytes())) {
+                if (!map.containsKey(disk) && backedUpVol.getSize().equals(disk.getCapacityInBytes())) {
                     String volId = backedUpVol.getUuid();
                     VolumeVO vol = _volumeDao.findByUuid(volId);
                     map.put(disk, vol);
