@@ -316,7 +316,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("VM " + vmId + " couldn't be found on existing or removed VMs");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
-        if (vm.getRemoved() == null && !vm.getState().equals(VirtualMachine.State.Stopped)) {
+        if (vm.getRemoved() == null && (!vm.getState().equals(VirtualMachine.State.Stopped) ||
+                !vm.getState().equals(VirtualMachine.State.Destroyed))) {
             throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
         }
         if (!backupProvider.restoreVMFromBackup(vm, backup.getExternalId(), restorePointId)) {
@@ -346,6 +347,11 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
+        }
+
+        VMInstanceVO vmFromBackup = vmInstanceDao.findByIdIncludingRemoved(backup.getVmId());
+        if (vmFromBackup != null) {
+            accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vmFromBackup);
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
 
