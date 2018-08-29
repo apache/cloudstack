@@ -316,8 +316,8 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
             throw new CloudRuntimeException("VM " + vmId + " couldn't be found on existing or removed VMs");
         }
         accountManager.checkAccess(CallContext.current().getCallingAccount(), null, true, vm);
-        if (vm.getRemoved() == null && (!vm.getState().equals(VirtualMachine.State.Stopped) ||
-                !vm.getState().equals(VirtualMachine.State.Destroyed))) {
+        if (vm.getRemoved() == null && !vm.getState().equals(VirtualMachine.State.Stopped) &&
+                !vm.getState().equals(VirtualMachine.State.Destroyed)) {
             throw new CloudRuntimeException("Existing VM should be stopped before being restored from backup");
         }
         if (!backupProvider.restoreVMFromBackup(vm, backup.getExternalId(), restorePointId)) {
