@@ -141,9 +141,7 @@ import org.apache.cloudstack.api.response.VpcResponse;
 import org.apache.cloudstack.api.response.VpnUsersResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.cloudstack.backup.BackupPolicy;
-import org.apache.cloudstack.backup.BackupPolicyVO;
 import org.apache.cloudstack.backup.VMBackup;
-import org.apache.cloudstack.backup.VMBackupVO;
 import org.apache.cloudstack.config.Configuration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
@@ -3496,7 +3494,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 resourceId = sg.getId();
                 usageRecResponse.setUsageId(sg.getUuid());
             }
-        } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT) {
+        } else if (usageRecord.getUsageType() == UsageTypes.VM_SNAPSHOT || usageRecord.getUsageType() == UsageTypes.VM_BACKUP) {
             VMInstanceVO vm = _entityMgr.findByIdIncludingRemoved(VMInstanceVO.class, usageRecord.getVmInstanceId().toString());
             resourceType = ResourceObjectType.UserVm;
             if (vm != null) {
@@ -3505,22 +3503,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setUsageId(vm.getUuid());
             }
             usageRecResponse.setSize(usageRecord.getSize());
+            if (usageRecord.getVirtualSize() != null) {
+                usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
+            }
             if (usageRecord.getOfferingId() != null) {
                 usageRecResponse.setOfferingId(usageRecord.getOfferingId().toString());
             }
-        } else if (usageRecord.getUsageType() == UsageTypes.VM_BACKUP) {
-            VMBackupVO backup = _entityMgr.findByIdIncludingRemoved(VMBackupVO.class, usageRecord.getUsageId().toString());
-            resourceType = ResourceObjectType.VMBackup;
-            if (backup != null) {
-                usageRecResponse.setUsageId(backup.getUuid());
-                BackupPolicyVO policy = _entityMgr.findByIdIncludingRemoved(BackupPolicyVO.class, String.valueOf(backup.getPolicyId()));
-                if (policy != null) {
-                    usageRecResponse.setOfferingId(policy.getUuid());
-                }
-                resourceId = backup.getId();
-            }
-            usageRecResponse.setSize(usageRecord.getSize());
-            usageRecResponse.setVirtualSize(usageRecord.getVirtualSize());
         }
 
         if(resourceTagResponseMap != null && resourceTagResponseMap.get(resourceId + ":" + resourceType) != null) {
