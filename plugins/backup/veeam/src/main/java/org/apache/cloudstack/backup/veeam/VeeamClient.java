@@ -548,7 +548,7 @@ public class VeeamClient {
     public boolean deleteJobAndBackup(final String jobName) {
         Pair<Boolean, String> result = executePowerShellCommands(Arrays.asList(
                 String.format("$job = Get-VBRJob -Name \"%s\"", jobName),
-                "Remove-VBRJob -Job $job -Confirm:$false",
+                "if ($job) { Remove-VBRJob -Job $job -Confirm:$false }",
                 String.format("$backup = Get-VBRBackup -Name \"%s\"", jobName),
                 "if ($backup) { Remove-VBRBackup -Backup $backup -FromDisk -Confirm:$false }",
                 "$repo = Get-VBRBackupRepository",
