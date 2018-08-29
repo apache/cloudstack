@@ -1243,11 +1243,14 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     private Map<VirtualDisk, VolumeVO> getDisksMapping(VMBackup backup, List<VirtualDisk> virtualDisks) {
         Map<VirtualDisk, VolumeVO> map = new HashMap<>();
         List<VMBackup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
+        Map<String, Boolean> usedVols = new HashMap<>();
         for (VMBackup.VolumeInfo backedUpVol : backedUpVolumes) {
             for (VirtualDisk disk : virtualDisks) {
-                if (!map.containsKey(disk) && backedUpVol.getSize().equals(disk.getCapacityInBytes())) {
+                if (!map.containsKey(disk) && backedUpVol.getSize().equals(disk.getCapacityInBytes())
+                        && !usedVols.containsKey(backedUpVol.getUuid())) {
                     String volId = backedUpVol.getUuid();
                     VolumeVO vol = _volumeDao.findByUuid(volId);
+                    usedVols.put(backedUpVol.getUuid(), true);
                     map.put(disk, vol);
                 }
             }
