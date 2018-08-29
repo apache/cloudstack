@@ -25,7 +25,6 @@ override_dh_auto_clean:
 override_dh_auto_install:
 	# Common packages
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)
-	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/init.d
 	mkdir -p $(DESTDIR)/$(SYSCONFDIR)/default
 
 	mkdir -p $(DESTDIR)/var/cache/$(PACKAGE)
@@ -43,7 +42,6 @@ override_dh_auto_install:
 	install -D plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm-$(VERSION).jar $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 
-	install -m0755 packaging/debian/$(PACKAGE)-agent.init $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-agent
 	install -d -m0755 debian/$(PACKAGE)-agent/lib/systemd/system
 	# Fix libvirt service name for Debian/Ubuntu
 	sed -i 's/Requires=libvirtd.service/Requires=libvirt-bin.service/g' packaging/systemd/$(PACKAGE)-agent.service
@@ -85,7 +83,6 @@ override_dh_auto_install:
 	mv $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/server/cloudstack-sudoers $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/$(PACKAGE)
 	chmod 0440 $(DESTDIR)/$(SYSCONFDIR)/sudoers.d/$(PACKAGE)
 
-	install -D packaging/debian/init/cloud-management $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-management
 	install -D client/target/utilities/bin/cloud-update-xenserver-licenses $(DESTDIR)/usr/bin/cloudstack-update-xenserver-licenses
 	# Remove configuration in /ur/share/cloudstack-management/webapps/client/WEB-INF
 	# This should all be in /etc/cloudstack/management
@@ -130,7 +127,6 @@ override_dh_auto_install:
 	cp usage/target/transformed/db.properties $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/
 	cp usage/target/transformed/log4j-cloud_usage.xml $(DESTDIR)/$(SYSCONFDIR)/$(PACKAGE)/usage/log4j-cloud.xml
 
-	install -D -m0755 packaging/debian/$(PACKAGE)-usage.init $(DESTDIR)/$(SYSCONFDIR)/init.d/$(PACKAGE)-usage
 	install -d -m0755 debian/$(PACKAGE)-usage/lib/systemd/system
 	install -m0644 packaging/systemd/$(PACKAGE)-usage.service debian/$(PACKAGE)-usage/lib/systemd/system/$(PACKAGE)-usage.service
 	install -m0644 packaging/systemd/$(PACKAGE)-usage.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-usage
@@ -142,9 +138,6 @@ override_dh_auto_install:
 	# cloudstack-integration-tests
 	mkdir -p $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests
 	cp -r test/integration/* $(DESTDIR)/usr/share/$(PACKAGE)-integration-tests/
-
-override_dh_installinit:
-	dh_installinit -pcloudstack-management -pcloudstack-agent -pcloudstack-usage --onlyscripts --no-start
 
 override_dh_systemd_enable:
 	dh_systemd_enable -pcloudstack-management -pcloudstack-agent -pcloudstack-usage
