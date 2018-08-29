@@ -64,6 +64,7 @@ public class VMBackupDaoImpl extends GenericDaoBase<VMBackupVO, Long> implements
         backupSearch.and("account_id", backupSearch.entity().getAccountId(), SearchCriteria.Op.EQ);
         backupSearch.and("zone_id", backupSearch.entity().getZoneId(), SearchCriteria.Op.EQ);
         backupSearch.and("external_id", backupSearch.entity().getExternalId(), SearchCriteria.Op.EQ);
+        backupSearch.and("policy_id", backupSearch.entity().getPolicyId(), SearchCriteria.Op.EQ);
         backupSearch.and("status", backupSearch.entity().getStatus(), SearchCriteria.Op.EQ);
         backupSearch.done();
     }
@@ -80,6 +81,13 @@ public class VMBackupDaoImpl extends GenericDaoBase<VMBackupVO, Long> implements
         SearchCriteria<VMBackupVO> sc = backupSearch.create();
         sc.setParameters("vm_id", vmId);
         sc.setParameters("zone_id", zoneId);
+        return new ArrayList<>(listBy(sc));
+    }
+
+    @Override
+    public List<VMBackup> listByPolicyId(Long policyId) {
+        SearchCriteria<VMBackupVO> sc = backupSearch.create();
+        sc.setParameters("policy_id", policyId);
         return new ArrayList<>(listBy(sc));
     }
 

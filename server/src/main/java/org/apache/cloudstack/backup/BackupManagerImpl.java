@@ -425,6 +425,9 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
 
     @Override
     public boolean deleteBackupPolicy(final Long policyId) {
+        if (!backupDao.listByPolicyId(policyId).isEmpty()) {
+            throw new CloudRuntimeException("Cannot allow deletion of backup policy due to use in existing VM backups, please delete the VM backups first");
+        }
         BackupPolicyVO policy = backupPolicyDao.findById(policyId);
         if (policy == null) {
             throw new CloudRuntimeException("Could not find a backup policy with id: " + policyId);
