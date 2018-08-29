@@ -26,50 +26,6 @@ import java.util.UUID;
 
 import javax.inject.Inject;
 
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
-import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
-import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
-import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
-import com.cloud.hypervisor.vmware.mo.DatacenterMO;
-import com.cloud.hypervisor.vmware.mo.NetworkMO;
-import com.cloud.hypervisor.vmware.mo.VirtualDiskManagerMO;
-import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
-import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
-import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
-import com.cloud.hypervisor.vmware.util.VmwareContext;
-import com.cloud.network.Network;
-import com.cloud.network.Networks;
-import com.cloud.network.dao.PhysicalNetworkDao;
-import com.cloud.network.dao.PhysicalNetworkVO;
-import com.cloud.service.ServiceOfferingVO;
-import com.cloud.service.dao.ServiceOfferingDao;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.utils.UuidUtils;
-import com.cloud.utils.db.Transaction;
-import com.cloud.utils.db.TransactionCallbackWithException;
-import com.cloud.utils.db.TransactionStatus;
-import com.cloud.vm.Nic;
-import com.cloud.vm.UserVmVO;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.UserVmDao;
-import com.google.gson.Gson;
-import com.vmware.vim25.ManagedObjectReference;
-import com.vmware.vim25.VirtualDevice;
-import com.vmware.vim25.VirtualDeviceBackingInfo;
-import com.vmware.vim25.VirtualDeviceConnectInfo;
-import com.vmware.vim25.VirtualDisk;
-import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
-import com.vmware.vim25.VirtualE1000;
-import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
-import com.vmware.vim25.VirtualMachineConfigSummary;
-import com.vmware.vim25.VirtualMachineRuntimeInfo;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.backup.VMBackup;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
@@ -79,8 +35,8 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.storage.command.CopyCommand;
-import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.DeleteCommand;
+import org.apache.cloudstack.storage.command.DownloadCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -109,6 +65,7 @@ import com.cloud.agent.api.to.NicTO;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.cluster.ClusterManager;
 import com.cloud.exception.InsufficientAddressCapacityException;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.host.Host;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
@@ -116,46 +73,89 @@ import com.cloud.host.dao.HostDetailsDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.HypervisorGuru;
 import com.cloud.hypervisor.HypervisorGuruBase;
+import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
+import com.cloud.hypervisor.vmware.dao.VmwareDatacenterZoneMapDao;
 import com.cloud.hypervisor.vmware.manager.VmwareManager;
+import com.cloud.hypervisor.vmware.mo.DatacenterMO;
 import com.cloud.hypervisor.vmware.mo.DiskControllerType;
+import com.cloud.hypervisor.vmware.mo.NetworkMO;
+import com.cloud.hypervisor.vmware.mo.VirtualDiskManagerMO;
 import com.cloud.hypervisor.vmware.mo.VirtualEthernetCardType;
+import com.cloud.hypervisor.vmware.mo.VirtualMachineDiskInfoBuilder;
+import com.cloud.hypervisor.vmware.mo.VirtualMachineMO;
+import com.cloud.hypervisor.vmware.resource.VmwareContextFactory;
+import com.cloud.hypervisor.vmware.util.VmwareContext;
+import com.cloud.network.Network;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.NetworkModel;
+import com.cloud.network.Networks;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
+import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeDao;
 import com.cloud.network.dao.PhysicalNetworkTrafficTypeVO;
+import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.secstorage.CommandExecLogVO;
+import com.cloud.service.ServiceOfferingVO;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
 import com.cloud.storage.Storage;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSDao;
 import com.cloud.storage.dao.GuestOSHypervisorDao;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.secondary.SecondaryStorageVmManager;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
 import com.cloud.utils.Pair;
+import com.cloud.utils.UuidUtils;
 import com.cloud.utils.db.DB;
+import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallbackWithException;
+import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
+import com.cloud.vm.Nic;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.SecondaryStorageVmVO;
+import com.cloud.vm.UserVmVO;
+import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.VmDetailConstants;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.NicDao;
+import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.gson.Gson;
+import com.vmware.vim25.ManagedObjectReference;
+import com.vmware.vim25.VirtualDevice;
+import com.vmware.vim25.VirtualDeviceBackingInfo;
+import com.vmware.vim25.VirtualDeviceConnectInfo;
+import com.vmware.vim25.VirtualDisk;
+import com.vmware.vim25.VirtualDiskFlatVer2BackingInfo;
+import com.vmware.vim25.VirtualE1000;
+import com.vmware.vim25.VirtualEthernetCardNetworkBackingInfo;
+import com.vmware.vim25.VirtualMachineConfigSummary;
+import com.vmware.vim25.VirtualMachineRuntimeInfo;
 
 public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Configurable {
     private static final Logger s_logger = Logger.getLogger(VMwareGuru.class);
@@ -1052,7 +1052,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
             if (disksMapping.containsKey(disk) && disksMapping.get(disk) != null) {
                 volumeVO = updateVolume(disk, disksMapping, vmToImport, poolId);
             } else {
-                volumeVO = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup);
+                volumeVO = createVolume(disk, vmToImport, domainId, zoneId, accountId, instanceId, poolId, templateId, backup, true);
             }
             vols.add(volumeVO);
         }
@@ -1077,13 +1077,15 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     private VolumeVO createVolume(VirtualDisk disk, VirtualMachineMO vmToImport, long domainId, long zoneId,
-                                  long accountId, long instanceId, Long poolId, long templateId, VMBackup backup) throws Exception {
+                                  long accountId, long instanceId, Long poolId, long templateId, VMBackup backup, boolean isImport) throws Exception {
         Long size = disk.getCapacityInBytes();
         List<VMBackup.VolumeInfo> backedUpVolumes = backup.getBackedUpVolumes();
         Volume.Type type = Volume.Type.DATADISK;
-        for (VMBackup.VolumeInfo volumeInfo : backedUpVolumes) {
-            if (volumeInfo.getSize().equals(disk.getCapacityInBytes())) {
-                type = volumeInfo.getType();
+        if (isImport) {
+            for (VMBackup.VolumeInfo volumeInfo : backedUpVolumes) {
+                if (volumeInfo.getSize().equals(disk.getCapacityInBytes())) {
+                    type = volumeInfo.getType();
+                }
             }
         }
         VirtualDeviceBackingInfo backing = disk.getBacking();
@@ -1378,7 +1380,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
         VirtualDisk attachedDisk = getAttachedDisk(vmMo, diskPath);
         createVolume(attachedDisk, vmMo, vm.getDomainId(), vm.getDataCenterId(), vm.getAccountId(), vm.getId(),
-                poolId, vm.getTemplateId(), backup);
+                poolId, vm.getTemplateId(), backup, false);
 
         return true;
     }

@@ -403,9 +403,13 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
                                      String volumeUuid, VMInstanceVO vm, String datastoreUuid, VMBackup backup) throws Exception {
         HypervisorGuru guru = hypervisorGuruManager.getGuru(vm.getHypervisorType());
         VMBackup.VolumeInfo volumeInfo = getVolumeInfo(backedUpVolumes, volumeUuid);
-        StoragePoolVO pool = primaryDataStoreDao.findByUuid(datastoreUuid);
+        if (volumeInfo == null) {
+            throw new CloudRuntimeException("Failed to find volume in the backedup volumes of ID " + volumeUuid);
+        }
+        volumeInfo.setType(Volume.Type.DATADISK);
 
         LOG.debug("Attaching the restored volume to VM " + vm.getId());
+        StoragePoolVO pool = primaryDataStoreDao.findByUuid(datastoreUuid);
         try {
             return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, volumeInfo, vm, pool.getId(), backup);
         } catch (Exception e) {

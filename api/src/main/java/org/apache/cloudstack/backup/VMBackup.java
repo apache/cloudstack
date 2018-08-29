@@ -20,10 +20,11 @@ package org.apache.cloudstack.backup;
 import java.util.Date;
 import java.util.List;
 
-import com.cloud.storage.Volume;
-import com.cloud.utils.StringUtils;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
+
+import com.cloud.storage.Volume;
+import com.cloud.utils.StringUtils;
 
 public interface VMBackup extends InternalIdentity, Identity {
 
@@ -112,6 +113,10 @@ public interface VMBackup extends InternalIdentity, Identity {
 
         public Volume.Type getType() {
             return type;
+        }
+
+        public void setType(Volume.Type type) {
+            this.type = type;
         }
 
         public String getPath() {
