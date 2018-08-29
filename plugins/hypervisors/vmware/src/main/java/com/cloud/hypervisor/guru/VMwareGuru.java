@@ -824,18 +824,6 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     }
 
     /**
-     * Get pool ID for VM being imported
-     */
-    private Long getImportingVMPoolId(List<VirtualDisk> disks, Map<VirtualDisk, VolumeVO> disksMapping, VMBackup backup) {
-        for (VirtualDisk disk : disks) {
-            if (isRootDisk(disk, disksMapping, backup)) {
-                return getPoolId(disk);
-            }
-        }
-        throw new CloudRuntimeException("No ROOT disk found");
-    }
-
-    /**
      * Get volume name from filename
      */
     private String getVolumeNameFromFileName(String fileName) {
@@ -1038,7 +1026,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     /**
      * Get volumes for VM being imported
      */
-    private void importVMVolumes(VMInstanceVO vmInstanceVO, Long poolId, List<VirtualDisk> virtualDisks,
+    private void importVMVolumes(VMInstanceVO vmInstanceVO, List<VirtualDisk> virtualDisks,
                                  Map<VirtualDisk, VolumeVO> disksMapping, VirtualMachineMO vmToImport, VMBackup backup) throws Exception {
         long zoneId = vmInstanceVO.getDataCenterId();
         long accountId = vmInstanceVO.getAccountId();
@@ -1048,6 +1036,7 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
         List<VolumeVO> vols = new ArrayList<>();
         for (VirtualDisk disk : virtualDisks) {
+            Long poolId = getPoolId(disk);
             VolumeVO volumeVO;
             if (disksMapping.containsKey(disk) && disksMapping.get(disk) != null) {
                 volumeVO = updateVolume(disk, disksMapping, vmToImport, poolId);
@@ -1339,14 +1328,13 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
 
                 long guestOsId = getImportingVMGuestOs(configSummary);
                 long serviceOfferingId = getImportingVMServiceOffering(configSummary, runtimeInfo);
-                long poolId = getImportingVMPoolId(virtualDisks, disksMapping, backup);
                 long templateId = getImportingVMTemplate(virtualDisks, dcMo, vmInternalName, guestOsId, accountId, disksMapping, backup);
 
                 VMInstanceVO vmInstanceVO = getVM(vmInternalName, templateId, guestOsId,
                         serviceOfferingId, zoneId, accountId, userId, domainId);
 
                 importVMNics(nicDevices, dcMo, networksMapping, vmInstanceVO);
-                importVMVolumes(vmInstanceVO, poolId, virtualDisks, disksMapping, vmToImport, backup);
+                importVMVolumes(vmInstanceVO, virtualDisks, disksMapping, vmToImport, backup);
                 return vmInstanceVO;
             }
         });
