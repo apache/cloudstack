@@ -344,7 +344,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         if (backup == null) {
             throw new CloudRuntimeException("Backup " + backupId + " does not exist");
         }
-        VMInstanceVO vm = vmInstanceDao.findByIdIncludingRemoved(vmId);
+        VMInstanceVO vm = vmInstanceDao.findById(vmId);
         if (vm == null) {
             throw new CloudRuntimeException("VM " + vmId + " does not exist");
         }
@@ -378,7 +378,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
      * Get the pair: hostIp, datastoreUuid in which to restore the volume, based on the VM to be attached information
      */
     private Pair<String, String> getRestoreVolumeHostAndDatastore(VMInstanceVO vm) {
-        List<VolumeVO> rootVmVolume = volumeDao.findByInstanceAndType(vm.getId(), Volume.Type.ROOT);
+        List<VolumeVO> rootVmVolume = volumeDao.findIncludingRemovedByInstanceAndType(vm.getId(), Volume.Type.ROOT);
         Long poolId = rootVmVolume.get(0).getPoolId();
         StoragePoolVO storagePoolVO = primaryDataStoreDao.findById(poolId);
         String datastoreUuid = storagePoolVO.getUuid();
