@@ -161,7 +161,7 @@ class TestHostHA(cloudstackTestCase):
         cmd.recover = recover
         cmd.fence = fence
         response = self.apiclient.configureSimulatorHAProviderState(cmd)
-        self.assertEqual(response.success, 'true')
+        self.assertEqual(response.success, True)
 
 
     def getSimulatorHAStateTransitions(self, hostId):

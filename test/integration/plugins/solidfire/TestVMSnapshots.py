@@ -44,6 +44,10 @@ from marvin.lib.utils import cleanup_resources
 #  Only one pod
 #  Only one cluster
 
+# Running the tests:
+#  Change the "hypervisor_type" variable to control which hypervisor type to test.
+#  If using XenServer, verify the "xen_server_hostname" variable is correct.
+
 
 class TestData:
     account = "account"
@@ -74,6 +78,7 @@ class TestData:
 
     # modify to control which hypervisor type to test
     hypervisor_type = xenServer
+    xen_server_hostname = "XenServer-6.5-1"
 
     def __init__(self):
         self.testdata = {
@@ -129,7 +134,7 @@ class TestData:
                 "customizediops": False,
                 "miniops": "10000",
                 "maxiops": "15000",
-                "hypervisorsnapshotreserve": 200,
+                "hypervisorsnapshotreserve": 400,
                 TestData.tags: TestData.storageTag
             },
             TestData.diskOffering: {
@@ -139,7 +144,7 @@ class TestData:
                 "customizediops": False,
                 "miniops": 300,
                 "maxiops": 500,
-                "hypervisorsnapshotreserve": 200,
+                "hypervisorsnapshotreserve": 400,
                 TestData.tags: TestData.storageTag,
                 "storagetype": "shared"
             },
@@ -179,7 +184,7 @@ class TestVMSnapshots(cloudstackTestCase):
 
         # Set up XenAPI connection
         host_ip = "https://" + \
-                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId], name="XenServer-6.5-1")[0].ipaddress
+                  list_hosts(cls.apiClient, clusterid=cls.testdata[TestData.clusterId], name=TestData.xen_server_hostname)[0].ipaddress
 
         cls.xen_session = XenAPI.Session(host_ip)
 

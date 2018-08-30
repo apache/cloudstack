@@ -44,7 +44,7 @@ cd ${CLOUDSTACK_DIR}/systemvm/debian
 tar -cf ${TEMP_DIR}/cloud_scripts/usr/share/cloud/cloud-scripts.tar *
 
 cd ${TEMP_DIR}
-shar `find . -print` > ${CURR_DIR}/cloud_scripts_shar_archive.sh
+shar `find . -print` > "${CURR_DIR}"/cloud_scripts_shar_archive.sh
 
 cd ${CURR_DIR}
 rm -rf ${TEMP_DIR}

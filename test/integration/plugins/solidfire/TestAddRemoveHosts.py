@@ -34,7 +34,7 @@ from marvin.cloudstackTestCase import cloudstackTestCase
 from marvin.lib.base import Account, ServiceOffering, User, Host, StoragePool, VirtualMachine
 
 # common - commonly used methods for all tests are listed here
-from marvin.lib.common import get_domain, get_template, get_zone, list_hosts, list_clusters, list_volumes
+from marvin.lib.common import get_domain, get_template, get_zone, list_clusters, list_hosts, list_volumes
 
 # utils - utility classes for common cleanup, external library wrappers, etc.
 from marvin.lib.utils import cleanup_resources
@@ -46,14 +46,15 @@ from marvin.lib.utils import cleanup_resources
 #
 # Running the tests:
 #  Change the "hypervisor_type" variable to control which hypervisor type to test.
-#  If using XenServer, set a breakpoint on each test after the first one. When the breakpoint is hit, reset the added/removed
-#   host to a snapshot state and re-start it. Once it's up and running, run the test code.
+#  If using XenServer, set a breakpoint on each test after the first one. When the breakpoint is hit, reset the
+#   added/removed host to a snapshot state and re-start it. Once it's up and running, run the test code.
 #  Check that ip_address_of_new_xenserver_host / ip_address_of_new_kvm_host is correct.
 #  If using XenServer, verify the "xen_server_master_hostname" variable is correct.
 #  If using KVM, verify the "kvm_1_ip_address" variable is correct.
 #
 # Note:
-#  If you do have more than one cluster, you might need to change this line: cls.cluster = list_clusters(cls.apiClient)[0]
+#  If you do have more than one cluster, you might need to change this line: cls.cluster = list_clusters(cls.apiClient)[0] and
+#   this variable's value: TestData.clusterId.
 
 
 class TestData:
@@ -95,18 +96,18 @@ class TestData:
     # modify to control which hypervisor type to test
     hypervisor_type = xenServer
     xen_server_master_hostname = "XenServer-6.5-1"
-    kvm_1_ip_address = "10.117.40.112"
-    ip_address_of_new_xenserver_host = "10.117.40.107"
-    ip_address_of_new_kvm_host = "10.117.40.116"
+    kvm_1_ip_address = "10.117.40.111"
+    ip_address_of_new_xenserver_host = "10.117.40.118"
+    ip_address_of_new_kvm_host = "10.117.40.115"
 
     def __init__(self):
         self.testdata = {
             TestData.solidFire: {
-                TestData.mvip: "10.117.40.120",
+                TestData.mvip: "10.117.78.225",
                 TestData.username: "admin",
                 TestData.password: "admin",
                 TestData.port: 443,
-                TestData.url: "https://10.117.40.120:443"
+                TestData.url: "https://10.117.78.225:443"
             },
             TestData.kvm: {
                 TestData.username: "root",
@@ -147,7 +148,7 @@ class TestData:
             TestData.primaryStorage: {
                 TestData.name: "SolidFire-%d" % random.randint(0, 100),
                 TestData.scope: "ZONE",
-                TestData.url: "MVIP=10.117.40.120;SVIP=10.117.41.120;" +
+                TestData.url: "MVIP=10.117.78.225;SVIP=10.117.94.225;" +
                        "clusterAdminUsername=admin;clusterAdminPassword=admin;" +
                        "clusterDefaultMinIops=10000;clusterDefaultMaxIops=15000;" +
                        "clusterDefaultBurstIopsPercentOfMaxIops=1.5;",
@@ -160,7 +161,7 @@ class TestData:
             TestData.primaryStorage2: {
                 TestData.name: "SolidFireShared-%d" % random.randint(0, 100),
                 TestData.scope: "CLUSTER",
-                TestData.url: "MVIP=10.117.40.120;SVIP=10.117.41.120;" +
+                TestData.url: "MVIP=10.117.78.225;SVIP=10.117.94.225;" +
                        "clusterAdminUsername=admin;clusterAdminPassword=admin;" +
                        "minIops=5000;maxIops=50000;burstIops=75000",
                 TestData.provider: "SolidFireShared",
@@ -454,6 +455,143 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         self._perform_add_remove_xenserver_host(primary_storage_2.id, sf_iscsi_name)
 
+    # Make sure each host is in its own VAG.
+    # Create a VM that needs a new volume from the storage that has a VAG per host.
+    # Verify the volume is in all VAGs.
+    # Remove one of the hosts.
+    # Check that the IQN is no longer in its previous VAG, but that the volume ID is still in that VAG, though.
+    # Add the host back into the cluster. The IQN should be added to a VAG that already has an IQN from this cluster in it.
+    def test_vag_per_host_5(self):
+        hosts = list_hosts(self.apiClient, clusterid=self.cluster.id)
+
+        self.assertTrue(
+            len(hosts) >= 2,
+            "There needs to be at least two hosts."
+        )
+
+        unique_vag_ids = self._get_unique_vag_ids(hosts)
+
+        self.assertTrue(len(hosts) == len(unique_vag_ids), "To run this test, each host should be in its own VAG.")
+
+        primarystorage = self.testdata[TestData.primaryStorage]
+
+        primary_storage = StoragePool.create(
+            self.apiClient,
+            primarystorage,
+            scope=primarystorage[TestData.scope],
+            zoneid=self.zone.id,
+            provider=primarystorage[TestData.provider],
+            tags=primarystorage[TestData.tags],
+            capacityiops=primarystorage[TestData.capacityIops],
+            capacitybytes=primarystorage[TestData.capacityBytes],
+            hypervisor=primarystorage[TestData.hypervisor]
+        )
+
+        self.cleanup.append(primary_storage)
+
+        self.virtual_machine = VirtualMachine.create(
+            self.apiClient,
+            self.testdata[TestData.virtualMachine],
+            accountid=self.account.name,
+            zoneid=self.zone.id,
+            serviceofferingid=self.compute_offering.id,
+            templateid=self.template.id,
+            domainid=self.domain.id,
+            startvm=True
+        )
+
+        root_volume = self._get_root_volume(self.virtual_machine)
+
+        sf_account_id = sf_util.get_sf_account_id(self.cs_api, self.account.id, primary_storage.id, self, TestAddRemoveHosts._sf_account_id_should_be_non_zero_int_err_msg)
+
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
+
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, root_volume.name, self)
+
+        sf_vag_ids = sf_util.get_vag_ids(self.cs_api, self.cluster.id, primary_storage.id, self)
+
+        sf_util.check_vags(sf_volume, sf_vag_ids, self)
+
+        host = Host(hosts[0].__dict__)
+
+        host_iqn = self._get_host_iqn(host)
+
+        all_vags = sf_util.get_all_vags(self.sfe)
+
+        host_vag = self._get_host_vag(host_iqn, all_vags)
+
+        self.assertTrue(host_vag != None, "The host should be in a VAG.")
+
+        host.delete(self.apiClient)
+
+        sf_volumes = sf_util.get_active_sf_volumes(self.sfe, sf_account_id)
+
+        sf_volume = sf_util.check_and_get_sf_volume(sf_volumes, root_volume.name, self)
+
+        sf_util.check_vags(sf_volume, sf_vag_ids, self)
+
+        all_vags = sf_util.get_all_vags(self.sfe)
+
+        host_vag = self._get_host_vag(host_iqn, all_vags)
+
+        self.assertTrue(host_vag == None, "The host should not be in a VAG.")
+
+        details = {
+            TestData.username: "root",
+            TestData.password: "solidfire",
+            TestData.url: "http://" + host.ipaddress,
+            TestData.podId : host.podid,
+            TestData.zoneId: host.zoneid
+        }
+
+        host = Host.create(
+            self.apiClient,
+            self.cluster,
+            details,
+            hypervisor=host.hypervisor
+        )
+
+        self.assertTrue(
+            isinstance(host, Host),
+            "'host' is not a 'Host'."
+        )
+
+        hosts = list_hosts(self.apiClient, clusterid=self.cluster.id)
+
+        unique_vag_ids = self._get_unique_vag_ids(hosts)
+
+        self.assertTrue(len(hosts) == len(unique_vag_ids) + 1, "There should be one more host than unique VAG.")
+
+    def _get_unique_vag_ids(self, hosts):
+        all_vags = sf_util.get_all_vags(self.sfe)
+
+        unique_vag_ids = []
+
+        for host in hosts:
+            host = Host(host.__dict__)
+
+            host_iqn = self._get_host_iqn(host)
+
+            host_vag = self._get_host_vag(host_iqn, all_vags)
+
+            if host_vag != None and host_vag.volume_access_group_id not in unique_vag_ids:
+                unique_vag_ids.append(host_vag.volume_access_group_id)
+
+        return unique_vag_ids
+
+    def _get_host_vag(self, host_iqn, vags):
+        self.assertTrue(host_iqn, "'host_iqn' should not be 'None'.")
+        self.assertTrue(vags, "'vags' should not be 'None'.")
+
+        self.assertTrue(isinstance(host_iqn, basestring), "'host_iqn' should be a 'string'.")
+        self.assertTrue(isinstance(vags, list), "'vags' should be a 'list'.")
+
+        for vag in vags:
+            if host_iqn in vag.initiators:
+                return vag
+
+        return None
+
     def _perform_add_remove_xenserver_host(self, primary_storage_id, sr_name):
         xen_sr = self.xen_session.xenapi.SR.get_by_name_label(sr_name)[0]
 
@@ -463,7 +601,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         num_pbds = len(pbds)
 
-        sf_vag_id = self._get_sf_vag_id(self.cluster.id, primary_storage_id)
+        sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, primary_storage_id, self)
 
         host_iscsi_iqns = self._get_xenserver_host_iscsi_iqns()
 
@@ -604,7 +742,7 @@ class TestAddRemoveHosts(cloudstackTestCase):
         )
 
     def _perform_add_remove_kvm_host(self, primary_storage_id):
-        sf_vag_id = self._get_sf_vag_id(self.cluster.id, primary_storage_id)
+        sf_vag_id = sf_util.get_vag_id(self.cs_api, self.cluster.id, primary_storage_id, self)
 
         kvm_login = self.testdata[TestData.kvm]
 
@@ -720,6 +858,14 @@ class TestAddRemoveHosts(cloudstackTestCase):
 
         return sql_result[0][0]
 
+    def _get_host_iqn(self, host):
+        sql_query = "Select url From host Where uuid = '" + str(host.id) + "'"
+
+        # make sure you can connect to MySQL: https://teamtreehouse.com/community/cant-connect-remotely-to-mysql-server-with-mysql-workbench
+        sql_result = self.dbConnection.execute(sql_query)
+
+        return sql_result[0][0]
+
     def _get_xenserver_host_iscsi_iqns(self):
         hosts = self.xen_session.xenapi.host.get_all()
 
@@ -766,20 +912,6 @@ class TestAddRemoveHosts(cloudstackTestCase):
         self.assertFalse(len(result.strip()) == 0, "Unable to locate the IQN of the KVM host (Zero-length string)")
 
         return result[len(searchFor):].strip()
-
-    def _get_sf_vag_id(self, cluster_id, primary_storage_id):
-        # Get SF Volume Access Group ID
-        sf_vag_id_request = {'clusterid': cluster_id, 'storageid': primary_storage_id}
-        sf_vag_id_result = self.cs_api.getSolidFireVolumeAccessGroupId(sf_vag_id_request)
-        sf_vag_id = sf_vag_id_result['apisolidfirevolumeaccessgroupid']['solidFireVolumeAccessGroupId']
-
-        self.assertEqual(
-            isinstance(sf_vag_id, int),
-            True,
-            TestAddRemoveHosts._vag_id_should_be_non_zero_int_err_msg
-        )
-
-        return sf_vag_id
 
     def _get_sf_vag(self, sf_vag_id):
         return self.sfe.list_volume_access_groups(sf_vag_id, 1).volume_access_groups[0]

@@ -34,6 +34,8 @@
 - [ ] My code follows the code style of this project.
 - [ ] My change requires a change to the documentation.
 - [ ] I have updated the documentation accordingly.
+Testing
 - [ ] I have added tests to cover my changes.
-- [ ] All new and existing tests passed.
+- [ ] All relevant new and existing integration tests have passed.
+- [ ] A full integration testsuite with all test that can run on my environment has passed.
 

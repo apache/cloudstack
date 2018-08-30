@@ -33,3 +33,7 @@ LOGDIR="/var/log/cloudstack/management"
 CLASSPATH="/etc/cloudstack/management:/usr/share/cloudstack-common:/usr/share/cloudstack-management/setup:/usr/share/cloudstack-management:/usr/share/java/mysql-connector-java.jar:/usr/share/java/commons-daemon.jar"
 
 BOOTSTRAP_CLASS=org.apache.cloudstack.ServerDaemon
+
+#You can uncomment this if you want to enable Java remote debugging.
+#You can change the parameters at your will. The 'address' field defines the port to be used. 
+#JAVA_DEBUG="-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n"

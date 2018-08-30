@@ -44,12 +44,10 @@ CloudStack is built using Java and Python.  To make selection of these tools ver
 
 Following installation, execute the following commands to configure jenv and pyenv for use with CloudStack development:
 
-'''
-  # pyenv install 2.7.11                                          # Install Python 2.7.11
-  # pyenv virtualenv 2.7.11 cloudstack                            # Create a cloidstack virtualenv using Python 2.7.11
-  # pip install -r <root CloudStack source tree>/requirements.txt # Install cloudstack Python dependencies
-  # jenv add <path to JDK 1.7 installation>                       # Add Java7 to jenv
-'''
+    # pyenv install 2.7.11                                          ## Install Python 2.7.11
+    # pyenv virtualenv 2.7.11 cloudstack                            ## Create a cloudstack virtualenv using Python 2.7.11
+    # pip install -r <root CloudStack source tree>/requirements.txt ## Install cloudstack Python dependencies
+    # jenv add <path to JDK 1.7 installation>                       ## Add Java7 to jenv
 
 *N.B.* If you are running Linux, you may need to install additional packages to allow pyenv to build Python.
 
@@ -59,7 +57,7 @@ Following these steps, jenv and pyenv will use .java-version and .python-version
 
 You may get the source code from the repository hosted on Apache:
 
-    $ git clone https://git-wip-us.apache.org/repos/asf/cloudstack.git
+    $ git clone https://gitbox.apache.org/repos/asf/cloudstack.git
 
 Or, you may fork the repository from the official Apache CloudStack mirror on [Github](https://github.com/apache/cloudstack)
 
@@ -97,13 +95,13 @@ field should be left blank which is defaulted to the ROOT domain.
 
 ## Building with non-redistributable plugins
 
-CloudStack supports several plugins that depend on libraries with distribution restrictions. 
-Because of this they are not included in the default build. Enable these additional plugins 
+CloudStack supports several plugins that depend on libraries with distribution restrictions.
+Because of this they are not included in the default build. Enable these additional plugins
 activate their respective profiles. For convenience adding -Dnoredist will enable all plugins
-that depend on libraries with distribution restrictions. The build procedure expects that the 
-required libraries are present in the maven repository. 
+that depend on libraries with distribution restrictions. The build procedure expects that the
+required libraries are present in the maven repository.
 
-The following procedure can be used to add the libraries to the local maven repository. Details 
+The following procedure can be used to add the libraries to the local maven repository. Details
 on obtaining the required libraries can be found in this file. Note that this will vary between
 releases of CloudStack
 
