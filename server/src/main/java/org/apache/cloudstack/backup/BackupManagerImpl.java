@@ -419,7 +419,7 @@ public class BackupManagerImpl extends ManagerBase implements BackupManager {
         try {
             return guru.attachRestoredVolumeToVirtualMachine(zoneId, restoredVolumeLocation, volumeInfo, vm, pool.getId(), backup);
         } catch (Exception e) {
-            throw new CloudRuntimeException("Error attach restored volume to VM " + vm.getUuid());
+            throw new CloudRuntimeException("Error attach restored volume to VM " + vm.getUuid() + " due to: " + e.getMessage());
         }
     }
 
