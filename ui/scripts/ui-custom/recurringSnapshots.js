@@ -207,9 +207,9 @@
                         });
                     }
                 }]
-            }).closest('.ui-dialog').overlay();
+            });
 
-            return $dialog;
+            return cloudStack.applyDefaultZindexAndOverlayOnJqueryDialogAndRemoveCloseButton($dialog);
         };
     };
 }(cloudStack, jQuery));
