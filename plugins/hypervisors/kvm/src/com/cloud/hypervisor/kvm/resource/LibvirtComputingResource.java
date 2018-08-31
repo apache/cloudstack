@@ -1954,7 +1954,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         features.addFeatures("apic");
         features.addFeatures("acpi");
         //for rhel 6.5 and above, hyperv enlightenment feature is added
-       
+
         if (vmTO.getOs().contains("Windows PV")) {
             LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
             hyv.setRelaxed(true);
