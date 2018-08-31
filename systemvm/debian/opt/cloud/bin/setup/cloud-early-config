@@ -35,6 +35,16 @@ log_it() {
 }
 
 hypervisor() {
+  if [ -d /proc/xen ]; then
+    mount -t xenfs none /proc/xen
+    $(dmesg | grep -q "Xen HVM")
+    if [ $? -eq 0 ]; then  # 1=PV,0=HVM
+      echo "xen-hvm" && return 0
+    else
+      echo "xen-pv" && return 0
+    fi
+  fi
+
   [ -x /usr/sbin/virt-what ] && local facts=( $(virt-what) )
   if [ "$facts" != "" ]; then
     # Xen HVM is recognized as Hyperv when Viridian extensions are enabled
@@ -47,16 +57,6 @@ hypervisor() {
 
   grep -q QEMU /proc/cpuinfo  && echo "kvm" && return 0
   grep -q QEMU /var/log/messages && echo "kvm" && return 0
-
-  [ -d /proc/xen ] && mount -t xenfs none /proc/xen
-  if [ -d /proc/xen ]; then
-    $(dmesg | grep -q "Xen HVM")
-    if [ $? -eq 0 ]; then  # 1=PV,0=HVM
-      echo "xen-hvm" && return 0
-    else
-      echo "xen-pv" && return 0
-    fi
-  fi
 
   vmware-checkvm &> /dev/null && echo "vmware" && return 0
 
