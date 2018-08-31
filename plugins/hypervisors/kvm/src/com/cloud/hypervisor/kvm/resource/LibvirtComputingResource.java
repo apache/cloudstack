@@ -1953,14 +1953,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         features.addFeatures("pae");
         features.addFeatures("apic");
         features.addFeatures("acpi");
-        //for rhel 6.5 and above, hyperv enlightment feature is added
-        /*
-         * if (vmTO.getOs().contains("Windows Server 2008") && hostOsVersion != null && ((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7))) {
-         *    LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
-         *    hyv.setRelaxed(true);
-         *    features.addHyperVFeature(hyv);
-         * }
-         */
+        //for rhel 6.5 and above, hyperv enlightenment feature is added
+       
+        if (vmTO.getOs().contains("Windows PV")) {
+            LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
+            hyv.setRelaxed(true);
+            features.addHyperVFeature(hyv);
+        }
+
         vm.addComp(features);
 
         final TermPolicy term = new TermPolicy();
