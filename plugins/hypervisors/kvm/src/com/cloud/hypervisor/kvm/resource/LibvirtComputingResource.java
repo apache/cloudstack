@@ -1957,7 +1957,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         if (vmTO.getOs().contains("Windows PV")) {
             LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
-            hyv.setRelaxed(true);
+            hyv.setFeature("relaxed", true);
+            hyv.setFeature("vapic", true);
+            hyv.setFeature("spinlocks", true);
+            hyv.setRetries(8096);
             features.addHyperVFeature(hyv);
         }
 
