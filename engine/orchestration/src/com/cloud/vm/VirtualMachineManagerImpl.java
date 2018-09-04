@@ -1890,6 +1890,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
                     if (!stateTransitTo(vm, VirtualMachine.Event.DestroyRequested, vm.getHostId())) {
                         s_logger.debug("Unable to destroy the vm because it is not in the correct state: " + vm);
                         throw new CloudRuntimeException("Unable to destroy " + vm);
+                    } else {
+                        if (expunge) {
+                            if (!stateTransitTo(vm, VirtualMachine.Event.ExpungeOperation, vm.getHostId())) {
+                                s_logger.debug("Unable to expunge the vm because it is not in the correct state: " + vm);
+                                throw new CloudRuntimeException("Unable to expunge " + vm);
+                            }
+                        }
                     }
                 } catch (final NoTransitionException e) {
                     s_logger.debug(e.getMessage());
