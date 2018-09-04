@@ -19,6 +19,7 @@ package com.cloud.storage;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -1138,10 +1139,6 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         StoragePoolVO storagePool = _storagePoolDao.findById(volume.getPoolId());
         boolean isManaged = storagePool.isManaged();
 
-        List<Volume> volumes = new ArrayList<Volume>();
-        volumes.add(volume);
-
-        //check if there is space
         if (!storageMgr.storagePoolHasEnoughSpaceForResize(storagePool, currentSize, newSize)) {
             throw new CloudRuntimeException("Storage pool " + storagePool.getName() + " does not have enough space to resize volume " + volume.getName());
         }
@@ -2069,11 +2066,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
             throw new InvalidParameterValueException("Cannot migrate volume " + vol + "to the destination storage pool " + destPool.getName() + " as the storage pool is in maintenance mode.");
         }
 
-        List<Volume> volumes = new ArrayList<Volume>();
-        volumes.add(vol);
-
-        //check if there is space
-        if (!storageMgr.storagePoolHasEnoughSpace(volumes, destPool)) {
+        if (!storageMgr.storagePoolHasEnoughSpace(Collections.singletonList(vol), destPool)) {
             throw new CloudRuntimeException("Storage pool " + destPool.getName() + " does not have enough space to migrate volume " + vol.getName());
         }
 
