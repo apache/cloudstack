@@ -16,11 +16,11 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.diagnostics;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.InsufficientCapacityException;
-import com.cloud.exception.ResourceUnavailableException;
-import com.cloud.user.Account;
-import com.cloud.vm.VirtualMachine;
+import java.util.Collections;
+import java.util.Map;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.api.ACL;
@@ -41,9 +41,11 @@ import org.apache.cloudstack.diagnostics.DiagnosticsType;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
-import javax.inject.Inject;
-import java.util.Collections;
-import java.util.Map;
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InsufficientCapacityException;
+import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.user.Account;
+import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = RunDiagnosticsCmd.APINAME, responseObject = RunDiagnosticsResponse.class, entityType = {VirtualMachine.class},
         responseHasSensitiveInfo = false,
@@ -124,14 +126,20 @@ public class RunDiagnosticsCmd extends BaseAsyncCmd {
 
     @Override
     public String getEventType() {
-        VirtualMachine vm = _entityMgr.findById(VirtualMachine.class, getId());
-        if (vm.getType() == VirtualMachine.Type.ConsoleProxy) {
-            return EventTypes.EVENT_PROXY_DIAGNOSTICS;
-        } else if (vm.getType() == VirtualMachine.Type.SecondaryStorageVm){
-            return EventTypes.EVENT_SSVM_DIAGNOSTICS;
-        } else {
-            return EventTypes.EVENT_ROUTER_DIAGNOSTICS;
+        VirtualMachine.Type vmType = _entityMgr.findById(VirtualMachine.class, getId()).getType();
+        String eventType = "";
+        switch (vmType) {
+            case ConsoleProxy:
+                eventType =  EventTypes.EVENT_PROXY_DIAGNOSTICS;
+            break;
+            case SecondaryStorageVm:
+                eventType = EventTypes.EVENT_SSVM_DIAGNOSTICS;
+                break;
+            case DomainRouter:
+                eventType = EventTypes.EVENT_ROUTER_DIAGNOSTICS;
+                break;
         }
+        return eventType;
     }
 
     @Override

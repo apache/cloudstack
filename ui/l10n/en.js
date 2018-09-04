@@ -1487,7 +1487,7 @@ var dictionary = {
 "label.rules":"Rules",
 "label.run.diagnostics.type":"Type",
 "label.run.diagnostics.destination":"Destination",
-"label.run.diagnostics.extra":"Extra Args",
+"label.run.diagnostics.extra":"Extra Arguments",
 "label.running.vms":"Running VMs",
 "label.s3.access_key":"Access Key",
 "label.s3.bucket":"Bucket",
