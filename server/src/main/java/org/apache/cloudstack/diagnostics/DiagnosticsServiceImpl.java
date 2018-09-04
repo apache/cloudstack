@@ -28,6 +28,7 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.utils.component.ManagerBase;
@@ -55,7 +56,7 @@ public class DiagnosticsServiceImpl extends ManagerBase implements PluggableServ
     private NetworkOrchestrationService networkManager;
 
     @Override
-    @ActionEvent(eventType = "", eventDescription = "running diagnostics on system vm", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_SYSTEM_VM_DIAGNOSTICS, eventDescription = "running diagnostics on system vm", async = true)
     public Map<String, String> runDiagnosticsCommand(final RunDiagnosticsCmd cmd) {
         final Long vmId = cmd.getId();
         final String cmdType = cmd.getType().getValue();

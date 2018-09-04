@@ -587,6 +587,9 @@ public class EventTypes {
     public static final String EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE = "TEMPLATE.DIRECT.DOWNLOAD.FAILURE";
     public static final String EVENT_ISO_DIRECT_DOWNLOAD_FAILURE = "ISO.DIRECT.DOWNLOAD.FAILURE";
 
+    // Diagnostics Events
+    public static final String EVENT_SYSTEM_VM_DIAGNOSTICS = "SYSTEM.VM.DIAGNOSTICS";
+
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -983,6 +986,7 @@ public class EventTypes {
 
         entityEventDetails.put(EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE, VirtualMachineTemplate.class);
         entityEventDetails.put(EVENT_ISO_DIRECT_DOWNLOAD_FAILURE, "Iso");
+        entityEventDetails.put(EVENT_SYSTEM_VM_DIAGNOSTICS, VirtualMachine.class);
     }
 
     public static String getEntityForEvent(String eventName) {
