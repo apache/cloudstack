@@ -99,17 +99,52 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     Long getBytesReadRate();
 
+    void setBytesReadRateMax(Long bytesReadRateMax);
+
+    Long getBytesReadRateMax();
+
+    void setBytesReadRateMaxLength(Long bytesReadRateMaxLength);
+
+    Long getBytesReadRateMaxLength();
+
+
     void setBytesWriteRate(Long bytesWriteRate);
 
     Long getBytesWriteRate();
+
+    void setBytesWriteRateMax(Long bytesWriteMax);
+
+    Long getBytesWriteRateMax();
+
+    void setBytesWriteRateMaxLength(Long bytesWriteMaxLength);
+
+    Long getBytesWriteRateMaxLength();
+
 
     void setIopsReadRate(Long iopsReadRate);
 
     Long getIopsReadRate();
 
+    void setIopsReadRateMax(Long iopsReadRateMax);
+
+    Long getIopsReadRateMax();
+
+    void setIopsReadRateMaxLength(Long iopsReadRateMaxLength);
+
+    Long getIopsReadRateMaxLength();
+
     void setIopsWriteRate(Long iopsWriteRate);
 
     Long getIopsWriteRate();
+
+    void setIopsWriteRateMax(Long iopsWriteRateMax);
+
+    Long getIopsWriteRateMax();
+
+
+    void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength);
+
+    Long getIopsWriteRateMaxLength();
 
     void setHypervisorSnapshotReserve(Integer hypervisorSnapshotReserve);
 

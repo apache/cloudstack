@@ -2231,7 +2231,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     protected DiskOfferingVO createDiskOffering(final Long userId, final Long domainId, final String name, final String description, final String provisioningType,
             final Long numGibibytes, String tags, boolean isCustomized, final boolean localStorageRequired,
             final boolean isDisplayOfferingEnabled, final Boolean isCustomizedIops, Long minIops, Long maxIops,
-            Long bytesReadRate, Long bytesWriteRate, Long iopsReadRate, Long iopsWriteRate,
+            Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
+            Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
+            Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
+            Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
             final Integer hypervisorSnapshotReserve) {
         long diskSize = 0;// special case for custom disk offerings
         if (numGibibytes != null && numGibibytes <= 0) {
@@ -2251,9 +2254,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (isCustomizedIops != null) {
             bytesReadRate = null;
+            bytesReadRateMax = null;
+            bytesReadRateMaxLength = null;
             bytesWriteRate = null;
+            bytesWriteRateMax = null;
+            bytesWriteRateMaxLength = null;
             iopsReadRate = null;
+            iopsReadRateMax = null;
+            iopsReadRateMaxLength = null;
             iopsWriteRate = null;
+            iopsWriteRateMax = null;
+            iopsWriteRateMaxLength = null;
 
             if (isCustomizedIops) {
                 minIops = null;
@@ -2310,14 +2321,38 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (bytesReadRate != null && bytesReadRate > 0) {
             newDiskOffering.setBytesReadRate(bytesReadRate);
         }
+        if (bytesReadRateMax != null && bytesReadRateMax > 0) {
+            newDiskOffering.setBytesReadRateMax(bytesReadRateMax);
+        }
+        if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > 0) {
+            newDiskOffering.setBytesReadRateMaxLength(bytesReadRateMaxLength);
+        }
         if (bytesWriteRate != null && bytesWriteRate > 0) {
             newDiskOffering.setBytesWriteRate(bytesWriteRate);
+        }
+        if (bytesWriteRateMax != null && bytesWriteRateMax > 0) {
+            newDiskOffering.setBytesWriteRateMax(bytesWriteRateMax);
+        }
+        if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > 0) {
+            newDiskOffering.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
         }
         if (iopsReadRate != null && iopsReadRate > 0) {
             newDiskOffering.setIopsReadRate(iopsReadRate);
         }
+        if (iopsReadRateMax != null && iopsReadRateMax > 0) {
+            newDiskOffering.setIopsReadRateMax(iopsReadRateMax);
+        }
+        if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > 0) {
+            newDiskOffering.setIopsReadRateMaxLength(iopsReadRateMaxLength);
+        }
         if (iopsWriteRate != null && iopsWriteRate > 0) {
             newDiskOffering.setIopsWriteRate(iopsWriteRate);
+        }
+        if (iopsWriteRateMax != null && iopsWriteRateMax > 0) {
+            newDiskOffering.setIopsWriteRateMax(iopsWriteRateMax);
+        }
+        if (iopsWriteRateMaxLength != null && iopsWriteRateMaxLength > 0) {
+            newDiskOffering.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
         }
 
         if (hypervisorSnapshotReserve != null && hypervisorSnapshotReserve < 0) {
@@ -2376,15 +2411,25 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long minIops = cmd.getMinIops();
         final Long maxIops = cmd.getMaxIops();
         final Long bytesReadRate = cmd.getBytesReadRate();
+        final Long bytesReadRateMax = cmd.getBytesReadRateMax();
+        final Long bytesReadRateMaxLength = cmd.getBytesReadRateMaxLength();
         final Long bytesWriteRate = cmd.getBytesWriteRate();
+        final Long bytesWriteRateMax = cmd.getBytesWriteRateMax();
+        final Long bytesWriteRateMaxLength = cmd.getBytesWriteRateMaxLength();
         final Long iopsReadRate = cmd.getIopsReadRate();
+        final Long iopsReadRateMax = cmd.getIopsReadRateMax();
+        final Long iopsReadRateMaxLength = cmd.getIopsReadRateMaxLength();
         final Long iopsWriteRate = cmd.getIopsWriteRate();
+        final Long iopsWriteRateMax = cmd.getIopsWriteRateMax();
+        final Long iopsWriteRateMaxLength = cmd.getIopsWriteRateMaxLength();
         final Integer hypervisorSnapshotReserve = cmd.getHypervisorSnapshotReserve();
 
         final Long userId = CallContext.current().getCallingUserId();
         return createDiskOffering(userId, domainId, name, description, provisioningType, numGibibytes, tags, isCustomized,
                 localStorageRequired, isDisplayOfferingEnabled, isCustomizedIops, minIops,
-                maxIops, bytesReadRate, bytesWriteRate, iopsReadRate, iopsWriteRate, hypervisorSnapshotReserve);
+                maxIops, bytesReadRate, bytesReadRateMax, bytesReadRateMaxLength, bytesWriteRate, bytesWriteRateMax, bytesWriteRateMaxLength,
+                iopsReadRate, iopsReadRateMax, iopsReadRateMaxLength, iopsWriteRate, iopsWriteRateMax, iopsWriteRateMaxLength,
+                hypervisorSnapshotReserve);
     }
 
     @Override

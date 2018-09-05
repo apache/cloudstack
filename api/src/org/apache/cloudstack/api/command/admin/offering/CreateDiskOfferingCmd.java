@@ -80,14 +80,40 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.BYTES_READ_RATE, type = CommandType.LONG, required = false, description = "bytes read rate of the disk offering")
     private Long bytesReadRate;
 
+
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX, type = CommandType.LONG, required = false, description = "burst bytes read rate of the disk offering")
+    private Long bytesReadRateMax;
+
+    @Parameter(name = ApiConstants.BYTES_READ_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    private Long bytesReadRateMaxLength;
+
     @Parameter(name = ApiConstants.BYTES_WRITE_RATE, type = CommandType.LONG, required = false, description = "bytes write rate of the disk offering")
     private Long bytesWriteRate;
+
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX, type = CommandType.LONG, required = false, description = "burst bytes write rate of the disk offering")
+    private Long bytesWriteRateMax;
+
+
+    @Parameter(name = ApiConstants.BYTES_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    private Long bytesWriteRateMaxLength;
 
     @Parameter(name = ApiConstants.IOPS_READ_RATE, type = CommandType.LONG, required = false, description = "io requests read rate of the disk offering")
     private Long iopsReadRate;
 
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX, type = CommandType.LONG, required = false, description = "burst requests read rate of the disk offering")
+    private Long iopsReadRateMax;
+
+    @Parameter(name = ApiConstants.IOPS_READ_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    private Long iopsReadRateMaxLength;
+
     @Parameter(name = ApiConstants.IOPS_WRITE_RATE, type = CommandType.LONG, required = false, description = "io requests write rate of the disk offering")
     private Long iopsWriteRate;
+
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX, type = CommandType.LONG, required = false, description = "burst io requests write rate of the disk offering")
+    private Long iopsWriteRateMax;
+
+    @Parameter(name = ApiConstants.IOPS_WRITE_RATE_MAX_LENGTH, type = CommandType.LONG, required = false, description = "length (in seconds) of the burst")
+    private Long iopsWriteRateMaxLength;
 
     @Parameter(name = ApiConstants.CUSTOMIZED_IOPS, type = CommandType.BOOLEAN, required = false, description = "whether disk offering iops is custom or not")
     private Boolean customizedIops;
@@ -148,16 +174,48 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         return bytesReadRate;
     }
 
+    public Long getBytesReadRateMax() {
+        return bytesReadRateMax;
+    }
+
+    public Long getBytesReadRateMaxLength() {
+        return bytesReadRateMaxLength;
+    }
+
     public Long getBytesWriteRate() {
         return bytesWriteRate;
+    }
+
+    public Long getBytesWriteRateMax() {
+        return bytesWriteRateMax;
+    }
+
+    public Long getBytesWriteRateMaxLength() {
+        return bytesWriteRateMaxLength;
     }
 
     public Long getIopsReadRate() {
         return iopsReadRate;
     }
 
+    public Long getIopsReadRateMax() {
+        return iopsReadRateMax;
+    }
+
+    public Long getIopsReadRateMaxLength() {
+        return iopsReadRateMaxLength;
+    }
+
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    public Long getIopsWriteRateMax() {
+        return iopsWriteRateMax;
+    }
+
+    public Long getIopsWriteRateMaxLength() {
+        return iopsWriteRateMaxLength;
     }
 
     public String getStorageType() {

@@ -46,11 +46,27 @@ public interface VolumeInfo extends DataObject, Volume {
 
     Long getBytesReadRate();
 
+    Long getBytesReadRateMax();
+
+    Long getBytesReadRateMaxLength();
+
     Long getBytesWriteRate();
+
+    Long getBytesWriteRateMax();
+
+    Long getBytesWriteRateMaxLength();
 
     Long getIopsReadRate();
 
+    Long getIopsReadRateMax();
+
+    Long getIopsReadRateMaxLength();
+
     Long getIopsWriteRate();
+
+    Long getIopsWriteRateMax();
+
+    Long getIopsWriteRateMaxLength();
 
     DiskCacheMode getCacheMode();
 }
