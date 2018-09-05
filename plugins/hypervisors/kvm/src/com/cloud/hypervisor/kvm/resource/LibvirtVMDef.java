@@ -915,9 +915,9 @@ public class LibvirtVMDef {
                         diskBuilder.append("<write_bytes_sec_max_length>" + _bytesWriteRateMaxLength + "</write_bytes_sec_max_length>\n");
                     }
                     if (_iopsReadRateMaxLength != null && _iopsReadRateMaxLength > 0)
-                        diskBuilder.append("<read_iops_sec_max_length>>" + _iopsReadRateMaxLength + "</read_iops_sec_max_length>");
+                        diskBuilder.append("<read_iops_sec_max_length>" + _iopsReadRateMaxLength + "</read_iops_sec_max_length>");
                     if (_iopsWriteRateMaxLength != null && _iopsWriteRateMaxLength > 0)
-                        diskBuilder.append("write_iops_sec_max_length>" + _iopsWriteRateMaxLength + "</write_iops_sec_max_length>");
+                        diskBuilder.append("<write_iops_sec_max_length>" + _iopsWriteRateMaxLength + "</write_iops_sec_max_length>");
                 }
 
                 diskBuilder.append("</iotune>\n");
