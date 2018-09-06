@@ -29,6 +29,7 @@ ALTER VIEW `disk_offering_view` AS
         `disk_offering`.`bytes_read_rate` AS `bytes_read_rate`,
         `disk_offering`.`bytes_read_rate_max` AS `bytes_read_rate_max`,
         `disk_offering`.`bytes_read_rate_max_length` AS `bytes_read_rate_max_length`,
+        `disk_offering`.`bytes_write_rate` AS `bytes_write_rate`,
         `disk_offering`.`bytes_write_rate_max` AS `bytes_write_rate_max`,
         `disk_offering`.`bytes_write_rate_max_length` AS `bytes_write_rate_max_length`,
         `disk_offering`.`iops_read_rate` AS `iops_read_rate`,
