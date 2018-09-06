@@ -83,14 +83,38 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name = "bytes_read_rate")
     Long bytesReadRate;
 
+    @Column(name = "bytes_read_rate_max")
+    Long bytesReadRateMax;
+
+    @Column(name = "bytes_read_rate_max_length")
+    Long bytesReadRateMaxLength;
+
     @Column(name = "bytes_write_rate")
     Long bytesWriteRate;
+
+    @Column(name = "bytes_write_rate_max")
+    Long bytesWriteRateMax;
+
+    @Column(name = "bytes_write_rate_max_length")
+    Long bytesWriteRateMaxLength;
 
     @Column(name = "iops_read_rate")
     Long iopsReadRate;
 
+    @Column(name = "iops_read_rate_max")
+    Long iopsReadRateMax;
+
+    @Column(name = "iops_read_rate_max_length")
+    Long iopsReadRateMaxLength;
+
     @Column(name = "iops_write_rate")
     Long iopsWriteRate;
+
+    @Column(name = "iops_write_rate_max")
+    Long iopsWriteRateMax;
+
+    @Column(name = "iops_write_rate_max_length")
+    Long iopsWriteRateMaxLength;
 
     @Column(name = "cache_mode")
     String cacheMode;
@@ -228,15 +252,31 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
         return bytesReadRate;
     }
 
+    public Long getBytesReadRateMax() { return bytesReadRateMax; }
+
+    public Long getBytesReadRateMaxLength() { return bytesReadRateMaxLength; }
+
     public Long getBytesWriteRate() {
         return bytesWriteRate;
     }
+
+    public Long getBytesWriteRateMax() { return bytesWriteRateMax; }
+
+    public Long getBytesWriteRateMaxLength() { return bytesWriteRateMaxLength; }
 
     public Long getIopsReadRate() {
         return iopsReadRate;
     }
 
+    public Long getIopsReadRateMax() { return iopsReadRateMax; }
+
+    public Long getIopsReadRateMaxLength() { return iopsReadRateMaxLength; }
+
     public Long getIopsWriteRate() {
         return iopsWriteRate;
     }
+
+    public Long getIopsWriteRateMax() { return iopsWriteRateMax; }
+
+    public Long getIopsWriteRateMaxLength() { return iopsWriteRateMaxLength; }
 }
