@@ -905,7 +905,7 @@ public class LibvirtVMDef {
                     if (_iopsReadRateMax != null && _iopsReadRateMax > 0)
                         diskBuilder.append("<read_iops_sec_max>" + _iopsReadRateMax + "</read_iops_sec_max>\n");
                     if (_iopsWriteRateMax != null && _iopsWriteRateMax > 0)
-                        diskBuilder.append("<write_iops_sec_max>" + _iopsWriteRateMax + "</write_iops_sec_max");
+                        diskBuilder.append("<write_iops_sec_max>" + _iopsWriteRateMax + "</write_iops_sec_max>");
                 }
                 if (s_qemuVersion >= 2006000) {
                     if (_bytesReadRateMaxLength != null && _bytesReadRateMaxLength > 0) {
