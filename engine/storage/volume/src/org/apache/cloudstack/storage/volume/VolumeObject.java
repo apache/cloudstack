@@ -208,10 +208,46 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
+    public Long getBytesReadRateMax() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getBytesReadRateMax();
+        }
+        return null;
+    }
+
+    @Override
+    public Long getBytesReadRateMaxLength() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getBytesReadRateMaxLength();
+        }
+        return null;
+    }
+
+    @Override
     public Long getBytesWriteRate() {
         DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
         if (diskOfferingVO != null) {
             return diskOfferingVO.getBytesWriteRate();
+        }
+        return null;
+    }
+
+    @Override
+    public Long getBytesWriteRateMax() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getBytesWriteRateMax();
+        }
+        return null;
+    }
+
+    @Override
+    public Long getBytesWriteRateMaxLength() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getBytesWriteRateMaxLength();
         }
         return null;
     }
@@ -226,10 +262,46 @@ public class VolumeObject implements VolumeInfo {
     }
 
     @Override
+    public Long getIopsReadRateMax() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getIopsReadRateMax();
+        }
+        return null;
+    }
+
+    @Override
+    public Long getIopsReadRateMaxLength() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getIopsReadRateMaxLength();
+        }
+        return null;
+    }
+
+    @Override
     public Long getIopsWriteRate() {
         DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
         if (diskOfferingVO != null) {
             return diskOfferingVO.getIopsWriteRate();
+        }
+        return null;
+    }
+
+    @Override
+    public Long getIopsWriteRateMax() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getIopsWriteRateMax();
+        }
+        return null;
+    }
+
+    @Override
+    public Long getIopsWriteRateMaxLength() {
+        DiskOfferingVO diskOfferingVO = getDiskOfferingVO();
+        if (diskOfferingVO != null) {
+            return diskOfferingVO.getIopsWriteRateMaxLength();
         }
         return null;
     }
