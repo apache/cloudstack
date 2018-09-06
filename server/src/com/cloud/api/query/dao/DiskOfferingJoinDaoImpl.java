@@ -73,9 +73,17 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         diskOfferingResponse.setHypervisorSnapshotReserve(offering.getHypervisorSnapshotReserve());
         diskOfferingResponse.setStorageType(offering.isUseLocalStorage() ? ServiceOffering.StorageType.local.toString() : ServiceOffering.StorageType.shared.toString());
         diskOfferingResponse.setBytesReadRate(offering.getBytesReadRate());
+        diskOfferingResponse.setBytesReadRateMax(offering.getBytesReadRateMax());
+        diskOfferingResponse.setBytesReadRateMaxLength(offering.getBytesReadRateMaxLength());
         diskOfferingResponse.setBytesWriteRate(offering.getBytesWriteRate());
+        diskOfferingResponse.setBytesWriteRateMax(offering.getBytesWriteRateMax());
+        diskOfferingResponse.setBytesWriteRateMaxLength(offering.getBytesWriteRateMaxLength());
         diskOfferingResponse.setIopsReadRate(offering.getIopsReadRate());
+        diskOfferingResponse.setIopsReadRateMax(offering.getIopsReadRateMax());
+        diskOfferingResponse.setIopsReadRateMaxLength(offering.getIopsReadRateMaxLength());
         diskOfferingResponse.setIopsWriteRate(offering.getIopsWriteRate());
+        diskOfferingResponse.setIopsWriteRateMax(offering.getIopsWriteRateMax());
+        diskOfferingResponse.setIopsWriteRateMaxLength(offering.getIopsWriteRateMaxLength());
         diskOfferingResponse.setCacheMode(offering.getCacheMode());
         diskOfferingResponse.setObjectName("diskoffering");
 
