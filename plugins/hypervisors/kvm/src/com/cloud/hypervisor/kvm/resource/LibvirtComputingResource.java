@@ -2197,7 +2197,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                     disk.setIopsWriteRateMax(volumeObjectTO.getIopsWriteRateMax());
                 }
                 if (volumeObjectTO.getIopsWriteRateMaxLength() != null && volumeObjectTO.getIopsWriteRateMaxLength() > 0) {
-                    disk.setIopsWriteRateMax(volumeObjectTO.getIopsWriteRateMaxLength());
+                    disk.setIopsWriteRateMaxLength(volumeObjectTO.getIopsWriteRateMaxLength());
                 }
 
                 if (volumeObjectTO.getCacheMode() != null) {
