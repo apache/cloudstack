@@ -463,7 +463,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         Account account = _accountDao.findByIdIncludingRemoved(network.getAccountId());
 
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        boolean sharedSourceNat = offering.getSharedSourceNat();
+        boolean sharedSourceNat = offering.isSharedSourceNat();
 
         IPAddressVO sourceNatIp = null;
         if (!sharedSourceNat) {
@@ -582,7 +582,7 @@ public abstract class ExternalFirewallDeviceManagerImpl extends AdapterBase impl
         List<FirewallRuleTO> rulesTO = new ArrayList<FirewallRuleTO>();
         NetworkVO networkVO = _networkDao.findById(network.getId());
         NetworkOfferingVO offering = _networkOfferingDao.findById(networkVO.getNetworkOfferingId());
-        Boolean defaultEgressPolicy = offering.getEgressDefaultPolicy();
+        Boolean defaultEgressPolicy = offering.isEgressDefaultPolicy();
 
         for (FirewallRule rule : rules) {
             if (rule.getSourceCidrList() == null && (rule.getPurpose() == Purpose.Firewall || rule.getPurpose() == Purpose.NetworkACL)) {

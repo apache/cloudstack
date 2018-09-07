@@ -445,7 +445,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
             try {
                 if (deviceMapLock.lock(120)) {
                     try {
-                        final boolean dedicatedLB = offering.getDedicatedLB(); // does network offering supports a dedicated load balancer?
+                        final boolean dedicatedLB = offering.isDedicatedLB(); // does network offering supports a dedicated load balancer?
 
                         try {
                             lbDevice = Transaction.execute(new TransactionCallbackWithException<ExternalLoadBalancerDeviceVO, InsufficientCapacityException>() {
@@ -532,7 +532,7 @@ public abstract class ExternalLoadBalancerDeviceManagerImpl extends AdapterBase 
                             String privateIf = createLbAnswer.getPrivateInterface();
 
                             // we have provisioned load balancer so add the appliance as cloudstack provisioned external load balancer
-                            String dedicatedLb = offering.getDedicatedLB() ? "true" : "false";
+                            String dedicatedLb = offering.isDedicatedLB() ? "true" : "false";
                             String capacity = Long.toString(lbProviderDevice.getCapacity());
 
                             // acquire a public IP to associate with lb appliance (used as subnet IP to make the appliance part of private network)

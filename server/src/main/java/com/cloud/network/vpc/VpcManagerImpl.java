@@ -1262,7 +1262,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // 4) Only one network in the VPC can support public LB inside the VPC.
         // Internal LB can be supported on multiple VPC tiers
-        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb) && guestNtwkOff.getPublicLb()) {
+        if (_ntwkModel.areServicesSupportedByNetworkOffering(guestNtwkOff.getId(), Service.Lb) && guestNtwkOff.isPublicLb()) {
             final List<? extends Network> networks = getVpcNetworks(vpc.getId());
             for (final Network network : networks) {
                 if (networkId != null && network.getId() == networkId.longValue()) {
@@ -1272,7 +1272,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
                     final NetworkOffering otherOff = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
                     // throw only if networks have different offerings with
                     // public lb support
-                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.getPublicLb() && guestNtwkOff.getId() != otherOff.getId()) {
+                    if (_ntwkModel.areServicesSupportedInNetwork(network.getId(), Service.Lb) && otherOff.isPublicLb() && guestNtwkOff.getId() != otherOff.getId()) {
                         throw new InvalidParameterValueException("Public LB service is already supported " + "by network " + network + " in VPC " + vpc);
                     }
                 }
@@ -1319,7 +1319,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
         }
 
         // 5) If Netscaler is LB provider make sure it is in dedicated mode
-        if (providers.contains(Provider.Netscaler) && !guestNtwkOff.getDedicatedLB()) {
+        if (providers.contains(Provider.Netscaler) && !guestNtwkOff.isDedicatedLB()) {
             throw new InvalidParameterValueException("Netscaler only with Dedicated LB can belong to VPC");
         }
         return;

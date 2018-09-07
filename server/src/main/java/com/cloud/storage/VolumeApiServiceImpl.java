@@ -709,7 +709,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         // If local storage is disabled then creation of volume with local disk
         // offering not allowed
-        if (!zone.isLocalStorageEnabled() && diskOffering.getUseLocalStorage()) {
+        if (!zone.isLocalStorageEnabled() && diskOffering.isUseLocalStorage()) {
             throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it");
         }
 
@@ -850,7 +850,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         Long newMinIops;
         Long newMaxIops;
         Integer newHypervisorSnapshotReserve;
-        boolean shrinkOk = cmd.getShrinkOk();
+        boolean shrinkOk = cmd.isShrinkOk();
 
         VolumeVO volume = _volsDao.findById(cmd.getEntityId());
         if (volume == null) {
@@ -1532,7 +1532,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         DataCenterVO dataCenter = _dcDao.findById(volumeToAttach.getDataCenterId());
         if (!dataCenter.isLocalStorageEnabled()) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(volumeToAttach.getDiskOfferingId());
-            if (diskOffering.getUseLocalStorage()) {
+            if (diskOffering.isUseLocalStorage()) {
                 throw new InvalidParameterValueException("Zone is not configured to use local storage but volume's disk offering " + diskOffering.getName() + " uses it");
             }
         }
@@ -2173,7 +2173,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if (newDiskOffering == null) {
             return;
         }
-        if ((destPool.isShared() && newDiskOffering.getUseLocalStorage()) || destPool.isLocal() && newDiskOffering.isShared()) {
+        if ((destPool.isShared() && newDiskOffering.isUseLocalStorage()) || destPool.isLocal() && newDiskOffering.isShared()) {
             throw new InvalidParameterValueException("You cannot move the volume to a shared storage and assing a disk offering for local storage and vice versa.");
         }
         if (!doesTargetStorageSupportNewDiskOffering(destPool, newDiskOffering)) {

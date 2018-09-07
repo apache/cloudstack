@@ -666,7 +666,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _vmDao.loadDetails(userVm);
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(userVm.getTemplateId());
-        if (template == null || !template.getEnablePassword()) {
+        if (template == null || !template.isEnablePassword()) {
             throw new InvalidParameterValueException("Fail to reset password for the virtual machine, the template is not password enabled");
         }
 
@@ -706,7 +706,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vmInstance.getTemplateId());
-        if (template.getEnablePassword()) {
+        if (template.isEnablePassword()) {
             Nic defaultNic = _networkModel.getDefaultNic(vmId);
             if (defaultNic == null) {
                 s_logger.error("Unable to reset password for vm " + vmInstance + " as the instance doesn't have default nic");
@@ -797,7 +797,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(caller, null, true, userVm);
         String password = null;
         String sshPublicKey = s.getPublicKey();
-        if (template != null && template.getEnablePassword()) {
+        if (template != null && template.isEnablePassword()) {
             password = _mgr.generateRandomPassword();
         }
 
@@ -826,7 +826,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         VirtualMachineProfile vmProfile = new VirtualMachineProfileImpl(vmInstance);
 
-        if (template.getEnablePassword()) {
+        if (template.isEnablePassword()) {
             vmProfile.setParameter(VirtualMachineProfile.Param.VmPassword, password);
         }
 
@@ -844,7 +844,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             final UserVmVO userVm = _vmDao.findById(vmId);
             _vmDao.loadDetails(userVm);
             userVm.setDetail("SSH.PublicKey", sshPublicKey);
-            if (template.getEnablePassword()) {
+            if (template.isEnablePassword()) {
                 userVm.setPassword(password);
                 //update the encrypted password in vm_details table too
                 encryptAndStorePassword(userVm, password);
@@ -2528,7 +2528,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         ServiceOffering offering = _serviceOfferingDao.findById(vm.getId(), vm.getServiceOfferingId());
-        if (!offering.getOfferHA() && ha) {
+        if (!offering.isOfferHA() && ha) {
             throw new InvalidParameterValueException("Can't enable ha for the vm as it's created from the Service offering having HA disabled");
         }
 
@@ -2711,7 +2711,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         long serviceOfferingId = vmInstance.getServiceOfferingId();
         ServiceOfferingVO offering = _serviceOfferingDao.findById(vmInstance.getId(), serviceOfferingId);
         if (offering != null && offering.getRemoved() == null) {
-            if (offering.getVolatileVm()) {
+            if (offering.isVolatileVm()) {
                 return restoreVMInternal(caller, vmInstance, null);
             }
         } else {
@@ -3536,7 +3536,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                         throw new InvalidParameterValueException("Unable to deploy VM as SSH keypair is provided while deploying the VM, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
                     }
 
-                    if (template.getEnablePassword()) {
+                    if (template.isEnablePassword()) {
                         throw new InvalidParameterValueException("Unable to deploy VM as template " + template.getId() + " is password enabled, but there is no support for " + Network.Service.UserData.getName() + " service in the default network " + network.getId());
                     }
                 }
@@ -3691,7 +3691,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         return Transaction.execute(new TransactionCallbackWithException<UserVmVO, InsufficientCapacityException>() {
             @Override
             public UserVmVO doInTransaction(TransactionStatus status) throws InsufficientCapacityException {
-                UserVmVO vm = new UserVmVO(id, instanceName, displayName, template.getId(), hypervisorType, template.getGuestOSId(), offering.getOfferHA(),
+                UserVmVO vm = new UserVmVO(id, instanceName, displayName, template.getId(), hypervisorType, template.getGuestOSId(), offering.isOfferHA(),
                         offering.getLimitCpuUse(), owner.getDomainId(), owner.getId(), userId, offering.getId(), userData, hostName, diskOfferingId);
                 vm.setUuid(uuidName);
                 vm.setDynamicallyScalable(template.isDynamicallyScalable());
@@ -4091,7 +4091,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
         // Check that the password was passed in and is valid
         VMTemplateVO template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
-        if (template.getEnablePassword()) {
+        if (template.isEnablePassword()) {
             // this value is not being sent to the backend; need only for api
             // display purposes
             vm.setPassword((String)vmParamPair.second().get(VirtualMachineProfile.Param.VmPassword));
@@ -4362,7 +4362,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 long networkId = ip.getAssociatedWithNetworkId();
                 Network guestNetwork = _networkDao.findById(networkId);
                 NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
-                assert (offering.getAssociatePublicIP() == true) : "User VM should not have system owned public IP associated with it when offering configured not to associate public IP.";
+                assert (offering.isAssociatePublicIP() == true) : "User VM should not have system owned public IP associated with it when offering configured not to associate public IP.";
                 _rulesMgr.disableStaticNat(ip.getId(), ctx.getCallingAccount(), ctx.getCallingUserId(), true);
             } catch (Exception ex) {
                 s_logger.warn("Failed to disable static nat and release system ip " + ip + " as a part of vm " + profile.getVirtualMachine() + " stop due to exception ", ex);
@@ -4458,7 +4458,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             template = _templateDao.findByIdIncludingRemoved(vm.getTemplateId());
 
             String password = "saved_password";
-            if (template.getEnablePassword()) {
+            if (template.isEnablePassword()) {
                 if (vm.getDetail("password") != null) {
                     password = DBEncryptionUtil.decrypt(vm.getDetail("password"));
                 } else {
@@ -4500,7 +4500,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vm != null && vm.isUpdateParameters()) {
             // this value is not being sent to the backend; need only for api
             // display purposes
-            if (template.getEnablePassword()) {
+            if (template.isEnablePassword()) {
                 vm.setPassword((String)vmParamPair.second().get(VirtualMachineProfile.Param.VmPassword));
                 vm.setUpdateParameters(false);
                 if (vm.getDetail("password") != null) {
@@ -4797,10 +4797,10 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (!zone.isLocalStorageEnabled()) {
-            if (serviceOffering.getUseLocalStorage()) {
+            if (serviceOffering.isUseLocalStorage()) {
                 throw new InvalidParameterValueException("Zone is not configured to use local storage but service offering " + serviceOffering.getName() + " uses it");
             }
-            if (diskOffering != null && diskOffering.getUseLocalStorage()) {
+            if (diskOffering != null && diskOffering.isUseLocalStorage()) {
                 throw new InvalidParameterValueException("Zone is not configured to use local storage but disk offering " + diskOffering.getName() + " uses it");
             }
         }
@@ -4991,7 +4991,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         List<VolumeVO> volumes = _volsDao.findByInstance(vm.getId());
         for (VolumeVO vol : volumes) {
             DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
-            if (diskOffering.getUseLocalStorage()) {
+            if (diskOffering.isUseLocalStorage()) {
                 usesLocalStorage = true;
                 break;
             }
@@ -5934,7 +5934,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                                     null, physicalNetwork, zone.getId(), ACLType.Account, null, null,
                                     null, null, true, null, null);
                             // if the network offering has persistent set to true, implement the network
-                            if (requiredOfferings.get(0).getIsPersistent()) {
+                            if (requiredOfferings.get(0).isPersistent()) {
                                 DeployDestination dest = new DeployDestination(zone, null, null, null);
                                 UserVO callerUser = _userDao.findById(CallContext.current().getCallingUserId());
                                 Journal journal = new Journal.LogJournal("Implementing " + newNetwork, s_logger);
@@ -6159,7 +6159,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             Map<VirtualMachineProfile.Param, Object> params = null;
             String password = null;
 
-            if (template.getEnablePassword()) {
+            if (template.isEnablePassword()) {
                 password = _mgr.generateRandomPassword();
                 boolean result = resetVMPasswordInternal(vmId, password);
                 if (!result) {
@@ -6175,7 +6175,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                     }
                     _itMgr.start(vm.getUuid(), params);
                     vm = _vmDao.findById(vmId);
-                    if (template.getEnablePassword()) {
+                    if (template.isEnablePassword()) {
                         // this value is not being sent to the backend; need only for api
                         // display purposes
                         vm.setPassword(password);

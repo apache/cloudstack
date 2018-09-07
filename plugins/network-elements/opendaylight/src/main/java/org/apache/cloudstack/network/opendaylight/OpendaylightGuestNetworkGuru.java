@@ -140,7 +140,7 @@ public class OpendaylightGuestNetworkGuru extends GuestNetworkGuru {
         }
 
         NetworkVO implemented = new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
-                network.getDataCenterId(), physicalNetworkId, offering.getRedundantRouter());
+                network.getDataCenterId(), physicalNetworkId, offering.isRedundantRouter());
 
         if (network.getGateway() != null) {
             implemented.setGateway(network.getGateway());

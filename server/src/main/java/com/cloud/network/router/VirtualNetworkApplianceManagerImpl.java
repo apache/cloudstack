@@ -376,7 +376,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
         // check if it is a system service offering, if yes return with error as
         // it cannot be used for user vms
-        if (!newServiceOffering.getSystemUse()) {
+        if (!newServiceOffering.isSystemUse()) {
             throw new InvalidParameterValueException("Cannot upgrade router vm to a non system service offering " + serviceOfferingId);
         }
 
@@ -392,9 +392,9 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
         // Check that the service offering being upgraded to has the same
         // storage pool preference as the VM's current service
         // offering
-        if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
-            throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newServiceOffering.getUseLocalStorage() + " is different from "
-                    + "curruent local storage status: " + currentServiceOffering.getUseLocalStorage());
+        if (currentServiceOffering.isUseLocalStorage() != newServiceOffering.isUseLocalStorage()) {
+            throw new InvalidParameterValueException("Can't upgrade, due to new local storage status : " + newServiceOffering.isUseLocalStorage() + " is different from "
+                    + "curruent local storage status: " + currentServiceOffering.isUseLocalStorage());
         }
 
         router.setServiceOfferingId(serviceOfferingId);
@@ -1670,7 +1670,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
 
                 final NetworkOffering offering = _networkOfferingDao.findById(_networkDao.findById(guestNetworkId).getNetworkOfferingId());
                 // service monitoring is currently not added in RVR
-                if (!offering.getRedundantRouter()) {
+                if (!offering.isRedundantRouter()) {
                     final String serviceMonitringSet = _configDao.getValue(Config.EnableServiceMonitoring.key());
 
                     if (serviceMonitringSet != null && serviceMonitringSet.equalsIgnoreCase("true")) {
@@ -1947,7 +1947,7 @@ Configurable, StateListener<VirtualMachine.State, VirtualMachine.Event, VirtualM
     private void createDefaultEgressFirewallRule(final List<FirewallRule> rules, final long networkId) {
         final NetworkVO network = _networkDao.findById(networkId);
         final NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        final Boolean defaultEgressPolicy = offering.getEgressDefaultPolicy();
+        final Boolean defaultEgressPolicy = offering.isEgressDefaultPolicy();
 
         // The default on the router is set to Deny all. So, if the default configuration in the offering is set to true (Allow), we change the Egress here
         if (defaultEgressPolicy) {

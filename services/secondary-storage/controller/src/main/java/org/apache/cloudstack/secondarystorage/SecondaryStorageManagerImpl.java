@@ -653,7 +653,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
         }
         SecondaryStorageVmVO secStorageVm =
             new SecondaryStorageVmVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
-                systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), role, serviceOffering.getOfferHA());
+                systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), role, serviceOffering.isOfferHA());
         secStorageVm.setDynamicallyScalable(template.isDynamicallyScalable());
         secStorageVm = _secStorageVmDao.persist(secStorageVm);
         try {
@@ -950,7 +950,7 @@ public class SecondaryStorageManagerImpl extends ManagerBase implements Secondar
             }
         }
 
-        if (_serviceOffering == null || !_serviceOffering.getSystemUse()) {
+        if (_serviceOffering == null || !_serviceOffering.isSystemUse()) {
             int ramSize = NumbersUtil.parseInt(_configDao.getValue("ssvm.ram.size"), DEFAULT_SS_VM_RAMSIZE);
             int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("ssvm.cpu.mhz"), DEFAULT_SS_VM_CPUMHZ);
             List<ServiceOfferingVO> offerings = _offeringDao.createSystemServiceOfferings("System Offering For Secondary Storage VM",

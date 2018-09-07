@@ -129,7 +129,7 @@ public class ContrailGuru extends AdapterBase implements NetworkGuru {
         }
         NetworkVO network =
                 new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Lswitch, offering.getId(), State.Allocated, plan.getDataCenterId(),
-                        plan.getPhysicalNetworkId(), offering.getRedundantRouter());
+                        plan.getPhysicalNetworkId(), offering.isRedundantRouter());
         if (userSpecified.getCidr() != null) {
             network.setCidr(userSpecified.getCidr());
             network.setGateway(userSpecified.getGateway());

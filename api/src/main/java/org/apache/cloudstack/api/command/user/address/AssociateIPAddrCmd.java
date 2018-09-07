@@ -238,7 +238,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
 
             DataCenter zone = _entityMgr.findById(DataCenter.class, network.getDataCenterId());
-            if (zone.getNetworkType() == NetworkType.Basic && offering.getElasticIp() && offering.getElasticLb()) {
+            if (zone.getNetworkType() == NetworkType.Basic && offering.isElasticIp() && offering.isElasticLb()) {
                 // Since the basic zone network is owned by 'Root' domain, domain access checkers will fail for the
                 // accounts in non-root domains while acquiring public IP. So add an exception for the 'Basic' zone
                 // shared network with EIP/ELB service.

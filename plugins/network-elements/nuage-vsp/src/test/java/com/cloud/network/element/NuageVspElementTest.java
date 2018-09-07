@@ -137,7 +137,7 @@ public class NuageVspElementTest extends NuageTest {
 
         final NetworkOfferingVO ntwkoffer = mock(NetworkOfferingVO.class);
         when(ntwkoffer.getId()).thenReturn(NETWORK_ID);
-        when(ntwkoffer.getIsPersistent()).thenReturn(true);
+        when(ntwkoffer.isPersistent()).thenReturn(true);
         when(_networkOfferingDao.findById(NETWORK_ID)).thenReturn(ntwkoffer);
 
         // Golden path
@@ -162,7 +162,7 @@ public class NuageVspElementTest extends NuageTest {
         assertFalse(_nuageVspElement.canHandle(net, Service.Dhcp));
 
         // Can't handle network offerings with specify vlan = true
-        when(ntwkoffer.getSpecifyVlan()).thenReturn(true);
+        when(ntwkoffer.isSpecifyVlan()).thenReturn(true);
         assertFalse(_nuageVspElement.canHandle(net, Service.Connectivity));
     }
 
@@ -277,7 +277,7 @@ public class NuageVspElementTest extends NuageTest {
 
         final NetworkOfferingVO ntwkoffer = mock(NetworkOfferingVO.class);
         when(ntwkoffer.getId()).thenReturn(NETWORK_ID);
-        when(ntwkoffer.getEgressDefaultPolicy()).thenReturn(true);
+        when(ntwkoffer.isEgressDefaultPolicy()).thenReturn(true);
         when(_networkOfferingDao.findById(NETWORK_ID)).thenReturn(ntwkoffer);
 
         final HostVO host = mock(HostVO.class);
@@ -307,7 +307,7 @@ public class NuageVspElementTest extends NuageTest {
 
         final NetworkOfferingVO ntwkoffer = mock(NetworkOfferingVO.class);
         when(ntwkoffer.getId()).thenReturn(NETWORK_ID);
-        when(ntwkoffer.getEgressDefaultPolicy()).thenReturn(true);
+        when(ntwkoffer.isEgressDefaultPolicy()).thenReturn(true);
         when(_networkOfferingDao.findById(NETWORK_ID)).thenReturn(ntwkoffer);
 
         final HostVO host = mock(HostVO.class);

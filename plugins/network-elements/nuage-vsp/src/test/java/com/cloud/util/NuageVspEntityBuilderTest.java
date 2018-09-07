@@ -319,7 +319,7 @@ public class NuageVspEntityBuilderTest extends NuageTest {
     }
 
     private void setUpMockedNetworkOffering(NetworkOfferingVO networkOfferingToMock, Network.GuestType guestType) {
-        when(networkOfferingToMock.getEgressDefaultPolicy()).thenReturn(true);
+        when(networkOfferingToMock.isEgressDefaultPolicy()).thenReturn(true);
         when(networkOfferingToMock.getGuestType()).thenReturn(guestType);
     }
 

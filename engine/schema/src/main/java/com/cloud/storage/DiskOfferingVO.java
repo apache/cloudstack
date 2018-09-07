@@ -299,7 +299,7 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     @Override
-    public boolean getUseLocalStorage() {
+    public boolean isUseLocalStorage() {
         return useLocalStorage;
     }
 
@@ -332,7 +332,7 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     @Override
-    public boolean getSystemUse() {
+    public boolean isSystemUse() {
         return systemUse;
     }
 
