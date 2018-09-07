@@ -178,6 +178,8 @@ public interface StorageManager extends StorageService {
      */
     boolean storagePoolHasEnoughSpace(List<Volume> volume, StoragePool pool, Long clusterId);
 
+    boolean storagePoolHasEnoughSpaceForResize(StoragePool pool, long currentSize, long newSiz);
+
     boolean registerHostListener(String providerUuid, HypervisorHostListener listener);
 
     void connectHostToSharedPool(long hostId, long poolId) throws StorageUnavailableException, StorageConflictException;
