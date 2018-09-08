@@ -57,11 +57,11 @@ public abstract class AbstractStoragePoolAllocator extends AdapterBase implement
 
     protected BigDecimal storageOverprovisioningFactor = new BigDecimal(1);
     protected String allocationAlgorithm = "random";
-    protected @Inject DataStoreManager dataStoreMgr;
-    @Inject PrimaryDataStoreDao storagePoolDao;
-    @Inject VolumeDao volumeDao;
-    @Inject ConfigurationDao configDao;
-    long extraBytesPerVolume = 0;
+    protected long extraBytesPerVolume = 0;
+    @Inject protected DataStoreManager dataStoreMgr;
+    @Inject protected PrimaryDataStoreDao storagePoolDao;
+    @Inject protected VolumeDao volumeDao;
+    @Inject protected ConfigurationDao configDao;
     @Inject private CapacityDao capacityDao;
     @Inject private ClusterDao clusterDao;
     @Inject private StorageManager storageMgr;
