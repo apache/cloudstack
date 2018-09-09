@@ -65,7 +65,7 @@ public final class LibvirtReplugNicCommandWrapper extends CommandWrapper<ReplugN
             InterfaceDef oldPluggedNic = findPluggedNic(libvirtComputingResource, nic, vmName, conn);
 
             final VifDriver newVifDriver = libvirtComputingResource.getVifDriver(nic.getType(), nic.getName());
-            final InterfaceDef interfaceDef = newVifDriver.plug(nic, "Other PV", oldPluggedNic.getModel().toString());
+            final InterfaceDef interfaceDef = newVifDriver.plug(nic, "Other PV", oldPluggedNic.getModel().toString(), null);
 
             interfaceDef.setSlot(oldPluggedNic.getSlot());
             interfaceDef.setDevName(oldPluggedNic.getDevName());

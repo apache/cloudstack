@@ -64,7 +64,7 @@ public final class LibvirtPrepareForMigrationCommandWrapper extends CommandWrapp
 
             final Connect conn = libvirtUtilitiesHelper.getConnectionByVmName(vm.getName());
             for (final NicTO nic : nics) {
-                libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "");
+                libvirtComputingResource.getVifDriver(nic.getType(), nic.getName()).plug(nic, null, "", null);
             }
 
             /* setup disks, e.g for iso */

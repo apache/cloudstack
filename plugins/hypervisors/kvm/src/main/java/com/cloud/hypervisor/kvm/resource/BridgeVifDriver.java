@@ -207,7 +207,7 @@ public class BridgeVifDriver extends VifDriverBase {
     }
 
     @Override
-    public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter) throws InternalErrorException, LibvirtException {
+    public LibvirtVMDef.InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
 
         if (s_logger.isDebugEnabled()) {
             s_logger.debug("nic=" + nic);
