@@ -531,19 +531,6 @@ public class EventTypes {
 
     public static final String EVENT_UCS_ASSOCIATED_PROFILE = "UCS.ASSOCIATEPROFILE";
 
-    // IAM events
-    public static final String EVENT_IAM_POLICY_CREATE = "IAMPOLICY.CREATE";
-    public static final String EVENT_IAM_POLICY_DELETE = "IAMPOLICY.DELETE";
-    public static final String EVENT_IAM_POLICY_GRANT = "IAMPOLICY.GRANT";
-    public static final String EVENT_IAM_POLICY_REVOKE = "IAMPOLICY.REVOKE";
-
-    public static final String EVENT_IAM_GROUP_UPDATE = "IAMGROUP.UPDATE";
-    public static final String EVENT_IAM_GROUP_CREATE = "IAMGROUP.CREATE";
-    public static final String EVENT_IAM_GROUP_DELETE = "IAMGROUP.DELETE";
-    public static final String EVENT_IAM_GROUP_GRANT = "IAMGROUP.GRANT";
-    public static final String EVENT_IAM_GROUP_REVOKE = "IAMGROUP.REVOKE";
-    public static final String EVENT_IAM_ACCOUNT_POLICY_UPDATE = "IAMACCOUNTPOLICY.UPDATE";
-
     // Object store migration
     public static final String EVENT_MIGRATE_PREPARE_SECONDARY_STORAGE = "MIGRATE.PREPARE.SS";
 

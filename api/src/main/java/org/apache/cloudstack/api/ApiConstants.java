@@ -652,19 +652,7 @@ public class ApiConstants {
     public static final String MAX_CONNECTIONS = "maxconnections";
     public static final String SERVICE_STATE = "servicestate";
 
-    public static final String IAM_ACCOUNT_IDS = "accountids";
-    public static final String IAM_MEMBER_ACCOUNTS = "memberaccounts";
-    public static final String IAM_PARENT_POLICY_ID = "parentpolicyid";
-    public static final String IAM_PARENT_POLICY_NAME = "parentpolicyname";
-    public static final String IAM_POLICY_IDS = "policyids";
-    public static final String IAM_POLICIES = "policies";
-    public static final String IAM_APIS = "apis";
     public static final String IAM_GROUPS = "groups";
-    public static final String IAM_PERMISSIONS = "permission";
-    public static final String IAM_ACTION = "action";
-    public static final String IAM_SCOPE = "scope";
-    public static final String IAM_SCOPE_ID = "scopeid";
-    public static final String IAM_ALLOW_DENY = "permission";
     public static final String ENTITY_TYPE = "entitytype";
     public static final String ENTITY_ID = "entityid";
     public static final String EXTERNAL_ID = "externalid";
