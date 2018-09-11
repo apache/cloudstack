@@ -48,7 +48,7 @@ public class RandomStoragePoolAllocator extends AbstractStoragePoolAllocator {
         }
 
         s_logger.debug("Looking for pools in dc: " + dcId + "  pod:" + podId + "  cluster:" + clusterId);
-        List<StoragePoolVO> pools = _storagePoolDao.listBy(dcId, podId, clusterId, ScopeType.CLUSTER);
+        List<StoragePoolVO> pools = storagePoolDao.listBy(dcId, podId, clusterId, ScopeType.CLUSTER);
         if (pools.size() == 0) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("No storage pools available for allocation, returning");

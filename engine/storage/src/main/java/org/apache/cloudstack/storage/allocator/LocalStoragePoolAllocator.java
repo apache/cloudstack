@@ -69,7 +69,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
         if (s_logger.isTraceEnabled()) {
             // Log the pools details that are ignored because they are in disabled state
-            List<StoragePoolVO> disabledPools = _storagePoolDao.findDisabledPoolsByScope(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), ScopeType.HOST);
+            List<StoragePoolVO> disabledPools = storagePoolDao.findDisabledPoolsByScope(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), ScopeType.HOST);
             if (disabledPools != null && !disabledPools.isEmpty()) {
                 for (StoragePoolVO pool : disabledPools) {
                     s_logger.trace("Ignoring pool " + pool + " as it is in disabled state.");
@@ -81,7 +81,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
         // data disk and host identified from deploying vm (attach volume case)
         if (plan.getHostId() != null) {
-            List<StoragePoolVO> hostTagsPools = _storagePoolDao.findLocalStoragePoolsByHostAndTags(plan.getHostId(), dskCh.getTags());
+            List<StoragePoolVO> hostTagsPools = storagePoolDao.findLocalStoragePoolsByHostAndTags(plan.getHostId(), dskCh.getTags());
             for (StoragePoolVO pool : hostTagsPools) {
                 if (pool != null && pool.isLocal()) {
                     StoragePool storagePool = (StoragePool)this.dataStoreMgr.getPrimaryDataStore(pool.getId());
@@ -103,7 +103,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
                 return null;
             }
             List<StoragePoolVO> availablePools =
-                _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), dskCh.getTags());
+                storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), dskCh.getTags());
             for (StoragePoolVO pool : availablePools) {
                 if (suitablePools.size() == returnUpTo) {
                     break;
@@ -118,7 +118,7 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
 
             // add remaining pools in cluster, that did not match tags, to avoid
             // set
-            List<StoragePoolVO> allPools = _storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), null);
+            List<StoragePoolVO> allPools = storagePoolDao.findLocalStoragePoolsByTags(plan.getDataCenterId(), plan.getPodId(), plan.getClusterId(), null);
             allPools.removeAll(availablePools);
             for (StoragePoolVO pool : allPools) {
                 avoid.addPool(pool.getId());
@@ -136,8 +136,8 @@ public class LocalStoragePoolAllocator extends AbstractStoragePoolAllocator {
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         super.configure(name, params);
 
-        _storageOverprovisioningFactor = new BigDecimal(1);
-        _extraBytesPerVolume = NumbersUtil.parseLong((String)params.get("extra.bytes.per.volume"), 50 * 1024L * 1024L);
+        storageOverprovisioningFactor = new BigDecimal(1);
+        extraBytesPerVolume = NumbersUtil.parseLong((String)params.get("extra.bytes.per.volume"), 50 * 1024L * 1024L);
 
         return true;
     }

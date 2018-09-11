@@ -25,6 +25,6 @@
                       http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
                       http://www.springframework.org/schema/context
                       http://www.springframework.org/schema/context/spring-context.xsd"
-                      >                     
-
+                      >
+    <bean id="storageUtil" class="com.cloud.storage.StorageUtil" />
 </beans>
