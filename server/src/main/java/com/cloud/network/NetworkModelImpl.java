@@ -592,7 +592,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 return false;
             }
             if (network.getIp6Gateway() != null) {
-                hasFreeIps = isIP6AddressAvailableInNetwork(network.getId());
+                hasFreeIps = areThereIPv6AddressAvailableInNetwork(network.getId());
             }
         } else {
             if (network.getCidr() == null) {
@@ -606,7 +606,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     }
 
     @Override
-    public boolean isIP6AddressAvailableInNetwork(long networkId) {
+    public boolean areThereIPv6AddressAvailableInNetwork(long networkId) {
         Network network = _networksDao.findById(networkId);
         if (network == null) {
             return false;

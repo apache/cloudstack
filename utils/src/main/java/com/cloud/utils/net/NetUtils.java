@@ -23,9 +23,9 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigInteger;
-import java.net.InetAddress;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -1545,6 +1545,22 @@ public class NetUtils {
 
     public static IPv6Address ipv6LinkLocal(final String macAddress) {
         return EUI64Address(IPv6Network.LINK_LOCAL_NETWORK, macAddress);
+    }
+
+    /**
+     * Returns true if the given IP address is IPv4 or false if it is an IPv6. If it is an invalid IP address it throws an exception.
+     */
+    public static boolean isIpv4(String ipAddr) {
+        boolean isIpv4 = true;
+        if (ipAddr != null) {
+            if (!NetUtils.isValidIp4(ipAddr)) {
+                isIpv4 = false;
+            }
+            if (!NetUtils.isValidIp6(ipAddr) && !isIpv4) {
+                throw new IllegalArgumentException("Invalid ip address " + ipAddr);
+            }
+        }
+        return isIpv4;
     }
 
 }

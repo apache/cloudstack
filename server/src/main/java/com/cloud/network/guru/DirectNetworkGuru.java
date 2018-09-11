@@ -45,6 +45,7 @@ import com.cloud.network.Network.Service;
 import com.cloud.network.Network.State;
 import com.cloud.network.NetworkModel;
 import com.cloud.network.NetworkProfile;
+import com.cloud.network.NetworkService;
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
@@ -65,6 +66,7 @@ import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.exception.ExceptionUtil;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import com.cloud.vm.Nic.ReservationStrategy;
 import com.cloud.vm.NicProfile;
@@ -74,6 +76,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
+import com.cloud.vm.dao.NicSecondaryIpVO;
 
 
 public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
@@ -105,6 +108,10 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     NetworkOfferingServiceMapDao _ntwkOfferingSrvcDao;
     @Inject
     PhysicalNetworkDao _physicalNetworkDao;
+    @Inject
+    private NetworkService networkService;
+    @Inject
+    private NicSecondaryIpDao nicSecondaryIpDao;
 
     private static final TrafficType[] TrafficTypes = {TrafficType.Guest};
     protected IsolationMethod[] _isolationMethods;
@@ -338,9 +345,16 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
                         List<String> nicSecIps = null;
                         nicSecIps = _nicSecondaryIpDao.getSecondaryIpAddressesForNic(nic.getId());
                         for (String secIp : nicSecIps) {
-                            IPAddressVO pubIp = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), secIp);
-                            _ipAddrMgr.markIpAsUnavailable(pubIp.getId());
-                            _ipAddressDao.unassignIpAddress(pubIp.getId());
+                            if (NetUtils.isValidIp4(secIp)) {
+                                IPAddressVO pubIp = _ipAddressDao.findByIpAndSourceNetworkId(nic.getNetworkId(), secIp);
+                                _ipAddrMgr.markIpAsUnavailable(pubIp.getId());
+                                _ipAddressDao.unassignIpAddress(pubIp.getId());
+                            } else {
+                                NicSecondaryIpVO nicSecIp = nicSecondaryIpDao.findByIp6AddressAndNetworkId(secIp, nic.getNetworkId());
+                                if (nicSecIp != null) {
+                                    networkService.releaseSecondaryIpFromNic(nicSecIp.getId());
+                                }
+                            }
                         }
                     }
                 });

@@ -166,18 +166,18 @@ public interface IpAddressManager {
      * @throws ConcurrentOperationException
      * @throws InsufficientAddressCapacityException
      */
-    PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat) throws ConcurrentOperationException,
-            InsufficientAddressCapacityException;
+    PublicIp assignDedicateIpAddress(Account owner, Long guestNtwkId, Long vpcId, long dcId, boolean isSourceNat)
+            throws ConcurrentOperationException, InsufficientAddressCapacityException;
 
-    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone, Boolean displayIp) throws ConcurrentOperationException,
-            ResourceAllocationException, InsufficientAddressCapacityException;
+    IpAddress allocateIp(Account ipOwner, boolean isSystem, Account caller, long callerId, DataCenter zone, Boolean displayIp)
+            throws ConcurrentOperationException, ResourceAllocationException, InsufficientAddressCapacityException;
 
-    PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp,
-            boolean isSystem) throws InsufficientAddressCapacityException;
+    PublicIp assignPublicIpAddressFromVlans(long dcId, Long podId, Account owner, VlanType type, List<Long> vlanDbIds, Long networkId, String requestedIp, boolean isSystem)
+            throws InsufficientAddressCapacityException;
 
     @DB
-    void allocateNicValues(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network, String requestedIpv4,
-            String requestedIpv6) throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
+    void allocateNicValues(NicProfile nic, DataCenter dc, VirtualMachineProfile vm, Network network, String requestedIpv4, String requestedIpv6)
+            throws InsufficientVirtualNetworkCapacityException, InsufficientAddressCapacityException;
 
     int getRuleCountForIp(Long addressId, FirewallRule.Purpose purpose, FirewallRule.State state);
 
@@ -186,6 +186,8 @@ public interface IpAddressManager {
     String allocatePublicIpForGuestNic(Network network, Long podId, Account ipOwner, String requestedIp) throws InsufficientAddressCapacityException;
 
     AcquirePodIpCmdResponse allocatePodIp(String zoneId, String podId) throws ConcurrentOperationException, ResourceAllocationException;
+
+    public boolean isIpEqualsGatewayOrNetworkOfferingsEmpty(Network network, String requestedIp);
 
     void releasePodIp(Long id) throws CloudRuntimeException;
 }

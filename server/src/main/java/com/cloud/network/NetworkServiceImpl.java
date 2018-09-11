@@ -34,10 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
-
-import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -58,6 +57,7 @@ import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.messagebus.MessageBus;
 import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.network.element.InternalLoadBalancerElementService;
+import org.apache.log4j.Logger;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.configuration.Config;
@@ -91,6 +91,7 @@ import com.cloud.host.dao.HostDao;
 import com.cloud.network.IpAddress.State;
 import com.cloud.network.Network.Capability;
 import com.cloud.network.Network.GuestType;
+import com.cloud.network.Network.IpAddresses;
 import com.cloud.network.Network.Provider;
 import com.cloud.network.Network.Service;
 import com.cloud.network.Networks.BroadcastDomainType;
@@ -292,6 +293,8 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     OvsProviderDao _ovsProviderDao;
     @Inject
     IpAddressManager _ipAddrMgr;
+    @Inject
+    Ipv6AddressManager ipv6AddrMgr;
     @Inject
     EntityManager _entityMgr;
     @Inject
@@ -642,13 +645,16 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
     }
 
     @Override
-    @ActionEvent(eventType = EventTypes.EVENT_NIC_SECONDARY_IP_CONFIGURE, eventDescription = "Configuring secondary ip " +
-            "rules",  async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_NIC_SECONDARY_IP_CONFIGURE, eventDescription = "Configuring secondary ip " + "rules", async = true)
     public boolean configureNicSecondaryIp(NicSecondaryIp secIp, boolean isZoneSgEnabled) {
         boolean success = false;
+        String secondaryIp = secIp.getIp4Address();
+        if (secIp.getIp4Address() == null) {
+            secondaryIp = secIp.getIp6Address();
+        }
 
         if (isZoneSgEnabled) {
-            success = _securityGroupService.securityGroupRulesForVmSecIp(secIp.getNicId(), secIp.getIp4Address(), true);
+            success = _securityGroupService.securityGroupRulesForVmSecIp(secIp.getNicId(), secondaryIp, true);
             s_logger.info("Associated ip address to NIC : " + secIp.getIp4Address());
         } else {
             success = true;
@@ -656,11 +662,16 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         return success;
     }
 
+    /**
+     * It allocates a secondary IP alias on the NIC. It can be either an Ipv4 or an Ipv6 or even both, according to the the given IpAddresses object.
+     */
     @Override
     @ActionEvent(eventType = EventTypes.EVENT_NIC_SECONDARY_IP_ASSIGN, eventDescription = "assigning secondary ip to nic", create = true)
-    public NicSecondaryIp allocateSecondaryGuestIP(final long nicId, String requestedIp) throws InsufficientAddressCapacityException {
+    public NicSecondaryIp allocateSecondaryGuestIP(final long nicId, IpAddresses requestedIpPair) throws InsufficientAddressCapacityException {
 
         Account caller = CallContext.current().getCallingAccount();
+        String ipv4Address = requestedIpPair.getIp4Address();
+        String ipv6Address = requestedIpPair.getIp6Address();
 
         //check whether the nic belongs to user vm.
         final NicVO nicVO = _nicDao.findById(nicId);
@@ -690,18 +701,23 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         int maxAllowedIpsPerNic = NumbersUtil.parseInt(_configDao.getValue(Config.MaxNumberOfSecondaryIPsPerNIC.key()), 10);
         Long nicWiseIpCount = _nicSecondaryIpDao.countByNicId(nicId);
-        if(nicWiseIpCount.intValue() >= maxAllowedIpsPerNic) {
-            s_logger.error("Maximum Number of Ips \"vm.network.nic.max.secondary.ipaddresses = \"" + maxAllowedIpsPerNic + " per Nic has been crossed for the nic " +  nicId + ".");
+        if (nicWiseIpCount.intValue() >= maxAllowedIpsPerNic) {
+            s_logger.error("Maximum Number of Ips \"vm.network.nic.max.secondary.ipaddresses = \"" + maxAllowedIpsPerNic + " per Nic has been crossed for the nic " + nicId + ".");
             throw new InsufficientAddressCapacityException("Maximum Number of Ips per Nic has been crossed.", Nic.class, nicId);
         }
 
-
         s_logger.debug("Calling the ip allocation ...");
         String ipaddr = null;
+        String ip6addr = null;
         //Isolated network can exist in Basic zone only, so no need to verify the zone type
         if (network.getGuestType() == Network.GuestType.Isolated) {
             try {
-                ipaddr = _ipAddrMgr.allocateGuestIP(network, requestedIp);
+                if (ipv4Address != null) {
+                    ipaddr = _ipAddrMgr.allocateGuestIP(network, ipv4Address);
+                }
+                if (ipv6Address != null) {
+                    ip6addr = ipv6AddrMgr.allocateGuestIpv6(network, ipv6Address);
+                }
             } catch (InsufficientAddressCapacityException e) {
                 throw new InvalidParameterValueException("Allocating guest ip for nic failed");
             }
@@ -711,16 +727,21 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             DataCenter dc = _dcDao.findById(network.getDataCenterId());
 
             if (dc.getNetworkType() == NetworkType.Basic) {
-            VMInstanceVO vmi = (VMInstanceVO)vm;
+                VMInstanceVO vmi = (VMInstanceVO)vm;
                 podId = vmi.getPodIdToDeployIn();
-            if (podId == null) {
+                if (podId == null) {
                     throw new InvalidParameterValueException("vm pod id is null in Basic zone; can't decide the range for ip allocation");
-            }
+                }
             }
 
             try {
-                ipaddr = _ipAddrMgr.allocatePublicIpForGuestNic(network, podId, ipOwner, requestedIp);
-                if (ipaddr == null) {
+                if (ipv4Address != null) {
+                    ipaddr = _ipAddrMgr.allocatePublicIpForGuestNic(network, podId, ipOwner, ipv4Address);
+                }
+                if (ipv6Address != null) {
+                    ip6addr = ipv6AddrMgr.allocatePublicIp6ForGuestNic(network, podId, ipOwner, ipv6Address);
+                }
+                if (ipaddr == null && ipv6Address == null) {
                     throw new InvalidParameterValueException("Allocating ip to guest nic " + nicId + " failed");
                 }
             } catch (InsufficientAddressCapacityException e) {
@@ -732,29 +753,30 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
             return null;
         }
 
-        if (ipaddr != null) {
+        if (ipaddr != null || ip6addr != null) {
             // we got the ip addr so up the nics table and secodary ip
-            final String addrFinal = ipaddr;
+            final String ip4AddrFinal = ipaddr;
+            final String ip6AddrFinal = ip6addr;
             long id = Transaction.execute(new TransactionCallback<Long>() {
                 @Override
                 public Long doInTransaction(TransactionStatus status) {
-            boolean nicSecondaryIpSet = nicVO.getSecondaryIp();
-            if (!nicSecondaryIpSet) {
-                nicVO.setSecondaryIp(true);
-                // commit when previously set ??
-                s_logger.debug("Setting nics table ...");
-                _nicDao.update(nicId, nicVO);
-            }
+                    boolean nicSecondaryIpSet = nicVO.getSecondaryIp();
+                    if (!nicSecondaryIpSet) {
+                        nicVO.setSecondaryIp(true);
+                        // commit when previously set ??
+                        s_logger.debug("Setting nics table ...");
+                        _nicDao.update(nicId, nicVO);
+                    }
 
-            s_logger.debug("Setting nic_secondary_ip table ...");
+                    s_logger.debug("Setting nic_secondary_ip table ...");
                     Long vmId = nicVO.getInstanceId();
-                    NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, addrFinal, vmId, ipOwner.getId(), ipOwner.getDomainId(), networkId);
-            _nicSecondaryIpDao.persist(secondaryIpVO);
+                    NicSecondaryIpVO secondaryIpVO = new NicSecondaryIpVO(nicId, ip4AddrFinal, ip6AddrFinal, vmId, ipOwner.getId(), ipOwner.getDomainId(), networkId);
+                    _nicSecondaryIpDao.persist(secondaryIpVO);
                     return secondaryIpVO.getId();
                 }
             });
 
-           return getNicSecondaryIp(id);
+            return getNicSecondaryIp(id);
         } else {
             return null;
         }

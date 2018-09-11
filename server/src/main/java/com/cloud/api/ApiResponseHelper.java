@@ -471,7 +471,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         cfgResponse.setCategory(cfg.getCategory());
         cfgResponse.setDescription(cfg.getDescription());
         cfgResponse.setName(cfg.getName());
-        if(cfg.isEncrypted()) {
+        if (cfg.isEncrypted()) {
             cfgResponse.setValue(DBEncryptionUtil.encrypt(cfg.getValue()));
         } else {
             cfgResponse.setValue(cfg.getValue());
@@ -3623,11 +3623,22 @@ public class ApiResponseHelper implements ResponseGenerator {
         NicVO nic = _entityMgr.findById(NicVO.class, result.getNicId());
         NetworkVO network = _entityMgr.findById(NetworkVO.class, result.getNetworkId());
         response.setId(result.getUuid());
-        response.setIpAddr(result.getIp4Address());
+        setResponseIpAddress(result, response);
         response.setNicId(nic.getUuid());
         response.setNwId(network.getUuid());
         response.setObjectName("nicsecondaryip");
         return response;
+    }
+
+    /**
+     * Set the NicSecondaryIpResponse object with the IP address that is not null (IPv4 or IPv6)
+     */
+    public static void setResponseIpAddress(NicSecondaryIp result, NicSecondaryIpResponse response) {
+        if (result.getIp4Address() != null) {
+            response.setIpAddr(result.getIp4Address());
+        } else if (result.getIp6Address() != null) {
+            response.setIpAddr(result.getIp6Address());
+        }
     }
 
     /**
@@ -3706,7 +3717,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 for (NicSecondaryIpVO ip : secondaryIps) {
                     NicSecondaryIpResponse ipRes = new NicSecondaryIpResponse();
                     ipRes.setId(ip.getUuid());
-                    ipRes.setIpAddr(ip.getIp4Address());
+                    setResponseIpAddress(ip, ipRes);
                     ipList.add(ipRes);
                 }
                 response.setSecondaryIps(ipList);
