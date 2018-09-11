@@ -52,7 +52,7 @@ from marvin.lib.base import (Account,
                              Hypervisor, Template)
 from marvin.lib.common import (get_domain,
                                get_template,
-                               get_zone)
+                               get_zone, get_test_template)
 from marvin.lib.utils import random_gen
 # Import System Modules
 from nose.plugins.attrib import attr
@@ -100,6 +100,19 @@ class Services:
 
     def __init__(self):
         self.services = {
+            "test_templates": {
+                "kvm": {
+                    "name": "Centos-5.5-configdrive",
+                    "displaytext": "ConfigDrive enabled CentOS",
+                    "format": "qcow2",
+                    "hypervisor": "kvm",
+                    "ostype": "CentOS 5.5 (64-bit)",
+                    "url": "http://people.apache.org/~fmaximus/centos55-extended.qcow2.bz2",
+                    "requireshvm": "False",
+                    "ispublic": "True",
+                    "isextractable": "True"
+                }
+            },
             "vpc_offering_configdrive": {
                 "name": 'VPC offering ConfigDrive',
                 "displaytext": 'VPC offering ConfigDrive',
@@ -1144,17 +1157,19 @@ class TestConfigDrive(cloudstackTestCase, ConfigDriveUtils):
         cls.api_client = test_client.getApiClient()
         cls.db_client = test_client.getDbConnection()
         cls.test_data = test_client.getParsedTestDataConfig()
+        cls.test_data.update(Services().services)
 
         # Get Zone, Domain and templates
         cls.zone = get_zone(cls.api_client)
         cls.domain = get_domain(cls.api_client)
-        cls.template = get_template(cls.api_client,
-                                    cls.zone.id,
-                                    cls.test_data["ostype"]
-                                    )
+
+        cls.hypervisor = cls.testClient.getHypervisorInfo()
+        cls.template = get_test_template(cls.api_client,
+                                         cls.zone.id,
+                                         cls.hypervisor,
+                                         cls.test_data["test_templates"])
         cls.test_data["virtual_machine"]["zoneid"] = cls.zone.id
         cls.test_data["virtual_machine"]["template"] = cls.template.id
-        cls.test_data.update(Services().services)
 
         # Create service offering
         cls.service_offering = ServiceOffering.create(
