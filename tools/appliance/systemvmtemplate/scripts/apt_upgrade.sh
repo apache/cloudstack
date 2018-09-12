@@ -19,12 +19,12 @@
 set -e
 set -x
 
-# Perform fsck check on every 2nd boot
+# Perform fsck check on every 3rd boot
 function fix_tune2fs() {
   for partition in $(blkid -o list | grep ext | awk '{print $1}')
   do
     tune2fs -m 0 $partition
-    tune2fs -c 3 $partition
+    tune2fs -c 4 $partition
   done
   fdisk -l
   df -h
