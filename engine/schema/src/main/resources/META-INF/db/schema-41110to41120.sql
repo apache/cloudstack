@@ -16,12 +16,9 @@
 -- under the License.
 
 --;
--- Schema upgrade cleanup from 4.11.1.0 to 4.12.0.0
+-- Schema upgrade from 4.11.1.0 to 4.11.2.0
 --;
 
-DROP TABLE IF EXISTS `cloud`.`iam_account_policy_map`;
-DROP TABLE IF EXISTS `cloud`.`iam_group_account_map`;
-DROP TABLE IF EXISTS `cloud`.`iam_group_policy_map`;
-DROP TABLE IF EXISTS `cloud`.`iam_group`;
-DROP TABLE IF EXISTS `cloud`.`iam_policy_permission`;
-DROP TABLE IF EXISTS `cloud`.`iam_policy`;
+-- XenServer 7.5
+INSERT IGNORE INTO `cloud`.`hypervisor_capabilities`(uuid, hypervisor_type, hypervisor_version, max_guests_limit, max_data_volumes_limit, storage_motion_supported) values (UUID(), 'XenServer', '7.5.0', 500, 13, 1);
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid,hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) SELECT UUID(),'Xenserver', '7.5.0', guest_os_name, guest_os_id, utc_timestamp(), 0  FROM `cloud`.`guest_os_hypervisor` WHERE hypervisor_type='Xenserver' AND hypervisor_version='7.4.0';

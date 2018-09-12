@@ -18,35 +18,46 @@
 
 . /opt/cloud/bin/setup/common.sh
 
-setup_router() {
-  log_it "Setting up virtual router system vm"
+check_reboot_vmware() {
+  if [ "$HYPERVISOR" != "vmware" ]; then
+    return
+  fi
 
-  #To save router public interface and gw ip information
+  if [ -n "$MGMTNET" ]; then
+    MGMT_GW=$(echo $MGMTNET | awk -F "." '{print $1"."$2"."$3".1"}')
+    if ping -n -c 1 -W 3 $MGMT_GW &> /dev/null; then
+      log_it "Management gateway pingable, skipping VR reboot"
+      return
+    fi
+  fi
+
+  log_it "Management gateway not pingable, rebooting VR"
+  sync
+  reboot
+}
+
+setup_router() {
+  # To save router public interface and gw ip information
   touch /var/cache/cloud/ifaceGwIp
 
   oldmd5=
   [ -f "/etc/udev/rules.d/70-persistent-net.rules" ] && oldmd5=$(md5sum "/etc/udev/rules.d/70-persistent-net.rules" | awk '{print $1}')
 
-  if [ -n "$ETH2_IP" ]
-  then
-      setup_common eth0 eth1 eth2
+  if [ -n "$ETH2_IP" ]; then
+    setup_common eth0 eth1 eth2
 
-      if [ -n "$EXTRA_PUBNICS" ]
-      then
-        for((i = 3; i < 3 + $EXTRA_PUBNICS; i++))
-        do
-            setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
-        done
-      fi
+    if [ -n "$EXTRA_PUBNICS" ]; then
+      for ((i = 3; i < 3 + $EXTRA_PUBNICS; i++)); do
+        setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
+      done
+    fi
   else
     setup_common eth0 eth1
-      if [ -n "$EXTRA_PUBNICS" ]
-      then
-        for((i = 2; i < 2 + $EXTRA_PUBNICS; i++))
-        do
-            setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
-        done
-      fi
+    if [ -n "$EXTRA_PUBNICS" ]; then
+      for ((i = 2; i < 2 + $EXTRA_PUBNICS; i++)); do
+        setup_interface "$i" "0.0.0.0" "255.255.255.255" $GW "force"
+      done
+    fi
   fi
 
   log_it "Checking udev NIC assignment order changes"
@@ -61,10 +72,7 @@ setup_router() {
     then
       log_it "Reloading udev for new udev NIC assignment"
       udevadm control --reload-rules && udevadm trigger
-      if [ "$HYPERVISOR" == "vmware" ]; then
-          sync
-          reboot
-      fi
+      check_reboot_vmware
     fi
   fi
 
@@ -79,14 +87,15 @@ setup_router() {
   disable_rpfilter_domR
   enable_fwding 1
   enable_rpsrfs 1
+  enable_passive_ftp 1
   cp /etc/iptables/iptables-router /etc/iptables/rules.v4
   setup_sshd $ETH1_IP "eth1"
 
-  #Only allow DNS service for current network
+  # Only allow DNS service for current network
   sed -i "s/-A INPUT -i eth0 -p udp -m udp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p udp -m udp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
   sed -i "s/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -j ACCEPT/-A INPUT -i eth0 -p tcp -m tcp --dport 53 -s $DHCP_RANGE\/$CIDR_SIZE -j ACCEPT/g" /etc/iptables/rules.v4
 
-  #setup hourly logrotate
+  # Setup hourly logrotate
   mv -n /etc/cron.daily/logrotate /etc/cron.hourly 2>&1
 }
 

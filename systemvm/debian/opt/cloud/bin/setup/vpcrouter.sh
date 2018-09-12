@@ -84,6 +84,7 @@ EOF
   enable_vpc_rpsrfs 1
   disable_rpfilter
   enable_fwding 1
+  enable_passive_ftp 1
   cp /etc/iptables/iptables-vpcrouter /etc/iptables/rules.v4
   setup_sshd $ETH0_IP "eth0"
   cp /etc/vpcdnsmasq.conf /etc/dnsmasq.conf

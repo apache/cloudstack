@@ -29,12 +29,9 @@ import java.util.Date;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.utils.CloudStackVersion;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-
-import com.google.common.annotations.VisibleForTesting;
-
-import org.apache.cloudstack.utils.CloudStackVersion;
 
 import com.cloud.upgrade.dao.DbUpgrade;
 import com.cloud.upgrade.dao.Upgrade217to218;
@@ -65,7 +62,8 @@ import com.cloud.upgrade.dao.Upgrade40to41;
 import com.cloud.upgrade.dao.Upgrade41000to41100;
 import com.cloud.upgrade.dao.Upgrade410to420;
 import com.cloud.upgrade.dao.Upgrade41100to41110;
-import com.cloud.upgrade.dao.Upgrade41110to41200;
+import com.cloud.upgrade.dao.Upgrade41110to41120;
+import com.cloud.upgrade.dao.Upgrade41120to41200;
 import com.cloud.upgrade.dao.Upgrade420to421;
 import com.cloud.upgrade.dao.Upgrade421to430;
 import com.cloud.upgrade.dao.Upgrade430to440;
@@ -101,6 +99,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.google.common.annotations.VisibleForTesting;
 
 public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     private static final Logger s_logger = Logger.getLogger(DatabaseUpgradeChecker.class);
@@ -182,7 +181,8 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                 .next("4.9.3.1" , new Upgrade4930to41000())
                 .next("4.10.0.0", new Upgrade41000to41100())
                 .next("4.11.0.0", new Upgrade41100to41110())
-                .next("4.11.1.0", new Upgrade41110to41200())
+                .next("4.11.1.0", new Upgrade41110to41120())
+                .next("4.11.2.0", new Upgrade41120to41200())
                 .build();
     }
 

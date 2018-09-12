@@ -16,7 +16,7 @@
 -- under the License.
 
 --;
--- Schema upgrade from 4.11.1.0 to 4.12.0.0
+-- Schema upgrade from 4.11.2.0 to 4.12.0.0
 --;
 
 -- [CLOUDSTACK-10314] Add reason column to ACL rule table

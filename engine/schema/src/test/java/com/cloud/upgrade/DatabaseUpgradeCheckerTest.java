@@ -22,15 +22,15 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 
-import org.junit.Test;
-
 import org.apache.cloudstack.utils.CloudStackVersion;
+import org.junit.Test;
 
 import com.cloud.upgrade.DatabaseUpgradeChecker.NoopDbUpgrade;
 import com.cloud.upgrade.dao.DbUpgrade;
 import com.cloud.upgrade.dao.Upgrade41000to41100;
 import com.cloud.upgrade.dao.Upgrade41100to41110;
-import com.cloud.upgrade.dao.Upgrade41110to41200;
+import com.cloud.upgrade.dao.Upgrade41110to41120;
+import com.cloud.upgrade.dao.Upgrade41120to41200;
 import com.cloud.upgrade.dao.Upgrade452to453;
 import com.cloud.upgrade.dao.Upgrade453to460;
 import com.cloud.upgrade.dao.Upgrade460to461;
@@ -97,10 +97,11 @@ public class DatabaseUpgradeCheckerTest {
         assertTrue(upgrades.length >= 1);
         assertTrue(upgrades[0] instanceof Upgrade41000to41100);
         assertTrue(upgrades[1] instanceof Upgrade41100to41110);
-        assertTrue(upgrades[2] instanceof Upgrade41110to41200);
+        assertTrue(upgrades[2] instanceof Upgrade41110to41120);
+        assertTrue(upgrades[3] instanceof Upgrade41120to41200);
 
         assertTrue(Arrays.equals(new String[] {"4.11.0.0", "4.11.1.0"}, upgrades[1].getUpgradableVersionRange()));
-        assertEquals(currentVersion.toString(), upgrades[2].getUpgradedVersion());
+        assertEquals(currentVersion.toString(), upgrades[3].getUpgradedVersion());
 
     }
 
