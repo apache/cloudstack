@@ -16,13 +16,23 @@
 // under the License.
 package com.cloud.vm;
 
+import org.apache.cloudstack.api.InternalIdentity;
+
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.Table;
 
 @Entity
 @Table(name = "user_vm_clone_setting")
-public class UserVmCloneSettingVO {
+public class UserVmCloneSettingVO implements InternalIdentity {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
+    private long id;
 
     @Column(name = "vm_id")
     private Long vmId;
@@ -49,5 +59,10 @@ public class UserVmCloneSettingVO {
 
     public void setCloneType(String cloneType) {
         this.cloneType = cloneType;
+    }
+
+    @Override
+    public long getId() {
+        return id;
     }
 }
