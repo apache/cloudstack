@@ -107,7 +107,7 @@ public class ResizeVolumeCmd extends BaseAsyncCmd {
         return size;
     }
 
-    public boolean getShrinkOk() {
+    public boolean isShrinkOk() {
         return shrinkOk;
     }
 

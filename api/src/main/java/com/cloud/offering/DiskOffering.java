@@ -57,13 +57,13 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     String getUniqueName();
 
-    boolean getUseLocalStorage();
+    boolean isUseLocalStorage();
 
     Long getDomainId();
 
     String getName();
 
-    boolean getSystemUse();
+    boolean isSystemUse();
 
     String getDisplayText();
 

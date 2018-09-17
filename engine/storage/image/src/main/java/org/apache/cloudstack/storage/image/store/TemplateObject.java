@@ -403,13 +403,13 @@ public class TemplateObject implements TemplateInfo {
     }
 
     @Override
-    public boolean getEnablePassword() {
-        return imageVO.getEnablePassword();
+    public boolean isEnablePassword() {
+        return imageVO.isEnablePassword();
     }
 
     @Override
-    public boolean getEnableSshKey() {
-        return imageVO.getEnableSshKey();
+    public boolean isEnableSshKey() {
+        return imageVO.isEnableSshKey();
     }
 
     @Override

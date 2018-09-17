@@ -97,7 +97,7 @@ public class PrivateIpVO implements InternalIdentity {
         return vpcId;
     }
 
-    public boolean getSourceNat() {
+    public boolean isSourceNat() {
         return sourceNat;
     }
 

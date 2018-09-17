@@ -231,7 +231,7 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         final List<DomainRouterVO> routers = routerDeploymentDefinition.deployVirtualRouter();
 
         int expectedRouters = 1;
-        if (offering.getRedundantRouter() || network.isRollingRestart()) {
+        if (offering.isRedundantRouter() || network.isRollingRestart()) {
             expectedRouters = 2;
         }
         if (routers == null || routers.size() < expectedRouters) {

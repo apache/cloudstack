@@ -213,10 +213,10 @@ public class VirtualMachineManagerImplTest {
         ServiceOfferingVO mockCurrentServiceOffering = mock(ServiceOfferingVO.class);
 
         when(serviceOfferingDaoMock.findByIdIncludingRemoved(anyLong(), anyLong())).thenReturn(mockCurrentServiceOffering);
-        when(mockCurrentServiceOffering.getUseLocalStorage()).thenReturn(true);
-        when(serviceOfferingMock.getUseLocalStorage()).thenReturn(true);
-        when(mockCurrentServiceOffering.getSystemUse()).thenReturn(true);
-        when(serviceOfferingMock.getSystemUse()).thenReturn(true);
+        when(mockCurrentServiceOffering.isUseLocalStorage()).thenReturn(true);
+        when(serviceOfferingMock.isUseLocalStorage()).thenReturn(true);
+        when(mockCurrentServiceOffering.isSystemUse()).thenReturn(true);
+        when(serviceOfferingMock.isSystemUse()).thenReturn(true);
         when(mockCurrentServiceOffering.getTags()).thenReturn("x,y");
         when(serviceOfferingMock.getTags()).thenReturn("z,x,y");
 

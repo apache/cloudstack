@@ -773,7 +773,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
         }
         ConsoleProxyVO proxy =
             new ConsoleProxyVO(id, serviceOffering.getId(), name, template.getId(), template.getHypervisorType(), template.getGuestOSId(), dataCenterId,
-                systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), 0, serviceOffering.getOfferHA());
+                systemAcct.getDomainId(), systemAcct.getId(), _accountMgr.getSystemUser().getId(), 0, serviceOffering.isOfferHA());
         proxy.setDynamicallyScalable(template.isDynamicallyScalable());
         proxy = _consoleProxyDao.persist(proxy);
         try {
@@ -1315,7 +1315,7 @@ public class ConsoleProxyManagerImpl extends ManagerBase implements ConsoleProxy
             }
         }
 
-        if (_serviceOffering == null || !_serviceOffering.getSystemUse()) {
+        if (_serviceOffering == null || !_serviceOffering.isSystemUse()) {
             int ramSize = NumbersUtil.parseInt(_configDao.getValue("console.ram.size"), DEFAULT_PROXY_VM_RAMSIZE);
             int cpuFreq = NumbersUtil.parseInt(_configDao.getValue("console.cpu.mhz"), DEFAULT_PROXY_VM_CPUMHZ);
             List<ServiceOfferingVO> offerings = _offeringDao.createSystemServiceOfferings("System Offering For Console Proxy",

@@ -2180,7 +2180,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Guest OS not found. Please specify a valid ID for the Guest OS");
         }
 
-        if (!guestOsHandle.getIsUserDefined()) {
+        if (!guestOsHandle.isUserDefined()) {
             throw new InvalidParameterValueException("Unable to modify system defined guest OS");
         }
 
@@ -2222,7 +2222,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
             throw new InvalidParameterValueException("Guest OS not found. Please specify a valid ID for the Guest OS");
         }
 
-        if (!guestOs.getIsUserDefined()) {
+        if (!guestOs.isUserDefined()) {
             throw new InvalidParameterValueException("Unable to remove system defined guest OS");
         }
 

@@ -68,7 +68,7 @@ public class DiskProfile {
             offering.getId(),
             vol.getSize(),
             offering.getTagsArray(),
-            offering.getUseLocalStorage(),
+            offering.isUseLocalStorage(),
             offering.isCustomized(),
             null);
         this.hyperType = hyperType;

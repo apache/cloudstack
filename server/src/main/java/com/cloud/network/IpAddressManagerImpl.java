@@ -1379,7 +1379,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
 
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        boolean sharedSourceNat = offering.getSharedSourceNat();
+        boolean sharedSourceNat = offering.isSharedSourceNat();
         boolean isSourceNat = false;
         if (!sharedSourceNat) {
             if (getExistingSourceNatInNetwork(owner.getId(), networkId) == null) {
@@ -1737,7 +1737,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         Network guestNetwork = pair.third();
 
         // if the network offering has persistent set to true, implement the network
-        if (createNetwork && requiredOfferings.get(0).getIsPersistent()) {
+        if (createNetwork && requiredOfferings.get(0).isPersistent()) {
             DataCenter zone = _dcDao.findById(zoneId);
             DeployDestination dest = new DeployDestination(zone, null, null, null);
             Account callerAccount = CallContext.current().getCallingAccount();
@@ -1959,7 +1959,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         Network guestNetwork = _networksDao.findById(networkId);
         NetworkOffering off = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
         IpAddress ip = null;
-        if ((off.getElasticLb() && forElasticLb) || (off.getElasticIp() && forElasticIp)) {
+        if ((off.isElasticLb() && forElasticLb) || (off.isElasticIp() && forElasticIp)) {
 
             try {
                 s_logger.debug("Allocating system IP address for load balancer rule...");

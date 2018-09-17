@@ -3214,14 +3214,14 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         // Check that the service offering being upgraded to has the same storage pool preference as the VM's current service
         // offering
-        if (currentServiceOffering.getUseLocalStorage() != newServiceOffering.getUseLocalStorage()) {
+        if (currentServiceOffering.isUseLocalStorage() != newServiceOffering.isUseLocalStorage()) {
             throw new InvalidParameterValueException("Unable to upgrade virtual machine " + vmInstance.toString() +
                     ", cannot switch between local storage and shared storage service offerings.  Current offering " + "useLocalStorage=" +
-                    currentServiceOffering.getUseLocalStorage() + ", target offering useLocalStorage=" + newServiceOffering.getUseLocalStorage());
+                    currentServiceOffering.isUseLocalStorage() + ", target offering useLocalStorage=" + newServiceOffering.isUseLocalStorage());
         }
 
         // if vm is a system vm, check if it is a system service offering, if yes return with error as it cannot be used for user vms
-        if (currentServiceOffering.getSystemUse() != newServiceOffering.getSystemUse()) {
+        if (currentServiceOffering.isSystemUse() != newServiceOffering.isSystemUse()) {
             throw new InvalidParameterValueException("isSystem property is different for current service offering and new service offering");
         }
 
@@ -3245,7 +3245,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final VMInstanceVO vmForUpdate = _vmDao.createForUpdate();
         vmForUpdate.setServiceOfferingId(serviceOfferingId);
         final ServiceOffering newSvcOff = _entityMgr.findById(ServiceOffering.class, serviceOfferingId);
-        vmForUpdate.setHaEnabled(newSvcOff.getOfferHA());
+        vmForUpdate.setHaEnabled(newSvcOff.isOfferHA());
         vmForUpdate.setLimitCpuUse(newSvcOff.getLimitCpuUse());
         vmForUpdate.setServiceOfferingId(newSvcOff.getId());
         return _vmDao.update(vmId, vmForUpdate);

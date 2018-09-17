@@ -690,10 +690,10 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                     @Override
                     public void doInTransactionWithoutResult(final TransactionStatus status) {
                         final NetworkVO vo = new NetworkVO(id, network, offering.getId(), guru.getName(), owner.getDomainId(), owner.getId(), relatedFile, name, displayText, predefined
-                                .getNetworkDomain(), offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.getSpecifyIpRanges(),
-                                vpcId, offering.getRedundantRouter(), predefined.getExternalId());
+                                .getNetworkDomain(), offering.getGuestType(), plan.getDataCenterId(), plan.getPhysicalNetworkId(), aclType, offering.isSpecifyIpRanges(),
+                                vpcId, offering.isRedundantRouter(), predefined.getExternalId());
                         vo.setDisplayNetwork(isDisplayNetworkEnabled == null ? true : isDisplayNetworkEnabled);
-                        vo.setStrechedL2Network(offering.getSupportsStrechedL2());
+                        vo.setStrechedL2Network(offering.isSupportingStrechedL2());
                         final NetworkVO networkPersisted = _networksDao.persist(vo, vo.getGuestType() == Network.GuestType.Isolated,
                                 finalizeServicesAndProvidersForNetwork(offering, plan.getPhysicalNetworkId()));
                         networks.add(networkPersisted);
@@ -1110,7 +1110,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         //     2) network has sourceNat service
         //     3) network offering does not support a shared source NAT rule
 
-        final boolean sharedSourceNat = offering.getSharedSourceNat();
+        final boolean sharedSourceNat = offering.isSharedSourceNat();
         final DataCenter zone = _dcDao.findById(network.getDataCenterId());
 
         if (!sharedSourceNat && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.SourceNat)
@@ -1220,7 +1220,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (_networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall) && _networkModel.areServicesSupportedInNetwork(network.getId(), Service.Firewall)
                 && (network.getGuestType() == Network.GuestType.Isolated || network.getGuestType() == Network.GuestType.Shared && zone.getNetworkType() == NetworkType.Advanced)) {
             // add default egress rule to accept the traffic
-            _firewallMgr.applyDefaultEgressFirewallRule(network.getId(), offering.getEgressDefaultPolicy(), true);
+            _firewallMgr.applyDefaultEgressFirewallRule(network.getId(), offering.isEgressDefaultPolicy(), true);
         }
         if (!_firewallMgr.applyFirewallRules(firewallEgressRulesToApply, false, caller)) {
             s_logger.warn("Failed to reapply firewall Egress rule(s) as a part of network id=" + networkId + " restart");
@@ -2171,7 +2171,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
 
             //don't allow eip/elb networks in Advance zone
-            if (ntwkOff.getElasticIp() || ntwkOff.getElasticLb()) {
+            if (ntwkOff.isElasticIp() || ntwkOff.isElasticLb()) {
                 throw new InvalidParameterValueException("Elastic IP and Elastic LB services are supported in zone of type " + NetworkType.Basic);
             }
         }
@@ -2183,7 +2183,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         //TODO(VXLAN): Support VNI specified
         // VlanId can be specified only when network offering supports it
         final boolean vlanSpecified = vlanId != null;
-        if (vlanSpecified != ntwkOff.getSpecifyVlan()) {
+        if (vlanSpecified != ntwkOff.isSpecifyVlan()) {
             if (vlanSpecified) {
                 throw new InvalidParameterValueException("Can't specify vlan; corresponding offering says specifyVlan=false");
             } else {

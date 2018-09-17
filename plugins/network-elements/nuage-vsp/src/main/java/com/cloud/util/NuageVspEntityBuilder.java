@@ -178,8 +178,8 @@ public class NuageVspEntityBuilder {
         }
 
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        vspNetworkBuilder.egressDefaultPolicy(networkOffering.getEgressDefaultPolicy())
-                         .publicAccess(networkOffering.getSupportsPublicAccess());
+        vspNetworkBuilder.egressDefaultPolicy(networkOffering.isEgressDefaultPolicy())
+                         .publicAccess(networkOffering.isSupportingPublicAccess());
 
         Map<String, String> networkDetails = _networkDetailsDao.listDetailsKeyPairs(network.getId(), false);
 
@@ -381,7 +381,7 @@ public class NuageVspEntityBuilder {
                 .trafficType(getEnumValue(firewallRule.getTrafficType(), VspAclRule.ACLTrafficType.class));
 
         NetworkOfferingVO networkOffering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        if (firewallRule.getTrafficType() == FirewallRule.TrafficType.Egress && networkOffering.getEgressDefaultPolicy()) {
+        if (firewallRule.getTrafficType() == FirewallRule.TrafficType.Egress && networkOffering.isEgressDefaultPolicy()) {
             vspAclRuleBuilder.deny();
         } else {
             vspAclRuleBuilder.allow();

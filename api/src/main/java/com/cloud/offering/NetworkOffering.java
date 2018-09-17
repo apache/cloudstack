@@ -82,11 +82,11 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
      */
     Integer getMulticastRateMbps();
 
-    boolean getForVpc();
+    boolean isForVpc();
 
     TrafficType getTrafficType();
 
-    boolean getSpecifyVlan();
+    boolean isSpecifyVlan();
 
     String getTags();
 
@@ -106,39 +106,39 @@ public interface NetworkOffering extends InfrastructureEntity, InternalIdentity,
 
     Long getServiceOfferingId();
 
-    boolean getDedicatedLB();
+    boolean isDedicatedLB();
 
-    boolean getSharedSourceNat();
+    boolean isSharedSourceNat();
 
-    boolean getRedundantRouter();
+    boolean isRedundantRouter();
 
     boolean isConserveMode();
 
-    boolean getElasticIp();
+    boolean isElasticIp();
 
-    boolean getAssociatePublicIP();
+    boolean isAssociatePublicIP();
 
-    boolean getElasticLb();
+    boolean isElasticLb();
 
-    boolean getSpecifyIpRanges();
+    boolean isSpecifyIpRanges();
 
     boolean isInline();
 
-    boolean getIsPersistent();
+    boolean isPersistent();
 
-    boolean getInternalLb();
+    boolean isInternalLb();
 
-    boolean getPublicLb();
+    boolean isPublicLb();
 
-    boolean getEgressDefaultPolicy();
+    boolean isEgressDefaultPolicy();
 
     Integer getConcurrentConnections();
 
     boolean isKeepAliveEnabled();
 
-    boolean getSupportsStrechedL2();
+    boolean isSupportingStrechedL2();
 
-    boolean getSupportsPublicAccess();
+    boolean isSupportingPublicAccess();
 
     String getServicePackage();
 }

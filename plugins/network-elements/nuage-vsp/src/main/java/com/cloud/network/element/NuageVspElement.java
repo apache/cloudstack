@@ -481,14 +481,14 @@ public class NuageVspElement extends AdapterBase implements ConnectivityProvider
             return false;
         }
 
-        if (networkOffering.getSpecifyVlan()) {
+        if (networkOffering.isSpecifyVlan()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("NuageVsp doesn't support VLAN values for networks");
             }
             return false;
         }
 
-        if (network.getVpcId() != null && !networkOffering.getIsPersistent()) {
+        if (network.getVpcId() != null && !networkOffering.isPersistent()) {
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("NuageVsp can't handle VPC tiers which use a network offering which are not persistent");
             }

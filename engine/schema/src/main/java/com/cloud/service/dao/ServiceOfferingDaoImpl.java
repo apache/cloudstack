@@ -60,7 +60,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
         UniqueNameSearch = createSearchBuilder();
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
-        UniqueNameSearch.and("system", UniqueNameSearch.entity().getSystemUse(), SearchCriteria.Op.EQ);
+        UniqueNameSearch.and("system", UniqueNameSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
 
         ServiceOfferingsByDomainIdSearch = createSearchBuilder();
@@ -69,14 +69,14 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
         SystemServiceOffering = createSearchBuilder();
         SystemServiceOffering.and("domainId", SystemServiceOffering.entity().getDomainId(), SearchCriteria.Op.EQ);
-        SystemServiceOffering.and("system", SystemServiceOffering.entity().getSystemUse(), SearchCriteria.Op.EQ);
+        SystemServiceOffering.and("system", SystemServiceOffering.entity().isSystemUse(), SearchCriteria.Op.EQ);
         SystemServiceOffering.and("vm_type", SystemServiceOffering.entity().getSpeed(), SearchCriteria.Op.EQ);
         SystemServiceOffering.and("removed", SystemServiceOffering.entity().getRemoved(), SearchCriteria.Op.NULL);
         SystemServiceOffering.done();
 
         PublicServiceOfferingSearch = createSearchBuilder();
         PublicServiceOfferingSearch.and("domainId", PublicServiceOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
-        PublicServiceOfferingSearch.and("system", PublicServiceOfferingSearch.entity().getSystemUse(), SearchCriteria.Op.EQ);
+        PublicServiceOfferingSearch.and("system", PublicServiceOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
         PublicServiceOfferingSearch.and("removed", PublicServiceOfferingSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         PublicServiceOfferingSearch.done();
 
@@ -111,7 +111,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
                 update(vo.getId(), vo);
             }
             if (!vo.getUniqueName().endsWith("-Local")) {
-                if (vo.getUseLocalStorage()) {
+                if (vo.isUseLocalStorage()) {
                     vo.setUniqueName(vo.getUniqueName() + "-Local");
                     vo.setName(vo.getName() + " - Local Storage");
                     update(vo.getId(), vo);
@@ -260,7 +260,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         }
 
         boolean useLocal = true;
-        if (offering.getUseLocalStorage()) { // if 1st one is already local then 2nd needs to be shared
+        if (offering.isUseLocalStorage()) { // if 1st one is already local then 2nd needs to be shared
             useLocal = false;
         }
 

@@ -1314,7 +1314,7 @@ public class AutoScaleManagerImpl<Type> extends ManagerBase implements AutoScale
             }
 
             if (!zone.isLocalStorageEnabled()) {
-                if (serviceOffering.getUseLocalStorage()) {
+                if (serviceOffering.isUseLocalStorage()) {
                     throw new InvalidParameterValueException("Zone is not configured to use local storage but service offering " + serviceOffering.getName() + " uses it");
                 }
             }

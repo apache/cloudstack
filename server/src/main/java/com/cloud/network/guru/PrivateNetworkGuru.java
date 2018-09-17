@@ -111,7 +111,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
         }
         NetworkVO network =
             new NetworkVO(offering.getTrafficType(), Mode.Static, broadcastType, offering.getId(), State.Allocated, plan.getDataCenterId(),
-                    plan.getPhysicalNetworkId(), offering.getRedundantRouter());
+                    plan.getPhysicalNetworkId(), offering.isRedundantRouter());
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
                 throw new InvalidParameterValueException("cidr and gateway must be specified together.");
@@ -124,7 +124,7 @@ public class PrivateNetworkGuru extends AdapterBase implements NetworkGuru {
                 throw new InvalidParameterValueException("Can't design network " + network + "; netmask/gateway must be passed in");
             }
 
-            if (offering.getSpecifyVlan()) {
+            if (offering.isSpecifyVlan()) {
                 network.setBroadcastUri(userSpecified.getBroadcastUri());
                 network.setState(State.Setup);
             }

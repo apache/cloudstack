@@ -2337,7 +2337,7 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
 
         if (network != null) {
             NetworkOfferingVO offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-            return offering.getEgressDefaultPolicy();
+            return offering.isEgressDefaultPolicy();
         } else {
             InvalidParameterValueException ex = new InvalidParameterValueException("network with network id does not exist");
             throw ex;

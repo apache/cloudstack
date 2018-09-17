@@ -272,7 +272,7 @@ public class VxlanGuestNetworkGuruTest {
         NetworkProfile implementednetwork = mock(NetworkProfile.class);
         when(implementednetwork.getId()).thenReturn(42L);
         when(implementednetwork.getBroadcastUri()).thenReturn(new URI("vxlan:12345"));
-        when(offering.getSpecifyVlan()).thenReturn(false);
+        when(offering.isSpecifyVlan()).thenReturn(false);
 
         guru.shutdown(implementednetwork, offering);
         verify(implementednetwork, times(1)).setBroadcastUri(null);

@@ -1601,7 +1601,7 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         if (result == null) {
             IpAddress systemIp = null;
             NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
-            if (off.getElasticLb() && ipVO == null && network.getVpcId() == null) {
+            if (off.isElasticLb() && ipVO == null && network.getVpcId() == null) {
                 systemIp = _ipAddrMgr.assignSystemIp(networkId, lbOwner, true, false);
                 if (systemIp != null) {
                     ipVO = _ipAddressDao.findById(systemIp.getId());
@@ -2507,11 +2507,11 @@ public class LoadBalancingRulesManagerImpl<Type> extends ManagerBase implements 
         //2) Check if the Scheme is supported\
         NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
         if (scheme == Scheme.Public) {
-            if (!off.getPublicLb()) {
+            if (!off.isPublicLb()) {
                 throw new InvalidParameterValueException("Scheme " + scheme + " is not supported by the network offering " + off);
             }
         } else {
-            if (!off.getInternalLb()) {
+            if (!off.isInternalLb()) {
                 throw new InvalidParameterValueException("Scheme " + scheme + " is not supported by the network offering " + off);
             }
         }
