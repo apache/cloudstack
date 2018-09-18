@@ -21,13 +21,7 @@ set -e
 #
 # This script builds Debian packages for CloudStack and does
 # so by altering the debian/changelog file and add the Ubuntu
-# version as a suffix, for example: 4.9.0~xenial
-#
-# To build packages for Ubuntu 14.04 run this script on a
-# 14.04 system. The same goes for Ubuntu 16.04
-#
-# The biggest difference between those two versions is the
-# sysvinit vs systemd and Java 7 vs Java 8
+# version as a suffix, for example: 4.10.0~xenial
 #
 # These packages can be build using Docker for example:
 #
@@ -35,9 +29,6 @@ set -e
 #
 # Ubuntu 16.04
 # docker run -ti -v /tmp:/src ubuntu:16.04 /bin/bash -c "apt-get update && apt-get install -y dpkg-dev python debhelper openjdk-8-jdk genisoimage python-mysql.connector maven lsb-release devscripts dh-systemd python-setuptools && /src/cloudstack/packaging/build-deb.sh"
-#
-# Ubuntu 14.04
-# docker run -ti -v /tmp:/src ubuntu:14.04 /bin/bash -c "apt-get update && apt-get install -y dpkg-dev python debhelper openjdk-8-jdk genisoimage python-mysql.connector maven lsb-release devscripts dh-systemd python-setuptools && /src/cloudstack/packaging/build-deb.sh"
 #
 
 function usage() {

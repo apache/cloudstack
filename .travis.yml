@@ -215,8 +215,3 @@ jobs:
       env: IMAGE=khos2ow/cloudstack-deb-builder:ubuntu1604 PARAMS=""
       <<: *package_job
 
-    - stage: package
-      services: docker
-      env: IMAGE=khos2ow/cloudstack-deb-builder:ubuntu1404 PARAMS=""
-      <<: *package_job
-
