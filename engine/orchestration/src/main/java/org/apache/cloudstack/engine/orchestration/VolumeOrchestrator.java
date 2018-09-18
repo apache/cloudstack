@@ -1404,7 +1404,7 @@ public class VolumeOrchestrator extends ManagerBase implements VolumeOrchestrati
                 if (cloneSettingVO != null) {
                     if (!cloneSettingVO.getCloneType().equals(cloneType.toString())) {
                         cloneSettingVO.setCloneType(cloneType.toString());
-                        _vmCloneSettingDao.update(cloneSettingVO.getVmId(), cloneSettingVO);
+                        _vmCloneSettingDao.update(cloneSettingVO.getId(), cloneSettingVO);
                     }
                 } else {
                     UserVmCloneSettingVO vmCloneSettingVO = new UserVmCloneSettingVO(vm.getId(), cloneType.toString());
