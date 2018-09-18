@@ -3840,6 +3840,91 @@
                                                 }
                                             },
 
+                                            diagnostics: {
+                                                label: 'label.action.run.diagnostics',
+                                                messages: {
+                                                    notification: function (args) {
+                                                        return 'label.action.run.diagnostics';
+                                                    },
+                                                    complete: function(args) {
+                                                        var exitcode = _l('message.diagnostics.exitcode');
+                                                        exitcode = exitcode.replace('var', args.exitcode);
+                                                        var stderr = _l('message.diagnostics.stderr');
+                                                        stderr = stderr.replace('var', args.stderr);
+                                                        var stdout = _l('message.diagnostics.stdout');
+                                                        stdout = stdout.replace('var', args.stdout);
+                                                        var msg = "<div style='text-align: left; overflow-y: auto'>" + exitcode + "<br><br>" + stderr + "<br><br>" + stdout + "</div>";
+                                                        return msg;
+                                                    }
+                                                },
+                                                createForm: {
+                                                    title: 'label.action.run.diagnostics',
+                                                    desc: '',
+                                                    fields: {
+                                                        type: {
+                                                            label: 'label.run.diagnostics.type',
+                                                            validation: {
+                                                                required: true
+                                                            },
+                                                            select: function (args) {
+                                                                var items = [];
+                                                                items.push({
+                                                                    id: "ping",
+                                                                    description: "Ping"
+                                                                });
+                                                                items.push({
+                                                                    id: "traceroute",
+                                                                    description: "Traceroute"
+                                                                });
+                                                                items.push({
+                                                                    id: "arping",
+                                                                    description: "Arping"
+                                                                });
+                                                                args.response.success({
+                                                                    data: items
+                                                                });
+                                                            }
+                                                        },
+                                                        destination: {
+                                                            label: 'label.run.diagnostics.destination',
+                                                            validation: {
+                                                                required: true
+                                                            }
+                                                        },
+                                                        extra: {
+                                                            label: 'label.run.diagnostics.extra'
+                                                        }
+
+                                                    }
+                                                },
+                                                action: function (args) {
+                                                    $.ajax({
+                                                        url: createURL("runDiagnostics&targetid=" + args.context.systemVMs[0].id + "&ipaddress=" + args.data.destination + "&type=" + args.data.type + "&params=" + args.data.extra),
+                                                        dataType: "json",
+                                                        async: true,
+                                                        success: function(json) {
+                                                            var jid = json.rundiagnosticsresponse.jobid;
+                                                            args.response.success({
+                                                                _custom: {
+                                                                    jobId : jid,
+                                                                    getUpdatedItem: function (json) {
+                                                                        return json.queryasyncjobresultresponse.jobresult.diagnostics;
+
+                                                                    },
+                                                                    getActionFilter: function(){
+                                                                        return systemvmActionfilter;
+                                                                   }
+                                                                }
+
+                                                            });
+                                                        }
+                                                    }); //end ajax
+                                                },
+                                                notification: {
+                                                    poll: pollAsyncJobResult
+                                                }
+                                            },
+
                                             viewConsole: {
                                                 label: 'label.view.console',
                                                 action: {
@@ -8857,6 +8942,91 @@
                                                         }
                                                     },
 
+                                                    diagnostics: {
+                                                        label: 'label.action.run.diagnostics',
+                                                        messages: {
+                                                            notification: function (args) {
+                                                                return 'label.action.run.diagnostics';
+                                                            },
+                                                            complete: function(args) {
+                                                                var exitcode = _l('message.diagnostics.exitcode');
+                                                                exitcode = exitcode.replace('var', args.exitcode);
+                                                                var stderr = _l('message.diagnostics.stderr');
+                                                                stderr = stderr.replace('var', args.stderr);
+                                                                var stdout = _l('message.diagnostics.stdout');
+                                                                stdout = stdout.replace('var', args.stdout);
+                                                                var msg = "<div style='text-align: left; overflow-y: auto'>" + exitcode + "<br><br>" + stderr + "<br><br>" + stdout + "</div>";
+                                                                return msg;
+                                                            }
+                                                        },
+                                                        createForm: {
+                                                            title: 'label.action.run.diagnostics',
+                                                            desc: '',
+                                                            fields: {
+                                                                type: {
+                                                                    label: 'label.run.diagnostics.type',
+                                                                    validation: {
+                                                                        required: true
+                                                                    },
+                                                                    select: function (args) {
+                                                                        var items = [];
+                                                                        items.push({
+                                                                            id: "ping",
+                                                                            description: "Ping"
+                                                                        });
+                                                                        items.push({
+                                                                            id: "traceroute",
+                                                                            description: "Traceroute"
+                                                                        });
+                                                                        items.push({
+                                                                            id: "arping",
+                                                                            description: "Arping"
+                                                                        });
+                                                                        args.response.success({
+                                                                            data: items
+                                                                        });
+                                                                    }
+                                                                },
+                                                                destination: {
+                                                                    label: 'label.run.diagnostics.destination',
+                                                                    validation: {
+                                                                        required: true
+                                                                    }
+                                                                },
+                                                                extra: {
+                                                                    label: 'label.run.diagnostics.extra'
+                                                                }
+
+                                                            }
+                                                        },
+                                                        action: function (args) {
+                                                            $.ajax({
+                                                                url: createURL("runDiagnostics&targetid=" + args.context.systemVMs[0].id + "&ipaddress=" + args.data.destination + "&type=" + args.data.type + "&params=" + args.data.extra),
+                                                                dataType: "json",
+                                                                async: true,
+                                                                success: function(json) {
+                                                                    var jid = json.rundiagnosticsresponse.jobid;
+                                                                    args.response.success({
+                                                                        _custom: {
+                                                                            jobId : jid,
+                                                                            getUpdatedItem: function (json) {
+                                                                                return json.queryasyncjobresultresponse.jobresult.diagnostics;
+
+                                                                            },
+                                                                            getActionFilter: function(){
+                                                                                return systemvmActionfilter;
+                                                                           }
+                                                                        }
+
+                                                                    });
+                                                                }
+                                                            }); //end ajax
+                                                        },
+                                                        notification: {
+                                                            poll: pollAsyncJobResult
+                                                        }
+                                                    },
+
                                                     scaleUp: {
                                                         label: 'label.change.service.offering',
                                                         createForm: {
@@ -10183,6 +10353,92 @@
                                         }
                                     },
 
+                                    // VR Diagnostics
+                                    diagnostics: {
+                                        label: 'label.action.run.diagnostics',
+                                        messages: {
+                                            notification: function (args) {
+                                                return 'label.action.run.diagnostics';
+                                            },
+                                            complete: function(args) {
+                                                var exitcode = _l('message.diagnostics.exitcode');
+                                                exitcode = exitcode.replace('var', args.exitcode);
+                                                var stderr = _l('message.diagnostics.stderr');
+                                                stderr = stderr.replace('var', args.stderr);
+                                                var stdout = _l('message.diagnostics.stdout');
+                                                stdout = stdout.replace('var', args.stdout);
+                                                var msg = "<div style='text-align: left; overflow-y: auto'>" + exitcode + "<br><br>" + stderr + "<br><br>" + stdout + "</div>";
+                                                return msg;
+                                            }
+                                        },
+                                        createForm: {
+                                            title: 'label.action.run.diagnostics',
+                                            desc: '',
+                                            fields: {
+                                                type: {
+                                                    label: 'label.run.diagnostics.type',
+                                                    validation: {
+                                                        required: true
+                                                    },
+                                                    select: function (args) {
+                                                        var items = [];
+                                                        items.push({
+                                                            id: "ping",
+                                                            description: "Ping"
+                                                        });
+                                                        items.push({
+                                                            id: "traceroute",
+                                                            description: "Traceroute"
+                                                        });
+                                                        items.push({
+                                                            id: "arping",
+                                                            description: "Arping"
+                                                        });
+                                                        args.response.success({
+                                                            data: items
+                                                        });
+                                                    }
+                                                },
+                                                destination: {
+                                                    label: 'label.run.diagnostics.destination',
+                                                    validation: {
+                                                        required: true
+                                                    }
+                                                },
+                                                extra: {
+                                                    label: 'label.run.diagnostics.extra'
+                                                }
+
+                                            }
+                                        },
+                                        action: function (args) {
+                                            $.ajax({
+                                                url: createURL("runDiagnostics&targetid=" + args.context.routers[0].id + "&ipaddress=" + args.data.destination + "&type=" + args.data.type + "&params=" + args.data.extra),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var jid = json.rundiagnosticsresponse.jobid;
+                                                    args.response.success({
+                                                        _custom: {
+                                                            jobId : jid,
+                                                            getUpdatedItem: function (json) {
+                                                                return json.queryasyncjobresultresponse.jobresult.diagnostics;
+
+                                                            },
+                                                            getActionFilter: function(){
+                                                                return routerActionfilter;
+                                                           }
+                                                        }
+
+                                                    });
+                                                }
+                                            }); //end ajax
+                                        },
+                                        notification: {
+                                            poll: pollAsyncJobResult
+                                        }
+                                    },
+
                                     scaleUp: { //*** Infrastructure > Virtual Routers > change service offering ***
                                         label: 'label.change.service.offering',
                                         createForm: {
@@ -11448,6 +11704,91 @@
                                 }
                             },
 
+                            diagnostics: {
+                                label: 'label.action.run.diagnostics',
+                                messages: {
+                                    notification: function (args) {
+                                        return 'label.action.run.diagnostics';
+                                    },
+                                    complete: function(args) {
+                                        var exitcode = _l('message.diagnostics.exitcode');
+                                        exitcode = exitcode.replace('var', args.exitcode);
+                                        var stderr = _l('message.diagnostics.stderr');
+                                        stderr = stderr.replace('var', args.stderr);
+                                        var stdout = _l('message.diagnostics.stdout');
+                                        stdout = stdout.replace('var', args.stdout);
+                                        var msg = "<div style='text-align: left; overflow-y: auto'>" + exitcode + "<br><br>" + stderr + "<br><br>" + stdout + "</div>";
+                                        return msg;
+                                    }
+                                },
+                                createForm: {
+                                    title: 'label.action.run.diagnostics',
+                                    desc: '',
+                                    fields: {
+                                        type: {
+                                            label: 'label.run.diagnostics.type',
+                                            validation: {
+                                                required: true
+                                            },
+                                            select: function (args) {
+                                                var items = [];
+                                                items.push({
+                                                    id: "ping",
+                                                    description: "Ping"
+                                                });
+                                                items.push({
+                                                    id: "traceroute",
+                                                    description: "Traceroute"
+                                                });
+                                                items.push({
+                                                    id: "arping",
+                                                    description: "Arping"
+                                                });
+                                                args.response.success({
+                                                    data: items
+                                                });
+                                            }
+                                        },
+                                        destination: {
+                                            label: 'label.run.diagnostics.destination',
+                                            validation: {
+                                                required: true
+                                            }
+                                        },
+                                        extra: {
+                                            label: 'label.run.diagnostics.extra'
+                                        }
+
+                                    }
+                                },
+                                action: function (args) {
+                                    $.ajax({
+                                        url: createURL("runDiagnostics&targetid=" + args.context.systemVMs[0].id + "&ipaddress=" + args.data.destination + "&type=" + args.data.type + "&params=" + args.data.extra),
+                                        dataType: "json",
+                                        async: true,
+                                        success: function(json) {
+                                            var jid = json.rundiagnosticsresponse.jobid;
+                                            args.response.success({
+                                                _custom: {
+                                                    jobId : jid,
+                                                    getUpdatedItem: function (json) {
+                                                        return json.queryasyncjobresultresponse.jobresult.diagnostics;
+
+                                                    },
+                                                    getActionFilter: function(){
+                                                        return systemvmActionfilter;
+                                                   }
+                                                }
+
+                                            });
+                                        }
+                                    }); //end ajax
+                                },
+                                notification: {
+                                    poll: pollAsyncJobResult
+                                }
+                            },
+
                             scaleUp: { //*** Infrastructure > System VMs (consoleProxy or SSVM) > change service offering ***
                                 label: 'label.change.service.offering',
                                 createForm: {
@@ -11540,8 +11881,6 @@
                                     poll: pollAsyncJobResult
                                 }
                             },
-
-
 
                             viewConsole: {
                                 label: 'label.view.console',
@@ -22094,8 +22433,10 @@
             allowedActions.push("remove");
             allowedActions.push("viewConsole");
 
-            if (isAdmin())
-            allowedActions.push("migrate");
+            if (isAdmin()) {
+                allowedActions.push("migrate");
+                allowedActions.push("diagnostics");
+            }
         } else if (jsonObj.state == 'Starting') {
             if (isAdmin()) {
                 allowedActions.push("viewConsole");
@@ -22145,8 +22486,10 @@
             }
 
             allowedActions.push("viewConsole");
-            if (isAdmin())
-            allowedActions.push("migrate");
+            if (isAdmin()) {
+                allowedActions.push("migrate");
+                allowedActions.push("diagnostics");
+            }
         } else if (jsonObj.state == 'Starting') {
             if (isAdmin()) {
                 allowedActions.push("viewConsole");
