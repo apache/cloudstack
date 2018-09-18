@@ -123,8 +123,12 @@ public class VirtualMachinePowerStateSyncImpl implements VirtualMachinePowerStat
 
                 Date vmStateUpdateTime = instance.getPowerStateUpdateTime();
                 if (vmStateUpdateTime == null) {
-                    s_logger.warn("VM state was updated but update time is null?! vm id: " + instance.getId());
-                    vmStateUpdateTime = currentTime;
+                    s_logger.warn("VM power state update time is null, falling back to update time for vm id: " + instance.getId());
+                    vmStateUpdateTime = instance.getUpdateTime();
+                    if (vmStateUpdateTime == null) {
+                        s_logger.warn("VM update time is null, falling back to creation time for vm id: " + instance.getId());
+                        vmStateUpdateTime = instance.getCreated();
+                    }
                 }
 
                 if (s_logger.isDebugEnabled())
