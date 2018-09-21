@@ -509,8 +509,8 @@ public class Agent implements HandlerFactory, IAgentControl {
             _shell.getBackoffAlgorithm().waitBeforeRetry();
         }
 
-        final String host = _shell.getNextHost();
         do {
+            final String host = _shell.getNextHost();
             _connection = new NioClient("Agent", host, _shell.getPort(), _shell.getWorkers(), this);
             s_logger.info("Reconnecting to host:" + host);
             try {
