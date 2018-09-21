@@ -337,20 +337,27 @@ class ConfigDriveUtils:
         """
         This method is to verify whether configdrive iso
         is attached to vm or not
-        Returns mount path if config drive is attached else False
+        Returns mount path if config drive is attached else None
         """
         mountdir = "/root/iso"
         cmd = "blkid -t LABEL='config-2' " \
               "/dev/sr? /dev/hd? /dev/sd? /dev/xvd? -o device"
         tmp_cmd = [
-            'bash -c "if [ ! -d /root/iso ] ; then mkdir /root/iso ; fi"',
-            "umount /root/iso"]
+            'bash -c "if [ ! -d {0} ]; then mkdir {0}; fi"'.format(mountdir),
+            "umount %s" % mountdir]
+        self.debug("Unmounting drive from %s" % mountdir)
         for tcmd in tmp_cmd:
             ssh.execute(tcmd)
+
+        self.debug("Trying to find ConfigDrive device")
         configDrive = ssh.execute(cmd)
+        if not configDrive:
+            self.warn("ConfigDrive is not attached")
+            return None
+
         res = ssh.execute("mount {} {}".format(str(configDrive[0]), mountdir))
         if str(res).lower().find("mounting read-only") > -1:
-            self.debug("configDrive iso is mounted at location %s" % mountdir)
+            self.debug("ConfigDrive iso is mounted at location %s" % mountdir)
             return mountdir
         else:
             return None
