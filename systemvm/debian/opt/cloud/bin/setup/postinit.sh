@@ -21,7 +21,7 @@
 # Eject cdrom if any
 eject || true
 
-TYPE=$(grep -Po 'type=\K[a-zA-Z]*' $CMDLINE)
+TYPE=$(grep -Po 'type=\K[a-zA-Z]*' /var/cache/cloud/cmdline)
 if [ "$TYPE" == "router" ] || [ "$TYPE" == "vpcrouter" ] || [ "$TYPE" == "dhcpsrvr" ]
 then
   if [ -x /opt/cloud/bin/update_config.py ]
