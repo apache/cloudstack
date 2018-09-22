@@ -122,7 +122,7 @@ public class VxlanGuestNetworkGuru extends GuestNetworkGuru {
 
         NetworkVO implemented =
             new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
-                network.getDataCenterId(), physicalNetworkId, offering.getRedundantRouter());
+                network.getDataCenterId(), physicalNetworkId, offering.isRedundantRouter());
 
         allocateVnet(network, implemented, dcId, physicalNetworkId, context.getReservationId());
 

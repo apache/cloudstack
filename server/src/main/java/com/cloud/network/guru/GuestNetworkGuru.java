@@ -191,7 +191,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
         final NetworkVO network =
                 new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), State.Allocated, plan.getDataCenterId(),
-                        plan.getPhysicalNetworkId(), offering.getRedundantRouter());
+                        plan.getPhysicalNetworkId(), offering.isRedundantRouter());
         if (userSpecified != null) {
             if (userSpecified.getCidr() == null && userSpecified.getGateway() != null || userSpecified.getCidr() != null && userSpecified.getGateway() == null) {
                 throw new InvalidParameterValueException("cidr and gateway must be specified together.");
@@ -211,7 +211,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
                 }
             }
 
-            if (offering.getSpecifyVlan()) {
+            if (offering.isSpecifyVlan()) {
                 network.setBroadcastUri(userSpecified.getBroadcastUri());
                 network.setState(State.Setup);
             }
@@ -315,7 +315,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
 
         final NetworkVO implemented =
                 new NetworkVO(network.getTrafficType(), network.getMode(), network.getBroadcastDomainType(), network.getNetworkOfferingId(), State.Allocated,
-                        network.getDataCenterId(), physicalNetworkId, offering.getRedundantRouter());
+                        network.getDataCenterId(), physicalNetworkId, offering.isRedundantRouter());
 
         allocateVnet(network, implemented, dcId, physicalNetworkId, context.getReservationId());
 
@@ -430,7 +430,7 @@ public abstract class GuestNetworkGuru extends AdapterBase implements NetworkGur
             return; // Nothing to do here if the uri is null already
         }
 
-        if ((profile.getBroadcastDomainType() == BroadcastDomainType.Vlan || profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan) && !offering.getSpecifyVlan()) {
+        if ((profile.getBroadcastDomainType() == BroadcastDomainType.Vlan || profile.getBroadcastDomainType() == BroadcastDomainType.Vxlan) && !offering.isSpecifyVlan()) {
             s_logger.debug("Releasing vnet for the network id=" + profile.getId());
             _dcDao.releaseVnet(BroadcastDomainType.getValue(profile.getBroadcastUri()), profile.getDataCenterId(), profile.getPhysicalNetworkId(), profile.getAccountId(),
                     profile.getReservationId());

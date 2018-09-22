@@ -56,7 +56,7 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
      * @return is this a system service offering
      */
     @Override
-    boolean getSystemUse();
+    boolean isSystemUse();
 
     /**
      * @return # of cpu.
@@ -76,7 +76,7 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
     /**
      * @return Does this service plan offer HA?
      */
-    boolean getOfferHA();
+    boolean isOfferHA();
 
     /**
      * @return Does this service plan offer VM to use CPU resources beyond the service offering limits?
@@ -86,7 +86,7 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
     /**
      * @return Does this service plan support Volatile VM that is, discard VM's root disk and create a new one on reboot?
      */
-    boolean getVolatileVm();
+    boolean isVolatileVm();
 
     /**
      * @return the rate in megabits per sec to which a VM's network interface is throttled to
@@ -102,7 +102,7 @@ public interface ServiceOffering extends DiskOffering, InfrastructureEntity, Int
      * @return whether or not the service offering requires local storage
      */
     @Override
-    boolean getUseLocalStorage();
+    boolean isUseLocalStorage();
 
     @Override
     Long getDomainId();

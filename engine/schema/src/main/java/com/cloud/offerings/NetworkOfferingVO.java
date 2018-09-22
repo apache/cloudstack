@@ -172,7 +172,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean getForVpc() {
+    public boolean isForVpc() {
         return forVpc;
     }
 
@@ -249,7 +249,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean getSpecifyVlan() {
+    public boolean isSpecifyVlan() {
         return specifyVlan;
     }
 
@@ -292,7 +292,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean getDedicatedLB() {
+    public boolean isDedicatedLB() {
         return dedicatedLB;
     }
 
@@ -301,7 +301,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean getSharedSourceNat() {
+    public boolean isSharedSourceNat() {
         return sharedSourceNat;
     }
 
@@ -310,7 +310,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean getRedundantRouter() {
+    public boolean isRedundantRouter() {
         return redundantRouter;
     }
 
@@ -319,7 +319,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean getEgressDefaultPolicy() {
+    public boolean isEgressDefaultPolicy() {
         return egressdefaultpolicy;
     }
 
@@ -456,22 +456,22 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean getElasticIp() {
+    public boolean isElasticIp() {
         return elasticIp;
     }
 
     @Override
-    public boolean getAssociatePublicIP() {
+    public boolean isAssociatePublicIP() {
         return eipAssociatePublicIp;
     }
 
     @Override
-    public boolean getElasticLb() {
+    public boolean isElasticLb() {
         return elasticLb;
     }
 
     @Override
-    public boolean getSpecifyIpRanges() {
+    public boolean isSpecifyIpRanges() {
         return specifyIpRanges;
     }
 
@@ -485,17 +485,17 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean getIsPersistent() {
+    public boolean isPersistent() {
         return isPersistent;
     }
 
     @Override
-    public boolean getInternalLb() {
+    public boolean isInternalLb() {
         return internalLb;
     }
 
     @Override
-    public boolean getPublicLb() {
+    public boolean isPublicLb() {
         return publicLb;
     }
 
@@ -517,7 +517,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean getSupportsStrechedL2() {
+    public boolean isSupportingStrechedL2() {
         return supportsStrechedL2;
     }
 
@@ -526,7 +526,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     @Override
-    public boolean getSupportsPublicAccess() {
+    public boolean isSupportingPublicAccess() {
         return supportsPublicAccess;
     }
 

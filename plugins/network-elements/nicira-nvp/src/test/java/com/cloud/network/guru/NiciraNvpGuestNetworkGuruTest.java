@@ -469,7 +469,7 @@ public class NiciraNvpGuestNetworkGuruTest {
         final NetworkProfile implementednetwork = mock(NetworkProfile.class);
         when(implementednetwork.getId()).thenReturn(NETWORK_ID);
         when(implementednetwork.getBroadcastUri()).thenReturn(new URI("lswitch:aaaa"));
-        when(offering.getSpecifyVlan()).thenReturn(false);
+        when(offering.isSpecifyVlan()).thenReturn(false);
 
         guru.shutdown(implementednetwork, offering);
         verify(agentmgr, times(1)).easySend(eq(NETWORK_ID), (Command)any());

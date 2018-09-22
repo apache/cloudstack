@@ -216,7 +216,7 @@ public class BasicNetworkVisitor extends NetworkTopologyVisitor {
         final NicVO nicVo = sshkey.getNicVo();
         final VMTemplateVO template = sshkey.getTemplate();
 
-        if (template != null && template.getEnablePassword()) {
+        if (template != null && template.isEnablePassword()) {
             _commandSetupHelper.createPasswordCommand(router, profile, nicVo, commands);
         }
 

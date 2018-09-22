@@ -33,5 +33,5 @@ public interface GuestOS extends InternalIdentity, Identity {
 
     Date getRemoved();
 
-    boolean getIsUserDefined();
+    boolean isUserDefined();
 }

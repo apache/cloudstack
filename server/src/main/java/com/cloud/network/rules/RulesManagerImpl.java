@@ -391,7 +391,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
 
         Network network = _networkModel.getNetwork(networkId);
         NetworkOffering off = _entityMgr.findById(NetworkOffering.class, network.getNetworkOfferingId());
-        if (off.getElasticIp()) {
+        if (off.isElasticIp()) {
             throw new InvalidParameterValueException("Can't create ip forwarding rules for the network where elasticIP service is enabled");
         }
 
@@ -653,7 +653,7 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
             if (networkId != null) {
                 Network guestNetwork = _networkModel.getNetwork(networkId);
                 NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
-                if (offering.getElasticIp()) {
+                if (offering.isElasticIp()) {
                     reassignStaticNat = true;
                 }
             }
@@ -1235,8 +1235,8 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         // re-enable it on the new one enable static nat takes care of that
         Network guestNetwork = _networkModel.getNetwork(ipAddress.getAssociatedWithNetworkId());
         NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
-        if (offering.getElasticIp()) {
-            if (offering.getAssociatePublicIP()) {
+        if (offering.isElasticIp()) {
+            if (offering.isAssociatePublicIP()) {
                 getSystemIpAndEnableStaticNatForVm(_vmDao.findById(vmId), true);
                 return true;
             }
@@ -1434,10 +1434,10 @@ public class RulesManagerImpl extends ManagerBase implements RulesManager, Rules
         for (Nic nic : nics) {
             Network guestNetwork = _networkModel.getNetwork(nic.getNetworkId());
             NetworkOffering offering = _entityMgr.findById(NetworkOffering.class, guestNetwork.getNetworkOfferingId());
-            if (offering.getElasticIp()) {
+            if (offering.isElasticIp()) {
                 boolean isSystemVM = (vm.getType() == Type.ConsoleProxy || vm.getType() == Type.SecondaryStorageVm);
                 // for user VM's associate public IP only if offering is marked to associate a public IP by default on start of VM
-                if (!isSystemVM && !offering.getAssociatePublicIP()) {
+                if (!isSystemVM && !offering.isAssociatePublicIP()) {
                     continue;
                 }
                 // check if there is already static nat enabled

@@ -1391,7 +1391,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                           * IP allocated for EIP. So return the guest/public IP accordingly.
                           * */
                         NetworkOffering networkOffering = ApiDBUtils.findNetworkOfferingById(network.getNetworkOfferingId());
-                        if (networkOffering.getElasticIp()) {
+                        if (networkOffering.isElasticIp()) {
                             IpAddress ip = ApiDBUtils.findIpByAssociatedVmId(vm.getId());
                             if (ip != null) {
                                 Vlan vlan = ApiDBUtils.findVlanById(ip.getVlanId());
@@ -1908,16 +1908,16 @@ public class ApiResponseHelper implements ResponseGenerator {
         response.setTags(offering.getTags());
         response.setTrafficType(offering.getTrafficType().toString());
         response.setIsDefault(offering.isDefault());
-        response.setSpecifyVlan(offering.getSpecifyVlan());
+        response.setSpecifyVlan(offering.isSpecifyVlan());
         response.setConserveMode(offering.isConserveMode());
-        response.setSpecifyIpRanges(offering.getSpecifyIpRanges());
+        response.setSpecifyIpRanges(offering.isSpecifyIpRanges());
         response.setAvailability(offering.getAvailability().toString());
-        response.setIsPersistent(offering.getIsPersistent());
+        response.setIsPersistent(offering.isPersistent());
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
-        response.setEgressDefaultPolicy(offering.getEgressDefaultPolicy());
+        response.setEgressDefaultPolicy(offering.isEgressDefaultPolicy());
         response.setConcurrentConnections(offering.getConcurrentConnections());
-        response.setSupportsStrechedL2Subnet(offering.getSupportsStrechedL2());
-        response.setSupportsPublicAccess(offering.getSupportsPublicAccess());
+        response.setSupportsStrechedL2Subnet(offering.isSupportingStrechedL2());
+        response.setSupportsPublicAccess(offering.isSupportingPublicAccess());
         Long so = null;
         if (offering.getServiceOfferingId() != null) {
             so = offering.getServiceOfferingId();
@@ -1963,12 +1963,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 CapabilityResponse lbIsoaltion = new CapabilityResponse();
                 lbIsoaltion.setName(Capability.SupportedLBIsolation.getName());
-                lbIsoaltion.setValue(offering.getDedicatedLB() ? "dedicated" : "shared");
+                lbIsoaltion.setValue(offering.isDedicatedLB() ? "dedicated" : "shared");
                 lbCapResponse.add(lbIsoaltion);
 
                 CapabilityResponse eLb = new CapabilityResponse();
                 eLb.setName(Capability.ElasticLb.getName());
-                eLb.setValue(offering.getElasticLb() ? "true" : "false");
+                eLb.setValue(offering.isElasticLb() ? "true" : "false");
                 lbCapResponse.add(eLb);
 
                 CapabilityResponse inline = new CapabilityResponse();
@@ -1981,12 +1981,12 @@ public class ApiResponseHelper implements ResponseGenerator {
                 List<CapabilityResponse> capabilities = new ArrayList<CapabilityResponse>();
                 CapabilityResponse sharedSourceNat = new CapabilityResponse();
                 sharedSourceNat.setName(Capability.SupportedSourceNatTypes.getName());
-                sharedSourceNat.setValue(offering.getSharedSourceNat() ? "perzone" : "peraccount");
+                sharedSourceNat.setValue(offering.isSharedSourceNat() ? "perzone" : "peraccount");
                 capabilities.add(sharedSourceNat);
 
                 CapabilityResponse redundantRouter = new CapabilityResponse();
                 redundantRouter.setName(Capability.RedundantRouter.getName());
-                redundantRouter.setValue(offering.getRedundantRouter() ? "true" : "false");
+                redundantRouter.setValue(offering.isRedundantRouter() ? "true" : "false");
                 capabilities.add(redundantRouter);
 
                 svcRsp.setCapabilities(capabilities);
@@ -1995,12 +1995,12 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 CapabilityResponse eIp = new CapabilityResponse();
                 eIp.setName(Capability.ElasticIp.getName());
-                eIp.setValue(offering.getElasticIp() ? "true" : "false");
+                eIp.setValue(offering.isElasticIp() ? "true" : "false");
                 staticNatCapResponse.add(eIp);
 
                 CapabilityResponse associatePublicIp = new CapabilityResponse();
                 associatePublicIp.setName(Capability.AssociatePublicIP.getName());
-                associatePublicIp.setValue(offering.getAssociatePublicIP() ? "true" : "false");
+                associatePublicIp.setValue(offering.isAssociatePublicIP() ? "true" : "false");
                 staticNatCapResponse.add(associatePublicIp);
 
                 svcRsp.setCapabilities(staticNatCapResponse);
@@ -2127,7 +2127,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             response.setNetworkOfferingConserveMode(networkOffering.isConserveMode());
             response.setIsSystem(networkOffering.isSystemOnly());
             response.setNetworkOfferingAvailability(networkOffering.getAvailability().toString());
-            response.setIsPersistent(networkOffering.getIsPersistent());
+            response.setIsPersistent(networkOffering.isPersistent());
         }
 
         if (network.getAclType() != null) {
@@ -3204,7 +3204,7 @@ public class ApiResponseHelper implements ResponseGenerator {
         GuestOSResponse response = new GuestOSResponse();
         response.setDescription(guestOS.getDisplayName());
         response.setId(guestOS.getUuid());
-        response.setIsUserDefined(guestOS.getIsUserDefined());
+        response.setIsUserDefined(guestOS.isUserDefined());
         GuestOSCategoryVO category = ApiDBUtils.findGuestOsCategoryById(guestOS.getCategoryId());
         if (category != null) {
             response.setOsCategoryId(category.getUuid());

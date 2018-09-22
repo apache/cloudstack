@@ -101,9 +101,9 @@ public interface VirtualMachineTemplate extends ControlledEntity, Identity, Inte
 
     String getDisplayText();
 
-    boolean getEnablePassword();
+    boolean isEnablePassword();
 
-    boolean getEnableSshKey();
+    boolean isEnableSshKey();
 
     boolean isCrossZones();
 

@@ -179,7 +179,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
         NetworkVO config =
             new NetworkVO(offering.getTrafficType(), Mode.Dhcp, BroadcastDomainType.Vlan, offering.getId(), state, plan.getDataCenterId(),
-                    plan.getPhysicalNetworkId(), offering.getRedundantRouter());
+                    plan.getPhysicalNetworkId(), offering.isRedundantRouter());
 
         if (userSpecified != null) {
             if ((userSpecified.getCidr() == null && userSpecified.getGateway() != null) || (userSpecified.getCidr() != null && userSpecified.getGateway() == null)) {
