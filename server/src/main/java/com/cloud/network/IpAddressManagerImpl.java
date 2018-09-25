@@ -1418,7 +1418,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
     protected boolean isSourceNatAvailableForNetwork(Account owner, IPAddressVO ipToAssoc, Network network) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
-        boolean sharedSourceNat = offering.getSharedSourceNat();
+        boolean sharedSourceNat = offering.isSharedSourceNat();
         boolean isSourceNat = false;
         if (!sharedSourceNat) {
             if (getExistingSourceNatInNetwork(owner.getId(), network.getId()) == null) {
