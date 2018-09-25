@@ -22,6 +22,108 @@
     var step6ContainerType = 'nothing-to-select'; //'nothing-to-select', 'select-network', 'select-security-group', 'select-advanced-sg'(advanced sg-enabled zone)
 
     cloudStack.instanceWizard = {
+
+        fetchPodList: function (podcallback, parentId) {
+            var urlString = "listPods";
+            if (parentId != -1) {
+                urlString += "&zoneid=" + parentId
+            }
+            $.ajax({
+                url: createURL(urlString),
+                dataType: "json",
+                async: false,
+                success: function (json) {
+                    var pods = [{
+                        id: -1,
+                        description: 'Default',
+                        parentId: -1
+                    }];
+                    var podsObjs = json.listpodsresponse.pod;
+                    if (podsObjs !== undefined) {
+                        $(podsObjs).each(function () {
+                            pods.push({
+                                id: this.id,
+                                description: this.name,
+                                parentId: this.zoneid
+                            });
+                        });
+                    }
+                    podcallback(pods);
+                }
+            });
+        },
+
+        fetchClusterList: function (clustercallback, parentId, zoneId) {
+            var urlString = "listClusters";
+            // If Pod ID is not specified, filter clusters by Zone
+            if (parentId != -1) {
+                urlString += "&podid=" + parentId;
+            } else if (zoneId != -1) {
+                urlString += "&zoneid=" + zoneId;
+            }
+
+            $.ajax({
+                url: createURL(urlString),
+                dataType: "json",
+                async: false,
+                success: function (json) {
+                    var clusters = [{
+                        id: -1,
+                        description: 'Default',
+                        parentId: -1
+                    }];
+                    var clusterObjs = json.listclustersresponse.cluster;
+                    if (clusterObjs != undefined) {
+                        $(clusterObjs).each(function () {
+                            clusters.push({
+                                id: this.id,
+                                description: this.name,
+                                parentId: this.podid
+                            });
+                        });
+                    }
+                    clustercallback(clusters);
+                }
+            });
+        },
+
+        fetchHostList: function (hostcallback, parentId, podId, zoneId) {
+            // If Cluster ID is not specified, filter hosts by Zone or Pod
+            var urlString = "listHosts&state=Up&type=Routing";
+
+            if (parentId != -1) {
+                urlString += "&clusterid=" + parentId;
+            } else if (podId != -1) {
+                urlString += "&podid=" + podId;
+            } else if (zoneId != -1) {
+                urlString += "&zoneid=" + zoneId
+            }
+
+            $.ajax({
+                url: createURL(urlString),
+                dataType: "json",
+                async: false,
+                success: function (json) {
+                    var hosts = [{
+                        id: -1,
+                        description: 'Default',
+                        parentId: -1
+                    }];
+                    var hostObjs = json.listhostsresponse.host;
+                    if (hostObjs != undefined) {
+                        $(hostObjs).each(function () {
+                            hosts.push({
+                                id: this.id,
+                                description: this.name,
+                                parentId: this.clusterid
+                            });
+                        });
+                    }
+                    hostcallback(hosts);
+                }
+            });
+        },
+
         //min disk offering  size when custom disk size is used
         minDiskOfferingSize: function() {
             return g_capabilities.customdiskofferingminsize;
@@ -94,18 +196,106 @@
                 }
                 //in all other cases (as well as from instance page) all zones are populated to dropdown
                 else {
+                    var postData = {};
+                    var zones = [{
+                        id: -1,
+                        name: 'Default'
+                    }];
                     $.ajax({
                         url: createURL("listZones&available=true"),
                         dataType: "json",
                         async: false,
                         success: function(json) {
                             zoneObjs = json.listzonesresponse.zone;
-                            args.response.success({
-                                data: {
-                                    zones: zoneObjs
-                                }
+                            $(zoneObjs).each(function() {
+                                zones.push({
+                                    id: this.id,
+                                    name: this.name
+                                });
                             });
                         }
+                    });
+
+                    $.extend(postData, {
+                        "zones": zones
+                    });
+
+                    if (isAdmin()) {                       
+                        pods = [{
+                            id: -1,
+                            description: 'Default',
+                            parentId: -1
+                        }];
+                        $.ajax({
+                            url: createURL("listPods"),
+                            dataType: "json",
+                            async: false,
+                            success: function(json) {
+                                if (json.listpodsresponse.pod != undefined) {
+                                    podObjs = json.listpodsresponse.pod;
+                                    $(podObjs).each(function() {
+                                        pods.push({
+                                            id: this.id,
+                                            description: this.name,
+                                            parentId: this.zoneid
+                                        });
+                                    });
+                                }
+                            }
+                        });
+                        clusters = [{
+                            id: -1,
+                            description: 'Default',
+                            parentId: -1
+                        }];
+                        $.ajax({
+                            url: createURL("listClusters"),
+                            dataType: "json",
+                            async: false,
+                            success: function(json) {
+                                  if (json.listclustersresponse.cluster != undefined) {
+                                      clusterObjs = json.listclustersresponse.cluster;
+                                      $(clusterObjs).each(function() {
+                                          clusters.push({
+                                              id: this.id,
+                                              description: this.name,
+                                              parentId: this.podid
+                                          });
+                                      });
+                                  }
+                            }
+                        });
+                        hosts = [{
+                            id: -1,
+                            description: 'Default',
+                            parentId: -1
+                        }];
+                        $.ajax({
+                            url: createURL("listHosts&state=Up&type=Routing"),
+                            dataType: "json",
+                            async: false,
+                            success: function(json) {
+                                  if (json.listhostsresponse.host != undefined) {
+                                      hostObjs = json.listhostsresponse.host;
+                                      $(hostObjs).each(function() {
+                                          hosts.push({
+                                              id: this.id,
+                                              description: this.name,
+                                              parentId: this.clusterid
+                                          });
+                                      });
+                                  }
+                            }
+                        });
+                        $.extend(postData, {
+                            "pods": pods,
+                            "clusters": clusters,
+                            "hosts": hosts
+                        });
+
+                    } 
+                    args.response.success({
+                        data: postData
                     });
                 }
             },
@@ -113,6 +303,7 @@
             // Step 2: Select template
             function(args) {
                 $(zoneObjs).each(function() {
+                    args.currentData.zoneid = (args.currentData.zoneid == -1)? this.id : args.currentData.zoneid ;
                     if (this.id == args.currentData.zoneid) {
                         selectedZoneObj = this;
                         return false; //break the $.each() loop
@@ -539,7 +730,7 @@
                     var defaultNetworkArray = [],
                         optionalNetworkArray = [];
                     var networkData = {
-                        zoneId: args.currentData.zoneid,
+                        zoneId: selectedZoneObj.id,
                         canusefordeploy: true
                     };
 
@@ -662,7 +853,7 @@
                         dataType: "json",
                         data: {
                             forvpc: false,
-                            zoneid: args.currentData.zoneid,
+                            zoneid: selectedZoneObj.id,
                             guestiptype: 'Isolated',
                             supportedServices: 'SourceNat',
                             specifyvlan: false,
@@ -769,9 +960,28 @@
             var deployVmData = {};
 
             //step 1 : select zone
+            zoneId = (args.data.zoneid == -1)? selectedZoneObj.id : args.data.zoneid;
             $.extend(deployVmData, {
-                zoneid : args.data.zoneid
+                zoneid : zoneId
             });
+
+            if (args.data.podid != -1) {
+                $.extend(deployVmData, {
+                    podid : args.data.podid
+                });
+            }
+
+            if (args.data.clusterid != -1) {
+                $.extend(deployVmData, {
+                    clusterid : args.data.clusterid
+                });
+            }
+
+            if (args.data.hostid != -1) {
+                $.extend(deployVmData, {
+                    hostid : args.data.hostid
+                });
+            }
 
             //step 2: select template
             $.extend(deployVmData, {

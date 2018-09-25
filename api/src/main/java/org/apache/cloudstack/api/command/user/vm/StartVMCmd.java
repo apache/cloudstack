@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.PodResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.RoleType;
@@ -60,6 +62,18 @@ public class StartVMCmd extends BaseAsyncCmd {
             required = true, description = "The ID of the virtual machine")
     private Long id;
 
+    @Parameter(name = ApiConstants.POD_ID,
+            type = CommandType.UUID,
+            entityType = PodResponse.class,
+            description = "destination Pod ID to deploy the VM to - parameter available for root admin only")
+    private Long podId;
+
+    @Parameter(name = ApiConstants.CLUSTER_ID,
+            type = CommandType.UUID,
+            entityType = ClusterResponse.class,
+            description = "destination Cluster ID to deploy the VM to - parameter available for root admin only")
+    private Long clusterId;
+
     @Parameter(name = ApiConstants.HOST_ID,
                type = CommandType.UUID,
                entityType = HostResponse.class,
@@ -80,6 +94,14 @@ public class StartVMCmd extends BaseAsyncCmd {
 
     public Long getHostId() {
         return hostId;
+    }
+
+    public Long getPodId() {
+        return podId;
+    }
+
+    public Long getClusterId() {
+        return clusterId;
     }
 
     // ///////////////////////////////////////////////////
