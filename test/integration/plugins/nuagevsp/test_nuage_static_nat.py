@@ -849,19 +849,19 @@ class TestNuageStaticNat(nuageTestCase):
         # Creating VPCs
         self.debug("Creating a VPC with Static NAT service provider as "
                    "NuageVsp...")
-        vpc_1 = self.create_Vpc(vpc_off_1, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc_1, state="Enabled")
+        vpc_1 = self.create_vpc(vpc_off_1, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc_1, state="Enabled")
 
         self.debug("Creating a VPC with Static NAT service provider as "
                    "VpcVirtualRouter...")
         with self.assertRaises(Exception):
-            self.create_Vpc(vpc_off_2, cidr='10.1.0.0/16')
+            self.create_vpc(vpc_off_2, cidr='10.1.0.0/16')
         self.debug("Nuage VSP does not support provider VpcVirtualRouter for "
                    "service Static NAT for VPCs")
 
         self.debug("Creating a VPC without Static NAT service...")
-        vpc_2 = self.create_Vpc(vpc_off_3, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc_2, state="Enabled")
+        vpc_2 = self.create_vpc(vpc_off_3, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc_2, state="Enabled")
 
         # Creating network offerings
         self.debug("Creating Nuage VSP VPC Network offering with Static NAT "
@@ -1194,8 +1194,8 @@ class TestNuageStaticNat(nuageTestCase):
         # Creating VPC
         self.debug("Creating a VPC with Static NAT service provider as "
                    "NuageVsp...")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating network offering
         self.debug("Creating Nuage VSP VPC Network offering with Static NAT "
@@ -1406,8 +1406,8 @@ class TestNuageStaticNat(nuageTestCase):
         # Creating VPC
         self.debug("Creating a VPC with Static NAT service provider as "
                    "NuageVsp...")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating network offering
         self.debug("Creating Nuage VSP VPC Network offering with Static NAT "
@@ -1696,7 +1696,8 @@ class TestNuageStaticNat(nuageTestCase):
         # from the deployed VM
         if not self.isSimulator:
             with self.assertRaises(Exception):
-                self.verify_StaticNAT_Internet_traffic(vm, network_1, public_ip_1)
+                self.verify_StaticNAT_Internet_traffic(vm, network_1,
+                                                       public_ip_1)
         self.debug("Static NAT rule not enabled in this VM NIC")
         self.verify_StaticNAT_Internet_traffic(vm, network_2, public_ip_2)
 
@@ -1991,8 +1992,8 @@ class TestNuageStaticNat(nuageTestCase):
         # Creating VPC
         self.debug("Creating a VPC with Static NAT service provider as "
                    "NuageVsp...")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating VPC network offering
         self.debug("Creating Nuage VSP VPC Network offering with Static NAT "
@@ -2088,6 +2089,7 @@ class TestNuageStaticNat(nuageTestCase):
         self.debug("Restarting the created VPC network with cleanup...")
         Network.restart(vpc_tier, self.api_client, cleanup=True)
         self.validate_Network(vpc_tier, state="Implemented")
+        vpc_vr = self.get_Router(vpc_tier)
         self.check_Router_state(vpc_vr, state="Running")
         self.check_VM_state(vpc_vm, state="Running")
 

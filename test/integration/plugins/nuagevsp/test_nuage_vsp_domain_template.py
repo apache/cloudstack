@@ -158,7 +158,7 @@ class TestNuageDomainTemplate(nuageTestCase):
             for i in range(0, 3):
                 cls.domain_template_list.append("domain_template_" + str(i))
             for account in [cls.account_root, cls.account_d1, cls.account_d11]:
-                vpc = cls.create_Vpc(
+                vpc = cls.create_vpc(
                     cls.vpc_offering, cidr='10.1.0.0/16', account=account)
                 cls.create_Network(
                     cls.network_offering,
@@ -350,7 +350,7 @@ class TestNuageDomainTemplate(nuageTestCase):
         # 7. Delete all the created objects (cleanup).
 
         # Creating VPC
-        vpc_1 = self.create_Vpc(self.vpc_offering, cidr='10.1.0.0/16')
+        vpc_1 = self.create_vpc(self.vpc_offering, cidr='10.1.0.0/16')
 
         # Associating pre-configured Nuage VSP Domain Template to VPC
         with self.assertRaises(Exception):
@@ -426,7 +426,7 @@ class TestNuageDomainTemplate(nuageTestCase):
             domain_template_name=self.domain_template_list[0])
 
         # Creating VPC
-        vpc_2 = self.create_Vpc(self.vpc_offering, cidr='10.1.0.0/16')
+        vpc_2 = self.create_vpc(self.vpc_offering, cidr='10.1.0.0/16')
 
         # Associating pre-configured Nuage VSP Domain Template to VPC
         self.validate_NuageVspDomainTemplate(self.domain_template_list[0])
@@ -481,7 +481,7 @@ class TestNuageDomainTemplate(nuageTestCase):
             domain_template_name=self.domain_template_list[1])
 
         # Creating VPC
-        vpc_3 = self.create_Vpc(self.vpc_offering, cidr='10.1.0.0/16')
+        vpc_3 = self.create_vpc(self.vpc_offering, cidr='10.1.0.0/16')
 
         # Associating pre-configured Nuage VSP Domain Template to VPC
         self.validate_NuageVspDomainTemplate(self.domain_template_list[0])
@@ -523,7 +523,7 @@ class TestNuageDomainTemplate(nuageTestCase):
             domain_template_name=self.domain_template_list[0])
 
         # Creating VPC and VPC network (tier)
-        vpc = self.create_Vpc(self.vpc_offering, cidr='10.1.0.0/16')
+        vpc = self.create_vpc(self.vpc_offering, cidr='10.1.0.0/16')
         vpc_tier = self.create_Network(self.network_offering, vpc=vpc)
 
         # VSD verification
@@ -669,7 +669,7 @@ class TestNuageDomainTemplate(nuageTestCase):
 
         # Creating VPC
         with self.assertRaises(Exception):
-            self.create_Vpc(self.vpc_offering, cidr='10.1.0.0/16')
+            self.create_vpc(self.vpc_offering, cidr='10.1.0.0/16')
         self.debug("VPC creation fails as there is no domain template with "
                    "name invalid_domain_template in VSD as mentioned in "
                    "global setting nuagevsp.vpc.domaintemplate.name")
@@ -685,7 +685,7 @@ class TestNuageDomainTemplate(nuageTestCase):
         self.validate_NuageVspDomainTemplate(self.domain_template_list[0])
 
         # Creating VPC and VPC networks (tiers)
-        vpc_1 = self.create_Vpc(self.vpc_offering, cidr='10.1.0.0/16')
+        vpc_1 = self.create_vpc(self.vpc_offering, cidr='10.1.0.0/16')
         vpc_1_tier_1 = self.create_Network(
             self.network_offering, gateway='10.1.1.1', vpc=vpc_1)
         vpc_1_tier_2 = self.create_Network(
@@ -700,7 +700,7 @@ class TestNuageDomainTemplate(nuageTestCase):
             domain_template_name=self.domain_template_list[0])
 
         # Creating VPC and VPC networks (tiers)
-        vpc_2 = self.create_Vpc(self.vpc_offering, cidr='10.1.0.0/16')
+        vpc_2 = self.create_vpc(self.vpc_offering, cidr='10.1.0.0/16')
         vpc_2_tier_1 = self.create_Network(
             self.network_offering, gateway='10.1.1.1', vpc=vpc_2)
         vpc_2_tier_2 = self.create_Network(
@@ -715,7 +715,7 @@ class TestNuageDomainTemplate(nuageTestCase):
             domain_template_name=self.domain_template_list[0])
 
         # Creating VPC
-        vpc_3 = self.create_Vpc(self.vpc_offering, cidr='10.1.0.0/16')
+        vpc_3 = self.create_vpc(self.vpc_offering, cidr='10.1.0.0/16')
 
         # Associating pre-configured Nuage VSP Domain Template to VPC
         self.validate_NuageVspDomainTemplate(self.domain_template_list[1])

@@ -460,19 +460,19 @@ class TestNuageSourceNat(nuageTestCase):
         # Creating VPCs
         self.debug("Creating a VPC with Source NAT service provider as "
                    "NuageVsp...")
-        vpc_1 = self.create_Vpc(vpc_off_1, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc_1, state="Enabled")
+        vpc_1 = self.create_vpc(vpc_off_1, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc_1, state="Enabled")
 
         self.debug("Creating a VPC with Source NAT service provider as "
                    "VpcVirtualRouter...")
         with self.assertRaises(Exception):
-            self.create_Vpc(vpc_off_2, cidr='10.1.0.0/16')
+            self.create_vpc(vpc_off_2, cidr='10.1.0.0/16')
         self.debug("Nuage VSP does not support provider VpcVirtualRouter for "
                    "service Source NAT for VPCs")
 
         self.debug("Creating a VPC without Source NAT service...")
         with self.assertRaises(Exception):
-            self.create_Vpc(vpc_off_3, cidr='10.1.0.0/16')
+            self.create_vpc(vpc_off_3, cidr='10.1.0.0/16')
         self.debug("Nuage VSP does not support VPCs without Source NAT "
                    "service")
 
@@ -714,8 +714,8 @@ class TestNuageSourceNat(nuageTestCase):
         # Creating VPC
         self.debug("Creating a VPC with Source NAT service provider as "
                    "NuageVsp...")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating network offering
         self.debug("Creating Nuage VSP VPC Network offering with Source NAT "
@@ -887,8 +887,8 @@ class TestNuageSourceNat(nuageTestCase):
         # Creating VPC
         self.debug("Creating a VPC with Source NAT service provider as "
                    "NuageVsp...")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating VPC network offering
         self.debug("Creating Nuage VSP VPC Network offering with Source NAT "
@@ -1321,8 +1321,8 @@ class TestNuageSourceNat(nuageTestCase):
         # Creating VPC
         self.debug("Creating a VPC with Source NAT service provider as "
                    "NuageVsp...")
-        vpc = self.create_Vpc(vpc_off, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_off, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating VPC network offering
         self.debug("Creating Nuage VSP VPC Network offering with Source NAT "

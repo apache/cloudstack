@@ -29,11 +29,11 @@ import java.util.Set;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import org.apache.log4j.Logger;
+
 import com.cloud.network.Network;
 import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkVO;
-import org.apache.log4j.Logger;
-
 import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
@@ -368,9 +368,13 @@ public class UserVmDaoImpl extends GenericDaoBase<UserVmVO, Long> implements Use
         if (detailsStr == null) {
             return;
         }
+
+        final Map<String, Boolean> visibilityMap = _detailsDao.listDetailsVisibility(vm.getId());
+
         List<UserVmDetailVO> details = new ArrayList<UserVmDetailVO>();
-        for (String key : detailsStr.keySet()) {
-            details.add(new UserVmDetailVO(vm.getId(), key, detailsStr.get(key), true));
+        for (Map.Entry<String, String> entry : detailsStr.entrySet()) {
+            boolean display = visibilityMap.getOrDefault(entry.getKey(), true);
+            details.add(new UserVmDetailVO(vm.getId(), entry.getKey(), entry.getValue(), display));
         }
 
         _detailsDao.saveDetails(details);
