@@ -839,6 +839,7 @@ class TestSecuredVmMigration(cloudstackTestCase):
 
     @classmethod
     def tearDownClass(cls):
+        time.sleep(120)
         cls.apiclient = super(TestSecuredVmMigration, cls).getClsTestClient().getApiClient()
         try:
             cleanup_resources(cls.apiclient, cls._cleanup)
@@ -866,7 +867,9 @@ class TestSecuredVmMigration(cloudstackTestCase):
         self.updateConfiguration("ca.plugin.root.auth.strictness", "false")
 
     def tearDown(self):
+        time.sleep(120)
         self.secure_all_hosts()
+        time.sleep(120)
         self.updateConfiguration("ca.plugin.root.auth.strictness", "true")
         try:
             cleanup_resources(self.apiclient, self.cleanup)
@@ -907,9 +910,10 @@ class TestSecuredVmMigration(cloudstackTestCase):
                       sed -i 's/listen_tcp.*/listen_tcp=1/g' /etc/libvirt/libvirtd.conf && \
                       sed -i '/.*_file=.*/d' /etc/libvirt/libvirtd.conf && \
                       service libvirtd restart && \
+                      sleep 30 && \
                       service cloudstack-agent restart")
-
-        time.sleep(10)
+ 
+        time.sleep(120)
         self.check_connection(host=host, secured='false')
         return host
 

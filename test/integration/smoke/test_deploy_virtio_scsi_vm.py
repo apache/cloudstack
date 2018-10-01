@@ -96,6 +96,7 @@ class TestDeployVirtioSCSIVM(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.pod = get_pod(cls.apiclient, cls.zone.id)
         cls.services['mode'] = cls.zone.networktype
+        cls.cleanup = []
         if cls.hypervisor.lower() not in ['kvm']:
             cls.hypervisorNotSupported = True
             return
