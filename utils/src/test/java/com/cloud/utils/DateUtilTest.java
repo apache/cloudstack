@@ -103,7 +103,7 @@ public class DateUtilTest {
     public void zonedTimeFormatWithMillisecondsNoColon() throws ParseException {
         Date time = new Date();
         DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-        String str = dfDate.format(time)
+        String str = dfDate.format(time);
         Date dtParsed = DateUtil.parseTZDateString(str + ".000000+0100");
 
         assertEquals(time.toString(), dtParsed.toString());
