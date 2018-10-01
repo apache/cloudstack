@@ -67,7 +67,7 @@ public class DateUtilTest {
         String str = dfDate.format(time);
         Date dtParsed = DateUtil.parseTZDateString(str + "+0100");
 
-        Date utcTime = new Date(time.getTime() + HOUR);
+        Date utcTime = new Date(time.getTime() - HOUR);
         assertEquals(utcTime.toString(), dtParsed.toString());
     }
 
@@ -78,7 +78,7 @@ public class DateUtilTest {
         String str = dfDate.format(time);
         Date dtParsed = DateUtil.parseTZDateString(str + "+01:00");
 
-        Date utcTime = new Date(time.getTime() + HOUR);
+        Date utcTime = new Date(time.getTime() - HOUR);
         assertEquals(utcTime.toString(), dtParsed.toString());
     }
 
@@ -99,7 +99,7 @@ public class DateUtilTest {
         String str = dfDate.format(time);
         Date dtParsed = DateUtil.parseTZDateString(str + ".000000+01:00");
 
-        Date utcTime = new Date(time.getTime() + HOUR);
+        Date utcTime = new Date(time.getTime() - HOUR);
         assertEquals(utcTime.toString(), dtParsed.toString());
     }
 
@@ -110,7 +110,7 @@ public class DateUtilTest {
         String str = dfDate.format(time);
         Date dtParsed = DateUtil.parseTZDateString(str + ".000000+0100");
 
-        Date utcTime = new Date(time.getTime() + HOUR);
+        Date utcTime = new Date(time.getTime() - HOUR);
         assertEquals(utcTime.toString(), dtParsed.toString());
     }
 }
