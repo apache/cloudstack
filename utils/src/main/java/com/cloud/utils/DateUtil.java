@@ -31,7 +31,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class DateUtil {
     public static final TimeZone GMT_TIMEZONE = TimeZone.getTimeZone("GMT");
     public static final String YYYYMMDD_FORMAT = "yyyyMMddHHmmss";
-    private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+    private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
 
     public static Date currentGMTTime() {
         // Date object always stores miliseconds offset based on GMT internally
@@ -43,7 +43,7 @@ public class DateUtil {
         try {
             return s_outputFormat.parse(str);
         } catch (ParseException e) {
-            final DateFormat dfParse = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z");
+            final DateFormat dfParse = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX");
             return dfParse.parse(str);
         }
     }

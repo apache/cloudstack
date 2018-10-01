@@ -52,7 +52,7 @@ public class DateUtilTest {
     @Test
     public void zonedTimeFormatLegacy() throws ParseException {
         Date time = new Date();
-        DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'Z");
+        DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'");
         String str = dfDate.format(time);
         Date dtParsed = DateUtil.parseTZDateString(str);
 
@@ -60,11 +60,51 @@ public class DateUtilTest {
     }
 
     @Test
-    public void zonedTimeFormat() throws ParseException {
+    public void zonedTimeFormatNoColon() throws ParseException {
         Date time = new Date();
         DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         String str = dfDate.format(time);
-        Date dtParsed = DateUtil.parseTZDateString(str);
+        Date dtParsed = DateUtil.parseTZDateString(str + "+0100");
+
+        assertEquals(time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatWithColon() throws ParseException {
+        Date time = new Date();
+        DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        String str = dfDate.format(time);
+        Date dtParsed = DateUtil.parseTZDateString(str + "+01:00");
+
+        assertEquals(time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatWithMilliseconds() throws ParseException {
+        Date time = new Date();
+        DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        String str = dfDate.format(time);
+        Date dtParsed = DateUtil.parseTZDateString(str + ".000Z");
+
+        assertEquals(time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatWithMillisecondsAndColon() throws ParseException {
+        Date time = new Date();
+        DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        String str = dfDate.format(time);
+        Date dtParsed = DateUtil.parseTZDateString(str + ".000000+01:00");
+
+        assertEquals(time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatWithMillisecondsNoColon() throws ParseException {
+        Date time = new Date();
+        DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        String str = dfDate.format(time)
+        Date dtParsed = DateUtil.parseTZDateString(str + ".000000+0100");
 
         assertEquals(time.toString(), dtParsed.toString());
     }
