@@ -42,6 +42,7 @@ import com.cloud.user.User;
 import com.cloud.user.UserAccount;
 import com.cloud.user.UserVO;
 import com.cloud.utils.ConstantTimeComparator;
+import com.cloud.utils.DateUtil;
 import com.cloud.utils.HttpUtils;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
@@ -166,9 +167,7 @@ import java.net.URISyntaxException;
 import java.net.URLEncoder;
 import java.security.SecureRandom;
 import java.security.Security;
-import java.text.DateFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -228,7 +227,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private ApiAsyncJobDispatcher asyncDispatcher;
 
     private static int s_workerCount = 0;
-    private static final DateFormat DateFormatToUse = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
     private static Map<String, List<Class<?>>> s_apiNameCmdClassMap = new HashMap<String, List<Class<?>>>();
 
     private static ExecutorService s_executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
@@ -883,14 +881,14 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
                     s_logger.debug("Missing Expires parameter -- ignoring request. Signature: " + signature + ", apiKey: " + apiKey);
                     return false;
                 }
-                synchronized (DateFormatToUse) {
-                    try {
-                        expiresTS = DateFormatToUse.parse(expires);
-                    } catch (final ParseException pe) {
-                        s_logger.debug("Incorrect date format for Expires parameter", pe);
-                        return false;
-                    }
+
+                try {
+                    expiresTS = DateUtil.parseTZDateString(expires);
+                } catch (final ParseException pe) {
+                    s_logger.debug("Incorrect date format for Expires parameter", pe);
+                    return false;
                 }
+
                 final Date now = new Date(System.currentTimeMillis());
                 if (expiresTS.before(now)) {
                     s_logger.debug("Request expired -- ignoring ...sig: " + signature + ", apiKey: " + apiKey);
