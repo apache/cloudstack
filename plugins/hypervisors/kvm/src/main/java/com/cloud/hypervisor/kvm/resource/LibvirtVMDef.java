@@ -370,6 +370,8 @@ public class LibvirtVMDef {
 
                 if (_timerName.equals("kvmclock") && _noKvmClock) {
                     clockBuilder.append("present='no' />");
+                } else if (_timerName.equals("hypervclock")) {
+                    clockBuilder.append("present='yes' />");
                 } else {
                     if (_tickPolicy != null) {
                         clockBuilder.append("tickpolicy='");
