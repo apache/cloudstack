@@ -31,21 +31,30 @@ import com.cloud.utils.exception.CloudRuntimeException;
 public class DateUtil {
     public static final TimeZone GMT_TIMEZONE = TimeZone.getTimeZone("GMT");
     public static final String YYYYMMDD_FORMAT = "yyyyMMddHHmmss";
-    private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX");
+    private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
+
+    private static final DateFormat[] parseFormats = new DateFormat[]{
+        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"),
+        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX"),
+        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"),
+        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX")
+    };
 
     public static Date currentGMTTime() {
         // Date object always stores miliseconds offset based on GMT internally
         return new Date();
     }
 
-    // yyyy-MM-ddTHH:mm:ssZZZZ or yyyy-MM-ddTHH:mm:ssZxxxx
+    // yyyy-MM-ddTHH:mm:ss.SSSSX or yyyy-MM-ddTHH:mm:ssX
     public static Date parseTZDateString(String str) throws ParseException {
-        try {
-            return s_outputFormat.parse(str);
-        } catch (ParseException e) {
-            final DateFormat dfParse = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX");
-            return dfParse.parse(str);
+        for (DateFormat df : parseFormats) {
+            try {
+                return df.parse(str);
+            } catch (ParseException e) {
+                // do nothing
+            }
         }
+        throw new ParseException("Unparseable date: \"" + str + "\"", 0);
     }
 
     public static Date parseDateString(TimeZone tz, String dateString) {
