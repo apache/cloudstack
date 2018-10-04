@@ -1253,16 +1253,5 @@
                 </plugins>
             </build>
         </profile>
-        <profile>
-            <id>buildw</id>
-            <activation>
-                <property>
-                    <name>buildw</name>
-                </property>
-            </activation>
-            <modules>
-                <module>tools/wix-cloudstack-maven-plugin</module>
-            </modules>
-        </profile>
     </profiles>
 </project>
