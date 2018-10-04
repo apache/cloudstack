@@ -27,7 +27,7 @@ import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 
-public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends GenericDaoBase<R, Long> {
+public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends GenericDaoBase<R, Long> implements ResourceDetailsDao<R> {
     private SearchBuilder<R> AllFieldsSearch;
 
     public ResourceDetailsDaoBase() {
@@ -77,6 +77,18 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         Map<String, String> details = new HashMap<String, String>(results.size());
         for (R result : results) {
             details.put(result.getName(), result.getValue());
+        }
+        return details;
+    }
+
+    public Map<String, Boolean> listDetailsVisibility(long resourceId) {
+        SearchCriteria<R> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceId", resourceId);
+
+        List<R> results = search(sc, null);
+        Map<String, Boolean> details = new HashMap<>(results.size());
+        for (R result : results) {
+            details.put(result.getName(), result.isDisplay());
         }
         return details;
     }

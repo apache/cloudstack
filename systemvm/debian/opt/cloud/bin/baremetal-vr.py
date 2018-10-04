@@ -156,4 +156,4 @@ def notify_provisioning_done(mac):
 if __name__ == '__main__':
     server = Server()
     shell("iptables-save | grep -- '-A INPUT -i eth0 -p tcp -m tcp --dport 10086 -j ACCEPT' > /dev/null || iptables -I INPUT -i eth0 -p tcp -m tcp --dport 10086 -j ACCEPT")
-    app.run(host='0.0.0.0', port=10086, debug=True)
+    app.run(host='0.0.0.0', port=10086)

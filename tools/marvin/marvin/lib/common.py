@@ -345,14 +345,16 @@ def get_template(
     return list_templatesout[0]
 
 
-def get_test_template(apiclient, zone_id=None, hypervisor=None):
+def get_test_template(apiclient, zone_id=None, hypervisor=None, test_templates=None):
     """
     @Name : get_test_template
     @Desc : Retrieves the test template used to running tests. When the template
             is missing it will be download at most one in a zone for a hypervisor.
     @Input : returns a template
     """
-    test_templates = test_data["test_templates"]
+
+    if test_templates is None:
+        test_templates = test_data["test_templates"]
 
     if hypervisor is None:
         return FAILED

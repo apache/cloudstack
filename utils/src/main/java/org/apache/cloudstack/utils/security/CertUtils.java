@@ -75,8 +75,6 @@ import org.joda.time.DateTimeZone;
 
 import com.google.common.base.Strings;
 
-//import org.bouncycastle.x509.extension.SubjectKeyIdentifierStructure;
-
 public class CertUtils {
 
     private static final Logger LOG = Logger.getLogger(CertUtils.class);
@@ -132,7 +130,7 @@ public class CertUtils {
     }
 
     public static String privateKeyToPem(final PrivateKey key) throws IOException {
-        final PemObject pemObject = new PemObject("RSA PRIVATE KEY", key.getEncoded());
+        final PemObject pemObject = new PemObject("PRIVATE KEY", key.getEncoded());
         final StringWriter sw = new StringWriter();
         try (final PemWriter pw = new PemWriter(sw)) {
             pw.writeObject(pemObject);

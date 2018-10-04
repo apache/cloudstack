@@ -24,14 +24,12 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.utils.net.NetUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import com.cloud.network.router.NetworkHelper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 import org.cloud.network.router.deployment.RouterDeploymentDefinition;
 import org.cloud.network.router.deployment.RouterDeploymentDefinitionBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 
 import com.google.gson.Gson;
 
@@ -83,6 +81,7 @@ import com.cloud.network.dao.OvsProviderDao;
 import com.cloud.network.dao.VirtualRouterProviderDao;
 import com.cloud.network.lb.LoadBalancingRule;
 import com.cloud.network.lb.LoadBalancingRulesManager;
+import com.cloud.network.router.NetworkHelper;
 import com.cloud.network.router.VirtualRouter;
 import com.cloud.network.router.VirtualRouter.Role;
 import com.cloud.network.router.VpcVirtualNetworkApplianceManager;
@@ -103,6 +102,7 @@ import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.NicProfile;
 import com.cloud.vm.ReservationContext;
@@ -703,7 +703,14 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
         // save the password in DB
         for (final VirtualRouter router : routers) {
             if (router.getState() == State.Running) {
-                return networkTopology.savePasswordToRouter(network, nic, uservm, router);
+                final boolean result = networkTopology.savePasswordToRouter(network, nic, uservm, router);
+                if (result) {
+                    // Explicit password reset, while VM hasn't generated a password yet.
+                    final UserVmVO userVmVO = _userVmDao.findById(vm.getId());
+                    userVmVO.setUpdateParameters(false);
+                    _userVmDao.update(userVmVO.getId(), userVmVO);
+                }
+                return result;
             }
         }
         final String password = (String) uservm.getParameter(VirtualMachineProfile.Param.VmPassword);

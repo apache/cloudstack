@@ -20,7 +20,7 @@ Nuage VSP SDN plugin
 """
 # Import Local Modules
 from nuageTestCase import nuageTestCase
-from marvin.lib.base import Account, VPC
+from marvin.lib.base import Account
 # Import System Modules
 from nose.plugins.attrib import attr
 
@@ -75,8 +75,8 @@ class TestNuageVpcNetwork(nuageTestCase):
 
         # Creating a VPC
         self.debug("Creating a VPC with Nuage VSP VPC offering...")
-        vpc = self.create_Vpc(vpc_offering, cidr='10.1.0.0/16')
-        self.validate_Vpc(vpc, state="Enabled")
+        vpc = self.create_vpc(vpc_offering, cidr='10.1.0.0/16')
+        self.validate_vpc(vpc, state="Enabled")
 
         # Creating a network offering
         self.debug("Creating Nuage VSP VPC Network offering...")

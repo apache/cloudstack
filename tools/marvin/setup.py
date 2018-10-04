@@ -55,10 +55,12 @@ setup(name="Marvin",
           "netaddr >= 0.7.14",
           "dnspython",
           "ipmisim >= 0.7",
-          "pytz"
+          "pytz",
+          "retries",
+          "PyCrypt"
       ],
       extras_require={
-        "nuagevsp": ["vspk", "PyYAML", "futures", "netaddr", "retries", "jpype1"]
+        "nuagevsp": ["vspk", "PyYAML", "futures", "netaddr", "jpype1"]
       },
       py_modules=['marvin.marvinPlugin'],
       zip_safe=False,

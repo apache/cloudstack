@@ -19,11 +19,11 @@
 Nuage VSP SDN plugin
 """
 # Import Local Modules
-from nuageTestCase import (nuageTestCase, gherkin)
+from nuageTestCase import (nuageTestCase)
+from nuage_lib import gherkin
 from marvin.cloudstackAPI import updateVirtualMachine, updateZone
 from marvin.lib.base import (Account,
                              Network,
-                             VirtualMachine,
                              Configurations,
                              NetworkOffering)
 # Import System Modules
@@ -56,7 +56,7 @@ class TestNuageExtraDhcp(nuageTestCase):
         cls.api_client.updateZone(cmd)
         cls.vpc_offering = cls.create_VpcOffering(
             cls.test_data["nuagevsp"]["vpc_offering_nuage_dhcp"])
-        cls.vpc1 = cls.create_Vpc(cls.vpc_offering, cidr="10.0.0.0/16",
+        cls.vpc1 = cls.create_vpc(cls.vpc_offering, cidr="10.0.0.0/16",
                                   networkDomain="testvpc.com")
 
         cls.vpc_network_offering = cls.create_NetworkOffering(
@@ -423,7 +423,8 @@ class TestNuageExtraDhcp(nuageTestCase):
     def verify_dhcp_on_vm(
             self, dhcpleasefile, dhcp_option_map, ssh_client, cleanlease=True):
         if self.isSimulator:
-            self.debug("Simulator Environment: Skipping VM DHCP option verification")
+            self.debug("Simulator Environment: "
+                       "Skipping VM DHCP option verification")
             return
 
         cmd = 'cat /var/lib/dhclient/'+dhcpleasefile
@@ -455,8 +456,7 @@ class TestNuageExtraDhcp(nuageTestCase):
         self.debug("clear lease is done properly:" + completeoutput)
 
     def update_zone_details(self, value):
-        """Updates the VM data"""
-        # update Network Domain at zone level
+        """Updates Network Domain at zone level"""
         cmd = updateZone.updateZoneCmd()
         cmd.id = self.zone.id
         cmd.domain = value
@@ -489,9 +489,9 @@ class TestNuageExtraDhcp(nuageTestCase):
         self.validate_NetworkOffering(network_offering, state="Enabled")
         self.validate_Network(network)
 
-    def validate_vpc(self, vpc, vpc_offering):
+    def validate_vpc_and_vpcoffering(self, vpc, vpc_offering):
         self.debug("Validating vpc...")
-        self.validate_Vpc(vpc)
+        self.validate_vpc(vpc)
         self.validate_VpcOffering(vpc_offering)
 
     def verify_dhcp_options_on_vm(
@@ -590,18 +590,18 @@ class TestNuageExtraDhcp(nuageTestCase):
         self.validate_NetworkOffering(network_offering, state="Enabled")
         return network_offering
 
-    def create_vpc(self, vpc_offering, cidr="10.0.0.0/16"):
+    def create_and_validate_vpc(self, vpc_offering, cidr="10.0.0.0/16"):
         # Creating a VPC
         self.debug("Creating a VPC with Nuage VSP VPC offering...")
-        vpc = self.create_Vpc(vpc_offering, cidr=cidr,
+        vpc = self.create_vpc(vpc_offering, cidr=cidr,
                               networkDomain="testvpc.com")
-        self.validate_Vpc(vpc, state="Enabled")
+        self.validate_vpc(vpc, state="Enabled")
 
         return vpc
 
     def create_vpc_with_tier(self, domain_name="testvpc.com"):
         vpc_offering = self.create_vpc_offering_with_nuage_dhcp()
-        vpc = self.create_vpc(vpc_offering)
+        vpc = self.create_and_validate_vpc(vpc_offering)
 
         vpc_network_offering = self.create_vpc_network_offering()
         acl_list = self.create_acl_list_with_item(vpc)
@@ -1267,8 +1267,9 @@ class TestNuageExtraDhcp(nuageTestCase):
         self.when_i_stop_and_start_a_vm(vm1)
         with self.assertRaises(Exception):
             vm1.remove_nic(
-                self.api_client, [nic for nic in result.nic
-                                  if nic.networkid == network.id][0])
+                self.api_client,
+                [nic for nic in result.nic
+                 if nic.networkid == network.id][0].id)
 
     def validate_all_extra_dhcp_for_update_multinic(
             self, network,
@@ -1683,7 +1684,7 @@ class TestNuageExtraDhcp(nuageTestCase):
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_02_nuage_extra_dhcp_single_nic_in_vpc(self):
         self.update_zone_details("testvpc.com")
-        self.validate_vpc(self.vpc1, self.vpc_offering)
+        self.validate_vpc_and_vpcoffering(self.vpc1, self.vpc_offering)
         self.validate_Network(self.vpc_network)
 
         self.validate_all_extra_dhcp_deploy_vm(
@@ -1710,7 +1711,7 @@ class TestNuageExtraDhcp(nuageTestCase):
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_05_nuage_extra_dhcp_update_vm_in_vpc(self):
         self.update_zone_details("testvpc.com")
-        self.validate_vpc(self.vpc1, self.vpc_offering)
+        self.validate_vpc_and_vpcoffering(self.vpc1, self.vpc_offering)
         self.validate_Network(self.vpc_network)
 
         self.validate_all_extra_dhcp_after_vm_update(
@@ -1736,7 +1737,7 @@ class TestNuageExtraDhcp(nuageTestCase):
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_08_nuage_extra_dhcp_add_nic_in_vpc(self):
         self.update_zone_details("testvpc.com")
-        self.validate_vpc(self.vpc1, self.vpc_offering)
+        self.validate_vpc_and_vpcoffering(self.vpc1, self.vpc_offering)
         self.validate_Network(self.vpc_network)
 
         self.validate_all_extra_dhcp_after_plug_nic(
@@ -1762,7 +1763,7 @@ class TestNuageExtraDhcp(nuageTestCase):
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_11_nuage_extra_dhcp_deploy_multi_nic_vm_in_vpc(self):
         self.update_zone_details("testvpc.com")
-        self.validate_vpc(self.vpc1, self.vpc_offering)
+        self.validate_vpc_and_vpcoffering(self.vpc1, self.vpc_offering)
         self.validate_Network(self.vpc_network)
 
         self.validate_all_extra_dhcp_for_multi_nic(
@@ -1788,7 +1789,7 @@ class TestNuageExtraDhcp(nuageTestCase):
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_14_nuage_extra_dhcp_update_multi_nic_in_vpc(self):
         self.update_zone_details("testvpc.com")
-        self.validate_vpc(self.vpc1, self.vpc_offering)
+        self.validate_vpc_and_vpcoffering(self.vpc1, self.vpc_offering)
         self.validate_Network(self.vpc_network)
 
         self.validate_all_extra_dhcp_for_update_multinic(
@@ -1814,7 +1815,7 @@ class TestNuageExtraDhcp(nuageTestCase):
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_17_nuage_extra_dhcp_remove_nic_in_vpc(self):
         self.update_zone_details("testvpc.com")
-        self.validate_vpc(self.vpc1, self.vpc_offering)
+        self.validate_vpc_and_vpcoffering(self.vpc1, self.vpc_offering)
         self.validate_Network(self.vpc_network)
 
         self.validate_all_extra_dhcp_for_remove_nic_from_vm(
@@ -1841,7 +1842,7 @@ class TestNuageExtraDhcp(nuageTestCase):
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_20_nuage_nuage_extra_dhcp_vm_actions_in_vpc(self):
         self.update_zone_details("testvpc.com")
-        self.validate_vpc(self.vpc1, self.vpc_offering)
+        self.validate_vpc_and_vpcoffering(self.vpc1, self.vpc_offering)
         self.validate_Network(self.vpc_network)
 
         self.validate_all_extra_dhcp_for_vm_actions_in_network(
@@ -1868,7 +1869,7 @@ class TestNuageExtraDhcp(nuageTestCase):
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_23_nuage_nuage_extra_dhcp_network_actions_in_vpc(self):
         self.update_zone_details("testvpc.com")
-        self.validate_vpc(self.vpc1, self.vpc_offering)
+        self.validate_vpc_and_vpcoffering(self.vpc1, self.vpc_offering)
         self.validate_Network(self.vpc_network)
 
         self.validate_all_extra_dhcp_for_network_actions_in_network(
@@ -1895,7 +1896,7 @@ class TestNuageExtraDhcp(nuageTestCase):
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_26_nuage_nuage_extra_dhcp_nic_after_migrate_in_vpc(self):
         self.update_zone_details("testvpc.com")
-        self.validate_vpc(self.vpc1, self.vpc_offering)
+        self.validate_vpc_and_vpcoffering(self.vpc1, self.vpc_offering)
         self.validate_Network(self.vpc_network)
 
         self.validate_all_extra_dhcp_for_add_remove_nic_after_migrate(
@@ -1929,7 +1930,7 @@ class TestNuageExtraDhcp(nuageTestCase):
     @attr(tags=["advanced", "nuagevsp"], required_hardware="false")
     def test_30_nuage_extra_dhcp_allocated_vpc(self):
         self.update_zone_details("testvpc.com")
-        self.validate_vpc(self.vpc1, self.vpc_offering)
+        self.validate_vpc_and_vpcoffering(self.vpc1, self.vpc_offering)
         self.validate_Network(self.vpc_network)
 
         self.validate_all_extra_dhcp_for_network_in_allocated(
