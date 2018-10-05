@@ -678,4 +678,10 @@ public class NetUtilsTest {
         assertFalse(NetUtils.isValidPort(-1));
         assertFalse(NetUtils.isValidPort(65536));
     }
+
+    @Test
+    public void testAllIpsOfDefaultNic() {
+        final String defaultHostIp = NetUtils.getDefaultHostIp();
+        assertTrue(NetUtils.getAllDefaultNicIps().stream().anyMatch(defaultHostIp::contains));
+    }
 }

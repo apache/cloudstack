@@ -225,6 +225,27 @@ public class NetUtils {
         }
     }
 
+    public static List<String> getAllDefaultNicIps() {
+        final List<String> addrs = new ArrayList<>();
+        final String pubNic = getDefaultEthDevice();
+
+        if (pubNic == null) {
+            return addrs;
+        }
+
+        NetworkInterface nic = null;
+        try {
+            nic = NetworkInterface.getByName(pubNic);
+        } catch (final SocketException e) {
+            return addrs;
+        }
+
+        for (InterfaceAddress address : nic.getInterfaceAddresses()) {
+            addrs.add(address.getAddress().getHostAddress().split("%")[0]);
+        }
+        return addrs;
+    }
+
     public static String getDefaultEthDevice() {
         if (SystemUtils.IS_OS_MAC) {
             final String defDev = Script.runSimpleBashScript("/sbin/route -n get default 2> /dev/null | grep interface | awk '{print $2}'");
