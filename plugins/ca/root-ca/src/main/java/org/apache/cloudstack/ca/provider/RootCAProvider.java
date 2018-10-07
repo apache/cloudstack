@@ -359,7 +359,7 @@ public final class RootCAProvider extends AdapterBase implements CAProvider, Con
             return true;
         }
         final Certificate serverCertificate = issueCertificate(Collections.singletonList(NetUtils.getHostName()),
-                Collections.singletonList(NetUtils.getDefaultHostIp()), getCaValidityDays());
+                NetUtils.getAllDefaultNicIps(), getCaValidityDays());
         if (serverCertificate == null || serverCertificate.getPrivateKey() == null) {
             throw new CloudRuntimeException("Failed to generate management server certificate and load management server keystore");
         }

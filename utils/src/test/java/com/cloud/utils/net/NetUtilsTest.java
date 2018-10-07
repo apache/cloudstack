@@ -694,4 +694,9 @@ public class NetUtilsTest {
     public void testIsIpv4ExpectException2() {
         NetUtils.isIpv4("2001:db8:300::/64");
     }
+
+    public void testAllIpsOfDefaultNic() {
+        final String defaultHostIp = NetUtils.getDefaultHostIp();
+        assertTrue(NetUtils.getAllDefaultNicIps().stream().anyMatch(defaultHostIp::contains));
+    }
 }
