@@ -25,6 +25,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import java.time.format.DateTimeFormatter;
+import java.time.OffsetDateTime;
+
 import com.cloud.utils.DateUtil.IntervalType;
 
 import org.junit.Test;
@@ -32,6 +35,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public class DateUtilTest {
+    private static final int HOUR = 3600000; // in ms
 
     // command line test tool
     public static void main(String[] args) {
@@ -64,6 +68,59 @@ public class DateUtilTest {
         Date time = new Date();
         DateFormat dfDate = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
         String str = dfDate.format(time);
+        Date dtParsed = DateUtil.parseTZDateString(str);
+
+        assertEquals(time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatIsoOffsetDateTime() throws ParseException {
+        Date time = new Date();
+        String str = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+
+        Date dtParsed = DateUtil.parseTZDateString(str);
+
+        assertEquals(time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatIsoInstant() throws ParseException {
+        Date time = new Date();
+        String str = OffsetDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+
+        Date dtParsed = DateUtil.parseTZDateString(str);
+
+        assertEquals(time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatIsoOffsetDateTimeMs() throws ParseException {
+        Date time = new Date();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX");
+        String str = OffsetDateTime.now().format(formatter);
+
+        Date dtParsed = DateUtil.parseTZDateString(str);
+
+        assertEquals(time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatIsoInstantMs() throws ParseException {
+        Date time = new Date();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'");
+        String str = OffsetDateTime.now().format(formatter);
+
+        Date dtParsed = DateUtil.parseTZDateString(str);
+
+        assertEquals(time.toString(), dtParsed.toString());
+    }
+
+    @Test
+    public void zonedTimeFormatIsoNoColonZMs() throws ParseException {
+        Date time = new Date();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ");
+        String str = OffsetDateTime.now().format(formatter);
+
         Date dtParsed = DateUtil.parseTZDateString(str);
 
         assertEquals(time.toString(), dtParsed.toString());
