@@ -26,6 +26,10 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.OffsetDateTime;
+
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DateUtil {
@@ -33,11 +37,16 @@ public class DateUtil {
     public static final String YYYYMMDD_FORMAT = "yyyyMMddHHmmss";
     private static final DateFormat s_outputFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
-    private static final DateFormat[] parseFormats = new DateFormat[]{
-        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'"),
-        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssX"),
-        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"),
-        new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX")
+    private static final DateTimeFormatter[] parseFormats = new DateTimeFormatter[]{
+        DateTimeFormatter.ISO_OFFSET_DATE_TIME,
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssZ"),
+        DateTimeFormatter.ISO_INSTANT,
+        // with milliseconds
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"),
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'"),
+        // legacy and non-sensical format
+        DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'Z")
     };
 
     public static Date currentGMTTime() {
@@ -45,12 +54,12 @@ public class DateUtil {
         return new Date();
     }
 
-    // yyyy-MM-ddTHH:mm:ss.SSSSX or yyyy-MM-ddTHH:mm:ssX
     public static Date parseTZDateString(String str) throws ParseException {
-        for (DateFormat df : parseFormats) {
+        for (DateTimeFormatter formatter : parseFormats) {
             try {
-                return df.parse(str);
-            } catch (ParseException e) {
+                OffsetDateTime dt = OffsetDateTime.parse(str, formatter);
+                return Date.from(dt.toInstant());
+            } catch (DateTimeParseException e) {
                 // do nothing
             }
         }
