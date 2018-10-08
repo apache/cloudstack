@@ -21,6 +21,9 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
+import org.apache.commons.lang.builder.ToStringStyle;
+
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.api.Displayable;
 import org.apache.cloudstack.api.Identity;
@@ -93,6 +96,12 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             }
 
             return success;
+        }
+
+        @Override public String toString() {
+            return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                    .append("name", name)
+                    .toString();
         }
 
         public static Service getService(String serviceName) {
@@ -186,6 +195,12 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
             }
             return null;
         }
+
+        @Override public String toString() {
+            return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                    .append("name", name)
+                    .toString();
+        }
     }
 
     public static class Capability {
@@ -240,6 +255,12 @@ public interface Network extends ControlledEntity, StateObject<Network.State>, I
                 }
             }
             return null;
+        }
+
+        @Override public String toString() {
+            return new ToStringBuilder(this, ToStringStyle.SHORT_PREFIX_STYLE)
+                    .append("name", name)
+                    .toString();
         }
     }
 

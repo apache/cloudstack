@@ -26,9 +26,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
-import com.cloud.network.dao.NetworkDao;
-import com.cloud.network.dao.NetworkVO;
-import com.cloud.tags.dao.ResourceTagDao;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -50,6 +47,7 @@ import com.cloud.exception.CloudException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.ResourceUnavailableException;
+import com.cloud.exception.UnsupportedServiceException;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.network.Network;
@@ -62,7 +60,9 @@ import com.cloud.network.NuageVspDeviceVO;
 import com.cloud.network.dao.FirewallRulesDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
+import com.cloud.network.dao.NetworkDao;
 import com.cloud.network.dao.NetworkServiceMapDao;
+import com.cloud.network.dao.NetworkVO;
 import com.cloud.network.dao.NuageVspDao;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
@@ -77,14 +77,18 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.resource.ResourceManager;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.user.Account;
 import com.cloud.util.NuageVspEntityBuilder;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.ReservationContext;
 import com.cloud.vm.dao.DomainRouterDao;
 
+import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -233,6 +237,18 @@ public class NuageVspElementTest extends NuageTest {
                 Service.Connectivity,
                 Service.Firewall);
         assertTrue(_nuageVspElement.verifyServicesCombination(services));
+
+
+        services = Sets.newHashSet(
+                Service.Dhcp,
+                Service.StaticNat,
+                Service.Firewall);
+        try {
+            _nuageVspElement.verifyServicesCombination(services);
+            fail("Expected Exception");
+        } catch (UnsupportedServiceException e) {
+            assertThat(e.getMessage(), is("Provider Network.Provider[name=NuageVsp] requires services: [Network.Service[name=Connectivity]]"));
+        }
     }
 
     @Test
