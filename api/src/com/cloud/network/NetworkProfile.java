@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.network;
 
+import java.net.URI;
+
 import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.Mode;
 import com.cloud.network.Networks.TrafficType;
-
-import java.net.URI;
 
 public class NetworkProfile implements Network {
     private final long id;
@@ -33,6 +33,7 @@ public class NetworkProfile implements Network {
     private URI broadcastUri;
     private final State state;
     private boolean isRedundant;
+    private boolean isRollingRestart = false;
     private final String name;
     private final Mode mode;
     private final BroadcastDomainType broadcastDomainType;
@@ -92,6 +93,7 @@ public class NetworkProfile implements Network {
         guruName = network.getGuruName();
         strechedL2Subnet = network.isStrechedL2Network();
         isRedundant = network.isRedundant();
+        isRollingRestart = network.isRollingRestart();
         externalId = network.getExternalId();
     }
 
@@ -157,7 +159,7 @@ public class NetworkProfile implements Network {
 
     @Override
     public boolean isRollingRestart() {
-        return false;
+        return isRollingRestart;
     }
 
     @Override

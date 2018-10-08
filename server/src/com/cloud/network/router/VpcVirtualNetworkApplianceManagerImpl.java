@@ -316,7 +316,7 @@ public class VpcVirtualNetworkApplianceManagerImpl extends VirtualNetworkApplian
             final List<Pair<Nic, Network>> publicNics = new ArrayList<Pair<Nic, Network>>();
             final Map<String, String> vlanMacAddress = new HashMap<String, String>();
 
-            final List<? extends Nic> routerNics = _nicDao.listByVmId(profile.getId());
+            final List<? extends Nic> routerNics = _nicDao.listByVmIdOrderByDeviceId(profile.getId());
             for (final Nic routerNic : routerNics) {
                 final Network network = _networkModel.getNetwork(routerNic.getNetworkId());
                 if (network.getTrafficType() == TrafficType.Guest) {

@@ -26,6 +26,8 @@ import com.cloud.vm.VirtualMachine;
 public interface NicDao extends GenericDao<NicVO, Long> {
     List<NicVO> listByVmId(long instanceId);
 
+    List<NicVO> listByVmIdOrderByDeviceId(long instanceId);
+
     List<String> listIpAddressInNetwork(long networkConfigId);
 
     List<NicVO> listByVmIdIncludingRemoved(long instanceId);
