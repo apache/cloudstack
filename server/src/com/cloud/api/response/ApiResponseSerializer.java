@@ -132,8 +132,8 @@ public class ApiResponseSerializer {
                     log.append("}");
                 }
             } else if (result instanceof SuccessResponse) {
-                sb.append("{\"success\":\"").append(((SuccessResponse)result).getSuccess()).append("\"}");
-                log.append("{\"success\":\"").append(((SuccessResponse)result).getSuccess()).append("\"}");
+                sb.append("{\"success\":\"").append(((SuccessResponse)result).getSuccess()).append("\",\"text\":\"").append(((SuccessResponse)result).getDisplayText()).append("\"}");
+                log.append("{\"success\":\"").append(((SuccessResponse)result).getSuccess()).append("\",\"text\":\"").append(((SuccessResponse)result).getDisplayText()).append("\"}");
             } else if (result instanceof ExceptionResponse) {
                 String jsonErrorText = responseBuilder.toJson(result);
                 jsonErrorText = unescape(jsonErrorText);

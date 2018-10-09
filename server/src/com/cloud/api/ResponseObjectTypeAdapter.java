@@ -38,6 +38,7 @@ public class ResponseObjectTypeAdapter implements JsonSerializer<ResponseObject>
 
         if (responseObj instanceof SuccessResponse) {
             obj.addProperty("success", ((SuccessResponse)responseObj).getSuccess());
+            obj.addProperty("text", ((SuccessResponse)responseObj).getDisplayText());
             return obj;
         } else if (responseObj instanceof ExceptionResponse) {
             obj.addProperty("errorcode", ((ExceptionResponse)responseObj).getErrorCode());

@@ -329,6 +329,7 @@ import org.apache.cloudstack.api.command.user.firewall.ListPortForwardingRulesCm
 import org.apache.cloudstack.api.command.user.firewall.UpdateEgressFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.firewall.UpdateFirewallRuleCmd;
 import org.apache.cloudstack.api.command.user.firewall.UpdatePortForwardingRuleCmd;
+import org.apache.cloudstack.api.command.user.fizzbuzz.FizzBuzzCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCategoriesCmd;
 import org.apache.cloudstack.api.command.user.guest.ListGuestOsCmd;
 import org.apache.cloudstack.api.command.user.iso.AttachIsoCmd;
@@ -3064,6 +3065,9 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(IssueOutOfBandManagementPowerActionCmd.class);
         cmdList.add(ChangeOutOfBandManagementPasswordCmd.class);
         cmdList.add(GetUserKeysCmd.class);
+
+        // Just for fun APIs :)
+        cmdList.add(FizzBuzzCmd.class);
         return cmdList;
     }
 
