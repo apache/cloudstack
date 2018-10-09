@@ -17,8 +17,8 @@
 
 package org.apache.cloudstack.api.command.user.fizzbuzz;
 
+import com.cloud.fizzbuzz.FizzBuzzService;
 import com.cloud.user.Account;
-import com.google.common.base.Preconditions;
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseCmd;
@@ -26,7 +26,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.SuccessResponse;
 import org.apache.log4j.Logger;
 
-import java.util.Random;
+import javax.inject.Inject;
 
 @APICommand(name = FizzBuzzCmd.APINAME,
         description = "the classic fizzBuzz test",
@@ -42,9 +42,12 @@ public class FizzBuzzCmd extends BaseCmd {
 
     @Parameter(name = "number",
             type = CommandType.INTEGER,
-            required = true,
-            description = "A number passed by user to do FizzBizz test on.")
+            required = false,
+            description = "A number passed by user to do FizzBuzz test on.")
     private Integer number;
+
+    @Inject
+    private FizzBuzzService _fizzBuzzService;
 
     // MARK - Implementation
 
@@ -60,19 +63,7 @@ public class FizzBuzzCmd extends BaseCmd {
 
     @Override
     public void execute() {
-        Preconditions.checkNotNull(number, "Number must be provided!");
-
-        final String responseText;
-        if (this.number % 15 == 0) {
-            responseText = "fizzbuzz";
-        } else if (this.number % 3 == 0) {
-            responseText = "fizz";
-        } else if (this.number % 5 == 0) {
-            responseText = "buzz";
-        } else {
-            responseText = String.valueOf(new Random().nextInt(99) + 1);
-        }
-
+        final String responseText = _fizzBuzzService.getDisplayText(this.number);
         s_logger.debug("FizzBuzz: " + number + " response " + responseText);
         final SuccessResponse response = new SuccessResponse(getCommandName());
         response.setDisplayText(responseText);

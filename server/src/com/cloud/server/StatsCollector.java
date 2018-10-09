@@ -593,6 +593,10 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         return _VmStats.get(id);
     }
 
+    public int getNumberOfVms() {
+        return _VmStats.size();
+    }
+
     class VmDiskStatsUpdaterTask extends ManagedContextRunnable {
         @Override
         protected void runInContext() {
