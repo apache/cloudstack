@@ -605,22 +605,34 @@ class VirtualMachine:
             return VirtualMachine(virtual_machine.__dict__, services)
 
         # program ssh access over NAT via PF
-        if mode.lower() == 'advanced':
-            cls.access_ssh_over_nat(
-                apiclient,
-                services,
-                virtual_machine,
-                allow_egress=allow_egress,
-                networkid=cmd.networkids[0] if cmd.networkids else None)
-        elif mode.lower() == 'basic':
-            if virtual_machine.publicip is not None:
-                # EIP/ELB (netscaler) enabled zone
-                vm_ssh_ip = virtual_machine.publicip
-            else:
-                # regular basic zone with security group
-                vm_ssh_ip = virtual_machine.nic[0].ipaddress
-            virtual_machine.ssh_ip = vm_ssh_ip
-            virtual_machine.public_ip = vm_ssh_ip
+        retries = 5
+        interval = 30
+        while retries > 0:
+            time.sleep(interval)
+            try:
+                if mode.lower() == 'advanced':
+                    cls.access_ssh_over_nat(
+                        apiclient,
+                        services,
+                        virtual_machine,
+                        allow_egress=allow_egress,
+                        networkid=cmd.networkids[0] if cmd.networkids else None)
+                elif mode.lower() == 'basic':
+                    if virtual_machine.publicip is not None:
+                        # EIP/ELB (netscaler) enabled zone
+                        vm_ssh_ip = virtual_machine.publicip
+                    else:
+                        # regular basic zone with security group
+                        vm_ssh_ip = virtual_machine.nic[0].ipaddress
+                    virtual_machine.ssh_ip = vm_ssh_ip
+                    virtual_machine.public_ip = vm_ssh_ip
+                break
+            except Exception as e:
+                if retries >= 0:
+                    retries = retries - 1
+                    continue
+                raise Exception(
+                    "The following exception appeared while programming ssh access - %s" % e)
 
         return VirtualMachine(virtual_machine.__dict__, services)
 
