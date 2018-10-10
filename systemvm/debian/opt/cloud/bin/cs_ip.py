@@ -16,7 +16,19 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import os
 from netaddr import *
+
+
+def macdevice_map():
+    device_map = {}
+    for eth in os.listdir('/sys/class/net'):
+        if not eth.startswith('eth'):
+            continue
+        with open('/sys/class/net/%s/address' % eth) as f:
+            mac_address = f.read().replace('\n', '')
+            device_map[mac_address] = eth[3:]
+    return device_map
 
 
 def merge(dbag, ip):
@@ -33,6 +45,11 @@ def merge(dbag, ip):
     ipo = IPNetwork(ip['public_ip'] + '/' + ip['netmask'])
     if 'nic_dev_id' in ip:
         nic_dev_id = ip['nic_dev_id']
+    if 'vif_mac_address' in ip:
+        mac_address = ip['vif_mac_address']
+        device_map = macdevice_map()
+        if mac_address in device_map:
+            nic_dev_id = device_map[mac_address]
     ip['device'] = 'eth' + str(nic_dev_id)
     ip['broadcast'] = str(ipo.broadcast)
     ip['cidr'] = str(ipo.ip) + '/' + str(ipo.prefixlen)
