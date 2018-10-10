@@ -37,13 +37,13 @@ import java.net.UnknownHostException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import com.googlecode.ipv6.IPv6Network;
 import org.apache.log4j.Logger;
 import org.junit.Test;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.net.NetUtils.SupersetOrSubset;
 import com.googlecode.ipv6.IPv6Address;
+import com.googlecode.ipv6.IPv6Network;
 
 public class NetUtilsTest {
 
@@ -682,6 +682,8 @@ public class NetUtilsTest {
     @Test
     public void testAllIpsOfDefaultNic() {
         final String defaultHostIp = NetUtils.getDefaultHostIp();
-        assertTrue(NetUtils.getAllDefaultNicIps().stream().anyMatch(defaultHostIp::contains));
+        if (defaultHostIp != null) {
+            assertTrue(NetUtils.getAllDefaultNicIps().stream().anyMatch(defaultHostIp::contains));
+        }
     }
 }
