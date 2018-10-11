@@ -26,7 +26,7 @@ public final class TemplateConstants {
     public static final String DEFAULT_TMPLT_FIRST_LEVEL_DIR = "tmpl/";
 
     public static final String DEFAULT_SYSTEM_VM_TEMPLATE_PATH = "template/tmpl/1/";
-
+    public static final String DEFAULT_BASE_SYSTEMVM_URL = "https://download.cloudstack.org/systemvm";
     public static final String DEFAULT_SYSTEM_VM_TMPLT_NAME = "routing";
 
     public static final int DEFAULT_TMPLT_COPY_PORT = 80;

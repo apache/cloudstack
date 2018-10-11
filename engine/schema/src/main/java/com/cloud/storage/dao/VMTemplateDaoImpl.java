@@ -92,6 +92,7 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
     protected SearchBuilder<VMTemplateVO> tmpltTypeHyperSearch;
     protected SearchBuilder<VMTemplateVO> readySystemTemplateSearch;
     protected SearchBuilder<VMTemplateVO> tmpltTypeHyperSearch2;
+    protected SearchBuilder<VMTemplateVO> urlLikeSearch;
 
     protected SearchBuilder<VMTemplateVO> AccountIdSearch;
     protected SearchBuilder<VMTemplateVO> NameSearch;
@@ -219,6 +220,15 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
 
         Filter filter = new Filter(VMTemplateVO.class, "id", false, null, null);
         return listBy(sc, filter);
+    }
+
+    @Override
+    public List<VMTemplateVO> listSystemVMTemplatesByUrlLike(String partialUrl, String hypervisorType) {
+        SearchCriteria<VMTemplateVO> sc = urlLikeSearch.create();
+        sc.setParameters("templateType", TemplateType.SYSTEM);
+        sc.setParameters("hypervisorType", hypervisorType);
+        sc.setParameters("url", "%" + partialUrl + "%");
+        return listBy(sc);
     }
 
     @Override
@@ -416,6 +426,12 @@ public class VMTemplateDaoImpl extends GenericDaoBase<VMTemplateVO, Long> implem
         ParentTemplateIdSearch.and("parentTemplateId", ParentTemplateIdSearch.entity().getParentTemplateId(), SearchCriteria.Op.EQ);
         ParentTemplateIdSearch.and("state", ParentTemplateIdSearch.entity().getState(), SearchCriteria.Op.EQ);
         ParentTemplateIdSearch.done();
+
+        urlLikeSearch = createSearchBuilder();
+        urlLikeSearch.and("templateType", urlLikeSearch.entity().getTemplateType(), SearchCriteria.Op.EQ);
+        urlLikeSearch.and("hypervisorType", urlLikeSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        urlLikeSearch.and("url", urlLikeSearch.entity().getUrl(), SearchCriteria.Op.LIKE);
+        urlLikeSearch.done();
 
         return result;
     }

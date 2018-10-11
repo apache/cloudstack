@@ -16,18 +16,25 @@
 // under the License.
 package com.cloud.storage.download;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Timer;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.storage.DownloadAnswer;
+import com.cloud.configuration.Config;
+import com.cloud.storage.ImageStoreDetailsUtil;
+import com.cloud.storage.RegisterVolumePayload;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.Volume;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.download.managementserver.ManagementServerDownloader;
+import com.cloud.storage.template.TemplateConstants;
+import com.cloud.storage.upload.UploadListener;
+import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.component.ManagerBase;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Proxy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
@@ -45,23 +52,17 @@ import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.storage.DownloadAnswer;
-import com.cloud.utils.net.Proxy;
-import com.cloud.configuration.Config;
-import com.cloud.storage.RegisterVolumePayload;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.Volume;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.template.TemplateConstants;
-import com.cloud.storage.upload.UploadListener;
-import com.cloud.template.VirtualMachineTemplate;
-import com.cloud.utils.component.ComponentContext;
-import com.cloud.utils.component.ManagerBase;
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.inject.Inject;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Timer;
 
 @Component
 public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor {
@@ -81,11 +82,16 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
     private ConfigurationDao _configDao;
     @Inject
     private EndPointSelector _epSelector;
+    @Inject
+    private ImageStoreDetailsUtil imageStoreDetailsUtil;
+    @Inject
+    private ManagementServerDownloader managementServerDownloader;
 
     private String _copyAuthPasswd;
     private String _proxy = null;
 
     private Timer _timer;
+    private final Map<String, String> _storageMounts = new HashMap<>();
 
     @Override
     public boolean configure(String name, Map<String, Object> params) {
@@ -152,28 +158,34 @@ public class DownloadMonitorImpl extends ManagerBase implements DownloadMonitor 
             }
             EndPoint ep = _epSelector.select(template);
             if (ep == null) {
-                String errMsg = "There is no secondary storage VM for downloading template to image store " + store.getName();
-                s_logger.warn(errMsg);
-                throw new CloudRuntimeException(errMsg);
-            }
-            DownloadListener dl = new DownloadListener(ep, store, template, _timer, this, dcmd, callback);
-            ComponentContext.inject(dl);  // initialize those auto-wired field in download listener.
-            if (downloadJobExists) {
-                // due to handling existing download job issues, we still keep
-                // downloadState in template_store_ref to avoid big change in
-                // DownloadListener to use
-                // new ObjectInDataStore.State transition. TODO: fix this later
-                // to be able to remove downloadState from template_store_ref.
-                s_logger.info("found existing download job");
-                dl.setCurrState(vmTemplateStore.getDownloadState());
-            }
+                if (tmpl.getTemplateType() == Storage.TemplateType.SYSTEM) {
+                    managementServerDownloader.download(tmpl, template);
+                    //set to ready state
+                } else {
+                    String errMsg = "There is no secondary storage VM for downloading template to image store " + store.getName();
+                    s_logger.warn(errMsg);
+                    throw new CloudRuntimeException(errMsg);
+                }
+            } else {
+                DownloadListener dl = new DownloadListener(ep, store, template, _timer, this, dcmd, callback);
+                ComponentContext.inject(dl);  // initialize those auto-wired field in download listener.
+                if (downloadJobExists) {
+                    // due to handling existing download job issues, we still keep
+                    // downloadState in template_store_ref to avoid big change in
+                    // DownloadListener to use
+                    // new ObjectInDataStore.State transition. TODO: fix this later
+                    // to be able to remove downloadState from template_store_ref.
+                    s_logger.info("found existing download job");
+                    dl.setCurrState(vmTemplateStore.getDownloadState());
+                }
 
-            try {
-                ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
-            } catch (Exception e) {
-                s_logger.warn("Unable to start /resume download of template " + template.getId() + " to " + store.getName(), e);
-                dl.setDisconnected();
-                dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
+                try {
+                    ep.sendMessageAsync(dcmd, new UploadListener.Callback(ep.getId(), dl));
+                } catch (Exception e) {
+                    s_logger.warn("Unable to start /resume download of template " + template.getId() + " to " + store.getName(), e);
+                    dl.setDisconnected();
+                    dl.scheduleStatusCheck(RequestType.GET_OR_RESTART);
+                }
             }
         }
     }

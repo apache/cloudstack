@@ -28,6 +28,7 @@ import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -77,6 +78,7 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     protected SearchBuilder<VMInstanceVO> StateChangeSearch;
     protected SearchBuilder<VMInstanceVO> TransitionSearch;
     protected SearchBuilder<VMInstanceVO> TypesSearch;
+    protected SearchBuilder<VMInstanceVO> hypervisorTypeAndNonUserTypeSearch;
     protected SearchBuilder<VMInstanceVO> IdTypesSearch;
     protected SearchBuilder<VMInstanceVO> HostIdTypesSearch;
     protected SearchBuilder<VMInstanceVO> HostIdStatesSearch;
@@ -192,6 +194,12 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
         TypesSearch = createSearchBuilder();
         TypesSearch.and("types", TypesSearch.entity().getType(), Op.IN);
         TypesSearch.done();
+
+        hypervisorTypeAndNonUserTypeSearch = createSearchBuilder();
+        hypervisorTypeAndNonUserTypeSearch.and("hypervisorType",
+                hypervisorTypeAndNonUserTypeSearch.entity().getHypervisorType(), SearchCriteria.Op.EQ);
+        hypervisorTypeAndNonUserTypeSearch.and("types", hypervisorTypeAndNonUserTypeSearch.entity().getType(), Op.NIN);
+        hypervisorTypeAndNonUserTypeSearch.done();
 
         IdTypesSearch = createSearchBuilder();
         IdTypesSearch.and("id", IdTypesSearch.entity().getId(), Op.EQ);
@@ -424,6 +432,14 @@ public class VMInstanceDaoImpl extends GenericDaoBase<VMInstanceVO, Long> implem
     public List<VMInstanceVO> listByTypes(Type... types) {
         SearchCriteria<VMInstanceVO> sc = TypesSearch.create();
         sc.setParameters("types", (Object[])types);
+        return listBy(sc);
+    }
+
+    @Override
+    public List<VMInstanceVO> listByHypervisorTypeAndNonUserTypes(HypervisorType hypervisorType) {
+        SearchCriteria<VMInstanceVO> sc = hypervisorTypeAndNonUserTypeSearch.create();
+        sc.setParameters("hypervisorType", hypervisorType);
+        sc.setParameters("types", Type.User);
         return listBy(sc);
     }
 
