@@ -59,8 +59,3 @@ fi
 systemctl enable --now --no-block ssh
 
 date > /var/cache/cloud/boot_up_done
-
-if [ "$TYPE" == "router" ]
-then
-    python /opt/cloud/bin/baremetal-vr.py &
-fi
