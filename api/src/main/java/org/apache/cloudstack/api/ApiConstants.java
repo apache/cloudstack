@@ -308,6 +308,7 @@ public class ApiConstants {
     public static final String TARGET_IQN = "targetiqn";
     public static final String TEMPLATE_FILTER = "templatefilter";
     public static final String TEMPLATE_ID = "templateid";
+    public static final String SYSTEM = "system";
     public static final String ISO_ID = "isoid";
     public static final String TIMEOUT = "timeout";
     public static final String TIMEZONE = "timezone";
@@ -611,6 +612,7 @@ public class ApiConstants {
     public static final String INTERVAL = "interval";
     public static final String QUIETTIME = "quiettime";
     public static final String ACTION = "action";
+    public static final String ACTIVATE = "activate";
     public static final String CONDITION_ID = "conditionid";
     public static final String CONDITION_IDS = "conditionids";
     public static final String COUNTERPARAM_LIST = "counterparam";

@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.utils.Pair;
 import com.cloud.utils.db.GenericDao;
 import com.cloud.utils.fsm.StateDao;
@@ -81,6 +82,8 @@ public interface VMInstanceDao extends GenericDao<VMInstanceVO, Long>, StateDao<
     List<VMInstanceVO> listByHostAndState(long hostId, State... states);
 
     List<VMInstanceVO> listByTypes(VirtualMachine.Type... types);
+
+    List<VMInstanceVO> listByHypervisorTypeAndNonUserTypes(HypervisorType hypervisorType);
 
     VMInstanceVO findByIdTypes(long id, VirtualMachine.Type... types);
 

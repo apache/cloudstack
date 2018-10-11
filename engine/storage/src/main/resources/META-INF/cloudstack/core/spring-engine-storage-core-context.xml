@@ -50,6 +50,9 @@
     <bean id="defaultEndPointSelector"
         class="org.apache.cloudstack.storage.endpoint.DefaultEndPointSelector" />
 
+    <bean id="nfsManagementServerCopier"
+          class="com.cloud.storage.copy.NfsManagementServerCopier" />
+
     <bean id="dataStoreManagerImpl"
         class="org.apache.cloudstack.storage.datastore.DataStoreManagerImpl"
         depends-on="dataStoreProviderManager">

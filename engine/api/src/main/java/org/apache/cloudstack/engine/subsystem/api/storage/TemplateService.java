@@ -51,6 +51,8 @@ public interface TemplateService {
 
     AsyncCallFuture<TemplateApiResult> copyTemplate(TemplateInfo srcTemplate, DataStore destStore);
 
+    AsyncCallFuture<TemplateApiResult> copySystemVMTemplate(TemplateInfo srcTemplate, DataStore destStore);
+
     AsyncCallFuture<TemplateApiResult> prepareTemplateOnPrimary(TemplateInfo srcTemplate, StoragePool pool);
 
     AsyncCallFuture<TemplateApiResult> deleteTemplateOnPrimary(TemplateInfo template, StoragePool pool);

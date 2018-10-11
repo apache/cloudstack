@@ -51,6 +51,7 @@ import com.cloud.storage.dao.VMTemplateDetailsDao;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
+import com.cloud.upgrade.dao.VersionDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountVO;
@@ -64,6 +65,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
+
 import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
 import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
 import org.apache.cloudstack.context.CallContext;
@@ -106,6 +108,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 import javax.inject.Inject;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -179,9 +182,13 @@ public class TemplateManagerImplTest {
     @Inject
     private VMTemplateDao _tmpltDao;
 
+    @Inject
+    private VersionDao versionDao;
+
 
     public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
         AtomicInteger ai = new AtomicInteger(0);
+
         public CustomThreadPoolExecutor(int corePoolSize, int maximumPoolSize, long keepAliveTime, TimeUnit unit,
                                         BlockingQueue<Runnable> workQueue, ThreadFactory threadFactory) {
             super(corePoolSize, maximumPoolSize, keepAliveTime, unit, workQueue, threadFactory);
@@ -237,8 +244,8 @@ public class TemplateManagerImplTest {
         TemplateProfile templateProfile = mock(TemplateProfile.class);
 
 
-        List<VMInstanceVO> vmInstanceVOList  = new ArrayList<VMInstanceVO>();
-        List<TemplateAdapter> adapters  = new ArrayList<TemplateAdapter>();
+        List<VMInstanceVO> vmInstanceVOList = new ArrayList<VMInstanceVO>();
+        List<TemplateAdapter> adapters = new ArrayList<TemplateAdapter>();
         adapters.add(templateAdapter);
         when(cmd.getId()).thenReturn(0L);
         when(_tmpltDao.findById(cmd.getId())).thenReturn(template);
@@ -267,10 +274,11 @@ public class TemplateManagerImplTest {
         when(_vmInstanceDao.listNonExpungedByTemplate(anyLong())).thenReturn(vmInstanceVOList);
         try {
             templateManager.deleteTemplate(cmd);
-        } catch(Exception e) {
+        } catch (Exception e) {
             assertTrue("Invalid Parameter Value Exception is expected", (e instanceof InvalidParameterValueException));
         }
     }
+
     @Test
     public void testPrepareTemplateIsSeeded() {
         VMTemplateVO mockTemplate = mock(VMTemplateVO.class);
@@ -371,7 +379,7 @@ public class TemplateManagerImplTest {
         templateManager._preloadExecutor = preloadExecutor;
 
         templateManager.prepareTemplate(202, 1, 2l);
-        assertTrue("Test template is scheduled for seeding to on pool", ((CustomThreadPoolExecutor)preloadExecutor).getCount() == 1);
+        assertTrue("Test template is scheduled for seeding to on pool", ((CustomThreadPoolExecutor) preloadExecutor).getCount() == 1);
     }
 
     @Test
@@ -400,7 +408,7 @@ public class TemplateManagerImplTest {
         templateManager._preloadExecutor = preloadExecutor;
 
         templateManager.prepareTemplate(202, 1, 2l);
-        assertTrue("Test template is not scheduled for seeding on disabled pool", ((CustomThreadPoolExecutor)preloadExecutor).getCount() == 0);
+        assertTrue("Test template is not scheduled for seeding on disabled pool", ((CustomThreadPoolExecutor) preloadExecutor).getCount() == 0);
     }
 
     @Test
@@ -492,7 +500,7 @@ public class TemplateManagerImplTest {
             @Override
             public VMTemplateVO answer(InvocationOnMock invocationOnMock) throws Throwable {
                 Object[] args = invocationOnMock.getArguments();
-                return (VMTemplateVO)args[0];
+                return (VMTemplateVO) args[0];
             }
         });
 
@@ -694,6 +702,11 @@ public class TemplateManagerImplTest {
         @Bean
         public VMTemplateDetailsDao vmTemplateDetailsDao() {
             return Mockito.mock(VMTemplateDetailsDao.class);
+        }
+
+        @Bean
+        public VersionDao versionDao() {
+            return Mockito.mock(VersionDao.class);
         }
 
         public static class Library implements TypeFilter {

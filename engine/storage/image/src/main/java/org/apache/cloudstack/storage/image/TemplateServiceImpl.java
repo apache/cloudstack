@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.copy.ManagementServerCopier;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.CreateCmdResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionService;
@@ -156,6 +157,8 @@ public class TemplateServiceImpl implements TemplateService {
     ImageStoreDetailsUtil imageStoreDetailsUtil;
     @Inject
     TemplateDataFactory imageFactory;
+    @Inject
+    private ManagementServerCopier managementServerCopier;
 
     class TemplateOpContext<T> extends AsyncRpcContext<T> {
         final TemplateObject template;
@@ -1017,6 +1020,9 @@ public class TemplateServiceImpl implements TemplateService {
 
     @Override
     public AsyncCallFuture<TemplateApiResult> copyTemplate(TemplateInfo srcTemplate, DataStore destStore) {
+        if (srcTemplate.getTemplateType() == TemplateType.SYSTEM) {
+            return copySystemVMTemplate(srcTemplate, destStore);
+        }
         // for vmware template, we need to check if ova packing is needed, since template created from snapshot does not have .ova file
         // we invoke createEntityExtractURL to trigger ova packing. Ideally, we can directly use extractURL to pass to following createTemplate.
         // Need to understand what is the background to use two different urls for copy and extract.
@@ -1055,16 +1061,38 @@ public class TemplateServiceImpl implements TemplateService {
             destStore.getDriver().createAsync(destStore, templateOnStore, caller);
         } catch (CloudRuntimeException ex) {
             // clean up already persisted template_store_ref entry in case of createTemplateCallback is never called
-            TemplateDataStoreVO templateStoreVO = _vmTemplateStoreDao.findByStoreTemplate(destStore.getId(), srcTemplate.getId());
-            if (templateStoreVO != null) {
-                TemplateInfo tmplObj = _templateFactory.getTemplate(srcTemplate, destStore);
-                tmplObj.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
-            }
+            cleanupTemplateStoreRefEntry(srcTemplate, destStore);
             TemplateApiResult res = new TemplateApiResult((TemplateObject)templateOnStore);
             res.setResult(ex.getMessage());
             future.complete(res);
         }
         return future;
+    }
+
+    @Override
+    public AsyncCallFuture<TemplateApiResult> copySystemVMTemplate(TemplateInfo srcTemplate, DataStore destStore) {
+        AsyncCallFuture<TemplateApiResult> future = new AsyncCallFuture<>();
+        TemplateObject tmplForCopy = (TemplateObject)_templateFactory.getTemplate(srcTemplate, destStore);
+        DataObject templateOnStore = destStore.create(tmplForCopy);
+        templateOnStore.processEvent(Event.CreateOnlyRequested);
+        TemplateApiResult res = new TemplateApiResult(new TemplateObject());
+        try {
+            res.setSuccess(managementServerCopier.copy(srcTemplate, destStore));
+        } catch (CloudRuntimeException e) {
+            cleanupTemplateStoreRefEntry(srcTemplate, destStore);
+            res.setSuccess(false);
+            res.setResult(e.getMessage());
+        }
+        future.complete(res);
+        return future;
+    }
+
+    private void cleanupTemplateStoreRefEntry(TemplateInfo srcTemplate, DataStore destStore) {
+        TemplateDataStoreVO templateStoreVO = _vmTemplateStoreDao.findByStoreTemplate(destStore.getId(), srcTemplate.getId());
+        if (templateStoreVO != null) {
+            TemplateInfo info = _templateFactory.getTemplate(srcTemplate, destStore);
+            info.processEvent(ObjectInDataStoreStateMachine.Event.OperationFailed);
+        }
     }
 
     private String generateCopyUrl(String ipAddress, String dir, String path) {
