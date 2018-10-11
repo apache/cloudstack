@@ -101,7 +101,6 @@ import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
@@ -171,6 +170,7 @@ import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.TemplateAdapter.TemplateAdapterType;
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.upgrade.dao.VersionDao;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
@@ -203,6 +203,104 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Joiner;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import org.apache.cloudstack.acl.SecurityChecker.AccessType;
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseListTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoCmd;
+import org.apache.cloudstack.api.BaseUpdateTemplateOrIsoPermissionsCmd;
+import org.apache.cloudstack.api.command.admin.template.GetSystemVMTemplateDefaultURLCmd;
+import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.ListIsoPermissionsCmd;
+import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.UpdateIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.UpdateIsoPermissionsCmd;
+import org.apache.cloudstack.api.command.user.template.CopyTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.CreateTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.DeleteTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.ExtractTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.ListTemplatePermissionsCmd;
+import org.apache.cloudstack.api.command.user.template.RegisterTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.UpdateTemplateCmd;
+import org.apache.cloudstack.api.command.user.template.UpdateTemplatePermissionsCmd;
+import org.apache.cloudstack.api.response.GetSystemVMTemplateDefaultURLResponse;
+import org.apache.cloudstack.api.response.GetUploadParamsResponse;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
+import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
+import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.Scope;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotStrategy.SnapshotOperation;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageCacheManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.StorageStrategyFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService.TemplateApiResult;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ZoneScope;
+import org.apache.cloudstack.framework.async.AsyncCallFuture;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.cloudstack.storage.command.AttachCommand;
+import org.apache.cloudstack.storage.command.CommandResult;
+import org.apache.cloudstack.storage.command.DettachCommand;
+import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
+import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
+import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
+import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
+import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateHyperV;
+import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateKvm;
+import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateLxc;
+import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateOvm3;
+import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateVmware;
+import static com.cloud.network.router.VirtualNetworkApplianceManager.RouterTemplateXen;
+import static com.cloud.storage.template.TemplateConstants.DEFAULT_BASE_SYSTEMVM_URL;
 
 public class TemplateManagerImpl extends ManagerBase implements TemplateManager, TemplateApiService, Configurable {
     private final static Logger s_logger = Logger.getLogger(TemplateManagerImpl.class);
@@ -281,6 +379,8 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
     MessageBus _messageBus;
     @Inject
     private VMTemplateDetailsDao _tmpltDetailsDao;
+    @Inject
+    private VersionDao versionDao;
 
     private boolean _disableExtraction = false;
     private List<TemplateAdapter> _adapters;
@@ -289,9 +389,6 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
     @Inject
     private StorageCacheManager cacheMgr;
-    @Inject
-    private EndPointSelector selector;
-
 
     private TemplateAdapter getAdapter(HypervisorType type) {
         TemplateAdapter adapter = null;
@@ -337,16 +434,21 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                 throw new PermissionDeniedException("Parameter isrouting can only be specified by a Root Admin, permission denied");
             }
         }
+        if (cmd.isSystem()) {
+            if (!_accountService.isRootAdmin(account.getId())) {
+                throw new PermissionDeniedException(String.format("Value of '%s' for parameter %s can only be specified by a Root Admin, permission denied",
+                        cmd.isSystem(), ApiConstants.SYSTEM));
+            }
+        }
 
         TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
         TemplateProfile profile = adapter.prepare(cmd);
-        VMTemplateVO template = adapter.create(profile);
+        VMTemplateVO template = Optional.ofNullable(adapter.create(profile)).orElseThrow(() -> new CloudRuntimeException("Failed to create a template"));
 
-        if (template != null) {
-            return template;
-        } else {
-            throw new CloudRuntimeException("Failed to create a template");
+        if (cmd.isSystem() && cmd.isActivate()) {
+            return activateSystemVMTemplate(template.getId());
         }
+        return template;
     }
 
     /**
@@ -420,6 +522,108 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         TemplateAdapter adapter = getAdapter(HypervisorType.getType(cmd.getHypervisor()));
         TemplateProfile profile = adapter.prepare(cmd);
         return registerPostUploadInternal(adapter, profile);
+    }
+
+    public VirtualMachineTemplate activateSystemVMTemplate(long templateId) {
+        VMTemplateVO template = Optional.ofNullable(_tmpltDao.findById(templateId))
+                .orElseThrow(() -> new InvalidParameterValueException(String.format("Unable to find template with id %d.", templateId)));
+        Transaction.execute(new TransactionCallbackNoReturn() {
+
+            @Override
+            public void doInTransactionWithoutResult(TransactionStatus status) {
+                updateTemplate(template);
+                updateVMInstances(template);
+                updateRouterTemplateConfig(template);
+                updateMinRequiredSystemVMVersionConfig();
+            }
+        });
+
+        return template;
+    }
+
+    private void updateTemplate(VMTemplateVO template) {
+        template.setTemplateType(TemplateType.SYSTEM);
+        _tmpltDao.update(template.getId(), template);
+    }
+
+    private void updateVMInstances(VMTemplateVO template) {
+        List<VMInstanceVO> vmInstances = _vmInstanceDao.listByHypervisorTypeAndNonUserTypes(template.getHypervisorType());
+        vmInstances.stream().forEach(instance -> updateVmInstance(instance, template));
+    }
+
+    private void updateVmInstance(VMInstanceVO instance, VMTemplateVO template) {
+        instance.setTemplateId(template.getId());
+        _vmInstanceDao.update(instance.getId(), instance);
+    }
+
+    private void updateRouterTemplateConfig(VMTemplateVO template) {
+        String routerTemplateConfigKey = getRouterTemplateConfigKey(template.getHypervisorType());
+        ConfigurationVO routerTemplate = Optional.ofNullable(_configDao.findByName(routerTemplateConfigKey))
+                .orElseThrow(() -> new CloudRuntimeException(String.format("Cannot update %s configuration for hypervisor %s: unable to find it.", routerTemplateConfigKey, template.getHypervisorType())));
+        routerTemplate.setValue(template.getName());
+        _configDao.update(routerTemplate.getName(), routerTemplate);
+    }
+
+    private void updateMinRequiredSystemVMVersionConfig() {
+        String version = formatVersion(Optional.ofNullable(versionDao.getCurrentVersion())
+                .orElseThrow(() -> new CloudRuntimeException(String.format("Cannot update %s configuration: unable to find the current version.", NetworkOrchestrationService.MinVRVersion.key()))));
+        ConfigurationVO minRequiredVersion = Optional.ofNullable(_configDao.findByName(NetworkOrchestrationService.MinVRVersion.key()))
+                .orElseThrow(() -> new CloudRuntimeException(String.format("Cannot update %s configuration: unable to find it.", NetworkOrchestrationService.MinVRVersion.key())));
+        minRequiredVersion.setValue(version);
+        _configDao.update(minRequiredVersion.getName(), minRequiredVersion);
+    }
+
+    private String getRouterTemplateConfigKey(HypervisorType hypervisorType) {
+        switch (hypervisorType) {
+            case XenServer:
+                return RouterTemplateXen.key();
+            case KVM:
+                return RouterTemplateKvm.key();
+            case VMware:
+                return RouterTemplateVmware.key();
+            case Hyperv:
+                return RouterTemplateHyperV.key();
+            case LXC:
+                return RouterTemplateLxc.key();
+            case Ovm3:
+                return RouterTemplateOvm3.key();
+            default:
+                return "";
+        }
+    }
+
+    @Override
+    public GetSystemVMTemplateDefaultURLResponse getSystemVMTemplateDefaultURL(GetSystemVMTemplateDefaultURLCmd cmd) {
+        List<VMTemplateVO> vmTemplateVOS = getSystemVMTemplatesByUrlVersionMatch(cmd);
+        Optional<VMTemplateVO> maxIdTemplate = vmTemplateVOS.stream().max(Comparator.comparing(VMTemplateVO::getId));
+        GetSystemVMTemplateDefaultURLResponse urlResponse = new GetSystemVMTemplateDefaultURLResponse();
+        urlResponse.setUrl(maxIdTemplate.orElse(vmTemplateVOS.get(0)).getUrl());
+        return urlResponse;
+    }
+
+    private List<VMTemplateVO> getSystemVMTemplatesByUrlVersionMatch(GetSystemVMTemplateDefaultURLCmd cmd) {
+        String version = resolveVersion(Optional.ofNullable(cmd.getVersion()).orElse(""));
+        List<VMTemplateVO> vmTemplateVOS = _tmpltDao.listSystemVMTemplatesByUrlLike(DEFAULT_BASE_SYSTEMVM_URL + "%" + version, cmd.getHypervisor());
+        if (!vmTemplateVOS.isEmpty()) {
+            return vmTemplateVOS;
+        } else {
+            throw new CloudRuntimeException(String.format("Unable find System VM Template URL for version %s and hypervisor %s.", version, cmd.getHypervisor()));
+        }
+    }
+
+    private String resolveVersion(String version) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(version)) {
+            version = Optional.ofNullable(versionDao.getCurrentVersion()).orElse("");
+        }
+        return formatVersion(version);
+    }
+
+    private String formatVersion(String version) {
+        if (version.split("[.]").length > 3) {
+            return version.substring(0, org.apache.commons.lang3.StringUtils.ordinalIndexOf(version, ".", 3));
+        } else {
+            return version;
+        }
     }
 
     @Override

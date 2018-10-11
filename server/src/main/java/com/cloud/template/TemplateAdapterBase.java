@@ -164,7 +164,9 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             if (passwordEnabled == null) {
                 passwordEnabled = false;
             }
-            if (requiresHVM == null) {
+            if (templateType == TemplateType.SYSTEM) {
+                requiresHVM = false;
+            } else if (requiresHVM == null) {
                 requiresHVM = true;
             }
         }
@@ -267,13 +269,12 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Account caller = CallContext.current().getCallingAccount();
         Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
-
-        boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
+        TemplateType templateType = getTemplateType(cmd);
 
         List<Long> zoneId = cmd.getZoneIds();
-        // ignore passed zoneId if we are using region wide image store
+        // ignore passed zoneId if we are using region wide image store or system template type
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
-        if (stores != null && stores.size() > 0) {
+        if ((stores != null && stores.size() > 0) || templateType.equals(TemplateType.SYSTEM)){
             zoneId = null;
         }
 
@@ -285,8 +286,20 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
         return prepare(false, CallContext.current().getCallingUserId(), cmd.getTemplateName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
                 cmd.getUrl(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneId, hypervisorType, cmd.getChecksum(), true,
-                cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER, cmd.isDirectDownload());
+                cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null, cmd.isDynamicallyScalable(), templateType, cmd.isDirectDownload());
 
+    }
+
+    private TemplateType getTemplateType(RegisterTemplateCmd cmd) {
+        boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
+
+        if (cmd.isSystem()) {
+            return TemplateType.SYSTEM;
+        } else if (isRouting) {
+            return TemplateType.ROUTING;
+        } else {
+            return TemplateType.USER;
+        }
     }
 
     /**

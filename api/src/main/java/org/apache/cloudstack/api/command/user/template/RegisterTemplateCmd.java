@@ -22,7 +22,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -159,8 +161,21 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
 
     @Parameter(name=ApiConstants.DIRECT_DOWNLOAD,
                 type = CommandType.BOOLEAN,
+                authorized = {RoleType.Admin},
                 description = "true if template should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
     private Boolean directDownload;
+
+    @Parameter(name = ApiConstants.SYSTEM,
+            type = CommandType.BOOLEAN,
+            authorized = {RoleType.Admin},
+            description = "true if it is a system vm template.")
+    private Boolean isSystem;
+
+    @Parameter(name=ApiConstants.ACTIVATE,
+            type = CommandType.BOOLEAN,
+            authorized = {RoleType.Admin},
+            description = "true if this template should be used by CloudStack to create System VMs. Must be used with template type of 'system'.")
+    private Boolean activate;
 
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
@@ -274,6 +289,14 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
         return directDownload == null ? false : directDownload;
     }
 
+    public Boolean isSystem() {
+        return Optional.ofNullable(isSystem).orElse(false);
+    }
+
+    public Boolean isActivate() {
+        return Optional.ofNullable(activate).orElse(false);
+    }
+
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////
     /////////////////////////////////////////////////////
@@ -324,7 +347,7 @@ public class RegisterTemplateCmd extends BaseCmd implements UserCmd {
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Both zoneid and zoneids cannot be specified at the same time");
 
-        if (zoneId == null && (zoneIds == null || zoneIds.isEmpty()))
+        if ((zoneId == null && (zoneIds == null || zoneIds.isEmpty())) && !isSystem())
             throw new ServerApiException(ApiErrorCode.PARAM_ERROR,
                     "Either zoneid or zoneids is required. Both cannot be null.");
 

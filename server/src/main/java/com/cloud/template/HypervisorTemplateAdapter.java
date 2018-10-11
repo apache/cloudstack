@@ -16,23 +16,44 @@
 // under the License.
 package com.cloud.template;
 
+import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
+import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Config;
+import com.cloud.configuration.Resource.ResourceType;
+import com.cloud.dc.DataCenterVO;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
+import com.cloud.exception.InvalidParameterValueException;
+import com.cloud.exception.ResourceAllocationException;
 import com.cloud.host.HostVO;
 import com.cloud.hypervisor.Hypervisor;
+import com.cloud.org.Grouping;
 import com.cloud.resource.ResourceManager;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.ExecutionException;
-
-import javax.inject.Inject;
-
-import com.cloud.configuration.Config;
+import com.cloud.server.StatsCollector;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.TemplateType;
+import com.cloud.storage.TemplateProfile;
+import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.VMTemplateZoneVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplateZoneDao;
+import com.cloud.storage.download.DownloadMonitor;
+import com.cloud.storage.secondary.CapacityChecker;
+import com.cloud.template.VirtualMachineTemplate.State;
+import com.cloud.user.Account;
+import com.cloud.utils.Pair;
+import com.cloud.utils.UriUtils;
+import com.cloud.utils.db.DB;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionStatus;
+import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.cloudstack.agent.directdownload.CheckUrlAnswer;
 import org.apache.cloudstack.agent.directdownload.CheckUrlCommand;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
@@ -65,34 +86,13 @@ import org.apache.cloudstack.framework.messagebus.PublishScope;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.alert.AlertManager;
-import com.cloud.configuration.Resource.ResourceType;
-import com.cloud.dc.DataCenterVO;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.exception.ResourceAllocationException;
-import com.cloud.org.Grouping;
-import com.cloud.server.StatsCollector;
-import com.cloud.template.VirtualMachineTemplate.State;
-import com.cloud.user.Account;
-import com.cloud.utils.Pair;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.TemplateType;
-import com.cloud.storage.TemplateProfile;
-import com.cloud.storage.VMTemplateStorageResourceAssoc.Status;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VMTemplateZoneVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplateZoneDao;
-import com.cloud.storage.download.DownloadMonitor;
-import com.cloud.utils.UriUtils;
-import com.cloud.utils.db.DB;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.exception.CloudRuntimeException;
+import javax.inject.Inject;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
 public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     private final static Logger s_logger = Logger.getLogger(HypervisorTemplateAdapter.class);
@@ -126,6 +126,8 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
     ResourceManager resourceManager;
     @Inject
     VMTemplateDao templateDao;
+    @Inject
+    CapacityChecker capacityChecker;
 
     @Override
     public String getName() {
@@ -181,6 +183,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         TemplateProfile profile = super.prepare(cmd);
         String url = profile.getUrl();
         UriUtils.validateUrl(cmd.getFormat(), url);
+        UriUtils.checkUrlExistence(url);
         if (cmd.isDirectDownload()) {
             DigestHelper.validateChecksumString(cmd.getChecksum());
             Long templateSize = performDirectDownloadUrlValidation(url);
@@ -260,13 +263,14 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
                 }
 
                 // Check if zone is disabled
-                if (Grouping.AllocationState.Disabled == zone.getAllocationState()) {
+                if (Grouping.AllocationState.Disabled == zone.getAllocationState() && !template.getTemplateType().equals(Storage.TemplateType.SYSTEM)) {
                     s_logger.info("Zone " + zoneId + " is disabled. Skip downloading template to its image store " + imageStore.getId());
                     continue;
                 }
 
                 // Check if image store has enough capacity for template
-                if (!_statsCollector.imageStoreHasEnoughCapacity(imageStore)) {
+                if (!_statsCollector.imageStoreHasEnoughCapacity(imageStore) &&
+                        (template.getTemplateType().equals(Storage.TemplateType.SYSTEM) && !capacityChecker.hasEnoughCapacity(imageStore))) {
                     s_logger.info("Image store doesn't have enough capacity. Skip downloading template to this image store " + imageStore.getId());
                     continue;
                 }

@@ -40,6 +40,8 @@ public interface VMTemplateDao extends GenericDao<VMTemplateVO, Long>, StateDao<
 
     public List<VMTemplateVO> listAllSystemVMTemplates();
 
+    List<VMTemplateVO> listSystemVMTemplatesByUrlLike(String partialUrl, String hType);
+
     public List<VMTemplateVO> listDefaultBuiltinTemplates();
 
     public String getRoutingTemplateUniqueName();
