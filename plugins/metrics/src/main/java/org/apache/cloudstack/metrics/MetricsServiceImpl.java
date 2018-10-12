@@ -25,6 +25,7 @@ import com.cloud.capacity.Capacity;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.capacity.dao.CapacityDaoImpl;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.DataCenter;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.DataCenterDao;
@@ -95,6 +96,8 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
     private DomainRouterDao domainRouterDao;
     @Inject
     private CapacityDao capacityDao;
+    @Inject
+    private ManagementServerHostDao managementServerHostDao;
 
     protected MetricsServiceImpl() {
         super();
@@ -138,6 +141,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
             }
         }
         response.setCpuSockets(cpuSockets);
+        response.setManagementServers(managementServerHostDao.listAll().size());
         return response;
     }
 
