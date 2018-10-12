@@ -23,6 +23,15 @@ from configFileOps import configFileOps
 import os
 import shutil
 
+# exit() error constants
+Unknown = 0
+Fedora = 1
+CentOS6 = 2
+CentOS7 = 3
+Ubuntu = 4
+RHEL6 = 5
+RHEL7 = 6
+
 #=================== DISTRIBUTION DETECTION =================
 if os.path.exists("/etc/redhat-release"):
     version = file("/etc/redhat-release").readline()
