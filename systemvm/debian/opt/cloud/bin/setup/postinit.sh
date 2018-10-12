@@ -21,6 +21,9 @@
 # Eject cdrom if any
 eject || true
 
+# Restart journald for setting changes to apply
+systemctl restart systemd-journald
+
 TYPE=$(grep -Po 'type=\K[a-zA-Z]*' /var/cache/cloud/cmdline)
 if [ "$TYPE" == "router" ] || [ "$TYPE" == "vpcrouter" ] || [ "$TYPE" == "dhcpsrvr" ]
 then
