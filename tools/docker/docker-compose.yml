@@ -1,0 +1,17 @@
+version: '2'
+services:
+  db:
+    image: mariadb:10.0
+    volumes:
+      - db:/var/lib/mysql
+    environment:
+      MYSQL_DATABASE: cloud
+#      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+      MYSQL_USER: cloud
+      MYSQL_PASSWORD: cloud
+    ports:
+      - "3306:3306"
+
+volumes:
+  db:
