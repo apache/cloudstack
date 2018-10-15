@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.utils.security;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -92,5 +94,34 @@ public class DigestHelper {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Checks if the algorithm prefix is provided on the checksum
+     */
+    public static void checksumSanity(String checksum) {
+        if(StringUtils.isNotEmpty(checksum)) {
+            if (checksum.contains("{") && checksum.contains("}")) {
+                int s = checksum.indexOf('{');
+                int e = checksum.indexOf('}');
+                if (s == 0 && e > s+1) { // we have an algorithm name of at least 1 char
+                    String algorithm = checksum.substring(s + 1, e);
+                    Map<String, Integer> map = creatPaddingLengths();
+                    if (!map.containsKey(algorithm)) {
+                        throw new IllegalArgumentException("Algorithm was provided but it is not one of the supported algorithms");
+                    }
+                    Integer expectedLength = map.get(algorithm);
+                    ChecksumValue checksumValue = new ChecksumValue(checksum);
+                    String digest = checksumValue.getChecksum();
+                    if (digest.length() != expectedLength) {
+                        throw new IllegalArgumentException("Checksum digest length should be " + expectedLength + " instead of " + digest.length());
+                    }
+                } else {
+                    throw new IllegalArgumentException("Please add an algorithm between {}");
+                }
+            } else {
+                throw new IllegalArgumentException("Algorithm prefix missing on checksum, please prepend {ALG} to the checksum");
+            }
+        }
     }
 }

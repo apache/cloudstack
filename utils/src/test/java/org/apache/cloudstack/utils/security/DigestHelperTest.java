@@ -97,6 +97,30 @@ public class DigestHelperTest {
     public void reset() throws IOException {
         inputStream.reset();
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testChecksumSanityNoPrefix() {
+        String checksum = "177adf7019cf04933ccb9f0cff784b5b737de2b5f92a43c60c362f646dfee816";
+        DigestHelper.checksumSanity(checksum);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testChecksumSanityPrefixEmptyAlgorithm() {
+        String checksum = "{}177adf7019cf04933ccb9f0cff784b5b737de2b5f92a43c60c362f646dfee816";
+        DigestHelper.checksumSanity(checksum);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testChecksumSanityPrefixWrongAlgorithm() {
+        String checksum = "{MD5}177adf7019cf04933ccb9f0cff784b5b737de2b5f92a43c60c362f646dfee816";
+        DigestHelper.checksumSanity(checksum);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testChecksumSanityPrefixWrongChecksumLength() {
+        String checksum = "{SHA-256}177adf7019cf04933ccb9f0cff784b5b737de2b5f92a43c60c362f646dfee816XXXXX";
+        DigestHelper.checksumSanity(checksum);
+    }
 }
 
 //Generated with love by TestMe :) Please report issues and submit feature requests at: http://weirddev.com/forum#!/testme
