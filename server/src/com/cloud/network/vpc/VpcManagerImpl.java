@@ -2458,6 +2458,13 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
      * @throws InsufficientCapacityException
      */
     private boolean rollingRestartVpc(final Vpc vpc, final ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+        if (!NetworkOrchestrationService.RollingRestartEnabled.value()) {
+            if (shutdownVpc(vpc.getId())) {
+                return startVpc(vpc.getId(), false);
+            }
+            s_logger.warn("Failed to shutdown vpc as a part of VPC " + vpc + " restart process");
+            return false;
+        }
         s_logger.debug("Performing rolling restart of routers of VPC " + vpc);
         _ntwkMgr.destroyExpendableRouters(_routerDao.listByVpcId(vpc.getId()), context);
 
