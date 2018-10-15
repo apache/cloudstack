@@ -102,7 +102,7 @@ public class DigestHelper {
      * Hash length is verified, depending on the algorithm.
      * IllegalArgumentException is thrown in case of malformed checksums
      */
-    public static void checksumSanity(String checksum) {
+    public static void validateChecksumString(String checksum) {
         if(StringUtils.isNotEmpty(checksum)) {
             ChecksumValue checksumValue = new ChecksumValue(checksum);
             String digest = checksumValue.getChecksum();

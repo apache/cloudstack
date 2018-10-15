@@ -102,30 +102,30 @@ public class DigestHelperTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testChecksumSanityNoPrefixWrongAlgorithm() {
-        DigestHelper.checksumSanity(SHA256_NO_PREFIX_CHECKSUM);
+        DigestHelper.validateChecksumString(SHA256_NO_PREFIX_CHECKSUM);
     }
 
     @Test
     public void testChecksumSanityNoPrefix() {
-        DigestHelper.checksumSanity(MD5_NO_PREFIX_CHECKSUM);
+        DigestHelper.validateChecksumString(MD5_NO_PREFIX_CHECKSUM);
     }
 
     @Test
     public void testChecksumSanityPrefixEmptyAlgorithm() {
         String checksum = "{}" + MD5_NO_PREFIX_CHECKSUM;
-        DigestHelper.checksumSanity(checksum);
+        DigestHelper.validateChecksumString(checksum);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testChecksumSanityPrefixWrongAlgorithm() {
         String checksum = "{MD5}" + SHA256_NO_PREFIX_CHECKSUM;
-        DigestHelper.checksumSanity(checksum);
+        DigestHelper.validateChecksumString(checksum);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testChecksumSanityPrefixWrongChecksumLength() {
         String checksum = SHA256_CHECKSUM + "XXXXX";
-        DigestHelper.checksumSanity(checksum);
+        DigestHelper.validateChecksumString(checksum);
     }
 }
 

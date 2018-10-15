@@ -156,7 +156,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         String url = profile.getUrl();
         UriUtils.validateUrl(ImageFormat.ISO.getFileExtension(), url);
         if (cmd.isDirectDownload()) {
-            DigestHelper.checksumSanity(cmd.getChecksum());
+            DigestHelper.validateChecksumString(cmd.getChecksum());
             Long templateSize = performDirectDownloadUrlValidation(url);
             profile.setSize(templateSize);
         }
@@ -172,7 +172,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         String url = profile.getUrl();
         UriUtils.validateUrl(cmd.getFormat(), url);
         if (cmd.isDirectDownload()) {
-            DigestHelper.checksumSanity(cmd.getChecksum());
+            DigestHelper.validateChecksumString(cmd.getChecksum());
             Long templateSize = performDirectDownloadUrlValidation(url);
             profile.setSize(templateSize);
         }
