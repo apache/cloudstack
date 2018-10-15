@@ -72,9 +72,9 @@ public class DigestHelper {
         return checksum;
     }
 
-    static final Map<String, Integer> paddingLengths = creatPaddingLengths();
+    static final Map<String, Integer> paddingLengths = getChecksumLengthsMap();
 
-    private static final Map<String, Integer> creatPaddingLengths() {
+    private static final Map<String, Integer> getChecksumLengthsMap() {
         Map<String, Integer> map = new HashMap<>();
         map.put("MD5", 32);
         map.put("SHA-1", 40);
@@ -97,30 +97,22 @@ public class DigestHelper {
     }
 
     /**
-     * Checks if the algorithm prefix is provided on the checksum
+     * Checksum sanity for not empty checksum. Expected format: {ALG}HASH
+     * If ALG is missing, MD5 is assumed as default
+     * Hash length is verified, depending on the algorithm.
+     * IllegalArgumentException is thrown in case of malformed checksums
      */
     public static void checksumSanity(String checksum) {
         if(StringUtils.isNotEmpty(checksum)) {
-            if (checksum.contains("{") && checksum.contains("}")) {
-                int s = checksum.indexOf('{');
-                int e = checksum.indexOf('}');
-                if (s == 0 && e > s+1) { // we have an algorithm name of at least 1 char
-                    String algorithm = checksum.substring(s + 1, e);
-                    Map<String, Integer> map = creatPaddingLengths();
-                    if (!map.containsKey(algorithm)) {
-                        throw new IllegalArgumentException("Algorithm was provided but it is not one of the supported algorithms");
-                    }
-                    Integer expectedLength = map.get(algorithm);
-                    ChecksumValue checksumValue = new ChecksumValue(checksum);
-                    String digest = checksumValue.getChecksum();
-                    if (digest.length() != expectedLength) {
-                        throw new IllegalArgumentException("Checksum digest length should be " + expectedLength + " instead of " + digest.length());
-                    }
-                } else {
-                    throw new IllegalArgumentException("Please add an algorithm between {}");
-                }
-            } else {
-                throw new IllegalArgumentException("Algorithm prefix missing on checksum, please prepend {ALG} to the checksum");
+            ChecksumValue checksumValue = new ChecksumValue(checksum);
+            String digest = checksumValue.getChecksum();
+            Map<String, Integer> map = getChecksumLengthsMap();
+            if (!map.containsKey(checksumValue.getAlgorithm())) {
+                throw new IllegalArgumentException("Algorithm " + checksumValue.getAlgorithm() + " was provided but it is not one of the supported algorithms");
+            }
+            Integer expectedLength = map.get(checksumValue.getAlgorithm());
+            if (digest.length() != expectedLength) {
+                throw new IllegalArgumentException("Checksum digest length should be " + expectedLength + " instead of " + digest.length());
             }
         }
     }
