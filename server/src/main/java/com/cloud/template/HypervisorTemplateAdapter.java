@@ -39,6 +39,7 @@ import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplat
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.storage.command.TemplateOrVolumePostUploadCommand;
+import org.apache.cloudstack.utils.security.DigestHelper;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreDao;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
@@ -155,6 +156,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         String url = profile.getUrl();
         UriUtils.validateUrl(ImageFormat.ISO.getFileExtension(), url);
         if (cmd.isDirectDownload()) {
+            DigestHelper.validateChecksumString(cmd.getChecksum());
             Long templateSize = performDirectDownloadUrlValidation(url);
             profile.setSize(templateSize);
         }
@@ -170,6 +172,7 @@ public class HypervisorTemplateAdapter extends TemplateAdapterBase {
         String url = profile.getUrl();
         UriUtils.validateUrl(cmd.getFormat(), url);
         if (cmd.isDirectDownload()) {
+            DigestHelper.validateChecksumString(cmd.getChecksum());
             Long templateSize = performDirectDownloadUrlValidation(url);
             profile.setSize(templateSize);
         }

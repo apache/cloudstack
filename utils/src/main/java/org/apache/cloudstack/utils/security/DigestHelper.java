@@ -16,6 +16,8 @@
 // under the License.
 package org.apache.cloudstack.utils.security;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
@@ -70,9 +72,9 @@ public class DigestHelper {
         return checksum;
     }
 
-    static final Map<String, Integer> paddingLengths = creatPaddingLengths();
+    static final Map<String, Integer> paddingLengths = getChecksumLengthsMap();
 
-    private static final Map<String, Integer> creatPaddingLengths() {
+    private static final Map<String, Integer> getChecksumLengthsMap() {
         Map<String, Integer> map = new HashMap<>();
         map.put("MD5", 32);
         map.put("SHA-1", 40);
@@ -92,5 +94,26 @@ public class DigestHelper {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Checksum sanity for not empty checksum. Expected format: {ALG}HASH
+     * If ALG is missing, MD5 is assumed as default
+     * Hash length is verified, depending on the algorithm.
+     * IllegalArgumentException is thrown in case of malformed checksums
+     */
+    public static void validateChecksumString(String checksum) {
+        if(StringUtils.isNotEmpty(checksum)) {
+            ChecksumValue checksumValue = new ChecksumValue(checksum);
+            String digest = checksumValue.getChecksum();
+            Map<String, Integer> map = getChecksumLengthsMap();
+            if (!map.containsKey(checksumValue.getAlgorithm())) {
+                throw new IllegalArgumentException("Algorithm " + checksumValue.getAlgorithm() + " was provided but it is not one of the supported algorithms");
+            }
+            Integer expectedLength = map.get(checksumValue.getAlgorithm());
+            if (digest.length() != expectedLength) {
+                throw new IllegalArgumentException("Checksum digest length should be " + expectedLength + " instead of " + digest.length());
+            }
+        }
     }
 }
