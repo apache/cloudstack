@@ -30,7 +30,6 @@ public interface StoragePoolResource {
     // FIXME: Should have a PrimaryStorageDownloadAnswer
     PrimaryStorageDownloadAnswer execute(PrimaryStorageDownloadCommand cmd);
 
-    // FIXME: Should have an DestroyAnswer
     Answer execute(DestroyCommand cmd);
 
     CopyVolumeAnswer execute(CopyVolumeCommand cmd);

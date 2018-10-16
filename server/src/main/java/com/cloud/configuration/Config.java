@@ -683,8 +683,8 @@ public enum Config {
             String.class,
             "hypervisor.list",
             HypervisorType.Hyperv + "," + HypervisorType.KVM + "," + HypervisorType.XenServer + "," + HypervisorType.VMware + "," + HypervisorType.BareMetal + "," +
-                HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3,
-            "The list of hypervisors that this deployment will use.",
+                    HypervisorType.Ovm + "," + HypervisorType.LXC + "," + HypervisorType.Ovm3,
+                    "The list of hypervisors that this deployment will use.",
             "hypervisorList"),
     ManagementNetwork("Advanced", ManagementServer.class, String.class, "management.network.cidr", null, "The cidr of management server network", null),
     EventPurgeDelay(
@@ -1814,8 +1814,8 @@ public enum Config {
             "s3.singleupload.max.size",
             "5",
             "The maximum size limit for S3 single part upload API(in GB). If it is set to 0, then it means always use multi-part upload to upload object to S3. "
-                + "If it is set to -1, then it means always use single-part upload to upload object to S3. ",
-            null),
+                    + "If it is set to -1, then it means always use single-part upload to upload object to S3. ",
+                    null),
 
     // VMSnapshots
     VMSnapshotMax("Advanced", VMSnapshotManager.class, Integer.class, "vmsnapshot.max", "10", "Maximum vm snapshots for a vm", null),
@@ -1836,9 +1836,9 @@ public enum Config {
             Boolean.class,
             "execute.in.sequence.network.element.commands",
             "false",
-            "If set to true, DhcpEntryCommand, SavePasswordCommand, UserDataCommand, VmDataCommand will be synchronized on the agent side."
-                + " If set to false, these commands become asynchronous. Default value is false.",
-            null),
+            "If set to true, DhcpEntryCommand, SavePasswordCommand, VmDataCommand will be synchronized on the agent side."
+                    + " If set to false, these commands become asynchronous. Default value is false.",
+                    null),
 
     UCSSyncBladeInterval(
             "Advanced",
