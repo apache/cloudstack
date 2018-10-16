@@ -90,6 +90,10 @@ under the License.
       <priority value="INFO"/>
    </category>
 
+   <category name="org.apache.http.wire">
+      <priority value="INFO"/>
+   </category>
+
    <!-- ======================= -->
    <!-- Setup the Root category -->
    <!-- ======================= -->
