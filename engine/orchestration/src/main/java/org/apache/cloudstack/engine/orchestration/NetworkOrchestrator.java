@@ -2927,6 +2927,14 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
      * @throws InsufficientCapacityException
      */
     private boolean rollingRestartRouters(final NetworkVO network, final NetworkOffering offering, final DeployDestination dest, final ReservationContext context) throws ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
+        if (!NetworkOrchestrationService.RollingRestartEnabled.value()) {
+            if (shutdownNetworkElementsAndResources(context, true, network)) {
+                implementNetworkElementsAndResources(dest, context, network, offering);
+                return true;
+            }
+            s_logger.debug("Failed to shutdown the network elements and resources as a part of network restart: " + network.getState());
+            return false;
+        }
         s_logger.debug("Performing rolling restart of routers of network " + network);
         destroyExpendableRouters(_routerDao.findByNetwork(network.getId()), context);
 
@@ -3831,6 +3839,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {NetworkGcWait, NetworkGcInterval, NetworkLockTimeout,
                 GuestDomainSuffix, NetworkThrottlingRate, MinVRVersion,
-                PromiscuousMode, MacAddressChanges, ForgedTransmits};
+                PromiscuousMode, MacAddressChanges, ForgedTransmits, RollingRestartEnabled};
     }
 }
