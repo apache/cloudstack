@@ -303,6 +303,7 @@ public class Agent implements HandlerFactory, IAgentControl {
 
     public void stop(final String reason, final String detail) {
         s_logger.info("Stopping the agent: Reason = " + reason + (detail != null ? ": Detail = " + detail : ""));
+        _reconnectAllowed = false;
         if (_connection != null) {
             final ShutdownCommand cmd = new ShutdownCommand(reason, detail);
             try {
