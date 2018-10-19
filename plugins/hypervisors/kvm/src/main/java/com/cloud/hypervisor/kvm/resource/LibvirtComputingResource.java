@@ -2017,8 +2017,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     protected void enlightenWindowsVm(VirtualMachineTO vmTO, FeaturesDef features) {
-        // If OS is Windows PV, then enable the features. Features supported on Windows 2008 and later
         if (vmTO.getOs().contains("Windows PV")) {
+            // If OS is Windows PV, then enable the features. Features supported on Windows 2008 and later
             LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
             hyv.setFeature("relaxed", true);
             hyv.setFeature("vapic", true);
