@@ -116,4 +116,19 @@ public class DigestHelper {
             }
         }
     }
+
+    /**
+     * True if the algorithm is present on the checksum value. Format: {ALG}HASH
+     */
+    protected static boolean isAlgorithmPresent(String checksum) {
+        return StringUtils.isNotBlank(checksum) && checksum.contains("{") && checksum.contains("}") &&
+                checksum.indexOf("{") == 0 && checksum.indexOf("}") > checksum.indexOf("{");
+    }
+
+    /**
+     * Returns the checksum HASH from the checksum value which can have the following formats: {ALG}HASH or HASH
+     */
+    public static String getHashValueFromChecksumValue(String checksum) {
+        return isAlgorithmPresent(checksum) ? new ChecksumValue(checksum).getChecksum() : checksum;
+    }
 }
