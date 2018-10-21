@@ -26,6 +26,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 public class DigestHelperTest {
 
     private final static String INPUT_STRING = "01234567890123456789012345678901234567890123456789012345678901234567890123456789\n";
@@ -46,17 +49,17 @@ public class DigestHelperTest {
 
     @Test
     public void check_SHA256() throws Exception {
-        Assert.assertTrue(DigestHelper.check(SHA256_CHECKSUM, inputStream));
+        assertTrue(DigestHelper.check(SHA256_CHECKSUM, inputStream));
     }
 
     @Test
     public void check_SHA1() throws Exception {
-        Assert.assertTrue(DigestHelper.check(SHA1_CHECKSUM, inputStream));
+        assertTrue(DigestHelper.check(SHA1_CHECKSUM, inputStream));
     }
 
     @Test
     public void check_MD5() throws Exception {
-        Assert.assertTrue(DigestHelper.check(MD5_CHECKSUM, inputStream));
+        assertTrue(DigestHelper.check(MD5_CHECKSUM, inputStream));
     }
 
     @Test
@@ -126,6 +129,28 @@ public class DigestHelperTest {
     public void testChecksumSanityPrefixWrongChecksumLength() {
         String checksum = SHA256_CHECKSUM + "XXXXX";
         DigestHelper.validateChecksumString(checksum);
+    }
+
+    @Test
+    public void testIsAlgorithmPresentPositiveCase() {
+        assertTrue(DigestHelper.isAlgorithmSupported(SHA256_CHECKSUM));
+    }
+
+    @Test
+    public void testIsAlgorithmPresentnegativeCase() {
+        assertTrue(DigestHelper.isAlgorithmSupported(SHA256_NO_PREFIX_CHECKSUM));
+    }
+
+    @Test
+    public void testGetHashValueFromChecksumValuePrefixPresent() {
+        String checksum = DigestHelper.getHashValueFromChecksumValue(SHA256_CHECKSUM);
+        assertEquals(SHA256_NO_PREFIX_CHECKSUM, checksum);
+    }
+
+    @Test
+    public void testGetHashValueFromChecksumValueNoPrefixPresent() {
+        String checksum = DigestHelper.getHashValueFromChecksumValue(SHA256_NO_PREFIX_CHECKSUM);
+        assertEquals(SHA256_NO_PREFIX_CHECKSUM, checksum);
     }
 }
 
