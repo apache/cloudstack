@@ -9,5 +9,4 @@ WantedBy=multi-user.target
 Type=simple
 WorkingDirectory=/usr/local/cloud/systemvm
 ExecStart=/usr/local/cloud/systemvm/_run.sh
-Restart=always
-RestartSec=5
+Restart=on-failure

@@ -2,7 +2,6 @@
 Description=CloudStack post-patching init script
 After=cloud-early-config.service network.target local-fs.target
 Before=ssh.service
-Requires=networking.service
 
 [Install]
 WantedBy=multi-user.target
