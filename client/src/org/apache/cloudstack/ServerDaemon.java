@@ -85,7 +85,7 @@ public class ServerDaemon implements Daemon {
     private int sessionTimeout = 30;
     private boolean httpsEnable = false;
     private String accessLogFile = "access.log";
-    private String bindInterface = "";
+    private String bindInterface = null;
     private String contextPath = "/client";
     private String keystoreFile;
     private String keystorePassword;
@@ -117,7 +117,7 @@ public class ServerDaemon implements Daemon {
             if (properties == null) {
                 return;
             }
-            setBindInterface(properties.getProperty(BIND_INTERFACE, ""));
+            setBindInterface(properties.getProperty(BIND_INTERFACE, null));
             setContextPath(properties.getProperty(CONTEXT_PATH, "/client"));
             setHttpPort(Integer.valueOf(properties.getProperty(HTTP_PORT, "8080")));
             setHttpsEnable(Boolean.valueOf(properties.getProperty(HTTPS_ENABLE, "false")));
