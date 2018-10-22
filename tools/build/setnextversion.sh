@@ -124,7 +124,7 @@ echo "checking out correct branch"
 git checkout $branch
 
 echo "determining current POM version"
-export currentversion=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version | grep -v '\['`
+export currentversion=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version -B | grep -v '\['`
 echo "found $currentversion"
 
 echo "setting new version numbers"
