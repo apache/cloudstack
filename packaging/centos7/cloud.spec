@@ -571,7 +571,7 @@ pip install --upgrade /usr/share/cloudstack-marvin/Marvin-*.tar.gz
 %if "%{_ossnoss}" == "noredist"
 %files mysql-ha
 %defattr(0644,cloud,cloud,0755)
-%attr(0644,root,root) %{_datadir}/%{name}-management/lib/*mysql-ha*jar
+%attr(0644,root,root) %{_datadir}/%{name}-management/lib/*mysqlha*jar
 %endif
 
 %files baremetal-agent
