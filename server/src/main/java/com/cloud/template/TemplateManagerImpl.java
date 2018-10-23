@@ -1736,11 +1736,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         Integer bits = cmd.getBits();
         Boolean requiresHvm = cmd.getRequiresHvm();
         Boolean passwordEnabled = cmd.isPasswordEnabled();
+        Boolean sshKeyEnabled = cmd.isSshKeyEnabled();
         Boolean isPublic = cmd.isPublic();
         Boolean featured = cmd.isFeatured();
         int bitsValue = ((bits == null) ? 64 : bits.intValue());
         boolean requiresHvmValue = ((requiresHvm == null) ? true : requiresHvm.booleanValue());
         boolean passwordEnabledValue = ((passwordEnabled == null) ? false : passwordEnabled.booleanValue());
+        boolean sshKeyEnabledValue = ((sshKeyEnabled == null) ? false : sshKeyEnabled.booleanValue());
         if (isPublic == null) {
             isPublic = Boolean.FALSE;
         }
@@ -1849,7 +1851,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         }
         privateTemplate = new VMTemplateVO(nextTemplateId, name, ImageFormat.RAW, isPublic, featured, isExtractable,
                 TemplateType.USER, null, requiresHvmValue, bitsValue, templateOwner.getId(), null, description,
-                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), false, isDynamicScalingEnabled, false);
+                passwordEnabledValue, guestOS.getId(), true, hyperType, templateTag, cmd.getDetails(), sshKeyEnabledValue, isDynamicScalingEnabled, false);
 
         if (sourceTemplateId != null) {
             if (s_logger.isDebugEnabled()) {
@@ -2010,6 +2012,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         String format = cmd.getFormat();
         Long guestOSId = cmd.getOsTypeId();
         Boolean passwordEnabled = cmd.getPasswordEnabled();
+        Boolean sshKeyEnabled = cmd.isSshKeyEnabled();
         Boolean isDynamicallyScalable = cmd.isDynamicallyScalable();
         Boolean isRoutingTemplate = cmd.isRoutingType();
         Boolean bootable = cmd.getBootable();
@@ -2045,6 +2048,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                   guestOSId == null &&
                   passwordEnabled == null &&
                   bootable == null &&
+                  sshKeyEnabled == null &&
                   requiresHvm == null &&
                   sortKey == null &&
                   isDynamicallyScalable == null &&
@@ -2106,6 +2110,10 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
 
         if (passwordEnabled != null) {
             template.setEnablePassword(passwordEnabled);
+        }
+
+        if (sshKeyEnabled != null) {
+            template.setEnableSshKey(sshKeyEnabled);
         }
 
         if (bootable != null) {
