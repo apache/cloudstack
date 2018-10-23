@@ -48,11 +48,7 @@ addVlan() {
 	fi
 	
 	# is up?
-  	ifconfig |grep -w $vlanDev > /dev/null
-	if [ $? -gt 0 ]
-	then
-		ifconfig $vlanDev up > /dev/null
-	fi
+	ip link set $vlanDev up > /dev/null 2>/dev/null
 	
 	if [ ! -d /sys/class/net/$vlanBr ]
 	then
@@ -86,11 +82,7 @@ addVlan() {
 		fi
 	fi
 	# is vlanBr up?
-	ifconfig |grep -w $vlanBr > /dev/null
-	if [ $? -gt 0 ]
-	then
-		ifconfig $vlanBr up
-	fi
+	ip link set $vlanBr up > /dev/null 2>/dev/null
 
 	return 0
 }
@@ -109,7 +101,7 @@ deleteVlan() {
 		return 1
 	fi	
 
-	ifconfig $vlanBr down
+	ip link set $vlanBr down
 	
 	if [ $? -gt 0 ]
 	then
