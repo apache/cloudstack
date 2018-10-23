@@ -48,11 +48,7 @@ addVlan() {
 	fi
 	
 	# is up?
-  	ip link show dev $vlanDev > /dev/null
-	if [ $? -gt 0 ]
-	then
-		ip link set $vlanDev up > /dev/null
-	fi
+	ip link set $vlanDev up > /dev/null 2>/dev/null
 	
 	if [ ! -d /sys/class/net/$vlanBr ]
 	then
@@ -86,11 +82,7 @@ addVlan() {
 		fi
 	fi
 	# is vlanBr up?
-	ip link show dev $vlanBr > /dev/null
-	if [ $? -gt 0 ]
-	then
-		ip link set $vlanBr up
-	fi
+	ip link set $vlanBr up > /dev/null 2>/dev/null
 
 	return 0
 }
