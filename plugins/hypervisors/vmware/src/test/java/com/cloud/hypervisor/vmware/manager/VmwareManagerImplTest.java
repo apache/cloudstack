@@ -94,7 +94,7 @@ public class VmwareManagerImplTest {
         Mockito.doReturn(true).when(vmwareDcDao).update(Mockito.anyLong(), Mockito.any(VmwareDatacenterVO.class));
         Mockito.doReturn(Collections.singletonList(new ClusterVO(1, 1, "some-cluster"))).when(clusterDao).listByDcHyType(Mockito.anyLong(), Mockito.anyString());
         Mockito.doReturn(clusterDetails).when(clusterDetailsDao).findDetails(Mockito.anyLong());
-        Mockito.doReturn(Collections.singletonList(new HostVO("someGuid"))).when(hostDao).listByDataCenterIdAndHypervisorType(Mockito.anyLong(), Mockito.any());
+        Mockito.doReturn(Collections.singletonList(new HostVO("someGuid"))).when(hostDao).listAllHostsByZoneAndHypervisorType(Mockito.anyLong(), Mockito.any());
         Mockito.doReturn(hostDetails).when(hostDetailsDao).findDetails(Mockito.anyLong());
 
         VmwareDatacenter vmwareDatacenter = vmwareManager.updateVmwareDatacenter(updateVmwareDcCmd);
