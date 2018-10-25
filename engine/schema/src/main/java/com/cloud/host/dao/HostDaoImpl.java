@@ -229,6 +229,7 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
 
         DcSearch = createSearchBuilder();
         DcSearch.and("dc", DcSearch.entity().getDataCenterId(), SearchCriteria.Op.EQ);
+        DcSearch.and("hypervisorType", DcSearch.entity().getHypervisorType(), Op.EQ);
         DcSearch.and("type", DcSearch.entity().getType(), Op.EQ);
         DcSearch.and("status", DcSearch.entity().getStatus(), Op.EQ);
         DcSearch.and("resourceState", DcSearch.entity().getResourceState(), Op.EQ);
@@ -1114,6 +1115,16 @@ public class HostDaoImpl extends GenericDaoBase<HostVO, Long> implements HostDao
         SearchCriteria<Long> sc = HostIdSearch.create();
         sc.addAnd("dataCenterId", SearchCriteria.Op.EQ, zoneId);
         return customSearch(sc, null);
+    }
+
+    @Override
+    public List<HostVO> listAllHostsByZoneAndHypervisorType(long zoneId, HypervisorType hypervisorType) {
+        SearchCriteria<HostVO> sc = DcSearch.create();
+        sc.setParameters("dc", zoneId);
+        if (hypervisorType != null) {
+            sc.setParameters("hypervisorType", hypervisorType.toString());
+        }
+        return listBy(sc);
     }
 
     @Override

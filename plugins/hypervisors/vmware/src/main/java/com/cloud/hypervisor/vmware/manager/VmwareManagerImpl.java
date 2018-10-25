@@ -1195,13 +1195,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             }
                             clusterDetailsDao.persist(cluster.getId(), clusterDetails);
                         }
-                        for (final Host host : hostDao.listByDataCenterIdAndHypervisorType(zoneId, Hypervisor.HypervisorType.VMware)) {
+                        for (final Host host : hostDao.listAllHostsByZoneAndHypervisorType(zoneId, Hypervisor.HypervisorType.VMware)) {
                             final Map<String, String> hostDetails = hostDetailsDao.findDetails(host.getId());
                             hostDetails.put("username", vmwareDc.getUser());
                             hostDetails.put("password", vmwareDc.getPassword());
                             final String hostGuid = hostDetails.get("guid");
                             if (!Strings.isNullOrEmpty(hostGuid)) {
-                                hostDetails.put("guide", hostGuid.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
+                                hostDetails.put("guid", hostGuid.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
                             }
                             hostDetailsDao.persist(host.getId(), hostDetails);
                         }
