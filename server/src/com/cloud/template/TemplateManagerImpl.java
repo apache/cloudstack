@@ -582,6 +582,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
 
             TemplateObjectTO iso = (TemplateObjectTO)template.getTO();
+            iso.setDirectDownload(template.isDirectDownload());
             iso.setGuestOsType(displayName);
             DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
             profile.addDisk(disk);

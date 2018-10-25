@@ -49,6 +49,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.resource.RequestWrapper;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
+import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
@@ -2209,7 +2210,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final DataTO data = volume.getData();
         final DataStoreTO store = data.getDataStore();
 
-        if (volume.getType() == Volume.Type.ISO && data.getPath() != null && (store instanceof NfsTO || store instanceof PrimaryDataStoreTO)) {
+        if (volume.getType() == Volume.Type.ISO && data.getPath() != null && (store instanceof NfsTO ||
+                store instanceof PrimaryDataStoreTO && data instanceof TemplateObjectTO && !((TemplateObjectTO) data).isDirectDownload())) {
             final String isoPath = store.getUrl().split("\\?")[0] + File.separator + data.getPath();
             final int index = isoPath.lastIndexOf("/");
             final String path = isoPath.substring(0, index);

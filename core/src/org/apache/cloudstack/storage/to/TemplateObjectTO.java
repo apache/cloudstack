@@ -46,6 +46,7 @@ public class TemplateObjectTO implements DataTO {
     private Hypervisor.HypervisorType hypervisorType;
     private boolean bootable;
     private String uniqueName;
+    private boolean directDownload;
 
     public TemplateObjectTO() {
 
@@ -233,6 +234,14 @@ public class TemplateObjectTO implements DataTO {
 
     public void setUniqueName(String uniqueName) {
         this.uniqueName = uniqueName;
+    }
+
+    public boolean isDirectDownload() {
+        return directDownload;
+    }
+
+    public void setDirectDownload(boolean directDownload) {
+        this.directDownload = directDownload;
     }
 
     @Override
