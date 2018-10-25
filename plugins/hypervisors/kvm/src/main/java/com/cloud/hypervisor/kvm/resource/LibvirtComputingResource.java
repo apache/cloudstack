@@ -2016,6 +2016,19 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
     }
 
+    protected void enlightenWindowsVm(VirtualMachineTO vmTO, FeaturesDef features) {
+        if (vmTO.getOs().contains("Windows PV")) {
+            // If OS is Windows PV, then enable the features. Features supported on Windows 2008 and later
+            LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
+            hyv.setFeature("relaxed", true);
+            hyv.setFeature("vapic", true);
+            hyv.setFeature("spinlocks", true);
+            hyv.setRetries(8096);
+            features.addHyperVFeature(hyv);
+            s_logger.info("Enabling KVM Enlightment Features to VM domain " + vmTO.getUuid());
+        }
+    }
+
     public LibvirtVMDef createVMFromSpec(final VirtualMachineTO vmTO) {
         final LibvirtVMDef vm = new LibvirtVMDef();
         vm.setDomainName(vmTO.getName());
@@ -2101,14 +2114,10 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         features.addFeatures("pae");
         features.addFeatures("apic");
         features.addFeatures("acpi");
-        //for rhel 6.5 and above, hyperv enlightment feature is added
-        /*
-         * if (vmTO.getOs().contains("Windows Server 2008") && hostOsVersion != null && ((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7))) {
-         *    LibvirtVMDef.HyperVEnlightenmentFeatureDef hyv = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();
-         *    hyv.setRelaxed(true);
-         *    features.addHyperVFeature(hyv);
-         * }
-         */
+
+        //KVM hyperv enlightenment features based on OS Type
+        enlightenWindowsVm(vmTO, features);
+
         vm.addComp(features);
 
         final TermPolicy term = new TermPolicy();
@@ -2120,7 +2129,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         final ClockDef clock = new ClockDef();
         if (vmTO.getOs().startsWith("Windows")) {
             clock.setClockOffset(ClockDef.ClockOffset.LOCALTIME);
-            clock.setTimer("rtc", "catchup", null);
+            clock.setTimer("hypervclock", null, null);
         } else if (vmTO.getType() != VirtualMachine.Type.User || isGuestPVEnabled(vmTO.getOs())) {
             if (_hypervisorLibvirtVersion >= 9 * 1000 + 10) {
                 clock.setTimer("kvmclock", null, null, _noKvmClock);

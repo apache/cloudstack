@@ -26,7 +26,6 @@ import junit.framework.TestCase;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.ChannelDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.SCSIDef;
-import com.cloud.utils.Pair;
 
 public class LibvirtVMDefTest extends TestCase {
 
@@ -155,12 +154,8 @@ public class LibvirtVMDefTest extends TestCase {
         assertFalse(defs.contains("relaxed"));
         assertFalse(defs.contains("vapic"));
         assertFalse(defs.contains("spinlocks"));
-        assertTrue("Windows Server 2008 R2".contains("Windows Server 2008"));
+        assertTrue("Windows PV".contains("Windows PV"));
 
-        Pair<Integer,Integer> hostOsVersion = new Pair<Integer,Integer>(6,5);
-        assertTrue((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7));
-        hostOsVersion = new Pair<Integer,Integer>(7,1);
-        assertTrue((hostOsVersion.first() == 6 && hostOsVersion.second() >= 5) || (hostOsVersion.first() >= 7));
     }
 
     public void testRngDef() {
