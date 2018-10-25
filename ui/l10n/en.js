@@ -1710,6 +1710,7 @@ var dictionary = {
 "label.update.project.resources":"Update project resources",
 "label.update.ssl":" SSL Certificate",
 "label.update.ssl.cert":" SSL Certificate",
+"label.update.vmware.datacenter":"Update VMware datacenter",
 "label.updating":"Updating",
 "label.upgrade.required":"Upgrade is required",
 "label.upgrade.router.newer.template":"Upgrade Router to Use Newer Template",

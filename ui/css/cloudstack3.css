@@ -12566,6 +12566,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -169px -583px;
 }
 
+.updateVmwareDc .icon {
+  background-position: -265px -148px;
+}
+
+.updateVmwareDc:hover .icon {
+  background-position: -265px -728px;
+}
+
 .stop .icon,
 .removeVmwareDc .icon,
 .release .icon {
