@@ -38,11 +38,12 @@ if os.path.exists("/etc/redhat-release"):
         distro = RHEL6
     elif version.find("Red Hat Enterprise Linux Server 7") != -1:
         distro = RHEL7
-    elif version.find("CentOS release 6") != -1:
+elif os.path.exists("/etc/centos-release"):
+    if version.find("CentOS release 6") != -1:
         distro = CentOS6
     elif version.find("CentOS Linux release 7") != -1:
         distro = CentOS7
-elif os.path.exists("/etc/legal") and "Ubuntu" in file("/etc/legal").read(-1): distro = Ubuntu
+elif os.path.exists("/etc/lsb-release") and "Ubuntu" in file("/etc/lsb-release").read(-1): distro = Ubuntu
 else: distro = Unknown
 #=================== DISTRIBUTION DETECTION =================
 
