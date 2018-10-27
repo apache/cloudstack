@@ -20,6 +20,7 @@ services:
   db:
     image: mariadb:10.0
     volumes:
+      - ./mariadb-docker:/etc/mysql/conf.d
       - db:/var/lib/mysql
     environment:
       MYSQL_DATABASE: cloud
