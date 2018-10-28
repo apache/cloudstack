@@ -96,6 +96,7 @@ import com.cloud.utils.db.SearchCriteria.Func;
 import com.cloud.utils.db.SearchCriteria.Op;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
+import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionCallbackWithExceptionNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -886,60 +887,62 @@ public class ResourceLimitManagerImpl extends ManagerBase implements ResourceLim
 
     @DB
     protected long recalculateAccountResourceCount(final long accountId, final ResourceType type) {
-        Long newCount = Transaction.execute(new TransactionCallback<Long>() {
+        final Long newCount;
+        if (type == Resource.ResourceType.user_vm) {
+            newCount = _userVmDao.countAllocatedVMsForAccount(accountId);
+        } else if (type == Resource.ResourceType.volume) {
+            long virtualRouterCount = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId).size();
+            newCount = _volumeDao.countAllocatedVolumesForAccount(accountId) - virtualRouterCount; // don't count the volumes of virtual router
+        } else if (type == Resource.ResourceType.snapshot) {
+            newCount = _snapshotDao.countSnapshotsForAccount(accountId);
+        } else if (type == Resource.ResourceType.public_ip) {
+            newCount = calculatePublicIpForAccount(accountId);
+        } else if (type == Resource.ResourceType.template) {
+            newCount = _vmTemplateDao.countTemplatesForAccount(accountId);
+        } else if (type == Resource.ResourceType.project) {
+            newCount = _projectAccountDao.countByAccountIdAndRole(accountId, Role.Admin);
+        } else if (type == Resource.ResourceType.network) {
+            newCount = _networkDao.countNetworksUserCanCreate(accountId);
+        } else if (type == Resource.ResourceType.vpc) {
+            newCount = _vpcDao.countByAccountId(accountId);
+        } else if (type == Resource.ResourceType.cpu) {
+            newCount = countCpusForAccount(accountId);
+        } else if (type == Resource.ResourceType.memory) {
+            newCount = calculateMemoryForAccount(accountId);
+        } else if (type == Resource.ResourceType.primary_storage) {
+            List<Long> virtualRouters = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId);
+            newCount = _volumeDao.primaryStorageUsedForAccount(accountId, virtualRouters);
+        } else if (type == Resource.ResourceType.secondary_storage) {
+            newCount = calculateSecondaryStorageForAccount(accountId);
+        } else {
+            throw new InvalidParameterValueException("Unsupported resource type " + type);
+        }
+
+        long oldCount = 0;
+        final ResourceCountVO accountRC = _resourceCountDao.findByOwnerAndType(accountId, ResourceOwnerType.Account, type);
+        if (accountRC != null) {
+            oldCount = accountRC.getCount();
+        }
+
+        if (newCount == null || !newCount.equals(oldCount)) {
+            Transaction.execute(new TransactionCallbackNoReturn() {
                 @Override
-                public Long doInTransaction(TransactionStatus status) {
-                    Long newCount = null;
+                public void doInTransactionWithoutResult(TransactionStatus status) {
                     lockAccountAndOwnerDomainRows(accountId, type);
-                    ResourceCountVO accountRC = _resourceCountDao.findByOwnerAndType(accountId, ResourceOwnerType.Account, type);
-                    long oldCount = 0;
-                    if (accountRC != null)
-                        oldCount = accountRC.getCount();
-
-                    if (type == Resource.ResourceType.user_vm) {
-                        newCount = _userVmDao.countAllocatedVMsForAccount(accountId);
-                    } else if (type == Resource.ResourceType.volume) {
-                        newCount = _volumeDao.countAllocatedVolumesForAccount(accountId);
-                        long virtualRouterCount = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId).size();
-                        newCount = newCount - virtualRouterCount; // don't count the volumes of virtual router
-                    } else if (type == Resource.ResourceType.snapshot) {
-                        newCount = _snapshotDao.countSnapshotsForAccount(accountId);
-                    } else if (type == Resource.ResourceType.public_ip) {
-                        newCount = calculatePublicIpForAccount(accountId);
-                    } else if (type == Resource.ResourceType.template) {
-                        newCount = _vmTemplateDao.countTemplatesForAccount(accountId);
-                    } else if (type == Resource.ResourceType.project) {
-                        newCount = _projectAccountDao.countByAccountIdAndRole(accountId, Role.Admin);
-                    } else if (type == Resource.ResourceType.network) {
-                        newCount = _networkDao.countNetworksUserCanCreate(accountId);
-                    } else if (type == Resource.ResourceType.vpc) {
-                        newCount = _vpcDao.countByAccountId(accountId);
-                    } else if (type == Resource.ResourceType.cpu) {
-                        newCount = countCpusForAccount(accountId);
-                    } else if (type == Resource.ResourceType.memory) {
-                        newCount = calculateMemoryForAccount(accountId);
-                    } else if (type == Resource.ResourceType.primary_storage) {
-                        List<Long> virtualRouters = _vmDao.findIdsOfAllocatedVirtualRoutersForAccount(accountId);
-                        newCount = _volumeDao.primaryStorageUsedForAccount(accountId, virtualRouters);
-                    } else if (type == Resource.ResourceType.secondary_storage) {
-                        newCount = calculateSecondaryStorageForAccount(accountId);
-                    } else {
-                        throw new InvalidParameterValueException("Unsupported resource type " + type);
-                    }
-                    _resourceCountDao.setResourceCount(accountId, ResourceOwnerType.Account, type, (newCount == null) ? 0 : newCount.longValue());
-
-                    // No need to log message for primary and secondary storage because both are recalculating the
-                    // resource count which will not lead to any discrepancy.
-                    if (!Long.valueOf(oldCount).equals(newCount) &&
-                        (type != Resource.ResourceType.primary_storage && type != Resource.ResourceType.secondary_storage)) {
-                        s_logger.warn("Discrepency in the resource count " + "(original count=" + oldCount + " correct count = " + newCount + ") for type " + type +
-                                      " for account ID " + accountId + " is fixed during resource count recalculation.");
-                    }
-                    return newCount;
+                    _resourceCountDao.setResourceCount(accountId, ResourceOwnerType.Account, type, (newCount == null) ? 0 : newCount);
                 }
             });
+        }
 
-        return (newCount == null) ? 0 : newCount.longValue();
+        // No need to log message for primary and secondary storage because both are recalculating the
+        // resource count which will not lead to any discrepancy.
+        if (newCount != null && !newCount.equals(oldCount) &&
+                type != Resource.ResourceType.primary_storage && type != Resource.ResourceType.secondary_storage) {
+            s_logger.warn("Discrepancy in the resource count " + "(original count=" + oldCount + " correct count = " + newCount + ") for type " + type +
+                    " for account ID " + accountId + " is fixed during resource count recalculation.");
+        }
+
+        return (newCount == null) ? 0 : newCount;
     }
 
     public long countCpusForAccount(long accountId) {
