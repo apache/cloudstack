@@ -32,17 +32,18 @@ RHEL6 = 4
 RHEL7 = 5
 
 #=================== DISTRIBUTION DETECTION =================
-if os.path.exists("/etc/redhat-release"):
+if os.path.exists("/etc/centos-release"):
+    version = file("/etc/centos-release").readline()
+    if version.find("CentOS release 6") != -1:
+      distro = CentOS6
+    elif version.find("CentOS Linux release 7") != -1:
+      distro = CentOS7
+elif os.path.exists("/etc/redhat-release"):
     version = file("/etc/redhat-release").readline()
     if version.find("Red Hat Enterprise Linux Server release 6") != -1:
-        distro = RHEL6
+      distro = RHEL6
     elif version.find("Red Hat Enterprise Linux Server 7") != -1:
-        distro = RHEL7
-elif os.path.exists("/etc/centos-release"):
-    if version.find("CentOS release 6") != -1:
-        distro = CentOS6
-    elif version.find("CentOS Linux release 7") != -1:
-        distro = CentOS7
+      distro = RHEL7
 elif os.path.exists("/etc/lsb-release") and "Ubuntu" in file("/etc/lsb-release").read(-1): distro = Ubuntu
 else: distro = Unknown
 #=================== DISTRIBUTION DETECTION =================
