@@ -50,6 +50,7 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreVO;
 import org.apache.cloudstack.utils.imagestore.ImageStoreUtil;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ApiConstants;
@@ -557,11 +558,13 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (vm.getIsoId() != null) {
             Map<Volume, StoragePool> storageForDisks = dest.getStorageForDisks();
             Long poolId = null;
-            for (StoragePool storagePool : storageForDisks.values()) {
-                if (poolId != null && storagePool.getId() != poolId) {
-                    throw new CloudRuntimeException("Cannot determine where to download iso");
+            if (MapUtils.isNotEmpty(storageForDisks)) {
+                for (StoragePool storagePool : storageForDisks.values()) {
+                    if (poolId != null && storagePool.getId() != poolId) {
+                        throw new CloudRuntimeException("Cannot determine where to download iso");
+                    }
+                    poolId = storagePool.getId();
                 }
-                poolId = storagePool.getId();
             }
             TemplateInfo template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
             if (template == null){
@@ -579,6 +582,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
             }
 
             TemplateObjectTO iso = (TemplateObjectTO)template.getTO();
+            iso.setDirectDownload(template.isDirectDownload());
             iso.setGuestOsType(displayName);
             DiskTO disk = new DiskTO(iso, 3L, null, Volume.Type.ISO);
             profile.addDisk(disk);
