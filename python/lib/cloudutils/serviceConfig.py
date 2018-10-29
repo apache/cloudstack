@@ -30,6 +30,7 @@ CentOS7 = 2
 Ubuntu = 3
 RHEL6 = 4
 RHEL7 = 5
+distro = None
 
 #=================== DISTRIBUTION DETECTION =================
 if os.path.exists("/etc/centos-release"):
