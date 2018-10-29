@@ -37,4 +37,4 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`,
 UPDATE `cloud`.`async_job` SET `removed` = now() WHERE `removed` IS NULL;
 
 -- PR#1448 update description of 'execute.in.sequence.network.element.commands' parameter to reflect an unused command that has been removed. The removed class command is 'UserDataCommand'.
-update configuration set description = 'If set to true, DhcpEntryCommand, SavePasswordCommand, VmDataCommand will be synchronized on the agent side. If set to false, these commands become asynchronous. Default value is false.' where name = 'execute.in.sequence.network.element.commands'; 
+update `cloud`.`configuration` set description = 'If set to true, DhcpEntryCommand, SavePasswordCommand, VmDataCommand will be synchronized on the agent side. If set to false, these commands become asynchronous. Default value is false.' where name = 'execute.in.sequence.network.element.commands'; 
