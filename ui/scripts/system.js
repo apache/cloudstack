@@ -527,7 +527,8 @@
                                         },
                                         actionPreFilter: function (args) {
                                             var actionsToShow =[ 'destroy'];
-                                            if (args.context.multiRule[0].domain == 'ROOT' && args.context.multiRule[0].account != null && args.context.multiRule[0].account.account == 'system')
+                                            if (args.context.multiRule[0].domain == 'ROOT' && args.context.multiRule[0].account != null &&
+                                                args.context.multiRule[0].account.account == 'system' && !args.context.multiRule[0].forsystemvms)
                                             actionsToShow.push('addAccount'); else
                                             actionsToShow.push('releaseFromAccount');
                                             return actionsToShow;
