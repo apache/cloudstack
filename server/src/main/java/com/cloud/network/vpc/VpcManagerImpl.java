@@ -2490,6 +2490,7 @@ public class VpcManagerImpl extends ManagerBase implements VpcManager, VpcProvis
 
         // Destroy old routers
         for (final DomainRouterVO oldRouter : oldRouters) {
+            _routerService.stopRouter(oldRouter.getId(), true);
             _routerService.destroyRouter(oldRouter.getId(), context.getAccount(), context.getCaller().getId());
         }
 
