@@ -101,7 +101,7 @@ public class VmwareManagerImplTest {
         final HostVO host = new HostVO("someGuid");
         host.setDataCenterId(1);
         host.setHypervisorType(Hypervisor.HypervisorType.VMware);
-        Mockito.doReturn(Collections.singletonList(host)).when(hostDao).listAll();
+        Mockito.doReturn(Collections.singletonList(host)).when(hostDao).listAllHostsByZoneAndHypervisorType(Mockito.anyLong(), Mockito.any());
         Mockito.doReturn(hostDetails).when(hostDetailsDao).findDetails(Mockito.anyLong());
         Mockito.doReturn("some-old-guid").when(hostDetails).get("guid");
         Mockito.doReturn(hostDetails).when(hostDetailsDao).findDetails(Mockito.anyLong());
@@ -112,7 +112,7 @@ public class VmwareManagerImplTest {
         Assert.assertEquals(vmwareDatacenter.getPassword(), updateVmwareDcCmd.getPassword());
         Mockito.verify(clusterDetails, Mockito.times(2)).put(Mockito.anyString(), Mockito.anyString());
         Mockito.verify(clusterDetailsDao, Mockito.times(1)).persist(Mockito.anyLong(), Mockito.anyMapOf(String.class, String.class));
-        Mockito.verify(hostDetails, Mockito.times(1)).put(Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(hostDetails, Mockito.times(3)).put(Mockito.anyString(), Mockito.anyString());
         Mockito.verify(hostDetailsDao, Mockito.times(1)).persist(Mockito.anyLong(), Mockito.anyMapOf(String.class, String.class));
     }
 }
