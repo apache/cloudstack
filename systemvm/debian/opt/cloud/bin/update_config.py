@@ -52,7 +52,7 @@ def process_file():
     qf.setFile(sys.argv[1])
     qf.load(None)
     # These can be safely deferred, dramatically speeding up loading times
-    if not (os.environ.get('DEFER_CONFIG', False) and sys.argv[1] in ('vm_dhcp_entry.json', 'vm_metadata.json')):
+    if not (os.environ.get('DEFER_CONFIG', False) and ('vm_dhcp_entry.json' in sys.argv[1] or 'vm_metadata.json' in sys.argv[1])):
         # Converge
         finish_config()
 
