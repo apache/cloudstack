@@ -43,9 +43,6 @@ override_dh_auto_install:
 	install -D plugins/hypervisors/kvm/target/dependencies/* $(DESTDIR)/usr/share/$(PACKAGE)-agent/lib/
 
 	install -d -m0755 debian/$(PACKAGE)-agent/lib/systemd/system
-	# Fix libvirt service name for Debian/Ubuntu
-	sed -i 's/Requires=libvirtd.service/Requires=libvirt-bin.service/g' packaging/systemd/$(PACKAGE)-agent.service
-	sed -i 's/After=libvirtd.service/After=libvirt-bin.service/g' packaging/systemd/$(PACKAGE)-agent.service
 	install -m0644 packaging/systemd/$(PACKAGE)-agent.service debian/$(PACKAGE)-agent/lib/systemd/system/$(PACKAGE)-agent.service
 	install -m0644 packaging/systemd/$(PACKAGE)-agent.default $(DESTDIR)/$(SYSCONFDIR)/default/$(PACKAGE)-agent
 
