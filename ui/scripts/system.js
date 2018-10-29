@@ -126,13 +126,16 @@
                                 var $systemvmsCb = $systemvms.find('input[type=checkbox]');
                                 var $account = args.$form.find('.form-item[rel=account]');
                                 var $accountTxt = args.$form.find('input[name=account]');
+                                var $domainid = args.$form.find('select[name=domainid]');
                                 $systemvmsCb.change(function() {
                                     if ($systemvmsCb.is(':checked')) {
                                         $accountTxt.val('');
                                         $accountTxt.attr('disabled', true);
+                                        $domainid.attr('disabled', true);
                                     }
                                     else {
                                         $accountTxt.attr('disabled', false);
+                                        $domainid.attr('disabled', false);
                                     }
                                 });
                             }
