@@ -134,8 +134,9 @@ public class OvsVifDriver extends VifDriverBase {
         s_logger.debug("plugging nic=" + nic);
 
         LibvirtVMDef.InterfaceDef intf = new LibvirtVMDef.InterfaceDef();
-        if (!_libvirtComputingResource.dpdkSupport) {
-            // If DPDK property is enabled, libvirt does not handle ports creation, invoke 'addDpdkPort' method
+        if (!_libvirtComputingResource.dpdkSupport || nic.isDpdkDisabled()) {
+            // Let libvirt handle OVS ports creation when DPDK property is disabled or when it is enabled but disabled for the nic
+            // For DPDK support, libvirt does not handle ports creation, invoke 'addDpdkPort' method
             intf.setVirtualPortType("openvswitch");
         }
 
@@ -155,7 +156,7 @@ public class OvsVifDriver extends VifDriverBase {
             if ((nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan || nic.getBroadcastType() == Networks.BroadcastDomainType.Pvlan) &&
                     !vlanId.equalsIgnoreCase("untagged")) {
                 if (trafficLabel != null && !trafficLabel.isEmpty()) {
-                    if (_libvirtComputingResource.dpdkSupport) {
+                    if (_libvirtComputingResource.dpdkSupport && !nic.isDpdkDisabled()) {
                         s_logger.debug("DPDK support enabled: configuring per traffic label " + trafficLabel);
                         if (StringUtils.isBlank(_libvirtComputingResource.dpdkOvsPath)) {
                             throw new CloudRuntimeException("DPDK is enabled on the host but no OVS path has been provided");

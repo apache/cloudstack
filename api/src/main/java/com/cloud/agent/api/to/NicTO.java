@@ -30,6 +30,7 @@ public class NicTO extends NetworkTO {
     String nicUuid;
     List<String> nicSecIps;
     Map<NetworkOffering.Detail, String> details;
+    boolean dpdkDisabled;
 
     public NicTO() {
         super();
@@ -108,5 +109,13 @@ public class NicTO extends NetworkTO {
 
     public void setDetails(final Map<NetworkOffering.Detail, String> details) {
         this.details = details;
+    }
+
+    public boolean isDpdkDisabled() {
+        return dpdkDisabled;
+    }
+
+    public void setDpdkDisabled(boolean dpdkDisabled) {
+        this.dpdkDisabled = dpdkDisabled;
     }
 }
