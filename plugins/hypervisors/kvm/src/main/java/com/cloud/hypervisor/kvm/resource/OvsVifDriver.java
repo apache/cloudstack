@@ -86,7 +86,7 @@ public class OvsVifDriver extends VifDriverBase {
     protected int getDpdkLatestPortNumberUsed() {
         s_logger.debug("Checking the last DPDK port created");
         String cmd = "ovs-vsctl show | grep Port | grep " + DPDK_PORT_PREFIX + " | " +
-                "awk '{ print $2 }' | sort -rk3 | head -1";
+                "awk '{ print $2 }' | sort -rV | head -1";
         String port = Script.runSimpleBashScript(cmd);
         int portNumber = 0;
         if (StringUtils.isNotBlank(port)) {
