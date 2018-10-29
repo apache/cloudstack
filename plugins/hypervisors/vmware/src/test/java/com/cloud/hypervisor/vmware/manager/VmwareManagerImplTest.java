@@ -37,6 +37,7 @@ import com.cloud.dc.dao.ClusterDao;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.vmware.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
@@ -78,6 +79,7 @@ public class VmwareManagerImplTest {
 
         Mockito.doReturn(vmwareDatacenterZoneMap).when(vmwareDatacenterZoneMapDao).findByZoneId(Mockito.anyLong());
         Mockito.doReturn(vmwareDatacenterVO).when(vmwareDcDao).findById(Mockito.anyLong());
+        Mockito.doReturn(1L).when(updateVmwareDcCmd).getZoneId();
     }
 
     @Test
@@ -90,20 +92,27 @@ public class VmwareManagerImplTest {
     public void updateVmwareDatacenterNormalUpdate() {
         Mockito.doReturn("some-new-username").when(updateVmwareDcCmd).getUsername();
         Mockito.doReturn("some-new-password").when(updateVmwareDcCmd).getPassword();
+        Mockito.doReturn("some-new-vcenter-address").when(updateVmwareDcCmd).getVcenter();
         Mockito.doReturn(true).when(updateVmwareDcCmd).isRecursive();
         Mockito.doReturn(true).when(vmwareDcDao).update(Mockito.anyLong(), Mockito.any(VmwareDatacenterVO.class));
         Mockito.doReturn(Collections.singletonList(new ClusterVO(1, 1, "some-cluster"))).when(clusterDao).listByDcHyType(Mockito.anyLong(), Mockito.anyString());
         Mockito.doReturn(clusterDetails).when(clusterDetailsDao).findDetails(Mockito.anyLong());
-        Mockito.doReturn(Collections.singletonList(new HostVO("someGuid"))).when(hostDao).listAllHostsByZoneAndHypervisorType(Mockito.anyLong(), Mockito.any());
+
+        final HostVO host = new HostVO("someGuid");
+        host.setDataCenterId(1);
+        host.setHypervisorType(Hypervisor.HypervisorType.VMware);
+        Mockito.doReturn(Collections.singletonList(host)).when(hostDao).listAll();
+        Mockito.doReturn(hostDetails).when(hostDetailsDao).findDetails(Mockito.anyLong());
+        Mockito.doReturn("some-old-guid").when(hostDetails).get("guid");
         Mockito.doReturn(hostDetails).when(hostDetailsDao).findDetails(Mockito.anyLong());
 
-        VmwareDatacenter vmwareDatacenter = vmwareManager.updateVmwareDatacenter(updateVmwareDcCmd);
+        final VmwareDatacenter vmwareDatacenter = vmwareManager.updateVmwareDatacenter(updateVmwareDcCmd);
 
         Assert.assertEquals(vmwareDatacenter.getUser(), updateVmwareDcCmd.getUsername());
         Assert.assertEquals(vmwareDatacenter.getPassword(), updateVmwareDcCmd.getPassword());
         Mockito.verify(clusterDetails, Mockito.times(2)).put(Mockito.anyString(), Mockito.anyString());
         Mockito.verify(clusterDetailsDao, Mockito.times(1)).persist(Mockito.anyLong(), Mockito.anyMapOf(String.class, String.class));
-        Mockito.verify(hostDetails, Mockito.times(2)).put(Mockito.anyString(), Mockito.anyString());
+        Mockito.verify(hostDetails, Mockito.times(1)).put(Mockito.anyString(), Mockito.anyString());
         Mockito.verify(hostDetailsDao, Mockito.times(1)).persist(Mockito.anyLong(), Mockito.anyMapOf(String.class, String.class));
     }
 }

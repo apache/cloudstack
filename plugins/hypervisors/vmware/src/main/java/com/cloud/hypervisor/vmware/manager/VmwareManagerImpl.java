@@ -1190,20 +1190,23 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
                             clusterDetails.put("username", vmwareDc.getUser());
                             clusterDetails.put("password", vmwareDc.getPassword());
                             final String clusterUrl = clusterDetails.get("url");
-                            if (!Strings.isNullOrEmpty(clusterUrl)) {
+                            if (!oldVCenterHost.equals(vmwareDc.getVcenterHost()) && !Strings.isNullOrEmpty(clusterUrl)) {
                                 clusterDetails.put("url", clusterUrl.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
                             }
                             clusterDetailsDao.persist(cluster.getId(), clusterDetails);
                         }
-                        for (final Host host : hostDao.listAllHostsByZoneAndHypervisorType(zoneId, Hypervisor.HypervisorType.VMware)) {
-                            final Map<String, String> hostDetails = hostDetailsDao.findDetails(host.getId());
-                            hostDetails.put("username", vmwareDc.getUser());
-                            hostDetails.put("password", vmwareDc.getPassword());
-                            final String hostGuid = hostDetails.get("guid");
-                            if (!Strings.isNullOrEmpty(hostGuid)) {
-                                hostDetails.put("guid", hostGuid.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
+                        if (!oldVCenterHost.equals(vmwareDc.getVcenterHost())) {
+                            for (final Host host : hostDao.listAll()) {
+                                if (host.getDataCenterId() != zoneId || host.getHypervisorType() != Hypervisor.HypervisorType.VMware) {
+                                    continue;
+                                }
+                                final Map<String, String> hostDetails = hostDetailsDao.findDetails(host.getId());
+                                final String hostGuid = hostDetails.get("guid");
+                                if (!Strings.isNullOrEmpty(hostGuid)) {
+                                    hostDetails.put("guid", hostGuid.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
+                                }
+                                hostDetailsDao.persist(host.getId(), hostDetails);
                             }
-                            hostDetailsDao.persist(host.getId(), hostDetails);
                         }
                     }
                     return vmwareDc;

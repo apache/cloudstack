@@ -70,7 +70,7 @@ public class UpdateVmwareDcCmd extends BaseCmd {
     private String password;
 
     @Parameter(name = ApiConstants.IS_RECURSIVE, type = CommandType.BOOLEAN,
-            description = "Indicate to specify if host and cluster passwords need to be updated as well. Default is true.")
+            description = "Specify if cluster level username/password/url and host level guid need to be updated as well. By default this is true.")
     private Boolean recursive = true;
 
     /////////////////////////////////////////////////////
