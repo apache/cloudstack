@@ -72,7 +72,12 @@ public class LibvirtStorageAdaptor implements StorageAdaptor {
     private String _manageSnapshotPath;
 
     private String rbdTemplateSnapName = "cloudstack-base-snap";
-    private int rbdFeatures = (1 << 0); /* Feature 1<<0 means layering in RBD format 2 */
+    private static final int RBD_FEATURE_LAYERING = 1;
+    private static final int RBD_FEATURE_EXCLUSIVE_LOCK = 4;
+    private static final int RBD_FEATURE_OBJECT_MAP = 8;
+    private static final int RBD_FEATURE_FAST_DIFF = 16;
+    private static final int RBD_FEATURE_DEEP_FLATTEN = 32;
+    private int rbdFeatures = RBD_FEATURE_LAYERING + RBD_FEATURE_EXCLUSIVE_LOCK + RBD_FEATURE_OBJECT_MAP + RBD_FEATURE_FAST_DIFF + RBD_FEATURE_DEEP_FLATTEN;
     private int rbdOrder = 0; /* Order 0 means 4MB blocks (the default) */
 
     public LibvirtStorageAdaptor(StorageLayer storage) {
