@@ -38,11 +38,7 @@ public final class LibvirtPostCertificateRenewalCommandWrapper extends CommandWr
         if (command != null) {
             final int timeout = 30000;
             Script script = new Script(true, "service", timeout, s_logger);
-            if ("Ubuntu".equals(serverResource.getHostDistro())) {
-                script.add("libvirt-bin");
-            } else {
-               script.add("libvirtd");
-            }
+            script.add("libvirtd");
             script.add("restart");
             script.execute();
             return new SetupCertificateAnswer(true);
