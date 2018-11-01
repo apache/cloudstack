@@ -19,7 +19,9 @@
 
 package com.cloud.agent.api;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
@@ -33,6 +35,7 @@ public class MigrateCommand extends Command {
     private boolean isWindows;
     private VirtualMachineTO vmTO;
     private boolean executeInSequence = false;
+    private List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
 
     protected MigrateCommand() {
     }
@@ -90,6 +93,14 @@ public class MigrateCommand extends Command {
         return executeInSequence;
     }
 
+    public List<MigrateDiskInfo> getMigrateDiskInfoList() {
+        return migrateDiskInfoList;
+    }
+
+    public void setMigrateDiskInfoList(List<MigrateDiskInfo> migrateDiskInfoList) {
+        this.migrateDiskInfoList = migrateDiskInfoList;
+    }
+
     public static class MigrateDiskInfo {
         public enum DiskType {
             FILE, BLOCK;
@@ -123,6 +134,7 @@ public class MigrateCommand extends Command {
         private final DriverType driverType;
         private final Source source;
         private final String sourceText;
+        private boolean isSourceDiskOnStorageFileSystem;
 
         public MigrateDiskInfo(final String serialNumber, final DiskType diskType, final DriverType driverType, final Source source, final String sourceText) {
             this.serialNumber = serialNumber;
@@ -150,6 +162,14 @@ public class MigrateCommand extends Command {
 
         public String getSourceText() {
             return sourceText;
+        }
+
+        public boolean isSourceDiskOnStorageFileSystem() {
+            return isSourceDiskOnStorageFileSystem;
+        }
+
+        public void setSourceDiskOnStorageFileSystem(boolean isDiskOnFileSystemStorage) {
+            this.isSourceDiskOnStorageFileSystem = isDiskOnFileSystemStorage;
         }
     }
 }
