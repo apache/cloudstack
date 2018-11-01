@@ -695,16 +695,34 @@ public class Agent implements HandlerFactory, IAgentControl {
 
         final String keyStoreFile = agentFile.getParent() + "/" + KeyStoreUtils.KS_FILENAME;
 
-        String cerFile = agentFile.getParent() + "/" + certificateName + ".cer";
-        Script.runSimpleBashScript(String.format("echo '%s' > %s", certificate, cerFile));
+        String cerFile = agentFile.getParent() + "/" + "CSCERTIFICATE-" + certificateName;
 
+        s_logger.debug("Creating temporary certificate file into: " + cerFile);
+        int result = Script.runSimpleBashScriptForExitValue(String.format("echo '%s' > %s", certificate, cerFile));
+        if (result != 0) {
+            return new Answer(cmd, false, "Could not create the certificate file on path: " + cerFile);
+        }
+
+        s_logger.debug("Retrieving keystore password");
         String privatePasswordFormat = "sed -n '/keystore.passphrase/p' '%s' 2>/dev/null  | sed 's/keystore.passphrase=//g' 2>/dev/null";
         String privatePasswordCmd = String.format(privatePasswordFormat, agentFile.getAbsolutePath());
         String privatePassword = Script.runSimpleBashScript(privatePasswordCmd);
+        if (org.apache.commons.lang.StringUtils.isBlank(privatePassword)) {
+            return new Answer(cmd, false, "No password found for keystore: " + KeyStoreUtils.KS_FILENAME);
+        }
 
+        s_logger.debug("Importing certificate from temporary file to keystore");
         String importCommandFormat = "keytool -importcert -file %s -keystore %s -alias '%s' -storepass '%s' -noprompt";
         String importCmd = String.format(importCommandFormat, cerFile, keyStoreFile, certificateName, privatePassword);
-        Script.runSimpleBashScript(importCmd);
+        result = Script.runSimpleBashScriptForExitValue(importCmd);
+
+        s_logger.debug("Cleaning up temporary certificate file");
+        Script.runSimpleBashScript("rm -f " + cerFile);
+
+        if (result != 0) {
+            return new Answer(cmd, false, "Could not import certificate to keystore: " + KeyStoreUtils.KS_FILENAME);
+        }
+
         return new Answer(cmd, true, "Certificate " + certificateName + " imported");
     }
 
