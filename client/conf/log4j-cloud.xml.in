@@ -20,7 +20,7 @@ under the License.
 <!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
 
 <log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/" debug="false">
-   <throwableRenderer class="com.cloud.utils.log.CglibThrowableRenderer"/>
+   <throwableRenderer class="org.apache.cloudstack.utils.log.CglibThrowableRenderer"/>
 
    <!-- ================================= -->
    <!-- Preserve messages in a local file -->

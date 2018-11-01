@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package com.cloud.utils.log;
+package org.apache.cloudstack.utils.log;
 
 import java.lang.reflect.Method;
 

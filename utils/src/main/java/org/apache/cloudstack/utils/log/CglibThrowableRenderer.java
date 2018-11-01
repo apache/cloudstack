@@ -17,7 +17,7 @@
 // under the License.
 //
 
-package com.cloud.utils.log;
+package org.apache.cloudstack.utils.log;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +33,7 @@ import org.apache.log4j.spi.ThrowableRenderer;
  * simply override doRender. Not sure what the developers are thinking there
  * making it final.
  *
- * <throwableRenderer class="com.cloud.utils.log.CglibThrowableRenderer"/>
+ * <throwableRenderer class="org.apache.cloudstack.utils.log.CglibThrowableRenderer"/>
  * into log4j.xml.
  *
  */
