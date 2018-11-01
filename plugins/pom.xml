@@ -55,7 +55,6 @@
         <module>alert-handlers/syslog-alerts</module>
 
         <module>api/discovery</module>
-        <module>api/rate-limit</module>
         <module>api/solidfire-intg-test</module>
 
         <module>ca/root-ca</module>
