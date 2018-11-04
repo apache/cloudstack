@@ -190,6 +190,8 @@ public class BridgeVifDriver extends VifDriverBase {
             "^enp",
             "^team",
             "^enx",
+            "^dummy",
+            "^lo",
             "^p\\d+p\\d+"
     };
 

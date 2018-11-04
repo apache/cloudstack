@@ -1302,6 +1302,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             "^enp",
             "^team",
             "^enx",
+            "^dummy",
+            "^lo",
             "^p\\d+p\\d+"
     };
     /**
