@@ -26,6 +26,7 @@ import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -278,7 +279,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected String _rngPath = "/dev/random";
     protected int _rngRatePeriod = 1000;
     protected int _rngRateBytes = 2048;
-    private File _qemuSocketsPath;
+    protected File _qemuSocketsPath;
     private final String _qemuGuestAgentSocketName = "org.qemu.guest_agent.0";
     protected WatchDogAction _watchDogAction = WatchDogAction.NONE;
     protected WatchDogModel _watchDogModel = WatchDogModel.I6300ESB;
@@ -1308,7 +1309,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return "";
     }
 
-    String [] _ifNamePatterns = {
+    static String [] ifNamePatterns = {
             "^eth",
             "^bond",
             "^vlan",
@@ -1319,15 +1320,18 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             "^enp",
             "^team",
             "^enx",
+            "^dummy",
+            "^lo",
             "^p\\d+p\\d+"
     };
+
     /**
      * @param fname
      * @return
      */
-    boolean isInterface(final String fname) {
+    protected static boolean isInterface(final String fname) {
         StringBuffer commonPattern = new StringBuffer();
-        for (final String ifNamePattern : _ifNamePatterns) {
+        for (final String ifNamePattern : ifNamePatterns) {
             commonPattern.append("|(").append(ifNamePattern).append(".*)");
         }
         if(fname.matches(commonPattern.toString())) {
@@ -1502,7 +1506,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public synchronized boolean configureTunnelNetwork(final long networkId,
-            final long hostId, final String nwName) {
+                                                       final long hostId, final String nwName) {
         try {
             final boolean findResult = findOrCreateTunnelNetwork(nwName);
             if (!findResult) {
@@ -1532,7 +1536,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (result != null) {
                     throw new CloudRuntimeException(
                             "Unable to pre-configure OVS bridge " + nwName
-                            + " for network ID:" + networkId);
+                                    + " for network ID:" + networkId);
                 }
             }
         } catch (final Exception e) {
@@ -2172,8 +2176,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         /* Add a VirtIO channel for SystemVMs for communication and provisioning */
         if (vmTO.getType() != VirtualMachine.Type.User) {
-            devices.addDevice(new ChannelDef(vmTO.getName() + ".vport", ChannelDef.ChannelType.UNIX,
-                              new File(_qemuSocketsPath + "/" + vmTO.getName() + ".agent")));
+            File virtIoChannel = Paths.get(_qemuSocketsPath.getPath(), vmTO.getName() + ".agent").toFile();
+            devices.addDevice(new ChannelDef(vmTO.getName() + ".vport", ChannelDef.ChannelType.UNIX, virtIoChannel));
         }
 
         if (_rngEnable) {
@@ -2182,8 +2186,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         /* Add a VirtIO channel for the Qemu Guest Agent tools */
-        devices.addDevice(new ChannelDef(_qemuGuestAgentSocketName, ChannelDef.ChannelType.UNIX,
-                          new File(_qemuSocketsPath + "/" + vmTO.getName() + "." + _qemuGuestAgentSocketName)));
+        File virtIoChannel = Paths.get(_qemuSocketsPath.getPath(), vmTO.getName() + "." + _qemuGuestAgentSocketName).toFile();
+        devices.addDevice(new ChannelDef(_qemuGuestAgentSocketName, ChannelDef.ChannelType.UNIX, virtIoChannel));
 
         devices.addDevice(new WatchDogDef(_watchDogAction, _watchDogModel));
 
@@ -2488,7 +2492,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public synchronized String attachOrDetachISO(final Connect conn, final String vmName, String isoPath, final boolean isAttach, final Integer diskSeq) throws LibvirtException, URISyntaxException,
-    InternalErrorException {
+            InternalErrorException {
         final DiskDef iso = new DiskDef();
         if (isoPath != null && isAttach) {
             final int index = isoPath.lastIndexOf("/");
@@ -2518,8 +2522,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public synchronized String attachOrDetachDisk(final Connect conn,
-            final boolean attach, final String vmName, final KVMPhysicalDisk attachingDisk,
-            final int devId, final Long bytesReadRate, final Long bytesWriteRate, final Long iopsReadRate, final Long iopsWriteRate, final String cacheMode) throws LibvirtException, InternalErrorException {
+                                                  final boolean attach, final String vmName, final KVMPhysicalDisk attachingDisk,
+                                                  final int devId, final Long bytesReadRate, final Long bytesWriteRate, final Long iopsReadRate, final Long iopsWriteRate, final String cacheMode) throws LibvirtException, InternalErrorException {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
@@ -2895,9 +2899,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             speed = getCpuSpeed(hosts);
 
             /*
-            * Some CPUs report a single socket and multiple NUMA cells.
-            * We need to multiply them to get the correct socket count.
-            */
+             * Some CPUs report a single socket and multiple NUMA cells.
+             * We need to multiply them to get the correct socket count.
+             */
             cpuSockets = hosts.sockets;
             if (hosts.nodes > 0) {
                 cpuSockets = hosts.sockets * hosts.nodes;
@@ -3470,12 +3474,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     /**
-    * This method retrieves the memory statistics from the domain given as parameters.
-    * If no memory statistic is found, it will return {@link NumberUtils#LONG_ZERO} as the value of free memory in the domain.
-    * If it can retrieve the domain memory statistics, it will return the free memory statistic; that means, it returns the value at the first position of the array returned by {@link Domain#memoryStats(int)}.
-    *
-    * @return the amount of free memory in KBs
-    */
+     * This method retrieves the memory statistics from the domain given as parameters.
+     * If no memory statistic is found, it will return {@link NumberUtils#LONG_ZERO} as the value of free memory in the domain.
+     * If it can retrieve the domain memory statistics, it will return the free memory statistic; that means, it returns the value at the first position of the array returned by {@link Domain#memoryStats(int)}.
+     *
+     * @return the amount of free memory in KBs
+     */
     protected long getMemoryFreeInKBs(Domain dm) throws LibvirtException {
         MemoryStatistic[] mems = dm.memoryStats(NUMMEMSTATS);
         if (ArrayUtils.isEmpty(mems)) {
@@ -3605,7 +3609,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     }
 
     public boolean addNetworkRules(final String vmName, final String vmId, final String guestIP, final String guestIP6, final String sig, final String seq, final String mac, final String rules, final String vif, final String brname,
-            final String secIps) {
+                                   final String secIps) {
         if (!_canBridgeFirewall) {
             return false;
         }
@@ -3853,7 +3857,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     public boolean isHostSecured() {
         // Test for host certificates
         final File confFile = PropertiesUtil.findConfigFile(KeyStoreUtils.AGENT_PROPSFILE);
-        if (confFile == null || !confFile.exists() || !new File(confFile.getParent() + "/" + KeyStoreUtils.CERT_FILENAME).exists()) {
+        if (confFile == null || !confFile.exists() || !Paths.get(confFile.getParent(), KeyStoreUtils.CERT_FILENAME).toFile().exists()) {
             return false;
         }
 

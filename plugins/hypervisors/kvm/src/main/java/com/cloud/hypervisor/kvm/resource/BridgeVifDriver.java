@@ -170,40 +170,13 @@ public class BridgeVifDriver extends VifDriverBase {
         for (File anInterface : interfaces) {
             final String fname = anInterface.getName();
             s_logger.debug("matchPifFileInDirectory: file name '" + fname + "'");
-            if (isInterface(fname)) {
+            if (LibvirtComputingResource.isInterface(fname)) {
                 return fname;
             }
         }
 
         s_logger.debug("failing to get physical interface from bridge " + bridgeName + ", did not find an eth*, bond*, team*, vlan*, em*, p*p*, ens*, eno*, enp*, or enx* in " + brif.getAbsolutePath());
         return "";
-    }
-
-    private static final String [] IF_NAME_PATTERNS = {
-            "^eth",
-            "^bond",
-            "^vlan",
-            "^vx",
-            "^em",
-            "^ens",
-            "^eno",
-            "^enp",
-            "^team",
-            "^enx",
-            "^p\\d+p\\d+"
-    };
-
-    /**
-     * @param fname
-     * @return
-     */
-    private static boolean isInterface(final String fname) {
-        StringBuilder commonPattern = new StringBuilder();
-        for (final String ifNamePattern : IF_NAME_PATTERNS) {
-            commonPattern.append("|(").append(ifNamePattern).append(".*)");
-        }
-
-        return fname.matches(commonPattern.toString());
     }
 
     protected boolean isBroadcastTypeVlanOrVxlan(final NicTO nic) {
@@ -432,7 +405,7 @@ public class BridgeVifDriver extends VifDriverBase {
         }
         if (!foundLinkLocalBr) {
             Script.runSimpleBashScript("ip address add 169.254.0.1/16 dev " + linkLocalBr + ";" + "ip route add " + NetUtils.getLinkLocalCIDR() + " dev " + linkLocalBr + " src " +
-                NetUtils.getLinkLocalGateway());
+                    NetUtils.getLinkLocalGateway());
         }
     }
 
