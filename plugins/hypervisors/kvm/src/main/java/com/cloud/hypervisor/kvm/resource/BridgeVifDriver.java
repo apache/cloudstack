@@ -40,7 +40,6 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
-import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 
 public class BridgeVifDriver extends VifDriverBase {
 
