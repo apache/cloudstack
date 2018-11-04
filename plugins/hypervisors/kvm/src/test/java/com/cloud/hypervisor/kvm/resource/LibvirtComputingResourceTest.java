@@ -5112,6 +5112,12 @@ public class LibvirtComputingResourceTest {
         final LibvirtComputingResource lvcr = new LibvirtComputingResource();
         assertFalse(lvcr.isInterface("bla"));
         assertTrue(lvcr.isInterface("p99p00"));
+        assertTrue(lvcr.isInterface("lo1"));
+        assertTrue(lvcr.isInterface("lo_11"));
+        assertTrue(lvcr.isInterface("lo_public_1"));
+        assertTrue(lvcr.isInterface("dummy0"));
+        assertTrue(lvcr.isInterface("dummy_0"));
+        assertTrue(lvcr.isInterface("dummy_private_0"));
         for  (final String ifNamePattern : lvcr._ifNamePatterns) {
             // excluding regexps as "\\\\d+" won't replace with String.replaceAll(String,String);
             if (!ifNamePattern.contains("\\")) {
