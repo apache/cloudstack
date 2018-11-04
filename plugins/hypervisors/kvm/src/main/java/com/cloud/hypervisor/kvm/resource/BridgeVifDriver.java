@@ -40,6 +40,7 @@ import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
+import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 
 public class BridgeVifDriver extends VifDriverBase {
 
@@ -170,42 +171,13 @@ public class BridgeVifDriver extends VifDriverBase {
         for (File anInterface : interfaces) {
             final String fname = anInterface.getName();
             s_logger.debug("matchPifFileInDirectory: file name '" + fname + "'");
-            if (isInterface(fname)) {
+            if (LibvirtComputingResource.isInterface(fname)) {
                 return fname;
             }
         }
 
         s_logger.debug("failing to get physical interface from bridge " + bridgeName + ", did not find an eth*, bond*, team*, vlan*, em*, p*p*, ens*, eno*, enp*, or enx* in " + brif.getAbsolutePath());
         return "";
-    }
-
-    private static final String [] IF_NAME_PATTERNS = {
-            "^eth",
-            "^bond",
-            "^vlan",
-            "^vx",
-            "^em",
-            "^ens",
-            "^eno",
-            "^enp",
-            "^team",
-            "^enx",
-            "^dummy",
-            "^lo",
-            "^p\\d+p\\d+"
-    };
-
-    /**
-     * @param fname
-     * @return
-     */
-    private static boolean isInterface(final String fname) {
-        StringBuilder commonPattern = new StringBuilder();
-        for (final String ifNamePattern : IF_NAME_PATTERNS) {
-            commonPattern.append("|(").append(ifNamePattern).append(".*)");
-        }
-
-        return fname.matches(commonPattern.toString());
     }
 
     @Override

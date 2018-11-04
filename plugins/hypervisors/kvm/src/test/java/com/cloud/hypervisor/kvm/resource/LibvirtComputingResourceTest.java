@@ -5118,7 +5118,7 @@ public class LibvirtComputingResourceTest {
         assertTrue(lvcr.isInterface("dummy0"));
         assertTrue(lvcr.isInterface("dummy_0"));
         assertTrue(lvcr.isInterface("dummy_private_0"));
-        for  (final String ifNamePattern : lvcr._ifNamePatterns) {
+        for  (final String ifNamePattern : lvcr.IF_NAME_PATTERNS) {
             // excluding regexps as "\\\\d+" won't replace with String.replaceAll(String,String);
             if (!ifNamePattern.contains("\\")) {
                 final String ifName = ifNamePattern.replaceFirst("\\^", "") + "0";

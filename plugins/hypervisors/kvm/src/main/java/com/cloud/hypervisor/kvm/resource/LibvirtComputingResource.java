@@ -1291,7 +1291,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         return "";
     }
 
-    String [] _ifNamePatterns = {
+    static String [] IF_NAME_PATTERNS = {
             "^eth",
             "^bond",
             "^vlan",
@@ -1310,9 +1310,9 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
      * @param fname
      * @return
      */
-    boolean isInterface(final String fname) {
+    protected static boolean isInterface(final String fname) {
         StringBuffer commonPattern = new StringBuffer();
-        for (final String ifNamePattern : _ifNamePatterns) {
+        for (final String ifNamePattern : IF_NAME_PATTERNS) {
             commonPattern.append("|(").append(ifNamePattern).append(".*)");
         }
         if(fname.matches(commonPattern.toString())) {
