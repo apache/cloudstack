@@ -21,6 +21,8 @@ package com.cloud.utils;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
@@ -74,8 +76,9 @@ public class DateUtilTest {
 
     @Test
     public void zonedTimeFormatIsoOffsetDateTime() throws ParseException {
-        Date time = new Date();
-        String str = OffsetDateTime.now().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        Instant moment = Instant.now();
+        Date time = Date.from(moment);
+        String str = OffsetDateTime.ofInstant(moment, ZoneId.systemDefault()).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
 
         Date dtParsed = DateUtil.parseTZDateString(str);
 
@@ -84,8 +87,9 @@ public class DateUtilTest {
 
     @Test
     public void zonedTimeFormatIsoInstant() throws ParseException {
-        Date time = new Date();
-        String str = OffsetDateTime.now().format(DateTimeFormatter.ISO_INSTANT);
+        Instant moment = Instant.now();
+        Date time = Date.from(moment);
+        String str = OffsetDateTime.ofInstant(moment, ZoneId.systemDefault()).format(DateTimeFormatter.ISO_INSTANT);
 
         Date dtParsed = DateUtil.parseTZDateString(str);
 
@@ -94,9 +98,10 @@ public class DateUtilTest {
 
     @Test
     public void zonedTimeFormatIsoOffsetDateTimeMs() throws ParseException {
-        Date time = new Date();
+        Instant moment = Instant.now();
+        Date time = Date.from(moment);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSX");
-        String str = OffsetDateTime.now().format(formatter);
+        String str = OffsetDateTime.ofInstant(moment, ZoneId.systemDefault()).format(formatter);
 
         Date dtParsed = DateUtil.parseTZDateString(str);
 
@@ -105,9 +110,10 @@ public class DateUtilTest {
 
     @Test
     public void zonedTimeFormatIsoInstantMs() throws ParseException {
-        Date time = new Date();
+        Instant moment = Instant.now();
+        Date time = Date.from(moment);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSS'Z'");
-        String str = OffsetDateTime.now(ZoneOffset.UTC).format(formatter);
+        String str = OffsetDateTime.ofInstant(moment, ZoneId.of("UTC")).format(formatter);
 
         Date dtParsed = DateUtil.parseTZDateString(str);
 
@@ -116,9 +122,10 @@ public class DateUtilTest {
 
     @Test
     public void zonedTimeFormatIsoNoColonZMs() throws ParseException {
-        Date time = new Date();
+        Instant moment = Instant.now();
+        Date time = Date.from(moment);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ");
-        String str = OffsetDateTime.now().format(formatter);
+        String str = OffsetDateTime.ofInstant(moment, ZoneId.systemDefault()).format(formatter);
 
         Date dtParsed = DateUtil.parseTZDateString(str);
 
