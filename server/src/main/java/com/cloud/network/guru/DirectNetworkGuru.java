@@ -22,6 +22,7 @@ import javax.inject.Inject;
 
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.dc.DataCenter;
@@ -126,10 +127,18 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         return false;
     }
 
+    /**
+     * Return true if the physical network isolation method contains the expected isolation method for this guru
+     */
     protected boolean isMyIsolationMethod(PhysicalNetwork physicalNetwork) {
         for (IsolationMethod m : _isolationMethods) {
-            if (physicalNetwork.getIsolationMethods().contains(m.toString())) {
-                return true;
+            List<String> isolationMethods = physicalNetwork.getIsolationMethods();
+            if (CollectionUtils.isNotEmpty(isolationMethods)) {
+                for (String method : isolationMethods) {
+                    if (method.equalsIgnoreCase(m.toString())) {
+                        return true;
+                    }
+                }
             }
         }
         return false;
