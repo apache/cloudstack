@@ -37,7 +37,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -624,40 +623,9 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
 
         _allowSubdomainNetworkAccess = Boolean.valueOf(_configs.get(Config.SubDomainNetworkAccess.key()));
 
-        verifyConfigDriveEntriesOnZones();
-
         s_logger.info("Network Service is configured.");
 
         return true;
-    }
-
-    /**
-     * Verifies ConfigDrive entries on a zone. Adds Diabled ConfigDrive provider if missing
-     */
-    private void checkConfigDriveEntriesOnZone(DataCenterVO zone) {
-        if (zone.getNetworkType() == NetworkType.Advanced) {
-            List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZoneAndTrafficType(
-                    zone.getId(), TrafficType.Guest);
-            for (PhysicalNetworkVO physicalNetworkVO : physicalNetworks) {
-                PhysicalNetworkServiceProviderVO provider = _pNSPDao.findByServiceProvider(
-                        physicalNetworkVO.getId(), Provider.ConfigDrive.getName());
-                if (provider == null) {
-                    addConfigDriveToPhysicalNetwork(physicalNetworkVO.getId());
-                }
-            }
-        }
-    }
-
-    /**
-     * Verifies ConfigDrive entries on enabled zones. Adds Diabled ConfigDrive provider if missing.
-     */
-    private void verifyConfigDriveEntriesOnZones() {
-        List<DataCenterVO> zones = _dcDao.listEnabledZones();
-        if (CollectionUtils.isNotEmpty(zones)) {
-            for (DataCenterVO zone : zones) {
-                checkConfigDriveEntriesOnZone(zone);
-            }
-        }
     }
 
     @Override
