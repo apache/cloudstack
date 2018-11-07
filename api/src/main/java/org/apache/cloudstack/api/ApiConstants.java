@@ -117,6 +117,7 @@ public class ApiConstants {
     public static final String END_PORT = "endport";
     public static final String ENTRY_TIME = "entrytime";
     public static final String EXPIRES = "expires";
+    public static final String EXTRA_CONFIG = "extraconfig";
     public static final String EXTRA_DHCP_OPTION = "extradhcpoption";
     public static final String EXTRA_DHCP_OPTION_NAME = "extradhcpoptionname";
     public static final String EXTRA_DHCP_OPTION_CODE = "extradhcpoptioncode";

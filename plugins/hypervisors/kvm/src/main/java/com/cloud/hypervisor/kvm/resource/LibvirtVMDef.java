@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import com.google.common.collect.Maps;
@@ -900,7 +901,7 @@ public class LibvirtVMDef {
 
     public static class InterfaceDef {
         enum GuestNetType {
-            BRIDGE("bridge"), DIRECT("direct"), NETWORK("network"), USER("user"), ETHERNET("ethernet"), INTERNAL("internal");
+            BRIDGE("bridge"), DIRECT("direct"), NETWORK("network"), USER("user"), ETHERNET("ethernet"), INTERNAL("internal"), VHOSTUSER("vhostuser");
             String _type;
 
             GuestNetType(String type) {
@@ -933,7 +934,7 @@ public class LibvirtVMDef {
 
         private GuestNetType _netType; /*
          * bridge, ethernet, network, user,
-         * internal
+         * internal, vhostuser
          */
         private HostNicType _hostNetType; /* Only used by agent java code */
         private String _netSourceMode;
@@ -950,6 +951,9 @@ public class LibvirtVMDef {
         private boolean _pxeDisable = false;
         private boolean _linkStateUp = true;
         private Integer _slot;
+        private String _dpdkSourcePath;
+        private String _dpdkSourcePort;
+        private String _dpdkExtraLines;
 
         public void defBridgeNet(String brName, String targetBrName, String macAddr, NicModel model) {
             defBridgeNet(brName, targetBrName, macAddr, model, 0);
@@ -962,6 +966,16 @@ public class LibvirtVMDef {
             _macAddr = macAddr;
             _model = model;
             _networkRateKBps = networkRateKBps;
+        }
+
+        public void defDpdkNet(String dpdkSourcePath, String dpdkPort, String macAddress, NicModel model, Integer networkRateKBps, String extra) {
+            _netType = GuestNetType.VHOSTUSER;
+            _dpdkSourcePath = dpdkSourcePath;
+            _dpdkSourcePort = dpdkPort;
+            _macAddr = macAddress;
+            _model = model;
+            _networkRateKBps = networkRateKBps;
+            _dpdkExtraLines = extra;
         }
 
         public void defDirectNet(String sourceName, String targetName, String macAddr, NicModel model, String sourceMode) {
@@ -1089,6 +1103,13 @@ public class LibvirtVMDef {
             return _linkStateUp;
         }
 
+        public String getDpdkSourcePort() {
+            return _dpdkSourcePort;
+        }
+        public void setDpdkSourcePort(String port) {
+            _dpdkSourcePort = port;
+        }
+
         @Override
         public String toString() {
             StringBuilder netBuilder = new StringBuilder();
@@ -1099,6 +1120,8 @@ public class LibvirtVMDef {
                 netBuilder.append("<source network='" + _sourceName + "'/>\n");
             } else if (_netType == GuestNetType.DIRECT) {
                 netBuilder.append("<source dev='" + _sourceName + "' mode='" + _netSourceMode + "'/>\n");
+            } else if (_netType == GuestNetType.VHOSTUSER) {
+                netBuilder.append("<source type='unix' path='"+ _dpdkSourcePath + _dpdkSourcePort + "' mode='client'/>\n");
             }
             if (_networkName != null) {
                 netBuilder.append("<target dev='" + _networkName + "'/>\n");
@@ -1132,7 +1155,13 @@ public class LibvirtVMDef {
                 netBuilder.append("<vlan trunk='no'>\n<tag id='" + _vlanTag + "'/>\n</vlan>");
             }
 
-            netBuilder.append("<link state='" + (_linkStateUp ? "up" : "down") +"'/>\n");
+            if (StringUtils.isNotBlank(_dpdkExtraLines)) {
+                netBuilder.append(_dpdkExtraLines);
+            }
+
+            if (_netType != GuestNetType.VHOSTUSER) {
+                netBuilder.append("<link state='" + (_linkStateUp ? "up" : "down") +"'/>\n");
+            }
 
             if (_slot  != null) {
                 netBuilder.append(String.format("<address type='pci' domain='0x0000' bus='0x00' slot='0x%02x' function='0x0'/>\n", _slot));

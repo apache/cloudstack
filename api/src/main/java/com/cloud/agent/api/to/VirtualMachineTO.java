@@ -73,6 +73,7 @@ public class VirtualMachineTO {
     Double cpuQuotaPercentage = null;
 
     Map<String, String> guestOsDetails = new HashMap<String, String>();
+    Map<String, String> extraConfig = new HashMap<>();
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -349,5 +350,12 @@ public class VirtualMachineTO {
 
     public void setCpuQuotaPercentage(Double cpuQuotaPercentage) {
         this.cpuQuotaPercentage = cpuQuotaPercentage;
+    }
+
+    public void addExtraConfig(String key, String value) {
+        extraConfig.put(key, value);
+    }
+    public Map<String, String> getExtraConfig() {
+        return extraConfig;
     }
 }

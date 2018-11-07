@@ -26,7 +26,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.Vector;
@@ -176,8 +178,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -189,6 +193,8 @@ public class LibvirtComputingResourceTest {
     private LibvirtComputingResource libvirtComputingResource;
     @Mock
     VirtualMachineTO vmTO;
+    @Mock
+    LibvirtVMDef vmDef;
 
     String hyperVisorType = "kvm";
     Random random = new Random();
@@ -3165,7 +3171,7 @@ public class LibvirtComputingResourceTest {
 
             when(libvirtComputingResource.getVifDriver(nic.getType(), nic.getName())).thenReturn(vifDriver);
 
-            when(vifDriver.plug(nic, "Other PV", "")).thenReturn(interfaceDef);
+            when(vifDriver.plug(nic, "Other PV", "", null)).thenReturn(interfaceDef);
             when(interfaceDef.toString()).thenReturn("Interface");
 
             final String interfaceDefStr = interfaceDef.toString();
@@ -3188,7 +3194,7 @@ public class LibvirtComputingResourceTest {
             verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(command.getVmName());
             verify(libvirtComputingResource, times(1)).getDomain(conn, instanceName);
             verify(libvirtComputingResource, times(1)).getVifDriver(nic.getType(), nic.getName());
-            verify(vifDriver, times(1)).plug(nic, "Other PV", "");
+            verify(vifDriver, times(1)).plug(nic, "Other PV", "", null);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         } catch (final InternalErrorException e) {
@@ -3262,7 +3268,7 @@ public class LibvirtComputingResourceTest {
 
             when(libvirtComputingResource.getVifDriver(nic.getType(), nic.getName())).thenReturn(vifDriver);
 
-            when(vifDriver.plug(nic, "Other PV", "")).thenThrow(InternalErrorException.class);
+            when(vifDriver.plug(nic, "Other PV", "", null)).thenThrow(InternalErrorException.class);
 
         } catch (final LibvirtException e) {
             fail(e.getMessage());
@@ -3281,7 +3287,7 @@ public class LibvirtComputingResourceTest {
             verify(libvirtUtilitiesHelper, times(1)).getConnectionByVmName(command.getVmName());
             verify(libvirtComputingResource, times(1)).getDomain(conn, instanceName);
             verify(libvirtComputingResource, times(1)).getVifDriver(nic.getType(), nic.getName());
-            verify(vifDriver, times(1)).plug(nic, "Other PV", "");
+            verify(vifDriver, times(1)).plug(nic, "Other PV", "", null);
         } catch (final LibvirtException e) {
             fail(e.getMessage());
         } catch (final InternalErrorException e) {
@@ -5216,5 +5222,23 @@ public class LibvirtComputingResourceTest {
         Answer ans = libvirtComputingResource.executeRequest(cmd);
         assertFalse(ans instanceof UnsupportedAnswer);
         assertTrue(ans instanceof Answer);
+    }
+
+    @Test
+    public void testAddExtraConfigComponentEmptyExtraConfig() {
+        libvirtComputingResource = new LibvirtComputingResource();
+        libvirtComputingResource.addExtraConfigComponent(new HashMap<>(), vmDef);
+        Mockito.verify(vmDef, never()).addComp(any());
+    }
+
+    @Test
+    public void testAddExtraConfigComponentNotEmptyExtraConfig() {
+        libvirtComputingResource = new LibvirtComputingResource();
+        Map<String, String> extraConfig = new HashMap<>();
+        extraConfig.put("extraconfig-1", "value1");
+        extraConfig.put("extraconfig-2", "value2");
+        extraConfig.put("extraconfig-3", "value3");
+        libvirtComputingResource.addExtraConfigComponent(extraConfig, vmDef);
+        Mockito.verify(vmDef, times(1)).addComp(any());
     }
 }

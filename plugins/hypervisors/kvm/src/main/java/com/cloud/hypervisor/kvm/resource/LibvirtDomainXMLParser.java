@@ -182,6 +182,11 @@ public class LibvirtDomainXMLParser {
                 } else if (type.equalsIgnoreCase("ethernet")) {
                     String scriptPath = getAttrValue("script", "path", nic);
                     def.defEthernet(dev, mac, NicModel.valueOf(model.toUpperCase()), scriptPath, networkRateKBps);
+                } else if (type.equals("vhostuser")) {
+                    String sourcePort = getAttrValue("source", "path", nic);
+                    String[] sourcePathParts = sourcePort.split("/");
+                    String port = sourcePathParts[sourcePathParts.length - 1];
+                    def.setDpdkSourcePort(port);
                 }
 
                 if (StringUtils.isNotBlank(slot)) {

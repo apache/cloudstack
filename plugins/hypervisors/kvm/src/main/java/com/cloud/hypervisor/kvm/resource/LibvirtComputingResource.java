@@ -48,6 +48,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import com.cloud.resource.RequestWrapper;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -56,6 +57,7 @@ import org.apache.cloudstack.utils.linux.CPUStat;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
@@ -521,6 +523,12 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     protected StorageSubsystemCommandHandler storageHandler;
 
+    protected boolean dpdkSupport = false;
+    protected String dpdkOvsPath;
+    protected static final String DPDK_NUMA = ApiConstants.EXTRA_CONFIG + "-dpdk-numa";
+    protected static final String DPDK_HUGE_PAGES = ApiConstants.EXTRA_CONFIG + "-dpdk-hugepages";
+    protected static final String DPDK_INTERFACE_PREFIX = ApiConstants.EXTRA_CONFIG + "-dpdk-interface-";
+
     private String getEndIpFromStartIp(final String startIp, final int numIps) {
         final String[] tokens = startIp.split("[.]");
         assert tokens.length == 4;
@@ -635,6 +643,15 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             _bridgeType = BridgeType.NATIVE;
         } else {
             _bridgeType = BridgeType.valueOf(bridgeType.toUpperCase());
+        }
+
+        String dpdk = (String) params.get("openvswitch.dpdk.enabled");
+        if (_bridgeType == BridgeType.OPENVSWITCH && Boolean.parseBoolean(dpdk)) {
+            dpdkSupport = true;
+            dpdkOvsPath = (String) params.get("openvswitch.dpdk.ovs.path");
+            if (dpdkOvsPath != null && !dpdkOvsPath.endsWith("/")) {
+                dpdkOvsPath += "/";
+            }
         }
 
         params.put("domr.scripts.dir", domrScriptsDir);
@@ -1634,7 +1651,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         final Domain vm = getDomain(conn, vmName);
-        vm.attachDevice(getVifDriver(nicTO.getType()).plug(nicTO, "Other PV", "").toString());
+        vm.attachDevice(getVifDriver(nicTO.getType()).plug(nicTO, "Other PV", "", null).toString());
     }
 
 
@@ -2039,6 +2056,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         vm.setDomDescription(vmTO.getOs());
         vm.setPlatformEmulator(vmTO.getPlatformEmulator());
 
+        Map<String, String> extraConfig = vmTO.getExtraConfig();
+        if (dpdkSupport && (!extraConfig.containsKey(DPDK_NUMA) || !extraConfig.containsKey(DPDK_HUGE_PAGES))) {
+            s_logger.info("DPDK is enabled but it needs extra configurations for CPU NUMA and Huge Pages for VM deployment");
+        }
+
         final GuestDef guest = new GuestDef();
 
         if (HypervisorType.LXC == _hypervisorType && VirtualMachine.Type.User == vmTO.getType()) {
@@ -2072,21 +2094,23 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         grd.setVcpuNum(vcpus);
         vm.addComp(grd);
 
-        final CpuModeDef cmd = new CpuModeDef();
-        cmd.setMode(_guestCpuMode);
-        cmd.setModel(_guestCpuModel);
-        if (vmTO.getType() == VirtualMachine.Type.User) {
-            cmd.setFeatures(_cpuFeatures);
+        if (!extraConfig.containsKey(DPDK_NUMA)) {
+            final CpuModeDef cmd = new CpuModeDef();
+            cmd.setMode(_guestCpuMode);
+            cmd.setModel(_guestCpuModel);
+            if (vmTO.getType() == VirtualMachine.Type.User) {
+                cmd.setFeatures(_cpuFeatures);
+            }
+            // multi cores per socket, for larger core configs
+            if (vcpus % 6 == 0) {
+                final int sockets = vcpus / 6;
+                cmd.setTopology(6, sockets);
+            } else if (vcpus % 4 == 0) {
+                final int sockets = vcpus / 4;
+                cmd.setTopology(4, sockets);
+            }
+            vm.addComp(cmd);
         }
-        // multi cores per socket, for larger core configs
-        if (vcpus % 6 == 0) {
-            final int sockets = vcpus / 6;
-            cmd.setTopology(6, sockets);
-        } else if (vcpus % 4 == 0) {
-            final int sockets = vcpus / 4;
-            cmd.setTopology(4, sockets);
-        }
-        vm.addComp(cmd);
 
         if (_hypervisorLibvirtVersion >= 9000) {
             final CpuTuneDef ctd = new CpuTuneDef();
@@ -2192,7 +2216,27 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         vm.addComp(devices);
 
+        addExtraConfigComponent(extraConfig, vm);
+
         return vm;
+    }
+
+    /**
+     * Add extra configurations (if any) as a String component to the domain XML
+     */
+    protected void addExtraConfigComponent(Map<String, String> extraConfig, LibvirtVMDef vm) {
+        if (MapUtils.isNotEmpty(extraConfig)) {
+            StringBuilder extraConfigBuilder = new StringBuilder();
+            for (String key : extraConfig.keySet()) {
+                if (!key.startsWith(DPDK_INTERFACE_PREFIX)) {
+                    extraConfigBuilder.append(extraConfig.get(key));
+                }
+            }
+            String comp = extraConfigBuilder.toString();
+            if (org.apache.commons.lang.StringUtils.isNotBlank(comp)) {
+                vm.addComp(comp);
+            }
+        }
     }
 
     public void createVifs(final VirtualMachineTO vmSpec, final LibvirtVMDef vm) throws InternalErrorException, LibvirtException {
@@ -2202,10 +2246,11 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         if (params != null && params.get("nicAdapter") != null && !params.get("nicAdapter").isEmpty()) {
             nicAdapter = params.get("nicAdapter");
         }
+        Map<String, String> extraConfig = vmSpec.getExtraConfig();
         for (int i = 0; i < nics.length; i++) {
             for (final NicTO nic : vmSpec.getNics()) {
                 if (nic.getDeviceId() == i) {
-                    createVif(vm, nic, nicAdapter);
+                    createVif(vm, nic, nicAdapter, extraConfig);
                 }
             }
         }
@@ -2400,7 +2445,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     }
 
-    private void createVif(final LibvirtVMDef vm, final NicTO nic, final String nicAdapter) throws InternalErrorException, LibvirtException {
+    private void createVif(final LibvirtVMDef vm, final NicTO nic, final String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
 
         if (nic.getType().equals(TrafficType.Guest) && nic.getBroadcastType().equals(BroadcastDomainType.Vsp)) {
             String vrIp = nic.getBroadcastUri().getPath().substring(1);
@@ -2415,7 +2460,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             s_logger.error("LibvirtVMDef object get devices with null result");
             throw new InternalErrorException("LibvirtVMDef object get devices with null result");
         }
-        vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter));
+        vm.getDevices().addDevice(getVifDriver(nic.getType(), nic.getName()).plug(nic, vm.getPlatformEmulator(), nicAdapter, extraConfig));
     }
 
     public boolean cleanupDisk(Map<String, String> volumeToDisconnect) {

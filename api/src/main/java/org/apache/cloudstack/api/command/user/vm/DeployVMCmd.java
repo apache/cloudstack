@@ -200,6 +200,9 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             " an optional parameter used to create additional data disks from datadisk templates; can't be specified with diskOfferingId parameter")
     private Map dataDiskTemplateToDiskOfferingList;
 
+    @Parameter(name = ApiConstants.EXTRA_CONFIG, type = CommandType.STRING, since = "4.12", description = "an optional URL encoded string that can be passed to the virtual machine upon successful deployment", length = 5120)
+    private String extraConfig;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -480,6 +483,10 @@ public class DeployVMCmd extends BaseAsyncCreateCustomIdCmd implements SecurityG
             dataDiskTemplateToDiskOfferingMap.put(dataDiskTemplateId, dataDiskOffering);
         }
         return dataDiskTemplateToDiskOfferingMap;
+    }
+
+    public String getExtraConfig() {
+        return extraConfig;
     }
 
     /////////////////////////////////////////////////////
