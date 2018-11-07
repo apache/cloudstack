@@ -23,6 +23,32 @@ from configFileOps import configFileOps
 import os
 import shutil
 
+# exit() error constants
+Unknown = 0
+CentOS6 = 1
+CentOS7 = 2
+Ubuntu = 3
+RHEL6 = 4
+RHEL7 = 5
+distro = None
+
+#=================== DISTRIBUTION DETECTION =================
+if os.path.exists("/etc/centos-release"):
+    version = file("/etc/centos-release").readline()
+    if version.find("CentOS release 6") != -1:
+      distro = CentOS6
+    elif version.find("CentOS Linux release 7") != -1:
+      distro = CentOS7
+elif os.path.exists("/etc/redhat-release"):
+    version = file("/etc/redhat-release").readline()
+    if version.find("Red Hat Enterprise Linux Server release 6") != -1:
+      distro = RHEL6
+    elif version.find("Red Hat Enterprise Linux Server 7") != -1:
+      distro = RHEL7
+elif os.path.exists("/etc/lsb-release") and "Ubuntu" in file("/etc/lsb-release").read(-1): distro = Ubuntu
+else: distro = Unknown
+#=================== DISTRIBUTION DETECTION =================
+
 class serviceCfgBase(object):
     def __init__(self, syscfg):
         self.status = None
@@ -498,7 +524,8 @@ class libvirtConfigRedhat(serviceCfgBase):
             configureLibvirtConfig(self.syscfg.env.secure, self)
 
             cfo = configFileOps("/etc/sysconfig/libvirtd", self)
-            cfo.addEntry("export CGROUP_DAEMON", "'cpu:/virt'")
+            if distro in (CentOS6,RHEL6):
+                cfo.addEntry("export CGROUP_DAEMON", "'cpu:/virt'")
             cfo.addEntry("LIBVIRTD_ARGS", "-l")
             cfo.save()
 
