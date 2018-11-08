@@ -103,6 +103,8 @@ public interface IpAddressManager {
 
     String acquireGuestIpAddress(Network network, String requestedIp);
 
+    String acquireFirstGuestIpAddress(Network network);
+
     boolean applyStaticNats(List<? extends StaticNat> staticNats, boolean continueOnError, boolean forRevoke) throws ResourceUnavailableException;
 
     IpAddress assignSystemIp(long networkId, Account owner, boolean forElasticLb, boolean forElasticIp) throws InsufficientAddressCapacityException;

@@ -1845,6 +1845,19 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         return NetUtils.long2Ip(array[rand.nextInt(array.length)]);
     }
 
+    @Override
+    public String acquireFirstGuestIpAddress(Network network) {
+        if (_networkModel.listNetworkOfferingServices(network.getNetworkOfferingId()).isEmpty() && network.getCidr() == null) {
+            return null;
+        }
+        Set<Long> availableIps = _networkModel.getAvailableIps(network, null);
+        if (availableIps == null || availableIps.isEmpty()) {
+            s_logger.debug("There are no free ips in the  network " + network);
+            return null;
+        }
+        return NetUtils.long2Ip(availableIps.iterator().next());
+    }
+
     /**
      * Get the list of public IPs that need to be applied for a static NAT enable/disable operation.
      * Manipulating only these ips prevents concurrency issues when disabling static nat at the same time.

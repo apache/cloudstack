@@ -742,7 +742,7 @@ public class NetworkHelperImpl implements NetworkHelper {
             final NicProfile gatewayNic = new NicProfile(defaultNetworkStartIp, defaultNetworkStartIpv6);
             if (routerDeploymentDefinition.isPublicNetwork()) {
                 if (routerDeploymentDefinition.isRedundant()) {
-                    gatewayNic.setIPv4Address(_ipAddrMgr.acquireGuestIpAddress(guestNetwork, null));
+                    gatewayNic.setIPv4Address(_ipAddrMgr.acquireFirstGuestIpAddress(guestNetwork));
                 } else {
                     gatewayNic.setIPv4Address(guestNetwork.getGateway());
                 }
