@@ -1126,10 +1126,8 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
         String hypervisorVersion = host.getHypervisorVersion();
         Long maxGuestLimit = _hypervisorCapabilitiesDao.getMaxGuestsLimit(hypervisorType, hypervisorVersion);
         if (vmCount.longValue() >= maxGuestLimit.longValue()) {
-            if (s_logger.isDebugEnabled()) {
-                s_logger.debug("Host name: " + host.getName() + ", hostId: " + host.getId() + " already reached max Running VMs(count includes system VMs), limit is: " +
-                    maxGuestLimit + ",Running VM counts is: " + vmCount.longValue());
-            }
+            s_logger.info("Host name: " + host.getName() + ", hostId: " + host.getId() + " already reached max Running VMs(count includes system VMs), limit: " +
+                maxGuestLimit + ", Running VM count: " + vmCount.longValue());
             return true;
         }
         return false;
