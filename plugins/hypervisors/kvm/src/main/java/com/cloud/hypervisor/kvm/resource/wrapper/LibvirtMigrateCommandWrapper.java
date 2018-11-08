@@ -207,14 +207,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             destDomain = migrateThread.get(10, TimeUnit.SECONDS);
 
             if (destDomain != null) {
-                for (DiskDef disk : disks) {
-                    MigrateDiskInfo migrateDiskInfo = searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, disk);
-                    if (migrateDiskInfo != null && migrateDiskInfo.isSourceDiskOnStorageFileSystem()) {
-                        deleteLocalVolume(disk.getDiskPath());
-                    } else {
-                        libvirtComputingResource.cleanupDisk(disk);
-                    }
-                }
+                deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
             }
 
         } catch (final LibvirtException e) {
@@ -289,7 +282,23 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     }
 
     /**
-     * Deletes the local volume from the storage pool
+     * In case of a local file, it deletes the file on the source host/storage pool. Otherwise (for instance iScsi) it disconnects the disk on the source storage pool. </br>
+     * This method must be executed after a successful migration to a target storage pool, cleaning up the source storage.
+     */
+    protected void deleteOrDisconnectDisksOnSourcePool(final LibvirtComputingResource libvirtComputingResource, final List<MigrateDiskInfo> migrateDiskInfoList,
+            List<DiskDef> disks) {
+        for (DiskDef disk : disks) {
+            MigrateDiskInfo migrateDiskInfo = searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, disk);
+            if (migrateDiskInfo != null && migrateDiskInfo.isSourceDiskOnStorageFileSystem()) {
+                deleteLocalVolume(disk.getDiskPath());
+            } else {
+                libvirtComputingResource.cleanupDisk(disk);
+            }
+        }
+    }
+
+    /**
+     * Deletes the local volume from the storage pool.
      */
     protected void deleteLocalVolume(String localPath) {
         try {

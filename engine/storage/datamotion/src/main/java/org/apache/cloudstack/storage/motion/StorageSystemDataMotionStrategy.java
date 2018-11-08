@@ -1687,10 +1687,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
     /**
      * For each disk to migrate:
-     *   Create a volume on the target storage system.
-     *   Make the newly created volume accessible to the target KVM host.
-     *   Send a command to the target KVM host to connect to the newly created volume.
-     * Send a command to the source KVM host to migrate the VM and its storage.
+     * <ul>
+     *  <li>Create a volume on the target storage system.</li>
+     *  <li>Make the newly created volume accessible to the target KVM host.</li>
+     *  <li>Send a command to the target KVM host to connect to the newly created volume.</li>
+     *  <li>Send a command to the source KVM host to migrate the VM and its storage.</li>
+     * </ul>
      */
     @Override
     public void copyAsync(Map<VolumeInfo, DataStore> volumeDataStoreMap, VirtualMachineTO vmTO, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
@@ -1717,6 +1719,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 VolumeVO srcVolume = _volumeDao.findById(srcVolumeInfo.getId());
                 StoragePoolVO destStoragePool = _storagePoolDao.findById(destDataStore.getId());
                 StoragePoolVO sourceStoragePool = _storagePoolDao.findById(srcVolumeInfo.getPoolId());
+
+                if (!shouldMigrateVolume(sourceStoragePool, destHost, destStoragePool)) {
+                    continue;
+                }
 
                 VolumeVO destVolume = duplicateVolumeOnAnotherStorage(srcVolume, destStoragePool);
                 VolumeInfo destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
@@ -1815,6 +1821,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             callback.complete(result);
         }
+    }
+
+    /**
+     * Returns true. This method was implemented considering the classes that extend this {@link StorageSystemDataMotionStrategy} and cannot migrate volumes from certain types of source storage pools and/or to a different kind of destiny storage pool.
+     */
+    protected boolean shouldMigrateVolume(StoragePoolVO sourceStoragePool, Host destHost, StoragePoolVO destStoragePool) {
+        return true;
     }
 
     /**

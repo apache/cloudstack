@@ -30,7 +30,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
@@ -56,10 +55,10 @@ import com.cloud.vm.DiskProfile;
 public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMotionStrategy {
 
     @Inject
-    private TemplateDataFactory tmplFactory;
+    private TemplateDataFactory templateDataFactory;
 
     /**
-     * Uses the canHandle from the Super class {@link StorageSystemDataMotionStrategy}. If the storage pool is of file and the internalCanHandle from {@link StorageSystemDataMotionStrategy} CANT_HANDLE, returns the HIGHEST strategy priority. otherwise returns CANT_HANDLE.
+     * Uses the canHandle from the Super class {@link StorageSystemDataMotionStrategy}. If the storage pool is of file and the internalCanHandle from {@link StorageSystemDataMotionStrategy} CANT_HANDLE, returns the StrategyPriority.HYPERVISOR strategy priority. otherwise returns CANT_HANDLE.
      * Note that the super implementation (override) is called by {@link #canHandle(Map, Host, Host)} which ensures that {@link #internalCanHandle(Map)} will be executed only if the source host is KVM.
      */
     @Override
@@ -69,7 +68,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
 
             for (VolumeInfo volumeInfo : volumeInfoSet) {
                 StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
-                if (storagePoolVO.getPoolType() != StoragePoolType.Filesystem) {
+                if (storagePoolVO.getPoolType() != StoragePoolType.Filesystem && storagePoolVO.getPoolType() != StoragePoolType.NetworkFilesystem) {
                     return StrategyPriority.CANT_HANDLE;
                 }
             }
@@ -108,21 +107,22 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
             throw new CloudRuntimeException(String.format("Unable to modify target volume on the host [host id:%s, name:%s]", destHost.getId(), destHost.getName()));
         }
 
-        String libvirtDestImgsPath = StringUtils.EMPTY;
+        String libvirtDestImgsPath = null;
         if (rootImageProvisioningAnswer instanceof CreateAnswer) {
-            libvirtDestImgsPath = ((CreateAnswer)rootImageProvisioningAnswer).getVolume().getName() + File.separator;
+            libvirtDestImgsPath = ((CreateAnswer)rootImageProvisioningAnswer).getVolume().getName();
         }
-        return libvirtDestImgsPath + destVolumeInfo.getUuid();
+        // File.getAbsolutePath is used to keep the file separator as it should be and eliminate a verification to check if exists a file separator in the last character of libvirtDestImgsPath.
+        return new File(libvirtDestImgsPath, destVolumeInfo.getUuid()).getAbsolutePath();
     }
 
     /**
-     * Returns the template UUID of the given {@link VolumeVO}.
+     * Returns the template UUID with the given id. If the template ID is null, it returns null.
      */
     protected String getTemplateUuid(Long templateId) {
         if (templateId == null) {
             return null;
         }
-        TemplateInfo templateImage = tmplFactory.getTemplate(templateId, DataStoreRole.Image);
+        TemplateInfo templateImage = templateDataFactory.getTemplate(templateId, DataStoreRole.Image);
         return templateImage.getUuid();
     }
 
@@ -132,5 +132,14 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     @Override
     protected void setVolumePath(VolumeVO volume) {
         volume.setPath(volume.getUuid());
+    }
+
+    /**
+     * Return true if the volume should be migrated. Currently only supports migrating volumes on storage pool of the type StoragePoolType.Filesystem.
+     * This ensures that volumes on shared storage are not migrated and those on local storage pools are migrated.
+     */
+    @Override
+    protected boolean shouldMigrateVolume(StoragePoolVO sourceStoragePool, Host destHost, StoragePoolVO destStoragePool) {
+        return sourceStoragePool.getPoolType() == StoragePoolType.Filesystem;
     }
 }

@@ -21,11 +21,31 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.junit.Test;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.libvirt.Connect;
+import org.libvirt.StorageVol;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
+import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.DiskType;
+import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.DriverType;
+import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo.Source;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
+import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.utils.exception.CloudRuntimeException;
 
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({LibvirtConnection.class, LibvirtMigrateCommandWrapper.class})
 public class LibvirtMigrateCommandWrapperTest {
     String fullfile =
 "<domain type='kvm' id='4'>\n" +
@@ -252,11 +272,12 @@ public class LibvirtMigrateCommandWrapperTest {
 "  </devices>\n" +
 "</domain>";
 
+    LibvirtMigrateCommandWrapper libvirtMigrateCmdWrapper = new LibvirtMigrateCommandWrapper();
+
     @Test
     public void testReplaceIpForVNCInDescFile() {
         final String targetIp = "192.168.22.21";
-        final LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
-        final String result = lw.replaceIpForVNCInDescFile(fullfile, targetIp);
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFile(fullfile, targetIp);
         assertTrue("transformation does not live up to expectation:\n" + result, targetfile.equals(result));
     }
 
@@ -279,8 +300,7 @@ public class LibvirtMigrateCommandWrapperTest {
                 "  </devices>" +
                 "</domain>";
         final String targetIp = "10.10.10.10";
-        final LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
-        final String result = lw.replaceIpForVNCInDescFile(xmlDesc, targetIp);
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFile(xmlDesc, targetIp);
         assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
     }
 
@@ -303,26 +323,116 @@ public class LibvirtMigrateCommandWrapperTest {
                 "  </devices>" +
                 "</domain>";
         final String targetIp = "localhost.localdomain";
-        final LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
-        final String result = lw.replaceIpForVNCInDescFile(xmlDesc, targetIp);
+        final String result = libvirtMigrateCmdWrapper.replaceIpForVNCInDescFile(xmlDesc, targetIp);
         assertTrue("transformation does not live up to expectation:\n" + result, expectedXmlDesc.equals(result));
     }
 
     @Test
     public void testMigrationUri() {
         final String ip = "10.1.1.1";
-        LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
         LibvirtComputingResource lcr = new LibvirtComputingResource();
         if (lcr.isHostSecured()) {
-            assertEquals(lw.createMigrationURI(ip, lcr), String.format("qemu+tls://%s/system", ip));
+            assertEquals(libvirtMigrateCmdWrapper.createMigrationURI(ip, lcr), String.format("qemu+tls://%s/system", ip));
         } else {
-            assertEquals(lw.createMigrationURI(ip, lcr), String.format("qemu+tcp://%s/system", ip));
+            assertEquals(libvirtMigrateCmdWrapper.createMigrationURI(ip, lcr), String.format("qemu+tcp://%s/system", ip));
         }
     }
 
     @Test(expected = CloudRuntimeException.class)
     public void testMigrationUriException() {
-        LibvirtMigrateCommandWrapper lw = new LibvirtMigrateCommandWrapper();
-        lw.createMigrationURI(null, new LibvirtComputingResource());
+        libvirtMigrateCmdWrapper.createMigrationURI(null, new LibvirtComputingResource());
     }
+
+    @Test
+    public void deleteLocalVolumeTest() throws Exception {
+        PowerMockito.mockStatic(LibvirtConnection.class);
+        Connect conn = Mockito.mock(Connect.class);
+
+        PowerMockito.doReturn(conn).when(LibvirtConnection.class, "getConnection");
+
+        StorageVol storageVolLookupByPath = Mockito.mock(StorageVol.class);
+        Mockito.when(conn.storageVolLookupByPath("localPath")).thenReturn(storageVolLookupByPath);
+
+        libvirtMigrateCmdWrapper.deleteLocalVolume("localPath");
+
+        PowerMockito.verifyStatic(Mockito.times(1));
+        LibvirtConnection.getConnection();
+        InOrder inOrder = Mockito.inOrder(conn, storageVolLookupByPath);
+        inOrder.verify(conn, Mockito.times(1)).storageVolLookupByPath("localPath");
+        inOrder.verify(storageVolLookupByPath, Mockito.times(1)).delete(0);
+    }
+
+    @Test
+    public void searchDiskDefOnMigrateDiskInfoListTest() {
+        configureAndVerifyTestSearchDiskDefOnMigrateDiskInfoList("f3d49ecc-870c-475a-89fa-fd0124420a9b", "/var/lib/libvirt/images/f3d49ecc-870c-475a-89fa-fd0124420a9b", false);
+    }
+
+    @Test
+    public void searchDiskDefOnMigrateDiskInfoListTestExpectNull() {
+        configureAndVerifyTestSearchDiskDefOnMigrateDiskInfoList("f3d49ecc-870c-475a-89fa-fd0124420a9b", "/var/lib/libvirt/images/f3d49ecc-870c-89fa-fd0124420a9b", true);
+    }
+
+    private void configureAndVerifyTestSearchDiskDefOnMigrateDiskInfoList(String serialNumber, String diskPath, boolean isExpectedDiskInfoNull) {
+        MigrateDiskInfo migrateDiskInfo = new MigrateDiskInfo(serialNumber, DiskType.FILE, DriverType.QCOW2, Source.FILE, "sourceText");
+        List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
+        migrateDiskInfoList.add(migrateDiskInfo);
+
+        DiskDef disk = new DiskDef();
+        disk.setDiskPath(diskPath);
+
+        MigrateDiskInfo returnedMigrateDiskInfo = libvirtMigrateCmdWrapper.searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, disk);
+
+        if (isExpectedDiskInfoNull)
+            Assert.assertEquals(null, returnedMigrateDiskInfo);
+        else
+            Assert.assertEquals(migrateDiskInfo, returnedMigrateDiskInfo);
+    }
+
+    @Test
+    public void deleteOrDisconnectDisksOnSourcePoolTest() {
+        LibvirtMigrateCommandWrapper spyLibvirtMigrateCmdWrapper = PowerMockito.spy(libvirtMigrateCmdWrapper);
+        Mockito.doNothing().when(spyLibvirtMigrateCmdWrapper).deleteLocalVolume("volPath");
+
+        List<MigrateDiskInfo> migrateDiskInfoList = new ArrayList<>();
+        MigrateDiskInfo migrateDiskInfo0 = createMigrateDiskInfo(true);
+        MigrateDiskInfo migrateDiskInfo2 = createMigrateDiskInfo(false);
+
+        List<DiskDef> disks = new ArrayList<>();
+        DiskDef diskDef0 = new DiskDef();
+        DiskDef diskDef1 = new DiskDef();
+        DiskDef diskDef2 = new DiskDef();
+
+        diskDef0.setDiskPath("volPath");
+        disks.add(diskDef0);
+        disks.add(diskDef1);
+        disks.add(diskDef2);
+
+        LibvirtComputingResource libvirtComputingResource = Mockito.spy(new LibvirtComputingResource());
+        Mockito.doReturn(true).when(libvirtComputingResource).cleanupDisk(diskDef1);
+
+        Mockito.doReturn(migrateDiskInfo0).when(spyLibvirtMigrateCmdWrapper).searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, diskDef0);
+        Mockito.doReturn(null).when(spyLibvirtMigrateCmdWrapper).searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, diskDef1);
+        Mockito.doReturn(migrateDiskInfo2).when(spyLibvirtMigrateCmdWrapper).searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, diskDef2);
+
+        spyLibvirtMigrateCmdWrapper.deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
+
+        InOrder inOrder = Mockito.inOrder(spyLibvirtMigrateCmdWrapper, libvirtComputingResource);
+        inOrderVerifyDeleteOrDisconnect(inOrder, spyLibvirtMigrateCmdWrapper, libvirtComputingResource, migrateDiskInfoList, diskDef0, 1, 0);
+        inOrderVerifyDeleteOrDisconnect(inOrder, spyLibvirtMigrateCmdWrapper, libvirtComputingResource, migrateDiskInfoList, diskDef1, 0, 1);
+        inOrderVerifyDeleteOrDisconnect(inOrder, spyLibvirtMigrateCmdWrapper, libvirtComputingResource, migrateDiskInfoList, diskDef2, 0, 1);
+    }
+
+    private MigrateDiskInfo createMigrateDiskInfo(boolean isSourceDiskOnStorageFileSystem) {
+        MigrateDiskInfo migrateDiskInfo = new MigrateDiskInfo("serialNumber", DiskType.FILE, DriverType.QCOW2, Source.FILE, "sourceText");
+        migrateDiskInfo.setSourceDiskOnStorageFileSystem(isSourceDiskOnStorageFileSystem);
+        return migrateDiskInfo;
+    }
+
+    private void inOrderVerifyDeleteOrDisconnect(InOrder inOrder, LibvirtMigrateCommandWrapper lw, LibvirtComputingResource virtResource, List<MigrateDiskInfo> diskInfoList,
+            DiskDef disk, int timesDelete, int timesCleanup) {
+        inOrder.verify(lw).searchDiskDefOnMigrateDiskInfoList(diskInfoList, disk);
+        inOrder.verify(lw, Mockito.times(timesDelete)).deleteLocalVolume("volPath");
+        inOrder.verify(virtResource, Mockito.times(timesCleanup)).cleanupDisk(disk);
+    }
+
 }
