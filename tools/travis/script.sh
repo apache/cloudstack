@@ -26,6 +26,8 @@ mkdir -p integration-test-results/component
 TESTS=($@)
 echo "Running tests: " ${TESTS[@]}
 
+set -e
+
 for suite in "${TESTS[@]}" ; do
   echo "Currently running test: $suite"
   nosetests --with-xunit --xunit-file=integration-test-results/$suite.xml --with-marvin --marvin-config=setup/dev/advanced.cfg test/integration/$suite.py -s -a tags=advanced,required_hardware=false --zone=Sandbox-simulator --hypervisor=simulator || true ;
