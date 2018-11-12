@@ -14,8 +14,6 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-""" P1 tests for Account
-"""
 
 from nose.plugins.attrib import attr
 
@@ -154,7 +152,6 @@ class TestRAMCPUResourceAccounting(cloudstackTestCase):
             cls.account,
             cls.domain
         ]
-        return
 
     @classmethod
     def tearDownClass(cls):
@@ -163,13 +160,11 @@ class TestRAMCPUResourceAccounting(cloudstackTestCase):
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.dbclient = self.testClient.getDbConnection()
         self.cleanup = []
-        return
 
     def tearDown(self):
         try:
@@ -177,7 +172,6 @@ class TestRAMCPUResourceAccounting(cloudstackTestCase):
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
-        return
 
     def get_resource_amount(self, resource_type):
         cmd = updateResourceCount.updateResourceCountCmd()
@@ -247,6 +241,3 @@ class TestRAMCPUResourceAccounting(cloudstackTestCase):
 
         self.assertEqual(cores, self.services['service_offering_it_1']['cpunumber'] + self.services['service_offering_it_2']['cpunumber'])
         self.assertEqual(ram, self.services['service_offering_it_1']['memory'] + self.services['service_offering_it_2']['memory'])
-
-        pass
-
