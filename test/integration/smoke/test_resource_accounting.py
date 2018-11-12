@@ -67,7 +67,7 @@ class Services:
             "service_offering_it_2": {
                 "name": "InstanceType-2",
                 "displaytext": "Tiny Instance",
-                "cpunumber": 4,
+                "cpunumber": 2,
                 "cpuspeed": 100,
                 "memory": 512,
             },
