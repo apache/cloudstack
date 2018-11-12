@@ -16,6 +16,42 @@
 // under the License.
 package com.cloud.hypervisor.vmware.manager;
 
+import java.io.File;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.rmi.RemoteException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
+
+import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
+import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
+import org.apache.cloudstack.api.command.admin.zone.UpdateVmwareDcCmd;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -36,12 +72,17 @@ import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.dao.ClusterDao;
 import com.cloud.dc.dao.ClusterVSMMapDao;
 import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.event.ActionEvent;
+import com.cloud.event.EventTypes;
 import com.cloud.exception.DiscoveredWithErrorException;
 import com.cloud.exception.DiscoveryException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.ResourceInUseException;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.host.dao.HostDetailsDao;
+import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.hypervisor.dao.HypervisorCapabilitiesDao;
 import com.cloud.hypervisor.vmware.LegacyZoneVO;
@@ -49,6 +90,7 @@ import com.cloud.hypervisor.vmware.VmwareCleanupMaid;
 import com.cloud.hypervisor.vmware.VmwareDatacenter;
 import com.cloud.hypervisor.vmware.VmwareDatacenterService;
 import com.cloud.hypervisor.vmware.VmwareDatacenterVO;
+import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMap;
 import com.cloud.hypervisor.vmware.VmwareDatacenterZoneMapVO;
 import com.cloud.hypervisor.vmware.dao.LegacyZoneDao;
 import com.cloud.hypervisor.vmware.dao.VmwareDatacenterDao;
@@ -71,6 +113,7 @@ import com.cloud.network.Networks.BroadcastDomainType;
 import com.cloud.network.Networks.TrafficType;
 import com.cloud.network.VmwareTrafficLabel;
 import com.cloud.network.dao.CiscoNexusVSMDeviceDao;
+import com.cloud.org.Cluster;
 import com.cloud.org.Cluster.ClusterType;
 import com.cloud.secstorage.CommandExecLogDao;
 import com.cloud.server.ConfigurationServer;
@@ -88,6 +131,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.Transaction;
+import com.cloud.utils.db.TransactionCallback;
 import com.cloud.utils.db.TransactionCallbackNoReturn;
 import com.cloud.utils.db.TransactionStatus;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -96,41 +140,9 @@ import com.cloud.utils.ssh.SshHelper;
 import com.cloud.vm.DomainRouterVO;
 import com.cloud.vm.dao.UserVmCloneSettingDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Strings;
 import com.vmware.vim25.AboutInfo;
 import com.vmware.vim25.ManagedObjectReference;
-import org.apache.cloudstack.api.command.admin.zone.AddVmwareDcCmd;
-import org.apache.cloudstack.api.command.admin.zone.ListVmwareDcsCmd;
-import org.apache.cloudstack.api.command.admin.zone.RemoveVmwareDcCmd;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.jobs.impl.AsyncJobManagerImpl;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.utils.identity.ManagementServerNode;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.rmi.RemoteException;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 public class VmwareManagerImpl extends ManagerBase implements VmwareManager, VmwareStorageMount, Listener, VmwareDatacenterService, Configurable {
     private static final Logger s_logger = Logger.getLogger(VmwareManagerImpl.class);
@@ -148,9 +160,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject
     private NetworkModel _netMgr;
     @Inject
-    private ClusterDao _clusterDao;
+    private ClusterDao clusterDao;
     @Inject
-    private ClusterDetailsDao _clusterDetailsDao;
+    private ClusterDetailsDao clusterDetailsDao;
+    @Inject
+    private HostDao hostDao;
+    @Inject
+    private HostDetailsDao hostDetailsDao;
     @Inject
     private CommandExecLogDao _cmdExecLogDao;
     @Inject
@@ -166,17 +182,17 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Inject
     private HypervisorCapabilitiesDao _hvCapabilitiesDao;
     @Inject
-    private DataCenterDao _dcDao;
+    private DataCenterDao datacenterDao;
     @Inject
-    private VmwareDatacenterDao _vmwareDcDao;
+    private VmwareDatacenterDao vmwareDcDao;
     @Inject
-    private VmwareDatacenterZoneMapDao _vmwareDcZoneMapDao;
+    private VmwareDatacenterZoneMapDao vmwareDatacenterZoneMapDao;
     @Inject
-    private LegacyZoneDao _legacyZoneDao;
+    private LegacyZoneDao legacyZoneDao;
     @Inject
-    private ManagementServerHostPeerDao _mshostPeerDao;
+    private ManagementServerHostPeerDao msHostPeerDao;
     @Inject
-    private ClusterManager _clusterMgr;
+    private ClusterManager clusterManager;
     @Inject
     private ImageStoreDetailsUtil imageStoreDetailsUtil;
     @Inject
@@ -557,13 +573,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         long msid = Long.parseLong(tokens[1]);
         long runid = Long.parseLong(tokens[2]);
 
-        if (_mshostPeerDao.countStateSeenInPeers(msid, runid, ManagementServerHost.State.Down) > 0) {
+        if (msHostPeerDao.countStateSeenInPeers(msid, runid, ManagementServerHost.State.Down) > 0) {
             if (s_logger.isInfoEnabled())
                 s_logger.info("Worker VM's owner management server node has been detected down from peer nodes, recycle it");
             return true;
         }
 
-        if (runid != _clusterMgr.getManagementRunId(msid)) {
+        if (runid != clusterManager.getManagementRunId(msid)) {
             if (s_logger.isInfoEnabled())
                 s_logger.info("Worker VM's owner management server has changed runid, recycle it");
             return true;
@@ -819,16 +835,16 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     @DB
     private void updateClusterNativeHAState(Host host, StartupCommand cmd) {
-        ClusterVO cluster = _clusterDao.findById(host.getClusterId());
+        ClusterVO cluster = clusterDao.findById(host.getClusterId());
         if (cluster.getClusterType() == ClusterType.ExternalManaged) {
             if (cmd instanceof StartupRoutingCommand) {
                 StartupRoutingCommand hostStartupCmd = (StartupRoutingCommand)cmd;
                 Map<String, String> details = hostStartupCmd.getHostDetails();
 
                 if (details.get("NativeHA") != null && details.get("NativeHA").equalsIgnoreCase("true")) {
-                    _clusterDetailsDao.persist(host.getClusterId(), "NativeHA", "true");
+                    clusterDetailsDao.persist(host.getClusterId(), "NativeHA", "true");
                 } else {
-                    _clusterDetailsDao.persist(host.getClusterId(), "NativeHA", "false");
+                    clusterDetailsDao.persist(host.getClusterId(), "NativeHA", "false");
                 }
             }
         }
@@ -1000,6 +1016,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     public List<Class<?>> getCommands() {
         List<Class<?>> cmdList = new ArrayList<Class<?>>();
         cmdList.add(AddVmwareDcCmd.class);
+        cmdList.add(UpdateVmwareDcCmd.class);
         cmdList.add(RemoveVmwareDcCmd.class);
         cmdList.add(ListVmwareDcsCmd.class);
         return cmdList;
@@ -1040,14 +1057,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         // Zone validation
         validateZone(zoneId);
 
-        VmwareDatacenterZoneMapVO vmwareDcZoneMap = _vmwareDcZoneMapDao.findByZoneId(zoneId);
+        VmwareDatacenterZoneMapVO vmwareDcZoneMap = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
         // Check if zone is associated with VMware DC
         if (vmwareDcZoneMap != null) {
             // Check if the associated VMware DC matches the one specified in API params
             // This check would yield success as the association exists between same entities (zone and VMware DC)
             // This scenario would result in if the API addVmwareDc is called more than once with same parameters.
             Long associatedVmwareDcId = vmwareDcZoneMap.getVmwareDcId();
-            VmwareDatacenterVO associatedVmwareDc = _vmwareDcDao.findById(associatedVmwareDcId);
+            VmwareDatacenterVO associatedVmwareDc = vmwareDcDao.findById(associatedVmwareDcId);
             if (associatedVmwareDc.getVcenterHost().equalsIgnoreCase(vCenterHost) && associatedVmwareDc.getVmwareDatacenterName().equalsIgnoreCase(vmwareDcName)) {
                 s_logger.info("Ignoring API call addVmwareDc, because VMware DC " + vCenterHost + "/" + vmwareDcName +
                         " is already associated with specified zone with id " + zoneId);
@@ -1063,7 +1080,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
         // Check if DC is already part of zone
         // In that case vmware_data_center table should have the DC
-        vmwareDc = _vmwareDcDao.getVmwareDatacenterByGuid(vmwareDcName + "@" + vCenterHost);
+        vmwareDc = vmwareDcDao.getVmwareDatacenterByGuid(vmwareDcName + "@" + vCenterHost);
         if (vmwareDc != null) {
             throw new ResourceInUseException("This DC is already part of other CloudStack zone(s). Cannot add this DC to more zones.");
         }
@@ -1102,12 +1119,12 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
             // Add DC to database into vmware_data_center table
             vmwareDc = new VmwareDatacenterVO(guid, vmwareDcName, vCenterHost, userName, password);
-            vmwareDc = _vmwareDcDao.persist(vmwareDc);
+            vmwareDc = vmwareDcDao.persist(vmwareDc);
 
             // Map zone with vmware datacenter
             vmwareDcZoneMap = new VmwareDatacenterZoneMapVO(zoneId, vmwareDc.getId());
 
-            vmwareDcZoneMap = _vmwareDcZoneMapDao.persist(vmwareDcZoneMap);
+            vmwareDcZoneMap = vmwareDatacenterZoneMapDao.persist(vmwareDcZoneMap);
 
             // Set custom field for this DC
             if (addDcCustomFieldDef) {
@@ -1133,6 +1150,70 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     }
 
     @Override
+    @ActionEvent(eventType = EventTypes.EVENT_ZONE_EDIT, eventDescription = "updating VMware datacenter")
+    public VmwareDatacenter updateVmwareDatacenter(UpdateVmwareDcCmd cmd) {
+        final Long zoneId = cmd.getZoneId();
+        final String userName = cmd.getUsername();
+        final String password = cmd.getPassword();
+        final String vCenterHost = cmd.getVcenter();
+        final String vmwareDcName = cmd.getName();
+        final Boolean isRecursive = cmd.isRecursive();
+
+        final VmwareDatacenterZoneMap vdcMap = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
+        final VmwareDatacenterVO vmwareDc = vmwareDcDao.findById(vdcMap.getVmwareDcId());
+        if (vmwareDc == null) {
+            throw new CloudRuntimeException("VMWare datacenter does not exist by provided ID");
+        }
+        final String oldVCenterHost = vmwareDc.getVcenterHost();
+
+        if (!Strings.isNullOrEmpty(userName)) {
+            vmwareDc.setUser(userName);
+        }
+        if (!Strings.isNullOrEmpty(password)) {
+            vmwareDc.setPassword(password);
+        }
+        if (!Strings.isNullOrEmpty(vCenterHost)) {
+            vmwareDc.setVcenterHost(vCenterHost);
+        }
+        if (!Strings.isNullOrEmpty(vmwareDcName)) {
+            vmwareDc.setVmwareDatacenterName(vmwareDcName);
+        }
+        vmwareDc.setGuid(String.format("%s@%s", vmwareDc.getVmwareDatacenterName(), vmwareDc.getVcenterHost()));
+
+        return Transaction.execute(new TransactionCallback<VmwareDatacenter>() {
+            @Override
+            public VmwareDatacenter doInTransaction(TransactionStatus status) {
+                if (vmwareDcDao.update(vmwareDc.getId(), vmwareDc)) {
+                    if (isRecursive) {
+                        for (final Cluster cluster : clusterDao.listByDcHyType(zoneId, Hypervisor.HypervisorType.VMware.toString())) {
+                            final Map<String, String> clusterDetails = clusterDetailsDao.findDetails(cluster.getId());
+                            clusterDetails.put("username", vmwareDc.getUser());
+                            clusterDetails.put("password", vmwareDc.getPassword());
+                            final String clusterUrl = clusterDetails.get("url");
+                            if (!oldVCenterHost.equals(vmwareDc.getVcenterHost()) && !Strings.isNullOrEmpty(clusterUrl)) {
+                                clusterDetails.put("url", clusterUrl.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
+                            }
+                            clusterDetailsDao.persist(cluster.getId(), clusterDetails);
+                        }
+                        for (final Host host : hostDao.listAllHostsByZoneAndHypervisorType(zoneId, HypervisorType.VMware)) {
+                            final Map<String, String> hostDetails = hostDetailsDao.findDetails(host.getId());
+                            hostDetails.put("username", vmwareDc.getUser());
+                            hostDetails.put("password", vmwareDc.getPassword());
+                            final String hostGuid = hostDetails.get("guid");
+                            if (!Strings.isNullOrEmpty(hostGuid)) {
+                                hostDetails.put("guid", hostGuid.replace(oldVCenterHost, vmwareDc.getVcenterHost()));
+                            }
+                            hostDetailsDao.persist(host.getId(), hostDetails);
+                        }
+                    }
+                    return vmwareDc;
+                }
+                return null;
+            }
+        });
+    }
+
+    @Override
     public boolean removeVmwareDatacenter(RemoveVmwareDcCmd cmd) throws ResourceInUseException {
         Long zoneId = cmd.getZoneId();
         // Validate Id of zone
@@ -1148,14 +1229,14 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         String userName;
         String password;
         DatacenterMO dcMo = null;
-        final VmwareDatacenterZoneMapVO vmwareDcZoneMap = _vmwareDcZoneMapDao.findByZoneId(zoneId);
+        final VmwareDatacenterZoneMapVO vmwareDcZoneMap = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
         // Check if zone is associated with VMware DC
         if (vmwareDcZoneMap == null) {
             throw new CloudRuntimeException("Zone " + zoneId + " is not associated with any VMware datacenter.");
         }
 
         final long vmwareDcId = vmwareDcZoneMap.getVmwareDcId();
-        vmwareDatacenter = _vmwareDcDao.findById(vmwareDcId);
+        vmwareDatacenter = vmwareDcDao.findById(vmwareDcId);
         vmwareDcName = vmwareDatacenter.getVmwareDatacenterName();
         vCenterHost = vmwareDatacenter.getVcenterHost();
         userName = vmwareDatacenter.getUser();
@@ -1164,9 +1245,9 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
             @Override
             public void doInTransactionWithoutResult(TransactionStatus status) {
                 // Remove the VMware datacenter entry in table vmware_data_center
-                _vmwareDcDao.remove(vmwareDcId);
+                vmwareDcDao.remove(vmwareDcId);
                 // Remove the map entry in table vmware_data_center_zone_map
-                _vmwareDcZoneMapDao.remove(vmwareDcZoneMap.getId());
+                vmwareDatacenterZoneMapDao.remove(vmwareDcZoneMap.getId());
             }
         });
 
@@ -1217,7 +1298,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private void validateZoneWithResources(Long zoneId, String errStr) throws ResourceInUseException {
         // Check if zone has resources? - For now look for clusters
-        List<ClusterVO> clusters = _clusterDao.listByZoneId(zoneId);
+        List<ClusterVO> clusters = clusterDao.listByZoneId(zoneId);
         if (clusters != null && clusters.size() > 0) {
             // Look for VMware hypervisor.
             for (ClusterVO cluster : clusters) {
@@ -1231,7 +1312,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
     @Override
     public boolean isLegacyZone(long dcId) {
         boolean isLegacyZone = false;
-        LegacyZoneVO legacyZoneVo = _legacyZoneDao.findByZoneId(dcId);
+        LegacyZoneVO legacyZoneVo = legacyZoneDao.findByZoneId(dcId);
         if (legacyZoneVo != null) {
             isLegacyZone = true;
         }
@@ -1250,13 +1331,13 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
         doesZoneExist(zoneId);
 
         // Check if zone is associated with VMware DC
-        vmwareDcZoneMap = _vmwareDcZoneMapDao.findByZoneId(zoneId);
+        vmwareDcZoneMap = vmwareDatacenterZoneMapDao.findByZoneId(zoneId);
         if (vmwareDcZoneMap == null) {
             return null;
         }
         // Retrieve details of VMware DC associated with zone.
         vmwareDcId = vmwareDcZoneMap.getVmwareDcId();
-        vmwareDatacenter = _vmwareDcDao.findById(vmwareDcId);
+        vmwareDatacenter = vmwareDcDao.findById(vmwareDcId);
         vmwareDcList.add(vmwareDatacenter);
 
         // Currently a zone can have only 1 VMware DC associated with.
@@ -1266,7 +1347,7 @@ public class VmwareManagerImpl extends ManagerBase implements VmwareManager, Vmw
 
     private void doesZoneExist(Long zoneId) throws InvalidParameterValueException {
         // Check if zone with specified id exists
-        DataCenterVO zone = _dcDao.findById(zoneId);
+        DataCenterVO zone = datacenterDao.findById(zoneId);
         if (zone == null) {
             throw new InvalidParameterValueException("Can't find zone by the id specified.");
         }

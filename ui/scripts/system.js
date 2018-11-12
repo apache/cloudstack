@@ -8020,6 +8020,58 @@
                                         }
                                     },
 
+                                    updateVmwareDc: {
+                                        label: 'label.update.vmware.datacenter',
+                                        messages: {
+                                            confirm: function (args) {
+                                                return 'label.update.vmware.datacenter';
+                                            },
+                                            notification: function (args) {
+                                                return 'label.update.vmware.datacenter';
+                                            }
+                                        },
+                                        createForm: {
+                                            title: 'label.update.vmware.datacenter',
+                                            fields: {
+                                                name: {
+                                                    label: 'label.vmware.datacenter.name'
+                                                },
+                                                vcenter: {
+                                                    label: 'label.vmware.datacenter.vcenter'
+                                                },
+                                                username: {
+                                                    label: 'label.username'
+                                                },
+                                                password: {
+                                                    label: 'label.password',
+                                                    isPassword: true
+                                                }
+                                            }
+                                        },
+                                        action: function (args) {
+                                            var data = args.data;
+                                            data.zoneid = args.context.physicalResources[0].id;
+                                            $.ajax({
+                                                url: createURL('updateVmwareDc'),
+                                                data: data,
+                                                success: function (json) {
+                                                    args.response.success({
+                                                        data: args.context.physicalResources[0]
+                                                    });
+                                                },
+                                                error: function (XMLHttpResponse) {
+                                                    var errorMsg = parseXMLHttpResponse(XMLHttpResponse);
+                                                    args.response.error(errorMsg);
+                                                }
+                                            });
+                                        },
+                                        notification: {
+                                            poll: function (args) {
+                                                args.complete();
+                                            }
+                                        }
+                                    },
+
                                     removeVmwareDc: {
                                         label: 'label.remove.vmware.datacenter',
                                         messages: {
@@ -22192,9 +22244,12 @@
         var jsonObj = args.context.item;
         var allowedActions =[ 'enableSwift'];
 
-        if (jsonObj.vmwaredcId == null)
-        allowedActions.push('addVmwareDc'); else
-        allowedActions.push('removeVmwareDc');
+        if (jsonObj.vmwaredcId == null) {
+            allowedActions.push('addVmwareDc');
+        } else {
+            allowedActions.push('updateVmwareDc');
+            allowedActions.push('removeVmwareDc');
+        }
 
         if (jsonObj.domainid != null)
         allowedActions.push("releaseDedicatedZone"); else
