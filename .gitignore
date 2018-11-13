@@ -98,3 +98,4 @@ plugins/hypervisors/kvm/.pydevproject
 scripts/.pydevproject
 *.qcow2
 *.raw
+venv
