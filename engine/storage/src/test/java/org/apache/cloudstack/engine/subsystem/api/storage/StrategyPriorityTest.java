@@ -40,13 +40,11 @@ public class StrategyPriorityTest {
         SnapshotStrategy cantHandleStrategy = mock(SnapshotStrategy.class);
         SnapshotStrategy defaultStrategy = mock(SnapshotStrategy.class);
         SnapshotStrategy hyperStrategy = mock(SnapshotStrategy.class);
-        SnapshotStrategy pluginStrategy = mock(SnapshotStrategy.class);
         SnapshotStrategy highestStrategy = mock(SnapshotStrategy.class);
 
         doReturn(StrategyPriority.CANT_HANDLE).when(cantHandleStrategy).canHandle(any(Snapshot.class), any(SnapshotOperation.class));
         doReturn(StrategyPriority.DEFAULT).when(defaultStrategy).canHandle(any(Snapshot.class), any(SnapshotOperation.class));
         doReturn(StrategyPriority.HYPERVISOR).when(hyperStrategy).canHandle(any(Snapshot.class), any(SnapshotOperation.class));
-        doReturn(StrategyPriority.PLUGIN).when(pluginStrategy).canHandle(any(Snapshot.class), any(SnapshotOperation.class));
         doReturn(StrategyPriority.HIGHEST).when(highestStrategy).canHandle(any(Snapshot.class), any(SnapshotOperation.class));
 
         List<SnapshotStrategy> strategies = new ArrayList<SnapshotStrategy>(5);
@@ -67,10 +65,6 @@ public class StrategyPriorityTest {
         strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotOperation.TAKE);
         assertEquals("Hypervisor strategy was not picked.", hyperStrategy, strategy);
 
-        strategies.add(pluginStrategy);
-        strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotOperation.TAKE);
-        assertEquals("Plugin strategy was not picked.", pluginStrategy, strategy);
-
         strategies.add(highestStrategy);
         strategy = factory.getSnapshotStrategy(mock(Snapshot.class), SnapshotOperation.TAKE);
         assertEquals("Highest strategy was not picked.", highestStrategy, strategy);
@@ -81,13 +75,11 @@ public class StrategyPriorityTest {
         DataMotionStrategy cantHandleStrategy = mock(DataMotionStrategy.class);
         DataMotionStrategy defaultStrategy = mock(DataMotionStrategy.class);
         DataMotionStrategy hyperStrategy = mock(DataMotionStrategy.class);
-        DataMotionStrategy pluginStrategy = mock(DataMotionStrategy.class);
         DataMotionStrategy highestStrategy = mock(DataMotionStrategy.class);
 
         doReturn(StrategyPriority.CANT_HANDLE).when(cantHandleStrategy).canHandle(any(DataObject.class), any(DataObject.class));
         doReturn(StrategyPriority.DEFAULT).when(defaultStrategy).canHandle(any(DataObject.class), any(DataObject.class));
         doReturn(StrategyPriority.HYPERVISOR).when(hyperStrategy).canHandle(any(DataObject.class), any(DataObject.class));
-        doReturn(StrategyPriority.PLUGIN).when(pluginStrategy).canHandle(any(DataObject.class), any(DataObject.class));
         doReturn(StrategyPriority.HIGHEST).when(highestStrategy).canHandle(any(DataObject.class), any(DataObject.class));
 
         List<DataMotionStrategy> strategies = new ArrayList<DataMotionStrategy>(5);
@@ -108,10 +100,6 @@ public class StrategyPriorityTest {
         strategy = factory.getDataMotionStrategy(mock(DataObject.class), mock(DataObject.class));
         assertEquals("Hypervisor strategy was not picked.", hyperStrategy, strategy);
 
-        strategies.add(pluginStrategy);
-        strategy = factory.getDataMotionStrategy(mock(DataObject.class), mock(DataObject.class));
-        assertEquals("Plugin strategy was not picked.", pluginStrategy, strategy);
-
         strategies.add(highestStrategy);
         strategy = factory.getDataMotionStrategy(mock(DataObject.class), mock(DataObject.class));
         assertEquals("Highest strategy was not picked.", highestStrategy, strategy);
@@ -123,13 +111,11 @@ public class StrategyPriorityTest {
         DataMotionStrategy cantHandleStrategy = mock(DataMotionStrategy.class);
         DataMotionStrategy defaultStrategy = mock(DataMotionStrategy.class);
         DataMotionStrategy hyperStrategy = mock(DataMotionStrategy.class);
-        DataMotionStrategy pluginStrategy = mock(DataMotionStrategy.class);
         DataMotionStrategy highestStrategy = mock(DataMotionStrategy.class);
 
         doReturn(StrategyPriority.CANT_HANDLE).when(cantHandleStrategy).canHandle(any(Map.class), any(Host.class), any(Host.class));
         doReturn(StrategyPriority.DEFAULT).when(defaultStrategy).canHandle(any(Map.class), any(Host.class), any(Host.class));
         doReturn(StrategyPriority.HYPERVISOR).when(hyperStrategy).canHandle(any(Map.class), any(Host.class), any(Host.class));
-        doReturn(StrategyPriority.PLUGIN).when(pluginStrategy).canHandle(any(Map.class), any(Host.class), any(Host.class));
         doReturn(StrategyPriority.HIGHEST).when(highestStrategy).canHandle(any(Map.class), any(Host.class), any(Host.class));
 
         List<DataMotionStrategy> strategies = new ArrayList<DataMotionStrategy>(5);
@@ -149,10 +135,6 @@ public class StrategyPriorityTest {
         strategies.add(hyperStrategy);
         strategy = factory.getDataMotionStrategy(mock(Map.class), mock(Host.class), mock(Host.class));
         assertEquals("Hypervisor strategy was not picked.", hyperStrategy, strategy);
-
-        strategies.add(pluginStrategy);
-        strategy = factory.getDataMotionStrategy(mock(Map.class), mock(Host.class), mock(Host.class));
-        assertEquals("Plugin strategy was not picked.", pluginStrategy, strategy);
 
         strategies.add(highestStrategy);
         strategy = factory.getDataMotionStrategy(mock(Map.class), mock(Host.class), mock(Host.class));
