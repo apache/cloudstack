@@ -144,18 +144,20 @@ class TestNetworkMigration(cloudstackTestCase):
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
-        self.account = Account.create(
-                self.apiclient,
-                self.test_data["account"],
-                admin=True,
-                domainid=self.domain.id
-        )
+        if not self.hypervisorNotSupported:
+            self.account = Account.create(
+                    self.apiclient,
+                    self.test_data["account"],
+                    admin=True,
+                    domainid=self.domain.id
+            )
         self.cleanup = []
         return
 
     def tearDown(self):
         try:
-            self.account.delete(self.apiclient)
+            if not self.hypervisorNotSupported:
+                self.account.delete(self.apiclient)
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
