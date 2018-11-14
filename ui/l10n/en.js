@@ -511,6 +511,7 @@ var dictionary = {
 "label.by.type":"By Type",
 "label.by.type.id":"By Type ID",
 "label.by.zone":"By Zone",
+"label.bypass.vlan.overlap.check": "Bypass VLAN id/range overlap",
 "label.bytes.received":"Bytes Received",
 "label.bytes.sent":"Bytes Sent",
 "label.cache.mode":"Write-cache Type",
