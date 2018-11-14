@@ -39,6 +39,7 @@ from marvin.lib.utils import (get_hypervisor_type,
 
 # Import System Modules
 from nose.plugins.attrib import attr
+from marvin.lib.decoratorGenerators import skipTestIf
 
 
 class Services:
@@ -76,83 +77,87 @@ class TestNetworkMigration(cloudstackTestCase):
         cls.test_data = cls.testClient.getParsedTestDataConfig()
         cls.services = Services().services
 
+        cls.hypervisorNotSupported = False
         hypervisor = get_hypervisor_type(cls.api_client)
         if hypervisor.lower() not in ["vmware", "kvm"]:
-            raise unittest.SkipTest("This feature is supported "
-                                    "only on Vmware and KVM")
+            cls.hypervisorNotSupported = True
 
-    # Get Domain, Zone, Template
-        cls.domain = get_domain(cls.api_client)
-        cls.zone = get_zone(
-                cls.api_client,
-                cls.testClient.getZoneForTests())
-        cls.template = get_template(
-                cls.api_client,
-                cls.zone.id,
-                cls.test_data["ostype"]
-        )
-        cls.services["virtual_machine"]["template"] = cls.template.id
-        if cls.zone.localstorageenabled:
-            cls.storagetype = 'local'
-            cls.test_data["service_offerings"][
-                "tiny"]["storagetype"] = 'local'
-        else:
-            cls.storagetype = 'shared'
-            cls.test_data["service_offerings"][
-                "tiny"]["storagetype"] = 'shared'
-
-        cls.service_offering = ServiceOffering.create(
-                cls.api_client,
-                cls.test_data["service_offerings"]["tiny"]
-        )
-
-        # Create Network offering without userdata
-        cls.network_offering_nouserdata = NetworkOffering.create(
-                cls.api_client,
-                cls.test_data["network_offering"]
-        )
-        # Enable Network offering
-        cls.network_offering_nouserdata.update(cls.api_client,
-                                               state='Enabled')
-
-        # Create Network Offering with all the serices
-        cls.network_offering_all = NetworkOffering.create(
-                cls.api_client,
-                cls.test_data["isolated_network_offering"]
-        )
-        # Enable Network offering
-        cls.network_offering_all.update(cls.api_client, state='Enabled')
-
-        cls.native_vpc_network_offering = NetworkOffering.create(
+        cls._cleanup = []
+        if not cls.hypervisorNotSupported:
+            # Get Domain, Zone, Template
+            cls.domain = get_domain(cls.api_client)
+            cls.zone = get_zone(
                     cls.api_client,
-                    cls.test_data["nw_offering_isolated_vpc"],
-                    conservemode=False)
-        cls.native_vpc_network_offering.update(cls.api_client,
-                                               state='Enabled')
+                    cls.testClient.getZoneForTests())
+            cls.template = get_template(
+                    cls.api_client,
+                    cls.zone.id,
+                    cls.test_data["ostype"]
+            )
+            cls.services["virtual_machine"]["template"] = cls.template.id
+            if cls.zone.localstorageenabled:
+                cls.storagetype = 'local'
+                cls.test_data["service_offerings"][
+                    "tiny"]["storagetype"] = 'local'
+            else:
+                cls.storagetype = 'shared'
+                cls.test_data["service_offerings"][
+                    "tiny"]["storagetype"] = 'shared'
 
-        cls._cleanup = [
-            cls.service_offering,
-            cls.network_offering_nouserdata,
-            cls.network_offering_all,
-            cls.native_vpc_network_offering
-        ]
+            cls.service_offering = ServiceOffering.create(
+                    cls.api_client,
+                    cls.test_data["service_offerings"]["tiny"]
+            )
+
+            # Create Network offering without userdata
+            cls.network_offering_nouserdata = NetworkOffering.create(
+                    cls.api_client,
+                    cls.test_data["network_offering"]
+            )
+            # Enable Network offering
+            cls.network_offering_nouserdata.update(cls.api_client,
+                                                   state='Enabled')
+
+            # Create Network Offering with all the serices
+            cls.network_offering_all = NetworkOffering.create(
+                    cls.api_client,
+                    cls.test_data["isolated_network_offering"]
+            )
+            # Enable Network offering
+            cls.network_offering_all.update(cls.api_client, state='Enabled')
+
+            cls.native_vpc_network_offering = NetworkOffering.create(
+                        cls.api_client,
+                        cls.test_data["nw_offering_isolated_vpc"],
+                        conservemode=False)
+            cls.native_vpc_network_offering.update(cls.api_client,
+                                                   state='Enabled')
+
+            cls._cleanup = [
+                cls.service_offering,
+                cls.network_offering_nouserdata,
+                cls.network_offering_all,
+                cls.native_vpc_network_offering
+            ]
 
     def setUp(self):
         self.apiclient = self.testClient.getApiClient()
         self.hypervisor = self.testClient.getHypervisorInfo()
         self.dbclient = self.testClient.getDbConnection()
-        self.account = Account.create(
-                self.apiclient,
-                self.test_data["account"],
-                admin=True,
-                domainid=self.domain.id
-        )
+        if not self.hypervisorNotSupported:
+            self.account = Account.create(
+                    self.apiclient,
+                    self.test_data["account"],
+                    admin=True,
+                    domainid=self.domain.id
+            )
         self.cleanup = []
         return
 
     def tearDown(self):
         try:
-            self.account.delete(self.apiclient)
+            if not self.hypervisorNotSupported:
+                self.account.delete(self.apiclient)
             cleanup_resources(self.apiclient, self.cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
@@ -176,6 +181,7 @@ class TestNetworkMigration(cloudstackTestCase):
                            vpc_offering.id,
                            network_offering_map, resume)
 
+    @skipTestIf("hypervisorNotSupported")
     @attr(tags=["advanced", "smoke", "nativeisoonly"],
           required_hardware="false")
     def test_01_native_to_native_network_migration(self):
@@ -237,6 +243,7 @@ class TestNetworkMigration(cloudstackTestCase):
                 self.network_offering_all,
                 isolated_network, resume=False)
 
+    @skipTestIf("hypervisorNotSupported")
     @attr(tags=["advanced", "smoke", "nativevpconly"],
           required_hardware="false")
     def test_02_native_to_native_vpc_migration(self):
