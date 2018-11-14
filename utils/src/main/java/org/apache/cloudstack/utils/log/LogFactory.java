@@ -19,7 +19,7 @@
 package org.apache.cloudstack.utils.log;
 
 public class LogFactory {
-//  for log4j 1.2.x the actual LogFactory is org.apache.log4j.LogManager
+    //  for log4j 1.2.x the actual LogFactory is org.apache.log4j.LogManager
     public static Logger getLogger(Class klas) {
         return new Logger(org.apache.log4j.Logger.getLogger(klas));
     }
