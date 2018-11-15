@@ -1014,6 +1014,7 @@ var dictionary = {
 "label.management":"Management",
 "label.management.ips":"Management IP Addresses",
 "label.management.server":"Management Server",
+"label.mac.address": "MAC Address",
 "label.mac.address.changes":"MAC Address Changes",
 "label.max.cpus":"Max. CPU cores",
 "label.max.guest.limit":"Max guest limit",

@@ -2865,6 +2865,9 @@
                             type: {
                                 label: 'label.type'
                             },
+                            macaddress: {
+                              label: 'label.mac.address'
+                            },
                             ipaddress: {
                                 label: 'label.ip.address'
                             },
