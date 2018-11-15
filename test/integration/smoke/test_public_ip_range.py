@@ -396,7 +396,7 @@ class TestDedicatePublicIPRange(cloudstackTestCase):
         try:
             self.base_system_vm(
                 services,
-                'secondarystoragevm'
+                'consoleproxy'
             )
         except Exception:
             self.delete_range()
