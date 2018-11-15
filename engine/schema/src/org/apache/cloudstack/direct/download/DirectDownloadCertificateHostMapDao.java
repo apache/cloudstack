@@ -14,20 +14,10 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.direct.download;
 
-package org.apache.cloudstack.framework.agent.direct.download;
+import com.cloud.utils.db.GenericDao;
 
-public interface DirectDownloadService {
-
-    /**
-     * Download template/ISO into poolId bypassing secondary storage. Download performed by hostId
-     */
-    void downloadTemplate(long templateId, long poolId, long hostId);
-
-    /**
-     * Upload client certificate to each running host
-     */
-    boolean uploadCertificateToHosts(String certificateCer, String certificateName, String hypervisor, Long zoneId);
-
-    boolean uploadCertificate(long certificateId, long hostId);
+public interface DirectDownloadCertificateHostMapDao extends GenericDao<DirectDownloadCertificateHostMapVO, Long> {
+    DirectDownloadCertificateHostMapVO findByCertificateAndHost(long certificateId, long hostId);
 }

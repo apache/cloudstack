@@ -19,7 +19,14 @@ package org.apache.cloudstack.direct.download;
 
 import com.cloud.utils.component.PluggableService;
 import org.apache.cloudstack.framework.agent.direct.download.DirectDownloadService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
-public interface DirectDownloadManager extends DirectDownloadService, PluggableService {
+public interface DirectDownloadManager extends DirectDownloadService, PluggableService, Configurable {
 
+    ConfigKey<Long> DirectDownloadCertificateUploadInterval = new ConfigKey<>("Advanced", Long.class,
+            "direct.download.certificate.background.task.interval",
+            "24",
+            "The Direct Download framework background interval in hours.",
+            true);
 }
