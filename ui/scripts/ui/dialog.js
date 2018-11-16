@@ -382,7 +382,7 @@
 
                                 // Make sure all data is loaded to pass to select fn
                                 dependsOnLoaded = $.inArray(
-                                    true, $dependsOn.map(function(index, item) { return $(item).find('option').size() ? true : false; })
+                                    true, $dependsOn.map(function(index, item) { return $(item).find('option').length ? true : false; })
                                 ) > -1;
 
                                 if (!dependsOnLoaded) {
@@ -776,7 +776,7 @@
 
                 if (!$formContainer.find('form').valid()) {
                     // Ignore hidden field validation
-                    if ($formContainer.find('input.error:visible, select.error:visible').size()) {
+                    if ($formContainer.find('input.error:visible, select.error:visible').length) {
                         return false;
                     }
                 }
@@ -970,7 +970,7 @@
                     click: function() {
                         if (!$listView.find(
                             'input[type=radio]:checked, input[type=checkbox]:checked'
-                        ).size()) {
+                        ).length) {
                             cloudStack.dialog.notice({
                                 message: _l('message.select.instance')
                             });

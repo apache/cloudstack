@@ -450,7 +450,7 @@
                 });
 
                 // Logout action
-                $('#user-options a').live('click', function() {
+                $('#user-options a').on('click', function() {
                     loginArgs.logoutAction({
                         context: cloudStack.context
                     });

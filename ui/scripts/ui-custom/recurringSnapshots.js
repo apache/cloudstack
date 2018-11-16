@@ -117,7 +117,7 @@
                         return $(this).index() == index;
                     });
 
-                    if ($tr.size() && $tr.hasClass('active')) {
+                    if ($tr.length && $tr.hasClass('active')) {
                         $(this).addClass('disabled ui-state-disabled');
                     } else {
                         $(this).removeClass('disabled ui-state-disabled');
@@ -126,7 +126,7 @@
                     if ($(this).is('.ui-tabs-selected.ui-state-disabled')) {
                         $snapshots.find('form').show();
 
-                        if ($snapshots.find('li.ui-state-disabled').size() == $snapshots.find('li').size()) {
+                        if ($snapshots.find('li.ui-state-disabled').length == $snapshots.find('li').length) {
                             $snapshots.find('form').hide();
                         } else {
                             $snapshots.find('li:not(.ui-state-disabled):first a').click();
