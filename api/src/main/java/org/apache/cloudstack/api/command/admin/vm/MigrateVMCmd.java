@@ -43,10 +43,10 @@ import com.cloud.uservm.UserVm;
 import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "migrateVirtualMachine",
-            description = "Attempts Migration of a VM to a different host or Root volume of the vm to a different storage pool",
-            responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
-            requestHasSensitiveInfo = false,
-            responseHasSensitiveInfo = true)
+        description = "Attempts Migration of a VM to a different host or Root volume of the vm to a different storage pool",
+        responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = true)
 public class MigrateVMCmd extends BaseAsyncCmd {
     public static final Logger s_logger = Logger.getLogger(MigrateVMCmd.class.getName());
 
@@ -57,24 +57,24 @@ public class MigrateVMCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.HOST_ID,
-               type = CommandType.UUID,
-               entityType = HostResponse.class,
-               required = false,
-               description = "Destination Host ID to migrate VM to. Required for live migrating a VM from host to host")
+            type = CommandType.UUID,
+            entityType = HostResponse.class,
+            required = false,
+            description = "Destination Host ID to migrate VM to. Required for live migrating a VM from host to host")
     private Long hostId;
 
     @Parameter(name = ApiConstants.VIRTUAL_MACHINE_ID,
-               type = CommandType.UUID,
-               entityType = UserVmResponse.class,
-               required = true,
-               description = "the ID of the virtual machine")
+            type = CommandType.UUID,
+            entityType = UserVmResponse.class,
+            required = true,
+            description = "the ID of the virtual machine")
     private Long virtualMachineId;
 
     @Parameter(name = ApiConstants.STORAGE_ID,
-               type = CommandType.UUID,
-               entityType = StoragePoolResponse.class,
-               required = false,
-               description = "Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
+            type = CommandType.UUID,
+            entityType = StoragePoolResponse.class,
+            required = false,
+            description = "Destination storage pool ID to migrate VM volumes to. Required for migrating the root disk volume")
     private Long storageId;
 
     /////////////////////////////////////////////////////
@@ -167,7 +167,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
                 migratedVm = _userVmService.vmStorageMigration(getVirtualMachineId(), destStoragePool);
             }
             if (migratedVm != null) {
-                UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", (UserVm)migratedVm).get(0);
+                UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Full, "virtualmachine", (UserVm) migratedVm).get(0);
                 response.setResponseName(getCommandName());
                 setResponseObject(response);
             } else {
@@ -176,13 +176,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        } catch (ConcurrentOperationException e) {
-            s_logger.warn("Exception: ", e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-        } catch (ManagementServerException e) {
-            s_logger.warn("Exception: ", e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-        } catch (VirtualMachineMigrationException e) {
+        } catch (VirtualMachineMigrationException | ConcurrentOperationException | ManagementServerException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }
@@ -190,7 +184,7 @@ public class MigrateVMCmd extends BaseAsyncCmd {
 
     @Override
     public String getSyncObjType() {
-        return (getSyncObjId() != null)? BaseAsyncCmd.migrationSyncObject: null;
+        return (getSyncObjId() != null) ? BaseAsyncCmd.migrationSyncObject : null;
     }
 
     @Override
