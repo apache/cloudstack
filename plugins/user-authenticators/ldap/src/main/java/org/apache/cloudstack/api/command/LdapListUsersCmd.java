@@ -21,6 +21,8 @@ import java.util.List;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -83,6 +85,9 @@ public class LdapListUsersCmd extends BaseListCmd {
                description = "Determines whether all ldap users are returned or just non-cloudstack users")
     private String listType;
 
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, required = false, entityType = DomainResponse.class, description = "linked domain")
+    private Long domainId;
+
     public LdapListUsersCmd() {
         super();
     }
@@ -110,7 +115,7 @@ public class LdapListUsersCmd extends BaseListCmd {
         List<LdapUserResponse> ldapResponses = null;
         final ListResponse<LdapUserResponse> response = new ListResponse<LdapUserResponse>();
         try {
-            final List<LdapUser> users = _ldapManager.getUsers(null);
+            final List<LdapUser> users = _ldapManager.getUsers(domainId);
             ldapResponses = createLdapUserResponse(users);
         } catch (final NoLdapUserMatchingQueryException ex) {
             ldapResponses = new ArrayList<LdapUserResponse>();
