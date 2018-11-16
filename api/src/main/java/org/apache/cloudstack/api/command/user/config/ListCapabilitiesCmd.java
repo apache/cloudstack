@@ -59,6 +59,15 @@ public class ListCapabilitiesCmd extends BaseCmd {
         response.setKVMSnapshotEnabled((Boolean)capabilities.get("KVMSnapshotEnabled"));
         response.setAllowUserViewDestroyedVM((Boolean)capabilities.get("allowUserViewDestroyedVM"));
         response.setAllowUserExpungeRecoverVM((Boolean)capabilities.get("allowUserExpungeRecoverVM"));
+
+        response.setVmSnapshotsMax((Integer)capabilities.get("vmsnapshotsmax"));
+        response.setVmSnapshotExpireInterval((Integer)capabilities.get("vmsnapshotexpireinterval"));
+
+        response.setDiskSnapshotsMaxHourly((Integer)capabilities.get("disksnapshotsmaxhourly"));
+        response.setDiskSnapshotsMaxDaily((Integer)capabilities.get("disksnapshotsmaxdaily"));
+        response.setDiskSnapshotsMaxWeekly((Integer)capabilities.get("disksnapshotsmaxweekly"));
+        response.setDiskSnapshotsMaxMonthly((Integer)capabilities.get("disksnapshotsmaxmonthly"));
+
         if (capabilities.containsKey("apiLimitInterval")) {
             response.setApiLimitInterval((Integer)capabilities.get("apiLimitInterval"));
         }

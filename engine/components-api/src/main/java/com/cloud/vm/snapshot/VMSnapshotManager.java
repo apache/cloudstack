@@ -28,15 +28,36 @@ import com.cloud.vm.VMInstanceVO;
 
 public interface VMSnapshotManager extends VMSnapshotService, Manager {
 
-    static final ConfigKey<Integer> VMSnapshotExpireInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vmsnapshot.expire.interval", "-1",
-            "VM Snapshot expire interval in hours", true, ConfigKey.Scope.Account);
+    Integer defaultVirtualMachineSnapshotsMax = 10;
+    Integer defaultVirtualMachineJobCheckInterval = 3000;
+    Integer defaultVirtualMachineSnapshotExpireInterval = -1;
+    Integer defaultVirtualMachineSnapshotCreateWait = 1800;
 
-    public static final int VMSNAPSHOTMAX = 10;
+    ConfigKey<Integer> virtualMachineSnapshotExpireInterval = new ConfigKey<Integer>("Advanced",
+            Integer.class,
+            "vmsnapshot.expire.interval",
+            defaultVirtualMachineSnapshotExpireInterval.toString(),
+            "VM Snapshot expire interval in hours",
+            false,
+            ConfigKey.Scope.Account);
+
+    ConfigKey<Integer> virtualMachineSnapshotMax = new ConfigKey<Integer>("Advanced",
+            Integer.class, "vmsnapshot.max",
+            defaultVirtualMachineSnapshotsMax.toString(),
+            "Maximum number of snapshots which user can create for a virtual machine",
+            false);
+
+    ConfigKey<Integer> virtualMachineSnapshotCreateWait = new ConfigKey<Integer>("Advanced",
+            Integer.class, "vmsnapshot.create.wait",
+            defaultVirtualMachineSnapshotCreateWait.toString(),
+            "Maximum time to wait for a VM snapshot creation in seconds",
+            false);
 
     /**
      * Delete all VM snapshots belonging to one VM
-     * @param id, VM id
-     * @param type,
+     *
+     * @param id   VM id
+     * @param type
      * @return true for success, false for failure
      */
     boolean deleteAllVMSnapshots(long id, VMSnapshot.Type type);
@@ -45,7 +66,7 @@ public interface VMSnapshotManager extends VMSnapshotService, Manager {
      * Sync VM snapshot state when VM snapshot in reverting or snapshoting or expunging state
      * Used for fullsync after agent connects
      *
-     * @param vm, the VM in question
+     * @param vm    the VM in question
      * @param hostId
      * @return true if succeeds, false if fails
      */

@@ -242,7 +242,7 @@ public class SnapshotSchedulerImpl extends ManagerBase implements SnapshotSchedu
         List<VMSnapshotVO> vmSnapshots = _vmSnapshotDao.listAll();
         for (VMSnapshotVO vmSnapshot : vmSnapshots) {
             long accountId = vmSnapshot.getAccountId();
-            int expiration_interval_hours = VMSnapshotManager.VMSnapshotExpireInterval.valueIn(accountId);
+            int expiration_interval_hours = VMSnapshotManager.virtualMachineSnapshotExpireInterval.valueIn(accountId);
             if (expiration_interval_hours < 0 ) {
                 continue;
             }

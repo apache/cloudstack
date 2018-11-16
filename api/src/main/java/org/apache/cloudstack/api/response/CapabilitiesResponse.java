@@ -84,6 +84,30 @@ public class CapabilitiesResponse extends BaseResponse {
     @Param(description = "true if the user can recover and expunge virtualmachines, false otherwise", since = "4.6.0")
     private boolean allowUserExpungeRecoverVM;
 
+    @SerializedName("vmsnapshotsmax")
+    @Param(description = "Maximum number of VM snapshots can be done for a single VM", since = "4.12.0")
+    private Integer vmSnapshotsMax;
+
+    @SerializedName("vmsnapshotexpireinterval")
+    @Param(description = "VM Snapshot Expiration interval in hours", since = "4.12.0")
+    private Integer vmSnapshotExpireInterval;
+
+    @SerializedName("disksnapshotsmaxhourly")
+    @Param(description = "Maximum number of volume snapshots can be done hourly", since = "4.12.0")
+    private Integer diskSnapshotsMaxHourly;
+
+    @SerializedName("disksnapshotsmaxdaily")
+    @Param(description = "Maximum number of volume snapshots can be done daily", since = "4.12.0")
+    private Integer diskSnapshotsMaxDaily;
+
+    @SerializedName("disksnapshotsmaxweekly")
+    @Param(description = "Maximum number of volume snapshots can be done weekly", since = "4.12.0")
+    private Integer diskSnapshotsMaxWeekly;
+
+    @SerializedName("disksnapshotsmaxmonthly")
+    @Param(description = "Maximum number of volume snapshots can be done monthly", since = "4.12.0")
+    private Integer diskSnapshotsMaxMonthly;
+
     public void setSecurityGroupsEnabled(boolean securityGroupsEnabled) {
         this.securityGroupsEnabled = securityGroupsEnabled;
     }
@@ -142,5 +166,29 @@ public class CapabilitiesResponse extends BaseResponse {
 
     public void setAllowUserExpungeRecoverVM(boolean allowUserExpungeRecoverVM) {
         this.allowUserExpungeRecoverVM = allowUserExpungeRecoverVM;
+    }
+
+    public void setVmSnapshotsMax(Integer vmSnapshotsMax) {
+        this.vmSnapshotsMax = vmSnapshotsMax;
+    }
+
+    public void setVmSnapshotExpireInterval(Integer vmSnapshotExpireInterval) {
+        this.vmSnapshotExpireInterval = vmSnapshotExpireInterval;
+    }
+
+    public void setDiskSnapshotsMaxHourly(Integer diskSnapshotsMaxHourly) {
+        this.diskSnapshotsMaxHourly = diskSnapshotsMaxHourly;
+    }
+
+    public void setDiskSnapshotsMaxDaily(Integer diskSnapshotsMaxDaily) {
+        this.diskSnapshotsMaxDaily = diskSnapshotsMaxDaily;
+    }
+
+    public void setDiskSnapshotsMaxWeekly(Integer diskSnapshotsMaxWeekly) {
+        this.diskSnapshotsMaxWeekly = diskSnapshotsMaxWeekly;
+    }
+
+    public void setDiskSnapshotsMaxMonthly(Integer diskSnapshotsMaxMonthly) {
+        this.diskSnapshotsMaxMonthly = diskSnapshotsMaxMonthly;
     }
 }
