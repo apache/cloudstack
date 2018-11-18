@@ -56,6 +56,15 @@
         }
     };
 
+    var tabEvents = {
+        create: function(event, ui) {
+          manageTabsContent(event, ui);
+        },
+        activate: function(event, ui) {
+          manageTabsContent(event, ui);
+        }
+    };
+
     /**
      * Available UI actions to perform for buttons
      */
@@ -114,7 +123,7 @@
                     }
                 ).appendTo($detailView);
 
-                $detailView.tabs();
+                $detailView.tabs(tabEvents);
             };
 
             var performAction = function(data, options) {
@@ -1559,12 +1568,14 @@
             }
         }
 
-        $detailView.tabs({
-            select: function() {
+        $detailView.tabs(
+            $.extend(true, {}, tabEvents, {
+              select: function() {
                 // Cleanup old tab content
                 $detailView.find('.detail-group').children().remove();
-            }
-        });
+              }}
+            )
+        );
 
         return $detailView;
     };
@@ -1587,9 +1598,6 @@
 
         return true;
     };
-
-    $(document).bind('tabscreate',manageTabsContent);
-    $(document).bind('tabsactivate',manageTabsContent);
 
     // View all links
     $('a').on('click', function(event) {
