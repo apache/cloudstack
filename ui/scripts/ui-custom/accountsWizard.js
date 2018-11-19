@@ -126,7 +126,7 @@
                         }
                     });
                     $.ajax({
-                        url: createURL("listLdapUsers&listtype=new"),
+                        url: createURL("listLdapUsers&listtype=new&domainid=" + args.currentData.domainid),
                         dataType: "json",
                         async: false,
                         success: function(json) {
