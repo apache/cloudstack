@@ -2200,7 +2200,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
             if (! UuidUtils.validateUUID(vlanId)){
                 // For Isolated and L2 networks, don't allow to create network with vlan that already exists in the zone
-                if (ntwkOff.getGuestType() == GuestType.Isolated || !(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.L2)) {
+                if (ntwkOff.getGuestType() == GuestType.Isolated || checkL2BypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff)) {
                     if (_networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), null).size() > 0) {
                         throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists or overlaps with other network vlans in zone " + zoneId);
                     } else {
@@ -2388,7 +2388,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return network;
     }
 
-    /**
+  /**
+   * Checks bypass VLAN id/range overlap check during network creation for L2 networks
+   * @param bypassVlanOverlapCheck bypass VLAN id/range overlap check
+   * @param ntwkOff network offering
+   */
+  private boolean checkL2BypassVlanOverlapCheck(final boolean bypassVlanOverlapCheck, final NetworkOfferingVO ntwkOff) {
+    return !(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.L2);
+  }
+
+  /**
      * Checks for L2 network offering services. Only 2 cases allowed:
      * - No services
      * - User Data service only, provided by ConfigDrive
