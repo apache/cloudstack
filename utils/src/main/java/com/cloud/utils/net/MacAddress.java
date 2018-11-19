@@ -34,9 +34,7 @@ import org.apache.log4j.Logger;
 /**
  * This class retrieves the (first) MAC address for the machine is it is loaded on and stores it statically for retrieval.
  * It can also be used for formatting MAC addresses.
- * copied from the public domain utility from John Burkard.
- * @author <a href="mailto:jb@eaio.com">Johann Burkard</a>
- * @version 2.1.3
+ * copied fnd addpeted rom the public domain utility from John Burkard.
  **/
 public class MacAddress {
     private static final Logger s_logger = Logger.getLogger(MacAddress.class);
@@ -70,19 +68,6 @@ public class MacAddress {
         formatter.format("%02x%s%02x%s%02x%s%02x%s%02x%s%02x", _addr >> 40 & 0xff, separator, _addr >> 32 & 0xff, separator, _addr >> 24 & 0xff, separator,
             _addr >> 16 & 0xff, separator, _addr >> 8 & 0xff, separator, _addr & 0xff);
         return buff.toString();
-
-        /*
-
-        String str = Long.toHexString(_addr);
-
-        for (int i = str.length() - 1; i >= 0; i--) {
-            buff.append(str.charAt(i));
-            if (separator != null && (str.length() - i) % 2 == 0) {
-                buff.append(separator);
-            }
-        }
-        return buff.reverse().toString();
-         */
     }
 
     @Override
