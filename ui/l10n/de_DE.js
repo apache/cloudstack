@@ -976,6 +976,7 @@ var dictionary = {
     "label.logout": "Abmelden",
     "label.lun": "LUN",
     "label.lxc.traffic.label": "LXC Datenverkehrs-Bezeichnung",
+    "label.mac.address": "MAC Adresse",
     "label.make.project.owner": "Mache Benutzerkonto zum Projekteigentümer",
     "label.make.redundant": "Redundant machen",
     "label.manage": "Verwalten",
