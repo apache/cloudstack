@@ -30,7 +30,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateCommand;
@@ -51,7 +50,6 @@ import com.cloud.vm.DiskProfile;
  * Extends {@link StorageSystemDataMotionStrategy}, allowing KVM hosts to migrate VMs with the ROOT volume on a non managed local storage pool.
  * As {@link StorageSystemDataMotionStrategy} is considering KVM, this implementation also migrates only from/to KVM hosts.
  */
-@Component
 public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMotionStrategy {
 
     @Inject

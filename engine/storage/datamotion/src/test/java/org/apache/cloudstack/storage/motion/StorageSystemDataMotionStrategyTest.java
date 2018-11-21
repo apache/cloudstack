@@ -59,43 +59,43 @@ import com.cloud.storage.VolumeVO;
 @RunWith(MockitoJUnitRunner.class)
 public class StorageSystemDataMotionStrategyTest {
 
-    @Mock
-    VolumeObject source;
-    @Mock
-    DataObject destination;
-    @Mock
-    PrimaryDataStore sourceStore;
-    @Mock
-    ImageStore destinationStore;
-
     @Spy
     @InjectMocks
-    StorageSystemDataMotionStrategy storageSystemDataMotionStrategy;
+    private StorageSystemDataMotionStrategy storageSystemDataMotionStrategy;
 
     @Mock
-    PrimaryDataStoreDao storagePoolDao;
+    private VolumeObject volumeObjectSource;
+    @Mock
+    private DataObject dataObjectDestination;
+    @Mock
+    private PrimaryDataStore primaryDataStoreSourceStore;
+    @Mock
+    private ImageStore destinationStore;
+    @Mock
+    private PrimaryDataStoreDao primaryDataStoreDao;
 
-    @Before public void setUp() throws Exception {
-        sourceStore = mock(PrimaryDataStoreImpl.class);
+    @Before
+    public void setUp() throws Exception {
+        primaryDataStoreSourceStore = mock(PrimaryDataStoreImpl.class);
         destinationStore = mock(ImageStoreImpl.class);
-        source = mock(VolumeObject.class);
-        destination = mock(VolumeObject.class);
+        volumeObjectSource = mock(VolumeObject.class);
+        dataObjectDestination = mock(VolumeObject.class);
 
-                initMocks(storageSystemDataMotionStrategy);
+        initMocks(storageSystemDataMotionStrategy);
     }
 
     @Test
     public void cantHandleSecondary() {
-        doReturn(sourceStore).when(source).getDataStore();
-        doReturn(DataStoreRole.Primary).when(sourceStore).getRole();
-        doReturn(destinationStore).when(destination).getDataStore();
+        doReturn(primaryDataStoreSourceStore).when(volumeObjectSource).getDataStore();
+        doReturn(DataStoreRole.Primary).when(primaryDataStoreSourceStore).getRole();
+        doReturn(destinationStore).when(dataObjectDestination).getDataStore();
         doReturn(DataStoreRole.Image).when((DataStore)destinationStore).getRole();
-        doReturn(sourceStore).when(source).getDataStore();
-        doReturn(destinationStore).when(destination).getDataStore();
+        doReturn(primaryDataStoreSourceStore).when(volumeObjectSource).getDataStore();
+        doReturn(destinationStore).when(dataObjectDestination).getDataStore();
         StoragePoolVO storeVO = new StoragePoolVO();
-        doReturn(storeVO).when(storagePoolDao).findById(0l);
+        doReturn(storeVO).when(primaryDataStoreDao).findById(0l);
 
-        assertTrue(storageSystemDataMotionStrategy.canHandle(source,destination) == StrategyPriority.CANT_HANDLE);
+        assertTrue(storageSystemDataMotionStrategy.canHandle(volumeObjectSource, dataObjectDestination) == StrategyPriority.CANT_HANDLE);
     }
 
     @Test
@@ -133,8 +133,8 @@ public class StorageSystemDataMotionStrategyTest {
         StoragePoolVO storagePool1 = Mockito.spy(new StoragePoolVO());
         Mockito.doReturn(sPool1IsManaged).when(storagePool1).isManaged();
 
-        Mockito.doReturn(storagePool0).when(storagePoolDao).findById(0l);
-        Mockito.doReturn(storagePool1).when(storagePoolDao).findById(1l);
+        Mockito.doReturn(storagePool0).when(primaryDataStoreDao).findById(0l);
+        Mockito.doReturn(storagePool1).when(primaryDataStoreDao).findById(1l);
 
         StrategyPriority strategyPriority = storageSystemDataMotionStrategy.internalCanHandle(volumeMap);
 
@@ -164,8 +164,8 @@ public class StorageSystemDataMotionStrategyTest {
         Mockito.doReturn(0l).when(destVolumeInfo).getPoolId();
         Mockito.doReturn("expected").when(storageSystemDataMotionStrategy).connectHostToVolume(destHost, 0l, "iScsiName");
 
-        String expected = storageSystemDataMotionStrategy.generateDestPath(Mockito.mock(VirtualMachineTO.class), Mockito.mock(VolumeVO.class), destHost, Mockito.mock(StoragePoolVO.class),
-                destVolumeInfo);
+        String expected = storageSystemDataMotionStrategy.generateDestPath(Mockito.mock(VirtualMachineTO.class), Mockito.mock(VolumeVO.class), destHost,
+                Mockito.mock(StoragePoolVO.class), destVolumeInfo);
 
         Assert.assertEquals(expected, "expected");
         Mockito.verify(storageSystemDataMotionStrategy).connectHostToVolume(destHost, 0l, "iScsiName");

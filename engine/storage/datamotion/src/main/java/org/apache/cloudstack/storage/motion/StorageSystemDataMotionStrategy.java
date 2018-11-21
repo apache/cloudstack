@@ -132,7 +132,7 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
-    protected static final Logger LOGGER = Logger.getLogger(StorageSystemDataMotionStrategy.class);
+    private static final Logger LOGGER = Logger.getLogger(StorageSystemDataMotionStrategy.class);
     private static final Random RANDOM = new Random(System.nanoTime());
     private static final int LOCK_TIME_IN_SECONDS = 300;
     private static final String OPERATION_NOT_SUPPORTED = "This operation is not supported.";
