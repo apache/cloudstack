@@ -1110,6 +1110,7 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${cs.surefire-plugin.version}</version>
                     <configuration>
+                        <useSystemClassLoader>false</useSystemClassLoader>
                         <argLine>-Djava.security.egd=file:/dev/./urandom -noverify</argLine>
                     </configuration>
                 </plugin>
