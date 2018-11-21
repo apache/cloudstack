@@ -2151,9 +2151,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         } else if (zone.getNetworkType() == NetworkType.Advanced) {
             if (zone.isSecurityGroupEnabled()) {
-                if (ipv6) {
-                    throw new InvalidParameterValueException("IPv6 is not supported with security group!");
-                }
                 if (isolatedPvlan != null) {
                     throw new InvalidParameterValueException("Isolated Private VLAN is not supported with security group!");
                 }
