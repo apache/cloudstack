@@ -34,6 +34,7 @@ import java.util.TreeSet;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
@@ -202,6 +203,8 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
     private ProjectAccountDao _projectAccountDao;
     @Inject
     NetworkOfferingDetailsDao _ntwkOffDetailsDao;
+    @Inject
+    private NetworkService _networkService;
 
     private final HashMap<String, NetworkOfferingVO> _systemNetworks = new HashMap<String, NetworkOfferingVO>(5);
     static Long s_privateOfferingId = null;
@@ -2113,8 +2116,42 @@ public class NetworkModelImpl extends ManagerBase implements NetworkModel, Confi
                 }
             }
         }
+
+        //After network elements are configured correctly, verify ConfigDrive entries on enabled zones
+        verifyDisabledConfigDriveEntriesOnEnabledZones();
+
         s_logger.info("Started Network Model");
         return true;
+    }
+
+    /**
+     * Verifies ConfigDrive entries on a zone and adds disabled ConfigDrive provider if missing.
+     */
+    protected void addDisabledConfigDriveEntriesOnZone(DataCenterVO zone) {
+        if (zone.getNetworkType() == DataCenter.NetworkType.Advanced) {
+            List<PhysicalNetworkVO> physicalNetworks = _physicalNetworkDao.listByZoneAndTrafficType(
+                    zone.getId(), TrafficType.Guest);
+            for (PhysicalNetworkVO physicalNetworkVO : physicalNetworks) {
+                PhysicalNetworkServiceProviderVO provider = _pNSPDao.findByServiceProvider(
+                        physicalNetworkVO.getId(), Provider.ConfigDrive.getName());
+                if (provider == null) {
+                    _networkService.addProviderToPhysicalNetwork(
+                            physicalNetworkVO.getId(), Provider.ConfigDrive.getName(), null, null);
+                }
+            }
+        }
+    }
+
+    /**
+     * Verifies ConfigDrive entries on enabled zones, adds disabled ConfigDrive provider if missing.
+     */
+    protected void verifyDisabledConfigDriveEntriesOnEnabledZones() {
+        List<DataCenterVO> zones = _dcDao.listEnabledZones();
+        if (CollectionUtils.isNotEmpty(zones)) {
+            for (DataCenterVO zone : zones) {
+                addDisabledConfigDriveEntriesOnZone(zone);
+            }
+        }
     }
 
     @Override

@@ -126,13 +126,16 @@
                                 var $systemvmsCb = $systemvms.find('input[type=checkbox]');
                                 var $account = args.$form.find('.form-item[rel=account]');
                                 var $accountTxt = args.$form.find('input[name=account]');
+                                var $domainid = args.$form.find('select[name=domainid]');
                                 $systemvmsCb.change(function() {
                                     if ($systemvmsCb.is(':checked')) {
                                         $accountTxt.val('');
                                         $accountTxt.attr('disabled', true);
+                                        $domainid.attr('disabled', true);
                                     }
                                     else {
                                         $accountTxt.attr('disabled', false);
+                                        $domainid.attr('disabled', false);
                                     }
                                 });
                             }
@@ -524,7 +527,8 @@
                                         },
                                         actionPreFilter: function (args) {
                                             var actionsToShow =[ 'destroy'];
-                                            if (args.context.multiRule[0].domain == 'ROOT' && args.context.multiRule[0].account != null && args.context.multiRule[0].account.account == 'system')
+                                            if (args.context.multiRule[0].domain == 'ROOT' && args.context.multiRule[0].account != null &&
+                                                args.context.multiRule[0].account.account == 'system' && !args.context.multiRule[0].forsystemvms)
                                             actionsToShow.push('addAccount'); else
                                             actionsToShow.push('releaseFromAccount');
                                             return actionsToShow;

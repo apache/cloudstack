@@ -3569,10 +3569,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     }
                     // increment resource count for dedicated public ip's
                     _resourceLimitMgr.incrementResourceCount(vlanOwner.getId(), ResourceType.public_ip, new Long(ips.size()));
-                } else if (domain != null) {
+                } else if (domain != null && !forSystemVms) {
                     // This VLAN is domain-wide, so create a DomainVlanMapVO entry
-                    //final DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
-                    //_domainVlanMapDao.persist(domainVlanMapVO);
+                    final DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
+                    _domainVlanMapDao.persist(domainVlanMapVO);
                 } else if (podId != null) {
                     // This VLAN is pod-wide, so create a PodVlanMapVO entry
                     final PodVlanMapVO podVlanMapVO = new PodVlanMapVO(podId, vlan.getId());
@@ -3754,8 +3754,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if any of the Public IP addresses is allocated to another
         // account
+        boolean forSystemVms = false;
         final List<IPAddressVO> ips = _publicIpAddressDao.listByVlanId(vlanDbId);
         for (final IPAddressVO ip : ips) {
+            forSystemVms = ip.isForSystemVms();
             final Long allocatedToAccountId = ip.getAllocatedToAccountId();
             if (allocatedToAccountId != null) {
                 final Account accountAllocatedTo = _accountMgr.getActiveAccountById(allocatedToAccountId);
@@ -3779,7 +3781,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 UsageEventUtils.publishUsageEvent(EventTypes.EVENT_NET_IP_ASSIGN, vlanOwner.getId(), ip.getDataCenterId(), ip.getId(), ip.getAddress().toString(), ip.isSourceNat(),
                         vlan.getVlanType().toString(), ip.getSystem(), ip.getClass().getName(), ip.getUuid());
             }
-        } else if (domain != null) {
+        } else if (domain != null && !forSystemVms) {
             // Create an DomainVlanMapVO entry
             DomainVlanMapVO domainVlanMapVO = new DomainVlanMapVO(domain.getId(), vlan.getId());
             _domainVlanMapDao.persist(domainVlanMapVO);

@@ -230,7 +230,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
         return(totaltemplates)
 
-    def getstoragelimts(self,rtype):
+    def getstoragelimits(self, rtype):
 
         cmd=updateResourceCount.updateResourceCountCmd()
         cmd.account=self.account.name
@@ -1652,7 +1652,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
 
             self.debug("========================= Test 22 Upload template and verify secondary storage limits========================")
 
-            initialsecondarystoragelimit=self.getstoragelimts(11)
+            initialsecondarystoragelimit=self.getstoragelimits(11)
             browseup_template1=self.browse_upload_template()
 
             tmpldetails=Template.list(
@@ -1662,7 +1662,7 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                                      zoneid=self.zone.id)
 
 
-            afteruploadsecondarystoragelimit=self.getstoragelimts(11)
+            afteruploadsecondarystoragelimit=self.getstoragelimits(11)
 
             if afteruploadsecondarystoragelimit!=(initialsecondarystoragelimit+tmpldetails[0].size):
                 self.fail("Secondary Storage Resouce Count is not updated")
@@ -1709,10 +1709,10 @@ class TestBrowseUploadVolume(cloudstackTestCase):
                                      templatefilter="all",
                                      zoneid=self.zone.id)
 
-            initialuploadprimarystoragelimit=self.getstoragelimts(11)
+            initialuploadprimarystoragelimit=self.getstoragelimits(11)
             self.delete_template(browseup_template1)
 
-            afteruploadprimarystoragelimit=self.getstoragelimts(11)
+            afteruploadprimarystoragelimit=self.getstoragelimits(11)
 
             if afteruploadprimarystoragelimit!=(initialuploadprimarystoragelimit-tmpldetails[0].size):
                 self.fail("Secondary Storage Resource Count is not updated after deletion")

@@ -524,15 +524,16 @@ class CsIP:
                     CsHelper.execute("sudo ip route add throw " + self.config.address().dbag['eth1'][0]['network'] + " table " + tableName + " proto static")
 
                 # add 'defaul via gateway' rule in the device specific routing table
-                if "gateway" in self.address and self.address["gateway"] != "None":
+                if "gateway" in self.address and self.address["gateway"] and self.address["gateway"] != "None":
                     route.add_route(self.dev, self.address["gateway"])
-                route.add_network_route(self.dev, str(self.address["network"]))
+                if "network" in self.address and self.address["network"]:
+                    route.add_network_route(self.dev, str(self.address["network"]))
 
                 if self.get_type() in ["public"]:
                     CsRule(self.dev).addRule("from " + str(self.address["network"]))
 
             if self.config.is_vpc():
-                if self.get_type() in ["public"] and "gateway" in self.address and self.address["gateway"] != "None":
+                if self.get_type() in ["public"] and "gateway" in self.address and self.address["gateway"] and self.address["gateway"] != "None":
                     route.add_route(self.dev, self.address["gateway"])
                     for inf, addresses in self.config.address().dbag.iteritems():
                         if not inf.startswith("eth"):

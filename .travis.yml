@@ -78,6 +78,7 @@ env:
              smoke/test_pvlan
              smoke/test_regions
              smoke/test_reset_vm_on_reboot
+             smoke/test_resource_accounting
              smoke/test_resource_detail
              smoke/test_router_dhcphosts
              smoke/test_router_dns
