@@ -511,8 +511,10 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
     secIpSet = "1"
     ips = sec_ips.split(';')
     ips.pop()
-    if ips[0] == "0":
-        secIpSet = "0";
+    if len(ips) == 0 or ips[0] == "0":
+        secIpSet = "0"
+        ip4s = []
+        ip6s = []
 
     if secIpSet == "1":
         logging.debug("Adding ipset for secondary ipv4 addresses")
