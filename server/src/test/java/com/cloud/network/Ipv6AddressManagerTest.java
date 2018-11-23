@@ -19,6 +19,8 @@ package com.cloud.network;
 
 import static org.mockito.Mockito.mock;
 
+import com.cloud.dc.DataCenter;
+import com.cloud.vm.NicProfile;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -226,4 +228,24 @@ public class Ipv6AddressManagerTest {
         Mockito.when(ipVo.getState()).thenReturn(state);
     }
 
+    @Test
+    public void setNICIPv6AddressTest() {
+        NicProfile nic = new NicProfile();
+        Network network = mock(Network.class);
+        DataCenter dc = mock(DataCenter.class);
+
+        nic.setMacAddress("1e:00:b1:00:0a:f6");
+
+        Mockito.when(network.getIp6Cidr()).thenReturn("2001:db8:100::/64");
+        Mockito.when(network.getIp6Gateway()).thenReturn("2001:db8:100::1");
+
+        Mockito.when(dc.getIp6Dns1()).thenReturn("2001:db8::53:1");
+        Mockito.when(dc.getIp6Dns1()).thenReturn("2001:db8::53:2");
+
+        String expected = "2001:db8:100:0:1c00:b1ff:fe00:af6";
+
+        ip6Manager.setNicIp6Address(nic, dc, network);
+
+        Assert.assertEquals(expected, nic.getIPv6Address());
+    }
 }

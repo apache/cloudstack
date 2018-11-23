@@ -57,7 +57,6 @@ import com.cloud.dc.DataCenterIpAddressVO;
 import com.cloud.dc.HostPodVO;
 import com.cloud.dc.Pod;
 import com.cloud.dc.PodVlanMapVO;
-import com.cloud.dc.Vlan;
 import com.cloud.dc.Vlan.VlanType;
 import com.cloud.dc.VlanVO;
 import com.cloud.dc.dao.AccountVlanMapDao;
@@ -2014,7 +2013,6 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
 
                 if (network.getGateway() != null) {
                     if (nic.getIPv4Address() == null) {
-                        ipv4 = true;
                         PublicIp ip = null;
 
                         //Get ip address from the placeholder and don't allocate a new one
@@ -2050,30 +2048,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     nic.setIPv4Dns2(dc.getDns2());
                 }
 
-                //FIXME - get ipv6 address from the placeholder if it's stored there
-                if (network.getIp6Gateway() != null) {
-                    if (nic.getIPv6Address() == null) {
-                        UserIpv6Address ip = _ipv6Mgr.assignDirectIp6Address(dc.getId(), vm.getOwner(), network.getId(), requestedIpv6);
-                        Vlan vlan = _vlanDao.findById(ip.getVlanId());
-                        nic.setIPv6Address(ip.getAddress().toString());
-                        nic.setIPv6Gateway(vlan.getIp6Gateway());
-                        nic.setIPv6Cidr(vlan.getIp6Cidr());
-                        if (ipv4) {
-                            nic.setFormat(AddressFormat.DualStack);
-                        } else {
-                            nic.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanTag()));
-                            nic.setBroadcastType(BroadcastDomainType.Vlan);
-                            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanTag()));
-                            nic.setFormat(AddressFormat.Ip6);
-                            nic.setReservationId(String.valueOf(vlan.getVlanTag()));
-                            if(nic.getMacAddress() == null) {
-                                nic.setMacAddress(ip.getMacAddress());
-                            }
-                        }
-                    }
-                    nic.setIPv6Dns1(dc.getIp6Dns1());
-                    nic.setIPv6Dns2(dc.getIp6Dns2());
-                }
+                _ipv6Mgr.setNicIp6Address(nic, dc, network);
             }
         });
     }
@@ -2123,29 +2098,7 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     nic.setIPv4Dns2(dc.getDns2());
                 }
 
-                // TODO: the IPv6 logic is not changed.
-                //FIXME - get ipv6 address from the placeholder if it's stored there
-                if (network.getIp6Gateway() != null) {
-                    if (nic.getIPv6Address() == null) {
-                        UserIpv6Address ip = _ipv6Mgr.assignDirectIp6Address(dc.getId(), vm.getOwner(), network.getId(), requestedIpv6);
-                        Vlan vlan = _vlanDao.findById(ip.getVlanId());
-                        nic.setIPv6Address(ip.getAddress().toString());
-                        nic.setIPv6Gateway(vlan.getIp6Gateway());
-                        nic.setIPv6Cidr(vlan.getIp6Cidr());
-                        if (ipv4) {
-                            nic.setFormat(AddressFormat.DualStack);
-                        } else {
-                            nic.setIsolationUri(IsolationType.Vlan.toUri(vlan.getVlanTag()));
-                            nic.setBroadcastType(BroadcastDomainType.Vlan);
-                            nic.setBroadcastUri(BroadcastDomainType.Vlan.toUri(vlan.getVlanTag()));
-                            nic.setFormat(AddressFormat.Ip6);
-                            nic.setReservationId(String.valueOf(vlan.getVlanTag()));
-                            nic.setMacAddress(ip.getMacAddress());
-                        }
-                    }
-                    nic.setIPv6Dns1(dc.getIp6Dns1());
-                    nic.setIPv6Dns2(dc.getIp6Dns2());
-                }
+                _ipv6Mgr.setNicIp6Address(nic, dc, network);
             }
         });
     }
