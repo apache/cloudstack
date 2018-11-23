@@ -20,10 +20,12 @@
 package com.cloud.agent.api;
 
 import com.cloud.host.HostStats;
+import com.cloud.host.HostVO;
 
 public class HostStatsEntry implements HostStats {
 
     long hostId;
+    HostVO hostVo;
     String entityType;
     double cpuUtilization;
     double networkReadKBs;
@@ -111,5 +113,17 @@ public class HostStatsEntry implements HostStats {
 
     public void setHostId(long hostId) {
         this.hostId = hostId;
+    }
+
+    public long getHostId() {
+        return hostId;
+    }
+
+    public HostVO getHostVo() {
+        return hostVo;
+    }
+
+    public void setHostVo(HostVO hostVo) {
+        this.hostVo = hostVo;
     }
 }
