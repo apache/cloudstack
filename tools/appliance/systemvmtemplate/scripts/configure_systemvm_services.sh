@@ -19,7 +19,7 @@
 set -e
 set -x
 
-CLOUDSTACK_RELEASE=4.11.2
+CLOUDSTACK_RELEASE=4.11.2.1
 
 function configure_apache2() {
    # Enable ssl, rewrite and auth
@@ -46,7 +46,7 @@ function install_cloud_scripts() {
   rsync -av ./cloud_scripts/ /
   chmod +x /opt/cloud/bin/* /opt/cloud/bin/setup/* \
     /root/{clearUsageRules.sh,reconfigLB.sh,monitorServices.py} \
-    /etc/profile.d/cloud.sh
+    /etc/profile.d/cloud.sh /etc/cron.daily/* /etc/cron.hourly.*
 
   chmod -x /etc/systemd/system/*
 
@@ -108,6 +108,7 @@ function configure_services() {
   systemctl disable strongswan
   systemctl disable x11-common
   systemctl disable xl2tpd
+  systemctl disable vgauth
 
   configure_apache2
   configure_strongswan
