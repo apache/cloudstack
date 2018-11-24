@@ -46,7 +46,7 @@ function install_cloud_scripts() {
   rsync -av ./cloud_scripts/ /
   chmod +x /opt/cloud/bin/* /opt/cloud/bin/setup/* \
     /root/{clearUsageRules.sh,reconfigLB.sh,monitorServices.py} \
-    /etc/profile.d/cloud.sh /etc/cron.daily/* /etc/cron.hourly.*
+    /etc/profile.d/cloud.sh /etc/cron.daily/* /etc/cron.hourly/*
 
   chmod -x /etc/systemd/system/*
 
