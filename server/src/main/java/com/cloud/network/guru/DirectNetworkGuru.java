@@ -222,9 +222,6 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
         boolean isSecurityGroupEnabled = _networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup);
         if (isSecurityGroupEnabled) {
-            if (userSpecified.getIp6Cidr() != null) {
-                throw new InvalidParameterValueException("Didn't support security group with IPv6");
-            }
             config.setName("SecurityGroupEnabledNetwork");
             config.setDisplayText("SecurityGroupEnabledNetwork");
         }
