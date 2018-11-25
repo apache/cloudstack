@@ -182,8 +182,8 @@ public class RegisterIsoCmd extends BaseCmd {
         return directDownload == null ? false : directDownload;
     }
 
-    public Boolean isPasswordEnabled() {
-        return passwordEnabled;
+    public boolean isPasswordEnabled() {
+        return passwordEnabled == null ? false : passwordEnabled;
     }
 
     /////////////////////////////////////////////////////
