@@ -1630,7 +1630,7 @@
                             position: 'absolute',
                             left: $quickView.offset().left + $quickView.outerWidth() - $quickViewTooltip.width() - 2*(parseInt($quickView.css('border-left-width')) + parseInt($quickView.css('border-right-width'))),
                             top: $quickView.offset().top,
-                            zIndex: $tr.closest('.panel').zIndex() + 1
+                            zIndex: $tr.closest('.panel').css("zIndex") + 1
                         });
 
                         $quickViewTooltip.mouseleave(function() {
