@@ -202,6 +202,17 @@ patch() {
     cat /mnt/cmdline > $CMDLINE
   fi
 
+  # set cache back pressure based on amount of physical memory 100 is default
+  physmem=$(free|awk '/^Mem:/{print $2}')
+  case $physmem in
+    [1-4095999])
+      sysctl -w vm.vfs_cache_pressure=200
+      ;;
+    *)
+      sysctl -w vm.vfs_cache_pressure=100
+      ;;
+  esac
+
   return 0
 }
 
