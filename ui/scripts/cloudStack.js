@@ -450,10 +450,10 @@
                 });
 
                 // Logout action
-                $('#user-options a').on('click', function() {
-                    loginArgs.logoutAction({
-                        context: cloudStack.context
-                    });
+                $(document).on('click', '#user-options a', function() {
+                  loginArgs.logoutAction({
+                    context: cloudStack.context
+                  });
                 });
 
                 window._reloadUI = function() {
