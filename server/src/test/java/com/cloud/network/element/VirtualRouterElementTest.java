@@ -449,4 +449,60 @@ public class VirtualRouterElementTest {
         when(_routerDao.persist(any(DomainRouterVO.class))).thenReturn(router);
     }
 
+    @Test
+    public void testCanHandle() {
+        Network network = Mockito.mock(Network.class);
+
+        final long networkId = 1;
+        final long physicalNetworkId = 42;
+        final long networkOfferingId = 10;
+        final long dataCenterId = 33;
+
+        when(network.getId()).thenReturn(networkId);
+        when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+        when(network.getTrafficType()).thenReturn(TrafficType.Guest);
+        when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        when(network.getDataCenterId()).thenReturn(dataCenterId);
+        when(network.getVpcId()).thenReturn(null);
+
+        when(virtualRouterElement._networkMdl.getPhysicalNetworkId(network)).thenReturn(physicalNetworkId);
+        when(virtualRouterElement._networkMdl.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName())).thenReturn(true);
+        when(virtualRouterElement._networkMdl.isProviderForNetwork(Network.Provider.VirtualRouter, networkId)).thenReturn(true);
+
+        assertTrue(virtualRouterElement.canHandle(network, null));
+    }
+
+    @Test
+    public void testAddPasswordAndUserdata() throws Exception {
+        Network network = Mockito.mock(Network.class);
+        VirtualMachineProfile vm = Mockito.mock(VirtualMachineProfile.class);
+        NicProfile nic = Mockito.mock(NicProfile.class);
+        DeployDestination dest = Mockito.mock(DeployDestination.class);
+        ReservationContext context = Mockito.mock(ReservationContext.class);
+        Service service = Service.UserData;
+
+        final long networkId = 1;
+        final long physicalNetworkId = 42;
+        final long networkOfferingId = 10;
+        final long dataCenterId = 33;
+
+        when(network.getId()).thenReturn(networkId);
+        when(network.getPhysicalNetworkId()).thenReturn(physicalNetworkId);
+        when(network.getTrafficType()).thenReturn(TrafficType.Guest);
+        when(network.getNetworkOfferingId()).thenReturn(networkOfferingId);
+        when(network.getDataCenterId()).thenReturn(dataCenterId);
+        when(network.getVpcId()).thenReturn(null);
+
+        when(vm.getType()).thenReturn(VirtualMachine.Type.User);
+
+        when(virtualRouterElement._networkMdl.getPhysicalNetworkId(network)).thenReturn(physicalNetworkId);
+        when(virtualRouterElement._networkMdl.isProviderEnabledInPhysicalNetwork(physicalNetworkId, Network.Provider.VirtualRouter.getName())).thenReturn(true);
+        when(virtualRouterElement._networkMdl.isProviderSupportServiceInNetwork(networkId, service, Network.Provider.VirtualRouter)).thenReturn(true);
+
+        when(virtualRouterElement._dcDao.findById(dataCenterId)).thenReturn(Mockito.mock(DataCenterVO.class));
+
+        when(virtualRouterElement.canHandle(network, service)).thenReturn(false);
+
+        assertTrue(virtualRouterElement.addPasswordAndUserdata(network, nic, vm, dest, context));
+    }
 }
