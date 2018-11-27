@@ -1859,8 +1859,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
     @ActionEvent(eventType = EventTypes.EVENT_VOLUME_DETACH, eventDescription = "detaching volume")
     public Volume detachVolumeViaDestroyVM(long vmId, long volumeId) {
-        Volume result = orchestrateDetachVolumeFromVM(vmId, volumeId);
-        return result;
+        return orchestrateDetachVolumeFromVM(vmId, volumeId);
     }
 
     private Volume orchestrateDetachVolumeFromVM(long vmId, long volumeId) {
