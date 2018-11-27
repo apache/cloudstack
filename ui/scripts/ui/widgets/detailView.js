@@ -1600,7 +1600,7 @@
     };
 
     // View all links
-    $('a').on('click', function(event) {
+    $(document).on('click', 'a', function(event) {
         var $target = $(event.target);
         var $viewAll = $target.closest('td.view-all a');
         var viewAllArgs;
