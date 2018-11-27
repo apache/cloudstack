@@ -206,10 +206,10 @@ patch() {
   physmem=$(free|awk '/^Mem:/{print $2}')
   case $physmem in
     [1-4095999])
-      sysctl -w vm.vfs_cache_pressure=200
+      sed  -i "/^vm.vfs_cache_pressure/ c\vm.vfs_cache_pressure = 200" /etc/sysctl.conf
       ;;
     *)
-      sysctl -w vm.vfs_cache_pressure=100
+      sed  -i "/^vm.vfs_cache_pressure/ c\vm.vfs_cache_pressure = 100" /etc/sysctl.conf
       ;;
   esac
 
