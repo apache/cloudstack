@@ -336,7 +336,7 @@ class TestISO(cloudstackTestCase):
 
         self.assertEqual(
             iso_response.passwordenabled,
-            self.services["passwordenabled"],
+            bool(self.services["passwordenabled"]),
             "Check passwordenabled of updated ISO"
         )
 
