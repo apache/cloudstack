@@ -331,7 +331,7 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             zoneList.add(zoneId);
         }
 
-        return prepare(true, CallContext.current().getCallingUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, false, true, cmd.getUrl(), cmd.isPublic(),
+        return prepare(true, CallContext.current().getCallingUserId(), cmd.getIsoName(), cmd.getDisplayText(), 64, cmd.isPasswordEnabled(), true, cmd.getUrl(), cmd.isPublic(),
             cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(), zoneList, HypervisorType.None, cmd.getChecksum(), cmd.isBootable(), null,
             owner, null, false, cmd.getImageStoreUuid(), cmd.isDynamicallyScalable(), TemplateType.USER, cmd.isDirectDownload());
     }

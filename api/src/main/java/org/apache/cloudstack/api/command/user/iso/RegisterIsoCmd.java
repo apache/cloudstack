@@ -113,6 +113,11 @@ public class RegisterIsoCmd extends BaseCmd {
             description = "true if ISO should bypass Secondary Storage and be downloaded to Primary Storage on deployment")
     private Boolean directDownload;
 
+    @Parameter(name = ApiConstants.PASSWORD_ENABLED,
+            type = CommandType.BOOLEAN,
+            description = "true if password reset feature is supported; default is false")
+    private Boolean passwordEnabled;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -175,6 +180,10 @@ public class RegisterIsoCmd extends BaseCmd {
 
     public boolean isDirectDownload() {
         return directDownload == null ? false : directDownload;
+    }
+
+    public boolean isPasswordEnabled() {
+        return passwordEnabled == null ? false : passwordEnabled;
     }
 
     /////////////////////////////////////////////////////
