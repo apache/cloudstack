@@ -229,7 +229,7 @@ public class BridgeVifDriver extends VifDriverBase {
 
         String vNetId = null;
         String protocol = null;
-        if (nic.getBroadcastType() == Networks.BroadcastDomainType.Vlan || nic.getBroadcastType() == Networks.BroadcastDomainType.Vxlan) {
+        if (isBroadcastTypeVlanOrVxlan(nic)) {
             vNetId = Networks.BroadcastDomainType.getValue(nic.getBroadcastUri());
             protocol = Networks.BroadcastDomainType.getSchemeValue(nic.getBroadcastUri()).scheme();
         } else if (nic.getBroadcastType() == Networks.BroadcastDomainType.Lswitch) {
