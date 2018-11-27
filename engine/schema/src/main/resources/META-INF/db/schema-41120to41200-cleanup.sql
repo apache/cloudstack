@@ -25,3 +25,6 @@ DROP TABLE IF EXISTS `cloud`.`iam_group_policy_map`;
 DROP TABLE IF EXISTS `cloud`.`iam_group`;
 DROP TABLE IF EXISTS `cloud`.`iam_policy_permission`;
 DROP TABLE IF EXISTS `cloud`.`iam_policy`;
+
+-- PR #3063 Remove unused stats.timeout configuration variable
+DELETE FROM `cloud`.`configuration` WHERE `cloud`.`configuration`.`name`='stats.timeout';
