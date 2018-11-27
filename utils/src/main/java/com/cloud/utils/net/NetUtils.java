@@ -479,9 +479,23 @@ public class NetUtils {
         return validator.isValidInet4Address(ip);
     }
 
+    /**
+     * Returns true if the given IPv4 address is in the specific Ipv4 range
+     */
+    public static boolean isIpInRange(final String ipInRange, final String startIP, final String endIP) {
+        if (ipInRange == null || !validIpRange(startIP, endIP))
+            return false;
+
+        final long ipInRangeLong = NetUtils.ip2Long(ipInRange);
+        final long startIPLong = NetUtils.ip2Long(startIP);
+        final long endIPLong = NetUtils.ip2Long(endIP);
+
+        return startIPLong <= ipInRangeLong && ipInRangeLong <= endIPLong;
+    }
+
     public static boolean is31PrefixCidr(final String cidr) {
         final boolean isValidCird = isValidIp4Cidr(cidr);
-        if (isValidCird){
+        if (isValidCird) {
             final String[] cidrPair = cidr.split("\\/");
             final String cidrSize = cidrPair[1];
 
