@@ -37,8 +37,12 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`,
 UPDATE `cloud`.`async_job` SET `removed` = now() WHERE `removed` IS NULL;
 
 -- PR#1448 update description of 'execute.in.sequence.network.element.commands' parameter to reflect an unused command that has been removed. The removed class command is 'UserDataCommand'.
-update `cloud`.`configuration` set description = 'If set to true, DhcpEntryCommand, SavePasswordCommand, VmDataCommand will be synchronized on the agent side. If set to false, these commands become asynchronous. Default value is false.' where name = 'execute.in.sequence.network.element.commands';
+update `cloud`.`configuration` set description = 'If set to true, DhcpEntryCommand, SavePasswordCommand, VmDataCommand will be synchronized on the agent side. If set to false, these commands become asynchronous. Default value is false.' where name = 'execute.in.sequence.network.element.commands'; 
 
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'StorageManager', 'kvm.storage.offline.migration.wait', '10800', 'Timeout in seconds for offline (non-live) storage migration to complete on KVM', '10800', null, 'Global', 0);
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'StorageManager', 'kvm.storage.online.migration.wait', '10800', 'Timeout in seconds for online (live) storage migration to complete on KVM (migrateVirtualMachineWithVolume)', '10800', null, 'Global', 0);
 INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'StorageManager', 'max.number.managed.clustered.file.systems', '200', 'XenServer and VMware only: Maximum number of managed SRs or datastores per compute cluster', '200', null, 'Cluster', 0);
+
+-- add KVM Guest OS mapping for Windows Server 2019
+INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (276, UUID(), 6, 'Windows Server 2019 (64-bit)', now());
+INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'KVM', 'default', 'Windows Server 2019', 276, now(), 0);
