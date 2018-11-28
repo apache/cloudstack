@@ -80,22 +80,27 @@ def can_bridge_firewall(privnic):
     return True
 
 
+def get_libvirt_connection():
+    conn = libvirt.openReadOnly(driver)
+    if not conn:
+        raise Exception('Failed to open connection to the hypervisor')
+
+    return conn
+
+
 def virshlist(states):
-    libvirt_states={ 'running'  : libvirt.VIR_DOMAIN_RUNNING,
-                     'shutoff'  : libvirt.VIR_DOMAIN_SHUTOFF,
-                     'shutdown' : libvirt.VIR_DOMAIN_SHUTDOWN,
-                     'paused'   : libvirt.VIR_DOMAIN_PAUSED,
-                     'nostate'  : libvirt.VIR_DOMAIN_NOSTATE,
-                     'blocked'  : libvirt.VIR_DOMAIN_BLOCKED,
-                     'crashed'  : libvirt.VIR_DOMAIN_CRASHED,
+    libvirt_states={ 'running': libvirt.VIR_DOMAIN_RUNNING,
+                     'shutoff': libvirt.VIR_DOMAIN_SHUTOFF,
+                     'shutdown': libvirt.VIR_DOMAIN_SHUTDOWN,
+                     'paused': libvirt.VIR_DOMAIN_PAUSED,
+                     'nostate': libvirt.VIR_DOMAIN_NOSTATE,
+                     'blocked': libvirt.VIR_DOMAIN_BLOCKED,
+                     'crashed': libvirt.VIR_DOMAIN_CRASHED,
     }
 
     searchstates = list(libvirt_states[state] for state in states)
 
-    conn = libvirt.openReadOnly(driver)
-    if not conn:
-       print('Failed to open connection to the hypervisor')
-       sys.exit(3)
+    conn = get_libvirt_connection()
 
     alldomains = map(conn.lookupByID, conn.listDomainsID())
     alldomains += map(conn.lookupByName, conn.listDefinedDomains())
@@ -110,47 +115,14 @@ def virshlist(states):
     return domains
 
 
-def virshdomstate(domain):
-    libvirt_states={ libvirt.VIR_DOMAIN_RUNNING  : 'running',
-                     libvirt.VIR_DOMAIN_SHUTOFF  : 'shut off',
-                     libvirt.VIR_DOMAIN_SHUTDOWN : 'shut down',
-                     libvirt.VIR_DOMAIN_PAUSED   : 'paused',
-                     libvirt.VIR_DOMAIN_NOSTATE  : 'no state',
-                     libvirt.VIR_DOMAIN_BLOCKED  : 'blocked',
-                     libvirt.VIR_DOMAIN_CRASHED  : 'crashed',
-    }
-
-    conn = libvirt.openReadOnly(driver)
-    if not conn:
-       print('Failed to open connection to the hypervisor')
-       sys.exit(3)
-
-    try:
-        dom = (conn.lookupByName (domain))
-    except libvirt.libvirtError:
-        return None
-
-    state = libvirt_states[dom.info()[0]]
-    conn.close()
-
-    return state
-
-
 def virshdumpxml(domain):
-    conn = libvirt.openReadOnly(driver)
-    if not conn:
-       print('Failed to open connection to the hypervisor')
-       sys.exit(3)
-
     try:
-        dom = (conn.lookupByName (domain))
+        conn = get_libvirt_connection()
+        dom = conn.lookupByName(domain)
+        conn.close()
+        return dom.XMLDesc(0)
     except libvirt.libvirtError:
         return None
-
-    xml = dom.XMLDesc(0)
-    conn.close()
-
-    return xml
 
 
 def ipv6_link_local_addr(mac=None):
