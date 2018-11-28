@@ -18,7 +18,6 @@
 
 import argparse
 from subprocess import check_output, CalledProcessError
-from cloudutils.configFileOps import configFileOps
 import logging
 import sys
 import os
@@ -34,11 +33,6 @@ from netaddr.core import AddrFormatError
 logpath = "/var/run/cloud/"        # FIXME: Logs should reside in /var/log/cloud
 lock_file = "/var/lock/cloudstack_security_group.lock"
 driver = "qemu:///system"
-cfo = configFileOps("/etc/cloudstack/agent/agent.properties")
-hyper = cfo.getEntry("hypervisor.type")
-if hyper == "lxc":
-    driver = "lxc:///"
-
 lock_handle = None
 
 
