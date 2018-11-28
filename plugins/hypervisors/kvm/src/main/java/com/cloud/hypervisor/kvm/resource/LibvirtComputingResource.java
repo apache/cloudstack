@@ -3491,7 +3491,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     private boolean canBridgeFirewall(final String prvNic) {
         final Script cmd = new Script(_securityGroupPath, _timeout, s_logger);
         cmd.add("can_bridge_firewall");
-        cmd.add(prvNic);
+        cmd.add("--privnic", prvNic);
         final String result = cmd.execute();
         if (result != null) {
             return false;

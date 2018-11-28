@@ -16,14 +16,13 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import cloud_utils
+import argparse
 from subprocess import check_output, CalledProcessError
 from cloudutils.configFileOps import configFileOps
 import logging
 import sys
 import os
 import xml.dom.minidom
-from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, OptionError, OptionConflictError, OptionValueError
 import re
 import libvirt
 import fcntl
@@ -1269,29 +1268,28 @@ def addFWFramework(brname):
 
 if __name__ == '__main__':
     logging.basicConfig(filename="/var/log/cloudstack/agent/security_group.log", format="%(asctime)s - %(message)s", level=logging.DEBUG)
-    parser = OptionParser()
-    parser.add_option("--vmname", dest="vmName")
-    parser.add_option("--vmip", dest="vmIP")
-    parser.add_option("--vmip6", dest="vmIP6")
-    parser.add_option("--vmid", dest="vmID")
-    parser.add_option("--vmmac", dest="vmMAC")
-    parser.add_option("--vif", dest="vif")
-    parser.add_option("--sig", dest="sig")
-    parser.add_option("--seq", dest="seq")
-    parser.add_option("--rules", dest="rules")
-    parser.add_option("--brname", dest="brname")
-    parser.add_option("--localbrname", dest="localbrname")
-    parser.add_option("--dhcpSvr", dest="dhcpSvr")
-    parser.add_option("--hostIp", dest="hostIp")
-    parser.add_option("--hostMacAddr", dest="hostMacAddr")
-    parser.add_option("--nicsecips", dest="nicSecIps")
-    parser.add_option("--action", dest="action")
-    (option, args) = parser.parse_args()
-    if len(args) == 0:
-        logging.debug("No command to execute")
-        sys.exit(1)
-    cmd = args[0]
-    logging.debug("Executing command: " + str(cmd))
+    parser = argparse.ArgumentParser(description='Apache CloudStack Security Groups')
+    parser.add_argument("command")
+    parser.add_argument("--vmname", dest="vmName")
+    parser.add_argument("--vmip", dest="vmIP")
+    parser.add_argument("--vmip6", dest="vmIP6")
+    parser.add_argument("--vmid", dest="vmID")
+    parser.add_argument("--vmmac", dest="vmMAC")
+    parser.add_argument("--vif", dest="vif")
+    parser.add_argument("--sig", dest="sig")
+    parser.add_argument("--seq", dest="seq")
+    parser.add_argument("--rules", dest="rules")
+    parser.add_argument("--brname", dest="brname")
+    parser.add_argument("--localbrname", dest="localbrname")
+    parser.add_argument("--dhcpSvr", dest="dhcpSvr")
+    parser.add_argument("--hostIp", dest="hostIp")
+    parser.add_argument("--hostMacAddr", dest="hostMacAddr")
+    parser.add_argument("--nicsecips", dest="nicSecIps")
+    parser.add_argument("--action", dest="action")
+    parser.add_argument("--privnic", dest="privnic")
+    args = parser.parse_args()
+    cmd = args.command
+    logging.debug("Executing command: %s", cmd)
 
     for i in range(0, 30):
         if obtain_file_lock(lock_file) is False:
@@ -1301,23 +1299,23 @@ if __name__ == '__main__':
             break
 
     if cmd == "can_bridge_firewall":
-        can_bridge_firewall(args[1])
+        can_bridge_firewall(args.privnic)
     elif cmd == "default_network_rules":
-        default_network_rules(option.vmName, option.vmID, option.vmIP, option.vmIP6, option.vmMAC, option.vif, option.brname, option.nicSecIps)
+        default_network_rules(args.vmName, args.vmID, args.vmIP, args.vmIP6, args.vmMAC, args.vif, args.brname, args.nicSecIps)
     elif cmd == "destroy_network_rules_for_vm":
-        destroy_network_rules_for_vm(option.vmName, option.vif)
+        destroy_network_rules_for_vm(args.vmName, args.vif)
     elif cmd == "default_network_rules_systemvm":
-        default_network_rules_systemvm(option.vmName, option.localbrname)
+        default_network_rules_systemvm(args.vmName, args.localbrname)
     elif cmd == "get_rule_logs_for_vms":
         get_rule_logs_for_vms()
     elif cmd == "add_network_rules":
-        add_network_rules(option.vmName, option.vmID, option.vmIP, option.vmIP6, option.sig, option.seq, option.vmMAC, option.rules, option.vif, option.brname, option.nicSecIps)
+        add_network_rules(args.vmName, args.vmID, args.vmIP, args.vmIP6, args.sig, args.seq, args.vmMAC, args.rules, args.vif, args.brname, args.nicSecIps)
     elif cmd == "network_rules_vmSecondaryIp":
-        network_rules_vmSecondaryIp(option.vmName, option.nicSecIps, option.action)
+        network_rules_vmSecondaryIp(args.vmName, args.nicSecIps, args.action)
     elif cmd == "cleanup_rules":
         cleanup_rules()
     elif cmd == "post_default_network_rules":
-        post_default_network_rules(option.vmName, option.vmID, option.vmIP, option.vmMAC, option.vif, option.brname, option.dhcpSvr, option.hostIp, option.hostMacAddr)
+        post_default_network_rules(args.vmName, args.vmID, args.vmIP, args.vmMAC, args.vif, args.brname, args.dhcpSvr, args.hostIp, args.hostMacAddr)
     else:
         logging.debug("Unknown command: " + cmd)
         sys.exit(1)
