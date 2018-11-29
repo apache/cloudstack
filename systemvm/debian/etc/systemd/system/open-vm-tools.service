@@ -1,0 +1,15 @@
+[Unit]
+Description=Service for virtual machines hosted on VMware
+Documentation=http://open-vm-tools.sourceforge.net/about.php
+ConditionVirtualization=vmware
+DefaultDependencies=no
+Before=cloud-init-local.service
+
+[Service]
+ExecStart=/usr/bin/vmtoolsd
+TimeoutStopSec=5
+Restart=always
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target
