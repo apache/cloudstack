@@ -54,7 +54,8 @@ def execute(cmd):
     try:
         return check_output(cmd, shell=True)
     except CalledProcessError as e:
-        pass
+        logging.exception('Command exited non-zero: %s', cmd)
+        raise
 
 
 def can_bridge_firewall(privnic):
