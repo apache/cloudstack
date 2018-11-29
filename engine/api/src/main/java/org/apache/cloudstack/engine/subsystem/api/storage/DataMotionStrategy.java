@@ -26,11 +26,11 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
 
 /**
- * interface to query how to move data around and to commision the moving
+ * Interface to query how to move data around and to commision the moving
  */
 public interface DataMotionStrategy {
     /**
-     * reports whether this instance can do a move from source to destination
+     * Reports whether this instance can do a move from source to destination
      * @param srcData object to move
      * @param destData location to move it to
      * @return the expertise level with which this instance knows how to handle the move
@@ -40,7 +40,7 @@ public interface DataMotionStrategy {
     StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);
 
     /**
-     * copy the source volume to its destination (on a host if not null)
+     * Copy the source volume to its destination (on a host if not null)
      *
      * @param srcData volume to move
      * @param destData volume description as intended after the move

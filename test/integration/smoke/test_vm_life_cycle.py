@@ -238,7 +238,7 @@ class TestDeployVM(cloudstackTestCase):
         list_vms = VirtualMachine.list(self.apiclient, ids=[virtual_machine1.id, virtual_machine2.id], listAll=True)
         self.debug(
             "Verify listVirtualMachines response for virtual machines: %s, %s" % (
-            virtual_machine1.id, virtual_machine2.id)
+                virtual_machine1.id, virtual_machine2.id)
         )
         self.assertEqual(
             isinstance(list_vms, list),
@@ -606,7 +606,7 @@ class TestVMLifeCycle(cloudstackTestCase):
         migrate_host = suitable_hosts[1]
 
         # deploy VM on target host
-        self.vm_to_migrate = VirtualMachine.create(
+        vm_to_migrate = VirtualMachine.create(
             self.apiclient,
             self.services["small"],
             accountid=self.account.name,
@@ -616,23 +616,23 @@ class TestVMLifeCycle(cloudstackTestCase):
             hostid=target_host.id
         )
         self.debug("Migrating VM-ID: %s to Host: %s" % (
-            self.vm_to_migrate.id,
+            vm_to_migrate.id,
             migrate_host.id
         ))
 
-        self.vm_to_migrate.migrate(self.apiclient, migrate_host.id)
+        vm_to_migrate.migrate(self.apiclient, migrate_host.id)
 
         retries_cnt = 3
         while retries_cnt >= 0:
             list_vm_response = VirtualMachine.list(self.apiclient,
-                                                   id=self.vm_to_migrate.id)
+                                                   id=vm_to_migrate.id)
             self.assertNotEqual(
                 list_vm_response,
                 None,
                 "Check virtual machine is listed"
             )
             vm_response = list_vm_response[0]
-            self.assertEqual(vm_response.id, self.vm_to_migrate.id, "Check virtual machine ID of migrated VM")
+            self.assertEqual(vm_response.id, vm_to_migrate.id, "Check virtual machine ID of migrated VM")
             self.assertEqual(vm_response.hostid, migrate_host.id, "Check destination hostID of migrated VM")
             retries_cnt = retries_cnt - 1
         return

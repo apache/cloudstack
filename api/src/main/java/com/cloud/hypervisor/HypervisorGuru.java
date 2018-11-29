@@ -33,7 +33,7 @@ import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
 
 public interface HypervisorGuru extends Adapter {
-    static final ConfigKey<Boolean> VmwareFullClone = new ConfigKey<Boolean>("Advanced", Boolean.class, "vmware.create.full.clone", "true",
+    ConfigKey<Boolean> VmwareFullClone = new ConfigKey<Boolean>("Advanced", Boolean.class, "vmware.create.full.clone", "true",
             "If set to true, creates guest VMs as full clones on ESX", false);
     HypervisorType getHypervisorType();
 
@@ -87,7 +87,7 @@ public interface HypervisorGuru extends Adapter {
     Map<String, String> getClusterSettings(long vmId);
 
     /**
-     * will generate commands to migrate a vm to a pool. For now this will ony work for stopped VMs on Vmware.
+     * Will generate commands to migrate a vm to a pool. For now this will only work for stopped VMs on Vmware.
      *
      * @param vm the stopped vm to migrate
      * @param destination the primary storage pool to migrate to

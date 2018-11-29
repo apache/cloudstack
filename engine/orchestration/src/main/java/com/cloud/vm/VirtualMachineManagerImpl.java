@@ -1981,8 +1981,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
 
         try {
             if(s_logger.isDebugEnabled()) {
-                s_logger.debug(
-                        String.format("Offline migration of %s vm %s with volumes",
+                s_logger.debug(String.format("Offline migration of %s vm %s with volumes",
                                 vm.getHypervisorType().toString(),
                                 vm.getInstanceName()));
             }
@@ -1992,20 +1991,21 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         } catch (ConcurrentOperationException
                 | InsufficientCapacityException // possibly InsufficientVirtualNetworkCapacityException or InsufficientAddressCapacityException
                 | StorageUnavailableException e) {
-            s_logger.debug("Failed to migration: " + e.toString());
-            throw new CloudRuntimeException("Failed to migration: " + e.toString());
+            String msg = String.format("Failed to migrate VM: %s", vmUuid);
+            s_logger.debug(msg);
+            throw new CloudRuntimeException(msg, e);
         } finally {
             try {
                 stateTransitTo(vm, Event.AgentReportStopped, null);
             } catch (final NoTransitionException e) {
-                s_logger.debug("Failed to change vm state: " + e.toString());
-                throw new CloudRuntimeException("Failed to change vm state: " + e.toString());
+                String anotherMEssage = String.format("failed to change vm state of VM: %s", vmUuid);
+                s_logger.debug(anotherMEssage);
+                throw new CloudRuntimeException(anotherMEssage, e);
             }
         }
     }
 
     private Answer[] attemptHypervisorMigration(StoragePool destPool, VMInstanceVO vm) {
-        boolean migrationResult = false;
         final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
         // OfflineVmwareMigration: in case of vmware call vcenter to do it for us.
         // OfflineVmwareMigration: should we check the proximity of source and destination
@@ -2014,7 +2014,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         List<Command> commandsToSend = hvGuru.finalizeMigrate(vm, destPool);
 
         Long hostId = vm.getHostId();
-        // OfflineVmwareMigration: probaby this is null when vm is stopped
+        // OfflineVmwareMigration: probably this is null when vm is stopped
         if(hostId == null) {
             hostId = vm.getLastHostId();
             if (s_logger.isDebugEnabled()) {
@@ -2027,17 +2027,17 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
             try {
                 // OfflineVmwareMigration: change to the call back variety?
                 // OfflineVmwareMigration: getting a Long seq to be filled with _agentMgr.send(hostId, commandsContainer, this)
-                Answer[] answers = _agentMgr.send(hostId, commandsContainer);
-                return answers;
+                return  _agentMgr.send(hostId, commandsContainer);
             } catch (AgentUnavailableException | OperationTimedoutException e) {
-                throw new CloudRuntimeException("Failed to migration: " + e.toString());
+                throw new CloudRuntimeException(String.format("Failed to migrate VM: %s", vm.getUuid()),e);
             }
         }
         return null;
     }
 
     private void afterHypervisorMigrationCleanup(StoragePool destPool, VMInstanceVO vm, HostVO srcHost, Long srcClusterId, Answer[] hypervisorMigrationResults) throws InsufficientCapacityException {
-        if(s_logger.isDebugEnabled()) {
+        boolean isDebugEnabled = s_logger.isDebugEnabled();
+        if(isDebugEnabled) {
             String msg = String.format("cleaning up after hypervisor pool migration volumes for VM %s(%s) to pool %s(%s)", vm.getInstanceName(), vm.getUuid(), destPool.getName(), destPool.getUuid());
             s_logger.debug(msg);
         }
@@ -2046,7 +2046,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         Long destPodId = destPool.getPodId();
         Long vmPodId = vm.getPodIdToDeployIn();
         if (destPodId == null || ! destPodId.equals(vmPodId)) {
-            if(s_logger.isDebugEnabled()) {
+            if(isDebugEnabled) {
                 String msg = String.format("resetting lasHost for VM %s(%s) as pod (%s) is no good.", vm.getInstanceName(), vm.getUuid(), destPodId);
                 s_logger.debug(msg);
             }
@@ -2064,7 +2064,7 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         MigrateVmToPoolAnswer relevantAnswer = null;
         for (Answer answer : hypervisorMigrationResults) {
             if (s_logger.isTraceEnabled()) {
-                s_logger.trace(String.format("recieved an %s: %s", answer.getClass().getSimpleName(), answer));
+                s_logger.trace(String.format("received an %s: %s", answer.getClass().getSimpleName(), answer));
             }
             if (answer instanceof MigrateVmToPoolAnswer) {
                 relevantAnswer = (MigrateVmToPoolAnswer) answer;
@@ -2118,14 +2118,15 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         try {
             stateTransitTo(vm, Event.StorageMigrationRequested, null);
         } catch (final NoTransitionException e) {
-            s_logger.debug("Unable to migrate vm: " + e.toString());
-            throw new CloudRuntimeException("Unable to migrate vm: " + e.toString());
+            String msg = String.format("Unable to migrate vm: %s", vm.getUuid());
+            s_logger.debug(msg);
+            throw new CloudRuntimeException(msg, e);
         }
     }
 
     private void checkDestinationForTags(StoragePool destPool, VMInstanceVO vm) {
         List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
-        // OfflineVmwareMigration: itterate over volumes
+        // OfflineVmwareMigration: iterate over volumes
         // OfflineVmwareMigration: get disk offering
         List<String> storageTags = storageMgr.getStoragePoolTagList(destPool.getId());
         for(Volume vol : vols) {
