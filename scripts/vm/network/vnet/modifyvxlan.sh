@@ -82,6 +82,7 @@ addVxlan() {
                 return 1
             fi
         fi
+        sysctl -w net.ipv6.conf.$vxlanDev.disable_ipv6=1
     fi
 
     # is up?
@@ -102,6 +103,7 @@ addVxlan() {
                 return 2
             fi
         fi
+        sysctl -w net.ipv6.conf.$vxlanBr.disable_ipv6=1
         brctl setfd $vxlanBr 0
     fi
 
