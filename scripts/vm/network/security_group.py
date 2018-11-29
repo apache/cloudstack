@@ -148,6 +148,11 @@ def split_ips_by_family(ips):
     return ip4s, ip6s
 
 
+def get_bridge_physdev(brname):
+    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}'" % brname)
+    return physdev.strip()
+
+
 def destroy_network_rules_for_vm(vm_name, vif=None):
     vmchain = iptables_chain_name(vm_name)
     vmchain_egress = egress_chain_name(vm_name)
@@ -1197,6 +1202,8 @@ def addFWFramework(brname):
     except:
         execute('ip6tables -N ' + brfwin)
 
+    physdev = get_bridge_physdev(brname)
+
     try:
         refs = int(execute("""iptables -n -L %s | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip())
         refs6 = int(execute("""ip6tables -n -L %s | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip())
@@ -1206,22 +1213,20 @@ def addFWFramework(brname):
             execute("iptables -I FORWARD -o " + brname + " -j DROP")
             execute("iptables -I FORWARD -i " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
             execute("iptables -I FORWARD -o " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
-            phydev = execute("brctl show | awk '/^%s[ \t]/ {print $4}'" % brname ).strip()
             execute("iptables -A " + brfw + " -m state --state RELATED,ESTABLISHED -j ACCEPT")
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-in -j " + brfwin)
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-out -j " + brfwout)
-            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + phydev + " -j ACCEPT")
+            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + physdev + " -j ACCEPT")
 
         if refs6 == 0:
             execute('ip6tables -I FORWARD -i ' + brname + ' -j DROP')
             execute('ip6tables -I FORWARD -o ' + brname + ' -j DROP')
             execute('ip6tables -I FORWARD -i ' + brname + ' -m physdev --physdev-is-bridged -j ' + brfw)
             execute('ip6tables -I FORWARD -o ' + brname + ' -m physdev --physdev-is-bridged -j ' + brfw)
-            phydev = execute("brctl show | awk '/^%s[ \t]/ {print $4}'" % brname ).strip()
             execute('ip6tables -A ' + brfw + ' -m state --state RELATED,ESTABLISHED -j ACCEPT')
             execute('ip6tables -A ' + brfw + ' -m physdev --physdev-is-bridged --physdev-is-in -j ' + brfwin)
             execute('ip6tables -A ' + brfw + ' -m physdev --physdev-is-bridged --physdev-is-out -j ' + brfwout)
-            execute('ip6tables -A ' + brfw + ' -m physdev --physdev-is-bridged --physdev-out ' + phydev + ' -j ACCEPT')
+            execute('ip6tables -A ' + brfw + ' -m physdev --physdev-is-bridged --physdev-out ' + physdev + ' -j ACCEPT')
 
         return True
     except:
