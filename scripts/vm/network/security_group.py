@@ -494,10 +494,10 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
 
         #don't let vm spoof its ip address
         if vm_ip:
-            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set ! --set " + vmipsetName + " src -j DROP")
-            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --set " + vmipsetName + " src -p udp --dport 53  -j RETURN ")
-            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --set " + vmipsetName + " src -p tcp --dport 53  -j RETURN ")
-            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --set " + vmipsetName + " src -j " + vmchain_egress)
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set ! --match-set " + vmipsetName + " src -j DROP")
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --match-set " + vmipsetName + " src -p udp --dport 53  -j RETURN ")
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --match-set " + vmipsetName + " src -p tcp --dport 53  -j RETURN ")
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --match-set " + vmipsetName + " src -j " + vmchain_egress)
         execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-out " + vif + " -j " + vmchain)
         execute("iptables -A " + vmchain + " -j DROP")
     except:
