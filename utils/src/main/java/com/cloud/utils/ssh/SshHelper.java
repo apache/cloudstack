@@ -58,6 +58,30 @@ public class SshHelper {
         scpTo(host, port, user, pemKeyFile, password, remoteTargetDirectory, data, remoteFileName, fileMode, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT);
     }
 
+    public static void scpFrom(String host, int port, String user, File permKeyFile, String localTargetDirectory, String remoteTargetFile) throws Exception {
+        com.trilead.ssh2.Connection conn = null;
+        com.trilead.ssh2.SCPClient scpClient = null;
+
+        try {
+            conn = new com.trilead.ssh2.Connection(host, port);
+            conn.connect(null, DEFAULT_CONNECT_TIMEOUT, DEFAULT_KEX_TIMEOUT);
+
+            if (!conn.authenticateWithPublicKey(user, permKeyFile, null)) {
+                String msg = "Failed to authentication SSH user " + user + " on host " + host;
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+            scpClient = conn.createSCPClient();
+
+            scpClient.get(remoteTargetFile, localTargetDirectory);
+
+        } finally {
+            if (conn != null) {
+                conn.close();
+            }
+        }
+    }
+
     public static void scpTo(String host, int port, String user, File pemKeyFile, String password, String remoteTargetDirectory, String localFile, String fileMode,
             int connectTimeoutInMs, int kexTimeoutInMs) throws Exception {
 

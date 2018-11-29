@@ -23,8 +23,11 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SocketChannel;
 
+import org.apache.cloudstack.diagnostics.DeleteFileInVrCommand;
 import org.apache.cloudstack.diagnostics.DiagnosticsAnswer;
 import org.apache.cloudstack.diagnostics.DiagnosticsCommand;
+import org.apache.cloudstack.diagnostics.PrepareFilesAnswer;
+import org.apache.cloudstack.diagnostics.PrepareFilesCommand;
 import org.joda.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -196,7 +199,11 @@ public class VirtualRoutingResource {
         } else if (cmd instanceof GetRouterAlertsCommand) {
             return execute((GetRouterAlertsCommand)cmd);
         } else if (cmd instanceof DiagnosticsCommand) {
-            return execute((DiagnosticsCommand)cmd);
+            return execute((DiagnosticsCommand) cmd);
+        } else if (cmd instanceof PrepareFilesCommand) {
+            return execute((PrepareFilesCommand) cmd);
+        } else if (cmd instanceof DeleteFileInVrCommand) {
+            return execute((DeleteFileInVrCommand)cmd);
         } else {
             s_logger.error("Unknown query command in VirtualRoutingResource!");
             return Answer.createUnsupportedCommandAnswer(cmd);
@@ -304,6 +311,24 @@ public class VirtualRoutingResource {
             return new DiagnosticsAnswer(cmd, false, result.getDetails());
         }
         return new DiagnosticsAnswer(cmd, result.isSuccess(), result.getDetails());
+    }
+
+    private Answer execute(PrepareFilesCommand cmd) {
+        String fileList = String.join(" ", cmd.getFilesToRetrieveList());
+        _eachTimeout = Duration.standardSeconds(cmd.getTimeout());
+        final ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.RETRIEVE_DIAGNOSTICS, fileList, _eachTimeout);
+        if (result.isSuccess()) {
+            return new PrepareFilesAnswer(cmd, true, result.getDetails());
+        }
+        return new PrepareFilesAnswer(cmd, false, result.getDetails());
+    }
+
+    private Answer execute(DeleteFileInVrCommand cmd) {
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), VRScripts.VR_FILE_CLEANUP, cmd.getFileName());
+        if (result.isSuccess()) {
+            return new Answer(cmd, result.isSuccess(), result.getDetails());
+        }
+        return new Answer(cmd, result.isSuccess(), result.getDetails());
     }
 
     private Answer execute(GetDomRVersionCmd cmd) {

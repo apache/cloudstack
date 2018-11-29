@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.hypervisor.xenserver.resource;
 
+import static org.apache.cloudstack.diagnostics.DiagnosticsHelper.setDirFilePermissions;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -29,6 +31,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.charset.Charset;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -49,6 +53,9 @@ import javax.naming.ConfigurationException;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
+import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageAnswer;
+import org.apache.cloudstack.diagnostics.CopyToSecondaryStorageCommand;
+import org.apache.cloudstack.diagnostics.DiagnosticsHelper;
 import org.apache.cloudstack.hypervisor.xenserver.ExtraConfigurationUtility;
 import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
@@ -5612,4 +5619,74 @@ public abstract class CitrixResourceBase implements ServerResource, HypervisorRe
 
     }
 
+    /**
+     * Get Diagnostics Data API
+     * Copy zip file from system vm and copy file directly to secondary storage
+     */
+    public Answer copyDiagnosticsFileToSecondaryStorage(Connection conn, CopyToSecondaryStorageCommand cmd) {
+        String secondaryStorageUrl = cmd.getSecondaryStorageUrl();
+        String vmIP = cmd.getSystemVmIp();
+        String diagnosticsZipFile = cmd.getFileName();
+
+        String localDir = null;
+        boolean success;
+
+        // Mount Secondary storage
+        String secondaryStorageMountPath = null;
+        try {
+            URI uri = new URI(secondaryStorageUrl);
+            secondaryStorageMountPath = uri.getHost() + ":" + uri.getPath();
+            localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(secondaryStorageMountPath.getBytes());
+            String mountPoint = mountNfs(conn, secondaryStorageMountPath, localDir);
+            if (org.apache.commons.lang.StringUtils.isBlank(mountPoint)) {
+                return new CopyToSecondaryStorageAnswer(cmd, false, "Could not mount secondary storage " + secondaryStorageMountPath + " on host " + localDir);
+            }
+
+            String dataDirectoryInSecondaryStore = localDir + "/" + DiagnosticsHelper.DIAGNOSTICS_DATA_DIR;
+            File dataDirectory = new File(dataDirectoryInSecondaryStore);
+            boolean existsInSecondaryStore = dataDirectory.exists() || dataDirectory.mkdir();
+
+            // Modify directory file permissions
+            Path path = Paths.get(dataDirectory.getAbsolutePath());
+            setDirFilePermissions(path);
+
+            if (existsInSecondaryStore) {
+                int port = 3922;
+                File permKey = new File("/root/.ssh/id_rsa.cloud");
+                SshHelper.scpFrom(vmIP, port, "root", permKey, dataDirectoryInSecondaryStore, diagnosticsZipFile);
+            }
+
+            File fileInSecondaryStore = new File(dataDirectoryInSecondaryStore + diagnosticsZipFile.replace("/root", ""));
+            if (fileInSecondaryStore.exists()) {
+                return new CopyToSecondaryStorageAnswer(cmd, true, "File copied to secondary storage successfully.");
+            } else {
+                return new CopyToSecondaryStorageAnswer(cmd, false, "Zip file " + diagnosticsZipFile.replace("/root/", "") + "not found in secondary storage");
+            }
+        } catch (Exception e) {
+            String msg = String.format("Exception caught zip file copy to secondary storage URI: " + secondaryStorageUrl, e);
+            s_logger.error(msg);
+            return new CopyToSecondaryStorageAnswer(cmd, false, msg);
+        } finally {
+            if (localDir != null) umountNfs(conn, secondaryStorageMountPath, localDir);
+        }
+    }
+
+    private String mountNfs(Connection conn, String remoteDir, String localDir) {
+        if (localDir == null) {
+            localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(remoteDir.getBytes());
+        }
+        return callHostPlugin(conn, "cloud-plugin-storage", "mountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
+    }
+
+    // Unmount secondary storage from host
+    private void umountNfs(Connection conn, String remoteDir, String localDir) {
+        if (localDir == null) {
+            localDir = "/var/cloud_mount/" + UUID.nameUUIDFromBytes(remoteDir.getBytes());
+        }
+        String result = callHostPlugin(conn, "cloud-plugin-storage", "umountNfsSecondaryStorage", "localDir", localDir, "remoteDir", remoteDir);
+        if (org.apache.commons.lang.StringUtils.isBlank(result)) {
+            String errMsg = "Could not umount secondary storage " + remoteDir + " on host " + localDir;
+            s_logger.warn(errMsg);
+        }
+    }
 }

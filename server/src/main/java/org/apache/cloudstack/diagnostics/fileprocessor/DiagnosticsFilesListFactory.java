@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,17 +14,25 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
-package org.apache.cloudstack.diagnostics;
+package org.apache.cloudstack.diagnostics.fileprocessor;
 
-import java.util.Map;
+import java.util.List;
 
-import org.apache.cloudstack.api.command.admin.diagnostics.GetDiagnosticsDataCmd;
-import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
+import com.cloud.vm.VirtualMachine;
 
-public interface DiagnosticsService {
+public class DiagnosticsFilesListFactory {
 
-    Map<String, String> runDiagnosticsCommand(RunDiagnosticsCmd cmd);
+    public static DiagnosticsFilesList getDiagnosticsFilesList(List<String> dataTypeList, VirtualMachine vm) {
+        VirtualMachine.Type vmType = vm.getType();
 
-    String getDiagnosticsDataCommand(GetDiagnosticsDataCmd getDiagnosticsDataCmd);
+        if (vmType == VirtualMachine.Type.ConsoleProxy) {
+            return new ConsoleProxyDiagnosticFiles(dataTypeList);
+        } else if (vmType == VirtualMachine.Type.SecondaryStorageVm) {
+            return new SecondaryStorageVmDiagnosticsFiles(dataTypeList);
+        } else if (vmType == VirtualMachine.Type.DomainRouter) {
+            return new DomainRouterDiagnosticsFiles(dataTypeList);
+        } else {
+            return null;
+        }
+    }
 }

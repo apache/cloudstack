@@ -12584,6 +12584,14 @@ div.ui-dialog div.autoscaler div.field-group div.form-container form div.form-it
   background-position: -165px -704px;
 }
 
+.retrieveDiagnostics .icon {
+  background-position: -35px -125px;
+}
+
+.retrieveDiagnostics:hover .icon {
+  background-position: -35px -707px;
+}
+
 .enableOutOfBandManagement .icon {
   background-position: -138px -65px;
 }

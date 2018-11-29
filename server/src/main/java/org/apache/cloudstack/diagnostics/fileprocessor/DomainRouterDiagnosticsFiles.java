@@ -16,16 +16,33 @@
 // specific language governing permissions and limitations
 // under the License.
 //
-package org.apache.cloudstack.diagnostics;
+package org.apache.cloudstack.diagnostics.fileprocessor;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import org.apache.cloudstack.api.command.admin.diagnostics.GetDiagnosticsDataCmd;
-import org.apache.cloudstack.api.command.admin.diagnostics.RunDiagnosticsCmd;
+import org.apache.commons.collections.CollectionUtils;
 
-public interface DiagnosticsService {
+public class DomainRouterDiagnosticsFiles implements DiagnosticsFilesList {
+    // Optional parameters
+    private List<String> dataTypeList;
 
-    Map<String, String> runDiagnosticsCommand(RunDiagnosticsCmd cmd);
+    public DomainRouterDiagnosticsFiles(List<String> dataTypeList) {
+        this.dataTypeList = dataTypeList;
+    }
 
-    String getDiagnosticsDataCommand(GetDiagnosticsDataCmd getDiagnosticsDataCmd);
+    @Override
+    public List<String> generateFileList() {
+        List<String> filesList = new ArrayList<>();
+
+        if (CollectionUtils.isEmpty(dataTypeList)) {
+            filesList.addAll(Arrays.asList(VrDefaultSupportedFiles.value().split(",")));
+
+        } else {
+            filesList.addAll(dataTypeList);
+        }
+        return filesList;
+    }
+
 }
