@@ -37,9 +37,9 @@ addVxlan() {
     local sysfs_dir=/sys/devices/virtual/net/
     local brif=`find ${sysfs_dir}*/brif/ -name $pif | sed -e "s,$sysfs_dir,," | sed -e 's,/brif/.*$,,'`
 
-    if [ "$brif " == " " ]
+    if [[ "$brif " == " " ]]
     then
-        if [ -d "/sys/class/net/${pif}" ]
+        if [[ -d "/sys/class/net/${pif}" ]]
         then
             # if bridge is not found, but matches a pif, use it
             brif=$pif
@@ -50,7 +50,7 @@ addVxlan() {
     else
         # confirm ip address of $brif
         ip addr show $brif | grep -w inet
-        if [ $? -gt 0 ]
+        if [[ $? -gt 0 ]]
         then
             printf "Failed to find vxlan multicast source ip address on brif: $brif."
             return 1
@@ -60,23 +60,23 @@ addVxlan() {
     # mcast route
     ## TODO(VXLAN): Can we assume there're only one IP address which can be multicast src IP on the IF?
     ip route get $mcastGrp | grep -w "dev $brif"
-    if [ $? -gt 0 ]
+    if [[ $? -gt 0 ]]
     then
         ip route add $mcastGrp/32 dev $brif
-        if [ $? -gt 0 ]
+        if [[ $? -gt 0 ]]
         then
             printf "Failed to add vxlan multicast route on brif: $brif."
             return 1
         fi
     fi
 
-    if [ ! -d /sys/class/net/$vxlanDev ]
+    if [[ ! -d /sys/class/net/$vxlanDev ]]
     then
         ip link add $vxlanDev type vxlan id $vxlanId group $mcastGrp ttl 10 dev $brif
-        if [ $? -gt 0 ]
+        if [[ $? -gt 0 ]]
         then
             # race condition that someone already creates the vxlan
-            if [ ! -d /sys/class/net/$vxlanDev ]
+            if [[ ! -d /sys/class/net/$vxlanDev ]]
             then
                 printf "Failed to create vxlan $vxlanId on brif: $brif."
                 return 1
@@ -86,17 +86,17 @@ addVxlan() {
 
     # is up?
     ip link show $vxlanDev | grep -w UP > /dev/null
-    if [ $? -gt 0 ]
+    if [[ $? -gt 0 ]]
     then
         ip link set $vxlanDev up > /dev/null
     fi
 
-    if [ ! -d /sys/class/net/$vxlanBr ]
+    if [[ ! -d /sys/class/net/$vxlanBr ]]
     then
         brctl addbr $vxlanBr > /dev/null
-        if [ $? -gt 0 ]
+        if [[ $? -gt 0 ]]
         then
-            if [ ! -d /sys/class/net/$vxlanBr ]
+            if [[ ! -d /sys/class/net/$vxlanBr ]]
             then
                 printf "Failed to create br: $vxlanBr"
                 return 2
@@ -107,13 +107,13 @@ addVxlan() {
 
     #pif is eslaved into vxlanBr?
     ls /sys/class/net/$vxlanBr/brif/ | grep -w "$vxlanDev" > /dev/null
-    if [ $? -gt 0 ]
+    if [[ $? -gt 0 ]]
     then
         brctl addif $vxlanBr $vxlanDev > /dev/null
-        if [ $? -gt 0 ]
+        if [[ $? -gt 0 ]]
         then
             ls /sys/class/net/$vxlanBr/brif/ | grep -w "$vxlanDev" > /dev/null
-            if [ $? -gt 0 ]
+            if [[ $? -gt 0 ]]
             then
                 printf "Failed to add vxlan: $vxlanDev to $vxlanBr"
                 return 3
@@ -123,7 +123,7 @@ addVxlan() {
 
     # is vxlanBr up?
     ip link show $vxlanBr  | grep -w UP > /dev/null
-    if [ $? -gt 0 ]
+    if [[ $? -gt 0 ]]
     then
         ip link set $vxlanBr up
     fi
@@ -145,7 +145,7 @@ deleteVxlan() {
 
     ip link delete $vxlanDev
 
-    if [ $? -gt 0 ]
+    if [[ $? -gt 0 ]]
     then
         printf "Failed to del vxlan: $vxlanId"
         printf "Continue..."
@@ -153,14 +153,14 @@ deleteVxlan() {
 
     ip link set $vxlanBr down
 
-    if [ $? -gt 0 ]
+    if [[ $? -gt 0 ]]
     then
         return 1
     fi
 
     brctl delbr $vxlanBr
 
-    if [ $? -gt 0 ]
+    if [[ $? -gt 0 ]]
     then
         printf "Failed to del bridge $vxlanBr"
         return 1
@@ -195,7 +195,7 @@ do
 done
 
 # Check that all arguments were passed in
-if [ "$oflag$vflag$pflag$bflag" != "1111" ]
+if [[ "$oflag$vflag$pflag$bflag" != "1111" ]]
 then
     usage
     exit 2
@@ -203,17 +203,17 @@ fi
 
 # Do we support Vxlan?
 lsmod|grep ^vxlan >& /dev/null
-if [ $? -gt 0 ]
+if [[ $? -gt 0 ]]
 then
     modprobe=`modprobe vxlan 2>&1`
-    if [ $? -gt 0 ]
+    if [[ $? -gt 0 ]]
     then
         printf "Failed to load vxlan kernel module: $modprobe"
         exit 1
     fi
 fi
 
-if [ "$op" == "add" ]
+if [[ "$op" == "add" ]]
 then
     # Add the vxlan
     addVxlan $vxlanId $pif $brName
@@ -224,7 +224,7 @@ then
         exit 1
     fi
 else 
-    if [ "$op" == "delete" ]
+    if [[ "$op" == "delete" ]]
     then
         # Delete the vxlan
         deleteVxlan $vxlanId $pif $brName
