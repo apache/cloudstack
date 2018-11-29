@@ -473,6 +473,12 @@ test_data = {
         "supportedservices":
             "Dhcp,Dns,SourceNat,PortForwarding,Vpn,Lb,UserData,StaticNat,NetworkACL"
     },
+    "vpc_offering_reduced": {
+        "name": "VPC reduced off",
+        "displaytext": "VPC reduced off",
+        "supportedservices":
+            "Dhcp,Dns,SourceNat,UserData,StaticNat,NetworkACL"
+    },
     "vpc_offering_multi_lb": {
         "name": "VPC offering with multiple Lb service providers",
         "displaytext": "VPC offering with multiple Lb service providers",
