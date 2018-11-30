@@ -4179,6 +4179,15 @@ textarea {
   float: left;
 }
 
+.ui-dialog div.form-container div.value label {
+  display: block;
+  width: 119px;
+  text-align: left;
+  font-size: 13px;
+  margin-top: 2px;
+  margin-left: -10px;
+}
+
 .ui-dialog div.form-container div.value input.hasDatepicker {
   color: #2F5D86;
   cursor: pointer;
