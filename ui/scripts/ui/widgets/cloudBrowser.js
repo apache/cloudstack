@@ -340,7 +340,7 @@
         }
     });
 
-    $('#breadcrumbs li').on('click', cloudStack.ui.event.bind(
+    $(document).on('click', '#breadcrumbs li', cloudStack.ui.event.bind(
         'cloudBrowser', {
             'breadcrumb': function($target, $browser, data) {
 
