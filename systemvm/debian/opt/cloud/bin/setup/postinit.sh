@@ -21,6 +21,21 @@
 # Eject cdrom if any
 eject || true
 
+# set cache back pressure based on amount of physical memory 100 is default
+physmem=$(free|awk '/^Mem:/{print $2}')
+if [ $((physmem)) -lt 409600 ]; then
+    sed  -i "/^vm.vfs_cache_pressure/ c\vm.vfs_cache_pressure = 200" /etc/sysctl.conf
+else
+    sed  -i "/^vm.vfs_cache_pressure/ c\vm.vfs_cache_pressure = 100" /etc/sysctl.conf
+fi
+sysctl -p
+
+# HYPERVISOR exported by cloud-early-config
+# stop ntp conflicting with vmtools
+if [ "$HYPERVISOR" == "vmware" ]; then
+  systemctl stop ntpd
+fi
+
 # Restart journald for setting changes to apply
 systemctl restart systemd-journald
 
