@@ -68,9 +68,10 @@ function install_packages() {
     python-flask \
     haproxy \
     radvd \
-    sharutils genisoimage aria2 \
+    sharutils genisoimage \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins \
-    virt-what open-vm-tools qemu-guest-agent hyperv-daemons
+    virt-what open-vm-tools qemu-guest-agent hyperv-daemons \
+    rng-tools
 
   apt-get -q -y -t stretch-backports install nftables
 
