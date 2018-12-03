@@ -161,7 +161,7 @@ public class VirtualRoutingResource {
                 cmd.getKeystorePassword(),
                 cmd.getValidityDays(),
                 KeyStoreUtils.CSR_FILENAME);
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), KeyStoreUtils.KS_SETUP_SCRIPT, args);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), KeyStoreUtils.KS_SETUP_SCRIPT, args, Duration.standardMinutes(15));
         return new SetupKeystoreAnswer(result.getDetails());
     }
 
@@ -179,7 +179,7 @@ public class VirtualRoutingResource {
                 cmd.getEncodedCaCertificates(),
                 KeyStoreUtils.PKEY_FILENAME,
                 cmd.getEncodedPrivateKey());
-        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), KeyStoreUtils.KS_IMPORT_SCRIPT, args);
+        ExecutionResult result = _vrDeployer.executeInVR(cmd.getRouterAccessIp(), KeyStoreUtils.KS_IMPORT_SCRIPT, args, Duration.standardMinutes(15));
         return new SetupCertificateAnswer(result.isSuccess());
     }
 
