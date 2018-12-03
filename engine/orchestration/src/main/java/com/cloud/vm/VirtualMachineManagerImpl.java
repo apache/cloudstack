@@ -2023,7 +2023,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         }
 
         if(CollectionUtils.isNotEmpty(commandsToSend)) {
-            Commands commandsContainer = new Commands(commandsToSend.get(0));
+            Commands commandsContainer = new Commands(Command.OnError.Stop);
+            commandsContainer.addCommands(commandsToSend);
             try {
                 // OfflineVmwareMigration: change to the call back variety?
                 // OfflineVmwareMigration: getting a Long seq to be filled with _agentMgr.send(hostId, commandsContainer, this)
