@@ -16,21 +16,13 @@
 // under the License.
 package org.apache.cloudstack.discovery;
 
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
-
+import com.cloud.serializer.Param;
+import com.cloud.user.User;
+import com.cloud.utils.ReflectUtil;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloud.utils.component.PluggableService;
 import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.acl.APIChecker;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.BaseAsyncCmd;
@@ -43,13 +35,18 @@ import org.apache.cloudstack.api.response.ApiDiscoveryResponse;
 import org.apache.cloudstack.api.response.ApiParameterResponse;
 import org.apache.cloudstack.api.response.ApiResponseResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.log4j.Logger;
+import org.reflections.ReflectionUtils;
+import org.springframework.stereotype.Component;
 
-import com.cloud.serializer.Param;
-import com.cloud.user.User;
-import com.cloud.utils.ReflectUtil;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.component.ComponentLifecycleBase;
-import com.cloud.utils.component.PluggableService;
+import javax.inject.Inject;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Component
 public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements ApiDiscoveryService {
@@ -100,7 +97,8 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             }
             ApiDiscoveryResponse response = getCmdRequestMap(cmdClass, apiCmdAnnotation);
 
-            String responseName = apiCmdAnnotation.responseObject().getName();
+            Class<? extends BaseResponse> responseClass = apiCmdAnnotation.responseObject();
+            String responseName = responseClass.getName();
             if (!responseName.contains("SuccessResponse")) {
                 if (!responseApiNameListMap.containsKey(responseName)) {
                     responseApiNameListMap.put(responseName, new ArrayList<String>());
@@ -109,7 +107,7 @@ public class ApiDiscoveryServiceImpl extends ComponentLifecycleBase implements A
             }
             response.setRelated(responseName);
 
-            Field[] responseFields = apiCmdAnnotation.responseObject().getDeclaredFields();
+            Set<Field> responseFields = ReflectionUtils.getAllFields(responseClass);
             for (Field responseField : responseFields) {
                 ApiResponseResponse responseResponse = getFieldResponseMap(responseField);
                 response.addApiResponse(responseResponse);
