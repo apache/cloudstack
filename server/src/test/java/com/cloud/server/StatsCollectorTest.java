@@ -34,14 +34,11 @@ import org.influxdb.dto.Point;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InOrder;
 import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import com.cloud.agent.api.HostStatsEntry;
-import com.cloud.host.HostVO;
 import com.cloud.server.StatsCollector.ExternalStatsProtocol;
 import com.cloud.utils.exception.CloudRuntimeException;
 
@@ -56,8 +53,6 @@ public class StatsCollectorTest {
     private static final String URL = String.format("http://%s:%s/", HOST_ADDRESS, INFLUXDB_DEFAULT_PORT);
 
     private static final String DEFAULT_DATABASE_NAME = "cloudstack";
-    private static final String INFLUXDB_HOST_MEASUREMENT = "host_stats";
-    private static final String INFLUXDB_VM_MEASUREMENT = "vm_stats";
 
     @Test
     public void createInfluxDbConnectionTest() {
@@ -71,6 +66,7 @@ public class StatsCollectorTest {
 
     private void configureAndTestCreateInfluxDbConnection(boolean databaseExists) {
         statsCollector.externalStatsHost = HOST_ADDRESS;
+        statsCollector.externalStatsPort = INFLUXDB_DEFAULT_PORT;
         InfluxDB influxDbConnection = Mockito.mock(InfluxDB.class);
         Mockito.when(influxDbConnection.databaseExists(DEFAULT_DATABASE_NAME)).thenReturn(databaseExists);
         PowerMockito.mockStatic(InfluxDBFactory.class);
@@ -105,37 +101,6 @@ public class StatsCollectorTest {
     }
 
     @Test
-    public void sendVmMetricsToExternalStatsCollectorTestVmStatsMetricsEmpty() {
-        configureAndTestSendVmMetricsToExternalStatsCollector(new HashMap<>(), ExternalStatsProtocol.INFLUXDB, 0, 0);
-    }
-
-    @Test
-    public void sendVmMetricsToExternalStatsCollectorTestVmStatsMetricsInfluxdb() {
-        Map<Object, Object> metrics = new HashMap<>();
-        metrics.put(0l, 0l);
-        configureAndTestSendVmMetricsToExternalStatsCollector(metrics, ExternalStatsProtocol.INFLUXDB, 0, 1);
-    }
-
-    @Test
-    public void sendVmMetricsToExternalStatsCollectorTestVmStatsMetricsGraphit() {
-        Map<Object, Object> metrics = new HashMap<>();
-        metrics.put(0l, 0l);
-        configureAndTestSendVmMetricsToExternalStatsCollector(metrics, ExternalStatsProtocol.GRAPHITE, 1, 0);
-    }
-
-    private void configureAndTestSendVmMetricsToExternalStatsCollector(Map<Object, Object> metrics, ExternalStatsProtocol externalStatsType, int timesGraphite, int timesInflux) {
-        HostVO host = new HostVO("guid");
-        statsCollector.externalStatsType = externalStatsType;
-        Mockito.doNothing().when(statsCollector).sendVmMetricsToGraphiteHost(Mockito.anyMap(), Mockito.any());
-//        Mockito.doNothing().when(statsCollector).sendMetricsToInfluxdb(Mockito.anyMap(), Mockito.anyString());
-
-//        statsCollector.sendVmMetricsToExternalStatsCollector(metrics, host); TODO review
-
-        Mockito.verify(statsCollector, Mockito.times(timesGraphite)).sendVmMetricsToGraphiteHost(metrics, host);
-//        Mockito.verify(statsCollector, Mockito.times(timesInflux)).sendMetricsToInfluxdb(metrics, "abc");
-    }
-
-    @Test
     public void configureExternalStatsPortTestGraphitePort() throws URISyntaxException {
         URI uri = new URI(HOST_ADDRESS);
         statsCollector.externalStatsType = ExternalStatsProtocol.GRAPHITE;
@@ -151,7 +116,7 @@ public class StatsCollectorTest {
         Assert.assertEquals(INFLUXDB_DEFAULT_PORT, port);
     }
 
-    @Test(expected = CloudRuntimeException.class)
+    @Test(expected = URISyntaxException.class)
     public void configureExternalStatsPortTestExpectException() throws URISyntaxException {
         statsCollector.externalStatsType = ExternalStatsProtocol.NONE;
         URI uri = new URI(HOST_ADDRESS);
@@ -159,45 +124,11 @@ public class StatsCollectorTest {
     }
 
     @Test
-    public void configureExternalStatsPortTestCustomized() throws URISyntaxException {
+    public void configureExternalStatsPortTestInfluxDbCustomizedPort() throws URISyntaxException {
+        statsCollector.externalStatsType = ExternalStatsProtocol.INFLUXDB;
         URI uri = new URI("test://" + HOST_ADDRESS + ":1234");
         int port = statsCollector.configureExternalStatsPort(uri);
         Assert.assertEquals(1234, port);
-    }
-
-    @Test
-    public void sendMetricsToInfluxdbTestHostMeasure() {
-        configureTestAndVerifySendMetricsToInfluxdb(2, 0, INFLUXDB_HOST_MEASUREMENT);
-    }
-
-    @Test
-    public void sendMetricsToInfluxdbTestVmMeasure() {
-        configureTestAndVerifySendMetricsToInfluxdb(0, 2, INFLUXDB_VM_MEASUREMENT);
-    }
-
-    private void configureTestAndVerifySendMetricsToInfluxdb(int timesPointForHost, int timesPointForVm, String measure) {
-        HostStatsEntry hostStatsEntry = Mockito.mock(HostStatsEntry.class);
-        Point point = Mockito.mock(Point.class);
-        List<Point> points = new ArrayList<>();
-        points.add(point);
-        points.add(point);
-        InfluxDB influxDbConnection = Mockito.mock(InfluxDB.class);
-        Map<Object, Object> metrics = new HashMap<>();
-        metrics.put(0l, hostStatsEntry);
-        metrics.put(1l, hostStatsEntry);
-
-        Mockito.doReturn(point).when(statsCollector).createInfluxDbPointForHostMetrics(Mockito.any());
-        Mockito.doReturn(point).when(statsCollector).createInfluxDbPointForVmMetrics(Mockito.any());
-        Mockito.doReturn(influxDbConnection).when(statsCollector).createInfluxDbConnection();
-        Mockito.doNothing().when(statsCollector).writeBatches(influxDbConnection, DEFAULT_DATABASE_NAME, points);
-
-//        statsCollector.sendMetricsToInfluxdb(metrics, measure); TODO review
-
-        InOrder inOrder = Mockito.inOrder(statsCollector);
-        inOrder.verify(statsCollector, Mockito.times(1)).createInfluxDbConnection();
-        inOrder.verify(statsCollector, Mockito.times(timesPointForHost)).createInfluxDbPointForHostMetrics(Mockito.any());
-        inOrder.verify(statsCollector, Mockito.times(timesPointForVm)).createInfluxDbPointForVmMetrics(Mockito.any());
-        inOrder.verify(statsCollector, Mockito.times(1)).writeBatches(influxDbConnection, DEFAULT_DATABASE_NAME, points);
     }
 
     @Test

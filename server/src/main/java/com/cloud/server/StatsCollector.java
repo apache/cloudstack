@@ -53,6 +53,7 @@ import org.influxdb.InfluxDB;
 import org.influxdb.InfluxDBFactory;
 import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
+import org.influxdb.dto.Pong;
 import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
@@ -294,6 +295,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     String externalStatsPrefix = "";
     String externalStatsHost = null;
     int externalStatsPort = -1;
+    String externalStatsScheme;
     ExternalStatsProtocol externalStatsType = ExternalStatsProtocol.NONE;
     private String databaseName = DEFAULT_DATABASE_NAME;
 
@@ -338,12 +340,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         if (StringUtils.isNotBlank(statsUri)) {
             try {
                 URI uri = new URI(statsUri);
-                String scheme = uri.getScheme();
+                externalStatsScheme = uri.getScheme();
 
                 try {
-                    externalStatsType = ExternalStatsProtocol.valueOf(scheme.toUpperCase());
+                    externalStatsType = ExternalStatsProtocol.valueOf(externalStatsScheme.toUpperCase());
                 } catch (IllegalArgumentException e) {
-                    s_logger.info(scheme + " is not a valid protocol for external statistics. No statistics will be send.");
+                    s_logger.error(externalStatsScheme + " is not a valid protocol for external statistics. No statistics will be send.");
                 }
 
                 if (!StringUtils.isEmpty(uri.getHost())) {
@@ -366,7 +368,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                 }
 
             } catch (URISyntaxException e) {
-                s_logger.debug("Failed to parse external statistics URI: " + e.getMessage());
+                s_logger.error("Failed to parse external statistics URI: ", e);
             }
         }
 
@@ -473,22 +475,25 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
 
     /**
      * Configures the port to be used when connecting with the stats collector service.
-     * Default values are 8086 for influx DB and 2003 for GraphiteDB
+     * Default values are 8086 for influx DB and 2003 for GraphiteDB.
+     * Throws URISyntaxException in case of non configured port and external StatsType
      */
-    protected int configureExternalStatsPort(URI uri) {
+    protected int configureExternalStatsPort(URI uri) throws URISyntaxException {
         int port = uri.getPort();
-        if (port != UNDEFINED_PORT_VALUE) {
-            return port;
+        if (externalStatsType != ExternalStatsProtocol.NONE) {
+            if (port != UNDEFINED_PORT_VALUE) {
+                return port;
+            }
+            if (externalStatsType == ExternalStatsProtocol.GRAPHITE) {
+                return GRAPHITE_DEFAULT_PORT;
+            }
+            if (externalStatsType == ExternalStatsProtocol.INFLUXDB) {
+                return INFLUXDB_DEFAULT_PORT;
+            }
         }
-        if (externalStatsType == ExternalStatsProtocol.GRAPHITE) {
-            return GRAPHITE_DEFAULT_PORT;
-        }
-        if (externalStatsType == ExternalStatsProtocol.INFLUXDB) {
-            return INFLUXDB_DEFAULT_PORT;
-        }
-        throw new CloudRuntimeException("Cannot define a port for the Stats Collector service. The configured URI in stats.output.uri is not supported. "
-                + "Please configure as the following examples: graphite://graphite-hostaddress:port, or influxdb://influxdb-hostaddress:port. "
-                + "Note that the port is optional, if not added the default port for the respective collector (graphite or influxdb) will be used.");
+        throw new URISyntaxException(uri.toString(), String.format(
+                "Cannot define a port for the Stats Collector host %s://%s:%s or URI scheme is incorrect. The configured URI in stats.output.uri is not supported. Please configure as the following examples: graphite://graphite-hostaddress:port, or influxdb://influxdb-hostaddress:port. Note that the port is optional, if not added the default port for the respective collector (graphite or influxdb) will be used.",
+                externalStatsPrefix, externalStatsHost, externalStatsPort));
     }
 
     class HostCollector extends AbstractStatsCollector {
@@ -517,7 +522,9 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     }
                 }
 
-                sendMetricsToInfluxdb(metrics);
+                if (externalStatsType == ExternalStatsProtocol.INFLUXDB) {
+                    sendMetricsToInfluxdb(metrics);
+                }
 
                 updateGpuEnabledHostsDetails(hosts);
             } catch (Throwable t) {
@@ -1345,6 +1352,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
          */
         protected void sendMetricsToInfluxdb(Map<Object, Object> metrics) {
             InfluxDB influxDbConnection = createInfluxDbConnection();
+
+            Pong response = influxDbConnection.ping();
+            if (response.getVersion().equalsIgnoreCase("unknown")) {
+                throw new CloudRuntimeException(String.format("Cannot ping influxdb host %s:%s.", externalStatsHost, externalStatsPort));
+            }
+
             Collection<Object> metricsObjects = metrics.values();
             List<Point> points = new ArrayList<>();
 
@@ -1471,7 +1484,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         Map<String, String> tagsToAdd = new HashMap<>();
         tagsToAdd.put(VM_ID_TAG, new Long(vmStatsEntry.getVmId()).toString());
         tagsToAdd.put(UUID_TAG, userVmVO.getUuid());
-        tagsToAdd.put(INSTANCE_NAME_TAG, userVmVO.getInstanceName());
         tagsToAdd.put(DATA_CENTER_ID_TAG, new Long(userVmVO.getDataCenterId()).toString());
         tagsToAdd.put(HOST_ID_TAG, new Long(userVmVO.getHostId()).toString());
 
@@ -1497,12 +1509,13 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      * The Default name for the database is 'cloudstack_stats'.
      */
     protected InfluxDB createInfluxDbConnection() {
-        String influxDbQueryUrl = String.format("http://%s:%s/", externalStatsHost, INFLUXDB_DEFAULT_PORT);
+        String influxDbQueryUrl = String.format("http://%s:%s/", externalStatsHost, externalStatsPort);
         InfluxDB influxDbConnection = InfluxDBFactory.connect(influxDbQueryUrl);
 
         if (!influxDbConnection.databaseExists(databaseName)) {
             throw new CloudRuntimeException(String.format("Database with name %s does not exist in influxdb host %s:%s", databaseName, externalStatsHost, externalStatsPort));
         }
+
         return influxDbConnection;
     }
 
