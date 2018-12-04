@@ -16,15 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import java.util.HashSet;
-import java.util.Set;
-
+import com.cloud.serializer.Param;
 import com.google.gson.annotations.SerializedName;
-
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
 
-import com.cloud.serializer.Param;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ApiResponseResponse extends BaseResponse {
     @SerializedName(ApiConstants.NAME)
@@ -60,5 +58,21 @@ public class ApiResponseResponse extends BaseResponse {
             this.apiResponse = new HashSet<ApiResponseResponse>();
         }
         this.apiResponse.add(childApiResponse);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public Set<ApiResponseResponse> getApiResponse() {
+        return apiResponse;
     }
 }
