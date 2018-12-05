@@ -70,8 +70,8 @@ function install_packages() {
     radvd \
     sharutils genisoimage \
     strongswan libcharon-extra-plugins libstrongswan-extra-plugins \
-    virt-what open-vm-tools qemu-guest-agent hyperv-daemons \
-    rng-tools
+    virt-what open-vm-tools qemu-guest-agent hyperv-daemons xen-tools\
+    haveged
 
   apt-get -q -y -t stretch-backports install nftables
 
@@ -88,10 +88,10 @@ function install_packages() {
     ${apt_get} install libuuid1:i386 libc6:i386
   fi
 
-  # Install xenserver guest utilities as debian repos don't have it
-  wget https://mirrors.kernel.org/ubuntu/pool/main/x/xe-guest-utilities/xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
-  dpkg -i xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
-  rm -f xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
+  # Install xenserver guest utilities as debian repos don't have it - commented temporarily then will be removed as debian9 repos have much later xen-tools
+  # wget https://mirrors.kernel.org/ubuntu/pool/main/x/xe-guest-utilities/xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
+  # dpkg -i xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
+  # rm -f xe-guest-utilities_7.10.0-0ubuntu1_amd64.deb
 }
 
 return 2>/dev/null || install_packages
