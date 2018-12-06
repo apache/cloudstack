@@ -1015,21 +1015,21 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         */
 
         if (_pifs.get("private") == null) {
-            s_logger.debug("Failed to get private nic name");
+            s_logger.error("Failed to get private nic name");
             throw new ConfigurationException("Failed to get private nic name");
         }
 
         if (_pifs.get("public") == null) {
-            s_logger.debug("Failed to get public nic name");
+            s_logger.error("Failed to get public nic name");
             throw new ConfigurationException("Failed to get public nic name");
         }
         s_logger.debug("Found pif: " + _pifs.get("private") + " on " + _privBridgeName + ", pif: " + _pifs.get("public") + " on " + _publicBridgeName);
 
         _canBridgeFirewall = canBridgeFirewall(_pifs.get("public"));
 
-        _localGateway = Script.runSimpleBashScript("ip route |grep default|awk '{print $3}'");
+        _localGateway = Script.runSimpleBashScript("ip route show default 0.0.0.0/0|head -1|awk '{print $3}'");
         if (_localGateway == null) {
-            s_logger.debug("Failed to found the local gateway");
+            s_logger.warn("No default IPv4 gateway found");
         }
 
         _mountPoint = (String)params.get("mount.path");
