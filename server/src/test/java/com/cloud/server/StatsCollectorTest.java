@@ -40,6 +40,7 @@ import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.cloud.server.StatsCollector.ExternalStatsProtocol;
+import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.utils.exception.CloudRuntimeException;
 
 @RunWith(PowerMockRunner.class)
@@ -104,7 +105,7 @@ public class StatsCollectorTest {
     public void configureExternalStatsPortTestGraphitePort() throws URISyntaxException {
         URI uri = new URI(HOST_ADDRESS);
         statsCollector.externalStatsType = ExternalStatsProtocol.GRAPHITE;
-        int port = statsCollector.configureExternalStatsPort(uri);
+        int port = statsCollector.retrieveExternalStatsPortFromUri(uri);
         Assert.assertEquals(GRAPHITE_DEFAULT_PORT, port);
     }
 
@@ -112,7 +113,7 @@ public class StatsCollectorTest {
     public void configureExternalStatsPortTestInfluxdbPort() throws URISyntaxException {
         URI uri = new URI(HOST_ADDRESS);
         statsCollector.externalStatsType = ExternalStatsProtocol.INFLUXDB;
-        int port = statsCollector.configureExternalStatsPort(uri);
+        int port = statsCollector.retrieveExternalStatsPortFromUri(uri);
         Assert.assertEquals(INFLUXDB_DEFAULT_PORT, port);
     }
 
@@ -120,14 +121,14 @@ public class StatsCollectorTest {
     public void configureExternalStatsPortTestExpectException() throws URISyntaxException {
         statsCollector.externalStatsType = ExternalStatsProtocol.NONE;
         URI uri = new URI(HOST_ADDRESS);
-        statsCollector.configureExternalStatsPort(uri);
+        statsCollector.retrieveExternalStatsPortFromUri(uri);
     }
 
     @Test
     public void configureExternalStatsPortTestInfluxDbCustomizedPort() throws URISyntaxException {
         statsCollector.externalStatsType = ExternalStatsProtocol.INFLUXDB;
         URI uri = new URI("test://" + HOST_ADDRESS + ":1234");
-        int port = statsCollector.configureExternalStatsPort(uri);
+        int port = statsCollector.retrieveExternalStatsPortFromUri(uri);
         Assert.assertEquals(1234, port);
     }
 
@@ -144,5 +145,60 @@ public class StatsCollectorTest {
         URI uri = new URI(URL + configuredDbName);
         String dbName = statsCollector.configureDatabaseName(uri);
         Assert.assertEquals(configuredDbName, dbName);
+    }
+
+    @Test
+    public void isCurrentVmDiskStatsDifferentFromPreviousTestNull() {
+        VmDiskStatisticsVO currentVmDiskStatisticsVO = new VmDiskStatisticsVO(1l, 1l, 1l, 1l);
+        boolean result = statsCollector.isCurrentVmDiskStatsDifferentFromPrevious(null, currentVmDiskStatisticsVO);
+        Assert.assertTrue(result);
+    }
+
+    @Test
+    public void isCurrentVmDiskStatsDifferentFromPreviousTestBothNull() {
+        boolean result = statsCollector.isCurrentVmDiskStatsDifferentFromPrevious(null, null);
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void isCurrentVmDiskStatsDifferentFromPreviousTestDifferentIoWrite() {
+        configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(123l, 123l, 123l, 12l, true);
+    }
+
+    @Test
+    public void isCurrentVmDiskStatsDifferentFromPreviousTestDifferentIoRead() {
+        configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(123l, 123l, 12l, 123l, true);
+    }
+
+    @Test
+    public void isCurrentVmDiskStatsDifferentFromPreviousTestDifferentBytesRead() {
+        configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(12l, 123l, 123l, 123l, true);
+    }
+
+    @Test
+    public void isCurrentVmDiskStatsDifferentFromPreviousTestDifferentBytesWrite() {
+        configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(123l, 12l, 123l, 123l, true);
+    }
+
+    @Test
+    public void isCurrentVmDiskStatsDifferentFromPreviousTestAllEqual() {
+        configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(123l, 123l, 123l, 123l, false);
+    }
+
+    private void configureAndTestisCurrentVmDiskStatsDifferentFromPrevious(long bytesRead, long bytesWrite, long ioRead, long ioWrite, boolean expectedResult) {
+        VmDiskStatisticsVO previousVmDiskStatisticsVO = new VmDiskStatisticsVO(1l, 1l, 1l, 1l);
+        previousVmDiskStatisticsVO.setCurrentBytesRead(123l);
+        previousVmDiskStatisticsVO.setCurrentBytesWrite(123l);
+        previousVmDiskStatisticsVO.setCurrentIORead(123l);
+        previousVmDiskStatisticsVO.setCurrentIOWrite(123l);
+
+        VmDiskStatisticsVO currentVmDiskStatisticsVO = new VmDiskStatisticsVO(1l, 1l, 1l, 1l);
+        currentVmDiskStatisticsVO.setCurrentBytesRead(bytesRead);
+        currentVmDiskStatisticsVO.setCurrentBytesWrite(bytesWrite);
+        currentVmDiskStatisticsVO.setCurrentIORead(ioRead);
+        currentVmDiskStatisticsVO.setCurrentIOWrite(ioWrite);
+
+        boolean result = statsCollector.isCurrentVmDiskStatsDifferentFromPrevious(previousVmDiskStatisticsVO, currentVmDiskStatisticsVO);
+        Assert.assertEquals(expectedResult, result);
     }
 }

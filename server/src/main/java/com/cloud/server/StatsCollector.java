@@ -47,6 +47,8 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.graphite.GraphiteClient;
 import org.apache.cloudstack.utils.graphite.GraphiteException;
 import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.influxdb.InfluxDB;
@@ -289,7 +291,6 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     long volumeStatsInterval = -1L;
     long autoScaleStatsInterval = -1L;
 
-    List<Long> hostIds = null;
     private double _imageStoreCapacityThreshold = 0.90;
 
     String externalStatsPrefix = "";
@@ -348,11 +349,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     s_logger.error(externalStatsScheme + " is not a valid protocol for external statistics. No statistics will be send.");
                 }
 
-                if (!StringUtils.isEmpty(uri.getHost())) {
+                if (StringUtils.isNotEmpty(uri.getHost())) {
                     externalStatsHost = uri.getHost();
                 }
 
-                externalStatsPort = configureExternalStatsPort(uri);
+                externalStatsPort = retrieveExternalStatsPortFromUri(uri);
 
                 databaseName = configureDatabaseName(uri);
 
@@ -478,7 +479,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      * Default values are 8086 for influx DB and 2003 for GraphiteDB.
      * Throws URISyntaxException in case of non configured port and external StatsType
      */
-    protected int configureExternalStatsPort(URI uri) throws URISyntaxException {
+    protected int retrieveExternalStatsPortFromUri(URI uri) throws URISyntaxException {
         int port = uri.getPort();
         if (externalStatsType != ExternalStatsProtocol.NONE) {
             if (port != UNDEFINED_PORT_VALUE) {
@@ -502,12 +503,8 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             try {
                 s_logger.debug("HostStatsCollector is running...");
 
-                SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-                sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
-                sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
-                sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Routing.toString());
+                SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
 
-                ConcurrentHashMap<Long, HostStats> hostStats = new ConcurrentHashMap<Long, HostStats>();
                 Map<Object, Object> metrics = new HashMap<>();
                 List<HostVO> hosts = _hostDao.search(sc, null);
 
@@ -518,7 +515,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                         metrics.put(hostStatsEntry.getHostId(), hostStatsEntry);
                         _hostStats.put(host.getId(), hostStatsEntry);
                     } else {
-                        s_logger.warn("Received invalid host stats for host: " + host.getId());
+                        s_logger.warn("The Host stats is null for host: " + host.getId());
                     }
                 }
 
@@ -536,25 +533,22 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
          * Updates GPU details on hosts supporting GPU.
          */
         private void updateGpuEnabledHostsDetails(List<HostVO> hosts) {
-            // Get a subset of hosts with GPU support from the list of "hosts"
             List<HostVO> gpuEnabledHosts = new ArrayList<HostVO>();
-            if (hostIds != null) {
-                for (HostVO host : hosts) {
-                    if (hostIds.contains(host.getId())) {
-                        gpuEnabledHosts.add(host);
-                    }
+            List<Long> hostIds = _hostGpuGroupsDao.listHostIds();
+            if (CollectionUtils.isEmpty(hostIds)) {
+                return;
+            }
+            for (HostVO host : hosts) {
+                if (hostIds.contains(host.getId())) {
+                    gpuEnabledHosts.add(host);
                 }
-            } else {
-                // Check for all the hosts managed by CloudStack.
-                gpuEnabledHosts = hosts;
             }
             for (HostVO host : gpuEnabledHosts) {
                 HashMap<String, HashMap<String, VgpuTypesInfo>> groupDetails = _resourceMgr.getGPUStatistics(host);
-                if (groupDetails != null) {
+                if (MapUtils.isEmpty(groupDetails)) {
                     _resourceMgr.updateGPUDetails(host.getId(), groupDetails);
                 }
             }
-            hostIds = _hostGpuGroupsDao.listHostIds();
         }
 
         @Override
@@ -569,10 +563,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             try {
                 s_logger.trace("VmStatsCollector is running...");
 
-                SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-                sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
-                sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
-                sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Routing.toString());
+                SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
                 List<HostVO> hosts = _hostDao.search(sc, null);
 
                 Map<Object, Object> metrics = new HashMap<>();
@@ -701,10 +692,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     public void doInTransactionWithoutResult(TransactionStatus status) {
                         s_logger.debug("VmDiskStatsTask is running...");
 
-                        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-                        sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
-                        sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
-                        sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Routing.toString());
+                        SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
                         sc.addAnd("hypervisorType", SearchCriteria.Op.EQ, HypervisorType.KVM); // support KVM only util 2013.06.25
                         List<HostVO> hosts = _hostDao.search(sc, null);
 
@@ -748,10 +736,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                         continue;
                                     }
 
-                                    if (previousVmDiskStats != null && ((previousVmDiskStats.getCurrentBytesRead() != vmDiskStat_lock.getCurrentBytesRead())
-                                            || (previousVmDiskStats.getCurrentBytesWrite() != vmDiskStat_lock.getCurrentBytesWrite())
-                                            || (previousVmDiskStats.getCurrentIORead() != vmDiskStat_lock.getCurrentIORead())
-                                            || (previousVmDiskStats.getCurrentIOWrite() != vmDiskStat_lock.getCurrentIOWrite()))) {
+                                    if (isCurrentVmDiskStatsDifferentFromPrevious(previousVmDiskStats, vmDiskStat_lock)) {
                                         s_logger.debug("vm disk stats changed from the time GetVmDiskStatsCommand was sent. " + "Ignoring current answer. Host: " + host.getName()
                                                 + " . VM: " + vmDiskStat.getVmName() + " Read(Bytes): " + vmDiskStat.getBytesRead() + " write(Bytes): " + vmDiskStat.getBytesWrite()
                                                 + " Read(IO): " + vmDiskStat.getIORead() + " write(IO): " + vmDiskStat.getIOWrite());
@@ -832,10 +817,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     public void doInTransactionWithoutResult(TransactionStatus status) {
                         s_logger.debug("VmNetworkStatsTask is running...");
 
-                        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
-                        sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
-                        sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
-                        sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Routing.toString());
+                        SearchCriteria<HostVO> sc = createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance();
                         List<HostVO> hosts = _hostDao.search(sc, null);
 
                         for (HostVO host : hosts) {
@@ -1530,6 +1512,40 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         }
 
         influxDbConnection.write(batchPoints);
+    }
+
+    /**
+     * Returns true if at least one of the current disk stats is different from the previous.</br>
+     * The considered disk stats are the following: bytes read, bytes write, IO read,  and IO write.
+     */
+    protected boolean isCurrentVmDiskStatsDifferentFromPrevious(VmDiskStatisticsVO previousVmDiskStats, VmDiskStatisticsVO currentVmDiskStats) {
+        if (previousVmDiskStats != null) {
+            boolean bytesReadDifferentFromPrevious = previousVmDiskStats.getCurrentBytesRead() != currentVmDiskStats.getCurrentBytesRead();
+            boolean bytesWriteDifferentFromPrevious = previousVmDiskStats.getCurrentBytesWrite() != currentVmDiskStats.getCurrentBytesWrite();
+            boolean ioReadDifferentFromPrevious = previousVmDiskStats.getCurrentIORead() != currentVmDiskStats.getCurrentIORead();
+            boolean ioWriteDifferentFromPrevious = previousVmDiskStats.getCurrentIOWrite() != currentVmDiskStats.getCurrentIOWrite();
+            return bytesReadDifferentFromPrevious || bytesWriteDifferentFromPrevious || ioReadDifferentFromPrevious || ioWriteDifferentFromPrevious;
+        }
+        if (currentVmDiskStats == null) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Creates a HostVO SearchCriteria where:
+     * <ul>
+     *  <li>"status" is Up;</li>
+     *  <li>"resourceState" is not in Maintenance, PrepareForMaintenance, or ErrorInMaintenance; and</li>
+     *  <li>"type" is Routing.</li>
+     * </ul>
+     */
+    private SearchCriteria<HostVO> createSearchCriteriaForHostTypeRoutingStateUpAndNotInMaintenance() {
+        SearchCriteria<HostVO> sc = _hostDao.createSearchCriteria();
+        sc.addAnd("status", SearchCriteria.Op.EQ, Status.Up.toString());
+        sc.addAnd("resourceState", SearchCriteria.Op.NIN, ResourceState.Maintenance, ResourceState.PrepareForMaintenance, ResourceState.ErrorInMaintenance);
+        sc.addAnd("type", SearchCriteria.Op.EQ, Host.Type.Routing.toString());
+        return sc;
     }
 
     public StorageStats getStorageStats(long id) {
