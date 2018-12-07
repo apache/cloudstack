@@ -98,11 +98,9 @@ echo "<settings>
 
 echo -e "\nInstalling some python packages: "
 
-pip install --user --upgrade pip
-
 for ((i=0;i<$RETRY_COUNT;i++))
 do
-  pip install --user --upgrade lxml paramiko nose texttable ipmisim pyopenssl mock flask netaddr pylint pycodestyle six astroid > /tmp/piplog
+  pip install --user --upgrade lxml paramiko nose texttable ipmisim pyopenssl pycrypto mock flask netaddr pylint pycodestyle six astroid > /tmp/piplog
   if [[ $? -eq 0 ]]; then
     echo -e "\npython packages installed successfully"
     break;
