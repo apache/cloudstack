@@ -14,5 +14,5 @@ WantedBy=multi-user.target
 [Service]
 Type=oneshot
 ExecStart=/opt/cloud/bin/setup/cloud-early-config
-RemainAfterExit=true
+RemainAfterExit=no
 TimeoutStartSec=5min

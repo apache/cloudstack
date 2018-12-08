@@ -31,10 +31,38 @@ fi
 sysctl -p
 
 # HYPERVISOR exported by cloud-early-config
-# stop ntp conflicting with vmtools
-if [ "$HYPERVISOR" == "vmware" ]; then
-  systemctl stop ntpd
-fi
+
+case $HYPERVISOR in
+     xen-pv|xen-domU)
+		systemctl stop ntpd
+		systemctl start xe-daemon xenstored
+          ;;
+     xen-hvm)
+		  systemctl stop ntpd
+		systemctl start xe-daemon xenstored
+
+          ;;
+     kvm)
+          systemctl start qemu-guest-agent
+		VPORT=$(find /dev/virtio-ports -type l -name '*.vport' 2>/dev/null|head -1)
+          ;;
+     vmware)
+		systemctl stop ntpd
+          systemctl start vmtoolsd
+
+          ;;
+     virtualpc|hyperv)
+          # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
+		systemctl start hyperv-daemons
+          ;;
+     virtualbox)
+          # Virtualbox is used to test the virtual router
+
+          ;;
+  esac
+
+
+
 
 # Restart journald for setting changes to apply
 systemctl restart systemd-journald

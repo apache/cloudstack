@@ -110,6 +110,9 @@ function configure_services() {
   systemctl disable xl2tpd
   systemctl disable vgauth
 
+  # Disable guest services which will selectively be started based on hypervisor
+  systemctl disable vmtoolsd xe-daemon qemu-guest-agent hyperv-daemons xenstored
+
   configure_apache2
   configure_strongswan
   configure_issue
