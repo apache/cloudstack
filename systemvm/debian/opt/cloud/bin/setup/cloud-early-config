@@ -217,6 +217,7 @@ start() {
   export HYPERVISOR=$(hypervisor)
   [ $? -ne 0 ] && log_it "Failed to detect hypervisor type, bailing out of early init" && exit 10
   log_it "Detected that we are running inside $HYPERVISOR"
+  echo "$HYPERVISOR" > /etc/cloudstack-agent_detected_hypervisor
 
   config_guest
   get_boot_params

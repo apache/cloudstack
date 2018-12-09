@@ -31,35 +31,33 @@ fi
 sysctl -p
 
 # HYPERVISOR exported by cloud-early-config
-
+HYPERVISOR=$(</etc/cloudstack-agent_detected_hypervisor)
 case $HYPERVISOR in
-     xen-pv|xen-domU)
-		systemctl stop ntpd
-		systemctl start xe-daemon xenstored
-          ;;
-     xen-hvm)
-		  systemctl stop ntpd
-		systemctl start xe-daemon xenstored
-
-          ;;
-     kvm)
-          systemctl start qemu-guest-agent
-		VPORT=$(find /dev/virtio-ports -type l -name '*.vport' 2>/dev/null|head -1)
-          ;;
-     vmware)
-		systemctl stop ntpd
-          systemctl start vmtoolsd
-
-          ;;
-     virtualpc|hyperv)
-          # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
-		systemctl start hyperv-daemons
-          ;;
-     virtualbox)
-          # Virtualbox is used to test the virtual router
-
-          ;;
-  esac
+   xen-pv|xen-domU)
+      systemctl stop ntpd
+      systemctl start xe-daemon
+      ;;
+   xen-hvm)
+      systemctl stop ntpd
+      systemctl start xe-daemon
+      ;;
+   kvm)
+      systemctl start qemu-guest-agent
+      VPORT=$(find /dev/virtio-ports -type l -name '*.vport' 2>/dev/null|head -1)
+      ;;
+   vmware)
+      # system time sync'd with host via vmware tools
+      systemctl stop ntpd
+      systemctl start open-vm-tools
+      ;;
+   virtualpc|hyperv)
+      # Hyper-V is recognized as virtualpc hypervisor type. Boot args are passed using KVP Daemon
+      systemctl start hyperv-daemons.hv-fcopy-daemon.service hyperv-daemons.hv-kvp-daemon.service hyperv-daemons.hv-vss-daemon.service
+      ;;
+   virtualbox)
+      # Virtualbox is used to test the virtual router
+      ;;
+   esac
 
 
 
