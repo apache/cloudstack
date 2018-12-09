@@ -111,8 +111,11 @@ function configure_services() {
   systemctl disable vgauth
 
   # Disable guest services which will selectively be started based on hypervisor
-  systemctl disable vmtoolsd xe-daemon hyperv-daemons xenstored
-  /lib/systemd/systemd-sysv-install disable qemu-guest-agent
+  systemctl disable open-vm-tools  || true
+  systemctl disable hyperv-daemons || true
+  systemctl disable xenstored || true
+  systemctl disable xe-daemon || true
+  /lib/systemd/systemd-sysv-install disable qemu-guest-agent || true
 
   configure_apache2
   configure_strongswan
