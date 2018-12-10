@@ -268,10 +268,9 @@
 
                 var dataGenerators = {
                     setup: function($step, formData) {
-                        var originalValues = function(formData) {
-                            $step.find('select').val(
-                                formData.zoneid
-                            );
+                        var originalValues = function(formData, initialValue) {
+                            var selectedValue = formData.zoneid || initialValue;
+                            $step.find('select').val(selectedValue);
 
                             $step.find('input[type=radio]').filter(function() {
                                 return $(this).val() == formData['select-template'];
@@ -282,7 +281,11 @@
                             response: {
                                 success: function(args) {
                                     // Zones
-                                    $(args.data.zones).each(function() {
+                                    var initialValue = '';
+                                    $(args.data.zones).each(function( index ) {
+                                        if(index == 0){
+                                          initialValue = this.id;
+                                        }
                                         $step.find('.select-zone select').append(
                                             $('<option>')
                                             .attr({
@@ -293,7 +296,7 @@
                                         );
                                     });
 
-                                    originalValues(formData);
+                                    originalValues(formData, initialValue);
                                 }
                             }
                         };
