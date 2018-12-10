@@ -2200,7 +2200,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
             if (! UuidUtils.validateUUID(vlanId)){
                 // For Isolated and L2 networks, don't allow to create network with vlan that already exists in the zone
-                if (ntwkOff.getGuestType() == GuestType.Isolated || checkL2BypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff)) {
+                if (ntwkOff.getGuestType() == GuestType.Isolated || !hasGuestBypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff)) {
                     if (_networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), null).size() > 0) {
                         throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists or overlaps with other network vlans in zone " + zoneId);
                     } else {
@@ -2389,12 +2389,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     }
 
   /**
-   * Checks bypass VLAN id/range overlap check during network creation for L2 networks
+   * Checks bypass VLAN id/range overlap check during network creation for guest networks
    * @param bypassVlanOverlapCheck bypass VLAN id/range overlap check
    * @param ntwkOff network offering
    */
-  private boolean checkL2BypassVlanOverlapCheck(final boolean bypassVlanOverlapCheck, final NetworkOfferingVO ntwkOff) {
-    return !(bypassVlanOverlapCheck && ntwkOff.getGuestType() == GuestType.L2);
+  private boolean hasGuestBypassVlanOverlapCheck(final boolean bypassVlanOverlapCheck, final NetworkOfferingVO ntwkOff) {
+    return bypassVlanOverlapCheck && ntwkOff.getGuestType() != GuestType.Isolated;
   }
 
   /**
