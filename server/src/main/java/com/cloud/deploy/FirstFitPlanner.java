@@ -122,6 +122,8 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     protected String globalDeploymentPlanner = "FirstFitPlanner";
     protected String[] implicitHostTags;
 
+    private final static String DEPLOY_VM = "deployvm";
+
     @Override
     public List<Long> orderClusters(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
         VirtualMachine vm = vmProfile.getVirtualMachine();
@@ -197,25 +199,24 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         return clusterList;
     }
 
-    private void reorderClustersBasedOnImplicitTags(List<Long> clusterList, int requiredCpu, long requiredRam) {
-            final HashMap<Long, Long> UniqueTagsInClusterMap = new HashMap<Long, Long>();
-            Long uniqueTags;
-            for (Long clusterId : clusterList) {
-                uniqueTags = (long) 0;
+    public void reorderClustersBasedOnImplicitTags(List<Long> clusterList, int requiredCpu, long requiredRam) {
+        Map<Long, Long> UniqueTagsInClusterMap = new HashMap<>();
+        for (Long clusterId : clusterList) {
+            long uniqueTags = 0l;
             List<Long> hostList = capacityDao.listHostsWithEnoughCapacity(requiredCpu, requiredRam, clusterId, Host.Type.Routing.toString());
             if (!hostList.isEmpty() && implicitHostTags.length > 0) {
-                uniqueTags = new Long(hostTagsDao.getDistinctImplicitHostTags(hostList, implicitHostTags).size());
-                }
-                UniqueTagsInClusterMap.put(clusterId, uniqueTags);
+                uniqueTags = hostTagsDao.getDistinctImplicitHostTags(hostList, implicitHostTags).size();
             }
-            Collections.sort(clusterList, new Comparator<Long>() {
-                @Override
-                public int compare(Long o1, Long o2) {
-                    Long t1 = UniqueTagsInClusterMap.get(o1);
-                    Long t2 = UniqueTagsInClusterMap.get(o2);
-                    return t1.compareTo(t2);
-                }
-            });
+            UniqueTagsInClusterMap.put(clusterId, uniqueTags);
+        }
+        Collections.sort(clusterList, new Comparator<Long>() {
+            @Override
+            public int compare(Long o1, Long o2) {
+                Long t1 = UniqueTagsInClusterMap.get(o1);
+                Long t2 = UniqueTagsInClusterMap.get(o2);
+                return t1.compareTo(t2);
+            }
+        });
     }
 
     private List<Long> scanPodsForDestination(VirtualMachineProfile vmProfile, DeploymentPlan plan, ExcludeList avoid) {
@@ -304,10 +305,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     /**
      * This method should remove the clusters crossing capacity threshold to avoid further vm allocation on it.
-     * @param clusterListForVmAllocation
-     * @param avoid
-     * @param vmProfile
-     * @param plan
      */
     protected void removeClustersCrossingThreshold(List<Long> clusterListForVmAllocation, ExcludeList avoid,
             VirtualMachineProfile vmProfile, DeploymentPlan plan) {
@@ -318,7 +315,7 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
         VirtualMachine vm = vmProfile.getVirtualMachine();
         Map<String, String> details = vmDetailsDao.listDetailsKeyPairs(vm.getId());
         Boolean isThresholdEnabled = ClusterThresholdEnabled.value();
-        if (!(isThresholdEnabled || (details != null && details.containsKey("deployvm")))) {
+        if (!isThresholdEnabled && !details.containsKey(DEPLOY_VM)) {
             return;
         }
 
@@ -362,7 +359,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
         VirtualMachine vm = vmProfile.getVirtualMachine();
         ServiceOffering offering = vmProfile.getServiceOffering();
-        DataCenter dc = dcDao.findById(vm.getDataCenterId());
         int requiredCpu = offering.getCpu() * offering.getSpeed();
         long requiredRam = offering.getRamSize() * 1024L * 1024L;
 
@@ -579,7 +575,6 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
 
     @Override
     public DeployDestination plan(VirtualMachineProfile vm, DeploymentPlan plan, ExcludeList avoid) throws InsufficientServerCapacityException {
-        // TODO Auto-generated method stub
         return null;
     }
 
@@ -596,5 +591,9 @@ public class FirstFitPlanner extends AdapterBase implements DeploymentClusterPla
     @Override
     public ConfigKey<?>[] getConfigKeys() {
         return new ConfigKey<?>[] {ClusterCPUCapacityDisableThreshold, ClusterMemoryCapacityDisableThreshold, ClusterThresholdEnabled};
+    }
+
+    public void setImplicitHostTags(String[] implicitHostTags) {
+        this.implicitHostTags = implicitHostTags;
     }
 }
