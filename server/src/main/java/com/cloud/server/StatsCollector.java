@@ -176,12 +176,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
      */
     private static final int INFLUXDB_DEFAULT_PORT = 8086;
 
-    private static final String HOST_ID_TAG = "host_id";
-    private static final String VM_ID_TAG = "vm_id";
-    private static final String INSTANCE_NAME_TAG = "instance_name";
     private static final String UUID_TAG = "uuid";
-    private static final String POD_ID_TAG = "pod_id";
-    private static final String DATA_CENTER_ID_TAG = "data_center_id";
 
     private static final String TOTAL_MEMORY_KBS_FIELD = "total_memory_kb";
     private static final String FREE_MEMORY_KBS_FIELD = "free_memory_kb";
@@ -719,13 +714,15 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                                     SearchCriteria<VolumeVO> sc_volume = _volsDao.createSearchCriteria();
                                     sc_volume.addAnd("path", SearchCriteria.Op.EQ, vmDiskStat.getPath());
                                     List<VolumeVO> volumes = _volsDao.search(sc_volume, null);
-                                    if ((volumes == null) || (volumes.size() == 0))
+
+                                    if (CollectionUtils.isEmpty(volumes))
                                         break;
+
                                     VolumeVO volume = volumes.get(0);
                                     VmDiskStatisticsVO previousVmDiskStats = _vmDiskStatsDao.findBy(userVm.getAccountId(), userVm.getDataCenterId(), vmId, volume.getId());
                                     VmDiskStatisticsVO vmDiskStat_lock = _vmDiskStatsDao.lock(userVm.getAccountId(), userVm.getDataCenterId(), vmId, volume.getId());
 
-                                    if ((vmDiskStat.getBytesRead() == 0) && (vmDiskStat.getBytesWrite() == 0) && (vmDiskStat.getIORead() == 0) && (vmDiskStat.getIOWrite() == 0)) {
+                                    if (areAllDiskStatsZero(vmDiskStat)) {
                                         s_logger.debug("IO/bytes read and write are all 0. Not updating vm_disk_statistics");
                                         continue;
                                     }
@@ -1437,10 +1434,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         HostStatsEntry hostStatsEntry = (HostStatsEntry)metricsObject;
 
         Map<String, String> tagsToAdd = new HashMap<>();
-        tagsToAdd.put(HOST_ID_TAG, new Long(hostStatsEntry.getHostId()).toString());
         tagsToAdd.put(UUID_TAG, hostStatsEntry.getHostVo().getUuid());
-        tagsToAdd.put(POD_ID_TAG, new Long(hostStatsEntry.getHostVo().getPodId()).toString());
-        tagsToAdd.put(DATA_CENTER_ID_TAG, new Long(hostStatsEntry.getHostVo().getDataCenterId()).toString());
 
         Map<String, Object> fieldsToAdd = new HashMap<>();
         fieldsToAdd.put(TOTAL_MEMORY_KBS_FIELD, hostStatsEntry.getTotalMemoryKBs());
@@ -1464,10 +1458,7 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
         UserVmVO userVmVO = vmStatsEntry.getUserVmVO();
 
         Map<String, String> tagsToAdd = new HashMap<>();
-        tagsToAdd.put(VM_ID_TAG, new Long(vmStatsEntry.getVmId()).toString());
         tagsToAdd.put(UUID_TAG, userVmVO.getUuid());
-        tagsToAdd.put(DATA_CENTER_ID_TAG, new Long(userVmVO.getDataCenterId()).toString());
-        tagsToAdd.put(HOST_ID_TAG, new Long(userVmVO.getHostId()).toString());
 
         Map<String, Object> fieldsToAdd = new HashMap<>();
         fieldsToAdd.put(TOTAL_MEMORY_KBS_FIELD, vmStatsEntry.getMemoryKBs());
@@ -1530,6 +1521,13 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             return false;
         }
         return true;
+    }
+
+    /**
+     * Returns true if all the VmDiskStatsEntry are Zeros (Bytes read, Bytes write, IO read, and IO write must be all equals to zero)
+     */
+    protected boolean areAllDiskStatsZero(VmDiskStatsEntry vmDiskStat) {
+        return (vmDiskStat.getBytesRead() == 0) && (vmDiskStat.getBytesWrite() == 0) && (vmDiskStat.getIORead() == 0) && (vmDiskStat.getIOWrite() == 0);
     }
 
     /**

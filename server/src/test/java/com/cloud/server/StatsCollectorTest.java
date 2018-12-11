@@ -38,12 +38,17 @@ import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
+import org.powermock.modules.junit4.PowerMockRunnerDelegate;
 
+import com.cloud.agent.api.VmDiskStatsEntry;
 import com.cloud.server.StatsCollector.ExternalStatsProtocol;
 import com.cloud.user.VmDiskStatisticsVO;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 
 @RunWith(PowerMockRunner.class)
+@PowerMockRunnerDelegate(DataProviderRunner.class)
 @PrepareForTest({InfluxDBFactory.class, BatchPoints.class})
 public class StatsCollectorTest {
     private StatsCollector statsCollector = Mockito.spy(new StatsCollector());
@@ -200,5 +205,23 @@ public class StatsCollectorTest {
 
         boolean result = statsCollector.isCurrentVmDiskStatsDifferentFromPrevious(previousVmDiskStatisticsVO, currentVmDiskStatisticsVO);
         Assert.assertEquals(expectedResult, result);
+    }
+
+    @Test
+    @DataProvider({
+        "0,0,0,0,true", "1,0,0,0,false", "0,1,0,0,false", "0,0,1,0,false",
+        "0,0,0,1,false", "1,0,0,1,false", "1,0,1,0,false", "1,1,0,0,false",
+        "0,1,1,0,false", "0,1,0,1,false", "0,0,1,1,false", "0,1,1,1,false",
+        "1,1,0,1,false", "1,0,1,1,false", "1,1,1,0,false", "1,1,1,1,false",
+    })
+    public void configureAndTestCheckIfDiskStatsAreZero(long bytesRead, long bytesWrite, long ioRead, long ioWrite, boolean expected) {
+        VmDiskStatsEntry vmDiskStatsEntry = new VmDiskStatsEntry();
+        vmDiskStatsEntry.setBytesRead(bytesRead);
+        vmDiskStatsEntry.setBytesWrite(bytesWrite);
+        vmDiskStatsEntry.setIORead(ioRead);
+        vmDiskStatsEntry.setIOWrite(ioWrite);
+
+        boolean result = statsCollector.areAllDiskStatsZero(vmDiskStatsEntry);
+        Assert.assertEquals(expected, result);
     }
 }
