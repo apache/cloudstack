@@ -56,6 +56,7 @@ import com.cloud.org.Cluster;
 import com.cloud.resource.ResourceState.Event;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.fsm.NoTransitionException;
+import org.apache.cloudstack.framework.config.ConfigKey;
 
 public class MockResourceManagerImpl extends ManagerBase implements ResourceManager {
 
@@ -624,5 +625,15 @@ public class MockResourceManagerImpl extends ManagerBase implements ResourceMana
     public boolean isHostGpuEnabled(final long hostId) {
         // TODO Auto-generated method stub
         return false;
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return null;
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey[0];
     }
 }
