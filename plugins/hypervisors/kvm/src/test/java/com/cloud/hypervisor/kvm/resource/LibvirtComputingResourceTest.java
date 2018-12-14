@@ -1765,8 +1765,7 @@ public class LibvirtComputingResourceTest {
         when(poolManager.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
 
         when(primary.getPhysicalDisk(command.getTemplateUrl())).thenReturn(baseVol);
-        when(poolManager.createDiskFromTemplate(baseVol,
-                diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, 0)).thenReturn(vol);
+        when(poolManager.createDiskFromTemplate(baseVol, diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, baseVol.getSize(), 0)).thenReturn(vol);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);

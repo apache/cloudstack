@@ -34,4 +34,6 @@
         class="org.apache.cloudstack.storage.motion.HypervStorageMotionStrategy" />
     <bean id="storageSystemDataMotionStrategy"
         class="org.apache.cloudstack.storage.motion.StorageSystemDataMotionStrategy" />
+    <bean id="kvmNonManagedStorageSystemDataMotionStrategy"
+        class="org.apache.cloudstack.storage.motion.KvmNonManagedStorageDataMotionStrategy" />
 </beans>

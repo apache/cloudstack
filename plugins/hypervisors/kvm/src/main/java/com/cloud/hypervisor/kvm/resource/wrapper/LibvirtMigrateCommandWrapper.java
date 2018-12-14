@@ -51,6 +51,7 @@ import org.libvirt.Connect;
 import org.libvirt.Domain;
 import org.libvirt.DomainInfo.DomainState;
 import org.libvirt.LibvirtException;
+import org.libvirt.StorageVol;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -61,7 +62,9 @@ import org.xml.sax.SAXException;
 import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
+import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.InterfaceDef;
 import com.cloud.hypervisor.kvm.resource.MigrateKVMAsync;
@@ -91,6 +94,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     public Answer execute(final MigrateCommand command, final LibvirtComputingResource libvirtComputingResource) {
         final String vmName = command.getVmName();
         final String destinationUri = createMigrationURI(command.getDestinationIp(), libvirtComputingResource);
+        final List<MigrateDiskInfo> migrateDiskInfoList = command.getMigrateDiskInfoList();
 
         String result = null;
 
@@ -203,9 +207,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             destDomain = migrateThread.get(10, TimeUnit.SECONDS);
 
             if (destDomain != null) {
-                for (final DiskDef disk : disks) {
-                    libvirtComputingResource.cleanupDisk(disk);
-                }
+                deleteOrDisconnectDisksOnSourcePool(libvirtComputingResource, migrateDiskInfoList, disks);
             }
 
         } catch (final LibvirtException e) {
@@ -280,6 +282,48 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     }
 
     /**
+     * In case of a local file, it deletes the file on the source host/storage pool. Otherwise (for instance iScsi) it disconnects the disk on the source storage pool. </br>
+     * This method must be executed after a successful migration to a target storage pool, cleaning up the source storage.
+     */
+    protected void deleteOrDisconnectDisksOnSourcePool(final LibvirtComputingResource libvirtComputingResource, final List<MigrateDiskInfo> migrateDiskInfoList,
+            List<DiskDef> disks) {
+        for (DiskDef disk : disks) {
+            MigrateDiskInfo migrateDiskInfo = searchDiskDefOnMigrateDiskInfoList(migrateDiskInfoList, disk);
+            if (migrateDiskInfo != null && migrateDiskInfo.isSourceDiskOnStorageFileSystem()) {
+                deleteLocalVolume(disk.getDiskPath());
+            } else {
+                libvirtComputingResource.cleanupDisk(disk);
+            }
+        }
+    }
+
+    /**
+     * Deletes the local volume from the storage pool.
+     */
+    protected void deleteLocalVolume(String localPath) {
+        try {
+            Connect conn = LibvirtConnection.getConnection();
+            StorageVol storageVolLookupByPath = conn.storageVolLookupByPath(localPath);
+            storageVolLookupByPath.delete(0);
+        } catch (LibvirtException e) {
+            s_logger.error(String.format("Cannot delete local volume [%s] due to: %s", localPath, e));
+        }
+    }
+
+    /**
+     * Searches for a {@link MigrateDiskInfo} with the path matching the {@link DiskDef} path.
+     */
+    protected MigrateDiskInfo searchDiskDefOnMigrateDiskInfoList(List<MigrateDiskInfo> migrateDiskInfoList, DiskDef disk) {
+        for (MigrateDiskInfo migrateDiskInfo : migrateDiskInfoList) {
+            if (StringUtils.contains(disk.getDiskPath(), migrateDiskInfo.getSerialNumber())) {
+                return migrateDiskInfo;
+            }
+        }
+        s_logger.debug(String.format("Cannot find Disk [uuid: %s] on the list of disks to be migrated", disk.getDiskPath()));
+        return null;
+    }
+
+    /**
      * This function assumes an qemu machine description containing a single graphics element like
      *     <graphics type='vnc' port='5900' autoport='yes' listen='10.10.10.1'>
      *       <listen type='address' address='10.10.10.1'/>
@@ -338,7 +382,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                         String path = getPathFromSourceText(migrateStorage.keySet(), sourceText);
 
                         if (path != null) {
-                            MigrateCommand.MigrateDiskInfo migrateDiskInfo = migrateStorage.remove(path);
+                            MigrateCommand.MigrateDiskInfo migrateDiskInfo = migrateStorage.get(path);
 
                             NamedNodeMap diskNodeAttributes = diskNode.getAttributes();
                             Node diskNodeAttribute = diskNodeAttributes.getNamedItem("type");
@@ -375,10 +419,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                     }
                 }
             }
-        }
-
-        if (!migrateStorage.isEmpty()) {
-            throw new CloudRuntimeException("Disk info was passed into LibvirtMigrateCommandWrapper.replaceStorage that was not used.");
         }
 
         return getXml(doc);
