@@ -4720,8 +4720,11 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User user = context.getCallingUser();
         final Account account = context.getCallingAccount();
 
-        for (StoragePool destPool : dest.getStorageForDisks().values()) {
-            checkConcurrentJobsPerDatastoreThreshhold(destPool);
+        Map<Volume, StoragePool> volumeStorageMap = dest.getStorageForDisks();
+        if (volumeStorageMap != null) {
+            for (Volume vol : volumeStorageMap.keySet()) {
+                checkConcurrentJobsPerDatastoreThreshhold(volumeStorageMap.get(vol));
+            }
         }
 
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
