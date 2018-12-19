@@ -1,5 +1,4 @@
-﻿root@s-1-VM:/lib/systemd/system# cat hyperv-daemons.hv-vss-daemon.service 
-[Unit]
+﻿[Unit]
 Description=Hyper-V volume shadow copy service (VSS) daemon
 
 [Service]
