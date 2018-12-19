@@ -206,7 +206,7 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection};
+        return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection, BackupSnapshotAfterTakingSnapshot};
     }
 
     @Override
@@ -1123,12 +1123,24 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
 
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
-            if (payload.getAsyncBackup()) {
-                backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshotOnPrimary, snapshotBackupRetries - 1, snapshotStrategy), 0, TimeUnit.SECONDS);
+            boolean backupFlag = BackupSnapshotAfterTakingSnapshot.value() == null ||
+                    BackupSnapshotAfterTakingSnapshot.value();
+
+            if (backupFlag) {
+                if (payload.getAsyncBackup()) {
+                    backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshotOnPrimary, snapshotBackupRetries - 1, snapshotStrategy), 0, TimeUnit.SECONDS);
+                } else {
+                    SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
+                    if (backupedSnapshot != null) {
+                        snapshotStrategy.postSnapshotCreation(snapshotOnPrimary);
+                    }
+                }
             } else {
-                SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
-                if (backupedSnapshot != null) {
-                    snapshotStrategy.postSnapshotCreation(snapshotOnPrimary);
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug("skipping backup of snapshot to secondary due to configuration");
+                }
+                if (!snapshotOnPrimary.markBackedUp()) {
+                    throw new CloudRuntimeException("Can't mark snapshot as backed up!");
                 }
             }
 
