@@ -644,6 +644,26 @@ test_data = {
             "Lb": "VpcVirtualRouter"
         }
     },
+    "nw_offering_reduced_vpc": {
+        "name": 'Reduced Network for VPC',
+        "displaytext": 'Reduced Network for VPC',
+        "guestiptype": 'Isolated',
+        "supportedservices": 'Dhcp,StaticNat,SourceNat,NetworkACL,UserData,'
+                             'Dns',
+        "traffictype": 'GUEST',
+        "availability": 'Optional',
+        "tags": "native",
+        "useVpc": 'on',
+        "ispersistent": 'True',
+        "serviceProviderList": {
+            "Dhcp": "VpcVirtualRouter",
+            "StaticNat": "VpcVirtualRouter",
+            "SourceNat": "VpcVirtualRouter",
+            "NetworkACL": "VpcVirtualRouter",
+            "UserData": "VpcVirtualRouter",
+            "Dns": "VpcVirtualRouter"
+        }
+    },
     "nw_off_persistent_VPCVR_LB": {
         "name": "Persistent Network VPC with LB",
         "displaytext": "Persistent Network VPC No LB",
