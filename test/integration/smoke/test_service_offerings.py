@@ -31,7 +31,7 @@ from marvin.lib.common import (list_service_offering,
                                list_virtual_machines,
                                get_domain,
                                get_zone,
-                               get_template,
+                               get_test_template,
                                list_hosts)
 from nose.plugins.attrib import attr
 
@@ -167,13 +167,13 @@ class TestServiceOfferings(cloudstackTestCase):
             cls.apiclient,
             cls.services["service_offerings"]["tiny"]
         )
-        template = get_template(
+        template = get_test_template(
             cls.apiclient,
             cls.zone.id,
             cls.hypervisor
         )
         if template == FAILED:
-            assert False, "get_template() failed to return template"
+            assert False, "get_test_template() failed to return template"
 
         # Set Zones and disk offerings
         cls.services["small"]["zoneid"] = cls.zone.id
@@ -458,9 +458,9 @@ class TestCpuCapServiceOfferings(cloudstackTestCase):
         cls.zone = get_zone(cls.apiclient, testClient.getZoneForTests())
         cls.services['mode'] = cls.zone.networktype
 
-        template = get_template(cls.apiclient, cls.zone.id, cls.hypervisor)
+        template = get_test_template(cls.apiclient, cls.zone.id, cls.hypervisor)
         if template == FAILED:
-            assert False, "get_template() failed to return template"
+            assert False, "get_test_template() failed to return template"
 
         cls.services["small"]["zoneid"] = cls.zone.id
         cls.services["small"]["template"] = template.id
