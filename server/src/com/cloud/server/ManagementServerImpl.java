@@ -3655,6 +3655,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends SSHKeyPair>, Integer> listSSHKeyPairs(final ListSSHKeyPairsCmd cmd) {
         final String name = cmd.getName();
         final String fingerPrint = cmd.getFingerprint();
+        final String keyword = cmd.getKeyword();
 
         final Account caller = getCaller();
         final List<Long> permittedAccounts = new ArrayList<Long>();
@@ -3679,6 +3680,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (fingerPrint != null) {
             sc.addAnd("fingerprint", SearchCriteria.Op.EQ, fingerPrint);
+        }
+
+        if (keyword != null) {
+            sc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addOr("fingerprint", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
 
         final Pair<List<SSHKeyPairVO>, Integer> result = _sshKeyPairDao.searchAndCount(sc, searchFilter);
