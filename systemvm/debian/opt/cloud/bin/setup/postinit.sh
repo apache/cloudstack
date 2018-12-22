@@ -21,15 +21,6 @@
 # Eject cdrom if any
 eject || true
 
-# set cache back pressure based on amount of physical memory 100 is default
-physmem=$(free|awk '/^Mem:/{print $2}')
-if [ $((physmem)) -lt 409600 ]; then
-    sed  -i "/^vm.vfs_cache_pressure/ c\vm.vfs_cache_pressure = 200" /etc/sysctl.conf
-else
-    sed  -i "/^vm.vfs_cache_pressure/ c\vm.vfs_cache_pressure = 100" /etc/sysctl.conf
-fi
-sysctl -p
-
 
 # Restart journald for setting changes to apply
 systemctl restart systemd-journald
@@ -45,15 +36,19 @@ fi
 
 [ ! -f /var/cache/cloud/enabled_svcs ] && touch /var/cache/cloud/enabled_svcs
 for svc in $(cat /var/cache/cloud/enabled_svcs)
-do
-   systemctl enable --now --no-block $svc
-done
+if [[ "$svc" != "cloud" ]]
+then
+  do
+    systemctl start --no-block $svc
+  done
+fi
 
-[ ! -f /var/cache/cloud/disabled_svcs ] && touch /var/cache/cloud/disabled_svcs
-for svc in $(cat /var/cache/cloud/disabled_svcs)
-do
-   systemctl disable --now --no-block $svc
-done
+#not required - all services disabled by default
+#[ ! -f /var/cache/cloud/disabled_svcs ] && touch /var/cache/cloud/disabled_svcs
+#for svc in $(cat /var/cache/cloud/disabled_svcs)
+#do
+#   systemctl disable --now --no-block $svc
+#done
 
 # Restore the persistent iptables nat, rules and filters for IPv4 and IPv6 if they exist
 ipv4="/etc/iptables/rules.v4"
@@ -68,9 +63,17 @@ then
    ip6tables-restore < $ipv6
 fi
 
-# Enable SSH
-systemctl enable --now --no-block ssh
+# Start SSH
+systemctl start ssh
 
 date > /var/cache/cloud/boot_up_done
 
-systemctl start cloud
+# explicitly start cloud service
+
+for svc in $(cat /var/cache/cloud/enabled_svcs)
+if [[ "$svc" == "cloud" ]]
+then
+  do
+    systemctl start --no-block $svc
+  done
+fi

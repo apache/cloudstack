@@ -23,7 +23,8 @@ CMDLINE=/var/cache/cloud/cmdline
 
 # Clear boot up flag, it would be created by rc.local after boot up done
 mkdir -p /var/cache/cloud
-rm -f /var/cache/cloud/boot_up_done
+rm -f /var/cache/cloud/enabled_svcs
+rm -f /var/cache/cloud/disabled_svcs
 
 [ -x /sbin/ifup ] || exit 0
 
@@ -240,6 +241,15 @@ HYPERVISOR=$(</etc/cloudstack-agent_detected_hypervisor)
    esac
 }
 
+add_cache_backpressure() {
+  # set cache back pressure based on amount of physical memory 100 is default
+  physmem=$(free|awk '/^Mem:/{print $2}')
+  if [ $((physmem)) -lt 409600 ]; then
+      sed  -i "/^vm.vfs_cache_pressure/ c\vm.vfs_cache_pressure = 200" /etc/sysctl.conf
+  else
+      sed  -i "/^vm.vfs_cache_pressure/ c\vm.vfs_cache_pressure = 100" /etc/sysctl.conf
+  fi
+}
 start() {
   log_it "Executing cloud-early-config"
 
@@ -259,6 +269,7 @@ start() {
   get_systemvm_type
   patch
   sync
+  add_cache_backpressure
   sysctl -p
   
   log_it "Starting Virtual Guest Services for $HYPERVISOR"
@@ -272,6 +283,10 @@ start() {
   else
       /opt/cloud/bin/setup/default.sh
   fi
+ 
+  log_it "Running postinit to start services"
+
+  /opt/cloud/bin/setup/postinit.sh
 
   log_it "Finished setting up systemvm"
 
