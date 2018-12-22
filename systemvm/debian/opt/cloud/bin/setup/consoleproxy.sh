@@ -1,4 +1,4 @@
-#!/bin/bash
+\#!/bin/bash
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -19,7 +19,6 @@
 . /opt/cloud/bin/setup/common.sh
 
 consoleproxy_svcs() {
-  echo "cloud" > /var/cache/cloud/enabled_svcs
   echo "haproxy dnsmasq apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
   mkdir -p /var/log/cloud
 }
