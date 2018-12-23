@@ -36,12 +36,13 @@ fi
 
 [ ! -f /var/cache/cloud/enabled_svcs ] && touch /var/cache/cloud/enabled_svcs
 for svc in $(cat /var/cache/cloud/enabled_svcs)
-if [[ "$svc" != "cloud" ]]
-then
   do
-    systemctl start --no-block $svc
-  done
-fi
+    if [[ "$svc" != "cloud" ]]
+    then
+      systemctl start --no-block $svc
+  fi
+done
+
 
 #not required - all services disabled by default
 #[ ! -f /var/cache/cloud/disabled_svcs ] && touch /var/cache/cloud/disabled_svcs
@@ -71,9 +72,9 @@ date > /var/cache/cloud/boot_up_done
 # explicitly start cloud service
 
 for svc in $(cat /var/cache/cloud/enabled_svcs)
-if [[ "$svc" == "cloud" ]]
-then
-  do
+do
+  if [[ "$svc" == "cloud" ]]
+  then
     systemctl start --no-block $svc
-  done
-fi
+  fi
+done
