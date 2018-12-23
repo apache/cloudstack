@@ -63,6 +63,7 @@ function do_signature() {
 
 function configure_issue() {
   cat > /etc/issue <<EOF
+ESC [ 2J
    __?.o/  Apache CloudStack SystemVM $CLOUDSTACK_RELEASE
   (  )#    https://cloudstack.apache.org
  (___(_)   Debian GNU/Linux 9 \n \l
