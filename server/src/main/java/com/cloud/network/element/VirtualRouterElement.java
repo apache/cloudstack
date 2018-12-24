@@ -1022,11 +1022,6 @@ NetworkMigrationResponder, AggregatedCommandExecutor, RedundantResource, DnsServ
                 return false;
             }
 
-            if (network.getIp6Gateway() != null) {
-                s_logger.info("Skip password and userdata service setup for IPv6 VM");
-                return true;
-            }
-
             final VirtualMachineProfile uservm = vm;
 
             final List<DomainRouterVO> routers = getRouters(network, dest);
