@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
@@ -272,7 +273,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
     private SearchBuilder<HostGpuGroupsVO> _gpuAvailability;
 
-    private Map<Long,Integer> retryHostMaintenance = new HashMap<>();
+    private Map<Long,Integer> retryHostMaintenance = new ConcurrentHashMap<>();
 
     private void insertListener(final Integer event, final ResourceListener listener) {
         List<ResourceListener> lst = _lifeCycleListeners.get(event);
