@@ -118,6 +118,7 @@ public class ResourceManagerImplTest {
         when(host.getId()).thenReturn(hostId);
         when(host.getResourceState()).thenReturn(ResourceState.Enabled);
         when(host.getHypervisorType()).thenReturn(Hypervisor.HypervisorType.VMware);
+        when(host.getClusterId()).thenReturn(1L);
         when(hostDao.findById(hostId)).thenReturn(host);
         when(vm1.getId()).thenReturn(vm1Id);
         when(vm2.getId()).thenReturn(vm2Id);
@@ -187,5 +188,22 @@ public class ResourceManagerImplTest {
         verify(userVmDetailsDao).addDetail(eq(vm2Id), eq("kvm.vnc.address"), eq(vm2VncAddress), anyBoolean());
         verify(userVmDetailsDao).addDetail(eq(vm2Id), eq("kvm.vnc.port"), eq(String.valueOf(vm2VncPort)), anyBoolean());
         verify(agentManager).pullAgentToMaintenance(hostId);
+    }
+
+    @Test
+    public void testCheckAndMaintainErrorInMaintenanceRetries() throws NoTransitionException {
+        resourceManager.setHostMaintenanceRetries(host);
+
+        List<VMInstanceVO> failedMigrations = Arrays.asList(vm1, vm2);
+        when(vmInstanceDao.listByHostId(host.getId())).thenReturn(failedMigrations);
+        when(vmInstanceDao.listNonMigratingVmsByHostEqualsLastHost(host.getId())).thenReturn(failedMigrations);
+
+        Integer retries = ResourceManager.HostMaintenanceRetries.valueIn(host.getClusterId());
+        for (int i = 0; i <= retries; i++) {
+            resourceManager.checkAndMaintain(host.getId());
+        }
+
+        verify(resourceManager, times(retries + 1)).isHostInMaintenance(host, failedMigrations, new ArrayList<>(), failedMigrations);
+        verify(resourceManager).setHostIntoErrorInMaintenance(host, failedMigrations);
     }
 }
