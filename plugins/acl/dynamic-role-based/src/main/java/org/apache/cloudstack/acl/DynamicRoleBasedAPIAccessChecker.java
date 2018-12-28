@@ -36,7 +36,7 @@ import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.component.PluggableService;
 import com.google.common.base.Strings;
 
-public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
+public class DynamicRoleBasedAPIAccessChecker extends AdapterBase implements APIAclChecker {
 
     @Inject
     private AccountService accountService;

@@ -264,6 +264,11 @@
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
         <property name="excludeKey" value="api.checkers.exclude" />
     </bean>
+
+    <bean id="apiAclCheckersRegistry"
+          class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
+        <property name="excludeKey" value="api.checkers.acl.exclude" />
+    </bean>
     
     <bean id="querySelectorsRegistry"
         class="org.apache.cloudstack.spring.lifecycle.registry.ExtensionRegistry">
