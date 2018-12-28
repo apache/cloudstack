@@ -147,9 +147,10 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             // migrateStorage is declared as final because the replaceStorage method may mutate mapMigrateStorage, but
             // migrateStorage's value should always only be associated with the initial state of mapMigrateStorage.
             final boolean migrateStorage = MapUtils.isNotEmpty(mapMigrateStorage);
+            final boolean migrateStorageManaged = command.isMigrateStorageManaged();
 
             if (migrateStorage) {
-                xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage);
+                xmlDesc = replaceStorage(xmlDesc, mapMigrateStorage, migrateStorageManaged);
             }
 
             dconn = libvirtUtilitiesHelper.retrieveQemuConnection(destinationUri);
@@ -157,7 +158,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
             //run migration in thread so we can monitor it
             s_logger.info("Live migration of instance " + vmName + " initiated to destination host: " + dconn.getURI());
             final ExecutorService executor = Executors.newFixedThreadPool(1);
-            final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc, migrateStorage,
+            final Callable<Domain> worker = new MigrateKVMAsync(libvirtComputingResource, dm, dconn, xmlDesc,
+                    migrateStorage, migrateStorageManaged,
                     command.isAutoConvergence(), vmName, command.getDestinationIp());
             final Future<Domain> migrateThread = executor.submit(worker);
             executor.shutdown();
@@ -356,7 +358,8 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
      *  <li>The source of the disk needs an attribute that is either 'file' or 'dev' as well as its corresponding value.
      * </ul>
      */
-    protected String replaceStorage(String xmlDesc, Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage)
+    protected String replaceStorage(String xmlDesc, Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage,
+                                  boolean migrateStorageManaged)
             throws IOException, ParserConfigurationException, SAXException, TransformerException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 
@@ -398,7 +401,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                             for (int z = 0; z < diskChildNodes.getLength(); z++) {
                                 Node diskChildNode = diskChildNodes.item(z);
 
-                                if ("driver".equals(diskChildNode.getNodeName())) {
+                                if (migrateStorageManaged && "driver".equals(diskChildNode.getNodeName())) {
                                     Node driverNode = diskChildNode;
 
                                     NamedNodeMap driverNodeAttributes = driverNode.getAttributes();
@@ -413,7 +416,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                                     newChildSourceNode.setAttribute(migrateDiskInfo.getSource().toString(), migrateDiskInfo.getSourceText());
 
                                     diskNode.appendChild(newChildSourceNode);
-                                } else if ("auth".equals(diskChildNode.getNodeName())) {
+                                } else if (migrateStorageManaged && "auth".equals(diskChildNode.getNodeName())) {
                                     diskNode.removeChild(diskChildNode);
                                 }
                             }

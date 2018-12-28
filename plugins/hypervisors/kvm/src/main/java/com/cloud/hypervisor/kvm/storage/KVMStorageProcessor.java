@@ -49,6 +49,7 @@ import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.DirectDownloadAnswer;
+import com.cloud.storage.MigrationOptions;
 import org.apache.cloudstack.storage.command.AttachAnswer;
 import org.apache.cloudstack.storage.command.AttachCommand;
 import org.apache.cloudstack.storage.command.CopyCmdAnswer;
@@ -1352,6 +1353,35 @@ public class KVMStorageProcessor implements StorageProcessor {
         }
     }
 
+    /**
+     * Create volume with backing file (linked clone)
+     */
+    protected KVMPhysicalDisk createLinkedCloneVolume(MigrationOptions migrationOptions, KVMStoragePool srcPool, KVMStoragePool primaryPool, VolumeObjectTO volume, PhysicalDiskFormat format, int timeout) {
+        String srcBackingFilePath = migrationOptions.getSrcBackingFilePath();
+        boolean copySrcTemplate = migrationOptions.isCopySrcTemplate();
+        KVMPhysicalDisk srcTemplate = srcPool.getPhysicalDisk(srcBackingFilePath);
+        KVMPhysicalDisk destTemplate;
+        if (copySrcTemplate) {
+            KVMPhysicalDisk copiedTemplate = storagePoolMgr.copyPhysicalDisk(srcTemplate, srcTemplate.getName(), primaryPool, 10000 * 1000);
+            destTemplate = primaryPool.getPhysicalDisk(copiedTemplate.getPath());
+        } else {
+            destTemplate = primaryPool.getPhysicalDisk(srcBackingFilePath);
+        }
+        return storagePoolMgr.createDiskWithTemplateBacking(destTemplate, volume.getUuid(), format, volume.getSize(),
+                primaryPool, timeout);
+    }
+
+    /**
+     * Create full clone volume from VM snapshot
+     */
+    protected KVMPhysicalDisk createFullCloneVolume(MigrationOptions migrationOptions, KVMStoragePool srcPool, VolumeObjectTO volume, KVMStoragePool primaryPool, int timeout) {
+        String snapshotName = migrationOptions.getSnapshotName();
+        String srcVolumeUuid = migrationOptions.getSrcVolumeUuid();
+        KVMPhysicalDisk srcVolume = srcPool.getPhysicalDisk(srcVolumeUuid);
+        s_logger.debug("Create disk from source disk " + srcVolumeUuid + " and snapshot: " + snapshotName);
+        return storagePoolMgr.createDiskFromSnapshot(srcVolume, snapshotName, volume.getUuid(), primaryPool, timeout);
+    }
+
     @Override
     public Answer createVolume(final CreateObjectCommand cmd) {
         final VolumeObjectTO volume = (VolumeObjectTO)cmd.getData();
@@ -1369,8 +1399,23 @@ public class KVMStorageProcessor implements StorageProcessor {
             } else {
                 format = PhysicalDiskFormat.valueOf(volume.getFormat().toString().toUpperCase());
             }
-            vol = primaryPool.createPhysicalDisk(volume.getUuid(), format,
-                    volume.getProvisioningType(), disksize);
+
+            MigrationOptions migrationOptions = volume.getMigrationOptions();
+            if (migrationOptions != null) {
+                String srcStoreUuid = migrationOptions.getSrcPoolUuid();
+                StoragePoolType srcPoolType = migrationOptions.getSrcPoolType();
+                KVMStoragePool srcPool = storagePoolMgr.getStoragePool(srcPoolType, srcStoreUuid);
+                int timeout = migrationOptions.getTimeout();
+
+                if (migrationOptions.getType() == MigrationOptions.Type.LinkedClone) {
+                    vol = createLinkedCloneVolume(migrationOptions, srcPool, primaryPool, volume, format, timeout);
+                } else if (migrationOptions.getType() == MigrationOptions.Type.FullClone) {
+                    vol = createFullCloneVolume(migrationOptions, srcPool, volume, primaryPool, timeout);
+                }
+            } else {
+                vol = primaryPool.createPhysicalDisk(volume.getUuid(), format,
+                        volume.getProvisioningType(), disksize);
+            }
 
             final VolumeObjectTO newVol = new VolumeObjectTO();
             if(vol != null) {

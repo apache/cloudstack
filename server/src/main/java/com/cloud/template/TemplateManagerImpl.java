@@ -558,6 +558,7 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
         if (vm.getIsoId() != null) {
             Map<Volume, StoragePool> storageForDisks = dest.getStorageForDisks();
             Long poolId = null;
+            TemplateInfo template;
             if (MapUtils.isNotEmpty(storageForDisks)) {
                 for (StoragePool storagePool : storageForDisks.values()) {
                     if (poolId != null && storagePool.getId() != poolId) {
@@ -565,8 +566,11 @@ public class TemplateManagerImpl extends ManagerBase implements TemplateManager,
                     }
                     poolId = storagePool.getId();
                 }
+                template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
+            } else {
+                template = _tmplFactory.getTemplate(vm.getIsoId(), DataStoreRole.Primary, dest.getDataCenter().getId());
             }
-            TemplateInfo template = prepareIso(vm.getIsoId(), vm.getDataCenterId(), dest.getHost().getId(), poolId);
+
             if (template == null){
                 s_logger.error("Failed to prepare ISO on secondary or cache storage");
                 throw new CloudRuntimeException("Failed to prepare ISO on secondary or cache storage");

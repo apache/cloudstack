@@ -109,12 +109,13 @@ public class KvmNonManagedStorageSystemDataMotionTest {
 
     private void canHandleExpectCannotHandle(HypervisorType hypervisorType, int times, StrategyPriority expectedStrategyPriority) {
         HostVO srcHost = new HostVO("sourceHostUuid");
+        HostVO destHost = new HostVO("destHostUuid");
         srcHost.setHypervisorType(hypervisorType);
-        Mockito.doReturn(StrategyPriority.HYPERVISOR).when(kvmNonManagedStorageDataMotionStrategy).internalCanHandle(new HashMap<>());
+        Mockito.doReturn(StrategyPriority.HYPERVISOR).when(kvmNonManagedStorageDataMotionStrategy).internalCanHandle(new HashMap<>(), srcHost, destHost);
 
-        StrategyPriority strategyPriority = kvmNonManagedStorageDataMotionStrategy.canHandle(new HashMap<>(), srcHost, new HostVO("destHostUuid"));
+        StrategyPriority strategyPriority = kvmNonManagedStorageDataMotionStrategy.canHandle(new HashMap<>(), srcHost, destHost);
 
-        Mockito.verify(kvmNonManagedStorageDataMotionStrategy, Mockito.times(times)).internalCanHandle(new HashMap<>());
+        Mockito.verify(kvmNonManagedStorageDataMotionStrategy, Mockito.times(times)).internalCanHandle(new HashMap<>(), srcHost, destHost);
         Assert.assertEquals(expectedStrategyPriority, strategyPriority);
     }
 
@@ -123,7 +124,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         StoragePoolType[] storagePoolTypeArray = StoragePoolType.values();
         for (int i = 0; i < storagePoolTypeArray.length; i++) {
             Map<VolumeInfo, DataStore> volumeMap = configureTestInternalCanHandle(false, storagePoolTypeArray[i]);
-            StrategyPriority strategyPriority = kvmNonManagedStorageDataMotionStrategy.internalCanHandle(volumeMap);
+            StrategyPriority strategyPriority = kvmNonManagedStorageDataMotionStrategy.internalCanHandle(volumeMap, new HostVO("sourceHostUuid"), new HostVO("destHostUuid"));
             if (storagePoolTypeArray[i] == StoragePoolType.Filesystem || storagePoolTypeArray[i] == StoragePoolType.NetworkFilesystem) {
                 Assert.assertEquals(StrategyPriority.HYPERVISOR, strategyPriority);
             } else {
@@ -137,7 +138,7 @@ public class KvmNonManagedStorageSystemDataMotionTest {
         StoragePoolType[] storagePoolTypeArray = StoragePoolType.values();
         for (int i = 0; i < storagePoolTypeArray.length; i++) {
             Map<VolumeInfo, DataStore> volumeMap = configureTestInternalCanHandle(true, storagePoolTypeArray[i]);
-            StrategyPriority strategyPriority = kvmNonManagedStorageDataMotionStrategy.internalCanHandle(volumeMap);
+            StrategyPriority strategyPriority = kvmNonManagedStorageDataMotionStrategy.internalCanHandle(volumeMap, null, null);
             Assert.assertEquals(StrategyPriority.CANT_HANDLE, strategyPriority);
         }
     }

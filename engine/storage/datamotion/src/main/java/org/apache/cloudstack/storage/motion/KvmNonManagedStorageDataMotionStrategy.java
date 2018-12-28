@@ -77,8 +77,8 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
      * Note that the super implementation (override) is called by {@link #canHandle(Map, Host, Host)} which ensures that {@link #internalCanHandle(Map)} will be executed only if the source host is KVM.
      */
     @Override
-    protected StrategyPriority internalCanHandle(Map<VolumeInfo, DataStore> volumeMap) {
-        if (super.internalCanHandle(volumeMap) == StrategyPriority.CANT_HANDLE) {
+    protected StrategyPriority internalCanHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
+        if (super.internalCanHandle(volumeMap, srcHost, destHost) == StrategyPriority.CANT_HANDLE) {
             Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
 
             for (VolumeInfo volumeInfo : volumeInfoSet) {
