@@ -18,71 +18,18 @@
  */
 package org.apache.cloudstack.storage.motion;
 
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.CreateVMSnapshotCommand;
-import com.cloud.agent.api.DeleteVMSnapshotCommand;
-import com.cloud.agent.api.VMSnapshotTO;
-import com.cloud.agent.api.storage.CheckStorageAvailabilityCommand;
-import com.cloud.agent.api.storage.CopyVolumeAnswer;
-import com.cloud.agent.api.storage.CopyVolumeCommand;
-import com.cloud.agent.api.MigrateAnswer;
-import com.cloud.agent.api.MigrateCommand;
-import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
-import com.cloud.agent.api.ModifyTargetsAnswer;
-import com.cloud.agent.api.ModifyTargetsCommand;
-import com.cloud.agent.api.PrepareForMigrationCommand;
-import com.cloud.agent.api.storage.MigrateVolumeAnswer;
-import com.cloud.agent.api.storage.MigrateVolumeCommand;
-import com.cloud.agent.api.to.DataStoreTO;
-import com.cloud.agent.api.to.DataTO;
-import com.cloud.agent.api.to.DiskTO;
-import com.cloud.agent.api.to.NfsTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.configuration.Config;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.Host;
-import com.cloud.host.HostVO;
-import com.cloud.host.dao.HostDao;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.resource.ResourceState;
-import com.cloud.storage.DataStoreRole;
-import com.cloud.storage.DiskOfferingVO;
-import com.cloud.storage.ScopeType;
-import com.cloud.storage.Snapshot;
-import com.cloud.storage.SnapshotVO;
-import com.cloud.storage.Storage;
-import com.cloud.storage.Storage.ImageFormat;
-import com.cloud.storage.Storage.StoragePoolType;
-import com.cloud.storage.StorageManager;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VMTemplateStoragePoolVO;
-import com.cloud.storage.VMTemplateStorageResourceAssoc;
-import com.cloud.storage.VMTemplateVO;
-import com.cloud.storage.VolumeDetailVO;
-import com.cloud.storage.Volume;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.DiskOfferingDao;
-import com.cloud.storage.dao.GuestOSCategoryDao;
-import com.cloud.storage.dao.GuestOSDao;
-import com.cloud.storage.dao.SnapshotDao;
-import com.cloud.storage.dao.SnapshotDetailsDao;
-import com.cloud.storage.dao.SnapshotDetailsVO;
-import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.storage.dao.VolumeDetailsDao;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.GlobalLock;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.VirtualMachineManager;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
-import com.google.common.base.Preconditions;
+import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.ChapInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.ClusterScope;
@@ -95,7 +42,6 @@ import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.HostScope;
-import com.cloud.storage.MigrationOptions;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.Event;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStoreDriver;
@@ -124,22 +70,72 @@ import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
-
 import org.springframework.stereotype.Component;
 
-import javax.inject.Inject;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.MigrateAnswer;
+import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.MigrateCommand.MigrateDiskInfo;
+import com.cloud.agent.api.ModifyTargetsAnswer;
+import com.cloud.agent.api.ModifyTargetsCommand;
+import com.cloud.agent.api.PrepareForMigrationCommand;
+import com.cloud.agent.api.storage.CheckStorageAvailabilityCommand;
+import com.cloud.agent.api.storage.CopyVolumeAnswer;
+import com.cloud.agent.api.storage.CopyVolumeCommand;
+import com.cloud.agent.api.storage.MigrateVolumeAnswer;
+import com.cloud.agent.api.storage.MigrateVolumeCommand;
+import com.cloud.agent.api.to.DataStoreTO;
+import com.cloud.agent.api.to.DataTO;
+import com.cloud.agent.api.to.DiskTO;
+import com.cloud.agent.api.to.NfsTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.configuration.Config;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.resource.ResourceState;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.DiskOfferingVO;
+import com.cloud.storage.MigrationOptions;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Snapshot;
+import com.cloud.storage.SnapshotVO;
+import com.cloud.storage.Storage;
+import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.Storage.StoragePoolType;
+import com.cloud.storage.StorageManager;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.VMTemplateVO;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeDetailVO;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.DiskOfferingDao;
+import com.cloud.storage.dao.GuestOSCategoryDao;
+import com.cloud.storage.dao.GuestOSDao;
+import com.cloud.storage.dao.SnapshotDao;
+import com.cloud.storage.dao.SnapshotDetailsDao;
+import com.cloud.storage.dao.SnapshotDetailsVO;
+import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.storage.dao.VolumeDetailsDao;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.VirtualMachineManager;
+import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Preconditions;
 
 @Component
 public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
@@ -1774,21 +1770,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      * Return expected MigrationOptions for a full clone volume live storage migration
      */
     protected MigrationOptions createFullCloneMigrationOptions(VolumeInfo srcVolumeInfo, VirtualMachineTO vmTO, Host srcHost, String srcPoolUuid, Storage.StoragePoolType srcPoolType) {
-        String snapshotName = "livemigration-snap-" + srcVolumeInfo.getPath();
-        VMSnapshotTO snapshotTO = new VMSnapshotTO();
-        snapshotTO.setSnapshotName(snapshotName);
-        CreateVMSnapshotCommand snapshotCommand = new CreateVMSnapshotCommand(vmTO.getName(), snapshotTO);
-        Answer snapshotAnswer;
-        try {
-            snapshotAnswer = _agentMgr.send(srcHost.getId(), snapshotCommand);
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
-            e.printStackTrace();
-            throw new CloudRuntimeException("Could not take snapshot of VM " + vmTO.getUuid() + " on host " + srcHost.getUuid());
-        }
-        if (snapshotAnswer == null || !snapshotAnswer.getResult()) {
-            throw new CloudRuntimeException("Snapshot of VM " + vmTO.getUuid() + " on host " + srcHost.getUuid() + " failed");
-        }
-        return new MigrationOptions(srcPoolUuid, srcPoolType, snapshotName, srcVolumeInfo.getPath());
+        return new MigrationOptions(srcPoolUuid, srcPoolType, srcVolumeInfo.getPath());
     }
 
     /**
@@ -2218,28 +2200,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     /**
-     * Remove VM snapshot taken before destination volume creation
-     */
-    protected void removePreviouslyTakenVMSnapshot(MigrationOptions migrationOptions, VirtualMachineTO vmTO, Host srcHost) {
-        String snapshotName = migrationOptions.getSnapshotName();
-        VMSnapshotTO snapshotTO = new VMSnapshotTO();
-        snapshotTO.setSnapshotName(snapshotName);
-        DeleteVMSnapshotCommand deleteVMSnapshotCommand = new DeleteVMSnapshotCommand(vmTO.getName(), snapshotTO);
-        Answer deleteSnapshotAnswer = null;
-        try {
-            deleteSnapshotAnswer = _agentMgr.send(srcHost.getId(), deleteVMSnapshotCommand);
-        } catch (AgentUnavailableException | OperationTimedoutException e) {
-            e.printStackTrace();
-            throw new CloudRuntimeException("Could not remove snapshot: " + snapshotName + " from VM: " +
-                    vmTO.getUuid() + " on host " + srcHost.getUuid() + " due to: " + e.getMessage());
-        }
-        if (deleteSnapshotAnswer == null || !deleteSnapshotAnswer.getResult()) {
-            throw new CloudRuntimeException("Error removing snapshot: " + snapshotName + " from VM: " +
-                    vmTO.getUuid() + " on host " + srcHost.getUuid());
-        }
-    }
-
-    /**
      * Handle post destination volume creation actions depending on the migrating volume type: full clone or linked clone
      */
     protected void postVolumeCreationActions(VolumeInfo srcVolumeInfo, VolumeInfo destVolumeInfo, VirtualMachineTO vmTO, Host srcHost) {
@@ -2247,8 +2207,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         if (migrationOptions != null) {
             if (migrationOptions.getType() == MigrationOptions.Type.LinkedClone && migrationOptions.isCopySrcTemplate()) {
                 updateCopiedTemplateReference(srcVolumeInfo, destVolumeInfo);
-            } else if (migrationOptions.getType() == MigrationOptions.Type.FullClone) {
-                removePreviouslyTakenVMSnapshot(migrationOptions, vmTO, srcHost);
             }
         }
     }

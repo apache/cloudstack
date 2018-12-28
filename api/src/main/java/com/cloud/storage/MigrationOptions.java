@@ -27,7 +27,6 @@ public class MigrationOptions implements Serializable {
     private Type type;
     private String srcBackingFilePath;
     private boolean copySrcTemplate;
-    private String snapshotName;
     private String srcVolumeUuid;
     private int timeout;
 
@@ -46,11 +45,10 @@ public class MigrationOptions implements Serializable {
         this.copySrcTemplate = copySrcTemplate;
     }
 
-    public MigrationOptions(String srcPoolUuid, Storage.StoragePoolType srcPoolType, String snapshotName, String srcVolumeUuid) {
+    public MigrationOptions(String srcPoolUuid, Storage.StoragePoolType srcPoolType, String srcVolumeUuid) {
         this.srcPoolUuid = srcPoolUuid;
         this.srcPoolType = srcPoolType;
         this.type = Type.FullClone;
-        this.snapshotName = snapshotName;
         this.srcVolumeUuid = srcVolumeUuid;
     }
 
@@ -68,10 +66,6 @@ public class MigrationOptions implements Serializable {
 
     public boolean isCopySrcTemplate() {
         return copySrcTemplate;
-    }
-
-    public String getSnapshotName() {
-        return snapshotName;
     }
 
     public String getSrcVolumeUuid() {
