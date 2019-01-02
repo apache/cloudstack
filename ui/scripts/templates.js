@@ -1038,7 +1038,6 @@
                                 }
                                 switch (args.filterBy.kind) {
                                     case "all":
-                                        ignoreProject = true;
                                         $.extend(data, {
                                             templatefilter: 'all'
                                         });
@@ -2383,7 +2382,6 @@
                                 }
                                 switch (args.filterBy.kind) {
                                     case "all":
-                                        ignoreProject = true;
                                         $.extend(data, {
                                             isofilter: 'all'
                                         });
