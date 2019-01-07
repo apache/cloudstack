@@ -120,7 +120,7 @@
                         isHidden: true,
                     },
                     volumeids: {
-                        label: 'label.volume.ids',
+                        label: 'label.delete.volumes',
                         dependsOn: 'volumes',
                         isBoolean: true,
                         isHidden: false,

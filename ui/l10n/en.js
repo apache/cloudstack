@@ -1816,7 +1816,7 @@ var dictionary = {
 "label.volume":"Volume",
 "label.volume.details":"Volume details",
 "label.volume.empty":"No volumes attached to this VM",
-"label.volume.ids":"Delete Volumes",
+"label.volume.ids":"Volume ID's",
 "label.volume.limits":"Volume Limits",
 "label.volume.migrated":"Volume migrated",
 "label.volume.name":"Volume Name",
