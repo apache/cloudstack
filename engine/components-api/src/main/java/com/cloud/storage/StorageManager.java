@@ -87,7 +87,7 @@ public interface StorageManager extends StorageService {
     ConfigKey<Integer> KvmStorageOnlineMigrationWait = new ConfigKey<>(Integer.class,
             "kvm.storage.online.migration.wait",
             "Storage",
-            "10800",
+            "86400",
             "Timeout in seconds for online (live) storage migration to complete on KVM (migrateVirtualMachineWithVolume)",
             true,
             ConfigKey.Scope.Global,
