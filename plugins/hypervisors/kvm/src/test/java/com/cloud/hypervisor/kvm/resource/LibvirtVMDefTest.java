@@ -196,10 +196,11 @@ public class LibvirtVMDefTest extends TestCase {
     }
 
     public void testSCSIDef() {
-        SCSIDef def = new SCSIDef();
+        SCSIDef def = new SCSIDef((short)0, 0, 0, 9, 0, 4);
         String str = def.toString();
         String expected = "<controller type='scsi' index='0' model='virtio-scsi'>\n" +
                 "<address type='pci' domain='0x0000' bus='0x00' slot='0x09' function='0x0'/>\n" +
+                "<driver queues='4'/>\n" +
                 "</controller>\n";
         assertEquals(str, expected);
     }
