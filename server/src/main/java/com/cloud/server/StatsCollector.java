@@ -195,16 +195,17 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private static final String INFLUXDB_HOST_MEASUREMENT = "host_stats";
     private static final String INFLUXDB_VM_MEASUREMENT = "vm_stats";
 
-    static final ConfigKey<Integer> vmDiskStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval", "0",
+    private static final ConfigKey<Integer> vmDiskStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval", "0",
             "Interval (in seconds) to report vm disk statistics. Vm disk statistics will be disabled if this is set to 0 or less than 0.", false);
-    static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
+    private static final ConfigKey<Integer> vmDiskStatsIntervalMin = new ConfigKey<Integer>("Advanced", Integer.class, "vm.disk.stats.interval.min", "300",
             "Minimal interval (in seconds) to report vm disk statistics. If vm.disk.stats.interval is smaller than this, use this to report vm disk statistics.", false);
-    static final ConfigKey<Integer> vmNetworkStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.network.stats.interval", "0",
+    private static final ConfigKey<Integer> vmNetworkStatsInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vm.network.stats.interval", "0",
             "Interval (in seconds) to report vm network statistics (for Shared networks). Vm network statistics will be disabled if this is set to 0 or less than 0.", false);
-    static final ConfigKey<Integer> vmNetworkStatsIntervalMin = new ConfigKey<Integer>("Advanced", Integer.class, "vm.network.stats.interval.min", "300",
+    private static final ConfigKey<Integer> vmNetworkStatsIntervalMin = new ConfigKey<Integer>("Advanced", Integer.class, "vm.network.stats.interval.min", "300",
             "Minimal Interval (in seconds) to report vm network statistics (for Shared networks). If vm.network.stats.interval is smaller than this, use this to report vm network statistics.",
             false);
-    static final ConfigKey<Integer> StatsTimeout = new ConfigKey<Integer>("Advanced", Integer.class, "stats.timeout", "60000", "The timeout for stats call in milli seconds.", true,
+    private static final ConfigKey<Integer> StatsTimeout = new ConfigKey<Integer>("Advanced", Integer.class, "stats.timeout", "60000",
+            "The timeout for stats call in milli seconds.", true,
             ConfigKey.Scope.Cluster);
     private static final ConfigKey<String> statsOutputUri = new ConfigKey<String>("Advanced", String.class, "stats.output.uri", "",
             "URI to send StatsCollector statistics to. The collector is defined on the URI scheme. Example: graphite://graphite-hostaddress:port or influxdb://influxdb-hostaddress/dbname. Note that the port is optional, if not added the default port for the respective collector (graphite or influxdb) will be used. Additionally, the database name '/dbname' is  also optional; default db name is 'cloudstack'. You must create and configure the database if using influxdb.",
@@ -280,18 +281,18 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
     private ConcurrentHashMap<Long, StorageStats> _storageStats = new ConcurrentHashMap<Long, StorageStats>();
     private ConcurrentHashMap<Long, StorageStats> _storagePoolStats = new ConcurrentHashMap<Long, StorageStats>();
 
-    long hostStatsInterval = -1L;
-    long hostAndVmStatsInterval = -1L;
-    long storageStatsInterval = -1L;
-    long volumeStatsInterval = -1L;
-    long autoScaleStatsInterval = -1L;
+    private long hostStatsInterval = -1L;
+    private long hostAndVmStatsInterval = -1L;
+    private long storageStatsInterval = -1L;
+    private long volumeStatsInterval = -1L;
+    private long autoScaleStatsInterval = -1L;
 
     private double _imageStoreCapacityThreshold = 0.90;
 
-    String externalStatsPrefix = "";
+    private String externalStatsPrefix = "";
     String externalStatsHost = null;
     int externalStatsPort = -1;
-    String externalStatsScheme;
+    private String externalStatsScheme;
     ExternalStatsProtocol externalStatsType = ExternalStatsProtocol.NONE;
     private String databaseName = DEFAULT_DATABASE_NAME;
 
