@@ -116,13 +116,14 @@
                     volumes: {
                         label: 'label.delete.volumes',
                         isBoolean: true,
-                        isChecked: false
+                        isChecked: true,
+                        isHidden: true,
                     },
                     volumeids: {
-                        label: 'label.volume.ids',
+                        label: 'label.delete.volumes',
                         dependsOn: 'volumes',
                         isBoolean: true,
-                        isHidden: true,
+                        isHidden: false,
                         emptyMessage: 'label.volume.empty',
                         multiDataArray: true,
                         multiData: function(args) {
