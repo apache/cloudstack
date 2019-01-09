@@ -619,6 +619,14 @@ public class ApiResponseHelper implements ResponseGenerator {
             vmSnapshotResponse.setDomainName(domain.getName());
         }
 
+        List<? extends ResourceTag> tags = _resourceTagDao.listBy(vmSnapshot.getId(), ResourceObjectType.VMSnapshot);
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, false);
+            CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
+        }
+        vmSnapshotResponse.setTags(new HashSet<>(tagResponses));
+
         vmSnapshotResponse.setCurrent(vmSnapshot.getCurrent());
         vmSnapshotResponse.setType(vmSnapshot.getType().toString());
         vmSnapshotResponse.setObjectName("vmsnapshot");
