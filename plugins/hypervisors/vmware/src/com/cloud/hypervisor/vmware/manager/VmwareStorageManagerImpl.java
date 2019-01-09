@@ -598,16 +598,6 @@ public class VmwareStorageManagerImpl implements VmwareStorageManager {
             s_logger.error(msg);
             throw new Exception(msg);
         }
-
-        if (vmMo.createSnapshot("cloud.template.base", "Base snapshot", false, false)) {
-            vmMo.setCustomFieldValue(CustomFieldConstants.CLOUD_UUID, templateUuid);
-            vmMo.markAsTemplate();
-        } else {
-            vmMo.destroy();
-            String msg = "Unable to create base snapshot for template, templateName: " + templateName + ", templateUuid: " + templateUuid;
-            s_logger.error(msg);
-            throw new Exception(msg);
-        }
     }
 
     private Ternary<String, Long, Long> createTemplateFromVolume(VirtualMachineMO vmMo, long accountId, long templateId, String templateUniqueName, String secStorageUrl,
