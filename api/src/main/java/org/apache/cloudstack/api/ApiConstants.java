@@ -37,7 +37,11 @@ public class ApiConstants {
     public static final String BIND_DN = "binddn";
     public static final String BIND_PASSWORD = "bindpass";
     public static final String BYTES_READ_RATE = "bytesreadrate";
+    public static final String BYTES_READ_RATE_MAX = "bytesreadratemax";
+    public static final String BYTES_READ_RATE_MAX_LENGTH = "bytesreadratemaxlength";
     public static final String BYTES_WRITE_RATE = "byteswriterate";
+    public static final String BYTES_WRITE_RATE_MAX = "byteswriteratemax";
+    public static final String BYTES_WRITE_RATE_MAX_LENGTH = "byteswriteratemaxlength";
     public static final String BYPASS_VLAN_OVERLAP_CHECK = "bypassvlanoverlapcheck";
     public static final String CATEGORY = "category";
     public static final String CAN_REVERT = "canrevert";
@@ -162,7 +166,11 @@ public class ApiConstants {
     public static final String INTERVAL_TYPE = "intervaltype";
     public static final String LOCATION_TYPE = "locationtype";
     public static final String IOPS_READ_RATE = "iopsreadrate";
+    public static final String IOPS_READ_RATE_MAX = "iopsreadratemax";
+    public static final String IOPS_READ_RATE_MAX_LENGTH = "iopsreadratemaxlength";
     public static final String IOPS_WRITE_RATE = "iopswriterate";
+    public static final String IOPS_WRITE_RATE_MAX = "iopswriteratemax";
+    public static final String IOPS_WRITE_RATE_MAX_LENGTH = "iopswriteratemaxlength";
     public static final String IP_ADDRESS = "ipaddress";
     public static final String IP6_ADDRESS = "ip6address";
     public static final String IP_ADDRESS_ID = "ipaddressid";

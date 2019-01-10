@@ -581,9 +581,17 @@ public class LibvirtVMDef {
         private boolean _shareable = false;
         private boolean _deferAttach = false;
         private Long _bytesReadRate;
+        private Long _bytesReadRateMax;
+        private Long _bytesReadRateMaxLength;
         private Long _bytesWriteRate;
+        private Long _bytesWriteRateMax;
+        private Long _bytesWriteRateMaxLength;
         private Long _iopsReadRate;
+        private Long _iopsReadRateMax;
+        private Long _iopsReadRateMaxLength;
         private Long _iopsWriteRate;
+        private Long _iopsWriteRateMax;
+        private Long _iopsWriteRateMaxLength;
         private DiskCacheMode _diskCacheMode;
         private String _serial;
         private boolean qemuDriver = true;
@@ -784,16 +792,48 @@ public class LibvirtVMDef {
             _bytesReadRate = bytesReadRate;
         }
 
+        public void setBytesReadRateMax(Long bytesReadRateMax) {
+            _bytesReadRateMax = bytesReadRateMax;
+        }
+
+        public void  setBytesReadRateMaxLength(Long bytesReadRateLength) {
+            _bytesReadRateMaxLength = bytesReadRateLength;
+        }
+
         public void setBytesWriteRate(Long bytesWriteRate) {
             _bytesWriteRate = bytesWriteRate;
+        }
+
+        public void setBytesWriteRateMax(Long bytesWriteRateMax) {
+            _bytesWriteRateMax = bytesWriteRateMax;
+        }
+
+        public void setBytesWriteRateMaxLength(Long bytesWriteRateMaxLength) {
+            _bytesWriteRateMaxLength = bytesWriteRateMaxLength;
         }
 
         public void setIopsReadRate(Long iopsReadRate) {
             _iopsReadRate = iopsReadRate;
         }
 
+        public void setIopsReadRateMax(Long iopsReadRateMax) {
+            _iopsReadRateMax = iopsReadRateMax;
+        }
+
+        public void setIopsReadRateMaxLength(Long iopsReadRateMaxLength) {
+            _iopsReadRateMaxLength = iopsReadRateMaxLength;
+        }
+
         public void setIopsWriteRate(Long iopsWriteRate) {
             _iopsWriteRate = iopsWriteRate;
+        }
+
+        public void setIopsWriteRateMax(Long iopsWriteRateMax) {
+            _iopsWriteRateMax = iopsWriteRateMax;
+        }
+
+        public void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength) {
+            _iopsWriteRateMaxLength = iopsWriteRateMaxLength;
         }
 
         public void setCacheMode(DiskCacheMode cacheMode) {
@@ -891,6 +931,31 @@ public class LibvirtVMDef {
                     diskBuilder.append("<read_iops_sec>" + _iopsReadRate + "</read_iops_sec>\n");
                 if ((_iopsWriteRate != null) && (_iopsWriteRate > 0))
                     diskBuilder.append("<write_iops_sec>" + _iopsWriteRate + "</write_iops_sec>\n");
+                if (s_qemuVersion >= 2004000) {
+                    if (_bytesReadRateMax != null && _bytesReadRateMax > 0 ) {
+                        diskBuilder.append("<read_bytes_sec_max>" + _bytesReadRateMax + "</read_bytes_sec_max>\n");
+                    }
+                    if (_bytesWriteRateMax != null && _bytesWriteRateMax > 0) {
+                        diskBuilder.append("<write_bytes_sec_max>" + _bytesWriteRateMax + "</write_bytes_sec_max>\n");
+                    }
+                    if (_iopsReadRateMax != null && _iopsReadRateMax > 0)
+                        diskBuilder.append("<read_iops_sec_max>" + _iopsReadRateMax + "</read_iops_sec_max>\n");
+                    if (_iopsWriteRateMax != null && _iopsWriteRateMax > 0)
+                        diskBuilder.append("<write_iops_sec_max>" + _iopsWriteRateMax + "</write_iops_sec_max>\n");
+                }
+                if (s_qemuVersion >= 2006000) {
+                    if (_bytesReadRateMaxLength != null && _bytesReadRateMaxLength > 0) {
+                        diskBuilder.append("<read_bytes_sec_max_length>" + _bytesReadRateMaxLength + "</read_bytes_sec_max_length>\n");
+                    }
+                    if (_bytesWriteRateMaxLength != null && _bytesWriteRateMaxLength > 0) {
+                        diskBuilder.append("<write_bytes_sec_max_length>" + _bytesWriteRateMaxLength + "</write_bytes_sec_max_length>\n");
+                    }
+                    if (_iopsReadRateMaxLength != null && _iopsReadRateMaxLength > 0)
+                        diskBuilder.append("<read_iops_sec_max_length>" + _iopsReadRateMaxLength + "</read_iops_sec_max_length>\n");
+                    if (_iopsWriteRateMaxLength != null && _iopsWriteRateMaxLength > 0)
+                        diskBuilder.append("<write_iops_sec_max_length>" + _iopsWriteRateMaxLength + "</write_iops_sec_max_length>\n");
+                }
+
                 diskBuilder.append("</iotune>\n");
             }
 

@@ -129,6 +129,73 @@ class TestCreateServiceOffering(cloudstackTestCase):
             "Check name in createServiceOffering"
         )
         return
+    @attr(
+        tags=[
+            "advanced",
+            "advancedns",
+            "smoke",
+            "basic",
+            "eip",
+            "sg"],
+        required_hardware="false")
+    def test_02_create_iops_offering(self):
+        """Test to create service io burst offering"""
+
+        # Validate the following:
+        # 1. createServiceOfferings should return a valid information
+        #    for newly created offering
+        # 2. The Cloud Database contains the valid information
+
+
+
+        svcs = self.services["service_offerings"]["tiny"]
+        kws = {}
+
+        for key in self.services["ioburst"]:
+            if str(key).startswith("bytes") or str(key).startswith("iops"):
+                kws[key] = self.services["ioburst"][key]
+            else:
+                svcs[key] = self.services["ioburst"][key]
+
+        service_offering = ServiceOffering.create(
+            self.apiclient,
+            svcs,
+            None,
+            None,
+            **kws
+        )
+        self.cleanup.append(service_offering)
+
+        self.debug(
+            "Created service offering with ID: %s" %
+            service_offering.id)
+
+        list_service_response = list_service_offering(
+            self.apiclient,
+            id=service_offering.id
+        )
+        self.assertEqual(
+            isinstance(list_service_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+
+        self.assertNotEqual(
+            len(list_service_response),
+            0,
+            "Check Service offering is created"
+        )
+
+        for key in kws:
+            k = str(key)
+            mapped = 'disk' + k[:1].upper() + k[1:]
+            self.assertEqual(
+                list_service_response[0][mapped],
+                kws[key],
+                "Check " + str(key) + " => " + str(mapped) +  " in createServiceOffering"
+            )
+
+        return
 
 
 class TestServiceOfferings(cloudstackTestCase):

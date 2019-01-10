@@ -1167,7 +1167,10 @@ public class KVMStorageProcessor implements StorageProcessor {
     }
 
     protected synchronized String attachOrDetachDisk(final Connect conn, final boolean attach, final String vmName, final KVMPhysicalDisk attachingDisk, final int devId, final String serial,
-            final Long bytesReadRate, final Long bytesWriteRate, final Long iopsReadRate, final Long iopsWriteRate) throws LibvirtException, InternalErrorException {
+            final Long bytesReadRate, final Long bytesReadRateMax, final Long bytesReadRateMaxLength,
+            final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength,
+            final Long iopsReadRate, final Long iopsReadRateMax, final Long iopsReadRateMaxLength,
+            final Long iopsWriteRate, final Long iopsWriteRateMax, final Long iopsWriteRateMaxLength) throws LibvirtException, InternalErrorException {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
@@ -1244,14 +1247,38 @@ public class KVMStorageProcessor implements StorageProcessor {
                 if ((bytesReadRate != null) && (bytesReadRate > 0)) {
                     diskdef.setBytesReadRate(bytesReadRate);
                 }
+                if ((bytesReadRateMax != null) && (bytesReadRateMax > 0)) {
+                    diskdef.setBytesReadRateMax(bytesReadRateMax);
+                }
+                if ((bytesReadRateMaxLength != null) && (bytesReadRateMaxLength > 0)) {
+                    diskdef.setBytesReadRateMaxLength(bytesReadRateMaxLength);
+                }
                 if ((bytesWriteRate != null) && (bytesWriteRate > 0)) {
                     diskdef.setBytesWriteRate(bytesWriteRate);
+                }
+                if ((bytesWriteRateMax != null) && (bytesWriteRateMax > 0)) {
+                    diskdef.setBytesWriteRateMax(bytesWriteRateMax);
+                }
+                if ((bytesWriteRateMaxLength != null) && (bytesWriteRateMaxLength > 0)) {
+                    diskdef.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
                 }
                 if ((iopsReadRate != null) && (iopsReadRate > 0)) {
                     diskdef.setIopsReadRate(iopsReadRate);
                 }
+                if ((iopsReadRateMax != null) && (iopsReadRateMax > 0)) {
+                    diskdef.setIopsReadRateMax(iopsReadRateMax);
+                }
+                if ((iopsReadRateMaxLength != null) && (iopsReadRateMaxLength > 0)) {
+                    diskdef.setIopsReadRateMaxLength(iopsReadRateMaxLength);
+                }
                 if ((iopsWriteRate != null) && (iopsWriteRate > 0)) {
                     diskdef.setIopsWriteRate(iopsWriteRate);
+                }
+                if ((iopsWriteRateMax != null) && (iopsWriteRateMax > 0)) {
+                    diskdef.setIopsWriteRateMax(iopsWriteRateMax);
+                }
+                if ((iopsWriteRateMaxLength != null) && (iopsWriteRateMaxLength > 0)) {
+                    diskdef.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
                 }
             }
 
@@ -1278,7 +1305,11 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             final KVMPhysicalDisk phyDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
-            attachOrDetachDisk(conn, true, vmName, phyDisk, disk.getDiskSeq().intValue(), serial, vol.getBytesReadRate(), vol.getBytesWriteRate(), vol.getIopsReadRate(), vol.getIopsWriteRate());
+            attachOrDetachDisk(conn, true, vmName, phyDisk, disk.getDiskSeq().intValue(), serial,
+                    vol.getBytesReadRate(), vol.getBytesReadRateMax(), vol.getBytesReadRateMaxLength(),
+                    vol.getBytesWriteRate(), vol.getBytesWriteRateMax(), vol.getBytesWriteRateMaxLength(),
+                    vol.getIopsReadRate(), vol.getIopsReadRateMax(), vol.getIopsReadRateMaxLength(),
+                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength());
 
             return new AttachAnswer(disk);
         } catch (final LibvirtException e) {
@@ -1303,7 +1334,11 @@ public class KVMStorageProcessor implements StorageProcessor {
 
             final KVMPhysicalDisk phyDisk = storagePoolMgr.getPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
-            attachOrDetachDisk(conn, false, vmName, phyDisk, disk.getDiskSeq().intValue(), serial, vol.getBytesReadRate(), vol.getBytesWriteRate(), vol.getIopsReadRate(), vol.getIopsWriteRate());
+            attachOrDetachDisk(conn, false, vmName, phyDisk, disk.getDiskSeq().intValue(), serial,
+                    vol.getBytesReadRate(), vol.getBytesReadRateMax(), vol.getBytesReadRateMaxLength(),
+                    vol.getBytesWriteRate(), vol.getBytesWriteRateMax(), vol.getBytesWriteRateMaxLength(),
+                    vol.getIopsReadRate(), vol.getIopsReadRateMax(), vol.getIopsReadRateMaxLength(),
+                    vol.getIopsWriteRate(), vol.getIopsWriteRateMax(), vol.getIopsWriteRateMaxLength());
 
             storagePoolMgr.disconnectPhysicalDisk(primaryStore.getPoolType(), primaryStore.getUuid(), vol.getPath());
 
