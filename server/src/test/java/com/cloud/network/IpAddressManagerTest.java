@@ -62,9 +62,6 @@ public class IpAddressManagerTest {
     @Mock
     NetworkOfferingDao _networkOfferingDao;
 
-    @Mock
-    NetworkModel _networkModel;
-
     @Spy
     @InjectMocks
     IpAddressManagerImpl _ipManager;
@@ -90,7 +87,6 @@ public class IpAddressManagerTest {
         networkOfferingVO.setSharedSourceNat(false);
 
         Mockito.when(_networkOfferingDao.findById(Mockito.anyLong())).thenReturn(networkOfferingVO);
-        when(_networkModel.areServicesSupportedInNetwork(0L, Network.Service.SourceNat)).thenReturn(true);
     }
 
     @Test
