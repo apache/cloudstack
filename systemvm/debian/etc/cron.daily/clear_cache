@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# clear memory cache to ultimately reduce swapping
+
+sync && echo 1 > /proc/sys/vm/drop_caches

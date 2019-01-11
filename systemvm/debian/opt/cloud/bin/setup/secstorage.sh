@@ -19,14 +19,14 @@
 . /opt/cloud/bin/setup/common.sh
 
 secstorage_svcs() {
-  echo "apache2 cloud nfs-common portmap" > /var/cache/cloud/enabled_svcs
+  echo "cloud apache2 nfs-common portmap" > /var/cache/cloud/enabled_svcs
   echo "conntrackd keepalived haproxy dnsmasq" > /var/cache/cloud/disabled_svcs
   mkdir -p /var/log/cloud
 }
 
 setup_secstorage() {
   log_it "Setting up secondary storage system vm"
-  sysctl vm.min_free_kbytes=8192
+  #sysctl vm.min_free_kbytes=8192
 
   setup_common eth0 eth1 eth2
   setup_storage_network
