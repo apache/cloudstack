@@ -1415,6 +1415,13 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
         }
     }
 
+    /**
+     * Prevents associating an IP address to an allocated (unimplemented network) network, throws an Exception otherwise
+     * @param owner Used to check if the user belongs to the Network
+     * @param ipToAssoc IP address to be associated to a Network, can only be associated to an implemented network for Source NAT
+     * @param network Network to which IP address is to be associated with, must not be in allocated state for Source NAT Network/IP association
+     * @return true if IP address can be successfully associated with Source NAT network
+     */
     protected boolean isSourceNatAvailableForNetwork(Account owner, IPAddressVO ipToAssoc, Network network) {
         NetworkOffering offering = _networkOfferingDao.findById(network.getNetworkOfferingId());
         boolean sharedSourceNat = offering.isSharedSourceNat();

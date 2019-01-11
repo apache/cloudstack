@@ -31,10 +31,10 @@ import java.util.List;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import com.cloud.exception.InvalidParameterValueException;
@@ -50,21 +50,23 @@ import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.AccountVO;
 import com.cloud.utils.net.Ip;
+import org.mockito.runners.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class IpAddressManagerTest {
 
     @Mock
-    IPAddressDao _ipAddrDao;
+    IPAddressDao ipAddressDao;
 
     @Mock
-    NetworkDao _networkDao;
+    NetworkDao networkDao;
 
     @Mock
-    NetworkOfferingDao _networkOfferingDao;
+    NetworkOfferingDao networkOfferingDao;
 
     @Spy
     @InjectMocks
-    IpAddressManagerImpl _ipManager;
+    IpAddressManagerImpl ipAddressManager;
 
     @InjectMocks
     NetworkModelImpl networkModel = Mockito.spy(new NetworkModelImpl());
@@ -75,7 +77,6 @@ public class IpAddressManagerTest {
 
     @Before
     public void setup() throws ResourceUnavailableException {
-        MockitoAnnotations.initMocks(this);
 
         ipAddressVO = new IPAddressVO(new Ip("192.0.0.1"), 1L, 1L, 1L,false);
         ipAddressVO.setAllocatedToAccountId(1L);
@@ -86,7 +87,7 @@ public class IpAddressManagerTest {
         NetworkOfferingVO networkOfferingVO = Mockito.mock(NetworkOfferingVO.class);
         networkOfferingVO.setSharedSourceNat(false);
 
-        Mockito.when(_networkOfferingDao.findById(Mockito.anyLong())).thenReturn(networkOfferingVO);
+        Mockito.when(networkOfferingDao.findById(Mockito.anyLong())).thenReturn(networkOfferingVO);
     }
 
     @Test
@@ -96,10 +97,10 @@ public class IpAddressManagerTest {
         when(vo.getAddress()).thenReturn(new Ip(publicIpAddress));
         when(vo.getId()).thenReturn(1l);
 
-        when(_ipAddrDao.findById(anyLong())).thenReturn(vo);
+        when(ipAddressDao.findById(anyLong())).thenReturn(vo);
         StaticNat snat = new StaticNatImpl(1, 1, 1, 1, publicIpAddress, false);
 
-        List<IPAddressVO> ips = _ipManager.getStaticNatSourceIps(Collections.singletonList(snat));
+        List<IPAddressVO> ips = ipAddressManager.getStaticNatSourceIps(Collections.singletonList(snat));
         Assert.assertNotNull(ips);
         Assert.assertEquals(1, ips.size());
 
@@ -111,7 +112,7 @@ public class IpAddressManagerTest {
     public void isIpEqualsGatewayOrNetworkOfferingsEmptyTestRequestedIpEqualsIp6Gateway() {
         Network network = setTestIsIpEqualsGatewayOrNetworkOfferingsEmpty(0l, "gateway", "ip6Gateway", null, new ArrayList<Service>());
 
-        boolean result = _ipManager.isIpEqualsGatewayOrNetworkOfferingsEmpty(network, "ip6Gateway");
+        boolean result = ipAddressManager.isIpEqualsGatewayOrNetworkOfferingsEmpty(network, "ip6Gateway");
 
         Mockito.verify(networkModel, Mockito.times(0)).listNetworkOfferingServices(Mockito.anyLong());
         Assert.assertTrue(result);
@@ -121,7 +122,7 @@ public class IpAddressManagerTest {
     public void isIpEqualsGatewayOrNetworkOfferingsEmptyTestRequestedIpEqualsGateway() {
         Network network = setTestIsIpEqualsGatewayOrNetworkOfferingsEmpty(0l, "gateway", "ip6Gateway", null, new ArrayList<Service>());
 
-        boolean result = _ipManager.isIpEqualsGatewayOrNetworkOfferingsEmpty(network, "gateway");
+        boolean result = ipAddressManager.isIpEqualsGatewayOrNetworkOfferingsEmpty(network, "gateway");
 
         Mockito.verify(networkModel, Mockito.times(0)).listNetworkOfferingServices(Mockito.anyLong());
         Assert.assertTrue(result);
@@ -134,7 +135,7 @@ public class IpAddressManagerTest {
         services.add(serviceGateway);
         Network network = setTestIsIpEqualsGatewayOrNetworkOfferingsEmpty(0l, "gateway", "ip6Gateway", null, services);
 
-        boolean result = _ipManager.isIpEqualsGatewayOrNetworkOfferingsEmpty(network, "requestedIp");
+        boolean result = ipAddressManager.isIpEqualsGatewayOrNetworkOfferingsEmpty(network, "requestedIp");
 
         Mockito.verify(networkModel).listNetworkOfferingServices(Mockito.anyLong());
         Assert.assertFalse(result);
@@ -144,7 +145,7 @@ public class IpAddressManagerTest {
     public void isIpEqualsGatewayOrNetworkOfferingsEmptyTestExpectFalseServicesCidrNotNull() {
         Network network = setTestIsIpEqualsGatewayOrNetworkOfferingsEmpty(0l, "gateway", "ip6Gateway", "cidr", new ArrayList<Service>());
 
-        boolean result = _ipManager.isIpEqualsGatewayOrNetworkOfferingsEmpty(network, "requestedIp");
+        boolean result = ipAddressManager.isIpEqualsGatewayOrNetworkOfferingsEmpty(network, "requestedIp");
 
         Mockito.verify(networkModel).listNetworkOfferingServices(Mockito.anyLong());
         Assert.assertFalse(result);
@@ -161,10 +162,10 @@ public class IpAddressManagerTest {
         when(networkImplemented.getVpcId()).thenReturn(null);
         when(networkImplemented.getId()).thenReturn(1L);
 
-        Mockito.when(_networkDao.findById(1L)).thenReturn(networkImplemented);
-        doReturn(null).when(_ipManager).getExistingSourceNatInNetwork(1L, 1L);
+        Mockito.when(networkDao.findById(1L)).thenReturn(networkImplemented);
+        doReturn(null).when(ipAddressManager).getExistingSourceNatInNetwork(1L, 1L);
 
-        boolean isSourceNat = _ipManager.isSourceNatAvailableForNetwork(account, ipAddressVO, networkImplemented);
+        boolean isSourceNat = ipAddressManager.isSourceNatAvailableForNetwork(account, ipAddressVO, networkImplemented);
 
         assertTrue("Source NAT should be true", isSourceNat);
     }
@@ -180,10 +181,10 @@ public class IpAddressManagerTest {
         when(networkAllocated.getVpcId()).thenReturn(null);
         when(networkAllocated.getId()).thenReturn(2L);
 
-        Mockito.when(_networkDao.findById(2L)).thenReturn(networkAllocated);
-        doReturn(null).when(_ipManager).getExistingSourceNatInNetwork(1L, 2L);
+        Mockito.when(networkDao.findById(2L)).thenReturn(networkAllocated);
+        doReturn(null).when(ipAddressManager).getExistingSourceNatInNetwork(1L, 2L);
 
-        _ipManager.isSourceNatAvailableForNetwork(account, ipAddressVO, networkAllocated);
+        ipAddressManager.isSourceNatAvailableForNetwork(account, ipAddressVO, networkAllocated);
     }
 
     @Test
@@ -200,10 +201,10 @@ public class IpAddressManagerTest {
 
         IPAddressVO sourceNat = new IPAddressVO(new Ip("192.0.0.2"), 1L, 1L, 1L,true);
 
-        Mockito.when(_networkDao.findById(3L)).thenReturn(networkNat);
-        doReturn(sourceNat).when(_ipManager).getExistingSourceNatInNetwork(1L, 3L);
+        Mockito.when(networkDao.findById(3L)).thenReturn(networkNat);
+        doReturn(sourceNat).when(ipAddressManager).getExistingSourceNatInNetwork(1L, 3L);
 
-        boolean isSourceNat = _ipManager.isSourceNatAvailableForNetwork(account, ipAddressVO, networkNat);
+        boolean isSourceNat = ipAddressManager.isSourceNatAvailableForNetwork(account, ipAddressVO, networkNat);
 
         assertFalse("Source NAT should be false", isSourceNat);
     }
@@ -212,7 +213,7 @@ public class IpAddressManagerTest {
     public void isIpEqualsGatewayOrNetworkOfferingsEmptyTestNetworkOfferingsEmptyAndCidrNull() {
         Network network = setTestIsIpEqualsGatewayOrNetworkOfferingsEmpty(0l, "gateway", "ip6Gateway", null, new ArrayList<Service>());
 
-        boolean result = _ipManager.isIpEqualsGatewayOrNetworkOfferingsEmpty(network, "requestedIp");
+        boolean result = ipAddressManager.isIpEqualsGatewayOrNetworkOfferingsEmpty(network, "requestedIp");
 
         Mockito.verify(networkModel).listNetworkOfferingServices(Mockito.anyLong());
         Assert.assertTrue(result);
