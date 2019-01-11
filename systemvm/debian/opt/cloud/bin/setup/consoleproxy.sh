@@ -18,12 +18,6 @@
 
 . /opt/cloud/bin/setup/common.sh
 
-consoleproxy_svcs() {
-  echo "cloud" > /var/cache/cloud/enabled_svcs
-  echo "haproxy dnsmasq apache2 nfs-common portmap" > /var/cache/cloud/disabled_svcs
-  mkdir -p /var/log/cloud
-}
-
 setup_console_proxy() {
   log_it "Setting up console proxy system vm"
   setup_common eth0 eth1 eth2
@@ -45,16 +39,13 @@ setup_console_proxy() {
     setup_sshd $ETH0_IP "eth0"
   fi
 
+  mkdir -p /var/log/cloud
   disable_rpfilter
   enable_fwding 0
   enable_irqbalance 0
   rm -f /etc/logrotate.d/cloud
+  echo "cloud" > /var/cache/cloud/enabled_svcs
+
 }
 
-consoleproxy_svcs
-if [ $? -gt 0 ]
-then
-  log_it "Failed to execute consoleproxy_svcs"
-  exit 1
-fi
 setup_console_proxy
