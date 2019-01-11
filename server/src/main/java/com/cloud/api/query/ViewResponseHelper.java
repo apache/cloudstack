@@ -284,29 +284,30 @@ public class ViewResponseHelper {
             }
             vrDataList.put(vr.getId(), vrData);
 
-            if (view == ResponseView.Full) {
-                VolumeStats vs = null;
-                if (vr.getFormat() == ImageFormat.QCOW2) {
-                    vs = ApiDBUtils.getVolumeStatistics(vrData.getId());
-                }
-                else if (vr.getFormat() == ImageFormat.VHD){
-                    vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
-                }
-                else if (vr.getFormat() == ImageFormat.OVA){
-                    if (vrData.getChainInfo() != null) {
-                        vs = ApiDBUtils.getVolumeStatistics(vrData.getChainInfo());
-                    }
-                }
-                if (vs != null){
-                    long vsz = vs.getVirtualSize();
-                    long psz = vs.getPhysicalSize() ;
-                    double util = (double)psz/vsz;
-                    vrData.setVirtualsize(vsz);
-                    vrData.setPhysicalsize(psz);
-                    vrData.setUtilization(df.format(util));
+            VolumeStats vs = null;
+            if (vr.getFormat() == ImageFormat.QCOW2) {
+                vs = ApiDBUtils.getVolumeStatistics(vrData.getId());
+            }
+            else if (vr.getFormat() == ImageFormat.VHD){
+                vs = ApiDBUtils.getVolumeStatistics(vrData.getPath());
+            }
+            else if (vr.getFormat() == ImageFormat.OVA){
+                if (vrData.getChainInfo() != null) {
+                    vs = ApiDBUtils.getVolumeStatistics(vrData.getChainInfo());
                 }
             }
 
+            if (vs != null){
+                long vsz = vs.getVirtualSize();
+                long psz = vs.getPhysicalSize() ;
+                double util = (double)psz/vsz;
+                vrData.setUtilization(df.format(util));
+
+                if (view == ResponseView.Full) {
+                    vrData.setVirtualsize(vsz);
+                    vrData.setPhysicalsize(psz);
+                }
+            }
         }
         return new ArrayList<VolumeResponse>(vrDataList.values());
     }

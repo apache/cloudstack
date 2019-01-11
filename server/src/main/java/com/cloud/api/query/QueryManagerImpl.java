@@ -50,7 +50,6 @@ import org.apache.cloudstack.api.command.admin.storage.ListStorageTagsCmd;
 import org.apache.cloudstack.api.command.admin.template.ListTemplatesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
 import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
-import org.apache.cloudstack.api.command.admin.volume.ListVolumesCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
@@ -1665,7 +1664,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         ListResponse<VolumeResponse> response = new ListResponse<VolumeResponse>();
 
         ResponseView respView = ResponseView.Restricted;
-        if (cmd instanceof ListVolumesCmdByAdmin) {
+        Account account = CallContext.current().getCallingAccount();
+        if (_accountMgr.isAdmin(account.getAccountId())) {
             respView = ResponseView.Full;
         }
 

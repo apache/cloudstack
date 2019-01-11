@@ -553,6 +553,15 @@
     cloudStack.sections.metrics.volumes = {
         title: 'label.metrics',
         listView: {
+            preFilter: function(args) {
+                var hiddenFields = [];
+                if (!isAdmin()) {
+                    hiddenFields.push('physicalsize');
+                    hiddenFields.push('storage');
+                    hiddenFields.push('storagetype');
+                }
+                return hiddenFields;
+            },
             id: 'volumes',
             fields: {
                 name: {
@@ -598,7 +607,7 @@
                 },
                 storage: {
                     label: 'label.metrics.storagepool'
-                },
+                }
             },
             dataProvider: function(args) {
                 var data = {listAll: true};

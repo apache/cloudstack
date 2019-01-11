@@ -862,8 +862,10 @@
         if (groupableColumns) {
             $tr.addClass('groupable-header-columns').addClass('groupable-header');
             $.each(fields, function(key) {
-                if ($.inArray(key, hiddenFields) != -1)
+                if ($.inArray(key, hiddenFields) != -1) {
                     return true;
+                }
+
                 var field = this;
                 if (field.columns) {
                     var colspan = Object.keys(field.columns).length;
