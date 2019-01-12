@@ -674,18 +674,18 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String ipv6Address = requestedIpPair.getIp6Address();
 
         //check whether the nic belongs to user vm.
-        final NicVO nicVO = _nicDao.findById(nicId);
+        NicVO nicVO = _nicDao.findById(nicId);
         if (nicVO == null) {
-            throw new InvalidParameterValueException("There is no nic for the " + nicId);
+            throw new InvalidParameterValueException("There is no NIC with the ID:  " + nicId);
         }
 
         if (nicVO.getVmType() != VirtualMachine.Type.User) {
-            throw new InvalidParameterValueException("The nic is not belongs to user vm");
+            throw new InvalidParameterValueException(String.format("The NIC [%s] does not belong to a user VM", nicVO.getUuid()));
         }
 
         VirtualMachine vm = _userVmDao.findById(nicVO.getInstanceId());
         if (vm == null) {
-            throw new InvalidParameterValueException("There is no vm with the nic");
+            throw new InvalidParameterValueException(String.format("There is no VM with the NIC [%s]", nicVO.getUuid()));
         }
 
         final long networkId = nicVO.getNetworkId();
@@ -711,15 +711,11 @@ public class NetworkServiceImpl extends ManagerBase implements  NetworkService {
         String ip6addr = null;
         //Isolated network can exist in Basic zone only, so no need to verify the zone type
         if (network.getGuestType() == Network.GuestType.Isolated) {
-            try {
-                if (ipv4Address != null) {
-                    ipaddr = _ipAddrMgr.allocateGuestIP(network, ipv4Address);
-                }
-                if (ipv6Address != null) {
-                    ip6addr = ipv6AddrMgr.allocateGuestIpv6(network, ipv6Address);
-                }
-            } catch (InsufficientAddressCapacityException e) {
-                throw new InvalidParameterValueException("Allocating guest ip for nic failed");
+            if ((ipv4Address != null || NetUtils.isIpv4(network.getGateway()) && org.apache.commons.lang3.StringUtils.isBlank(ipv6Address))) {
+                ipaddr = _ipAddrMgr.allocateGuestIP(network, ipv4Address);
+            }
+            if (ipv6Address != null) {
+                ip6addr = ipv6AddrMgr.allocateGuestIpv6(network, ipv6Address);
             }
         } else if (network.getGuestType() == Network.GuestType.Shared) {
             //for basic zone, need to provide the podId to ensure proper ip alloation
