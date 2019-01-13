@@ -1432,7 +1432,8 @@ public class IpAddressManagerImpl extends ManagerBase implements IpAddressManage
                     if (network.getState() == Network.State.Allocated) {
                         //prevent associating an ip address to an allocated (unimplemented network).
                         //it will cause the ip to become source nat, and it can't be disassociated later on.
-                        throw new InvalidParameterValueException("Network is in allocated state, implement network first before acquiring an IP address");
+                        String msg = String.format("Network %s is in allocated and needs to be implemented first before acquiring an IP address", network.getName());
+                        throw new InvalidParameterValueException(msg);
                     }
                     isSourceNat = true;
                 }

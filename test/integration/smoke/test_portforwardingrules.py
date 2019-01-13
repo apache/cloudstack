@@ -229,7 +229,7 @@ class TestPortForwardingRules(cloudstackTestCase):
             "IP Addresses listed for newly created User"
         )
 
-        self.service_offering = ServiceOffering.create(
+        service_offering = ServiceOffering.create(
             self.apiClient,
             self.services["service_offerings"]["tiny"],
         )
@@ -242,10 +242,13 @@ class TestPortForwardingRules(cloudstackTestCase):
             accountid=self.account.name,
             domainid=self.account.domainid,
             networkids=network.id,
-            serviceofferingid=self.service_offering.id
+            serviceofferingid=service_offering.id
         )
 
-        VirtualMachine.delete(vm, self.userapiclient, expunge=False)
+        VirtualMachine.delete(
+            vm,
+            self.userapiclient,
+            expunge=True)
 
         self.cleanup.append(vm)
 
@@ -270,7 +273,7 @@ class TestPortForwardingRules(cloudstackTestCase):
             status[0],
             "IP Addresses Association Failed"
         )
-        # Verifying the length of the list is 1
+        # Verifying the length of the list is 2
         self.assertEqual(
             2,
             len(list_ipaddresses_after),
@@ -303,7 +306,7 @@ class TestPortForwardingRules(cloudstackTestCase):
             status[0],
             "VM Created is not in Running state"
         )
-        # Verifying the length of the list is 1
+        # Verifying the length of the list is 2
         self.assertEqual(
             2,
             len(list_ipaddresses_after),
