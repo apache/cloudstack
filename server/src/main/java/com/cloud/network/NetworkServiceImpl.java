@@ -779,7 +779,7 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
     @Override
     @DB
-    @ActionEvent(eventType = EventTypes.EVENT_NIC_SECONDARY_IP_UNASSIGN, eventDescription = "Removing secondary ip " + "from nic", async = true)
+    @ActionEvent(eventType = EventTypes.EVENT_NIC_SECONDARY_IP_UNASSIGN, eventDescription = "Removing secondary IP from NIC", async = true)
     public boolean releaseSecondaryIpFromNic(long ipAddressId) {
         Account caller = CallContext.current().getCallingAccount();
         boolean success = false;
@@ -1242,8 +1242,9 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         // Regular user can create Guest Isolated Source Nat enabled network only
         if (_accountMgr.isNormalUser(caller.getId()) && (ntwkOff.getTrafficType() != TrafficType.Guest
                 || ntwkOff.getGuestType() != Network.GuestType.Isolated && areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat))) {
-            throw new InvalidParameterValueException("Regular user can create a network only from the network" + " offering having traffic type " + TrafficType.Guest + " and network type "
-                    + Network.GuestType.Isolated + " with a service " + Service.SourceNat.getName() + " enabled");
+            throw new InvalidParameterValueException(
+                    String.format("Regular users can only create a network from network offerings having traffic type [%s] and network type [%s] with a service [%s] enabled.", TrafficType.Guest,
+                            Network.GuestType.Isolated, Service.SourceNat.getName()));
         }
 
         // Don't allow to specify vlan if the caller is not ROOT admin
