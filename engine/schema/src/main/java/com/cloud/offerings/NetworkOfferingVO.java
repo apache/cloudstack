@@ -128,7 +128,7 @@ public class NetworkOfferingVO implements NetworkOffering {
     boolean inline;
 
     @Column(name = "is_persistent")
-    boolean isPersistent;
+    boolean persistent;
 
     @Column(name = "for_vpc")
     boolean forVpc;
@@ -348,7 +348,7 @@ public class NetworkOfferingVO implements NetworkOffering {
         this.elasticLb = false;
         this.inline = false;
         this.specifyIpRanges = specifyIpRanges;
-        this.isPersistent = isPersistent;
+        this.persistent = isPersistent;
         this.publicLb = publicLb;
         this.internalLb = internalLb;
         this.forVpc = isForVpc;
@@ -481,12 +481,12 @@ public class NetworkOfferingVO implements NetworkOffering {
     }
 
     public void setIsPersistent(Boolean isPersistent) {
-        this.isPersistent = isPersistent;
+        this.persistent = isPersistent;
     }
 
     @Override
     public boolean isPersistent() {
-        return isPersistent;
+        return persistent;
     }
 
     @Override
