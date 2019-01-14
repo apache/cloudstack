@@ -67,46 +67,57 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the account to associate with this IP address")
+    @Parameter(name = ApiConstants.ACCOUNT,
+            type = CommandType.STRING,
+            description = "the account to associate with this IP address")
     private String accountName;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
-               type = CommandType.UUID,
-               entityType = DomainResponse.class,
-               description = "the ID of the domain to associate with this IP address")
+            type = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the ID of the domain to associate with this IP address")
     private Long domainId;
 
     @Parameter(name = ApiConstants.ZONE_ID,
-               type = CommandType.UUID,
-               entityType = ZoneResponse.class,
-               description = "the ID of the availability zone you want to acquire an public IP address from")
+            type = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "the ID of the availability zone you want to acquire an public IP address from")
     private Long zoneId;
 
     @Parameter(name = ApiConstants.NETWORK_ID,
-               type = CommandType.UUID,
-               entityType = NetworkResponse.class,
-               description = "The network this IP address should be associated to.")
+            type = CommandType.UUID,
+            entityType = NetworkResponse.class,
+            description = "The network this IP address should be associated to.")
     private Long networkId;
 
-    @Parameter(name = ApiConstants.PROJECT_ID, type = CommandType.UUID, entityType = ProjectResponse.class, description = "Deploy VM for the project")
+    @Parameter(name = ApiConstants.PROJECT_ID,
+            type = CommandType.UUID,
+            entityType = ProjectResponse.class,
+            description = "Deploy VM for the project")
     private Long projectId;
 
-    @Parameter(name = ApiConstants.VPC_ID, type = CommandType.UUID, entityType = VpcResponse.class, description = "the VPC you want the IP address to "
-        + "be associated with")
+    @Parameter(name = ApiConstants.VPC_ID,
+            type = CommandType.UUID,
+            entityType = VpcResponse.class,
+            description = "the VPC you want the IP address to be associated with")
     private Long vpcId;
 
-    @Parameter(name = ApiConstants.IS_PORTABLE, type = BaseCmd.CommandType.BOOLEAN, description = "should be set to true "
-        + "if public IP is required to be transferable across zones, if not specified defaults to false")
+    @Parameter(name = ApiConstants.IS_PORTABLE,
+            type = BaseCmd.CommandType.BOOLEAN,
+            description = "should be set to true if public IP is required to be transferable across zones, if not specified defaults to false")
     private Boolean isPortable;
 
     @Parameter(name = ApiConstants.REGION_ID,
-               type = CommandType.INTEGER,
-               entityType = RegionResponse.class,
-               required = false,
-               description = "region ID from where portable IP is to be associated.")
+            type = CommandType.INTEGER,
+            entityType = RegionResponse.class,
+            required = false,
+            description = "region ID from where portable IP is to be associated.")
     private Integer regionId;
 
-    @Parameter(name = ApiConstants.FOR_DISPLAY, type = CommandType.BOOLEAN, description = "an optional field, whether to the display the IP to the end user or not", since = "4.4", authorized = {RoleType.Admin})
+    @Parameter(name = ApiConstants.FOR_DISPLAY,
+            type = CommandType.BOOLEAN,
+            description = "an optional field, whether to the display the IP to the end user or not", since = "4.4",
+            authorized = {RoleType.Admin})
     private Boolean display;
 
     /////////////////////////////////////////////////////
@@ -178,7 +189,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
             if (networks.size() == 0) {
                 String domain = _domainService.getDomain(getDomainId()).getName();
                 throw new InvalidParameterValueException("Account name=" + getAccountName() + " domain=" + domain + " doesn't have virtual networks in zone=" +
-                    zone.getName());
+                        zone.getName());
             }
 
             if (networks.size() < 1) {
@@ -205,7 +216,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
     @Override
     public boolean isDisplay() {
-        if(display == null)
+        if (display == null)
             return true;
         else
             return display;
@@ -224,7 +235,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
                     return project.getProjectAccountId();
                 } else {
                     throw new PermissionDeniedException("Can't add resources to the project with specified projectId in state=" + project.getState() +
-                        " as it's no longer active");
+                            " as it's no longer active");
                 }
             } else {
                 throw new InvalidParameterValueException("Unable to find project by ID");
@@ -268,7 +279,7 @@ public class AssociateIPAddrCmd extends BaseAsyncCreateCmd {
 
     @Override
     public String getEventDescription() {
-        return  "associating IP to network ID: " + getNetworkId() + " in zone " + getZoneId();
+        return "associating IP to network ID: " + getNetworkId() + " in zone " + getZoneId();
     }
 
     /////////////////////////////////////////////////////

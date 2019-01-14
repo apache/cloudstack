@@ -16,32 +16,20 @@
 # under the License.
 
 # Import Local Modules
-from marvin.codes import (FAILED)
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.codes import PASS
 from marvin.lib.base import (PublicIPAddress,
                              NetworkOffering,
-                             Autoscale,
                              Network,
-                             NetworkServiceProvider,
-                             Template,
                              VirtualMachine,
-                             VPC,
                              VpcOffering,
-                             StaticNATRule,
-                             FireWallRule,
                              NATRule,
-                             Vpn,
-                             VpnUser,
-                             LoadBalancerRule,
                              Account,
-                             ServiceOffering,
-                             PhysicalNetwork,
-                             User)
+                             ServiceOffering)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_test_template)
 from marvin.lib.utils import validateList, cleanup_resources
-from marvin.codes import PASS
 from nose.plugins.attrib import attr
 
 
@@ -214,6 +202,7 @@ class TestPortForwardingRules(cloudstackTestCase):
             networkofferingid=network_offerings_list[0].id,
             zoneid=self.zone.id
         )
+
         self.assertIsNotNone(
             network,
             "Network creation failed"
@@ -245,12 +234,7 @@ class TestPortForwardingRules(cloudstackTestCase):
             serviceofferingid=service_offering.id
         )
 
-        VirtualMachine.delete(
-            vm,
-            self.userapiclient,
-            expunge=True)
-
-        self.cleanup.append(vm)
+        VirtualMachine.delete(vm, self.apiClient, expunge=True)
 
         # Associating an IP Addresses to Network created
         associated_ipaddress = PublicIPAddress.create(
@@ -401,28 +385,28 @@ class TestPortForwardingRules(cloudstackTestCase):
             virtual_machine=vm_created,
             services=self.services["natrulerange"],
             ipaddressid=associated_ipaddress.ipaddress.id,
-            )
+        )
         self.assertIsNotNone(
             portfwd_rule,
             "Failed to create Port Forwarding Rule"
         )
         # update the private port for port forwarding rule
         updatefwd_rule = portfwd_rule.update(self.userapiclient,
-                            portfwd_rule.id,
-                            virtual_machine=vm_created,
-                            services=self.services["updatenatrulerange"],
-                            )
+                                             portfwd_rule.id,
+                                             virtual_machine=vm_created,
+                                             services=self.services["updatenatrulerange"],
+                                             )
 
         # Verifying details of Sticky Policy created
         # Creating expected and actual values dictionaries
         expected_dict = {
             "privateport": str(self.services["updatenatrulerange"]["privateport"]),
             "privateendport": str(self.services["updatenatrulerange"]["privateendport"]),
-            }
+        }
         actual_dict = {
             "privateport": str(updatefwd_rule.privateport),
             "privateendport": str(updatefwd_rule.privateendport),
-            }
+        }
         portfwd_status = self.__verify_values(
             expected_dict,
             actual_dict
