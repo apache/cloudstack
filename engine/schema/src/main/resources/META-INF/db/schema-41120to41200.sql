@@ -46,3 +46,6 @@ INSERT IGNORE INTO `cloud`.`configuration` VALUES ('Storage', 'DEFAULT', 'Storag
 -- add KVM Guest OS mapping for Windows Server 2019
 INSERT IGNORE INTO `cloud`.`guest_os` (id, uuid, category_id, display_name, created) VALUES (276, UUID(), 6, 'Windows Server 2019 (64-bit)', now());
 INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervisor_version, guest_os_name, guest_os_id, created, is_user_defined) VALUES (UUID(), 'KVM', 'default', 'Windows Server 2019', 276, now(), 0);
+
+-- changed fingerprint type to TEXT, it avoids db exception when creating the certificate issue #3123
+ALTER TABLE `cloud`.`sslcerts` MODIFY `fingerprint` TEXT;
