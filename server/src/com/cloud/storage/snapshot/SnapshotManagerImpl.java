@@ -1123,25 +1123,16 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             }
 
             SnapshotInfo snapshotOnPrimary = snapshotStrategy.takeSnapshot(snapshot);
-            boolean backupFlag = BackupSnapshotAfterTakingSnapshot.value() == null ||
+            boolean backupSnapToSecondary = BackupSnapshotAfterTakingSnapshot.value() == null ||
                     BackupSnapshotAfterTakingSnapshot.value();
 
-            if (backupFlag) {
-                if (payload.getAsyncBackup()) {
-                    backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshotOnPrimary, snapshotBackupRetries - 1, snapshotStrategy), 0, TimeUnit.SECONDS);
-                } else {
-                    SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
-                    if (backupedSnapshot != null) {
-                        snapshotStrategy.postSnapshotCreation(snapshotOnPrimary);
-                    }
-                }
+            if (backupSnapToSecondary) {
+                backupSnapshotToSecondary(payload.getAsyncBackup(), snapshotStrategy, snapshotOnPrimary);
             } else {
                 if(s_logger.isDebugEnabled()) {
-                    s_logger.debug("skipping backup of snapshot to secondary due to configuration");
+                    s_logger.debug("skipping backup of snapshot " + snapshotId + " to secondary due to configuration");
                 }
-                if (!snapshotOnPrimary.markBackedUp()) {
-                    throw new CloudRuntimeException("Can't mark snapshot as backed up!");
-                }
+                snapshotOnPrimary.markBackedUp();
             }
 
             try {
@@ -1181,6 +1172,17 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
             throw new CloudRuntimeException("Failed to create snapshot", e);
         }
         return snapshot;
+    }
+
+    protected void backupSnapshotToSecondary(boolean asyncBackup, SnapshotStrategy snapshotStrategy, SnapshotInfo snapshotOnPrimary) {
+        if (asyncBackup) {
+            backupSnapshotExecutor.schedule(new BackupSnapshotTask(snapshotOnPrimary, snapshotBackupRetries - 1, snapshotStrategy), 0, TimeUnit.SECONDS);
+        } else {
+            SnapshotInfo backupedSnapshot = snapshotStrategy.backupSnapshot(snapshotOnPrimary);
+            if (backupedSnapshot != null) {
+                snapshotStrategy.postSnapshotCreation(snapshotOnPrimary);
+            }
+        }
     }
 
     protected class BackupSnapshotTask extends ManagedContextRunnable {

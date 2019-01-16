@@ -150,14 +150,14 @@ public class SnapshotObject implements SnapshotInfo {
     }
 
     @Override
-    public boolean markBackedUp() {
+    public void markBackedUp() throws CloudRuntimeException{
         try {
             processEvent(Event.OperationNotPerformed);
         } catch (NoTransitionException ex) {
             s_logger.error("no transition error: ", ex);
-            return false;
+            throw new CloudRuntimeException("Error marking snapshot backed up: " +
+                    this.snapshot.getId() + " " + ex.getMessage());
         }
-        return true;
     }
 
     @Override
