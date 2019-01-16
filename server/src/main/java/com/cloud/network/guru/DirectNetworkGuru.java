@@ -39,7 +39,6 @@ import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.dao.PhysicalNetworkDao;
 import com.cloud.network.dao.PhysicalNetworkVO;
 import com.cloud.network.IpAddressManager;
-import com.cloud.network.Ipv6AddressManager;
 import com.cloud.network.Network;
 import com.cloud.network.Network.GuestType;
 import com.cloud.network.Network.Service;
@@ -55,9 +54,7 @@ import com.cloud.network.PhysicalNetwork.IsolationMethod;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.NetworkVO;
-import com.cloud.network.dao.UserIpv6AddressDao;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offerings.dao.NetworkOfferingDao;
 import com.cloud.user.Account;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.db.DB;
@@ -93,12 +90,6 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
     NetworkOrchestrationService _networkMgr;
     @Inject
     IPAddressDao _ipAddressDao;
-    @Inject
-    NetworkOfferingDao _networkOfferingDao;
-    @Inject
-    UserIpv6AddressDao _ipv6Dao;
-    @Inject
-    Ipv6AddressManager _ipv6Mgr;
     @Inject
     NicSecondaryIpDao _nicSecondaryIpDao;
     @Inject
@@ -367,9 +358,6 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
             }
         }
 
-        if (nic.getIPv6Address() != null) {
-            _ipv6Mgr.revokeDirectIpv6Address(nic.getNetworkId(), nic.getIPv6Address());
-        }
         nic.deallocate();
     }
 

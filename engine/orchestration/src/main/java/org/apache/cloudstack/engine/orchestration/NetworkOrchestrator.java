@@ -2257,8 +2257,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
-        if (ipv6 && !NetUtils.isValidIp6Cidr(ip6Cidr)) {
-            throw new InvalidParameterValueException("Invalid IPv6 cidr specified");
+        if (ipv6 && NetUtils.getIp6CidrSize(ip6Cidr) != 64) {
+            throw new InvalidParameterValueException("IPv6 subnet should be exactly 64-bits in size");
         }
 
         //TODO(VXLAN): Support VNI specified
