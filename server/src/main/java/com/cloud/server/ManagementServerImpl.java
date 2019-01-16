@@ -3455,6 +3455,8 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final boolean allowUserViewDestroyedVM = (QueryManagerImpl.AllowUserViewDestroyedVM.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
         final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
 
+        final boolean allowUserViewAllDomainAccounts = (QueryManagerImpl.allowUserViewAllDomainAccounts.valueIn(caller.getDomainId()));
+
         // check if region-wide secondary storage is used
         boolean regionSecondaryEnabled = false;
         final List<ImageStoreVO> imgStores = _imgStoreDao.findRegionImageStores();
@@ -3474,6 +3476,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
         capabilities.put("allowUserViewDestroyedVM", allowUserViewDestroyedVM);
         capabilities.put("allowUserExpungeRecoverVM", allowUserExpungeRecoverVM);
+        capabilities.put("allowUserViewAllDomainAccounts", allowUserViewAllDomainAccounts);
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);

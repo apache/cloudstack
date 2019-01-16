@@ -390,6 +390,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
      * com.cloud.api.query.QueryService#searchForUsers(org.apache.cloudstack
      * .api.command.admin.user.ListUsersCmd)
      */
+
+    public static final ConfigKey<Boolean> allowUserViewAllDomainAccounts = new ConfigKey<>("Advanced", Boolean.class,
+            "allow.user.view.all.domain.accounts", "false", "Determines whether users can view all user accounts within the same domain", true, ConfigKey.Scope.Domain);
     @Override
     public ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException {
         Pair<List<UserAccountJoinVO>, Integer> result = searchForUsersInternal(cmd);
@@ -1963,7 +1966,8 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         // if no "id" specified...
         if (accountId == null) {
             // listall only has significance if they are an admin
-            if (listAll && callerIsAdmin) {
+            boolean isDomainListAllAllowed = allowUserViewAllDomainAccounts.valueIn(caller.getDomainId());
+            if ((listAll && callerIsAdmin) || isDomainListAllAllowed) {
                 // if no domain id specified, use caller's domain
                 if (domainId == null) {
                     domainId = caller.getDomainId();
@@ -2009,6 +2013,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         sb.and("needsCleanup", sb.entity().isNeedsCleanup(), SearchCriteria.Op.EQ);
         sb.and("typeNEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
         sb.and("idNEQ", sb.entity().getId(), SearchCriteria.Op.NEQ);
+        sb.and("type2NEQ", sb.entity().getType(), SearchCriteria.Op.NEQ);
 
         if (domainId != null && isRecursive) {
             sb.and("path", sb.entity().getDomainPath(), SearchCriteria.Op.LIKE);
@@ -2018,8 +2023,14 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         // don't return account of type project to the end user
         sc.setParameters("typeNEQ", Account.ACCOUNT_TYPE_PROJECT);
+
         // don't return system account...
         sc.setParameters("idNEQ", Account.ACCOUNT_ID_SYSTEM);
+
+        // do not return account of type domain admin to the end user
+        if (!callerIsAdmin) {
+            sc.setParameters("type2NEQ", Account.ACCOUNT_TYPE_DOMAIN_ADMIN);
+        }
 
         if (keyword != null) {
             SearchCriteria<AccountJoinVO> ssc = _accountJoinDao.createSearchCriteria();
@@ -3714,6 +3725,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {AllowUserViewDestroyedVM};
+        return new ConfigKey<?>[] {AllowUserViewDestroyedVM, allowUserViewAllDomainAccounts};
     }
 }

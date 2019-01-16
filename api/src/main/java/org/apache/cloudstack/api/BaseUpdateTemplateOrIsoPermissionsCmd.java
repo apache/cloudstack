@@ -80,7 +80,6 @@ public abstract class BaseUpdateTemplateOrIsoPermissionsCmd extends BaseCmd {
         if (accountNames != null && projectIds != null) {
             throw new InvalidParameterValueException("Accounts and projectIds can't be specified together");
         }
-
         return accountNames;
     }
 

@@ -1355,5 +1355,20 @@ cloudStack.docs = {
     helpL2UserData: {
         desc: 'Pass user and meta data to VMs (via ConfigDrive)',
         externalLink: ''
-    }
+    },
+
+    // Update Template Permissions Helper
+    helpUpdateTemplateOperation: {
+        desc: 'Select the permission operator. Add is for sharing with user/project and Reset simply removes all the accounts and projects which template has been shared with.'
+    },
+    helpUpdateTemplateAccounts: {
+        desc: 'Choose one or more accounts to share this template. Ctrl+Click to select multiple accounts to share with. Accounts is mutually exclusive with Projects and only one of the 2 can be specified, do not select any projects when sharing templates with accounts.'
+    },
+    helpUpdateTemplateProjectIds: {
+        desc: 'Choose one or more projects to share this template. Ctrl+Click to select multiple projects to share with. Projects is mutually exclusive with Accounts and only one of the 2 can be specified, do not select any accounts when sharing templates with projects.'
+    },
+
+    helpUpdateTemplateAccountList: {
+        desc: 'A comma seperated list of accounts to share the template with. Must be specified with the Add/Remove operation, leave Project ID blank if this is specified.'
+    },
 };
