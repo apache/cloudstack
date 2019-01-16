@@ -16,14 +16,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import cloud_utils
+import argparse
 from subprocess import check_output, CalledProcessError
-from cloudutils.configFileOps import configFileOps
 import logging
 import sys
 import os
 import xml.dom.minidom
-from optparse import OptionParser, OptionGroup, OptParseError, BadOptionError, OptionError, OptionConflictError, OptionValueError
 import re
 import libvirt
 import fcntl
@@ -35,11 +33,6 @@ from netaddr.core import AddrFormatError
 logpath = "/var/run/cloud/"        # FIXME: Logs should reside in /var/log/cloud
 lock_file = "/var/lock/cloudstack_security_group.lock"
 driver = "qemu:///system"
-cfo = configFileOps("/etc/cloudstack/agent/agent.properties")
-hyper = cfo.getEntry("hypervisor.type")
-if hyper == "lxc":
-    driver = "lxc:///"
-
 lock_handle = None
 
 
@@ -61,7 +54,8 @@ def execute(cmd):
     try:
         return check_output(cmd, shell=True)
     except CalledProcessError as e:
-        pass
+        logging.exception('Command exited non-zero: %s', cmd)
+        raise
 
 
 def can_bridge_firewall(privnic):
@@ -87,22 +81,27 @@ def can_bridge_firewall(privnic):
     return True
 
 
+def get_libvirt_connection():
+    conn = libvirt.openReadOnly(driver)
+    if not conn:
+        raise Exception('Failed to open connection to the hypervisor')
+
+    return conn
+
+
 def virshlist(states):
-    libvirt_states={ 'running'  : libvirt.VIR_DOMAIN_RUNNING,
-                     'shutoff'  : libvirt.VIR_DOMAIN_SHUTOFF,
-                     'shutdown' : libvirt.VIR_DOMAIN_SHUTDOWN,
-                     'paused'   : libvirt.VIR_DOMAIN_PAUSED,
-                     'nostate'  : libvirt.VIR_DOMAIN_NOSTATE,
-                     'blocked'  : libvirt.VIR_DOMAIN_BLOCKED,
-                     'crashed'  : libvirt.VIR_DOMAIN_CRASHED,
+    libvirt_states={ 'running': libvirt.VIR_DOMAIN_RUNNING,
+                     'shutoff': libvirt.VIR_DOMAIN_SHUTOFF,
+                     'shutdown': libvirt.VIR_DOMAIN_SHUTDOWN,
+                     'paused': libvirt.VIR_DOMAIN_PAUSED,
+                     'nostate': libvirt.VIR_DOMAIN_NOSTATE,
+                     'blocked': libvirt.VIR_DOMAIN_BLOCKED,
+                     'crashed': libvirt.VIR_DOMAIN_CRASHED,
     }
 
     searchstates = list(libvirt_states[state] for state in states)
 
-    conn = libvirt.openReadOnly(driver)
-    if not conn:
-       print('Failed to open connection to the hypervisor')
-       sys.exit(3)
+    conn = get_libvirt_connection()
 
     alldomains = map(conn.lookupByID, conn.listDomainsID())
     alldomains += map(conn.lookupByName, conn.listDefinedDomains())
@@ -117,47 +116,14 @@ def virshlist(states):
     return domains
 
 
-def virshdomstate(domain):
-    libvirt_states={ libvirt.VIR_DOMAIN_RUNNING  : 'running',
-                     libvirt.VIR_DOMAIN_SHUTOFF  : 'shut off',
-                     libvirt.VIR_DOMAIN_SHUTDOWN : 'shut down',
-                     libvirt.VIR_DOMAIN_PAUSED   : 'paused',
-                     libvirt.VIR_DOMAIN_NOSTATE  : 'no state',
-                     libvirt.VIR_DOMAIN_BLOCKED  : 'blocked',
-                     libvirt.VIR_DOMAIN_CRASHED  : 'crashed',
-    }
-
-    conn = libvirt.openReadOnly(driver)
-    if not conn:
-       print('Failed to open connection to the hypervisor')
-       sys.exit(3)
-
-    try:
-        dom = (conn.lookupByName (domain))
-    except libvirt.libvirtError:
-        return None
-
-    state = libvirt_states[dom.info()[0]]
-    conn.close()
-
-    return state
-
-
 def virshdumpxml(domain):
-    conn = libvirt.openReadOnly(driver)
-    if not conn:
-       print('Failed to open connection to the hypervisor')
-       sys.exit(3)
-
     try:
-        dom = (conn.lookupByName (domain))
+        conn = get_libvirt_connection()
+        dom = conn.lookupByName(domain)
+        conn.close()
+        return dom.XMLDesc(0)
     except libvirt.libvirtError:
         return None
-
-    xml = dom.XMLDesc(0)
-    conn.close()
-
-    return xml
 
 
 def ipv6_link_local_addr(mac=None):
@@ -180,6 +146,11 @@ def split_ips_by_family(ips):
         elif version == 6:
             ip6s.append(ip)
     return ip4s, ip6s
+
+
+def get_bridge_physdev(brname):
+    physdev = execute("bridge -o link show | awk '/master %s / && !/^[0-9]+: vnet/ {print $2}'" % brname)
+    return physdev.strip()
 
 
 def destroy_network_rules_for_vm(vm_name, vif=None):
@@ -229,14 +200,14 @@ def destroy_network_rules_for_vm(vm_name, vif=None):
     remove_rule_log_for_vm(vm_name)
     remove_secip_log_for_vm(vm_name)
 
-    if 1 in [ vm_name.startswith(c) for c in ['r-', 's-', 'v-'] ]:
+    if 1 in [vm_name.startswith(c) for c in ['r-', 's-', 'v-']]:
         return True
 
     return True
 
 
 def destroy_ebtables_rules(vm_name, vif):
-    eb_vm_chain=ebtables_chain_name(vm_name)
+    eb_vm_chain = ebtables_chain_name(vm_name)
     delcmd = "ebtables -t nat -L PREROUTING | grep " + eb_vm_chain
     delcmds = []
     try:
@@ -319,8 +290,8 @@ def default_ebtables_rules(vm_name, vm_ip, vm_mac, vif):
 
 
 def default_network_rules_systemvm(vm_name, localbrname):
-    bridges = getBridges(vm_name)
-    domid = getvmId(vm_name)
+    bridges = get_bridges(vm_name)
+    domid = get_vm_id(vm_name)
     vmchain = iptables_chain_name(vm_name)
 
     delete_rules_for_vm_in_bridge_firewall_chain(vm_name)
@@ -332,10 +303,10 @@ def default_network_rules_systemvm(vm_name, localbrname):
 
     for bridge in bridges:
         if bridge != localbrname:
-            if not addFWFramework(bridge):
+            if not add_fw_framework(bridge):
                 return False
-            brfw = getBrfw(bridge)
-            vifs = getVifsForBridge(vm_name, bridge)
+            brfw = get_br_fw(bridge)
+            vifs = get_vifs_for_bridge(vm_name, bridge)
             for vif in vifs:
                 try:
                     execute("iptables -A " + brfw + "-OUT" + " -m physdev --physdev-is-bridged --physdev-out " + vif + " -j " + vmchain)
@@ -417,8 +388,6 @@ def network_rules_vmSecondaryIp(vm_name, ip_secondary, action):
     logging.debug("vmName = "+ vm_name)
     logging.debug("action = "+ action)
 
-    domid = getvmId(vm_name)
-
     vmchain = vm_name
     vmchain6 = vmchain + '-6'
 
@@ -455,12 +424,12 @@ def ebtables_rules_vmip (vmname, ips, action):
 
 
 def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, sec_ips):
-    if not addFWFramework(brname):
+    if not add_fw_framework(brname):
         return False
 
     vmName = vm_name
-    brfw = getBrfw(brname)
-    domID = getvmId(vm_name)
+    brfw = get_br_fw(brname)
+    domID = get_vm_id(vm_name)
     delete_rules_for_vm_in_bridge_firewall_chain(vmName)
     vmchain = iptables_chain_name(vm_name)
     vmchain_egress = egress_chain_name(vm_name)
@@ -486,13 +455,13 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
 
     #create ipset and add vm ips to that ip set
     if not create_ipset_forvm(vmipsetName):
-       logging.debug(" failed to create ipset for rule " + str(tokens))
-       return False
+        logging.debug("failed to create ipset for rule %s", vmipsetName)
+        return False
 
     #add primary nic ip to ipset
     if not add_to_ipset(vmipsetName, [vm_ip], action ):
-       logging.debug(" failed to add vm " + vm_ip + " ip to set ")
-       return False
+        logging.debug("failed to add vm " + vm_ip + " ip to set ")
+        return False
 
     #add secodnary nic ips to ipset
     secIpSet = "1"
@@ -510,7 +479,7 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
 
         add_to_ipset(vmipsetName, ip4s, action)
 
-        if write_secip_log_for_vm(vm_name, sec_ips, vm_id) == False:
+        if not write_secip_log_for_vm(vm_name, sec_ips, vm_id):
             logging.debug("Failed to log default network rules, ignoring")
 
     try:
@@ -523,10 +492,10 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
 
         #don't let vm spoof its ip address
         if vm_ip:
-            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set ! --set " + vmipsetName + " src -j DROP")
-            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --set " + vmipsetName + " src -p udp --dport 53  -j RETURN ")
-            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --set " + vmipsetName + " src -p tcp --dport 53  -j RETURN ")
-            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --set " + vmipsetName + " src -j " + vmchain_egress)
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set ! --match-set " + vmipsetName + " src -j DROP")
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --match-set " + vmipsetName + " src -p udp --dport 53  -j RETURN ")
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --match-set " + vmipsetName + " src -p tcp --dport 53  -j RETURN ")
+            execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-in " + vif + " -m set --match-set " + vmipsetName + " src -j " + vmchain_egress)
         execute("iptables -A " + vmchain_default + " -m physdev --physdev-is-bridged --physdev-out " + vif + " -j " + vmchain)
         execute("iptables -A " + vmchain + " -j DROP")
     except:
@@ -542,8 +511,8 @@ def default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vm_mac, vif, brname, se
             logging.debug("Failed to log default network rules, ignoring")
 
     if not create_ipset_forvm(vmipsetName6, family='inet6', type='hash:net'):
-       logging.debug(" failed to create ivp6 ipset for rule " + str(tokens))
-       return False
+        logging.debug(" failed to create ivp6 ipset for rule " + str(tokens))
+        return False
 
     vm_ip6_addr = [ipv6_link_local]
     try:
@@ -622,7 +591,7 @@ def post_default_network_rules(vm_name, vm_id, vm_ip, vm_mac, vif, brname, dhcpS
     iptables_vmchain=iptables_chain_name(vm_name)
     vmchain_in = iptables_vmchain + "-in"
     vmchain_out = iptables_vmchain + "-out"
-    domID = getvmId(vm_name)
+    domID = get_vm_id(vm_name)
     try:
         execute("iptables -I " + vmchain_default + " 4 -m physdev --physdev-is-bridged --physdev-in " + vif + " --source " + vm_ip + " -j ACCEPT")
     except:
@@ -705,7 +674,7 @@ def get_rule_log_for_vm(vmName):
 
 
 def check_domid_changed(vmName):
-    curr_domid = getvmId(vmName)
+    curr_domid = get_vm_id(vmName)
     if (curr_domid is None) or (not curr_domid.isdigit()):
         curr_domid = '-1'
 
@@ -754,13 +723,13 @@ def network_rules_for_rebooted_vm(vmName):
     vmchain = iptables_chain_name(vm_name)
     vmchain_default = '-'.join(vmchain.split('-')[:-1]) + "-def"
 
-    vifs = getVifs(vmName)
+    vifs = get_vifs(vmName)
     logging.debug(vifs, brName)
     for v in vifs:
-        execute("iptables -A " + getBrfw(brName) + "-IN " + " -m physdev --physdev-is-bridged --physdev-in " + v + " -j "+ vmchain_default)
-        execute("iptables -A " + getBrfw(brName) + "-OUT " + " -m physdev --physdev-is-bridged --physdev-out " + v + " -j "+ vmchain_default)
-        execute("ip6tables -A " + getBrfw(brName) + "-IN " + " -m physdev --physdev-is-bridged --physdev-in " + v + " -j " + vmchain_default)
-        execute("ip6tables -A " + getBrfw(brName) + "-OUT " + " -m physdev --physdev-is-bridged --physdev-out " + v + " -j " + vmchain_default)
+        execute("iptables -A " + get_br_fw(brName) + "-IN " + " -m physdev --physdev-is-bridged --physdev-in " + v + " -j " + vmchain_default)
+        execute("iptables -A " + get_br_fw(brName) + "-OUT " + " -m physdev --physdev-is-bridged --physdev-out " + v + " -j " + vmchain_default)
+        execute("ip6tables -A " + get_br_fw(brName) + "-IN " + " -m physdev --physdev-is-bridged --physdev-in " + v + " -j " + vmchain_default)
+        execute("ip6tables -A " + get_br_fw(brName) + "-OUT " + " -m physdev --physdev-is-bridged --physdev-out " + v + " -j " + vmchain_default)
 
     #change antispoof rule in vmchain
     try:
@@ -787,14 +756,14 @@ def network_rules_for_rebooted_vm(vmName):
 
 
 def get_rule_logs_for_vms():
-    state=['running']
+    state = ['running']
     vms = virshlist(state)
 
     result = []
     try:
         for name in vms:
             name = name.rstrip()
-            if 1 not in [ name.startswith(c) for c in ['r-', 's-', 'v-', 'i-'] ]:
+            if 1 not in [name.startswith(c) for c in ['r-', 's-', 'v-', 'i-'] ]:
                 continue
             network_rules_for_rebooted_vm(name)
             if name.startswith('i-'):
@@ -811,7 +780,7 @@ def cleanup_rules_for_dead_vms():
 
 
 def cleanup_bridge(bridge):
-    bridge_name = getBrfw(bridge)
+    bridge_name = get_br_fw(bridge)
     logging.debug("Cleaning old bridge chains: " + bridge_name)
     if not bridge_name:
         return True
@@ -840,7 +809,7 @@ def cleanup_bridge(bridge):
 
 def cleanup_rules():
     try:
-        states=['running','paused']
+        states = ['running', 'paused']
         vmsInHost = virshlist(states)
 
         logging.debug(" Vms on the host : %s ", vmsInHost)
@@ -854,11 +823,11 @@ def cleanup_rules():
         for chain in chains:
             if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
                 vm_name = chain
-                vmpresent=False
+                vmpresent = False
 
                 for vm in vmsInHost:
                     if vm_name  in vm:
-                        vmpresent=True
+                        vmpresent = True
                         break
 
                 if vmpresent is False:
@@ -873,12 +842,12 @@ def cleanup_rules():
         logging.debug(" ebtables chains in the host: %s ", chains)
 
         for chain in filter(None, chains):
-            if 1 in [ chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-'] ]:
+            if 1 in [chain.startswith(c) for c in ['r-', 'i-', 's-', 'v-']]:
                 vm_name = chain
-                vmpresent=False
+                vmpresent = False
                 for vm in vmsInHost:
                     if vm_name  in vm:
-                        vmpresent=True
+                        vmpresent = True
                         break
 
                 if vmpresent is False:
@@ -980,144 +949,144 @@ def egress_chain_name(vm_name):
 
 
 def parse_network_rules(rules):
-  ret = []
+    ret = []
 
-  if rules is None or len(rules) == 0:
+    if rules is None or len(rules) == 0:
+        return ret
+
+    lines = rules.split('NEXT;')[:-1]
+    for line in lines:
+        tokens = line.split(';', 3)
+        if len(tokens) != 4:
+            continue
+
+        ruletype, protocol = tokens[0].split(':')
+        start = int(tokens[1])
+        end = int(tokens[2])
+        cidrs = tokens.pop()
+
+        ipv4 = []
+        ipv6 = []
+        for ip in cidrs.split(","):
+            try:
+                network = IPNetwork(ip)
+                if network.version == 4:
+                    ipv4.append(ip)
+                else:
+                    ipv6.append(ip)
+            except:
+                pass
+
+        ret.append({'ipv4': ipv4, 'ipv6': ipv6, 'ruletype': ruletype,
+                    'start': start, 'end': end, 'protocol': protocol})
+
     return ret
-
-  lines = rules.split('NEXT;')[:-1]
-  for line in lines:
-    tokens = line.split(';', 3)
-    if len(tokens) != 4:
-      continue
-
-    ruletype, protocol = tokens[0].split(':')
-    start = int(tokens[1])
-    end = int(tokens[2])
-    cidrs = tokens.pop()
-
-    ipv4 = []
-    ipv6 = []
-    for ip in cidrs.split(","):
-        try:
-            network = IPNetwork(ip)
-            if network.version == 4:
-                ipv4.append(ip)
-            else:
-                ipv6.append(ip)
-        except:
-            pass
-
-    ret.append({'ipv4': ipv4, 'ipv6': ipv6, 'ruletype': ruletype,
-                'start': start, 'end': end, 'protocol': protocol})
-
-  return ret
 
 
 def add_network_rules(vm_name, vm_id, vm_ip, vm_ip6, signature, seqno, vmMac, rules, vif, brname, sec_ips):
-  try:
-    vmName = vm_name
-    domId = getvmId(vmName)
-
-    changes = check_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno)
-
-    if not 1 in changes:
-        logging.debug("Rules already programmed for vm " + vm_name)
-        return True
-
-    if changes[0] or changes[1] or changes[2] or changes[3]:
-        default_network_rules(vmName, vm_id, vm_ip, vm_ip6, vmMac, vif, brname, sec_ips)
-
-    logging.debug("    programming network rules for IP: " + vm_ip + " vmname=" + vm_name)
-
-    egress_chain_name(vm_name)
-    vmchain = iptables_chain_name(vm_name)
-    egress_vmchain = egress_chain_name(vm_name)
-
     try:
-      for chain in [vmchain, egress_vmchain]:
-          execute('iptables -F ' + chain)
-          execute('ip6tables -F ' + chain)
-    except:
-      logging.debug("Error flushing iptables rules for " + vm_name + ". Presuming firewall rules deleted, re-initializing." )
-      default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vmMac, vif, brname, sec_ips)
+        vmName = vm_name
+        domId = get_vm_id(vmName)
 
-    egressrule_v4 = 0
-    egressrule_v6 = 0
+        changes = check_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno)
 
-    for rule in parse_network_rules(rules):
-        start = rule['start']
-        end = rule['end']
-        protocol = rule['protocol']
+        if not 1 in changes:
+            logging.debug("Rules already programmed for vm " + vm_name)
+            return True
 
-        if rule['ruletype'] == 'E':
-            vmchain = egress_vmchain
-            direction = "-d"
-            action = "RETURN"
-            if rule['ipv4']:
-                egressrule_v4 =+ 1
+        if changes[0] or changes[1] or changes[2] or changes[3]:
+            default_network_rules(vmName, vm_id, vm_ip, vm_ip6, vmMac, vif, brname, sec_ips)
 
-            if rule['ipv6']:
-                egressrule_v6 +=1
+        logging.debug("programming network rules for IP: " + vm_ip + " vmname=%s", vm_name)
 
-        else:
-            vmchain = vm_name
-            action = "ACCEPT"
-            direction = "-s"
+        egress_chain_name(vm_name)
+        vmchain = iptables_chain_name(vm_name)
+        egress_vmchain = egress_chain_name(vm_name)
 
-        range = str(start) + ':' + str(end)
-        if 'icmp' == protocol:
-            range = str(start) + '/' + str(end)
-            if start == -1:
-                range = 'any'
+        try:
+            for chain in [vmchain, egress_vmchain]:
+                execute('iptables -F ' + chain)
+                execute('ip6tables -F ' + chain)
+        except:
+            logging.debug("Error flushing iptables rules for " + vm_name + ". Presuming firewall rules deleted, re-initializing." )
+            default_network_rules(vm_name, vm_id, vm_ip, vm_ip6, vmMac, vif, brname, sec_ips)
 
-        for ip in rule['ipv4']:
-            if protocol == 'all':
-                execute('iptables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
-            elif protocol != 'icmp':
-                execute('iptables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+        egressrule_v4 = 0
+        egressrule_v6 = 0
+
+        for rule in parse_network_rules(rules):
+            start = rule['start']
+            end = rule['end']
+            protocol = rule['protocol']
+
+            if rule['ruletype'] == 'E':
+                vmchain = egress_vmchain
+                direction = "-d"
+                action = "RETURN"
+                if rule['ipv4']:
+                    egressrule_v4 =+ 1
+
+                if rule['ipv6']:
+                    egressrule_v6 +=1
+
             else:
-                execute('iptables -I ' + vmchain + ' -p icmp --icmp-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
+                vmchain = vm_name
+                action = "ACCEPT"
+                direction = "-s"
 
-        for ip in rule['ipv6']:
-            if protocol == 'all':
-                execute('ip6tables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
-            elif 'icmp' != protocol:
-                execute('ip6tables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
-            else:
-                # ip6tables does not allow '--icmpv6-type any', allowing all ICMPv6 is done by not allowing a specific type
-                if range == 'any':
-                    execute('ip6tables -I ' + vmchain + ' -p icmpv6 ' + direction + ' ' + ip + ' -j ' + action)
+            range = str(start) + ':' + str(end)
+            if 'icmp' == protocol:
+                range = str(start) + '/' + str(end)
+                if start == -1:
+                    range = 'any'
+
+            for ip in rule['ipv4']:
+                if protocol == 'all':
+                    execute('iptables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+                elif protocol != 'icmp':
+                    execute('iptables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
                 else:
-                    execute('ip6tables -I ' + vmchain + ' -p icmpv6 --icmpv6-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
+                    execute('iptables -I ' + vmchain + ' -p icmp --icmp-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
 
-    egress_vmchain = egress_chain_name(vm_name)
-    if egressrule_v4 == 0 :
-        execute('iptables -A ' + egress_vmchain + ' -j RETURN')
-    else:
-        execute('iptables -A ' + egress_vmchain + ' -j DROP')
+            for ip in rule['ipv6']:
+                if protocol == 'all':
+                    execute('ip6tables -I ' + vmchain + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+                elif 'icmp' != protocol:
+                    execute('ip6tables -I ' + vmchain + ' -p ' + protocol + ' -m ' + protocol + ' --dport ' + range + ' -m state --state NEW ' + direction + ' ' + ip + ' -j ' + action)
+                else:
+                    # ip6tables does not allow '--icmpv6-type any', allowing all ICMPv6 is done by not allowing a specific type
+                    if range == 'any':
+                        execute('ip6tables -I ' + vmchain + ' -p icmpv6 ' + direction + ' ' + ip + ' -j ' + action)
+                    else:
+                        execute('ip6tables -I ' + vmchain + ' -p icmpv6 --icmpv6-type ' + range + ' ' + direction + ' ' + ip + ' -j ' + action)
 
-    if egressrule_v6 == 0 :
-        execute('ip6tables -A ' + egress_vmchain + ' -j RETURN')
-    else:
-        execute('ip6tables -A ' + egress_vmchain + ' -j DROP')
+        egress_vmchain = egress_chain_name(vm_name)
+        if egressrule_v4 == 0 :
+            execute('iptables -A ' + egress_vmchain + ' -j RETURN')
+        else:
+            execute('iptables -A ' + egress_vmchain + ' -j DROP')
 
-    vmchain = iptables_chain_name(vm_name)
+        if egressrule_v6 == 0 :
+            execute('ip6tables -A ' + egress_vmchain + ' -j RETURN')
+        else:
+            execute('ip6tables -A ' + egress_vmchain + ' -j DROP')
 
-    execute('iptables -A ' + vmchain + ' -j DROP')
-    execute('ip6tables -A ' + vmchain + ' -j DROP')
+        vmchain = iptables_chain_name(vm_name)
 
-    if not write_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno):
-        return False
+        execute('iptables -A ' + vmchain + ' -j DROP')
+        execute('ip6tables -A ' + vmchain + ' -j DROP')
 
-    return True
-  except:
-    logging.exception("Failed to network rule !")
+        if not write_rule_log_for_vm(vmName, vm_id, vm_ip, domId, signature, seqno):
+            return False
+
+        return True
+    except:
+        logging.exception("Failed to network rule !")
 
 
-def getVifs(vmName):
+def get_vifs(vm_name):
     vifs = []
-    xmlfile = virshdumpxml(vmName)
+    xmlfile = virshdumpxml(vm_name)
     if not xmlfile:
         return vifs
 
@@ -1129,9 +1098,9 @@ def getVifs(vmName):
     return vifs
 
 
-def getVifsForBridge(vmName, brname):
+def get_vifs_for_bridge(vm_name, brname):
     vifs = []
-    xmlfile = virshdumpxml(vmName)
+    xmlfile = virshdumpxml(vm_name)
     if not xmlfile:
         return vifs
 
@@ -1146,9 +1115,9 @@ def getVifsForBridge(vmName, brname):
     return list(set(vifs))
 
 
-def getBridges(vmName):
+def get_bridges(vm_name):
     bridges = []
-    xmlfile = virshdumpxml(vmName)
+    xmlfile = virshdumpxml(vm_name)
     if not xmlfile:
         return bridges
 
@@ -1160,15 +1129,10 @@ def getBridges(vmName):
     return list(set(bridges))
 
 
-def getvmId(vmName):
-
-    conn = libvirt.openReadOnly(driver)
-    if not conn:
-       print('Failed to open connection to the hypervisor')
-       sys.exit(3)
-
+def get_vm_id(vm_name):
+    conn = get_libvirt_connection()
     try:
-        dom = (conn.lookupByName (vmName))
+        dom = (conn.lookupByName (vm_name))
     except libvirt.libvirtError:
         return None
 
@@ -1180,7 +1144,7 @@ def getvmId(vmName):
     return res
 
 
-def getBrfw(brname):
+def get_br_fw(brname):
     cmd = "iptables-save |grep physdev-is-bridged |grep FORWARD |grep BF |grep '\-o' | grep -w " + brname  + "|awk '{print $9}' | head -1"
     brfwname = execute(cmd).strip()
     if not brfwname:
@@ -1188,7 +1152,7 @@ def getBrfw(brname):
     return brfwname
 
 
-def addFWFramework(brname):
+def add_fw_framework(brname):
     try:
         execute("sysctl -w net.bridge.bridge-nf-call-arptables=1")
         execute("sysctl -w net.bridge.bridge-nf-call-iptables=1")
@@ -1196,7 +1160,7 @@ def addFWFramework(brname):
     except:
         logging.warn("failed to turn on bridge netfilter")
 
-    brfw = getBrfw(brname)
+    brfw = get_br_fw(brname)
     try:
         execute("iptables -L " + brfw)
     except:
@@ -1231,6 +1195,8 @@ def addFWFramework(brname):
     except:
         execute('ip6tables -N ' + brfwin)
 
+    physdev = get_bridge_physdev(brname)
+
     try:
         refs = int(execute("""iptables -n -L %s | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip())
         refs6 = int(execute("""ip6tables -n -L %s | awk '/%s(.*)references/ {gsub(/\(/, "") ;print $3}'""" % (brfw,brfw)).strip())
@@ -1240,22 +1206,20 @@ def addFWFramework(brname):
             execute("iptables -I FORWARD -o " + brname + " -j DROP")
             execute("iptables -I FORWARD -i " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
             execute("iptables -I FORWARD -o " + brname + " -m physdev --physdev-is-bridged -j " + brfw)
-            phydev = execute("brctl show | awk '/^%s[ \t]/ {print $4}'" % brname ).strip()
             execute("iptables -A " + brfw + " -m state --state RELATED,ESTABLISHED -j ACCEPT")
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-in -j " + brfwin)
             execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-is-out -j " + brfwout)
-            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + phydev + " -j ACCEPT")
+            execute("iptables -A " + brfw + " -m physdev --physdev-is-bridged --physdev-out " + physdev + " -j ACCEPT")
 
         if refs6 == 0:
             execute('ip6tables -I FORWARD -i ' + brname + ' -j DROP')
             execute('ip6tables -I FORWARD -o ' + brname + ' -j DROP')
             execute('ip6tables -I FORWARD -i ' + brname + ' -m physdev --physdev-is-bridged -j ' + brfw)
             execute('ip6tables -I FORWARD -o ' + brname + ' -m physdev --physdev-is-bridged -j ' + brfw)
-            phydev = execute("brctl show | awk '/^%s[ \t]/ {print $4}'" % brname ).strip()
             execute('ip6tables -A ' + brfw + ' -m state --state RELATED,ESTABLISHED -j ACCEPT')
             execute('ip6tables -A ' + brfw + ' -m physdev --physdev-is-bridged --physdev-is-in -j ' + brfwin)
             execute('ip6tables -A ' + brfw + ' -m physdev --physdev-is-bridged --physdev-is-out -j ' + brfwout)
-            execute('ip6tables -A ' + brfw + ' -m physdev --physdev-is-bridged --physdev-out ' + phydev + ' -j ACCEPT')
+            execute('ip6tables -A ' + brfw + ' -m physdev --physdev-is-bridged --physdev-out ' + physdev + ' -j ACCEPT')
 
         return True
     except:
@@ -1269,29 +1233,28 @@ def addFWFramework(brname):
 
 if __name__ == '__main__':
     logging.basicConfig(filename="/var/log/cloudstack/agent/security_group.log", format="%(asctime)s - %(message)s", level=logging.DEBUG)
-    parser = OptionParser()
-    parser.add_option("--vmname", dest="vmName")
-    parser.add_option("--vmip", dest="vmIP")
-    parser.add_option("--vmip6", dest="vmIP6")
-    parser.add_option("--vmid", dest="vmID")
-    parser.add_option("--vmmac", dest="vmMAC")
-    parser.add_option("--vif", dest="vif")
-    parser.add_option("--sig", dest="sig")
-    parser.add_option("--seq", dest="seq")
-    parser.add_option("--rules", dest="rules")
-    parser.add_option("--brname", dest="brname")
-    parser.add_option("--localbrname", dest="localbrname")
-    parser.add_option("--dhcpSvr", dest="dhcpSvr")
-    parser.add_option("--hostIp", dest="hostIp")
-    parser.add_option("--hostMacAddr", dest="hostMacAddr")
-    parser.add_option("--nicsecips", dest="nicSecIps")
-    parser.add_option("--action", dest="action")
-    (option, args) = parser.parse_args()
-    if len(args) == 0:
-        logging.debug("No command to execute")
-        sys.exit(1)
-    cmd = args[0]
-    logging.debug("Executing command: " + str(cmd))
+    parser = argparse.ArgumentParser(description='Apache CloudStack Security Groups')
+    parser.add_argument("command")
+    parser.add_argument("--vmname", dest="vmName")
+    parser.add_argument("--vmip", dest="vmIP")
+    parser.add_argument("--vmip6", dest="vmIP6")
+    parser.add_argument("--vmid", dest="vmID")
+    parser.add_argument("--vmmac", dest="vmMAC")
+    parser.add_argument("--vif", dest="vif")
+    parser.add_argument("--sig", dest="sig")
+    parser.add_argument("--seq", dest="seq")
+    parser.add_argument("--rules", dest="rules")
+    parser.add_argument("--brname", dest="brname")
+    parser.add_argument("--localbrname", dest="localbrname")
+    parser.add_argument("--dhcpSvr", dest="dhcpSvr")
+    parser.add_argument("--hostIp", dest="hostIp")
+    parser.add_argument("--hostMacAddr", dest="hostMacAddr")
+    parser.add_argument("--nicsecips", dest="nicSecIps")
+    parser.add_argument("--action", dest="action")
+    parser.add_argument("--privnic", dest="privnic")
+    args = parser.parse_args()
+    cmd = args.command
+    logging.debug("Executing command: %s", cmd)
 
     for i in range(0, 30):
         if obtain_file_lock(lock_file) is False:
@@ -1301,23 +1264,23 @@ if __name__ == '__main__':
             break
 
     if cmd == "can_bridge_firewall":
-        can_bridge_firewall(args[1])
+        can_bridge_firewall(args.privnic)
     elif cmd == "default_network_rules":
-        default_network_rules(option.vmName, option.vmID, option.vmIP, option.vmIP6, option.vmMAC, option.vif, option.brname, option.nicSecIps)
+        default_network_rules(args.vmName, args.vmID, args.vmIP, args.vmIP6, args.vmMAC, args.vif, args.brname, args.nicSecIps)
     elif cmd == "destroy_network_rules_for_vm":
-        destroy_network_rules_for_vm(option.vmName, option.vif)
+        destroy_network_rules_for_vm(args.vmName, args.vif)
     elif cmd == "default_network_rules_systemvm":
-        default_network_rules_systemvm(option.vmName, option.localbrname)
+        default_network_rules_systemvm(args.vmName, args.localbrname)
     elif cmd == "get_rule_logs_for_vms":
         get_rule_logs_for_vms()
     elif cmd == "add_network_rules":
-        add_network_rules(option.vmName, option.vmID, option.vmIP, option.vmIP6, option.sig, option.seq, option.vmMAC, option.rules, option.vif, option.brname, option.nicSecIps)
+        add_network_rules(args.vmName, args.vmID, args.vmIP, args.vmIP6, args.sig, args.seq, args.vmMAC, args.rules, args.vif, args.brname, args.nicSecIps)
     elif cmd == "network_rules_vmSecondaryIp":
-        network_rules_vmSecondaryIp(option.vmName, option.nicSecIps, option.action)
+        network_rules_vmSecondaryIp(args.vmName, args.nicSecIps, args.action)
     elif cmd == "cleanup_rules":
         cleanup_rules()
     elif cmd == "post_default_network_rules":
-        post_default_network_rules(option.vmName, option.vmID, option.vmIP, option.vmMAC, option.vif, option.brname, option.dhcpSvr, option.hostIp, option.hostMacAddr)
+        post_default_network_rules(args.vmName, args.vmID, args.vmIP, args.vmMAC, args.vif, args.brname, args.dhcpSvr, args.hostIp, args.hostMacAddr)
     else:
         logging.debug("Unknown command: " + cmd)
         sys.exit(1)
