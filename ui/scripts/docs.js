@@ -1338,29 +1338,38 @@ cloudStack.docs = {
         desc: 'Pass user and meta data to VMs (via ConfigDrive)',
         externalLink: ''
     },
-
     helpComputeOfferingMinCPUCores: {
         desc: 'This will be used for the setting the range (min-max) of the number of cpu cores that should be allowed for VMs using this custom offering.',
         externalLink: ''
     },
-
     helpComputeOfferingMaxCPUCores: {
         desc: 'This will be used for the setting the range (min-max) of the number of cpu cores that should be allowed for VMs using this custom offering.',
         externalLink: ''
     },
-
     helpComputeOfferingMinMemory: {
         desc: 'This will be used for the setting the range (min-max) amount of memory that should be allowed for VMs using this custom offering.',
         externalLink: ''
     },
-
     helpComputeOfferingMaxMemory: {
         desc: 'This will be used for the setting the range (min-max) amount of memory that should be allowed for VMs using this custom offering.',
         externalLink: ''
     },
-
     helpComputeOfferingType: {
         desc: 'This will be used for setting the type of compute offering - whether it is fixed, custom constrained or custom unconstrained.',
         externalLink: ''
+    },
+
+    // Update Template Permissions Helper
+    helpUpdateTemplateOperation: {
+        desc: 'Select the permission operator. Add is for sharing with user/project and Reset simply removes all the accounts and projects which template has been shared with.'
+    },
+    helpUpdateTemplateAccounts: {
+        desc: 'Choose one or more accounts to share this template. Ctrl+Click to select multiple accounts to share with. Accounts is mutually exclusive with Projects and only one of the 2 can be specified, do not select any projects when sharing templates with accounts.'
+    },
+    helpUpdateTemplateProjectIds: {
+        desc: 'Choose one or more projects to share this template. Ctrl+Click to select multiple projects to share with. Projects is mutually exclusive with Accounts and only one of the 2 can be specified, do not select any accounts when sharing templates with projects.'
+    },
+    helpUpdateTemplateAccountList: {
+        desc: 'A comma seperated list of accounts to share the template with. Must be specified with the Add/Remove operation, leave Project ID blank if this is specified.'
     }
 };
