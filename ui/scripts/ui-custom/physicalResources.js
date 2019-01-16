@@ -71,7 +71,7 @@
             return $dashboard
                 .click(function(event) {
                     var $target = $(event.target);
-                    if ($target.closest('[view-all-target]').size()) {
+                    if ($target.closest('[view-all-target]').length) {
                         var targetID = $target.closest('[view-all-target]').attr('view-all-target');
                         args.$browser.cloudBrowser('addPanel', {
                             title: $target.closest('[view-all-title]').attr('view-all-title'),

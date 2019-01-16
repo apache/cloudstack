@@ -761,7 +761,7 @@ var addGuestNetworkDialog = {
                 } else { //domain-specific
                     array1.push("&acltype=domain");
 
-                    if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').size())
+                    if ($form.find('.form-item[rel=subdomainaccess]:visible input:checked').length)
                         array1.push("&subdomainaccess=true");
                     else
                         array1.push("&subdomainaccess=false");

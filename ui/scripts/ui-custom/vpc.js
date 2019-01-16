@@ -409,7 +409,7 @@
 
             // Title shows tier details
             $title.click(function() {
-                if ($browser && $browser.size()) { // Fix null exception, if add tier returns error
+                if ($browser && $browser.length) { // Fix null exception, if add tier returns error
                     $browser.cloudBrowser('addPanel', {
                         title: name,
                         maximizeIfSelected: true,
@@ -545,7 +545,7 @@
             );
 
             var showAddTierDialog = function() {
-                if ($(this).find('.loading-overlay').size()) {
+                if ($(this).find('.loading-overlay').length) {
                     return false;
                 }
 
