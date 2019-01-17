@@ -3309,7 +3309,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 usageRecResponse.setVirtualMachineId(vm.getUuid());
             }
         }
-        usageRecResponse.setVmName(usageRecord.getVmName());
+        usageRecResponse.setResourceName(usageRecord.getVmName());
         if (usageRecord.getTemplateId() != null) {
             VMTemplateVO template = ApiDBUtils.findTemplateById(usageRecord.getTemplateId());
             if (template != null) {
@@ -3389,6 +3389,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                     resourceType = ResourceObjectType.Network;
                     resourceId = network.getId();
                     usageRecResponse.setNetworkId(network.getUuid());
+                    usageRecResponse.setResourceName(network.getName());
                 }
             }
         } else if (usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_READ || usageRecord.getUsageType() == UsageTypes.VM_DISK_IO_WRITE
@@ -3495,7 +3496,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             resourceType = ResourceObjectType.UserVm;
             if (vm != null) {
                 resourceId = vm.getId();
-                usageRecResponse.setVmName(vm.getInstanceName());
+                usageRecResponse.setResourceName(vm.getInstanceName());
                 usageRecResponse.setUsageId(vm.getUuid());
             }
             usageRecResponse.setSize(usageRecord.getSize());
