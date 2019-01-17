@@ -92,6 +92,14 @@ public interface StorageManager extends StorageService {
             true,
             ConfigKey.Scope.Global,
             null);
+    ConfigKey<Boolean> KvmAutoConvergence = new ConfigKey<>(Boolean.class,
+            "kvm.auto.convergence",
+            "Storage",
+            "false",
+            "Setting this to 'true' allows KVM to use auto convergence to complete VM migration (libvirt version 1.2.3+ and QEMU version 1.6+)",
+            true,
+            ConfigKey.Scope.Global,
+            null);
     ConfigKey<Integer> MaxNumberOfManagedClusteredFileSystems = new ConfigKey<>(Integer.class,
             "max.number.managed.clustered.file.systems",
             "Storage",

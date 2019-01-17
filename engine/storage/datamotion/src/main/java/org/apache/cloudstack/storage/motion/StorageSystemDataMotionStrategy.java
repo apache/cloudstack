@@ -1915,16 +1915,12 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             boolean isWindows = _guestOsCategoryDao.findById(_guestOsDao.findById(vm.getGuestOSId()).getCategoryId()).getName().equalsIgnoreCase("Windows");
 
             MigrateCommand migrateCommand = new MigrateCommand(vmTO.getName(), destHost.getPrivateIpAddress(), isWindows, vmTO, true);
-
             migrateCommand.setWait(StorageManager.KvmStorageOnlineMigrationWait.value());
-
             migrateCommand.setMigrateStorage(migrateStorage);
             migrateCommand.setMigrateDiskInfoList(migrateDiskInfoList);
             migrateCommand.setMigrateStorageManaged(managedStorageDestination);
 
-            String autoConvergence = _configDao.getValue(Config.KvmAutoConvergence.toString());
-            boolean kvmAutoConvergence = Boolean.parseBoolean(autoConvergence);
-
+            boolean kvmAutoConvergence = StorageManager.KvmAutoConvergence.value();
             migrateCommand.setAutoConvergence(kvmAutoConvergence);
 
             MigrateAnswer migrateAnswer = (MigrateAnswer)agentManager.send(srcHost.getId(), migrateCommand);
