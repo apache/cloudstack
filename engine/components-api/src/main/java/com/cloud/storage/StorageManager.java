@@ -101,6 +101,9 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.Cluster,
             null);
 
+    ConfigKey<Integer> PRIMARY_STORAGE_DOWNLOAD_WAIT = new ConfigKey<Integer>("Storage", Integer.class, "primary.storage.download.wait", "10800",
+            "In second, timeout for download template to primary storage", false);
+
     /**
      * Returns a comma separated list of tags for the specified storage pool
      * @param poolId

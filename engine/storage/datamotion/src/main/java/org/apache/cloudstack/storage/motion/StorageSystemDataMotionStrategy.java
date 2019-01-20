@@ -138,7 +138,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private static final String OPERATION_NOT_SUPPORTED = "This operation is not supported.";
 
     @Inject
-    protected AgentManager _agentMgr;
+    protected AgentManager agentManager;
     @Inject private ConfigurationDao _configDao;
     @Inject private DataStoreManager dataStoreMgr;
     @Inject
@@ -953,7 +953,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 copyCommand.setOptions(srcDetails);
 
-                copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
+                copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
 
                 if (!copyCmdAnswer.getResult()) {
                     errMsg = copyCmdAnswer.getDetails();
@@ -1120,7 +1120,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             copyCommand.setOptions(srcDetails);
 
-            copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
+            copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
 
             if (!copyCmdAnswer.getResult()) {
                 errMsg = copyCmdAnswer.getDetails();
@@ -1609,7 +1609,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             copyCommand.setOptions2(destDetails);
 
-            copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
+            copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
         }
         catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
             String msg = "Failed to copy image : ";
@@ -1724,6 +1724,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     continue;
                 }
 
+                migrateTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, destDataStore, destStoragePool, destHost);
+
                 VolumeVO destVolume = duplicateVolumeOnAnotherStorage(srcVolume, destStoragePool);
                 VolumeInfo destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
 
@@ -1763,7 +1765,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             PrepareForMigrationCommand pfmc = new PrepareForMigrationCommand(vmTO);
 
             try {
-                Answer pfma = _agentMgr.send(destHost.getId(), pfmc);
+                Answer pfma = agentManager.send(destHost.getId(), pfmc);
 
                 if (pfma == null || !pfma.getResult()) {
                     String details = pfma != null ? pfma.getDetails() : "null answer returned";
@@ -1791,7 +1793,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             migrateCommand.setAutoConvergence(kvmAutoConvergence);
 
-            MigrateAnswer migrateAnswer = (MigrateAnswer)_agentMgr.send(srcHost.getId(), migrateCommand);
+            MigrateAnswer migrateAnswer = (MigrateAnswer)agentManager.send(srcHost.getId(), migrateCommand);
 
             boolean success = migrateAnswer != null && migrateAnswer.getResult();
 
@@ -1859,6 +1861,13 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         volume.setPath(volume.get_iScsiName());
     }
 
+    /**
+     * For this strategy it is not necessary to check and migrate the template; however, classes that extend this one may need to check if the template is on the target storage pool (and if not then migrate) before migrating the VM.
+     */
+    protected void migrateTemplateToTargetFilesystemStorageIfNeeded(VolumeInfo srcVolumeInfo, DataStore destDataStore, StoragePool destStoragePool, Host destHost) {
+        // This method is used by classes that extend this one
+    }
+
     private void handlePostMigration(boolean success, Map<VolumeInfo, VolumeInfo> srcVolumeInfoToDestVolumeInfo, VirtualMachineTO vmTO, Host destHost) {
         if (!success) {
             try {
@@ -1866,7 +1875,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 pfmc.setRollback(true);
 
-                Answer pfma = _agentMgr.send(destHost.getId(), pfmc);
+                Answer pfma = agentManager.send(destHost.getId(), pfmc);
 
                 if (pfma == null || !pfma.getResult()) {
                     String details = pfma != null ? pfma.getDetails() : "null answer returned";
@@ -2007,7 +2016,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     private List<String> sendModifyTargetsCommand(ModifyTargetsCommand cmd, long hostId) {
-        ModifyTargetsAnswer modifyTargetsAnswer = (ModifyTargetsAnswer)_agentMgr.easySend(hostId, cmd);
+        ModifyTargetsAnswer modifyTargetsAnswer = (ModifyTargetsAnswer)agentManager.easySend(hostId, cmd);
 
         if (modifyTargetsAnswer == null) {
             throw new CloudRuntimeException("Unable to get an answer to the modify targets command");
@@ -2125,7 +2134,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
                 copyCommand.setOptions(srcDetails);
 
-                copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
+                copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
 
                 if (!copyCmdAnswer.getResult()) {
                     errMsg = copyCmdAnswer.getDetails();
@@ -2389,7 +2398,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         try {
             _volumeService.grantAccess(dataObj, hostVO, dataStore);
 
-            answer = (ResignatureAnswer)_agentMgr.send(hostVO.getId(), command);
+            answer = (ResignatureAnswer)agentManager.send(hostVO.getId(), command);
         }
         catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
             keepGrantedAccess = false;
@@ -2466,7 +2475,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             _volumeService.grantAccess(destVolumeInfo, hostVO, destVolumeInfo.getDataStore());
 
-            MigrateVolumeAnswer migrateVolumeAnswer = (MigrateVolumeAnswer)_agentMgr.send(hostVO.getId(), migrateVolumeCommand);
+            MigrateVolumeAnswer migrateVolumeAnswer = (MigrateVolumeAnswer)agentManager.send(hostVO.getId(), migrateVolumeCommand);
 
             if (migrateVolumeAnswer == null || !migrateVolumeAnswer.getResult()) {
                 if (migrateVolumeAnswer != null && !StringUtils.isEmpty(migrateVolumeAnswer.getDetails())) {
@@ -2534,7 +2543,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 _volumeService.grantAccess(srcVolumeInfo, hostVO, srcVolumeInfo.getDataStore());
             }
 
-            CopyVolumeAnswer copyVolumeAnswer = (CopyVolumeAnswer)_agentMgr.send(hostVO.getId(), copyVolumeCommand);
+            CopyVolumeAnswer copyVolumeAnswer = (CopyVolumeAnswer)agentManager.send(hostVO.getId(), copyVolumeCommand);
 
             if (copyVolumeAnswer == null || !copyVolumeAnswer.getResult()) {
                 if (copyVolumeAnswer != null && !StringUtils.isEmpty(copyVolumeAnswer.getDetails())) {
@@ -2623,7 +2632,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
             copyCommand.setOptions2(destDetails);
 
-            copyCmdAnswer = (CopyCmdAnswer)_agentMgr.send(hostVO.getId(), copyCommand);
+            copyCmdAnswer = (CopyCmdAnswer)agentManager.send(hostVO.getId(), copyCommand);
         }
         catch (CloudRuntimeException | AgentUnavailableException | OperationTimedoutException ex) {
             String msg = "Failed to perform VDI copy : ";
