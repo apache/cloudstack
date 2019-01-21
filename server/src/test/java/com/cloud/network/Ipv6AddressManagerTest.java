@@ -248,4 +248,11 @@ public class Ipv6AddressManagerTest {
 
         Assert.assertEquals(expected, nic.getIPv6Address());
     }
+
+    @Test(expected = InsufficientAddressCapacityException.class)
+    public void acquireGuestIpv6AddressEUI64Test() throws InsufficientAddressCapacityException {
+        setAcquireGuestIpv6AddressTest(true, State.Free);
+        String requestedIpv6 = setCheckIfCanAllocateIpv6AddresscTest("2001:db8:13f::1c00:4aff:fe00:fe", false, false);
+        ip6Manager.acquireGuestIpv6Address(network, requestedIpv6);
+    }
 }

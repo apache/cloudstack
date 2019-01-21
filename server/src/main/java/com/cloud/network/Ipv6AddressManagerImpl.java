@@ -104,6 +104,11 @@ public class Ipv6AddressManagerImpl extends ManagerBase implements Ipv6AddressMa
                     network.getDataCenterId());
         }
 
+        if (NetUtils.isIPv6EUI64(requestedIpv6)) {
+            throw new InsufficientAddressCapacityException(String.format("Requested IPv6 address [%s] may not be a EUI-64 address", requestedIpv6), DataCenter.class,
+                    network.getDataCenterId());
+        }
+
         checkIfCanAllocateIpv6Address(network, requestedIpv6);
 
         IpAddresses requestedIpPair = new IpAddresses(null, requestedIpv6);
