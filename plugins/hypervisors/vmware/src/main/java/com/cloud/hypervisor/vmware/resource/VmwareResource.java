@@ -44,6 +44,7 @@ import java.util.UUID;
 import javax.naming.ConfigurationException;
 
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.joda.time.Duration;
@@ -295,7 +296,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.ExecutionResult;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
-import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -4398,7 +4398,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VmwareHypervisorHost srcHyperHost = null;
 
         // OfflineVmwareMigration: ifhost is null ???
-        if (StringUtils.isBlank(cmd.getAttachedVmName())) {
+        if (org.apache.commons.lang.StringUtils.isBlank(cmd.getAttachedVmName())) {
             return migrateVolume(cmd);
         }
         ManagedObjectReference morDs = null;

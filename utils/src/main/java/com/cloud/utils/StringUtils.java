@@ -73,11 +73,20 @@ public class StringUtils {
     public static String join(final String delimiter, final Object... components) {
         return org.apache.commons.lang.StringUtils.join(components, delimiter);
     }
-
+    /**
+     * @deprecated
+     * Please use org.apache.commons.lang.StringUtils.isBlank() as a replacement
+     */
+    @Deprecated
     public static boolean isBlank(String str) {
         return org.apache.commons.lang.StringUtils.isBlank(str);
     }
 
+    /**
+     * @deprecated
+     * Please use org.apache.commons.lang.StringUtils.isNotBlank() as a replacement
+     */
+    @Deprecated
     public static boolean isNotBlank(final String str) {
         return org.apache.commons.lang.StringUtils.isNotBlank(str);
     }
