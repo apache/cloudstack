@@ -980,7 +980,7 @@ public class ApiResponseHelper implements ResponseGenerator {
                 endIp.add(((existingPodIpRange.length > 1) && (existingPodIpRange[1] != null)) ? existingPodIpRange[1] : "");
                 forSystemVms.add((existingPodIpRange.length > 2) && (existingPodIpRange[2] != null) ? existingPodIpRange[2] : "0");
                 vlanIds.add((existingPodIpRange.length > 3) &&
-                        (existingPodIpRange[3] != null && !existingPodIpRange.equals("untagged")) ?
+                        (existingPodIpRange[3] != null && !existingPodIpRange[3].equals("untagged")) ?
                         BroadcastDomainType.Vlan.toUri(existingPodIpRange[3]).toString() :
                         BroadcastDomainType.Vlan.toUri(Vlan.UNTAGGED).toString());
             }

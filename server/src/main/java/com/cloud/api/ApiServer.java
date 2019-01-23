@@ -74,14 +74,10 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
-import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
-import org.apache.cloudstack.api.command.admin.volume.ListVolumesCmdByAdmin;
-import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
@@ -732,14 +728,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
             // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
-            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListVMsCmdByAdmin) && !(cmdObj instanceof ListRoutersCmd)
+            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
                     && !(cmdObj instanceof ListSecurityGroupsCmd) &&
                     !(cmdObj instanceof ListTagsCmd) && !(cmdObj instanceof ListEventsCmd) && !(cmdObj instanceof ListVMGroupsCmd) && !(cmdObj instanceof ListProjectsCmd) &&
                     !(cmdObj instanceof ListProjectAccountsCmd) && !(cmdObj instanceof ListProjectInvitationsCmd) && !(cmdObj instanceof ListHostsCmd) &&
-                    !(cmdObj instanceof ListVolumesCmd) && !(cmdObj instanceof ListVolumesCmdByAdmin) && !(cmdObj instanceof ListUsersCmd) && !(cmdObj instanceof ListAccountsCmd)
-                    && !(cmdObj instanceof ListAccountsCmdByAdmin) &&
-                    !(cmdObj instanceof ListStoragePoolsCmd) && !(cmdObj instanceof ListDiskOfferingsCmd) && !(cmdObj instanceof ListServiceOfferingsCmd) &&
-                    !(cmdObj instanceof ListZonesCmd) && !(cmdObj instanceof ListZonesCmdByAdmin)) {
+                    !(cmdObj instanceof ListVolumesCmd) && !(cmdObj instanceof ListUsersCmd) && !(cmdObj instanceof ListAccountsCmd)
+                    && !(cmdObj instanceof ListStoragePoolsCmd) && !(cmdObj instanceof ListDiskOfferingsCmd) && !(cmdObj instanceof ListServiceOfferingsCmd) &&
+                    !(cmdObj instanceof ListZonesCmd)) {
                 buildAsyncListResponse((BaseListCmd)cmdObj, caller);
             }
 

@@ -78,6 +78,10 @@ public class DeployDestination implements Serializable {
 
     @Override
     public boolean equals(Object obj) {
+        if (obj == null)
+            return false;
+        if (!(obj instanceof DeployDestination))
+            return false;
         DeployDestination that = (DeployDestination)obj;
         if (_dc == null || that._dc == null) {
             return false;
