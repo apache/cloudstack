@@ -47,6 +47,8 @@ public interface TemplateService {
 
     AsyncCallFuture<TemplateApiResult> createTemplateFromVolumeAsync(VolumeInfo volume, TemplateInfo template, DataStore store);
 
+    boolean createOvaDataDiskTemplates(TemplateInfo parentTemplate);
+
     AsyncCallFuture<TemplateApiResult> deleteTemplateAsync(TemplateInfo template);
 
     AsyncCallFuture<TemplateApiResult> copyTemplate(TemplateInfo srcTemplate, DataStore destStore);

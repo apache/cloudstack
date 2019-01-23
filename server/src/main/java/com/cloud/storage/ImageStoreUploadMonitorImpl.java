@@ -25,17 +25,14 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.configuration.Resource;
-import com.cloud.event.EventTypes;
-import com.cloud.event.UsageEventUtils;
-import com.cloud.user.ResourceLimitService;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPoint;
 import org.apache.cloudstack.engine.subsystem.api.storage.EndPointSelector;
 import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine.State;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.TemplateService;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.managed.context.ManagedContextRunnable;
@@ -48,6 +45,8 @@ import org.apache.cloudstack.storage.datastore.db.TemplateDataStoreVO;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.VolumeDataStoreVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -56,6 +55,9 @@ import com.cloud.agent.api.Answer;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.StartupCommand;
 import com.cloud.alert.AlertManager;
+import com.cloud.configuration.Resource;
+import com.cloud.event.EventTypes;
+import com.cloud.event.UsageEventUtils;
 import com.cloud.exception.ConnectionException;
 import com.cloud.host.Host;
 import com.cloud.host.Status;
@@ -65,6 +67,7 @@ import com.cloud.storage.dao.VMTemplateDao;
 import com.cloud.storage.dao.VMTemplateZoneDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.template.VirtualMachineTemplate;
+import com.cloud.user.ResourceLimitService;
 import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.Transaction;
@@ -102,6 +105,12 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
     private AlertManager _alertMgr;
     @Inject
     private VMTemplateZoneDao _vmTemplateZoneDao;
+    @Inject
+    private DataStoreManager dataStoreManager;
+    @Inject
+    private TemplateDataFactory templateFactory;
+    @Inject
+    private TemplateService templateService;
 
     private long _nodeId;
     private ScheduledExecutorService _executor = null;
@@ -395,6 +404,20 @@ public class ImageStoreUploadMonitorImpl extends ManagerBase implements ImageSto
                             VMTemplateVO templateUpdate = _templateDao.createForUpdate();
                             templateUpdate.setSize(answer.getVirtualSize());
                             _templateDao.update(tmpTemplate.getId(), templateUpdate);
+                            // For multi-disk OVA, check and create data disk templates
+                            if (tmpTemplate.getFormat().equals(Storage.ImageFormat.OVA)) {
+                                final DataStore store = dataStoreManager.getDataStore(templateDataStore.getDataStoreId(), templateDataStore.getDataStoreRole());
+                                final TemplateInfo templateInfo = templateFactory.getTemplate(tmpTemplate.getId(), store);
+                                if (!templateService.createOvaDataDiskTemplates(templateInfo)) {
+                                    tmpTemplateDataStore.setDownloadState(VMTemplateStorageResourceAssoc.Status.ABANDONED);
+                                    tmpTemplateDataStore.setState(State.Failed);
+                                    stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationFailed, null, _templateDao);
+                                    msg = "Multi-disk OVA template " + tmpTemplate.getUuid() + " failed to process data disks";
+                                    s_logger.error(msg);
+                                    sendAlert = true;
+                                    break;
+                                }
+                            }
                             stateMachine.transitTo(tmpTemplate, VirtualMachineTemplate.Event.OperationSucceeded, null, _templateDao);
                             _resourceLimitMgr.incrementResourceCount(template.getAccountId(), Resource.ResourceType.secondary_storage, answer.getVirtualSize());
                             //publish usage event
