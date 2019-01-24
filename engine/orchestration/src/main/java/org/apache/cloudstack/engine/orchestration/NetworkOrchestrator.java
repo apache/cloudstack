@@ -780,7 +780,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
 
                         final int devId = vmNic.getDeviceId();
-                        if (devId > deviceIds.length) {
+                        if (devId >= deviceIds.length) {
                             throw new IllegalArgumentException("Device id for nic is too large: " + vmNic);
                         }
                         if (deviceIds[devId]) {
