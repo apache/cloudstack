@@ -285,31 +285,47 @@ public class DiskOfferingResponse extends BaseResponse {
         this.bytesReadRate = bytesReadRate;
     }
 
-    public void setBytesReadRateMax(Long bytesReadRateMax) { this.bytesReadRateMax = bytesReadRateMax; }
+    public void setBytesReadRateMax(Long bytesReadRateMax) {
+        this.bytesReadRateMax = bytesReadRateMax;
+    }
 
-    public void setBytesReadRateMaxLength(Long bytesReadRateMaxLength) { this.bytesReadRateMaxLength = bytesReadRateMaxLength; }
+    public void setBytesReadRateMaxLength(Long bytesReadRateMaxLength) {
+        this.bytesReadRateMaxLength = bytesReadRateMaxLength;
+    }
 
     public void setBytesWriteRate(Long bytesWriteRate) {
         this.bytesWriteRate = bytesWriteRate;
     }
 
-    public void setBytesWriteRateMax(Long bytesWriteRateMax) { this.bytesWriteRateMax = bytesWriteRateMax; }
+    public void setBytesWriteRateMax(Long bytesWriteRateMax) {
+        this.bytesWriteRateMax = bytesWriteRateMax;
+    }
 
-    public void setBytesWriteRateMaxLength(Long bytesWriteRateMaxLength) { this.bytesWriteRateMaxLength = bytesWriteRateMaxLength; }
+    public void setBytesWriteRateMaxLength(Long bytesWriteRateMaxLength) {
+        this.bytesWriteRateMaxLength = bytesWriteRateMaxLength;
+    }
 
     public void setIopsReadRate(Long iopsReadRate) {
         this.iopsReadRate = iopsReadRate;
     }
 
-    public void setIopsReadRateMax(Long iopsReadRateMax) { this.iopsReadRateMax = iopsReadRateMax; }
+    public void setIopsReadRateMax(Long iopsReadRateMax) {
+        this.iopsReadRateMax = iopsReadRateMax;
+    }
 
-    public void setIopsReadRateMaxLength(Long iopsReadRateMaxLength) { this.iopsReadRateMaxLength = iopsReadRateMaxLength; }
+    public void setIopsReadRateMaxLength(Long iopsReadRateMaxLength) {
+        this.iopsReadRateMaxLength = iopsReadRateMaxLength;
+    }
 
     public void setIopsWriteRate(Long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
     }
 
-    public void setIopsWriteRateMax(Long iopsWriteRateMax) { this.iopsWriteRateMax = iopsWriteRateMax; }
+    public void setIopsWriteRateMax(Long iopsWriteRateMax) {
+        this.iopsWriteRateMax = iopsWriteRateMax;
+    }
 
-    public void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength) { this.iopsWriteRateMaxLength = iopsWriteRateMaxLength; }
+    public void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength) {
+        this.iopsWriteRateMaxLength = iopsWriteRateMaxLength;
+    }
 }

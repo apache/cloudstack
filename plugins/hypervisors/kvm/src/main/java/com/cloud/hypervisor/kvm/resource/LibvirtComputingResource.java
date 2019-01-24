@@ -2384,42 +2384,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (data instanceof VolumeObjectTO) {
                 final VolumeObjectTO volumeObjectTO = (VolumeObjectTO)data;
                 disk.setSerial(diskUuidToSerial(volumeObjectTO.getUuid()));
-                if (volumeObjectTO.getBytesReadRate() != null && volumeObjectTO.getBytesReadRate() > 0) {
-                    disk.setBytesReadRate(volumeObjectTO.getBytesReadRate());
-                }
-                if (volumeObjectTO.getBytesReadRateMax() != null && volumeObjectTO.getBytesReadRateMax() > 0) {
-                    disk.setBytesReadRateMax(volumeObjectTO.getBytesReadRateMax());
-                }
-                if (volumeObjectTO.getBytesReadRateMaxLength() != null && volumeObjectTO.getBytesReadRateMaxLength() > 0) {
-                    disk.setBytesReadRateMaxLength(volumeObjectTO.getBytesReadRateMaxLength());
-                }
-                if (volumeObjectTO.getBytesWriteRate() != null && volumeObjectTO.getBytesWriteRate() > 0) {
-                    disk.setBytesWriteRate(volumeObjectTO.getBytesWriteRate());
-                }
-                if (volumeObjectTO.getBytesWriteRateMax() != null && volumeObjectTO.getBytesWriteRateMax() > 0) {
-                    disk.setBytesWriteRateMax(volumeObjectTO.getBytesWriteRateMax());
-                }
-                if (volumeObjectTO.getBytesWriteRateMaxLength() != null && volumeObjectTO.getBytesWriteRateMaxLength() > 0) {
-                    disk.setBytesWriteRateMaxLength(volumeObjectTO.getBytesWriteRateMaxLength());
-                }
-                if (volumeObjectTO.getIopsReadRate() != null && volumeObjectTO.getIopsReadRate() > 0) {
-                    disk.setIopsReadRate(volumeObjectTO.getIopsReadRate());
-                }
-                if (volumeObjectTO.getIopsReadRateMax() != null && volumeObjectTO.getIopsReadRateMax() > 0) {
-                    disk.setIopsReadRateMax(volumeObjectTO.getIopsReadRateMax());
-                }
-                if (volumeObjectTO.getIopsReadRateMaxLength() != null && volumeObjectTO.getIopsReadRateMaxLength() > 0) {
-                    disk.setIopsReadRateMaxLength(volumeObjectTO.getIopsReadRateMaxLength());
-                }
-                if (volumeObjectTO.getIopsWriteRate() != null && volumeObjectTO.getIopsWriteRate() > 0) {
-                    disk.setIopsWriteRate(volumeObjectTO.getIopsWriteRate());
-                }
-                if (volumeObjectTO.getIopsWriteRateMax() != null && volumeObjectTO.getIopsWriteRateMax() > 0) {
-                    disk.setIopsWriteRateMax(volumeObjectTO.getIopsWriteRateMax());
-                }
-                if (volumeObjectTO.getIopsWriteRateMaxLength() != null && volumeObjectTO.getIopsWriteRateMaxLength() > 0) {
-                    disk.setIopsWriteRateMaxLength(volumeObjectTO.getIopsWriteRateMaxLength());
-                }
+                setBurstProperties(volumeObjectTO, disk);
 
                 if (volumeObjectTO.getCacheMode() != null) {
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
@@ -2469,6 +2434,45 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
+    }
+
+    private void setBurstProperties(final VolumeObjectTO volumeObjectTO, final DiskDef disk ) {
+        if (volumeObjectTO.getBytesReadRate() != null && volumeObjectTO.getBytesReadRate() > 0) {
+            disk.setBytesReadRate(volumeObjectTO.getBytesReadRate());
+        }
+        if (volumeObjectTO.getBytesReadRateMax() != null && volumeObjectTO.getBytesReadRateMax() > 0) {
+            disk.setBytesReadRateMax(volumeObjectTO.getBytesReadRateMax());
+        }
+        if (volumeObjectTO.getBytesReadRateMaxLength() != null && volumeObjectTO.getBytesReadRateMaxLength() > 0) {
+            disk.setBytesReadRateMaxLength(volumeObjectTO.getBytesReadRateMaxLength());
+        }
+        if (volumeObjectTO.getBytesWriteRate() != null && volumeObjectTO.getBytesWriteRate() > 0) {
+            disk.setBytesWriteRate(volumeObjectTO.getBytesWriteRate());
+        }
+        if (volumeObjectTO.getBytesWriteRateMax() != null && volumeObjectTO.getBytesWriteRateMax() > 0) {
+            disk.setBytesWriteRateMax(volumeObjectTO.getBytesWriteRateMax());
+        }
+        if (volumeObjectTO.getBytesWriteRateMaxLength() != null && volumeObjectTO.getBytesWriteRateMaxLength() > 0) {
+            disk.setBytesWriteRateMaxLength(volumeObjectTO.getBytesWriteRateMaxLength());
+        }
+        if (volumeObjectTO.getIopsReadRate() != null && volumeObjectTO.getIopsReadRate() > 0) {
+            disk.setIopsReadRate(volumeObjectTO.getIopsReadRate());
+        }
+        if (volumeObjectTO.getIopsReadRateMax() != null && volumeObjectTO.getIopsReadRateMax() > 0) {
+            disk.setIopsReadRateMax(volumeObjectTO.getIopsReadRateMax());
+        }
+        if (volumeObjectTO.getIopsReadRateMaxLength() != null && volumeObjectTO.getIopsReadRateMaxLength() > 0) {
+            disk.setIopsReadRateMaxLength(volumeObjectTO.getIopsReadRateMaxLength());
+        }
+        if (volumeObjectTO.getIopsWriteRate() != null && volumeObjectTO.getIopsWriteRate() > 0) {
+            disk.setIopsWriteRate(volumeObjectTO.getIopsWriteRate());
+        }
+        if (volumeObjectTO.getIopsWriteRateMax() != null && volumeObjectTO.getIopsWriteRateMax() > 0) {
+            disk.setIopsWriteRateMax(volumeObjectTO.getIopsWriteRateMax());
+        }
+        if (volumeObjectTO.getIopsWriteRateMaxLength() != null && volumeObjectTO.getIopsWriteRateMaxLength() > 0) {
+            disk.setIopsWriteRateMaxLength(volumeObjectTO.getIopsWriteRateMaxLength());
+        }
     }
 
     private void createVif(final LibvirtVMDef vm, final NicTO nic, final String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
