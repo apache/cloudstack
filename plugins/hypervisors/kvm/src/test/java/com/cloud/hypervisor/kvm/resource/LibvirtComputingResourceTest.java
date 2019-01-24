@@ -534,13 +534,6 @@ public class LibvirtComputingResourceTest {
         Assert.assertTrue(vmStat.getTargetMemoryKBs() >= vmStat.getMemoryKBs());
     }
 
-    @Test
-    public void getCpuSpeed() {
-        Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
-        final NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
-        LibvirtComputingResource.getCpuSpeed(nodeInfo);
-    }
-
     /*
      * New Tests
      */
@@ -988,8 +981,8 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResource.getMemStat()).thenReturn(memStat);
         when(libvirtComputingResource.getNicStats(Mockito.anyString())).thenReturn(new Pair<Double, Double>(1.0d, 1.0d));
         when(cpuStat.getCpuUsedPercent()).thenReturn(0.5d);
-        when(memStat.getAvailable()).thenReturn(1500.5d);
-        when(memStat.getTotal()).thenReturn(15000d);
+        when(memStat.getAvailable()).thenReturn(1500L);
+        when(memStat.getTotal()).thenReturn(15000L);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);

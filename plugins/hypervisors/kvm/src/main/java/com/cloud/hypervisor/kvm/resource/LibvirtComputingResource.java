@@ -19,9 +19,7 @@ package com.cloud.hypervisor.kvm.resource;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 import java.io.StringReader;
 import java.net.InetAddress;
 import java.net.URI;
@@ -55,12 +53,12 @@ import org.apache.cloudstack.storage.to.TemplateObjectTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.cloudstack.utils.hypervisor.HypervisorUtils;
 import org.apache.cloudstack.utils.linux.CPUStat;
+import org.apache.cloudstack.utils.linux.KVMHostInfo;
 import org.apache.cloudstack.utils.linux.MemStat;
 import org.apache.cloudstack.utils.qemu.QemuImg.PhysicalDiskFormat;
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
@@ -311,8 +309,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     protected int _cmdsTimeout;
     protected int _stopTimeout;
     protected CPUStat _cpuStat = new CPUStat();
-    protected MemStat _memStat = new MemStat();
-
+    protected MemStat _memStat = new MemStat(_dom0MinMem, _dom0OvercommitMem);
     private final LibvirtUtilitiesHelper libvirtUtilitiesHelper = new LibvirtUtilitiesHelper();
 
     @Override
@@ -871,7 +868,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
         value = (String)params.get("host.reserved.mem.mb");
         // Reserve 1GB unless admin overrides
-        _dom0MinMem = NumbersUtil.parseInt(value, 1024) * 1024 * 1024L;
+        _dom0MinMem = NumbersUtil.parseInt(value, 1024) * 1024* 1024L;
 
         value = (String)params.get("host.overcommit.mem.mb");
         // Support overcommit memory for host if host uses ZSWAP, KSM and other memory
@@ -2661,12 +2658,14 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
     @Override
     public StartupCommand[] initialize() {
 
-        final List<Object> info = getHostInfo();
+        final KVMHostInfo info = new KVMHostInfo(_dom0MinMem, _dom0OvercommitMem);
+
+        final String capabilities = String.join(",", info.getCapabilities());
 
         final StartupRoutingCommand cmd =
-                new StartupRoutingCommand((Integer)info.get(0), (Long)info.get(1), (Long)info.get(2), (Long)info.get(4), (String)info.get(3), _hypervisorType,
+                new StartupRoutingCommand(info.getCpus(), info.getCpuSpeed(), info.getTotalMemory(), info.getReservedMemory(), capabilities, _hypervisorType,
                         RouterPrivateIpStrategy.HostLocal);
-        cmd.setCpuSockets((Integer)info.get(5));
+        cmd.setCpuSockets(info.getCpuSockets());
         fillNetworkInformation(cmd);
         _privateIp = cmd.getPrivateIpAddress();
         cmd.getHostDetails().putAll(getVersionStrings());
@@ -2884,71 +2883,6 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
         }
 
         return vmStates;
-    }
-
-    protected List<Object> getHostInfo() {
-        final ArrayList<Object> info = new ArrayList<Object>();
-        long speed = 0;
-        long cpus = 0;
-        long ram = 0;
-        int cpuSockets = 0;
-        String cap = null;
-        try {
-            final Connect conn = LibvirtConnection.getConnection();
-            final NodeInfo hosts = conn.nodeInfo();
-            speed = getCpuSpeed(hosts);
-
-            /*
-             * Some CPUs report a single socket and multiple NUMA cells.
-             * We need to multiply them to get the correct socket count.
-             */
-            cpuSockets = hosts.sockets;
-            if (hosts.nodes > 0) {
-                cpuSockets = hosts.sockets * hosts.nodes;
-            }
-            cpus = hosts.cpus;
-            ram = hosts.memory * 1024L;
-            final LibvirtCapXMLParser parser = new LibvirtCapXMLParser();
-            parser.parseCapabilitiesXML(conn.getCapabilities());
-            final ArrayList<String> oss = parser.getGuestOsType();
-            for (final String s : oss) {
-                /*
-                 * Even host supports guest os type more than hvm, we only
-                 * report hvm to management server
-                 */
-                if (s.equalsIgnoreCase("hvm")) {
-                    cap = "hvm";
-                }
-            }
-        } catch (final LibvirtException e) {
-            s_logger.trace("Ignoring libvirt error.", e);
-        }
-
-        if (isSnapshotSupported()) {
-            cap = cap + ",snapshot";
-        }
-
-        info.add((int)cpus);
-        info.add(speed);
-        // Report system's RAM as actual RAM minus host OS reserved RAM
-        ram = ram - _dom0MinMem + _dom0OvercommitMem;
-        info.add(ram);
-        info.add(cap);
-        info.add(_dom0MinMem);
-        info.add(cpuSockets);
-        s_logger.debug("cpus=" + cpus + ", speed=" + speed + ", ram=" + ram + ", _dom0MinMem=" + _dom0MinMem + ", _dom0OvercommitMem=" + _dom0OvercommitMem + ", cpu sockets=" + cpuSockets);
-
-        return info;
-    }
-
-    protected static long getCpuSpeed(final NodeInfo nodeInfo) {
-        try (final Reader reader = new FileReader(
-                "/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq")) {
-            return Long.parseLong(IOUtils.toString(reader).trim()) / 1000;
-        } catch (IOException | NumberFormatException e) {
-            s_logger.warn("Could not read cpuinfo_max_freq");
-            return nodeInfo.mhz;
-        }
     }
 
     public String rebootVM(final Connect conn, final String vmName) {
