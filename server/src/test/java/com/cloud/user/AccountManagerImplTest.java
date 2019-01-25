@@ -226,7 +226,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
     private void prepareMockAndExecuteUpdateUserTest(int numberOfExpectedCallsForSetEmailAndSetTimeZone) {
         Mockito.doReturn(userVoMock).when(accountManagerImpl).retrieveAndValidateUser(UpdateUserCmdMock);
-        Mockito.doNothing().when(accountManagerImpl).validateAndUpdatApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
+        Mockito.doNothing().when(accountManagerImpl).validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
         Mockito.doReturn(accountMock).when(accountManagerImpl).retrieveAndValidateAccount(userVoMock);
 
         Mockito.doNothing().when(accountManagerImpl).validateAndUpdateFirstNameIfNeeded(UpdateUserCmdMock, userVoMock);
@@ -242,7 +242,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         InOrder inOrder = Mockito.inOrder(userVoMock, accountManagerImpl, userDaoMock, userAccountDaoMock);
 
         inOrder.verify(accountManagerImpl).retrieveAndValidateUser(UpdateUserCmdMock);
-        inOrder.verify(accountManagerImpl).validateAndUpdatApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
+        inOrder.verify(accountManagerImpl).validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
         inOrder.verify(accountManagerImpl).retrieveAndValidateAccount(userVoMock);
 
         inOrder.verify(accountManagerImpl).validateAndUpdateFirstNameIfNeeded(UpdateUserCmdMock, userVoMock);
@@ -275,7 +275,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
 
     @Test
     public void validateAndUpdatApiAndSecretKeyIfNeededTestNoKeys() {
-        accountManagerImpl.validateAndUpdatApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
+        accountManagerImpl.validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
 
         Mockito.verify(accountDaoMock, Mockito.times(0)).findUserAccountByApiKey(Mockito.anyString());
     }
@@ -284,14 +284,14 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
     public void validateAndUpdatApiAndSecretKeyIfNeededTestOnlyApiKeyInformed() {
         Mockito.doReturn("apiKey").when(UpdateUserCmdMock).getApiKey();
 
-        accountManagerImpl.validateAndUpdatApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
+        accountManagerImpl.validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
     }
 
     @Test(expected = InvalidParameterValueException.class)
     public void validateAndUpdatApiAndSecretKeyIfNeededTestOnlySecretKeyInformed() {
         Mockito.doReturn("secretKey").when(UpdateUserCmdMock).getSecretKey();
 
-        accountManagerImpl.validateAndUpdatApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
+        accountManagerImpl.validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
     }
 
     @Test(expected = InvalidParameterValueException.class)
@@ -308,7 +308,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Pair<User, Account> pairUserAccountMock = new Pair<User, Account>(otherUserMock, Mockito.mock(Account.class));
         Mockito.doReturn(pairUserAccountMock).when(accountDaoMock).findUserAccountByApiKey(apiKey);
 
-        accountManagerImpl.validateAndUpdatApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
+        accountManagerImpl.validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
     }
 
     @Test
@@ -327,7 +327,7 @@ public class AccountManagerImplTest extends AccountManagetImplTestBase {
         Pair<User, Account> pairUserAccountMock = new Pair<User, Account>(otherUserMock, Mockito.mock(Account.class));
         Mockito.doReturn(pairUserAccountMock).when(accountDaoMock).findUserAccountByApiKey(apiKey);
 
-        accountManagerImpl.validateAndUpdatApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
+        accountManagerImpl.validateAndUpdateApiAndSecretKeyIfNeeded(UpdateUserCmdMock, userVoMock);
 
         Mockito.verify(accountDaoMock).findUserAccountByApiKey(apiKey);
         Mockito.verify(userVoMock).setApiKey(apiKey);

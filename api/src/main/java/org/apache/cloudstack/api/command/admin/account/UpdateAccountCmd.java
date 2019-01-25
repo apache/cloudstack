@@ -21,6 +21,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.response.RoleResponse;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
@@ -48,16 +49,19 @@ public class UpdateAccountCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @ACL(accessType = AccessType.OperateEntry)
-    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "Account id")
+    @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "Account UUID")
     private Long id;
 
-    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "the current account name")
+    @Parameter(name = ApiConstants.ACCOUNT, type = CommandType.STRING, description = "Current account name")
     private String accountName;
 
-    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "the ID of the domain where the account exists")
+    @Parameter(name = ApiConstants.DOMAIN_ID, type = CommandType.UUID, entityType = DomainResponse.class, description = "The UUID of the domain where the account exists")
     private Long domainId;
 
-    @Parameter(name = ApiConstants.NEW_NAME, type = CommandType.STRING, required = true, description = "new name for the account")
+    @Parameter(name = ApiConstants.ROLE_ID, type = CommandType.UUID, entityType = RoleResponse.class, description = "The UUID of the dynamic role to set for the account")
+    private Long roleId;
+
+    @Parameter(name = ApiConstants.NEW_NAME, type = CommandType.STRING, description = "New name for the account")
     private String newName;
 
     @Parameter(name = ApiConstants.NETWORK_DOMAIN,
@@ -65,7 +69,7 @@ public class UpdateAccountCmd extends BaseCmd {
                description = "Network domain for the account's networks; empty string will update domainName with NULL value")
     private String networkDomain;
 
-    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "details for account used to store specific parameters")
+    @Parameter(name = ApiConstants.ACCOUNT_DETAILS, type = CommandType.MAP, description = "Details for the account used to store specific parameters")
     private Map details;
 
     @Inject
@@ -86,6 +90,8 @@ public class UpdateAccountCmd extends BaseCmd {
     public Long getDomainId() {
         return domainId;
     }
+
+    public Long getRoleId() { return roleId; }
 
     public String getNewName() {
         return newName;
