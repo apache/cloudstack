@@ -18,7 +18,7 @@
 # Where your java installation lives
 #JAVA_HOME="/usr/lib/jvm/java"
 
-JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:PermSize=512M -XX:MaxPermSize=800m -Djava.security.properties=/etc/cloudstack/management/java.security.ciphers "
+JAVA_OPTS="-Djava.awt.headless=true -Dcom.sun.management.jmxremote=false -Xmx2g -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=/var/log/cloudstack/management/ -XX:PermSize=512M -XX:MaxPermSize=800m "
 
 CLOUDSTACK_USER="cloud"
 
