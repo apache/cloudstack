@@ -49,6 +49,7 @@ public class ApiDispatcher {
     private static final Logger s_logger = Logger.getLogger(ApiDispatcher.class.getName());
 
     Long _createSnapshotQueueSizeLimit;
+    Long migrateQueueSizeLimit;
 
     @Inject
     AsyncJobManager _asyncMgr;
@@ -79,6 +80,9 @@ public class ApiDispatcher {
         _createSnapshotQueueSizeLimit = snapshotLimit;
     }
 
+    public void setMigrateQueueSizeLimit(final Long migrateLimit) {
+        migrateQueueSizeLimit = migrateLimit;
+    }
 
     public void dispatchCreateCmd(final BaseAsyncCreateCmd cmd, final Map<String, String> params) throws Exception {
         asyncCreationDispatchChain.dispatch(new DispatchTask(cmd, params));
@@ -123,7 +127,9 @@ public class ApiDispatcher {
             if (asyncCmd.getJob() != null && asyncCmd.getSyncObjId() != null && asyncCmd.getSyncObjType() != null) {
                 Long queueSizeLimit = null;
                 if (asyncCmd.getSyncObjType() != null && asyncCmd.getSyncObjType().equalsIgnoreCase(BaseAsyncCmd.snapshotHostSyncObject)) {
-                    queueSizeLimit = _createSnapshotQueueSizeLimit;
+                        queueSizeLimit = _createSnapshotQueueSizeLimit;
+                } else if (asyncCmd.getSyncObjType() != null && asyncCmd.getSyncObjType().equalsIgnoreCase(BaseAsyncCmd.migrationSyncObject)) {
+                        queueSizeLimit = migrateQueueSizeLimit;
                 } else {
                     queueSizeLimit = 1L;
                 }
@@ -148,6 +154,6 @@ public class ApiDispatcher {
         }
 
         cmd.execute();
-                            }
+    }
 
 }

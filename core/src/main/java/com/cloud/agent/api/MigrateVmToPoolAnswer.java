@@ -19,33 +19,25 @@
 
 package com.cloud.agent.api;
 
-public class UnregisterVMCommand extends Command {
-    String vmName;
-    boolean cleanupVmFiles = false;
-    boolean executeInSequence;
+import org.apache.cloudstack.storage.to.VolumeObjectTO;
 
-    public UnregisterVMCommand(String vmName) {
-        this(vmName, false);
-    }
-    public UnregisterVMCommand(String vmName, boolean executeInSequence) {
-        this.vmName = vmName;
-        this.executeInSequence = executeInSequence;
-    }
+import java.util.List;
 
-    @Override
-    public boolean executeInSequence() {
-        return executeInSequence;
+public class MigrateVmToPoolAnswer extends Answer {
+
+    List<VolumeObjectTO> volumeTos;
+
+    public MigrateVmToPoolAnswer(MigrateVmToPoolCommand cmd, Exception ex) {
+        super(cmd, ex);
+        volumeTos = null;
     }
 
-    public String getVmName() {
-        return vmName;
+    public MigrateVmToPoolAnswer(MigrateVmToPoolCommand cmd, List<VolumeObjectTO> volumeTos) {
+        super(cmd, true, null);
+        this.volumeTos = volumeTos;
     }
 
-    public void setCleanupVmFiles(boolean cleanupVmFiles) {
-        this.cleanupVmFiles = cleanupVmFiles;
-    }
-
-    public boolean getCleanupVmFiles() {
-        return this.cleanupVmFiles;
+    public List<VolumeObjectTO> getVolumeTos() {
+        return volumeTos;
     }
 }

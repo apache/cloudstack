@@ -56,6 +56,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeService.VolumeApiResult;
 import org.apache.cloudstack.framework.async.AsyncCallFuture;
 import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
 import org.apache.cloudstack.framework.jobs.AsyncJobExecutionContext;
@@ -178,7 +179,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
 
-public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService, VmWorkJobHandler {
+public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiService, VmWorkJobHandler, Configurable {
     private final static Logger s_logger = Logger.getLogger(VolumeApiServiceImpl.class);
     public static final String VM_WORK_JOB_HANDLER = VolumeApiServiceImpl.class.getSimpleName();
 
@@ -2028,10 +2029,12 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         }
 
         // Check that Vm to which this volume is attached does not have VM Snapshots
+        // OfflineVmwareMigration: considder if this is needed and desirable
         if (vm != null && _vmSnapshotDao.findByVm(vm.getId()).size() > 0) {
             throw new InvalidParameterValueException("Volume cannot be migrated, please remove all VM snapshots for VM to which this volume is attached");
         }
 
+        // OfflineVmwareMigration: extract this block as method and check if it is subject to regression
         if (vm != null && vm.getState() == State.Running) {
             // Check if the VM is GPU enabled.
             if (_serviceOfferingDetailsDao.findDetail(vm.getServiceOfferingId(), GPU.Keys.pciDevice.toString()) != null) {
@@ -2071,6 +2074,16 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
 
         if (!storageMgr.storagePoolHasEnoughSpace(Collections.singletonList(vol), destPool)) {
             throw new CloudRuntimeException("Storage pool " + destPool.getName() + " does not have enough space to migrate volume " + vol.getName());
+        }
+
+        // OfflineVmwareMigration: check storage tags on disk(offering)s in comparison to destination storage pool
+        // OfflineVmwareMigration: if no match return a proper error now
+        DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+        if(diskOffering.equals(null)) {
+            throw new CloudRuntimeException("volume '" + vol.getUuid() +"', has no diskoffering. Migration target cannot be checked.");
+        }
+        if(! doesTargetStorageSupportDiskOffering(destPool, diskOffering)) {
+            throw new CloudRuntimeException("Migration target has no matching tags for volume '" +vol.getName() + "(" + vol.getUuid() + ")'");
         }
 
         if (liveMigrateVolume && destPool.getClusterId() != null && srcClusterId != null) {
@@ -2191,7 +2204,7 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         if ((destPool.isShared() && newDiskOffering.isUseLocalStorage()) || destPool.isLocal() && newDiskOffering.isShared()) {
             throw new InvalidParameterValueException("You cannot move the volume to a shared storage and assing a disk offering for local storage and vice versa.");
         }
-        if (!doesTargetStorageSupportNewDiskOffering(destPool, newDiskOffering)) {
+        if (!doesTargetStorageSupportDiskOffering(destPool, newDiskOffering)) {
             throw new InvalidParameterValueException(String.format("Target Storage [id=%s] tags [%s] does not match new disk offering [id=%s] tags [%s].", destPool.getUuid(),
                     getStoragePoolTags(destPool), newDiskOffering.getUuid(), newDiskOffering.getTags()));
         }
@@ -2236,9 +2249,9 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
      *      </body>
      *   </table>
      */
-    protected boolean doesTargetStorageSupportNewDiskOffering(StoragePool destPool, DiskOfferingVO newDiskOffering) {
-        String newDiskOfferingTags = newDiskOffering.getTags();
-        return doesTargetStorageSupportDiskOffering(destPool, newDiskOfferingTags);
+    protected boolean doesTargetStorageSupportDiskOffering(StoragePool destPool, DiskOfferingVO diskOffering) {
+        String targetStoreTags = diskOffering.getTags();
+        return doesTargetStorageSupportDiskOffering(destPool, targetStoreTags);
     }
 
     @Override
@@ -3350,4 +3363,13 @@ public class VolumeApiServiceImpl extends ManagerBase implements VolumeApiServic
         return workJob;
     }
 
+    @Override
+    public String getConfigComponentName() {
+        return VolumeApiService.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {ConcurrentMigrationsThresholdPerDatastore};
+    }
 }

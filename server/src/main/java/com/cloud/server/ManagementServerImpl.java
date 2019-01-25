@@ -37,6 +37,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.ScopeType;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -1103,6 +1104,32 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Cluster>, Integer>(result.first(), result.second());
     }
 
+    private HypervisorType getHypervisorType(VMInstanceVO vm, StoragePool srcVolumePool, VirtualMachineProfile profile) {
+        HypervisorType type = null;
+        if (vm == null) {
+            StoragePoolVO poolVo = _poolDao.findById(srcVolumePool.getId());
+            if (ScopeType.CLUSTER.equals(poolVo.getScope())) {
+                Long clusterId = poolVo.getClusterId();
+                if (clusterId != null) {
+                    ClusterVO cluster = _clusterDao.findById(clusterId);
+                    type = cluster.getHypervisorType();
+                }
+            } else if (ScopeType.ZONE.equals(poolVo.getScope())) {
+                Long zoneId = poolVo.getDataCenterId();
+                if (zoneId != null) {
+                    DataCenterVO dc = _dcDao.findById(zoneId);
+                }
+            }
+
+            if (null == type) {
+                type = srcVolumePool.getHypervisor();
+            }
+        } else {
+            type = profile.getHypervisorType();
+        }
+        return type;
+    }
+
     @Override
     public Pair<List<? extends Host>, Integer> searchForServers(final ListHostsCmd cmd) {
 
@@ -1433,10 +1460,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null, null, null);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        // OfflineVmwareMigration: vm might be null here; deal!
+        HypervisorType type = getHypervisorType(vm, srcVolumePool, profile);
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         //This is an override mechanism so we can list the possible local storage pools that a volume in a shared pool might be able to be migrated to
-        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, type);
         diskProfile.setUseLocalStorage(true);
 
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {

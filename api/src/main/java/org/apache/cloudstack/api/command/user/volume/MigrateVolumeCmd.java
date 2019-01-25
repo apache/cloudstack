@@ -120,4 +120,16 @@ public class MigrateVolumeCmd extends BaseAsyncCmd {
         }
     }
 
+    @Override
+    public String getSyncObjType() {
+        return (getSyncObjId() != null) ? BaseAsyncCmd.migrationSyncObject : null;
+    }
+
+    @Override
+    public Long getSyncObjId() {
+        if (getStoragePoolId() != null) {
+            return getStoragePoolId();
+        }
+        return null;
+    }
 }

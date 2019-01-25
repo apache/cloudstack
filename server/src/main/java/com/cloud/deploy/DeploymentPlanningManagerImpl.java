@@ -1342,7 +1342,8 @@ StateListener<State, VirtualMachine.Event, VirtualMachine> {
 
         // There should be atleast the ROOT volume of the VM in usable state
         if (volumesTobeCreated.isEmpty()) {
-            throw new CloudRuntimeException("Unable to create deployment, no usable volumes found for the VM");
+            // OfflineVmwareMigration: find out what is wrong with the id of the vm we try to start
+            throw new CloudRuntimeException("Unable to create deployment, no usable volumes found for the VM: " + vmProfile.getId());
         }
 
         // don't allow to start vm that doesn't have a root volume

@@ -25,11 +25,28 @@ import org.apache.cloudstack.framework.async.AsyncCompletionCallback;
 import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.Host;
 
+/**
+ * Interface to query how to move data around and to commision the moving
+ */
 public interface DataMotionStrategy {
+    /**
+     * Reports whether this instance can do a move from source to destination
+     * @param srcData object to move
+     * @param destData location to move it to
+     * @return the expertise level with which this instance knows how to handle the move
+     */
     StrategyPriority canHandle(DataObject srcData, DataObject destData);
 
     StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost);
 
+    /**
+     * Copy the source volume to its destination (on a host if not null)
+     *
+     * @param srcData volume to move
+     * @param destData volume description as intended after the move
+     * @param destHost if not null destData should be reachable from here
+     * @param callback where to report completion or failure to
+     */
     void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback);
 
     void copyAsync(Map<VolumeInfo, DataStore> volumeMap, VirtualMachineTO vmTo, Host srcHost, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback);

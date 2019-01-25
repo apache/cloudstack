@@ -17,6 +17,7 @@
 
 package com.cloud.vm;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyLong;
@@ -25,6 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -178,7 +180,7 @@ public class VirtualMachineManagerImplTest {
 
         boolean actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
 
-        Assert.assertFalse(actual);
+        assertFalse(actual);
     }
 
     @Test
@@ -192,7 +194,7 @@ public class VirtualMachineManagerImplTest {
 
         boolean actual = virtualMachineManagerImpl.sendStop(guru, profile, false, false);
 
-        Assert.assertFalse(actual);
+        assertFalse(actual);
     }
 
     @Test
@@ -242,7 +244,7 @@ public class VirtualMachineManagerImplTest {
 
         boolean returnedValue = virtualMachineManagerImpl.isStorageCrossClusterMigration(hostMock, storagePoolVoMock);
 
-        Assert.assertFalse(returnedValue);
+        assertFalse(returnedValue);
     }
 
     @Test
@@ -253,7 +255,7 @@ public class VirtualMachineManagerImplTest {
 
         boolean returnedValue = virtualMachineManagerImpl.isStorageCrossClusterMigration(hostMock, storagePoolVoMock);
 
-        Assert.assertFalse(returnedValue);
+        assertFalse(returnedValue);
     }
 
     @Test
@@ -317,7 +319,7 @@ public class VirtualMachineManagerImplTest {
 
         Map<Volume, StoragePool> volumeToPoolObjectMap = virtualMachineManagerImpl.buildMapUsingUserInformation(virtualMachineProfileMock, hostMock, userDefinedVolumeToStoragePoolMap);
 
-        Assert.assertFalse(volumeToPoolObjectMap.isEmpty());
+        assertFalse(volumeToPoolObjectMap.isEmpty());
         Assert.assertEquals(storagePoolVoMock, volumeToPoolObjectMap.get(volumeVoMock));
 
         Mockito.verify(userDefinedVolumeToStoragePoolMap, times(1)).keySet();
@@ -501,7 +503,7 @@ public class VirtualMachineManagerImplTest {
         HashMap<Volume, StoragePool> volumeToPoolObjectMap = new HashMap<>();
         virtualMachineManagerImpl.createVolumeToStoragePoolMappingIfPossible(virtualMachineProfileMock, hostMock, volumeToPoolObjectMap, volumeVoMock, storagePoolVoMock);
 
-        Assert.assertFalse(volumeToPoolObjectMap.isEmpty());
+        assertFalse(volumeToPoolObjectMap.isEmpty());
         Assert.assertEquals(storagePoolMockOther, volumeToPoolObjectMap.get(volumeVoMock));
     }
 
@@ -558,7 +560,7 @@ public class VirtualMachineManagerImplTest {
 
         virtualMachineManagerImpl.createStoragePoolMappingsForVolumes(virtualMachineProfileMock, hostMock, volumeToPoolObjectMap, allVolumes);
 
-        Assert.assertFalse(volumeToPoolObjectMap.isEmpty());
+        assertFalse(volumeToPoolObjectMap.isEmpty());
         Assert.assertEquals(storagePoolVoMock, volumeToPoolObjectMap.get(volumeVoMock));
 
         Mockito.verify(virtualMachineManagerImpl).executeManagedStorageChecksWhenTargetStoragePoolNotProvided(hostMock, storagePoolVoMock, volumeVoMock);
@@ -586,5 +588,39 @@ public class VirtualMachineManagerImplTest {
         inOrder.verify(virtualMachineManagerImpl).buildMapUsingUserInformation(Mockito.eq(virtualMachineProfileMock), Mockito.eq(hostMock), Mockito.anyMapOf(Long.class, Long.class));
         inOrder.verify(virtualMachineManagerImpl).findVolumesThatWereNotMappedByTheUser(virtualMachineProfileMock, volumeToPoolObjectMap);
         inOrder.verify(virtualMachineManagerImpl).createStoragePoolMappingsForVolumes(virtualMachineProfileMock, hostMock, volumeToPoolObjectMap, volumesNotMapped);
+    }
+
+    @Test
+    public void matchesOfSorts() {
+        List<String> nothing = null;
+        List<String> empty = new ArrayList<>();
+        List<String> tag = Arrays.asList("bla");
+        List<String> tags = Arrays.asList("bla", "blob");
+        List<String> others = Arrays.asList("bla", "blieb");
+        List<String> three = Arrays.asList("bla", "blob", "blieb");
+
+        // single match
+        assertTrue(VirtualMachineManagerImpl.matches(tag,tags));
+        assertTrue(VirtualMachineManagerImpl.matches(tag,others));
+
+        // no requirements
+        assertTrue(VirtualMachineManagerImpl.matches(nothing,tags));
+        assertTrue(VirtualMachineManagerImpl.matches(empty,tag));
+
+        // mis(sing)match
+        assertFalse(VirtualMachineManagerImpl.matches(tags,tag));
+        assertFalse(VirtualMachineManagerImpl.matches(tag,nothing));
+        assertFalse(VirtualMachineManagerImpl.matches(tag,empty));
+
+        // disjunct sets
+        assertFalse(VirtualMachineManagerImpl.matches(tags,others));
+        assertFalse(VirtualMachineManagerImpl.matches(others,tags));
+
+        // everything matches the larger set
+        assertTrue(VirtualMachineManagerImpl.matches(nothing,three));
+        assertTrue(VirtualMachineManagerImpl.matches(empty,three));
+        assertTrue(VirtualMachineManagerImpl.matches(tag,three));
+        assertTrue(VirtualMachineManagerImpl.matches(tags,three));
+        assertTrue(VirtualMachineManagerImpl.matches(others,three));
     }
 }
