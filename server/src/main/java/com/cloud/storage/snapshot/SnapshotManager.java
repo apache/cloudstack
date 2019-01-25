@@ -34,27 +34,84 @@ import com.cloud.storage.Volume;
  */
 public interface SnapshotManager extends Configurable {
 
-    public static final int HOURLYMAX = 8;
-    public static final int DAILYMAX = 8;
-    public static final int WEEKLYMAX = 8;
-    public static final int MONTHLYMAX = 12;
-    public static final int DELTAMAX = 16;
+    Integer defaultDiskSnapshotMaxHourly = 8;
+    Integer defaultDiskSnapshotMaxDaily = 8;
+    Integer defaultDiskSnapshotMaxWeekly = 8;
+    Integer defaultDiskSnapshotMaxMonthly = 12;
+    Boolean defaultDiskSnapshotUsageVirtualsizeSelect = false;
+    Integer defaultBackupRetry = 3;
+    Integer defaultBackupRetryInterval = 300;
+    Integer snapshotDeltaMax = 16;
 
-    static final ConfigKey<Integer> SnapshotHourlyMax = new ConfigKey<Integer>(Integer.class, "snapshot.max.hourly", "Snapshots", "8",
-            "Maximum recurring hourly snapshots to be retained for a volume. If the limit is reached, early snapshots from the start of the hour are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring hourly snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Integer> SnapshotDailyMax = new ConfigKey<Integer>(Integer.class, "snapshot.max.daily", "Snapshots", "8",
-            "Maximum recurring daily snapshots to be retained for a volume. If the limit is reached, snapshots from the start of the day are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring daily snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Integer> SnapshotWeeklyMax = new ConfigKey<Integer>(Integer.class, "snapshot.max.weekly", "Snapshots", "8",
-            "Maximum recurring weekly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the week are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring weekly snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Integer> SnapshotMonthlyMax = new ConfigKey<Integer>(Integer.class, "snapshot.max.monthly", "Snapshots", "8",
-            "Maximum recurring monthly snapshots to be retained for a volume. If the limit is reached, snapshots from the beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. If set to 0, recurring monthly snapshots can not be scheduled.", false, ConfigKey.Scope.Global, null);
-    static final ConfigKey<Boolean> usageSnapshotSelection = new ConfigKey<Boolean>("Usage", Boolean.class, "usage.snapshot.virtualsize.select", "false",
-            "Set the value to true if snapshot usage need to consider virtual size, else physical size is considered ", false);
-    public static final ConfigKey<Integer> BackupRetryAttempts = new ConfigKey<Integer>(Integer.class, "backup.retry", "Advanced", "3",
-            "Number of times to retry in creating backup of snapshot on secondary", false, ConfigKey.Scope.Global, null);
+    ConfigKey<Integer> snapshotHourlyMax = new ConfigKey<Integer>(Integer.class,
+            "snapshot.max.hourly",
+            "Snapshots",
+            defaultDiskSnapshotMaxHourly.toString(),
+            "Maximum recurring hourly snapshots to be retained for a volume. " +
+                    "If the limit is reached, early snapshots from the start of the hour are deleted so that " +
+                    "newer ones can be saved. This limit does not apply to manual snapshots. " +
+                    "If set to 0, recurring hourly snapshots can not be scheduled.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
 
-    public static final ConfigKey<Integer> BackupRetryInterval = new ConfigKey<Integer>(Integer.class, "backup.retry.interval", "Advanced", "300",
-            "Time in seconds between retries in backing up snapshot to secondary", false, ConfigKey.Scope.Global, null);
+    ConfigKey<Integer> snapshotDailyMax = new ConfigKey<Integer>(Integer.class,
+            "snapshot.max.daily",
+            "Snapshots",
+            defaultDiskSnapshotMaxDaily.toString(),
+            "Maximum recurring daily snapshots to be retained for a volume. " +
+                    "If the limit is reached, snapshots from the start of the day are deleted so that newer ones can be saved. " +
+                    "This limit does not apply to manual snapshots. If set to 0, recurring daily snapshots can not be scheduled.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> snapshotWeeklyMax = new ConfigKey<Integer>(Integer.class,
+            "snapshot.max.weekly",
+            "Snapshots",
+            defaultDiskSnapshotMaxWeekly.toString(),
+            "Maximum recurring weekly snapshots to be retained for a volume. " +
+                    "If the limit is reached, snapshots from the beginning of the week are deleted so that newer ones can be saved. " +
+                    "This limit does not apply to manual snapshots. If set to 0, recurring weekly snapshots can not be scheduled.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> snapshotMonthlyMax = new ConfigKey<Integer>(Integer.class,
+            "snapshot.max.monthly",
+            "Snapshots",
+            defaultDiskSnapshotMaxMonthly.toString(),
+            "Maximum recurring monthly snapshots to be retained for a volume. If the limit is reached, snapshots from the " +
+                    "beginning of the month are deleted so that newer ones can be saved. This limit does not apply to manual snapshots. " +
+                    "If set to 0, recurring monthly snapshots can not be scheduled.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Boolean> usageSnapshotSelection = new ConfigKey<Boolean>("Usage",
+            Boolean.class,
+            "usage.snapshot.virtualsize.select",
+            defaultDiskSnapshotUsageVirtualsizeSelect.toString(),
+            "Set the value to true if snapshot usage need to consider virtual size, else physical size is considered ",
+            false);
+
+    ConfigKey<Integer> backupRetryAttempts = new ConfigKey<Integer>(Integer.class,
+            "backup.retry",
+            "Advanced",
+            defaultBackupRetry.toString(),
+            "Number of times to retry in creating backup of snapshot on secondary storage.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
+
+    ConfigKey<Integer> backupRetryInterval = new ConfigKey<Integer>(Integer.class,
+            "backup.retry.interval",
+            "Advanced",
+            defaultBackupRetryInterval.toString(),
+            "Time in seconds between retries in backing up snapshot to secondary storage.",
+            false,
+            ConfigKey.Scope.Global,
+            null);
 
     void deletePoliciesForVolume(Long volumeId);
 

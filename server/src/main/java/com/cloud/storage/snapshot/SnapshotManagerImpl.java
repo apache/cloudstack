@@ -206,7 +206,8 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {BackupRetryAttempts, BackupRetryInterval, SnapshotHourlyMax, SnapshotDailyMax, SnapshotMonthlyMax, SnapshotWeeklyMax, usageSnapshotSelection};
+        return new ConfigKey<?>[] {backupRetryAttempts, backupRetryInterval, snapshotHourlyMax, snapshotDailyMax,
+                snapshotMonthlyMax, snapshotWeeklyMax, usageSnapshotSelection};
     }
 
     @Override
@@ -1272,15 +1273,15 @@ public class SnapshotManagerImpl extends MutualExclusiveIdsManagerBase implement
 
         String value = _configDao.getValue(Config.BackupSnapshotWait.toString());
 
-        Type.HOURLY.setMax(SnapshotHourlyMax.value());
-        Type.DAILY.setMax(SnapshotDailyMax.value());
-        Type.WEEKLY.setMax(SnapshotWeeklyMax.value());
-        Type.MONTHLY.setMax(SnapshotMonthlyMax.value());
+        Type.HOURLY.setMax(snapshotHourlyMax.value());
+        Type.DAILY.setMax(snapshotDailyMax.value());
+        Type.WEEKLY.setMax(snapshotWeeklyMax.value());
+        Type.MONTHLY.setMax(snapshotMonthlyMax.value());
         _totalRetries = NumbersUtil.parseInt(_configDao.getValue("total.retries"), 4);
         _pauseInterval = 2 * NumbersUtil.parseInt(_configDao.getValue("ping.interval"), 60);
 
-        snapshotBackupRetries = BackupRetryAttempts.value();
-        snapshotBackupRetryInterval = BackupRetryInterval.value();
+        snapshotBackupRetries = backupRetryAttempts.value();
+        snapshotBackupRetryInterval = backupRetryInterval.value();
         backupSnapshotExecutor = Executors.newScheduledThreadPool(10, new NamedThreadFactory("BackupSnapshotTask"));
         s_logger.info("Snapshot Manager is configured.");
 

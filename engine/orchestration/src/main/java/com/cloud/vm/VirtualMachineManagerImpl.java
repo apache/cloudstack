@@ -341,12 +341,10 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     static final ConfigKey<Integer> ClusterVMMetaDataSyncInterval = new ConfigKey<Integer>("Advanced", Integer.class, "vmmetadata.sync.interval", "180", "Cluster VM metadata sync interval in seconds",
             false);
 
-    static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
-            Long.class, "vm.job.check.interval", "3000",
-            "Interval in milliseconds to check if the job is complete", false);
     static final ConfigKey<Long> VmJobTimeout = new ConfigKey<Long>("Advanced",
             Long.class, "vm.job.timeout", "600000",
             "Time in milliseconds to wait before attempting to cancel a job", false);
+
     static final ConfigKey<Integer> VmJobStateReportInterval = new ConfigKey<Integer>("Advanced",
             Integer.class, "vm.job.report.interval", "60",
             "Interval to send application level pings to make sure the connection is still working", false);

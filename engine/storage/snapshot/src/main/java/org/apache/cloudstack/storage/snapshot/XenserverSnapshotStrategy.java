@@ -147,7 +147,7 @@ public class XenserverSnapshotStrategy extends SnapshotStrategyBase {
             if (oldestSnapshotOnPrimary != null) {
                 if (oldestSnapshotOnPrimary.getDataStoreId() == volume.getPoolId() && oldestSnapshotOnPrimary.getId() != parentSnapshotOnPrimaryStore.getId()) {
                     int _deltaSnapshotMax = NumbersUtil.parseInt(configDao.getValue("snapshot.delta.max"),
-                            SnapshotManager.DELTAMAX);
+                            SnapshotManager.snapshotDeltaMax);
                     int deltaSnap = _deltaSnapshotMax;
                     int i;
 

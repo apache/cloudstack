@@ -37,6 +37,8 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.snapshot.SnapshotManager;
+import com.cloud.vm.snapshot.VMSnapshotManager;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -3424,6 +3426,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         final boolean allowUserViewDestroyedVM = (QueryManagerImpl.AllowUserViewDestroyedVM.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
         final boolean allowUserExpungeRecoverVM = (UserVmManager.AllowUserExpungeRecoverVm.valueIn(caller.getId()) | _accountService.isAdmin(caller.getId()));
 
+        final Integer vmSnapshotExpireInterval = VMSnapshotManager.virtualMachineSnapshotExpireInterval.value();
+
+        final Integer diskSnapshotsMaxHourly = SnapshotManager.snapshotHourlyMax.value();
+        final Integer diskSnapshotsMaxDaily = SnapshotManager.snapshotDailyMax.value();
+        final Integer diskSnapshotsMaxWeekly = SnapshotManager.snapshotWeeklyMax.value();
+        final Integer diskSnapshotsMaxMonthly = SnapshotManager.snapshotMonthlyMax.value();
+
         // check if region-wide secondary storage is used
         boolean regionSecondaryEnabled = false;
         final List<ImageStoreVO> imgStores = _imgStoreDao.findRegionImageStores();
@@ -3443,6 +3452,13 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         capabilities.put("KVMSnapshotEnabled", KVMSnapshotEnabled);
         capabilities.put("allowUserViewDestroyedVM", allowUserViewDestroyedVM);
         capabilities.put("allowUserExpungeRecoverVM", allowUserExpungeRecoverVM);
+        capabilities.put("vmsnapshotsmax", VMSnapshotManager.virtualMachineSnapshotMax.value());
+        capabilities.put("vmsnapshotexpireinterval", VMSnapshotManager.virtualMachineSnapshotExpireInterval.value());
+        capabilities.put("disksnapshotsmaxhourly", SnapshotManager.snapshotHourlyMax.value());
+        capabilities.put("disksnapshotsmaxdaily", SnapshotManager.snapshotDailyMax.value());
+        capabilities.put("disksnapshotsmaxweekly", SnapshotManager.snapshotWeeklyMax.value());
+        capabilities.put("disksnapshotsmaxmonthly", SnapshotManager.snapshotMonthlyMax.value());
+
         if (apiLimitEnabled) {
             capabilities.put("apiLimitInterval", apiLimitInterval);
             capabilities.put("apiLimitMax", apiLimitMax);

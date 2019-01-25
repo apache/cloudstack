@@ -58,6 +58,9 @@ public interface VirtualMachineManager extends Manager {
     ConfigKey<Boolean> VmConfigDriveOnPrimaryPool = new ConfigKey<>("Advanced", Boolean.class, "vm.configdrive.primarypool.enabled", "false",
             "If config drive need to be created and hosted on primary storage pool. Currently only supported for KVM.", true);
 
+    ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced", Long.class, "vm.job.check.interval", "3000",
+            "Interval in milliseconds to check if the job is complete", false);
+
     interface Topics {
         String VM_POWER_STATE = "vm.powerstate";
     }

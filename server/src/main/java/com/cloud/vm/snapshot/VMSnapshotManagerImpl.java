@@ -86,7 +86,6 @@ import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.DateUtil;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.Predicate;
 import com.cloud.utils.ReflectionUse;
@@ -164,10 +163,6 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
     int _vmSnapshotMax;
     int _wait;
 
-    static final ConfigKey<Long> VmJobCheckInterval = new ConfigKey<Long>("Advanced",
-            Long.class, "vm.job.check.interval", "3000",
-            "Interval in milliseconds to check if the job is complete", false);
-
     @Override
     public boolean configure(String name, Map<String, Object> params) throws ConfigurationException {
         _name = name;
@@ -175,10 +170,8 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
             throw new ConfigurationException("Unable to get the configuration dao.");
         }
 
-        _vmSnapshotMax = NumbersUtil.parseInt(_configDao.getValue("vmsnapshot.max"), VMSNAPSHOTMAX);
-
-        String value = _configDao.getValue("vmsnapshot.create.wait");
-        _wait = NumbersUtil.parseInt(value, 1800);
+        _vmSnapshotMax = virtualMachineSnapshotMax.value();
+        _wait = virtualMachineSnapshotCreateWait.value();
 
         return true;
     }
@@ -376,7 +369,6 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
      * Create, persist and return vm snapshot for userVmVo with given parameters.
      * Persistence and support for custom service offerings are done on the same transaction
      * @param userVmVo user vm
-     * @param vmId vm id
      * @param vsDescription vm description
      * @param vmSnapshotName vm snapshot name
      * @param vsDisplayName vm snapshot display name
@@ -1021,7 +1013,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         private long _vmSnapshotId;
 
         public VmJobVMSnapshotOutcome(final AsyncJob job, final long vmSnapshotId) {
-            super(VMSnapshot.class, job, VmJobCheckInterval.value(), new Predicate() {
+            super(VMSnapshot.class, job, VirtualMachineManager.VmJobCheckInterval.value(), new Predicate() {
                 @Override
                 public boolean checkCondition() {
                     AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
@@ -1045,16 +1037,13 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
         long vmId;
 
         public VmJobVirtualMachineOutcome(final AsyncJob job, final long vmId) {
-            super(VirtualMachine.class, job, VmJobCheckInterval.value(), new Predicate() {
-                @Override
-                public boolean checkCondition() {
-                    AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
-                    assert (jobVo != null);
-                    if (jobVo == null || jobVo.getStatus() != JobInfo.Status.IN_PROGRESS)
-                        return true;
+            super(VirtualMachine.class, job, VirtualMachineManager.VmJobCheckInterval.value(), () -> {
+                AsyncJobVO jobVo = _entityMgr.findById(AsyncJobVO.class, job.getId());
+                assert (jobVo != null);
+                if (jobVo == null || jobVo.getStatus() != JobInfo.Status.IN_PROGRESS)
+                    return true;
 
-                    return false;
-                }
+                return false;
             }, AsyncJob.Topics.JOB_STATE);
         }
 
@@ -1309,6 +1298,7 @@ public class VMSnapshotManagerImpl extends MutualExclusiveIdsManagerBase impleme
 
     @Override
     public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] {VMSnapshotExpireInterval};
+        return new ConfigKey<?>[] {
+                virtualMachineSnapshotExpireInterval, virtualMachineSnapshotCreateWait, virtualMachineSnapshotMax};
     }
 }

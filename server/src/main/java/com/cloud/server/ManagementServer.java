@@ -65,6 +65,6 @@ public interface ManagementServer extends ManagementService, PluggableService {
      */
     Pair<String, Integer> getVncPort(VirtualMachine vm);
 
-    public long getMemoryOrCpuCapacityByHost(Long hostId, short capacityType);
+    long getMemoryOrCpuCapacityByHost(Long hostId, short capacityType);
 
 }
