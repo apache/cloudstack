@@ -22,22 +22,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.cloudstack.api.BaseCmd;
-import org.apache.log4j.Logger;
-
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.usage.Usage;
-
-import com.cloud.utils.Pair;
 
 @APICommand(name = ListUsageRecordsCmd.APINAME,
         description = "Lists usage records for accounts",
