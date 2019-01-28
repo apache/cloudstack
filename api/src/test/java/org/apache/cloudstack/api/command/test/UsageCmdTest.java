@@ -28,7 +28,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.mockito.Mockito;
 
-import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.usage.Usage;
 import org.apache.cloudstack.usage.UsageService;
 
@@ -36,7 +36,7 @@ import com.cloud.utils.Pair;
 
 public class UsageCmdTest extends TestCase {
 
-    private GetUsageRecordsCmd getUsageRecordsCmd;
+    private ListUsageRecordsCmd listUsageRecordsCmd;
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
@@ -45,7 +45,7 @@ public class UsageCmdTest extends TestCase {
     @Before
     public void setUp() {
 
-        getUsageRecordsCmd = new GetUsageRecordsCmd() {
+        listUsageRecordsCmd = new ListUsageRecordsCmd() {
 
         };
     }
@@ -53,8 +53,8 @@ public class UsageCmdTest extends TestCase {
     @Test
     public void testExecuteSuccess() {
         UsageService usageService = Mockito.mock(UsageService.class);
-        getUsageRecordsCmd._usageService = usageService;
-        getUsageRecordsCmd.execute();
+        listUsageRecordsCmd._usageService = usageService;
+        listUsageRecordsCmd.execute();
     }
 
     @Test
@@ -64,29 +64,29 @@ public class UsageCmdTest extends TestCase {
 
         Pair<List<? extends Usage>, Integer> usageRecords = new Pair<List<? extends Usage>, Integer>(new ArrayList<Usage>(), new Integer(0));
 
-        Mockito.when(usageService.getUsageRecords(getUsageRecordsCmd)).thenReturn(usageRecords);
+        Mockito.when(usageService.getUsageRecords(listUsageRecordsCmd)).thenReturn(usageRecords);
 
-        getUsageRecordsCmd._usageService = usageService;
-        getUsageRecordsCmd.execute();
+        listUsageRecordsCmd._usageService = usageService;
+        listUsageRecordsCmd.execute();
 
     }
 
     @Test
     public void testCrud() {
-        getUsageRecordsCmd.setDomainId(1L);
-        assertTrue(getUsageRecordsCmd.getDomainId().equals(1L));
+        listUsageRecordsCmd.setDomainId(1L);
+        assertTrue(listUsageRecordsCmd.getDomainId().equals(1L));
 
-        getUsageRecordsCmd.setAccountName("someAccount");
-        assertTrue(getUsageRecordsCmd.getAccountName().equals("someAccount"));
+        listUsageRecordsCmd.setAccountName("someAccount");
+        assertTrue(listUsageRecordsCmd.getAccountName().equals("someAccount"));
 
         Date d = new Date();
-        getUsageRecordsCmd.setStartDate(d);
-        getUsageRecordsCmd.setEndDate(d);
-        assertTrue(getUsageRecordsCmd.getStartDate().equals(d));
-        assertTrue(getUsageRecordsCmd.getEndDate().equals(d));
+        listUsageRecordsCmd.setStartDate(d);
+        listUsageRecordsCmd.setEndDate(d);
+        assertTrue(listUsageRecordsCmd.getStartDate().equals(d));
+        assertTrue(listUsageRecordsCmd.getEndDate().equals(d));
 
-        getUsageRecordsCmd.setUsageId("someId");
-        assertTrue(getUsageRecordsCmd.getUsageId().equals("someId"));
+        listUsageRecordsCmd.setUsageId("someId");
+        assertTrue(listUsageRecordsCmd.getUsageId().equals("someId"));
     }
 
 }
