@@ -15,7 +15,7 @@
 # specific language governing permissions and limitations
 # under the License.
 sudo: required
-dist: trusty
+dist: xenial
 group: edge
 
 language: java
