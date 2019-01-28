@@ -22,6 +22,8 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.offering.ServiceOffering;
+import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.GuestOSHypervisorVO;
 import com.cloud.storage.GuestOSVO;
@@ -31,13 +33,16 @@ import com.cloud.utils.Pair;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachineProfile;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.List;
 import java.util.Map;
 
 public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
@@ -49,6 +54,35 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     HostDao _hostDao;
 
     public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
+
+    public static final String DPDK_VHOST_USER_MODE = "DPDK-VHOSTUSER";
+    public static final String DPDK_NUMA = ApiConstants.EXTRA_CONFIG + "-dpdk-numa";
+    public static final String DPDK_HUGE_PAGES = ApiConstants.EXTRA_CONFIG + "-dpdk-hugepages";
+
+    public enum DPDKvHostUserMode {
+        CLIENT("client"), SERVER("server");
+
+        private String str;
+
+        DPDKvHostUserMode(String str) {
+            this.str = str;
+        }
+
+        public static DPDKvHostUserMode fromValue(String val) {
+            if (val.equalsIgnoreCase("client")) {
+                return CLIENT;
+            } else if (val.equalsIgnoreCase("server")) {
+                return SERVER;
+            } else {
+                throw new IllegalArgumentException("Invalid DPDK vHost User mode:" + val);
+            }
+        }
+
+        @Override
+        public String toString() {
+            return str;
+        }
+    }
 
     @Override
     public HypervisorType getHypervisorType() {
@@ -106,6 +140,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     public VirtualMachineTO implement(VirtualMachineProfile vm) {
         VirtualMachineTO to = toVirtualMachineTO(vm);
         setVmQuotaPercentage(to, vm);
+        addServiceOfferingExtraConfiguration(to, vm);
 
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());
@@ -122,6 +157,44 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         }
 
         return to;
+    }
+
+    /**
+     * Add extra configurations from service offering to the VM TO.
+     * Extra configuration keys are expected in formats:
+     * - "extraconfig-N"
+     * - "extraconfig-CONFIG_NAME"
+     */
+    protected void addServiceOfferingExtraConfiguration(VirtualMachineTO to, VirtualMachineProfile vmProfile) {
+        ServiceOffering offering = vmProfile.getServiceOffering();
+        List<ServiceOfferingDetailsVO> details = _serviceOfferingDetailsDao.listDetails(offering.getId());
+        if (CollectionUtils.isNotEmpty(details)) {
+            for (ServiceOfferingDetailsVO detail : details) {
+                if (detail.getName().startsWith(ApiConstants.EXTRA_CONFIG)) {
+                    to.addExtraConfig(detail.getName(), detail.getValue());
+                } else if (detail.getName().equalsIgnoreCase(DPDK_VHOST_USER_MODE)) {
+                    setDpdkVhostUserMode(to, offering, detail);
+                }
+            }
+        }
+    }
+
+    /**
+     * Add DPDK vHost User Mode as extra configuration to the VM TO (if present on the VM service offering details)
+     */
+    protected void setDpdkVhostUserMode(VirtualMachineTO to, ServiceOffering offering, ServiceOfferingDetailsVO detail) {
+        if (detail != null) {
+            String mode = detail.getValue();
+            try {
+                DPDKvHostUserMode dpdKvHostUserMode = DPDKvHostUserMode.fromValue(mode);
+                to.addExtraConfig(DPDK_VHOST_USER_MODE, dpdKvHostUserMode.toString());
+            } catch (IllegalArgumentException e) {
+                s_logger.error(String.format("DPDK vHost User mode found as a detail for service offering: %s " +
+                                "but value: %s is not supported. Supported values: %s, %s",
+                        offering.getId(), mode,
+                        DPDKvHostUserMode.CLIENT.toString(), DPDKvHostUserMode.SERVER.toString()));
+            }
+        }
     }
 
     @Override

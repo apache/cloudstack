@@ -18,6 +18,7 @@
  */
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.hypervisor.KVMGuru;
 import com.cloud.utils.script.Script;
 import org.junit.Assert;
 import org.junit.Before;
@@ -30,6 +31,9 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @PrepareForTest({ Script.class })
 @RunWith(PowerMockRunner.class)
 public class OvsVifDriverTest {
@@ -38,11 +42,14 @@ public class OvsVifDriverTest {
 
     private OvsVifDriver driver = new OvsVifDriver();
 
+    private Map<String, String> extraConfig;
+
     @Before
     public void initMocks() {
         MockitoAnnotations.initMocks(this);
         PowerMockito.mockStatic(Script.class);
         Mockito.when(Script.runSimpleBashScript(Matchers.anyString())).thenReturn(null);
+        extraConfig = new HashMap<>();
     }
 
     @Test
@@ -71,5 +78,37 @@ public class OvsVifDriverTest {
                 thenReturn(OvsVifDriver.DPDK_PORT_PREFIX + String.valueOf(dpdkPortNumber));
         String expectedPortName = OvsVifDriver.DPDK_PORT_PREFIX + String.valueOf(dpdkPortNumber + 1);
         Assert.assertEquals(expectedPortName, driver.getNextDpdkPort());
+    }
+
+    @Test
+    public void testGetGuestInterfacesModeFromDPDKVhostUserModeClientDPDK() {
+        String guestMode = driver.getGuestInterfacesModeFromDPDKVhostUserMode(KVMGuru.DPDKvHostUserMode.CLIENT);
+        Assert.assertEquals("server", guestMode);
+    }
+
+    @Test
+    public void testGetGuestInterfacesModeFromDPDKVhostUserModeServerDPDK() {
+        String guestMode = driver.getGuestInterfacesModeFromDPDKVhostUserMode(KVMGuru.DPDKvHostUserMode.SERVER);
+        Assert.assertEquals("client", guestMode);
+    }
+
+    @Test
+    public void testGetDPDKvHostUserModeServerExtraConfig() {
+        extraConfig.put(KVMGuru.DPDK_VHOST_USER_MODE, KVMGuru.DPDKvHostUserMode.SERVER.toString());
+        KVMGuru.DPDKvHostUserMode dpdKvHostUserMode = driver.getDPDKvHostUserMode(extraConfig);
+        Assert.assertEquals(KVMGuru.DPDKvHostUserMode.SERVER, dpdKvHostUserMode);
+    }
+
+    @Test
+    public void testGetDPDKvHostUserModeServerClientExtraConfig() {
+        extraConfig.put(KVMGuru.DPDK_VHOST_USER_MODE, KVMGuru.DPDKvHostUserMode.CLIENT.toString());
+        KVMGuru.DPDKvHostUserMode dpdKvHostUserMode = driver.getDPDKvHostUserMode(extraConfig);
+        Assert.assertEquals(KVMGuru.DPDKvHostUserMode.CLIENT, dpdKvHostUserMode);
+    }
+
+    @Test
+    public void testGetDPDKvHostUserModeServerEmptyExtraConfig() {
+        KVMGuru.DPDKvHostUserMode dpdKvHostUserMode = driver.getDPDKvHostUserMode(extraConfig);
+        Assert.assertEquals(KVMGuru.DPDKvHostUserMode.SERVER, dpdKvHostUserMode);
     }
 }
