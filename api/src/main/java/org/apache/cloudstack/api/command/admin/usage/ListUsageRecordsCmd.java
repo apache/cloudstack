@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
@@ -38,15 +39,13 @@ import org.apache.cloudstack.usage.Usage;
 
 import com.cloud.utils.Pair;
 
-@APICommand(name = "listUsageRecords",
+@APICommand(name = ListUsageRecordsCmd.APINAME,
         description = "Lists usage records for accounts",
         responseObject = UsageRecordResponse.class,
         requestHasSensitiveInfo = false,
         responseHasSensitiveInfo = false)
 public class ListUsageRecordsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(ListUsageRecordsCmd.class.getName());
-
-    private static final String s_name = "listusagerecordsresponse";
+    public static final String APINAME = "listUsageRecords";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -156,7 +155,7 @@ public class ListUsageRecordsCmd extends BaseListCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override
