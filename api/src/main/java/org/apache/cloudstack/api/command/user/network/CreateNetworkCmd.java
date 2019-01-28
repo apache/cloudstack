@@ -26,6 +26,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.NetworkACLResponse;
 import org.apache.cloudstack.api.response.NetworkOfferingResponse;
@@ -47,7 +48,7 @@ import com.cloud.utils.net.NetUtils;
 
 @APICommand(name = "createNetwork", description = "Creates a network", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class CreateNetworkCmd extends BaseCmd {
+public class CreateNetworkCmd extends BaseCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(CreateNetworkCmd.class.getName());
 
     private static final String s_name = "createnetworkresponse";
@@ -310,7 +311,7 @@ public class CreateNetworkCmd extends BaseCmd {
         void execute() throws InsufficientCapacityException, ConcurrentOperationException, ResourceAllocationException {
         Network result = _networkService.createGuestNetwork(this);
         if (result != null) {
-            NetworkResponse response = _responseGenerator.createNetworkResponse(ResponseView.Restricted, result);
+            NetworkResponse response = _responseGenerator.createNetworkResponse(getResponseView(), result);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

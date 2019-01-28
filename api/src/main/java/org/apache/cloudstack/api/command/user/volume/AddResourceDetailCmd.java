@@ -16,17 +16,16 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.volume;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+
+import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
+import org.apache.cloudstack.api.TaggedResources;
 import org.apache.cloudstack.api.response.SuccessResponse;
-import org.apache.log4j.Logger;
 
 import com.cloud.event.EventTypes;
 import com.cloud.server.ResourceTag;
@@ -58,19 +57,7 @@ public class AddResourceDetailCmd extends BaseAsyncCmd {
     /////////////////////////////////////////////////////
 
     public Map getDetails() {
-        Map<String, String> detailsMap = null;
-        if (!details.isEmpty()) {
-            detailsMap = new HashMap<String, String>();
-            Collection<?> servicesCollection = details.values();
-            Iterator<?> iter = servicesCollection.iterator();
-            while (iter.hasNext()) {
-                HashMap<String, String> services = (HashMap<String, String>)iter.next();
-                String key = services.get("key");
-                String value = services.get("value");
-                detailsMap.put(key, value);
-            }
-        }
-        return detailsMap;
+        return TaggedResources.parseKeyValueMap(details, true);
     }
 
     public ResourceTag.ResourceObjectType getResourceType() {

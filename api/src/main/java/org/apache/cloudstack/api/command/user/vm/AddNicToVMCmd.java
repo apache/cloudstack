@@ -35,6 +35,7 @@ import org.apache.cloudstack.api.BaseAsyncCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -49,7 +50,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
-public class AddNicToVMCmd extends BaseAsyncCmd {
+public class AddNicToVMCmd extends BaseAsyncCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(AddNicToVMCmd.class);
     private static final String s_name = "addnictovirtualmachineresponse";
 
@@ -164,7 +165,7 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
         dc.add(VMDetails.valueOf("nics"));
         EnumSet<VMDetails> details = EnumSet.copyOf(dc);
         if (result != null){
-            UserVmResponse response = _responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", details, result).get(0);
+            UserVmResponse response = _responseGenerator.createUserVmResponse(getResponseView(), "virtualmachine", details, result).get(0);
             response.setResponseName(getCommandName());
             setResponseObject(response);
         } else {

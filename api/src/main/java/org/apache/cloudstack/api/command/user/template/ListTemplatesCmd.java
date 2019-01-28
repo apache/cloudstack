@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.TemplateResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
@@ -36,7 +37,7 @@ import com.cloud.user.Account;
 
 @APICommand(name = "listTemplates", description = "List all public, private, and privileged templates.", responseObject = TemplateResponse.class, entityType = {VirtualMachineTemplate.class}, responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListTemplatesCmd extends BaseListTaggedResourcesCmd {
+public class ListTemplatesCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListTemplatesCmd.class.getName());
 
     private static final String s_name = "listtemplatesresponse";

@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.GuestOSResponse;
 import org.apache.cloudstack.api.response.ListResponse;
@@ -39,7 +40,7 @@ import com.cloud.template.VirtualMachineTemplate;
 
 @APICommand(name = "registerIso", responseObject = TemplateResponse.class, description = "Registers an existing ISO into the CloudStack Cloud.", responseView = ResponseView.Restricted,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class RegisterIsoCmd extends BaseCmd {
+public class RegisterIsoCmd extends BaseCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(RegisterIsoCmd.class.getName());
 
     private static final String s_name = "registerisoresponse";
@@ -210,7 +211,7 @@ public class RegisterIsoCmd extends BaseCmd {
         VirtualMachineTemplate template = _templateService.registerIso(this);
         if (template != null) {
             ListResponse<TemplateResponse> response = new ListResponse<TemplateResponse>();
-            List<TemplateResponse> templateResponses = _responseGenerator.createIsoResponses(ResponseView.Restricted, template, zoneId, false);
+            List<TemplateResponse> templateResponses = _responseGenerator.createIsoResponses(getResponseView(), template, zoneId, false);
             response.setResponses(templateResponses);
             response.setResponseName(getCommandName());
             setResponseObject(response);

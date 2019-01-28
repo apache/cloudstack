@@ -1,3 +1,4 @@
+///
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -14,15 +15,12 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package org.apache.cloudstack.api.command.admin.domain;
+///
 
-import org.apache.cloudstack.api.APICommand;
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.command.admin.AdminCmd;
-import org.apache.cloudstack.api.response.DomainResponse;
+package org.apache.cloudstack.api.command;
 
-import com.cloud.domain.Domain;
+import org.apache.cloudstack.api.ResponseObject;
 
-@APICommand(name = "listDomains", description = "Lists domains and provides detailed information for listed domains", responseObject = DomainResponse.class, responseView = ResponseView.Full, entityType = {Domain.class},
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListDomainsCmdByAdmin extends ListDomainsCmd implements AdminCmd {}
+public interface ResponseViewProvider {
+    ResponseObject.ResponseView getResponseView();
+}
