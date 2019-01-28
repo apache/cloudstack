@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.volume;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.admin.AdminCmd;
 import org.apache.cloudstack.api.command.user.volume.ListVolumesCmd;
 import org.apache.cloudstack.api.response.VolumeResponse;
 
@@ -25,6 +26,4 @@ import com.cloud.storage.Volume;
 
 @APICommand(name = "listVolumes", description = "Lists all volumes.", responseObject = VolumeResponse.class, responseView = ResponseView.Full, entityType = {
         Volume.class}, requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListVolumesCmdByAdmin extends ListVolumesCmd {
-
-}
+public class ListVolumesCmdByAdmin extends ListVolumesCmd implements AdminCmd {}

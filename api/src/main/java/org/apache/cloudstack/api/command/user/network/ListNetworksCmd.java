@@ -27,6 +27,7 @@ import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListTaggedResourcesCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.UserCmd;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
@@ -38,7 +39,7 @@ import com.cloud.utils.Pair;
 
 @APICommand(name = "listNetworks", description = "Lists all available networks.", responseObject = NetworkResponse.class, responseView = ResponseView.Restricted, entityType = {Network.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
+public class ListNetworksCmd extends BaseListTaggedResourcesCmd implements UserCmd {
     public static final Logger s_logger = Logger.getLogger(ListNetworksCmd.class.getName());
     private static final String s_name = "listnetworksresponse";
 
@@ -164,7 +165,7 @@ public class ListNetworksCmd extends BaseListTaggedResourcesCmd {
         ListResponse<NetworkResponse> response = new ListResponse<NetworkResponse>();
         List<NetworkResponse> networkResponses = new ArrayList<NetworkResponse>();
         for (Network network : networks.first()) {
-            NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(ResponseView.Restricted, network);
+            NetworkResponse networkResponse = _responseGenerator.createNetworkResponse(getResponseView(), network);
             networkResponses.add(networkResponse);
         }
         response.setResponses(networkResponses, networks.second());
