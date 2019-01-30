@@ -18,9 +18,11 @@
  */
 package com.cloud.hypervisor.kvm.dpdk;
 
+import com.cloud.utils.component.Adapter;
+
 import java.util.Map;
 
-public interface DPDKDriver {
+public interface DPDKDriver extends Adapter {
 
     /**
      * Get the next DPDK port name to be created

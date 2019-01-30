@@ -18,19 +18,23 @@
  */
 package com.cloud.hypervisor.kvm.dpdk;
 
+import com.cloud.utils.component.AdapterBase;
 import com.cloud.utils.script.Script;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 
 import java.util.Map;
 
-public class DPDKDriverImpl implements DPDKDriver {
+public class DPDKDriverImpl extends AdapterBase implements DPDKDriver {
     static final String DPDK_PORT_PREFIX = "csdpdk-";
 
     private final String dpdkPortVhostUserType = "dpdkvhostuser";
     private final String dpdkPortVhostUserClientType = "dpdkvhostuserclient";
 
     private static final Logger s_logger = Logger.getLogger(DPDKDriver.class);
+
+    public DPDKDriverImpl() {
+    }
 
     /**
      * Get the next DPDK port name to be created

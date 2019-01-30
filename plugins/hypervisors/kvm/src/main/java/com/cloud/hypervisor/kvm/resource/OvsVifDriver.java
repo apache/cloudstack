@@ -22,10 +22,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.hypervisor.kvm.dpdk.DPDKDriver;
+import com.cloud.hypervisor.kvm.dpdk.DPDKDriverImpl;
 import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang.StringUtils;
@@ -44,9 +44,7 @@ import com.cloud.utils.script.Script;
 public class OvsVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(OvsVifDriver.class);
     private int _timeout;
-
-    @Inject
-    DPDKDriver dpdkDriver;
+    private DPDKDriver dpdkDriver;
 
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
@@ -57,6 +55,11 @@ public class OvsVifDriver extends VifDriverBase {
         String networkScriptsDir = (String)params.get("network.scripts.dir");
         if (networkScriptsDir == null) {
             networkScriptsDir = "scripts/vm/network/vnet";
+        }
+
+        String dpdk = (String) params.get("openvswitch.dpdk.enabled");
+        if (StringUtils.isNotBlank(dpdk) && Boolean.parseBoolean(dpdk)) {
+            dpdkDriver = new DPDKDriverImpl();
         }
 
         String value = (String)params.get("scripts.timeout");

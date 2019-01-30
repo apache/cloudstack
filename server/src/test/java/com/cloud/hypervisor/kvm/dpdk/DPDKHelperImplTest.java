@@ -35,14 +35,14 @@ import java.net.URLEncoder;
 import java.util.Arrays;
 
 @RunWith(MockitoJUnitRunner.class)
-public class DPDKManagerImplTest {
+public class DPDKHelperImplTest {
 
     @Mock
     ServiceOfferingDetailsDao serviceOfferingDetailsDao;
 
     @Spy
     @InjectMocks
-    private DPDKHelper dpdkManager = new DPDKHelperImpl();
+    private DPDKHelper dpdkHelper = new DPDKHelperImpl();
 
     @Mock
     VirtualMachineTO vmTO;
@@ -92,7 +92,7 @@ public class DPDKManagerImplTest {
 
     @Test
     public void testSetDpdkVhostUserModeValidDetail() {
-        dpdkManager.setDpdkVhostUserMode(vmTO, vmProfile);
+        dpdkHelper.setDpdkVhostUserMode(vmTO, vmProfile);
         Mockito.verify(vmTO).addExtraConfig(DPDKHelper.DPDK_VHOST_USER_MODE, dpdkVhostMode);
     }
 

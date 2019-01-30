@@ -54,7 +54,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     @Inject
     HostDao _hostDao;
     @Inject
-    DPDKHelper dpdkManager;
+    DPDKHelper dpdkHelper;
 
     public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
 
@@ -116,8 +116,8 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         setVmQuotaPercentage(to, vm);
         addServiceOfferingExtraConfiguration(to, vm);
 
-        if (dpdkManager.isDPDKvHostUserModeSettingOnServiceOffering(vm)) {
-            dpdkManager.setDpdkVhostUserMode(to, vm);
+        if (dpdkHelper.isDPDKvHostUserModeSettingOnServiceOffering(vm)) {
+            dpdkHelper.setDpdkVhostUserMode(to, vm);
         }
 
         // Determine the VM's OS description
