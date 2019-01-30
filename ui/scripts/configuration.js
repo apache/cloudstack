@@ -3001,9 +3001,9 @@
                                                                                 });
                                                                             }
                                                                         } else { //canenableindividualservice == true
-                                                                            if ($thisProviderDropdown.context.name in providerDropdownsForciblyChangedTogether) { //if this provider dropdown is one of provider dropdowns forcibly changed together earlier, make other forcibly changed provider dropdowns restore default option (i.e. 1st option in dropdown)
+                                                                            if (this.name in providerDropdownsForciblyChangedTogether) { //if this provider dropdown is one of provider dropdowns forcibly changed together earlier, make other forcibly changed provider dropdowns restore default option (i.e. 1st option in dropdown)
                                                                                 for (var key in providerDropdownsForciblyChangedTogether) {
-                                                                                    if (key == $thisProviderDropdown.context.name)
+                                                                                    if (key == this.name)
                                                                                         continue; //skip to next item in for loop
                                                                                     else
                                                                                         $("select[name='" + key + "'] option:first").attr("selected", "selected");
