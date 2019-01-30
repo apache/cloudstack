@@ -2264,7 +2264,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
      */
     private void verifyDestinationStorage(Map<String, Storage.StoragePoolType> sourcePools, Host destHost) {
         if (MapUtils.isNotEmpty(sourcePools)) {
-            LOGGER.debug("Verifying NFS source pools are already mounted on destination host " + destHost.getUuid());
+            LOGGER.debug("Verifying source pools are already available on destination host " + destHost.getUuid());
             CheckStorageAvailabilityCommand cmd = new CheckStorageAvailabilityCommand(sourcePools);
             try {
                 Answer answer = _agentMgr.send(destHost.getId(), cmd);
