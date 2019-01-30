@@ -22,9 +22,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.cloud.hypervisor.KVMGuru;
+import com.cloud.hypervisor.kvm.dpdk.DPDKDriver;
+import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
 import com.cloud.utils.exception.CloudRuntimeException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -43,9 +45,8 @@ public class OvsVifDriver extends VifDriverBase {
     private static final Logger s_logger = Logger.getLogger(OvsVifDriver.class);
     private int _timeout;
 
-    protected static final String DPDK_PORT_PREFIX = "csdpdk-";
-    protected static final String DPDK_PORT_VHOST_USER_TYPE = "dpdkvhostuser";
-    protected static final String DPDK_PORT_VHOST_USER_CLIENT_TYPE = "dpdkvhostuserclient";
+    @Inject
+    DPDKDriver dpdkDriver;
 
     @Override
     public void configure(Map<String, Object> params) throws ConfigurationException {
@@ -83,83 +84,6 @@ public class OvsVifDriver extends VifDriverBase {
         s_logger.debug("done looking for pifs, no more bridges");
     }
 
-    /**
-     * Get the latest DPDK port number created on a DPDK enabled host
-     */
-    protected int getDpdkLatestPortNumberUsed() {
-        s_logger.debug("Checking the last DPDK port created");
-        String cmd = "ovs-vsctl show | grep Port | grep " + DPDK_PORT_PREFIX + " | " +
-                "awk '{ print $2 }' | sort -rV | head -1";
-        String port = Script.runSimpleBashScript(cmd);
-        int portNumber = 0;
-        if (StringUtils.isNotBlank(port)) {
-            String unquotedPort = port.replace("\"", "");
-            String dpdkPortNumber = unquotedPort.split(DPDK_PORT_PREFIX)[1];
-            portNumber = Integer.valueOf(dpdkPortNumber);
-        }
-        return portNumber;
-    }
-
-    /**
-     * Get the next DPDK port name to be created
-     */
-    protected String getNextDpdkPort() {
-        int portNumber = getDpdkLatestPortNumberUsed();
-        return DPDK_PORT_PREFIX + String.valueOf(portNumber + 1);
-    }
-
-    /**
-     * Add OVS port (if it does not exist) to bridge with DPDK support
-     */
-    protected void addDpdkPort(String bridgeName, String port, String vlan, KVMGuru.DPDKvHostUserMode vHostUserMode) {
-        String type = vHostUserMode == KVMGuru.DPDKvHostUserMode.SERVER ?
-                DPDK_PORT_VHOST_USER_TYPE :
-                DPDK_PORT_VHOST_USER_CLIENT_TYPE;
-
-        StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(String.format("ovs-vsctl add-port %s %s " +
-                "vlan_mode=access tag=%s " +
-                "-- set Interface %s type=%s", bridgeName, port, vlan, port, type));
-
-        if (vHostUserMode == KVMGuru.DPDKvHostUserMode.CLIENT) {
-            stringBuilder.append(String.format(" options:vhost-server-path=%s/%s",
-                    _libvirtComputingResource.dpdkOvsPath, port));
-        }
-
-        String cmd = stringBuilder.toString();
-        s_logger.debug("DPDK property enabled, executing: " + cmd);
-        Script.runSimpleBashScript(cmd);
-    }
-
-    /**
-     * Since DPDK user client/server mode, retrieve the guest interfaces mode from the DPDK vHost User mode
-     */
-    protected String getGuestInterfacesModeFromDPDKVhostUserMode(KVMGuru.DPDKvHostUserMode dpdKvHostUserMode) {
-        return dpdKvHostUserMode == KVMGuru.DPDKvHostUserMode.CLIENT ? "server" : "client";
-    }
-
-    /**
-     * Get DPDK vHost User mode from extra config. If it is not present, server is returned as default
-     */
-    protected KVMGuru.DPDKvHostUserMode getDPDKvHostUserMode(Map<String, String> extraConfig) {
-        return extraConfig.containsKey(KVMGuru.DPDK_VHOST_USER_MODE) ?
-                KVMGuru.DPDKvHostUserMode.fromValue(extraConfig.get(KVMGuru.DPDK_VHOST_USER_MODE)) :
-                KVMGuru.DPDKvHostUserMode.SERVER;
-    }
-
-    /**
-     * Check for additional extra 'dpdk-interface' configurations, return them appended
-     */
-    private String getExtraDpdkProperties(Map<String, String> extraConfig) {
-        StringBuilder stringBuilder = new StringBuilder();
-        for (String key : extraConfig.keySet()) {
-            if (key.startsWith(LibvirtComputingResource.DPDK_INTERFACE_PREFIX)) {
-                stringBuilder.append(extraConfig.get(key));
-            }
-        }
-        return stringBuilder.toString();
-    }
-
     @Override
     public InterfaceDef plug(NicTO nic, String guestOsType, String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
         s_logger.debug("plugging nic=" + nic);
@@ -189,16 +113,17 @@ public class OvsVifDriver extends VifDriverBase {
                 if (trafficLabel != null && !trafficLabel.isEmpty()) {
                     if (_libvirtComputingResource.dpdkSupport && !nic.isDpdkDisabled()) {
                         s_logger.debug("DPDK support enabled: configuring per traffic label " + trafficLabel);
-                        if (StringUtils.isBlank(_libvirtComputingResource.dpdkOvsPath)) {
+                        String dpdkOvsPath = _libvirtComputingResource.dpdkOvsPath;
+                        if (StringUtils.isBlank(dpdkOvsPath)) {
                             throw new CloudRuntimeException("DPDK is enabled on the host but no OVS path has been provided");
                         }
-                        String port = getNextDpdkPort();
-                        KVMGuru.DPDKvHostUserMode dpdKvHostUserMode = getDPDKvHostUserMode(extraConfig);
-                        addDpdkPort(_pifs.get(trafficLabel), port, vlanId, dpdKvHostUserMode);
-                        String interfaceMode = getGuestInterfacesModeFromDPDKVhostUserMode(dpdKvHostUserMode);
-                        intf.defDpdkNet(_libvirtComputingResource.dpdkOvsPath, port, nic.getMac(),
+                        String port = dpdkDriver.getNextDpdkPort();
+                        DPDKHelper.VHostUserMode dpdKvHostUserMode = dpdkDriver.getDPDKvHostUserMode(extraConfig);
+                        dpdkDriver.addDpdkPort(_pifs.get(trafficLabel), port, vlanId, dpdKvHostUserMode, dpdkOvsPath);
+                        String interfaceMode = dpdkDriver.getGuestInterfacesModeFromDPDKVhostUserMode(dpdKvHostUserMode);
+                        intf.defDpdkNet(dpdkOvsPath, port, nic.getMac(),
                                 getGuestNicModel(guestOsType, nicAdapter), 0,
-                                getExtraDpdkProperties(extraConfig),
+                                dpdkDriver.getExtraDpdkProperties(extraConfig),
                                 interfaceMode);
                     } else {
                         s_logger.debug("creating a vlan dev and bridge for guest traffic per traffic label " + trafficLabel);

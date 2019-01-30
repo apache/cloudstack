@@ -22,6 +22,7 @@ import com.cloud.agent.api.to.VirtualMachineTO;
 import com.cloud.host.HostVO;
 import com.cloud.host.dao.HostDao;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.hypervisor.kvm.dpdk.DPDKHelper;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.storage.DataStoreRole;
@@ -52,37 +53,10 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
     GuestOSHypervisorDao _guestOsHypervisorDao;
     @Inject
     HostDao _hostDao;
+    @Inject
+    DPDKHelper dpdkManager;
 
     public static final Logger s_logger = Logger.getLogger(KVMGuru.class);
-
-    public static final String DPDK_VHOST_USER_MODE = "DPDK-VHOSTUSER";
-    public static final String DPDK_NUMA = ApiConstants.EXTRA_CONFIG + "-dpdk-numa";
-    public static final String DPDK_HUGE_PAGES = ApiConstants.EXTRA_CONFIG + "-dpdk-hugepages";
-
-    public enum DPDKvHostUserMode {
-        CLIENT("client"), SERVER("server");
-
-        private String str;
-
-        DPDKvHostUserMode(String str) {
-            this.str = str;
-        }
-
-        public static DPDKvHostUserMode fromValue(String val) {
-            if (val.equalsIgnoreCase("client")) {
-                return CLIENT;
-            } else if (val.equalsIgnoreCase("server")) {
-                return SERVER;
-            } else {
-                throw new IllegalArgumentException("Invalid DPDK vHost User mode:" + val);
-            }
-        }
-
-        @Override
-        public String toString() {
-            return str;
-        }
-    }
 
     @Override
     public HypervisorType getHypervisorType() {
@@ -142,6 +116,10 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
         setVmQuotaPercentage(to, vm);
         addServiceOfferingExtraConfiguration(to, vm);
 
+        if (dpdkManager.isDPDKvHostUserModeSettingOnServiceOffering(vm)) {
+            dpdkManager.setDpdkVhostUserMode(to, vm);
+        }
+
         // Determine the VM's OS description
         GuestOSVO guestOS = _guestOsDao.findByIdIncludingRemoved(vm.getVirtualMachine().getGuestOSId());
         to.setOs(guestOS.getDisplayName());
@@ -172,27 +150,7 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             for (ServiceOfferingDetailsVO detail : details) {
                 if (detail.getName().startsWith(ApiConstants.EXTRA_CONFIG)) {
                     to.addExtraConfig(detail.getName(), detail.getValue());
-                } else if (detail.getName().equalsIgnoreCase(DPDK_VHOST_USER_MODE)) {
-                    setDpdkVhostUserMode(to, offering, detail);
                 }
-            }
-        }
-    }
-
-    /**
-     * Add DPDK vHost User Mode as extra configuration to the VM TO (if present on the VM service offering details)
-     */
-    protected void setDpdkVhostUserMode(VirtualMachineTO to, ServiceOffering offering, ServiceOfferingDetailsVO detail) {
-        if (detail != null) {
-            String mode = detail.getValue();
-            try {
-                DPDKvHostUserMode dpdKvHostUserMode = DPDKvHostUserMode.fromValue(mode);
-                to.addExtraConfig(DPDK_VHOST_USER_MODE, dpdKvHostUserMode.toString());
-            } catch (IllegalArgumentException e) {
-                s_logger.error(String.format("DPDK vHost User mode found as a detail for service offering: %s " +
-                                "but value: %s is not supported. Supported values: %s, %s",
-                        offering.getId(), mode,
-                        DPDKvHostUserMode.CLIENT.toString(), DPDKvHostUserMode.SERVER.toString()));
             }
         }
     }
