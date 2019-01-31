@@ -63,6 +63,7 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VMTemplateDao;
+import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.utils.NumbersUtil;
@@ -160,6 +161,8 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     @Inject private VolumeService _volumeService;
     @Inject private StorageCacheManager cacheMgr;
     @Inject private EndPointSelector selector;
+    @Inject
+    private VMTemplatePoolDao vmTemplatePoolDao;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
@@ -1724,7 +1727,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                     continue;
                 }
 
-                migrateTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, destDataStore, destStoragePool, destHost);
+                copyTemplateToTargetFilesystemStorageIfNeeded(srcVolumeInfo, sourceStoragePool, destDataStore, destStoragePool, destHost);
 
                 VolumeVO destVolume = duplicateVolumeOnAnotherStorage(srcVolume, destStoragePool);
                 VolumeInfo destVolumeInfo = _volumeDataFactory.getVolume(destVolume.getId(), destDataStore);
@@ -1862,9 +1865,11 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     /**
-     * For this strategy it is not necessary to check and migrate the template; however, classes that extend this one may need to check if the template is on the target storage pool (and if not then migrate) before migrating the VM.
+     * For this strategy it is not necessary to copy the template before migrating the VM.
+     * However, classes that extend this one may need to copy the template to the target storage pool before migrating the VM.
      */
-    protected void migrateTemplateToTargetFilesystemStorageIfNeeded(VolumeInfo srcVolumeInfo, DataStore destDataStore, StoragePool destStoragePool, Host destHost) {
+    protected void copyTemplateToTargetFilesystemStorageIfNeeded(VolumeInfo srcVolumeInfo, StoragePool srcStoragePool, DataStore destDataStore, StoragePool destStoragePool,
+            Host destHost) {
         // This method is used by classes that extend this one
     }
 

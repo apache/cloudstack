@@ -19,6 +19,7 @@
 package org.apache.cloudstack.storage.motion;
 
 import java.io.File;
+import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,6 +30,7 @@ import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateInfo;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
+import org.apache.cloudstack.engine.subsystem.api.storage.ObjectInDataStoreStateMachine;
 import org.apache.cloudstack.storage.command.CopyCommand;
 import org.apache.cloudstack.storage.datastore.DataStoreManagerImpl;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
@@ -52,6 +54,7 @@ import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -162,10 +165,10 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     }
 
     /**
-     * If the template is not on the target primary storage then it migrates the template.
+     * If the template is not on the target primary storage then it copies the template.
      */
     @Override
-    protected void migrateTemplateToTargetFilesystemStorageIfNeeded(VolumeInfo srcVolumeInfo, DataStore destDataStore, StoragePool destStoragePool,
+    protected void copyTemplateToTargetFilesystemStorageIfNeeded(VolumeInfo srcVolumeInfo, StoragePool srcStoragePool, DataStore destDataStore, StoragePool destStoragePool,
             Host destHost) {
         VMTemplateStoragePoolVO sourceVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(destStoragePool.getId(), srcVolumeInfo.getTemplateId());
         if (sourceVolumeTemplateStoragePoolVO == null && destStoragePool.getPoolType() == StoragePoolType.Filesystem) {
@@ -178,8 +181,27 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
 
             TemplateInfo destTemplateInfo = templateDataFactory.getTemplate(srcVolumeInfo.getTemplateId(), destDataStore);
             final TemplateObjectTO destTemplate = new TemplateObjectTO(destTemplateInfo);
-            sendCopyCommand(destHost, sourceTemplate, destTemplate, destDataStore);
+            Answer copyCommandAnswer = sendCopyCommand(destHost, sourceTemplate, destTemplate, destDataStore);
+
+            if (copyCommandAnswer != null && copyCommandAnswer.getResult()) {
+                updateTemplateReferenceIfSuccessfulCopy(srcVolumeInfo, srcStoragePool, destTemplateInfo, destDataStore);
+            }
         }
+    }
+
+    /**
+     *  Update the template reference on table "template_spool_ref" (VMTemplateStoragePoolVO).
+     */
+    protected void updateTemplateReferenceIfSuccessfulCopy(VolumeInfo srcVolumeInfo, StoragePool srcStoragePool, TemplateInfo destTemplateInfo, DataStore destDataStore) {
+        VMTemplateStoragePoolVO srcVolumeTemplateStoragePoolVO = vmTemplatePoolDao.findByPoolTemplate(srcStoragePool.getId(), srcVolumeInfo.getTemplateId());
+        VMTemplateStoragePoolVO destVolumeTemplateStoragePoolVO = new VMTemplateStoragePoolVO(destDataStore.getId(), srcVolumeInfo.getTemplateId());
+        destVolumeTemplateStoragePoolVO.setDownloadPercent(100);
+        destVolumeTemplateStoragePoolVO.setDownloadState(VMTemplateStorageResourceAssoc.Status.DOWNLOADED);
+        destVolumeTemplateStoragePoolVO.setState(ObjectInDataStoreStateMachine.State.Ready);
+        destVolumeTemplateStoragePoolVO.setTemplateSize(srcVolumeTemplateStoragePoolVO.getTemplateSize());
+        destVolumeTemplateStoragePoolVO.setLocalDownloadPath(destTemplateInfo.getUuid());
+        destVolumeTemplateStoragePoolVO.setInstallPath(destTemplateInfo.getUuid());
+        vmTemplatePoolDao.persist(destVolumeTemplateStoragePoolVO);
     }
 
     /**
@@ -211,7 +233,7 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
             if (copyCommandAnswer.getDetails() != null) {
                 failureDetails = " Details: " + copyCommandAnswer.getDetails();
             }
-            LOGGER.debug(generateFailToCopyTemplateMessage(sourceTemplate, destDataStore) + failureDetails);
+            LOGGER.error(generateFailToCopyTemplateMessage(sourceTemplate, destDataStore) + failureDetails);
         }
     }
 }
