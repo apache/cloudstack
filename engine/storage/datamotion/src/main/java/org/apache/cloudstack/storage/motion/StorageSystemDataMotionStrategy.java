@@ -2240,11 +2240,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
 
             if (!destStoragePoolVO.isManaged()) {
-                if (srcStoragePoolVO.getPoolType() != Storage.StoragePoolType.NetworkFilesystem ||
-                        destStoragePoolVO.getPoolType() != Storage.StoragePoolType.NetworkFilesystem) {
-                    throw new CloudRuntimeException("Currently only NFS source and destination storage pools are supported " +
-                            "when destination is not managed on KVM live storage migrations");
-                }
                 if (destStoragePoolVO.getScope() != ScopeType.CLUSTER) {
                     throw new CloudRuntimeException("KVM live storage migrations currently support cluster-wide " +
                             "not managed destination storage");
