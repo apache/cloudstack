@@ -24,6 +24,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.StrategyPriority;
 import org.apache.cloudstack.engine.subsystem.api.storage.TemplateDataFactory;
@@ -54,6 +56,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachineManager;
+import org.apache.commons.collections.MapUtils;
 
 /**
  * Extends {@link StorageSystemDataMotionStrategy}, allowing KVM hosts to migrate VMs with the ROOT volume on a non managed local storage pool.
@@ -79,17 +82,65 @@ public class KvmNonManagedStorageDataMotionStrategy extends StorageSystemDataMot
     @Override
     protected StrategyPriority internalCanHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
         if (super.internalCanHandle(volumeMap, srcHost, destHost) == StrategyPriority.CANT_HANDLE) {
-            Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
+            if (canHandleKVMNonManagedLiveNFSStorageMigration(volumeMap, srcHost, destHost) == StrategyPriority.CANT_HANDLE) {
+                Set<VolumeInfo> volumeInfoSet = volumeMap.keySet();
 
-            for (VolumeInfo volumeInfo : volumeInfoSet) {
-                StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
-                if (storagePoolVO.getPoolType() != StoragePoolType.Filesystem && storagePoolVO.getPoolType() != StoragePoolType.NetworkFilesystem) {
-                    return StrategyPriority.CANT_HANDLE;
+                for (VolumeInfo volumeInfo : volumeInfoSet) {
+                    StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
+                    if (storagePoolVO.getPoolType() != StoragePoolType.Filesystem && storagePoolVO.getPoolType() != StoragePoolType.NetworkFilesystem) {
+                        return StrategyPriority.CANT_HANDLE;
+                    }
                 }
             }
             return StrategyPriority.HYPERVISOR;
         }
         return StrategyPriority.CANT_HANDLE;
+    }
+
+    /**
+     * Allow KVM live storage migration for non managed storage when:
+     * - Source host and destination host are different, and are on the same cluster
+     * - Source and destination storage are NFS
+     * - Destination storage is cluster-wide
+     */
+    protected StrategyPriority canHandleKVMNonManagedLiveNFSStorageMigration(Map<VolumeInfo, DataStore> volumeMap,
+                                                                             Host srcHost, Host destHost) {
+        if (srcHost.getId() != destHost.getId() &&
+                srcHost.getClusterId().equals(destHost.getClusterId()) &&
+                isSourceNfsPrimaryStorage(volumeMap) &&
+                isDestinationNfsPrimaryStorageClusterWide(volumeMap)) {
+            return StrategyPriority.HYPERVISOR;
+        }
+        return StrategyPriority.CANT_HANDLE;
+    }
+
+    /**
+     * True if volumes source storage are NFS
+     */
+    protected boolean isSourceNfsPrimaryStorage(Map<VolumeInfo, DataStore> volumeMap) {
+        if (MapUtils.isNotEmpty(volumeMap)) {
+            for (VolumeInfo volumeInfo : volumeMap.keySet()) {
+                StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
+                return storagePoolVO != null &&
+                        storagePoolVO.getPoolType() == Storage.StoragePoolType.NetworkFilesystem;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * True if destination storage is cluster-wide NFS
+     */
+    protected boolean isDestinationNfsPrimaryStorageClusterWide(Map<VolumeInfo, DataStore> volumeMap) {
+        if (MapUtils.isNotEmpty(volumeMap)) {
+            for (DataStore dataStore : volumeMap.values()) {
+                StoragePoolVO storagePoolVO = _storagePoolDao.findById(dataStore.getId());
+                return storagePoolVO != null &&
+                        storagePoolVO.getPoolType() == Storage.StoragePoolType.NetworkFilesystem &&
+                        storagePoolVO.getScope() == ScopeType.CLUSTER;
+            }
+        }
+        return false;
     }
 
     /**

@@ -277,52 +277,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
         return false;
     }
 
-    /**
-     * True if volumes source storage are NFS
-     */
-    protected boolean isSourceNfsPrimaryStorage(Map<VolumeInfo, DataStore> volumeMap) {
-        if (MapUtils.isNotEmpty(volumeMap)) {
-            for (VolumeInfo volumeInfo : volumeMap.keySet()) {
-                StoragePoolVO storagePoolVO = _storagePoolDao.findById(volumeInfo.getPoolId());
-                return storagePoolVO != null &&
-                        storagePoolVO.getPoolType() == Storage.StoragePoolType.NetworkFilesystem;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * True if destination storage is cluster-wide NFS
-     */
-    protected boolean isDestinationNfsPrimaryStorageClusterWide(Map<VolumeInfo, DataStore> volumeMap) {
-        if (MapUtils.isNotEmpty(volumeMap)) {
-            for (DataStore dataStore : volumeMap.values()) {
-                StoragePoolVO storagePoolVO = _storagePoolDao.findById(dataStore.getId());
-                return storagePoolVO != null &&
-                        storagePoolVO.getPoolType() == Storage.StoragePoolType.NetworkFilesystem &&
-                        storagePoolVO.getScope() == ScopeType.CLUSTER;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Allow KVM live storage migration for non managed storage when:
-     * - Source host and destination host are different, and are on the same cluster
-     * - Source and destination storage are NFS
-     * - Destination storage is cluster-wide
-     */
-    protected StrategyPriority canHandleKVMNonManagedLiveStorageMigration(Map<VolumeInfo, DataStore> volumeMap,
-                                                                          Host srcHost, Host destHost) {
-        if (srcHost.getId() != destHost.getId() &&
-                srcHost.getClusterId().equals(destHost.getClusterId()) &&
-                isSourceNfsPrimaryStorage(volumeMap) &&
-                isDestinationNfsPrimaryStorageClusterWide(volumeMap)) {
-            return StrategyPriority.HIGHEST;
-        }
-        return StrategyPriority.CANT_HANDLE;
-    }
-
     @Override
     public final StrategyPriority canHandle(Map<VolumeInfo, DataStore> volumeMap, Host srcHost, Host destHost) {
         if (HypervisorType.KVM.equals(srcHost.getHypervisorType())) {
@@ -354,7 +308,6 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 return StrategyPriority.HIGHEST;
             }
 
-            return canHandleKVMNonManagedLiveStorageMigration(volumeMap, srcHost, destHost);
         }
         return StrategyPriority.CANT_HANDLE;
     }
@@ -2240,9 +2193,10 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             }
 
             if (!destStoragePoolVO.isManaged()) {
-                if (destStoragePoolVO.getScope() != ScopeType.CLUSTER) {
+                if (destStoragePoolVO.getPoolType() == StoragePoolType.NetworkFilesystem &&
+                        destStoragePoolVO.getScope() != ScopeType.CLUSTER) {
                     throw new CloudRuntimeException("KVM live storage migrations currently support cluster-wide " +
-                            "not managed destination storage");
+                            "not managed NFS destination storage");
                 }
                 if (!sourcePools.containsKey(srcStoragePoolVO.getUuid())) {
                     sourcePools.put(srcStoragePoolVO.getUuid(), srcStoragePoolVO.getPoolType());
