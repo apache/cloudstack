@@ -63,7 +63,6 @@ import com.cloud.storage.dao.SnapshotDao;
 import com.cloud.storage.dao.SnapshotDetailsDao;
 import com.cloud.storage.dao.SnapshotDetailsVO;
 import com.cloud.storage.dao.VMTemplateDao;
-import com.cloud.storage.dao.VMTemplatePoolDao;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.dao.VolumeDetailsDao;
 import com.cloud.utils.NumbersUtil;
@@ -139,29 +138,44 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
 
     @Inject
     protected AgentManager agentManager;
-    @Inject private ConfigurationDao _configDao;
-    @Inject private DataStoreManager dataStoreMgr;
+    @Inject
+    private ConfigurationDao _configDao;
+    @Inject
+    private DataStoreManager dataStoreMgr;
     @Inject
     protected DiskOfferingDao _diskOfferingDao;
-    @Inject private GuestOSCategoryDao _guestOsCategoryDao;
-    @Inject private GuestOSDao _guestOsDao;
-    @Inject private ClusterDao clusterDao;
-    @Inject private HostDao _hostDao;
+    @Inject
+    private GuestOSCategoryDao _guestOsCategoryDao;
+    @Inject
+    private GuestOSDao _guestOsDao;
+    @Inject
+    private ClusterDao clusterDao;
+    @Inject
+    private HostDao _hostDao;
     @Inject
     protected PrimaryDataStoreDao _storagePoolDao;
-    @Inject private SnapshotDao _snapshotDao;
-    @Inject private SnapshotDataStoreDao _snapshotDataStoreDao;
-    @Inject private SnapshotDetailsDao _snapshotDetailsDao;
-    @Inject private VMInstanceDao _vmDao;
-    @Inject private VMTemplateDao _vmTemplateDao;
-    @Inject private VolumeDao _volumeDao;
-    @Inject private VolumeDataFactory _volumeDataFactory;
-    @Inject private VolumeDetailsDao volumeDetailsDao;
-    @Inject private VolumeService _volumeService;
-    @Inject private StorageCacheManager cacheMgr;
-    @Inject private EndPointSelector selector;
     @Inject
-    private VMTemplatePoolDao vmTemplatePoolDao;
+    private SnapshotDao _snapshotDao;
+    @Inject
+    private SnapshotDataStoreDao _snapshotDataStoreDao;
+    @Inject
+    private SnapshotDetailsDao _snapshotDetailsDao;
+    @Inject
+    private VMInstanceDao _vmDao;
+    @Inject
+    private VMTemplateDao _vmTemplateDao;
+    @Inject
+    private VolumeDao _volumeDao;
+    @Inject
+    private VolumeDataFactory _volumeDataFactory;
+    @Inject
+    private VolumeDetailsDao volumeDetailsDao;
+    @Inject
+    private VolumeService _volumeService;
+    @Inject
+    private StorageCacheManager cacheMgr;
+    @Inject
+    private EndPointSelector selector;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
