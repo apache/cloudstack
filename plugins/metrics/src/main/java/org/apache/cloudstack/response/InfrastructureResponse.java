@@ -59,6 +59,10 @@ public class InfrastructureResponse extends BaseResponse {
     @Param(description = "Number of cpu sockets")
     private Integer cpuSockets;
 
+    @SerializedName("managementservers")
+    @Param(description = "Number of management servers")
+    private Integer managementServers;
+
     public InfrastructureResponse() {
         setObjectName("infrastructure");
     }
@@ -97,5 +101,9 @@ public class InfrastructureResponse extends BaseResponse {
 
     public void setCpuSockets(final Integer cpuSockets) {
         this.cpuSockets = cpuSockets;
+    }
+
+    public void setManagementServers(Integer managementServers) {
+        this.managementServers = managementServers;
     }
 }

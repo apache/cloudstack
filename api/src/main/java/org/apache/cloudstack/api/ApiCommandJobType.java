@@ -52,5 +52,6 @@ public enum ApiCommandJobType {
     DedicatedGuestVlanRange,
     GuestOs,
     GuestOsMapping,
-    Network
+    Network,
+    Management
 }

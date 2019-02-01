@@ -62,7 +62,7 @@ import com.cloud.agent.api.StartupCommand;
 import com.cloud.agent.api.StartupRoutingCommand;
 import com.cloud.api.query.dao.TemplateJoinDao;
 import com.cloud.cluster.ClusterManager;
-import com.cloud.cluster.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.cluster.dao.ManagementServerHostPeerDao;
 import com.cloud.configuration.Config;
 import com.cloud.dc.ClusterDetailsDao;

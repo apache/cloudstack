@@ -9739,7 +9739,8 @@ div#details-tab-aclRules td.cidrlist span {
   top: 68px;
 }
 
-.system-dashboard.zone .status_box li.system-vms .icon {
+.system-dashboard.zone .status_box li.system-vms .icon,
+.system-dashboard.zone .status_box li.management-servers .icon {
   background-position: -408px -399px;
 }
 
