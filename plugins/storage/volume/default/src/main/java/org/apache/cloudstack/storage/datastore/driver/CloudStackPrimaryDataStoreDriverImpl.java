@@ -256,13 +256,12 @@ public class CloudStackPrimaryDataStoreDriverImpl implements PrimaryDataStoreDri
                 callback.complete(result);
             } else if (srcdata.getType() == DataObjectType.TEMPLATE && destData.getType() == DataObjectType.VOLUME) {
                 //For CLVM, we need to pass template on secondary storage to hypervisor
-                String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-                int _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+                int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
                 StoragePoolVO storagePoolVO = primaryStoreDao.findById(store.getId());
                 DataStore imageStore = templateManager.getImageStore(storagePoolVO.getDataCenterId(), srcdata.getId());
                 DataObject srcData = templateDataFactory.getTemplate(srcdata.getId(), imageStore);
 
-                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), _primaryStorageDownloadWait, true);
+                CopyCommand cmd = new CopyCommand(srcData.getTO(), destData.getTO(), primaryStorageDownloadWait, true);
                 EndPoint ep = epSelector.select(srcData, destData);
                 Answer answer = null;
                 if (ep == null) {

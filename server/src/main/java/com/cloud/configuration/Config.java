@@ -187,14 +187,6 @@ public enum Config {
             "3600",
             "Timeout (in seconds) to synchronize storage pool operations.",
             null),
-    PrimaryStorageDownloadWait(
-            "Storage",
-            TemplateManager.class,
-            Integer.class,
-            "primary.storage.download.wait",
-            "10800",
-            "In second, timeout for download template to primary storage",
-            null),
     CreateVolumeFromSnapshotWait(
             "Storage",
             StorageManager.class,

@@ -113,7 +113,6 @@ import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.PrimaryDataStoreTO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.log4j.Logger;
 
 import org.springframework.stereotype.Component;
@@ -929,8 +928,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 }
             }
 
-            String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-            int primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+            int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
             CopyCommand copyCommand = new CopyCommand(snapshotInfo.getTO(), destOnStore.getTO(), primaryStorageDownloadWait,
                     VirtualMachineManager.ExecuteInSequence.value());
 
@@ -1104,8 +1102,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
                 verifyCopyCmdAnswer(copyCmdAnswer, snapshotInfo);
             }
 
-            String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-            int primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+            int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
 
             CopyCommand copyCommand = new CopyCommand(snapshotInfo.getTO(), volumeInfo.getTO(), primaryStorageDownloadWait,
                     VirtualMachineManager.ExecuteInSequence.value());
@@ -1597,8 +1594,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     }
 
     private CopyCmdAnswer copyImageToVolume(DataObject srcDataObject, VolumeInfo destVolumeInfo, HostVO hostVO) {
-        String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-        int primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+        int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
 
         CopyCommand copyCommand = new CopyCommand(srcDataObject.getTO(), destVolumeInfo.getTO(), primaryStorageDownloadWait,
                 VirtualMachineManager.ExecuteInSequence.value());
@@ -2123,8 +2119,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
             HostVO hostVO = getHost(volumeInfo.getDataCenterId(), HypervisorType.KVM, false);
             DataStore srcDataStore = volumeInfo.getDataStore();
 
-            String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-            int primaryStorageDownloadWait = NumberUtils.toInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+            int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
 
             CopyCommand copyCommand = new CopyCommand(volumeInfo.getTO(), templateInfo.getTO(), primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
 
@@ -2606,8 +2601,7 @@ public class StorageSystemDataMotionStrategy implements DataMotionStrategy {
     private CopyCmdAnswer performCopyOfVdi(VolumeInfo volumeInfo, SnapshotInfo snapshotInfo, HostVO hostVO) {
         Snapshot.LocationType locationType = snapshotInfo.getLocationType();
 
-        String value = _configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-        int primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+        int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
 
         DataObject srcData = snapshotInfo;
         CopyCmdAnswer copyCmdAnswer = null;

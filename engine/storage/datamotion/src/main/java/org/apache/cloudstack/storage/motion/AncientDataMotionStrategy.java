@@ -62,6 +62,7 @@ import com.cloud.configuration.Config;
 import com.cloud.host.Host;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.Storage.StoragePoolType;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VolumeVO;
@@ -145,8 +146,7 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
     }
 
     protected Answer copyObject(DataObject srcData, DataObject destData, Host destHost) {
-        String value = configDao.getValue(Config.PrimaryStorageDownloadWait.toString());
-        int _primaryStorageDownloadWait = NumbersUtil.parseInt(value, Integer.parseInt(Config.PrimaryStorageDownloadWait.getDefaultValue()));
+        int primaryStorageDownloadWait = StorageManager.PRIMARY_STORAGE_DOWNLOAD_WAIT.value();
         Answer answer = null;
         DataObject cacheData = null;
         DataObject srcForCopy = srcData;
@@ -156,7 +156,8 @@ public class AncientDataMotionStrategy implements DataMotionStrategy {
                 srcForCopy = cacheData = cacheMgr.createCacheObject(srcData, destScope);
             }
 
-            CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), addFullCloneFlagOnVMwareDest(destData.getTO()), _primaryStorageDownloadWait, VirtualMachineManager.ExecuteInSequence.value());
+            CopyCommand cmd = new CopyCommand(srcForCopy.getTO(), addFullCloneFlagOnVMwareDest(destData.getTO()), primaryStorageDownloadWait,
+                    VirtualMachineManager.ExecuteInSequence.value());
             EndPoint ep = destHost != null ? RemoteHostEndPoint.getHypervisorHostEndPoint(destHost) : selector.select(srcForCopy, destData);
             if (ep == null) {
                 String errMsg = "No remote endpoint to send command, check if host or ssvm is down?";

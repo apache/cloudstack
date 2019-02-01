@@ -19,7 +19,6 @@
 package org.apache.cloudstack.storage.motion;
 
 import java.io.File;
-import java.util.Date;
 import java.util.Map;
 import java.util.Set;
 
