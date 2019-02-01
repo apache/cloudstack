@@ -71,7 +71,7 @@ setJavaHome() {
 setJavaHome
 
 JARS=$(ls /usr/share/cloudstack-management/lib/*.jar | tr '\n' ':' | sed s'/.$//')
-CLASSPATH="$JARS:$CLASSPATH"
+CLASSPATH="$JARS:$CLASSPATH:/usr/share/java/commons-daemon.jar"
 
 start() {
     if [ -s "$PIDFILE" ] && kill -0 $(cat "$PIDFILE") >/dev/null 2>&1; then

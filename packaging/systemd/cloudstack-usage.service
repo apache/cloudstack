@@ -23,11 +23,8 @@ After=network.target network-online.target
 
 [Service]
 Type=simple
-EnvironmentFile=-/etc/default/cloudstack-usage
-ExecStart=/bin/sh -ec '\
-    export UCP=`ls /usr/share/cloudstack-usage/cloud-usage-*.jar /usr/share/cloudstack-usage/lib/*.jar /usr/share/cloudstack-mysql-ha/lib/*.jar | tr "\\n" ":"`; \
-    export CLASSPATH="$UCP:/etc/cloudstack/usage:/usr/share/java/mysql-connector-java.jar"; \
-    ${JAVA} -Dpid=${JAVA_PID} -Xms${JAVA_HEAP_INITIAL} -Xmx${JAVA_HEAP_MAX} -cp "$CLASSPATH" $JAVA_CLASS'
+EnvironmentFile=/etc/default/cloudstack-usage
+ExecStart=/usr/bin/java $JAVA_OPTS -cp $CLASSPATH $JAVA_CLASS
 Restart=always
 RestartSec=10s
 
