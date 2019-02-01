@@ -616,9 +616,9 @@
                         poll: pollAsyncJobResult
                     }
                 },
-                start: vmStartAction({ listView: true }),
-                stop: vmStopAction({ listView: true }),
                 destroy: vmDestroyAction({ listView: true }),
+                stop: vmStopAction({ listView: true }),
+                start: vmStartAction({ listView: true }),
                 snapshot: vmSnapshotAction({ listView: true }),
                 viewMetrics: {
                     label: 'label.metrics',
