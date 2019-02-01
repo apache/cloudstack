@@ -676,7 +676,7 @@ var addGuestNetworkDialog = {
                     label: 'label.ipv6.gateway',
                     docID: 'helpGuestNetworkZoneGateway',
                     validation: {
-                        ipv6: true
+                    	ipv6CustomJqueryValidator: true
                     }
                 },
                 ip6cidr: {
@@ -689,14 +689,14 @@ var addGuestNetworkDialog = {
                     label: 'label.ipv6.start.ip',
                     docID: 'helpGuestNetworkZoneStartIP',
                     validation: {
-                        ipv6: true
+                    	ipv6CustomJqueryValidator: true
                     }
                 },
                 endipv6: {
                     label: 'label.ipv6.end.ip',
                     docID: 'helpGuestNetworkZoneEndIP',
                     validation: {
-                        ipv6: true
+                    	ipv6CustomJqueryValidator: true
                     }
                },
                 //IPv6 (end)
@@ -2582,7 +2582,7 @@ $.validator.addMethod("ipv6cidr", function(value, element) {
         return false;
     }
 
-    if (!$.validator.methods.ipv6.call(this, parts[0], element))
+    if (!$.validator.methods.ipv6CustomJqueryValidator.call(this, parts[0], element))
         return false;
 
     if (parts[1] != Number(parts[1]).toString()) //making sure that "", " ", "00", "0 ","2  ", etc. will not pass
@@ -2624,6 +2624,23 @@ $.validator.addMethod("ipv46cidr", function(value, element) {
 
     return false;
 }, "The specified IPv4/IPv6 CIDR is invalid.");
+
+jQuery.validator.addMethod("ipv4AndIpv6AddressValidator", function(value, element) {
+    if (this.optional(element) && value.length == 0) {
+        return true;
+	}
+    if (jQuery.validator.methods.ipv4.call(this, value, element) || jQuery.validator.methods.ipv6CustomJqueryValidator.call(this, value, element)) {
+        return true;
+    }
+    return false;
+}, "The specified IPv4/IPv6 address is invalid.");
+
+jQuery.validator.addMethod("ipv6CustomJqueryValidator", function(value, element) {
+    if (value == '::'){
+    	return true;
+    }
+    return jQuery.validator.methods.ipv6.call(this, value, element);
+}, "The specified IPv6 address is invalid.");
 
 
 $.validator.addMethod("allzonesonly", function(value, element){
