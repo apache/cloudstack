@@ -1239,6 +1239,24 @@ test_data = {
         "disksize": 1,  # in GB
         "provisioningtype": "fat"
     },
+    "ioburst": {
+        "name": "io burst disk offering",
+        "displaytext": "io burst disk offering",
+        "disksize": 1,
+        "provisioningtype": "sparse",
+        "bytesReadRate": 500,
+        "bytesReadRateMax": 2000,
+        "bytesReadRateMaxLength": 120,
+        "bytesWriteRate": 501,
+        "bytesWriteRateMax": 2001,
+        "bytesWriteRateMaxLength": 121,
+        "iopsReadRate": 1000,
+        "iopsReadRateMax": 2500,
+        "iopsReadRateMaxLength": 122,
+        "iopsWriteRate": 1001,
+        "iopsWriteRateMax": 2501,
+        "iopsWriteRateMaxLength": 123
+    },
     "sparse_disk_offering": {
         "displaytext": "Sparse",
         "name": "Sparse",

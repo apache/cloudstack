@@ -2384,18 +2384,8 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             if (data instanceof VolumeObjectTO) {
                 final VolumeObjectTO volumeObjectTO = (VolumeObjectTO)data;
                 disk.setSerial(diskUuidToSerial(volumeObjectTO.getUuid()));
-                if (volumeObjectTO.getBytesReadRate() != null && volumeObjectTO.getBytesReadRate() > 0) {
-                    disk.setBytesReadRate(volumeObjectTO.getBytesReadRate());
-                }
-                if (volumeObjectTO.getBytesWriteRate() != null && volumeObjectTO.getBytesWriteRate() > 0) {
-                    disk.setBytesWriteRate(volumeObjectTO.getBytesWriteRate());
-                }
-                if (volumeObjectTO.getIopsReadRate() != null && volumeObjectTO.getIopsReadRate() > 0) {
-                    disk.setIopsReadRate(volumeObjectTO.getIopsReadRate());
-                }
-                if (volumeObjectTO.getIopsWriteRate() != null && volumeObjectTO.getIopsWriteRate() > 0) {
-                    disk.setIopsWriteRate(volumeObjectTO.getIopsWriteRate());
-                }
+                setBurstProperties(volumeObjectTO, disk);
+
                 if (volumeObjectTO.getCacheMode() != null) {
                     disk.setCacheMode(DiskDef.DiskCacheMode.valueOf(volumeObjectTO.getCacheMode().toString().toUpperCase()));
                 }
@@ -2444,6 +2434,45 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
             }
         }
 
+    }
+
+    private void setBurstProperties(final VolumeObjectTO volumeObjectTO, final DiskDef disk ) {
+        if (volumeObjectTO.getBytesReadRate() != null && volumeObjectTO.getBytesReadRate() > 0) {
+            disk.setBytesReadRate(volumeObjectTO.getBytesReadRate());
+        }
+        if (volumeObjectTO.getBytesReadRateMax() != null && volumeObjectTO.getBytesReadRateMax() > 0) {
+            disk.setBytesReadRateMax(volumeObjectTO.getBytesReadRateMax());
+        }
+        if (volumeObjectTO.getBytesReadRateMaxLength() != null && volumeObjectTO.getBytesReadRateMaxLength() > 0) {
+            disk.setBytesReadRateMaxLength(volumeObjectTO.getBytesReadRateMaxLength());
+        }
+        if (volumeObjectTO.getBytesWriteRate() != null && volumeObjectTO.getBytesWriteRate() > 0) {
+            disk.setBytesWriteRate(volumeObjectTO.getBytesWriteRate());
+        }
+        if (volumeObjectTO.getBytesWriteRateMax() != null && volumeObjectTO.getBytesWriteRateMax() > 0) {
+            disk.setBytesWriteRateMax(volumeObjectTO.getBytesWriteRateMax());
+        }
+        if (volumeObjectTO.getBytesWriteRateMaxLength() != null && volumeObjectTO.getBytesWriteRateMaxLength() > 0) {
+            disk.setBytesWriteRateMaxLength(volumeObjectTO.getBytesWriteRateMaxLength());
+        }
+        if (volumeObjectTO.getIopsReadRate() != null && volumeObjectTO.getIopsReadRate() > 0) {
+            disk.setIopsReadRate(volumeObjectTO.getIopsReadRate());
+        }
+        if (volumeObjectTO.getIopsReadRateMax() != null && volumeObjectTO.getIopsReadRateMax() > 0) {
+            disk.setIopsReadRateMax(volumeObjectTO.getIopsReadRateMax());
+        }
+        if (volumeObjectTO.getIopsReadRateMaxLength() != null && volumeObjectTO.getIopsReadRateMaxLength() > 0) {
+            disk.setIopsReadRateMaxLength(volumeObjectTO.getIopsReadRateMaxLength());
+        }
+        if (volumeObjectTO.getIopsWriteRate() != null && volumeObjectTO.getIopsWriteRate() > 0) {
+            disk.setIopsWriteRate(volumeObjectTO.getIopsWriteRate());
+        }
+        if (volumeObjectTO.getIopsWriteRateMax() != null && volumeObjectTO.getIopsWriteRateMax() > 0) {
+            disk.setIopsWriteRateMax(volumeObjectTO.getIopsWriteRateMax());
+        }
+        if (volumeObjectTO.getIopsWriteRateMaxLength() != null && volumeObjectTO.getIopsWriteRateMaxLength() > 0) {
+            disk.setIopsWriteRateMaxLength(volumeObjectTO.getIopsWriteRateMaxLength());
+        }
     }
 
     private void createVif(final LibvirtVMDef vm, final NicTO nic, final String nicAdapter, Map<String, String> extraConfig) throws InternalErrorException, LibvirtException {
@@ -2520,7 +2549,7 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
 
     public synchronized String attachOrDetachDisk(final Connect conn,
                                                   final boolean attach, final String vmName, final KVMPhysicalDisk attachingDisk,
-                                                  final int devId, final Long bytesReadRate, final Long bytesWriteRate, final Long iopsReadRate, final Long iopsWriteRate, final String cacheMode) throws LibvirtException, InternalErrorException {
+                                                  final int devId, final Long bytesReadRate, final Long bytesReadRateMax, final Long bytesReadRateMaxLength, final Long bytesWriteRate, final Long bytesWriteRateMax, final Long bytesWriteRateMaxLength, final Long iopsReadRate, final Long iopsReadRateMax, final Long iopsReadRateMaxLength, final Long iopsWriteRate, final Long iopsWriteRateMax, final Long iopsWriteRateMaxLength, final String cacheMode) throws LibvirtException, InternalErrorException {
         List<DiskDef> disks = null;
         Domain dm = null;
         DiskDef diskdef = null;
@@ -2573,14 +2602,35 @@ public class LibvirtComputingResource extends ServerResourceBase implements Serv
                 if (bytesReadRate != null && bytesReadRate > 0) {
                     diskdef.setBytesReadRate(bytesReadRate);
                 }
+                if (bytesReadRateMax != null && bytesReadRateMax > 0) {
+                    diskdef.setBytesReadRateMax(bytesReadRateMax);
+                }
+                if (bytesReadRateMaxLength != null && bytesReadRateMaxLength > 0) {
+                    diskdef.setBytesReadRateMaxLength(bytesReadRateMaxLength);
+                }
                 if (bytesWriteRate != null && bytesWriteRate > 0) {
                     diskdef.setBytesWriteRate(bytesWriteRate);
+                }
+                if (bytesWriteRateMax != null && bytesWriteRateMax > 0) {
+                    diskdef.setBytesWriteRateMax(bytesWriteRateMax);
+                }
+                if (bytesWriteRateMaxLength != null && bytesWriteRateMaxLength > 0) {
+                    diskdef.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
                 }
                 if (iopsReadRate != null && iopsReadRate > 0) {
                     diskdef.setIopsReadRate(iopsReadRate);
                 }
+                if (iopsReadRateMax != null && iopsReadRateMax > 0) {
+                    diskdef.setIopsReadRateMax(iopsReadRateMax);
+                }
+                if (iopsReadRateMaxLength != null && iopsReadRateMaxLength > 0) {
+                    diskdef.setIopsReadRateMaxLength(iopsReadRateMaxLength);
+                }
                 if (iopsWriteRate != null && iopsWriteRate > 0) {
                     diskdef.setIopsWriteRate(iopsWriteRate);
+                }
+                if (iopsWriteRateMax != null && iopsWriteRateMax > 0) {
+                    diskdef.setIopsWriteRateMax(iopsWriteRateMax);
                 }
 
                 if (cacheMode != null) {

@@ -135,6 +135,59 @@ public class LibvirtVMDefTest extends TestCase {
         assertEquals(xmlDef, expectedXml);
     }
 
+    public void testDiskDefWithBurst() {
+        String filePath = "/var/lib/libvirt/images/disk.qcow2";
+        String diskLabel = "vda";
+
+        DiskDef disk = new DiskDef();
+        DiskDef.DiskBus bus = DiskDef.DiskBus.VIRTIO;
+        DiskDef.DiskFmtType type = DiskDef.DiskFmtType.QCOW2;
+        disk.defFileBasedDisk(filePath, diskLabel, bus, type);
+
+
+        Long iopsReadRate = 500L;
+        Long iopsReadRateMax = 2000L;
+        Long iopsReadRateMaxLength = 120L;
+        Long iopsWriteRate = 501L;
+        Long iopsWriteRateMax = 2001L;
+        Long iopsWriteRateMaxLength = 121L;
+        Long bytesReadRate = 1000L;
+        Long bytesReadRateMax = 2500L;
+        Long bytesReadRateMaxLength = 122L;
+        Long bytesWriteRate = 1001L;
+        Long bytesWriteRateMax = 2501L;
+        Long bytesWriteRateMaxLength = 123L;
+
+
+        disk.setIopsReadRate(iopsReadRate);
+        disk.setIopsReadRateMax(iopsReadRateMax);
+        disk.setIopsReadRateMaxLength(iopsReadRateMaxLength);
+        disk.setIopsWriteRate(iopsWriteRate);
+        disk.setIopsWriteRateMax(iopsWriteRateMax);
+        disk.setIopsWriteRateMaxLength(iopsWriteRateMaxLength);
+        disk.setBytesReadRate(bytesReadRate);
+        disk.setBytesReadRateMax(bytesReadRateMax);
+        disk.setBytesReadRateMaxLength(bytesReadRateMaxLength);
+        disk.setBytesWriteRate(bytesWriteRate);
+        disk.setBytesWriteRateMax(bytesWriteRateMax);
+        disk.setBytesWriteRateMaxLength(bytesWriteRateMaxLength);
+
+        LibvirtVMDef.setGlobalQemuVersion(2006000L);
+        LibvirtVMDef.setGlobalLibvirtVersion(9008L);
+
+        String xmlDef = disk.toString();
+        String expectedXml = "<disk  device='disk' type='file'>\n<driver name='qemu' type='" + type.toString() + "' cache='none' />\n" +
+                "<source file='" + filePath + "'/>\n<target dev='" + diskLabel + "' bus='" + bus.toString() + "'/>\n" +
+                "<iotune>\n<read_bytes_sec>"+bytesReadRate+"</read_bytes_sec>\n<write_bytes_sec>"+bytesWriteRate+"</write_bytes_sec>\n" +
+                "<read_iops_sec>"+iopsReadRate+"</read_iops_sec>\n<write_iops_sec>"+iopsWriteRate+"</write_iops_sec>\n" +
+                "<read_bytes_sec_max>"+bytesReadRateMax+"</read_bytes_sec_max>\n<write_bytes_sec_max>"+bytesWriteRateMax+"</write_bytes_sec_max>\n" +
+                "<read_iops_sec_max>"+iopsReadRateMax+"</read_iops_sec_max>\n<write_iops_sec_max>"+iopsWriteRateMax+"</write_iops_sec_max>\n" +
+                "<read_bytes_sec_max_length>"+bytesReadRateMaxLength+"</read_bytes_sec_max_length>\n<write_bytes_sec_max_length>"+bytesWriteRateMaxLength+"</write_bytes_sec_max_length>\n" +
+                "<read_iops_sec_max_length>"+iopsReadRateMaxLength+"</read_iops_sec_max_length>\n<write_iops_sec_max_length>"+iopsWriteRateMaxLength+"</write_iops_sec_max_length>\n</iotune>\n</disk>\n";
+
+                assertEquals(xmlDef, expectedXml);
+    }
+
     public void testHypervEnlightDef() {
         LibvirtVMDef.FeaturesDef featuresDef = new LibvirtVMDef.FeaturesDef();
         LibvirtVMDef.HyperVEnlightenmentFeatureDef hyperVEnlightenmentFeatureDef = new LibvirtVMDef.HyperVEnlightenmentFeatureDef();

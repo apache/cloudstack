@@ -77,9 +77,17 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         offeringResponse.setMaxIops(offering.getMaxIops());
         offeringResponse.setHypervisorSnapshotReserve(offering.getHypervisorSnapshotReserve());
         offeringResponse.setBytesReadRate(offering.getBytesReadRate());
+        offeringResponse.setBytesReadRateMax(offering.getBytesReadRateMax());
+        offeringResponse.setBytesReadRateMaxLength(offering.getBytesReadRateMaxLength());
         offeringResponse.setBytesWriteRate(offering.getBytesWriteRate());
+        offeringResponse.setBytesWriteRateMax(offering.getBytesWriteRateMax());
+        offeringResponse.setBytesWriteRateMaxLength(offering.getBytesWriteRateMaxLength());
         offeringResponse.setIopsReadRate(offering.getIopsReadRate());
+        offeringResponse.setIopsReadRateMax(offering.getIopsReadRateMax());
+        offeringResponse.setIopsReadRateMaxLength(offering.getIopsReadRateMaxLength());
         offeringResponse.setIopsWriteRate(offering.getIopsWriteRate());
+        offeringResponse.setIopsWriteRateMax(offering.getIopsWriteRateMax());
+        offeringResponse.setIopsWriteRateMaxLength(offering.getIopsWriteRateMaxLength());
         offeringResponse.setDetails(ApiDBUtils.getResourceDetails(offering.getId(), ResourceObjectType.ServiceOffering));
         offeringResponse.setObjectName("serviceoffering");
         offeringResponse.setIscutomized(offering.isDynamic());

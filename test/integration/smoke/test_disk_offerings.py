@@ -5,9 +5,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -171,6 +171,58 @@ class TestCreateDiskOffering(cloudstackTestCase):
                         )
         return
 
+    @attr(hypervisor="kvm")
+    @attr(tags = ["advanced", "basic", "eip", "sg", "advancedns", "simulator", "smoke"])
+    def test_05_create_burst_type_disk_offering(self):
+        """Test to create a disk offering with io bursting enabled"""
+
+        # Validate the following:
+        # 1. createDiskOfferings should return valid info for new offering with io burst settings
+        # 2. The Cloud Database contains the valid information
+
+        burstBits = {}
+        for key in self.services["ioburst"]:
+            if str(key).startswith("bytes") or str(key).startswith("iops"):
+                burstBits[key] = self.services["ioburst"][key]
+
+        disk_offering = DiskOffering.create(
+            self.apiclient,
+            self.services["ioburst"],
+            None,
+            False,
+            None,
+            **burstBits
+        )
+        self.cleanup.append(disk_offering)
+
+        self.debug("Created Disk offering with ID: %s" % disk_offering.id)
+
+        list_disk_response = list_disk_offering(
+            self.apiclient,
+            id=disk_offering.id
+        )
+        self.assertEqual(
+            isinstance(list_disk_response, list),
+            True,
+            "Check list response returns a valid list"
+        )
+        self.assertNotEqual(
+            len(list_disk_response),
+            0,
+            "Check Disk offering is created"
+        )
+        disk_response = list_disk_response[0]
+
+        for key in burstBits:
+            k = str(key)
+            mapped = 'disk' + k[:1].upper() + k[1:]
+            self.assertEqual(
+                disk_response[mapped],
+                self.services["ioburst"][key],
+                "Check " + str(key) + " in createServiceOffering"
+            )
+        return
+
 class TestDiskOfferings(cloudstackTestCase):
 
     def setUp(self):
@@ -193,7 +245,7 @@ class TestDiskOfferings(cloudstackTestCase):
         testClient = super(TestDiskOfferings, cls).getClsTestClient()
         cls.apiclient = cls.testClient.getApiClient()
         cls.services = cls.testClient.getParsedTestDataConfig()
-        
+
         cls.disk_offering_1 = DiskOffering.create(
                                                   cls.apiclient,
                                                   cls.services["disk_offering"]
@@ -227,9 +279,9 @@ class TestDiskOfferings(cloudstackTestCase):
         random_displaytext = random_gen()
         random_name = random_gen()
 
-        self.debug("Updating Disk offering with ID: %s" % 
+        self.debug("Updating Disk offering with ID: %s" %
                                     self.disk_offering_1.id)
-        
+
         cmd = updateDiskOffering.updateDiskOfferingCmd()
         cmd.id = self.disk_offering_1.id
         cmd.displaytext = random_displaytext
@@ -276,7 +328,7 @@ class TestDiskOfferings(cloudstackTestCase):
         """
         self.disk_offering_2.delete(self.apiclient)
 
-        self.debug("Deleted Disk offering with ID: %s" % 
+        self.debug("Deleted Disk offering with ID: %s" %
                                     self.disk_offering_2.id)
         list_disk_response = list_disk_offering(
                                                 self.apiclient,

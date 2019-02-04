@@ -2219,7 +2219,7 @@ class DiskOffering:
         self.__dict__.update(items)
 
     @classmethod
-    def create(cls, apiclient, services, tags=None, custom=False, domainid=None):
+    def create(cls, apiclient, services, tags=None, custom=False, domainid=None, **kwargs):
         """Create Disk offering"""
         cmd = createDiskOffering.createDiskOfferingCmd()
         cmd.displaytext = services["displaytext"]
@@ -2258,6 +2258,7 @@ class DiskOffering:
         if "provisioningtype" in services:
             cmd.provisioningtype = services["provisioningtype"]
 
+        [setattr(cmd, k, v) for k, v in kwargs.items()]
         return DiskOffering(apiclient.createDiskOffering(cmd).__dict__)
 
     def delete(self, apiclient):
