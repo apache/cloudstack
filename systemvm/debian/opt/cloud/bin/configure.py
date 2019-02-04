@@ -124,10 +124,10 @@ class CsAcl(CsDataBag):
             rnge = ''
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] == self.rule['last_port']:
-                    rnge = " --dport %s " % self.rule['first_port']
+                rnge = " --dport %s " % self.rule['first_port']
             if "first_port" in self.rule.keys() and \
                self.rule['first_port'] != self.rule['last_port']:
-                    rnge = " --dport %s:%s" % (rule['first_port'], rule['last_port'])
+                rnge = " --dport %s:%s" % (rule['first_port'], rule['last_port'])
 
             logging.debug("Current ACL IP direction is ==> %s", self.direction)
 

@@ -25,6 +25,8 @@ case "$1" in
         NEWCONFDIR="/etc/cloudstack/agent"
         CONFFILES="agent.properties log4j.xml log4j-cloud.xml"
 
+        mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
+
         # Copy old configuration so the admin doesn't have to do that
         # Only do so when we are installing for the first time
         if [ -z "$2" ]; then
