@@ -59,7 +59,6 @@ intelligent IaaS cloud implementation.
 %package management
 Summary:   CloudStack management server UI
 Requires: java-1.8.0-openjdk
-Requires: apache-commons-daemon-jsvc
 Requires: python
 Requires: bash
 Requires: bzip2
@@ -425,6 +424,7 @@ if [ ! -d %{_sysconfdir}/libvirt/hooks ] ; then
     mkdir %{_sysconfdir}/libvirt/hooks
 fi
 cp -a ${RPM_BUILD_ROOT}%{_datadir}/%{name}-agent/lib/libvirtqemuhook %{_sysconfdir}/libvirt/hooks/qemu
+mkdir -m 0755 -p /usr/share/cloudstack-agent/tmp
 /sbin/service libvirtd restart
 /sbin/systemctl enable cloudstack-agent > /dev/null 2>&1 || true
 
