@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 
-import com.cloud.cluster.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHostPeerVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.GenericDaoBase;

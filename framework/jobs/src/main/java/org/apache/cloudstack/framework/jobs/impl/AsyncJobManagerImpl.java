@@ -62,7 +62,7 @@ import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.slf4j.MDC;
 
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.Snapshot;
 import com.cloud.storage.dao.SnapshotDao;
@@ -1121,5 +1121,10 @@ public class AsyncJobManagerImpl extends ManagerBase implements AsyncJobManager,
     @Override
     public List<AsyncJobVO> findFailureAsyncJobs(String... cmds) {
         return _jobDao.getFailureJobsSinceLastMsStart(getMsid(), cmds);
+    }
+
+    @Override
+    public long countPendingJobs(String havingInfo, String... cmds) {
+        return _jobDao.countPendingJobs(havingInfo, cmds);
     }
 }

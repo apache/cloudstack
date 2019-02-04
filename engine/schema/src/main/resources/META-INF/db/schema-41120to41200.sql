@@ -50,7 +50,7 @@ INSERT IGNORE INTO `cloud`.`guest_os_hypervisor` (uuid, hypervisor_type, hypervi
 -- changed fingerprint type to TEXT, it avoids db exception when creating the certificate issue #3123
 ALTER TABLE `cloud`.`sslcerts` MODIFY `fingerprint` TEXT;
 
--- add KVM / qemu io bursting options
+-- add KVM / qemu io bursting options PR 3133
 alter table `cloud`.`disk_offering` add `bytes_read_rate_max` bigint(20) default null after `bytes_read_rate`;
 alter table `cloud`.`disk_offering` add `bytes_read_rate_max_length` bigint(20) default null after `bytes_read_rate_max`;
 alter table `cloud`.`disk_offering` add `bytes_write_rate_max` bigint(20) default null after `bytes_write_rate`;
@@ -157,3 +157,6 @@ ALTER VIEW `cloud`.`service_offering_view` AS
         LEFT JOIN `domain` ON ((`disk_offering`.`domain_id` = `domain`.`id`)))
     WHERE
         (`disk_offering`.`state` = 'Active');
+
+-- PR#2578 New column for listManagementServers API call
+ALTER TABLE `mshost` ADD COLUMN `uuid` varchar(40) AFTER `name`;

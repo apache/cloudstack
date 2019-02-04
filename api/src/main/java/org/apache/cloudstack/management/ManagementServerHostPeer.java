@@ -1,4 +1,3 @@
-//
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -15,37 +14,17 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-//
+package org.apache.cloudstack.management;
 
-package com.cloud.agent.api;
+import org.apache.cloudstack.api.InternalIdentity;
 
-public class UnregisterVMCommand extends Command {
-    String vmName;
-    boolean cleanupVmFiles = false;
-    boolean executeInSequence;
+import java.util.Date;
 
-    public UnregisterVMCommand(String vmName) {
-        this(vmName, false);
-    }
-    public UnregisterVMCommand(String vmName, boolean executeInSequence) {
-        this.vmName = vmName;
-        this.executeInSequence = executeInSequence;
-    }
+public interface ManagementServerHostPeer extends InternalIdentity {
 
-    @Override
-    public boolean executeInSequence() {
-        return executeInSequence;
-    }
-
-    public String getVmName() {
-        return vmName;
-    }
-
-    public void setCleanupVmFiles(boolean cleanupVmFiles) {
-        this.cleanupVmFiles = cleanupVmFiles;
-    }
-
-    public boolean getCleanupVmFiles() {
-        return this.cleanupVmFiles;
-    }
+    long getOwnerMshost();
+    long getPeerMshost();
+    long getPeerRunid();
+    ManagementServerHost.State getPeerState();
+    Date getLastUpdateTime();
 }

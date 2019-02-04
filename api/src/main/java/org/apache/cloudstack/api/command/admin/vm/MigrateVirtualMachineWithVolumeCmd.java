@@ -46,7 +46,7 @@ import com.cloud.vm.VirtualMachine;
 
 @APICommand(name = "migrateVirtualMachineWithVolume",
             description = "Attempts Migration of a VM with its volumes to a different host",
-        responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
+            responseObject = UserVmResponse.class, entityType = {VirtualMachine.class},
             requestHasSensitiveInfo = false,
             responseHasSensitiveInfo = true)
 public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
@@ -147,6 +147,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
         }
 
         Host destinationHost = _resourceService.getHost(getHostId());
+        // OfflineVmwareMigration: destination host would have to not be a required parameter for stopped VMs
         if (destinationHost == null) {
             throw new InvalidParameterValueException("Unable to find the host to migrate the VM, host id =" + getHostId());
         }
@@ -163,13 +164,7 @@ public class MigrateVirtualMachineWithVolumeCmd extends BaseAsyncCmd {
         } catch (ResourceUnavailableException ex) {
             s_logger.warn("Exception: ", ex);
             throw new ServerApiException(ApiErrorCode.RESOURCE_UNAVAILABLE_ERROR, ex.getMessage());
-        } catch (ConcurrentOperationException e) {
-            s_logger.warn("Exception: ", e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-        } catch (ManagementServerException e) {
-            s_logger.warn("Exception: ", e);
-            throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
-        } catch (VirtualMachineMigrationException e) {
+        } catch (ConcurrentOperationException | ManagementServerException | VirtualMachineMigrationException e) {
             s_logger.warn("Exception: ", e);
             throw new ServerApiException(ApiErrorCode.INTERNAL_ERROR, e.getMessage());
         }

@@ -115,7 +115,7 @@ import com.cloud.capacity.CapacityState;
 import com.cloud.capacity.CapacityVO;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.configuration.Config;
 import com.cloud.configuration.ConfigurationManager;
 import com.cloud.configuration.ConfigurationManagerImpl;
@@ -522,7 +522,12 @@ public class StorageManagerImpl extends ManagerBase implements StorageManager, C
 
     @Override
     public String getStoragePoolTags(long poolId) {
-        return com.cloud.utils.StringUtils.listToCsvTags(_storagePoolDao.searchForStoragePoolTags(poolId));
+        return StringUtils.listToCsvTags(getStoragePoolTagList(poolId));
+    }
+
+    @Override
+    public List<String> getStoragePoolTagList(long poolId) {
+        return _storagePoolDao.searchForStoragePoolTags(poolId);
     }
 
     @Override

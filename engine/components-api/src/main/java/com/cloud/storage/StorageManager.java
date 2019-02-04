@@ -106,7 +106,14 @@ public interface StorageManager extends StorageService {
      * @param poolId
      * @return comma separated list of tags
      */
-    public String getStoragePoolTags(long poolId);
+    String getStoragePoolTags(long poolId);
+
+    /**
+     * Returns a list of Strings with tags for the specified storage pool
+     * @param poolId
+     * @return comma separated list of tags
+     */
+    List<String> getStoragePoolTagList(long poolId);
 
     Answer sendToPool(long poolId, Command cmd) throws StorageUnavailableException;
 

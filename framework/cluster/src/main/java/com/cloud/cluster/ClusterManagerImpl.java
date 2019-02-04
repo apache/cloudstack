@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -39,6 +40,7 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.management.ManagementServerHost;
 import org.apache.cloudstack.framework.config.ConfigDepot;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
@@ -951,7 +953,7 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     mshost = new ManagementServerHostVO();
                     mshost.setMsid(_msId);
                     mshost.setRunid(_runId);
-                    mshost.setName(NetUtils.getHostName());
+                    mshost.setName(NetUtils.getCanonicalHostName());
                     mshost.setVersion(version);
                     mshost.setServiceIP(_clusterNodeIP);
                     mshost.setServicePort(_currentServiceAdapter.getServicePort());
@@ -959,12 +961,13 @@ public class ClusterManagerImpl extends ManagerBase implements ClusterManager, C
                     mshost.setRemoved(null);
                     mshost.setAlertCount(0);
                     mshost.setState(ManagementServerHost.State.Up);
+                    mshost.setUuid(UUID.randomUUID().toString());
                     _mshostDao.persist(mshost);
                     if (s_logger.isInfoEnabled()) {
                         s_logger.info("New instance of management server msid " + _msId + ", runId " + _runId + " is being started");
                     }
                 } else {
-                    _mshostDao.update(mshost.getId(), _runId, NetUtils.getHostName(), version, _clusterNodeIP, _currentServiceAdapter.getServicePort(),
+                    _mshostDao.update(mshost.getId(), _runId, NetUtils.getCanonicalHostName(), version, _clusterNodeIP, _currentServiceAdapter.getServicePort(),
                             DateUtil.currentGMTTime());
                     if (s_logger.isInfoEnabled()) {
                         s_logger.info("Management server " + _msId + ", runId " + _runId + " is being started");

@@ -279,6 +279,7 @@
                         data.systemVmCount = response.systemvms;
                         data.virtualRouterCount = response.routers;
                         data.socketCount = response.cpusockets;
+                        data.managementServerCount = response.managementservers;
                         args.response.success({
                             data: data
                         });
@@ -9956,6 +9957,40 @@
                             };
 
                             return listView;
+                        },
+
+                        managementServers: function () {
+                            var listView = {
+                                id: 'managementservers',
+                                fields: {
+                                    name: {
+                                        label: 'label.name'
+                                    },
+                                    id: {
+                                        label: 'label.uuid'
+                                    },
+                                    state: {
+                                        label: 'label.state',
+                                        indicator: {
+                                            'Up': 'on',
+                                            'Down': 'off'
+                                        }
+                                    },
+                                    version: {
+                                        label: 'label.version'
+                                    }
+                                },
+                                dataProvider: function (args) {
+                                        $.ajax({
+                                            url: createURL('listManagementServers'),
+                                            async: false,
+                                            success: function (json) {
+                                                args.response.success({ data: json.listmanagementserversresponse.managementserver });
+                                            }
+                                        });
+                                    }
+                                };
+                            return listView;
                         }
                     }
                 }
@@ -17854,6 +17889,9 @@
                                     },
                                     cpusockets: {
                                         label: 'label.number.of.cpu.sockets'
+                                    },
+                                    managementServers: {
+                                        label: 'label.number.of.management.servers'
                                     }
                                 }, {
 

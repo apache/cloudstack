@@ -122,10 +122,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
      * Return true if the physical network isolation method contains the expected isolation method for this guru
      */
     protected boolean isMyIsolationMethod(PhysicalNetwork physicalNetwork) {
-        for (IsolationMethod m : _isolationMethods) {
+        for (IsolationMethod m : this.getIsolationMethods()) {
             List<String> isolationMethods = physicalNetwork.getIsolationMethods();
             if (CollectionUtils.isNotEmpty(isolationMethods)) {
                 for (String method : isolationMethods) {
+                    s_logger.debug(method + ": " + m.toString());
                     if (method.equalsIgnoreCase(m.toString())) {
                         return true;
                     }
@@ -140,20 +141,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         return TrafficTypes;
     }
 
-    /**
-     * True for Advanced zones, with VXLAN isolation method and Security Groups enabled
-     */
-    private boolean isMyIsolationMethodVxlanWithSecurityGroups(NetworkOffering offering, DataCenter dc, PhysicalNetwork physnet) {
-        return dc.getNetworkType().equals(NetworkType.Advanced) &&
-                _networkModel.areServicesSupportedByNetworkOffering(offering.getId(), Service.SecurityGroup) &&
-                physnet.getIsolationMethods().contains("VXLAN");
-    }
-
     protected boolean canHandle(NetworkOffering offering, DataCenter dc, PhysicalNetwork physnet) {
-        // this guru handles only Guest networks in Advance zone with source nat service disabled
-        boolean vxlanWithSecurityGroups = isMyIsolationMethodVxlanWithSecurityGroups(offering, dc, physnet);
-        if (dc.getNetworkType() == NetworkType.Advanced && isMyTrafficType(offering.getTrafficType()) &&
-                (isMyIsolationMethod(physnet) || vxlanWithSecurityGroups) && offering.getGuestType() == GuestType.Shared
+        if (dc.getNetworkType() == NetworkType.Advanced
+                && isMyTrafficType(offering.getTrafficType())
+                && isMyIsolationMethod(physnet)
+                && offering.getGuestType() == GuestType.Shared
                 && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NuageVsp)
                 && !_ntwkOfferingSrvcDao.isProviderForNetworkOffering(offering.getId(), Network.Provider.NiciraNvp)) {
             return true;
@@ -169,6 +161,7 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
         PhysicalNetworkVO physnet = _physicalNetworkDao.findById(plan.getPhysicalNetworkId());
 
         if (!canHandle(offering, dc, physnet)) {
+            s_logger.info("Refusing to design this network");
             return null;
         }
 
@@ -222,7 +215,11 @@ public class DirectNetworkGuru extends AdapterBase implements NetworkGuru {
 
     protected DirectNetworkGuru() {
         super();
-        _isolationMethods = new IsolationMethod[] { new IsolationMethod("VLAN") };
+        _isolationMethods = new IsolationMethod[] { new IsolationMethod("VLAN"), new IsolationMethod("VXLAN") };
+    }
+
+    public IsolationMethod[] getIsolationMethods() {
+        return _isolationMethods;
     }
 
     @Override
