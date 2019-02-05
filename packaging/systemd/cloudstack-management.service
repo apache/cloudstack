@@ -23,14 +23,12 @@ After=syslog.target network.target
 
 [Service]
 UMask=0022
-Type=forking
-Environment="NAME=cloudstack-management"
+Type=simple
+User=cloud
 EnvironmentFile=/etc/default/cloudstack-management
-ExecStartPre=/bin/bash -c "/bin/systemctl set-environment JAVA_HOME=$( readlink -f $( which java ) | sed s:bin/.*$:: )"
-ExecStartPre=/bin/bash -c "/bin/systemctl set-environment JARS=$(ls /usr/share/cloudstack-management/lib/*.jar | tr '\n' ':' | sed s'/.$//')"
-ExecStart=/usr/bin/jsvc $JAVA_DEBUG -home "${JAVA_HOME}" -user "${CLOUDSTACK_USER}" -cp "${JARS}:${CLASSPATH}" -errfile "${LOGDIR}/${NAME}.err" -cwd "${LOGDIR}" -pidfile "${CLOUDSTACK_PID}" "${JAVA_OPTS}" "${BOOTSTRAP_CLASS}"
-ExecStop=/usr/bin/jsvc -cp "${JARS}:${CLASSPATH}" -pidfile "${CLOUDSTACK_PID}" -stop "${BOOTSTRAP_CLASS}"
-SuccessExitStatus=143
+WorkingDirectory=/var/log/cloudstack/management
+PIDFile=/var/run/cloudstack-management.pid
+ExecStart=/usr/bin/java $JAVA_DEBUG $JAVA_OPTS -cp $CLASSPATH $BOOTSTRAP_CLASS
 
 [Install]
 WantedBy=multi-user.target

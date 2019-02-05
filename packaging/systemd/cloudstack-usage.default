@@ -15,8 +15,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-JAVA=/usr/bin/java
-JAVA_HEAP_INITIAL=256m
-JAVA_HEAP_MAX=2048m
+JAVA_OPTS="-Dpid=$$ -Xms256m -Xmx2048m"
+
+CLASSPATH="/usr/share/cloudstack-usage/*:/usr/share/cloudstack-usage/lib/*:/usr/share/cloudstack-mysql-ha/lib/*:/etc/cloudstack/usage:/usr/share/java/mysql-connector-java.jar"
+
 JAVA_CLASS=com.cloud.usage.UsageServer
-JAVA_PID=$$
