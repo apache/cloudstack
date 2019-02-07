@@ -18,24 +18,53 @@
  */
 package org.apache.cloudstack.utils.log;
 
+import org.apache.log4j.Level;
+
 /**
  * wrapper class for the logging functionality of the log library in use
  */
 public class Logger {
-    private org.apache.log4j.Logger logger;
-    public Logger(org.apache.log4j.Logger logger) {
+    private org.apache.cloudstack.utils.log.Logger logger;
+    public Logger(org.apache.cloudstack.utils.log.Logger logger) {
         this.logger = logger;
     }
 
+    // log simple strings
+    public void log(Level p, String entry) {
+        logger.log(p,entry);
+    }
+
+    public void error(String s) {
+        logger.log(Level.ERROR, s);
+    }
+
+    public void warn(String s) {
+        logger.log(Level.WARN, s);
+    }
+
+    public void info(String s) {
+        logger.log(Level.INFO, s);
+    }
+
+    public void debug(String s) {
+        logger.log(Level.DEBUG, s);
+    }
+
+    public void trace(String s) {
+        logger.log(Level.TRACE, s);
+    }
+
+    // log string with exceptions
     public void warn(String s, Exception e) {
         logger.warn(s,e);
     }
 
-    public void info(String s) {
-        logger.info(s);
+    // level checks
+    public boolean isEnabledFor(Level p) {
+        return logger.isEnabledFor(p);
     }
 
-    public void error(String s) {
-        logger.error(s);
+    public boolean isDebugEnabled() {
+        return logger.isEnabledFor(Level.DEBUG);
     }
 }
