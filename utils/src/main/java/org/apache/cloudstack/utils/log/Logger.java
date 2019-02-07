@@ -18,20 +18,18 @@
  */
 package org.apache.cloudstack.utils.log;
 
-import org.apache.log4j.Level;
-
 /**
  * wrapper class for the logging functionality of the log library in use
  */
 public class Logger {
-    private org.apache.cloudstack.utils.log.Logger logger;
-    public Logger(org.apache.cloudstack.utils.log.Logger logger) {
+    private org.apache.log4j.Logger logger;
+    public Logger(org.apache.log4j.Logger logger) {
         this.logger = logger;
     }
 
     // log simple strings
     public void log(Level p, String entry) {
-        logger.log(p,entry);
+        logger.log(p, entry);
     }
 
     public void error(String s) {
@@ -55,8 +53,20 @@ public class Logger {
     }
 
     // log string with exceptions
-    public void warn(String s, Exception e) {
-        logger.warn(s,e);
+    public void error(String s, Throwable e) {
+        logger.error(s, e);
+    }
+
+    public void warn(String s, Throwable e) {
+        logger.warn(s, e);
+    }
+
+    public void info(String s, Throwable e) {
+        logger.info(s, e);
+    }
+
+    public void debug(String s, Throwable e) {
+        logger.debug(s, e);
     }
 
     // level checks
@@ -66,5 +76,9 @@ public class Logger {
 
     public boolean isDebugEnabled() {
         return logger.isEnabledFor(Level.DEBUG);
+    }
+
+    public boolean isTraceEnabled() {
+        return logger.isEnabledFor(Level.TRACE);
     }
 }
