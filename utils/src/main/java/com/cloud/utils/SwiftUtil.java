@@ -32,14 +32,15 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Hex;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.script.OutputInterpreter;
 import com.cloud.utils.script.Script;
 
 public class SwiftUtil {
-    private static Logger logger = Logger.getLogger(SwiftUtil.class);
+    private static Logger logger = LogFactory.getLogger(SwiftUtil.class);
     protected static final long SWIFT_MAX_SIZE = 5L * 1024L * 1024L * 1024L;
     private static final String HMAC_SHA1_ALGORITHM = "HmacSHA1";
     private static final String CD_SRC = "cd %s;";

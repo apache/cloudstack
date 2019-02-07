@@ -30,7 +30,8 @@ import java.util.Properties;
 
 import javax.annotation.PostConstruct;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.encryption.pbe.config.SimpleStringPBEConfig;
 
@@ -39,7 +40,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class EncryptionSecretKeyChecker {
 
-    private static final Logger s_logger = Logger.getLogger(EncryptionSecretKeyChecker.class);
+    private static final Logger LOG = LogFactory.getLogger(EncryptionSecretKeyChecker.class);
 
     // Two possible locations with the new packaging naming
     private static final String s_altKeyFile = "key";
@@ -58,14 +59,14 @@ public class EncryptionSecretKeyChecker {
     public void check(Properties dbProps) throws IOException {
         String encryptionType = dbProps.getProperty("db.cloud.encryption.type");
 
-        s_logger.debug("Encryption Type: " + encryptionType);
+        LOG.debug("Encryption Type: " + encryptionType);
 
         if (encryptionType == null || encryptionType.equals("none")) {
             return;
         }
 
         if (s_useEncryption) {
-            s_logger.warn("Encryption already enabled, is check() called twice?");
+            LOG.warn("Encryption already enabled, is check() called twice?");
             return;
         }
 
@@ -102,7 +103,7 @@ public class EncryptionSecretKeyChecker {
         } else if (encryptionType.equals("web")) {
             int port = 8097;
             try (ServerSocket serverSocket = new ServerSocket(port);) {
-                s_logger.info("Waiting for admin to send secret key on port " + port);
+                LOG.info("Waiting for admin to send secret key on port " + port);
                 try (
                         Socket clientSocket = serverSocket.accept();
                         PrintWriter out = new PrintWriter(clientSocket.getOutputStream(), true);

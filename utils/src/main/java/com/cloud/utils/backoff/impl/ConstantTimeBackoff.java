@@ -26,8 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.backoff.BackoffAlgorithm;
 import com.cloud.utils.component.AdapterBase;
-import org.apache.cloudstack.utils.log.LogFactory;
 import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 
 /**
  * An implementation of BackoffAlgorithm that waits for some seconds.

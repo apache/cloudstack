@@ -37,7 +37,8 @@ import java.net.UnknownHostException;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 import org.junit.Test;
 
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -47,7 +48,7 @@ import com.googlecode.ipv6.IPv6Network;
 
 public class NetUtilsTest {
 
-    private static final Logger s_logger = Logger.getLogger(NetUtilsTest.class);
+    private static final Logger LOG = LogFactory.getLogger(NetUtilsTest.class);
 
     @Test
     public void testGetRandomIpFromCidrWithSize24() throws Exception {
@@ -135,14 +136,14 @@ public class NetUtilsTest {
         for (int i = 0; i < 5; i++) {
             final String ip = NetUtils.getIp6FromRange("1234:5678::1-1234:5678::2");
             assertThat(ip, anyOf(equalTo("1234:5678::1"), equalTo("1234:5678::2")));
-            s_logger.info("IP is " + ip);
+            LOG.info("IP is " + ip);
         }
         String ipString = null;
         final IPv6Address ipStart = IPv6Address.fromString("1234:5678::1");
         final IPv6Address ipEnd = IPv6Address.fromString("1234:5678::ffff:ffff:ffff:ffff");
         for (int i = 0; i < 10; i++) {
             ipString = NetUtils.getIp6FromRange(ipStart.toString() + "-" + ipEnd.toString());
-            s_logger.info("IP is " + ipString);
+            LOG.info("IP is " + ipString);
             final IPv6Address ip = IPv6Address.fromString(ipString);
             assertThat(ip, greaterThanOrEqualTo(ipStart));
             assertThat(ip, lessThanOrEqualTo(ipEnd));

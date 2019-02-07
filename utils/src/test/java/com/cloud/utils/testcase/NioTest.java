@@ -27,7 +27,8 @@ import com.cloud.utils.nio.NioClient;
 import com.cloud.utils.nio.NioServer;
 import com.cloud.utils.nio.Task;
 import com.cloud.utils.nio.Task.Type;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -58,7 +59,7 @@ import java.util.concurrent.Executors;
 
 public class NioTest {
 
-    private static final Logger LOGGER = Logger.getLogger(NioTest.class);
+    private static final Logger LOGGER = LogFactory.getLogger(NioTest.class);
 
     // Test should fail in due time instead of looping forever
     private static final int TESTTIMEOUT = 60000;

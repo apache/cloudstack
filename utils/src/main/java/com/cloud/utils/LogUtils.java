@@ -21,23 +21,24 @@ package com.cloud.utils;
 
 import java.io.File;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 import org.apache.log4j.xml.DOMConfigurator;
 
 public class LogUtils {
-    public static final Logger s_logger = Logger.getLogger(LogUtils.class);
+    public static final Logger LOG = LogFactory.getLogger(LogUtils.class);
 
     public static void initLog4j(String log4jConfigFileName) {
         assert (log4jConfigFileName != null);
         File file = PropertiesUtil.findConfigFile(log4jConfigFileName);
         if (file != null) {
-            s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+            LOG.info("log4j configuration found at " + file.getAbsolutePath());
             DOMConfigurator.configureAndWatch(file.getAbsolutePath());
         } else {
             String nameWithoutExtension = log4jConfigFileName.substring(0, log4jConfigFileName.lastIndexOf('.'));
             file = PropertiesUtil.findConfigFile(nameWithoutExtension + ".properties");
             if (file != null) {
-                s_logger.info("log4j configuration found at " + file.getAbsolutePath());
+                LOG.info("log4j configuration found at " + file.getAbsolutePath());
                 DOMConfigurator.configureAndWatch(file.getAbsolutePath());
             }
         }

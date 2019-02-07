@@ -19,12 +19,13 @@
 
 package com.cloud.utils.nicira.nvp.plugin;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 
 import org.apache.cloudstack.utils.CloudStackVersion;
 
 public class NiciraNvpApiVersion {
-    private static final Logger s_logger = Logger.getLogger(NiciraNvpApiVersion.class);
+    private static final Logger LOG = LogFactory.getLogger(NiciraNvpApiVersion.class);
 
     private static String niciraApiVersion;
 
@@ -41,7 +42,7 @@ public class NiciraNvpApiVersion {
     }
 
     public static synchronized void logNiciraApiVersion(){
-        s_logger.info("NSX API VERSION: " + ((niciraApiVersion != null) ? niciraApiVersion : " NOT PRESENT"));
+        LOG.info("NSX API VERSION: " + ((niciraApiVersion != null) ? niciraApiVersion : " NOT PRESENT"));
     }
 
 }

@@ -22,7 +22,8 @@ package com.cloud.utils.script;
 import java.io.BufferedReader;
 import java.io.IOException;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 
 /**
  */
@@ -50,7 +51,7 @@ public abstract class OutputInterpreter {
     };
 
     public static class TimedOutLogger extends OutputInterpreter {
-        private static final Logger s_logger = Logger.getLogger(TimedOutLogger.class);
+        private static final Logger LOG = LogFactory.getLogger(TimedOutLogger.class);
         Process _process;
 
         public TimedOutLogger(Process process) {
@@ -77,7 +78,7 @@ public abstract class OutputInterpreter {
                     buff.append(reader.readLine());
                 }
             } catch (IOException e) {
-                s_logger.info("[ignored] can not append line to buffer",e);
+                LOG.info("[ignored] can not append line to buffer",e);
             }
 
             return buff.toString();

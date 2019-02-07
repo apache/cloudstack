@@ -21,7 +21,8 @@ package com.cloud.utils.crypt;
 
 import java.util.Properties;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.jasypt.exceptions.EncryptionOperationNotPossibleException;
 
@@ -30,7 +31,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class DBEncryptionUtil {
 
-    public static final Logger s_logger = Logger.getLogger(DBEncryptionUtil.class);
+    public static final Logger LOG = LogFactory.getLogger(DBEncryptionUtil.class);
     private static StandardPBEStringEncryptor s_encryptor = null;
 
     public static String encrypt(String plain) {
@@ -44,7 +45,7 @@ public class DBEncryptionUtil {
         try {
             encryptedString = s_encryptor.encrypt(plain);
         } catch (EncryptionOperationNotPossibleException e) {
-            s_logger.debug("Error while encrypting: " + plain);
+            LOG.debug("Error while encrypting: " + plain);
             throw e;
         }
         return encryptedString;
@@ -62,7 +63,7 @@ public class DBEncryptionUtil {
         try {
             plain = s_encryptor.decrypt(encrypted);
         } catch (EncryptionOperationNotPossibleException e) {
-            s_logger.debug("Error while decrypting: " + encrypted);
+            LOG.debug("Error while decrypting: " + encrypted);
             throw e;
         }
         return plain;

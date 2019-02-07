@@ -19,10 +19,11 @@
 
 package com.cloud.utils.concurrency;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 
 public class SynchronizationEvent {
-    protected final static Logger s_logger = Logger.getLogger(SynchronizationEvent.class);
+    protected final static Logger LOG = LogFactory.getLogger(SynchronizationEvent.class);
 
     private boolean signalled;
 
@@ -58,7 +59,7 @@ public class SynchronizationEvent {
                     assert (signalled);
                     return signalled;
                 } catch (InterruptedException e) {
-                    s_logger.debug("unexpected awaken signal in wait()");
+                    LOG.debug("unexpected awaken signal in wait()");
                     throw e;
                 }
             }
@@ -75,7 +76,7 @@ public class SynchronizationEvent {
                 return signalled;
             } catch (InterruptedException e) {
                 // TODO, we don't honor time out semantics when the waiting thread is interrupted
-                s_logger.debug("unexpected awaken signal in wait(...)");
+                LOG.debug("unexpected awaken signal in wait(...)");
                 throw e;
             }
         }

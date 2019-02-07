@@ -46,7 +46,8 @@ import org.apache.commons.lang.SystemUtils;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.commons.validator.routines.InetAddressValidator;
 import org.apache.commons.validator.routines.RegexValidator;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 
 import com.cloud.utils.IteratorUtil;
 import com.cloud.utils.Pair;
@@ -57,7 +58,7 @@ import com.googlecode.ipv6.IPv6AddressRange;
 import com.googlecode.ipv6.IPv6Network;
 
 public class NetUtils {
-    protected final static Logger s_logger = Logger.getLogger(NetUtils.class);
+    protected final static Logger LOG = LogFactory.getLogger(NetUtils.class);
 
     private static final int MAX_CIDR = 32;
     private static final int RFC_3021_31_BIT_CIDR = 31;
@@ -112,7 +113,7 @@ public class NetUtils {
                 return localAddr.getHostName();
             }
         } catch (final UnknownHostException e) {
-            s_logger.warn("UnknownHostException when trying to get host name. ", e);
+            LOG.warn("UnknownHostException when trying to get host name. ", e);
         }
         return "localhost";
     }
@@ -133,7 +134,7 @@ public class NetUtils {
         try {
             return InetAddress.getLocalHost();
         } catch (final UnknownHostException e) {
-            s_logger.warn("UnknownHostException in getLocalInetAddress().", e);
+            LOG.warn("UnknownHostException in getLocalInetAddress().", e);
             return null;
         }
     }
@@ -143,7 +144,7 @@ public class NetUtils {
             final InetAddress addr = InetAddress.getByName(host);
             return addr.getHostAddress();
         } catch (final UnknownHostException e) {
-            s_logger.warn("Unable to resolve " + host + " to IP due to UnknownHostException");
+            LOG.warn("Unable to resolve " + host + " to IP due to UnknownHostException");
             return null;
         }
     }
@@ -159,7 +160,7 @@ public class NetUtils {
                 }
             }
         } catch (final SocketException e) {
-            s_logger.warn("SocketException in getAllLocalInetAddresses().", e);
+            LOG.warn("SocketException in getAllLocalInetAddresses().", e);
         }
 
         final InetAddress[] addrs = new InetAddress[addrList.size()];
@@ -189,7 +190,7 @@ public class NetUtils {
                 }
             }
         } catch (final SocketException e) {
-            s_logger.warn("UnknownHostException in getLocalCidrs().", e);
+            LOG.warn("UnknownHostException in getLocalCidrs().", e);
         }
 
         return cidrList.toArray(new String[0]);
@@ -211,7 +212,7 @@ public class NetUtils {
                     line = output.readLine();
                 }
             } catch (final IOException e) {
-                s_logger.debug("Caught IOException", e);
+                LOG.debug("Caught IOException", e);
             }
             return null;
         } else {
@@ -232,7 +233,7 @@ public class NetUtils {
             try {
                 info = NetUtils.getNetworkParams(nic);
             } catch (final NullPointerException ignored) {
-                s_logger.debug("Caught NullPointerException when trying to getDefaultHostIp");
+                LOG.debug("Caught NullPointerException when trying to getDefaultHostIp");
             }
             if (info != null) {
                 return info[0];
@@ -324,7 +325,7 @@ public class NetUtils {
                 formatter.format("%02X%s", mac[i], i < mac.length - 1 ? ":" : "");
             }
         } catch (final SocketException e) {
-            s_logger.error("SocketException when trying to retrieve MAC address", e);
+            LOG.error("SocketException when trying to retrieve MAC address", e);
         } finally {
             formatter.close();
         }
@@ -431,7 +432,7 @@ public class NetUtils {
             final byte[] mac = nic.getHardwareAddress();
             result[1] = byte2Mac(mac);
         } catch (final SocketException e) {
-            s_logger.debug("Caught exception when trying to get the mac address ", e);
+            LOG.debug("Caught exception when trying to get the mac address ", e);
         }
 
         result[2] = prefix2Netmask(addr.getNetworkPrefixLength());
@@ -1002,16 +1003,16 @@ public class NetUtils {
         // If it's a host name, don't allow to start with digit
 
         if (hostName.length() > 63 || hostName.length() < 1) {
-            s_logger.warn("Domain name label must be between 1 and 63 characters long");
+            LOG.warn("Domain name label must be between 1 and 63 characters long");
             return false;
         } else if (!hostName.toLowerCase().matches("[a-z0-9-]*")) {
-            s_logger.warn("Domain name label may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner)");
+            LOG.warn("Domain name label may contain only the ASCII letters 'a' through 'z' (in a case-insensitive manner)");
             return false;
         } else if (hostName.startsWith("-") || hostName.endsWith("-")) {
-            s_logger.warn("Domain name label can not start  with a hyphen and digit, and must not end with a hyphen");
+            LOG.warn("Domain name label can not start  with a hyphen and digit, and must not end with a hyphen");
             return false;
         } else if (isHostName && hostName.matches("^[0-9-].*")) {
-            s_logger.warn("Host name can't start with digit");
+            LOG.warn("Host name can't start with digit");
             return false;
         }
 
@@ -1021,12 +1022,12 @@ public class NetUtils {
     public static boolean verifyDomainName(final String domainName) {
         // don't allow domain name length to exceed 190 chars (190 + 63 (max host name length) = 253 = max domainName length
         if (domainName.length() < 1 || domainName.length() > 190) {
-            s_logger.trace("Domain name must be between 1 and 190 characters long");
+            LOG.trace("Domain name must be between 1 and 190 characters long");
             return false;
         }
 
         if (domainName.startsWith(".") || domainName.endsWith(".")) {
-            s_logger.trace("Domain name can't start or end with .");
+            LOG.trace("Domain name can't start or end with .");
             return false;
         }
 
@@ -1034,7 +1035,7 @@ public class NetUtils {
 
         for (int i = 0; i < domainNameLabels.length; i++) {
             if (!verifyDomainNameLabel(domainNameLabels[i], false)) {
-                s_logger.warn("Domain name label " + domainNameLabels[i] + " is incorrect");
+                LOG.warn("Domain name label " + domainNameLabels[i] + " is incorrect");
                 return false;
             }
         }
@@ -1052,11 +1053,11 @@ public class NetUtils {
     public static boolean isSameIpRange(final String cidrA, final String cidrB) {
 
         if (!NetUtils.isValidIp4Cidr(cidrA)) {
-            s_logger.info("Invalid value of cidr " + cidrA);
+            LOG.info("Invalid value of cidr " + cidrA);
             return false;
         }
         if (!NetUtils.isValidIp4Cidr(cidrB)) {
-            s_logger.info("Invalid value of cidr " + cidrB);
+            LOG.info("Invalid value of cidr " + cidrB);
             return false;
         }
         final String[] cidrPairFirst = cidrA.split("\\/");
@@ -1090,7 +1091,7 @@ public class NetUtils {
         final String[] allowedNetBlocks = {"10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "100.64.0.0/10"};
 
         if (!isValidIp4Cidr(cidr)) {
-            s_logger.warn("Cidr " + cidr + " is not valid");
+            LOG.warn("Cidr " + cidr + " is not valid");
             return false;
         }
 
@@ -1101,7 +1102,7 @@ public class NetUtils {
         }
 
         // not in allowedNetBlocks - return false
-        s_logger.warn("cidr " + cidr + " is not RFC 1918 or 6598 compliant");
+        LOG.warn("cidr " + cidr + " is not RFC 1918 or 6598 compliant");
         return false;
     }
 
@@ -1125,7 +1126,7 @@ public class NetUtils {
     public static boolean verifyInstanceName(final String instanceName) {
         //instance name for cloudstack vms shouldn't contain - and spaces
         if (instanceName.contains("-") || instanceName.contains(" ") || instanceName.contains("+")) {
-            s_logger.warn("Instance name can not contain hyphen, spaces and \"+\" char");
+            LOG.warn("Instance name can not contain hyphen, spaces and \"+\" char");
             return false;
         }
         return true;
@@ -1138,7 +1139,7 @@ public class NetUtils {
             final long shift = MAX_CIDR - (cidrALong[1] > cidrBLong[1] ? cidrBLong[1] : cidrALong[1]);
             return cidrALong[0] >> shift == cidrBLong[0] >> shift;
         } catch (CloudRuntimeException e) {
-            s_logger.error(e.getLocalizedMessage(),e);
+            LOG.error(e.getLocalizedMessage(),e);
         }
         return false;
     }
@@ -1205,7 +1206,7 @@ public class NetUtils {
     public static boolean validateIcmpType(final long icmpType) {
         //Source - http://www.erg.abdn.ac.uk/~gorry/course/inet-pages/icmp-code.html
         if (!(icmpType >= 0 && icmpType <= 255)) {
-            s_logger.warn("impcType is not within 0-255 range");
+            LOG.warn("impcType is not within 0-255 range");
             return false;
         }
         return true;
@@ -1215,7 +1216,7 @@ public class NetUtils {
 
         //Source - http://www.erg.abdn.ac.uk/~gorry/course/inet-pages/icmp-code.html
         if (!(icmpCode >= 0 && icmpCode <= 15)) {
-            s_logger.warn("Icmp code should be within 0-15 range");
+            LOG.warn("Icmp code should be within 0-15 range");
             return false;
         }
 
@@ -1310,7 +1311,7 @@ public class NetUtils {
                 return endInt.subtract(startInt).add(BigInteger.ONE);
             }
         } catch (final IllegalArgumentException ex) {
-            s_logger.error("Failed to convert a string to an IPv6 address", ex);
+            LOG.error("Failed to convert a string to an IPv6 address", ex);
         }
         return null;
     }

@@ -37,7 +37,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 import org.reflections.Reflections;
 import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.ClasspathHelper;
@@ -50,8 +51,8 @@ import com.cloud.utils.exception.CloudRuntimeException;
 
 public class ReflectUtil {
 
-    private static final Logger s_logger = Logger.getLogger(ReflectUtil.class);
-    private static final Logger logger = Logger.getLogger(Reflections.class);
+    private static final Logger LOG = LogFactory.getLogger(ReflectUtil.class);
+    private static final Logger logger = LogFactory.getLogger(Reflections.class);
 
     public static Pair<Class<?>, Field> getAnyField(Class<?> clazz, String fieldName) {
         try {
@@ -186,13 +187,13 @@ public class ReflectUtil {
             return unmodifiableList(serializedProperties);
 
         } catch (IntrospectionException e) {
-            s_logger.warn("Ignored IntrospectionException when serializing class " + target.getClass().getCanonicalName(), e);
+            LOG.warn("Ignored IntrospectionException when serializing class " + target.getClass().getCanonicalName(), e);
         } catch (IllegalArgumentException e) {
-            s_logger.warn("Ignored IllegalArgumentException when serializing class " + target.getClass().getCanonicalName(), e);
+            LOG.warn("Ignored IllegalArgumentException when serializing class " + target.getClass().getCanonicalName(), e);
         } catch (IllegalAccessException e) {
-            s_logger.warn("Ignored IllegalAccessException when serializing class " + target.getClass().getCanonicalName(), e);
+            LOG.warn("Ignored IllegalAccessException when serializing class " + target.getClass().getCanonicalName(), e);
         } catch (InvocationTargetException e) {
-            s_logger.warn("Ignored InvocationTargetException when serializing class " + target.getClass().getCanonicalName(), e);
+            LOG.warn("Ignored InvocationTargetException when serializing class " + target.getClass().getCanonicalName(), e);
         }
 
         return emptyList();
@@ -222,8 +223,8 @@ public class ReflectUtil {
         final List<URL> searchUrls = new ArrayList<>();
         for (final URL url: urls) {
             if (url.toString().contains(name)) {
-                if (s_logger.isDebugEnabled()) {
-                    s_logger.debug("Search URL: " + url.toString());
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Search URL: " + url.toString());
                 }
                 searchUrls.add(url);
             }

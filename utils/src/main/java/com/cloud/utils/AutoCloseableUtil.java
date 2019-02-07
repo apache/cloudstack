@@ -16,11 +16,11 @@
 // under the License.
 package com.cloud.utils;
 
-import org.apache.cloudstack.utils.log.LogFactory;
 import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 
 public class AutoCloseableUtil {
-    private final static Logger s_logger = LogFactory.getLogger(AutoCloseableUtil.class);
+    private final static Logger LOG = LogFactory.getLogger(AutoCloseableUtil.class);
 
     public static void closeAutoCloseable(AutoCloseable ac, String message) {
         try {
@@ -30,7 +30,7 @@ public class AutoCloseableUtil {
             }
 
         } catch (Exception e) {
-            s_logger.warn("[ignored] " + message, e);
+            LOG.warn("[ignored] " + message, e);
         }
     }
 

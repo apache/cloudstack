@@ -26,14 +26,15 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 import org.jasypt.encryption.pbe.PBEStringEncryptor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 
 import com.cloud.utils.exception.CloudRuntimeException;
 
 public class EncryptionUtil {
-    public static final Logger s_logger = Logger.getLogger(EncryptionUtil.class.getName());
+    public static final Logger LOG = LogFactory.getLogger(EncryptionUtil.class);
     private static PBEStringEncryptor encryptor;
 
     private static void initialize(String key) {
@@ -66,7 +67,7 @@ public class EncryptionUtil {
             final byte[] encryptedBytes = mac.doFinal();
             return Base64.encodeBase64String(encryptedBytes);
         } catch (NoSuchAlgorithmException | InvalidKeyException | UnsupportedEncodingException e) {
-            s_logger.error("exception occurred which encoding the data." + e.getMessage());
+            LOG.error("exception occurred which encoding the data." + e.getMessage());
             throw new CloudRuntimeException("unable to generate signature", e);
         }
     }

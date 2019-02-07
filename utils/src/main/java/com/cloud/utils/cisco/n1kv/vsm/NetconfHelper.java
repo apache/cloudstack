@@ -23,8 +23,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
-import org.apache.cloudstack.utils.log.LogFactory;
 import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 
 import com.trilead.ssh2.Connection;
 import com.trilead.ssh2.Session;
@@ -37,7 +37,7 @@ import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.utils.ssh.SSHCmdHelper;
 
 public class NetconfHelper {
-    private static final Logger s_logger = LogFactory.getLogger(NetconfHelper.class);
+    private static final Logger LOG = LogFactory.getLogger(NetconfHelper.class);
 
     private static final String SSH_NETCONF_TERMINATOR = "]]>]]>";
 
@@ -57,7 +57,7 @@ public class NetconfHelper {
             exchangeHello();
         } catch (final Exception e) {
             disconnect();
-            s_logger.error("Failed to connect to device SSH server: " + e.getMessage());
+            LOG.error("Failed to connect to device SSH server: " + e.getMessage());
             throw new CloudRuntimeException("Failed to connect to SSH server: " + _connection.getHostname());
         }
     }
@@ -229,7 +229,7 @@ public class NetconfHelper {
             outputStream.write(message.getBytes());
             outputStream.flush();
         } catch (Exception e) {
-            s_logger.error("Failed to send message: " + e.getMessage());
+            LOG.error("Failed to send message: " + e.getMessage());
             throw new CloudRuntimeException("Failed to send message: " + e.getMessage());
         }
     }
