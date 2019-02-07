@@ -21,13 +21,18 @@ package com.cloud.utils.script;
 
 import java.util.HashMap;
 
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
 
 public class Script2 extends Script {
     HashMap<String, ParamType> _params = new HashMap<String, ParamType>();
 
     public static enum ParamType {
         NORMAL, PASSWORD,
+    }
+
+    @Deprecated
+    public Script2(String command, org.apache.log4j.Logger logger) {
+        this(command, new Logger(logger));
     }
 
     public Script2(String command, Logger logger) {

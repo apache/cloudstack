@@ -21,8 +21,8 @@ package com.cloud.utils;
 
 import java.util.ArrayList;
 
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Level;
+import org.apache.cloudstack.utils.log.Logger;
 
 /**
  * Journal is used to kept what has happened during a process so someone can track
@@ -91,6 +91,10 @@ public class Journal {
     public static class LogJournal extends Journal {
         Logger _logger;
 
+        @Deprecated
+        public LogJournal(String name, org.apache.log4j.Logger logger) {
+            this(name, new Logger(logger));
+        }
         public LogJournal(String name, Logger logger) {
             super(name);
             _logger = logger;
@@ -98,7 +102,7 @@ public class Journal {
 
         @Override
         public void record(String msg, Object... params) {
-            record(_logger, Level.DEBUG, msg, params);
+            record(_logger, (org.apache.cloudstack.utils.log.Level)Level.DEBUG, msg, params);
         }
     }
 }

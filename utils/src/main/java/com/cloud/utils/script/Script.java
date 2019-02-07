@@ -39,7 +39,8 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.cloudstack.utils.security.KeyStoreUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
+import org.apache.cloudstack.utils.log.Logger;
+import org.apache.cloudstack.utils.log.LogFactory;
 import org.joda.time.Duration;
 
 import com.cloud.utils.PropertiesUtil;
@@ -47,7 +48,7 @@ import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.script.OutputInterpreter.TimedOutLogger;
 
 public class Script implements Callable<String> {
-    private static final Logger s_logger = Logger.getLogger(Script.class);
+    private static final Logger LOG = LogFactory.getLogger(Script.class);
 
     private final Logger _logger;
 
@@ -70,6 +71,31 @@ public class Script implements Callable<String> {
         return _process.exitValue();
     }
 
+    /*
+     * a set of constructors that are creating wrappers around log4j1 loggers to facilitate single point upgrading later on
+     * these are all @deprecated and only created to not have to change code outside this package {code}org.apache.utils{code}
+     */
+    @Deprecated
+    public Script(String command, Duration timeout, org.apache.log4j.Logger logger) {
+        this(command, timeout.getMillis(), new Logger(logger));
+    }
+    @Deprecated
+    public Script(String command, long timeout, org.apache.log4j.Logger logger) {
+        this(command, timeout, new Logger(logger));
+    }
+    @Deprecated
+    public Script(String command, org.apache.log4j.Logger logger) {
+        this(command, new Logger(logger));
+    }
+    @Deprecated
+    public Script(boolean runWithSudo, String command, Duration timeout, org.apache.log4j.Logger logger) {
+        this(runWithSudo, command, timeout, new Logger(logger));
+    }
+    @Deprecated
+    public Script(boolean runWithSudo, String command, long timeout, org.apache.log4j.Logger logger) {
+        this(runWithSudo, command, timeout, new Logger(logger));
+    }
+
     public Script(String command, Duration timeout, Logger logger) {
         this(command, timeout.getMillis(), logger);
     }
@@ -84,7 +110,7 @@ public class Script implements Callable<String> {
             _timeout = _defaultTimeout;
         }
         _process = null;
-        _logger = logger != null ? logger : s_logger;
+        _logger = logger != null ? logger : LOG;
     }
 
     public Script(boolean runWithSudo, String command, Duration timeout, Logger logger) {
@@ -104,16 +130,16 @@ public class Script implements Callable<String> {
     }
 
     public Script(String command) {
-        this(command, 0, s_logger);
+        this(command, 0, LOG);
     }
 
     public Script(String command, Duration timeout) {
-        this(command, timeout.getMillis(), s_logger);
+        this(command, timeout.getMillis(), LOG);
     }
 
     @Deprecated
     public Script(String command, long timeout) {
-        this(command, timeout, s_logger);
+        this(command, timeout, LOG);
     }
 
     public void add(String... params) {
@@ -364,19 +390,19 @@ public class Script implements Callable<String> {
     }
 
     public static String findScript(String path, String script) {
-        s_logger.debug("Looking for " + script + " in the classpath");
+        LOG.debug("Looking for " + script + " in the classpath");
 
         URL url = ClassLoader.getSystemResource(script);
-        s_logger.debug("System resource: " + url);
+        LOG.debug("System resource: " + url);
         File file = null;
         if (url != null) {
             file = new File(url.getFile());
-            s_logger.debug("Absolute path =  " + file.getAbsolutePath());
+            LOG.debug("Absolute path =  " + file.getAbsolutePath());
             return file.getAbsolutePath();
         }
 
         if (path == null) {
-            s_logger.warn("No search path specified, unable to look for " + script);
+            LOG.warn("No search path specified, unable to look for " + script);
             return null;
         }
         path = path.replace("/", File.separator);
@@ -390,14 +416,14 @@ public class Script implements Callable<String> {
         } else {
             url = Script.class.getClassLoader().getResource(path + File.separator + script);
         }
-        s_logger.debug("Classpath resource: " + url);
+        LOG.debug("Classpath resource: " + url);
         if (url != null) {
             try {
                 file = new File(new URI(url.toString()).getPath());
-                s_logger.debug("Absolute path =  " + file.getAbsolutePath());
+                LOG.debug("Absolute path =  " + file.getAbsolutePath());
                 return file.getAbsolutePath();
             } catch (URISyntaxException e) {
-                s_logger.warn("Unable to convert " + url.toString() + " to a URI");
+                LOG.warn("Unable to convert " + url.toString() + " to a URI");
             }
         }
 
@@ -411,7 +437,7 @@ public class Script implements Callable<String> {
             return file.exists() ? file.getAbsolutePath() : null;
         }
 
-        s_logger.debug("Looking for " + script);
+        LOG.debug("Looking for " + script);
         String search = null;
         for (int i = 0; i < 3; i++) {
             if (i == 0) {
@@ -431,25 +457,25 @@ public class Script implements Callable<String> {
                 else
                     cp = cp.substring(begin, end);
 
-                s_logger.debug("Current binaries reside at " + cp);
+                LOG.debug("Current binaries reside at " + cp);
                 search = cp;
             } else if (i == 1) {
-                s_logger.debug("Searching in environment.properties");
+                LOG.debug("Searching in environment.properties");
                 try {
                     final File propsFile = PropertiesUtil.findConfigFile("environment.properties");
                     if (propsFile == null) {
-                        s_logger.debug("environment.properties could not be opened");
+                        LOG.debug("environment.properties could not be opened");
                     } else {
                         final Properties props = PropertiesUtil.loadFromFile(propsFile);
                         search = props.getProperty("paths.script");
                     }
                 } catch (IOException e) {
-                    s_logger.debug("environment.properties could not be opened");
+                    LOG.debug("environment.properties could not be opened");
                     continue;
                 }
-                s_logger.debug("environment.properties says scripts should be in " + search);
+                LOG.debug("environment.properties says scripts should be in " + search);
             } else {
-                s_logger.debug("Searching in the current directory");
+                LOG.debug("Searching in the current directory");
                 search = ".";
             }
 
@@ -457,7 +483,7 @@ public class Script implements Callable<String> {
             do {
                 search = search.substring(0, search.lastIndexOf(File.separator));
                 file = new File(search + File.separator + script);
-                s_logger.debug("Looking for " + script + " in " + file.getAbsolutePath());
+                LOG.debug("Looking for " + script + " in " + file.getAbsolutePath());
             } while (!file.exists() && search.lastIndexOf(File.separator) != -1);
 
             if (file.exists()) {
@@ -472,14 +498,14 @@ public class Script implements Callable<String> {
         do {
             search = search.substring(0, search.lastIndexOf(File.separator));
             file = new File(search + File.separator + script);
-            s_logger.debug("Looking for " + script + " in " + file.getAbsolutePath());
+            LOG.debug("Looking for " + script + " in " + file.getAbsolutePath());
         } while (!file.exists() && search.lastIndexOf(File.separator) != -1);
 
         if (file.exists()) {
             return file.getAbsolutePath();
         }
 
-        s_logger.warn("Unable to find script " + script);
+        LOG.warn("Unable to find script " + script);
         return null;
     }
 
