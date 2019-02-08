@@ -411,8 +411,6 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
                                     diskNode.appendChild(newChildSourceNode);
                                 } else if ("auth".equals(diskChildNode.getNodeName())) {
                                     diskNode.removeChild(diskChildNode);
-                                } else if ("iotune".equals(diskChildNode.getNodeName())) {
-                                    diskNode.removeChild(diskChildNode);
                                 }
                             }
                         }
