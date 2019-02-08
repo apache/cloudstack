@@ -125,7 +125,7 @@ public class NetUtils {
                 return localAddr.getCanonicalHostName();
             }
         } catch (UnknownHostException e) {
-            s_logger.warn("UnknownHostException when trying to get canonical host name. ", e);
+            LOG.warn("UnknownHostException when trying to get canonical host name. ", e);
         }
         return "localhost";
     }
