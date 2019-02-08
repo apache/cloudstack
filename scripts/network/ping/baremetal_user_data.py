@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,83 +17,73 @@
 # specific language governing permissions and limitations
 # under the License.
 
-'''
-Created on Jul 2, 2012
-
-@author: frank
-'''
 import sys
-import os
-import os.path
 import base64
+from pathlib import Path
 
 HTML_ROOT = "/var/www/html/"
 
 def writeIfNotHere(fileName, texts):
-    if not os.path.exists(fileName):
+    if not Path(filename).exists():
         entries = []
     else:
-        f = open(fileName, 'r')
-        entries = f.readlines()
-        f.close()
+        f = Path(filename).open(mode='r')
+        entries = f.readline()
 
-    texts = [ "%s\n" % t for t in texts ]
+    texts = [ "{}\n".format(t) for t in texts ]
     need = False
     for t in texts:
         if not t in entries:
             entries.append(t)
             need = True
-            
-    if need: 
-        f = open(fileName, 'w')
+
+    if need:
+        f = Path(filename).open(mode='w')
         f.write(''.join(entries))
-        f.close()
-    
+
 def createRedirectEntry(vmIp, folder, filename):
-    entry = "RewriteRule ^%s$  ../%s/%%{REMOTE_ADDR}/%s [L,NC,QSA]" % (filename, folder, filename)
-    htaccessFolder="/var/www/html/latest"
-    htaccessFile=os.path.join(htaccessFolder, ".htaccess")
-    if not os.path.exists(htaccessFolder):
-        os.makedirs(htaccessFolder)
+    entry = "RewriteRule ^{0}$  ../{1}/%%{REMOTE_ADDR}/{2} [L,NC,QSA]".format(filename,folder,filename)
+    htaccessFolder = "/var/www/html/latest"
+    htaccessFile = Path(htaccessFolder).joinpath(".htaccess")
+    if not Path(htaccessFolder).exists():
+        Path(htaccessFolder).mkdir()
     writeIfNotHere(htaccessFile, ["Options +FollowSymLinks", "RewriteEngine On", entry])
-        
-    htaccessFolder = os.path.join("/var/www/html/", folder, vmIp)
-    if not os.path.exists(htaccessFolder):
-        os.makedirs(htaccessFolder)
-    htaccessFile=os.path.join(htaccessFolder, ".htaccess")
-    entry="Options -Indexes\nOrder Deny,Allow\nDeny from all\nAllow from %s" % vmIp
-    f = open(htaccessFile, 'w')
+
+    htaccessFolder = Path(HTML_ROOT).joinpath(folder, vmIp)
+    if not Path.exists(htaccessFolder):
+        Path(htaccessFolder).mkdir()
+    htaccessFile = Path(htaccessFolder).joinpath(".htaccess")
+    entry="Options -Indexes\nOrder Deny,Allow\nDeny from all\nAllow from {}".format(vmIp)
+    f = Path(htaccessFile).open(mode='w')
     f.write(entry)
-    f.close()
-    
+
     if folder in ['metadata', 'meta-data']:
-        entry1="RewriteRule ^meta-data/(.+)$  ../%s/%%{REMOTE_ADDR}/$1 [L,NC,QSA]" % folder
-        htaccessFolder="/var/www/html/latest"
-        htaccessFile=os.path.join(htaccessFolder, ".htaccess")
-        entry2="RewriteRule ^meta-data/$  ../%s/%%{REMOTE_ADDR}/meta-data [L,NC,QSA]" % folder
+        entry1 = "RewriteRule ^meta-data/(.+)$  ../{}/%%{REMOTE_ADDR}/$1 [L,NC,QSA]".format(folder)
+        htaccessFolder = "/var/www/html/latest"
+        htaccessFile = Path(htaccessFolder).joinpath(".htaccess")
+        entry2 = "RewriteRule ^meta-data/$  ../{}/%%{REMOTE_ADDR}/meta-data [L,NC,QSA]".format(folder)
         writeIfNotHere(htaccessFile, [entry1, entry2])
-        
+
 
 def addUserData(vmIp, folder, fileName, contents):
-        
-    baseFolder = os.path.join(HTML_ROOT, folder, vmIp)
-    if not os.path.exists(baseFolder):
-        os.makedirs(baseFolder)
-        
+
+    baseFolder = Path(HTML_ROOT).joinpath(folder, vmIp)
+    if not Path(baseFolder).exists():
+        Path(baseFolder).mkdir()
+
     createRedirectEntry(vmIp, folder, fileName)
-    
-    datafileName = os.path.join(HTML_ROOT, folder, vmIp, fileName)
-    metaManifest = os.path.join(HTML_ROOT, folder, vmIp, "meta-data")
+
+    datafileName = Path(HTML_ROOT).joinpath(folder, vmIp, fileName)
+    metaManifest = Path(HTML_ROOT).joinpath(folder, vmIp, "meta-data")
     if folder == "userdata":
         if contents != "none":
             contents = base64.urlsafe_b64decode(contents)
         else:
             contents = ""
-            
-    f = open(datafileName, 'w')
-    f.write(contents) 
-    f.close()
-    
+
+    f = Path(datafileName).open(mode='w')
+    f.write(contents)
+
     if folder == "metadata" or folder == "meta-data":
         writeIfNotHere(metaManifest, [fileName])
 
@@ -101,4 +93,4 @@ if __name__ == '__main__':
     for entry in allEntires:
         (vmIp, folder, fileName, contents) = entry.split(',', 3)
         addUserData(vmIp, folder, fileName, contents)
-    sys.exit(0)    
+    sys.exit(0)
