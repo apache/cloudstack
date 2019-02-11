@@ -352,7 +352,7 @@ public final class LibvirtMigrateCommandWrapper extends CommandWrapper<MigrateCo
     //   * The value of the 'type' of the disk (ex. file, block)
     //   * The value of the 'type' of the driver of the disk (ex. qcow2, raw)
     //   * The source of the disk needs an attribute that is either 'file' or 'dev' as well as its corresponding value.
-    private String replaceStorage(String xmlDesc, Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage)
+    protected String replaceStorage(String xmlDesc, Map<String, MigrateCommand.MigrateDiskInfo> migrateStorage)
             throws IOException, ParserConfigurationException, SAXException, TransformerException {
         InputStream in = IOUtils.toInputStream(xmlDesc);
 

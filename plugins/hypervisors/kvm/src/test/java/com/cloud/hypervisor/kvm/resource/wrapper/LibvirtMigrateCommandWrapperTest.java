@@ -21,9 +21,13 @@ package com.cloud.hypervisor.kvm.resource.wrapper;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -43,6 +47,12 @@ import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.hypervisor.kvm.resource.LibvirtConnection;
 import com.cloud.hypervisor.kvm.resource.LibvirtVMDef.DiskDef;
 import com.cloud.utils.exception.CloudRuntimeException;
+import org.w3c.dom.Document;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({LibvirtConnection.class, LibvirtMigrateCommandWrapper.class})
@@ -96,6 +106,11 @@ public class LibvirtMigrateCommandWrapperTest {
 "        <backingStore/>\n" +
 "      </backingStore>\n" +
 "      <target dev='vda' bus='virtio'/>\n" +
+"      <iotune>\n" +
+"        <write_iops_sec>500</write_iops_sec>\n" +
+"        <write_iops_sec_max>5000</write_iops_sec_max>\n" +
+"        <write_iops_sec_max_length>60</write_iops_sec_max_length>\n" +
+"      </iotune>\n" +
 "      <serial>4650a2f7fce548e2beaa</serial>\n" +
 "      <alias name='virtio-disk0'/>\n" +
 "      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>\n" +
@@ -208,6 +223,11 @@ public class LibvirtMigrateCommandWrapperTest {
 "        <backingStore/>\n" +
 "      </backingStore>\n" +
 "      <target dev='vda' bus='virtio'/>\n" +
+"      <iotune>\n" +
+"        <write_iops_sec>500</write_iops_sec>\n" +
+"        <write_iops_sec_max>5000</write_iops_sec_max>\n" +
+"        <write_iops_sec_max_length>60</write_iops_sec_max_length>\n" +
+"      </iotune>\n" +
 "      <serial>4650a2f7fce548e2beaa</serial>\n" +
 "      <alias name='virtio-disk0'/>\n" +
 "      <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>\n" +
@@ -433,6 +453,34 @@ public class LibvirtMigrateCommandWrapperTest {
         inOrder.verify(lw).searchDiskDefOnMigrateDiskInfoList(diskInfoList, disk);
         inOrder.verify(lw, Mockito.times(timesDelete)).deleteLocalVolume("volPath");
         inOrder.verify(virtResource, Mockito.times(timesCleanup)).cleanupDisk(disk);
+    }
+
+    static void assertXpath(final Document doc, final String xPathExpr,
+                            final String expected) {
+        try {
+            Assert.assertEquals(expected, XPathFactory.newInstance().newXPath()
+                    .evaluate(xPathExpr, doc));
+        } catch (final XPathExpressionException e) {
+            Assert.fail("Could not evaluate xpath" + xPathExpr + ":"
+                    + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testReplaceStorage() throws Exception {
+        Map<String, MigrateDiskInfo> mapMigrateStorage = new HashMap<String, MigrateDiskInfo>();
+
+        MigrateDiskInfo diskInfo = new MigrateDiskInfo("123456", DiskType.BLOCK, DriverType.RAW, Source.FILE, "sourctest");
+        mapMigrateStorage.put("/mnt/812ea6a3-7ad0-30f4-9cab-01e3f2985b98/4650a2f7-fce5-48e2-beaa-bcdf063194e6", diskInfo);
+        final String result = libvirtMigrateCmdWrapper.replaceStorage(fullfile, mapMigrateStorage);
+
+        InputStream in = IOUtils.toInputStream(result);
+        DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+        Document doc = docBuilder.parse(in);
+        assertXpath(doc, "/domain/devices/disk/iotune/write_iops_sec", "500");
+        assertXpath(doc, "/domain/devices/disk/@type", "block");
+        assertXpath(doc, "/domain/devices/disk/driver/@type", "raw");
     }
 
 }
