@@ -17,36 +17,33 @@
 
 package com.cloud.event;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
-import com.cloud.utils.ReflectUtil;
-import com.cloud.utils.db.EntityManager;
-import org.apache.cloudstack.api.Identity;
-import org.apache.log4j.Logger;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.events.EventBus;
-import org.apache.cloudstack.framework.events.EventBusException;
-
 import com.cloud.configuration.Config;
 import com.cloud.event.dao.EventDao;
+import com.cloud.projects.Project;
+import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.ManagementService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.user.dao.UserDao;
-import com.cloud.projects.dao.ProjectDao;
-import com.cloud.projects.Project;
+import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.component.ComponentContext;
+import com.cloud.utils.db.EntityManager;
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.events.EventBus;
+import org.apache.cloudstack.framework.events.EventBusException;
+import org.apache.log4j.Logger;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 public class ActionEventUtils {
     private static final Logger s_logger = Logger.getLogger(ActionEventUtils.class);
@@ -97,6 +94,11 @@ public class ActionEventUtils {
 
         Event event = persistActionEvent(userId, accountId, domainId, null, type, Event.State.Completed, true, description, null);
 
+
+        //these work fine here
+        System.out.println("ndale - onActionEvent - System out");
+        s_logger.warn("ndale - onActionEvent");
+
         return event.getId();
     }
 
@@ -108,6 +110,9 @@ public class ActionEventUtils {
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Scheduled, description);
 
         Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled, eventDisplayEnabled, description, startEventId);
+
+        System.out.println("ndale - onScheduledActionEvent - System out");
+        s_logger.warn("ndale - onScheduledActionEvent");
 
         return event.getId();
     }
@@ -135,6 +140,10 @@ public class ActionEventUtils {
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Started, description);
 
         Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Started, eventDisplayEnabled, description, startEventId);
+
+        System.out.println("ndale - onStartedActionEvent - System out");
+        s_logger.warn("ndale - onStartedActionEvent");
+
 
         return event.getId();
     }
@@ -184,6 +193,20 @@ public class ActionEventUtils {
             event.setStartId(startEventId);
         }
         event = s_eventDao.persist(event);
+
+        //these work fine here
+        System.out.println("ndale - PersistActionEvent - System out");
+        s_logger.warn("ndale - PersistActionEvent");
+
+        //Gson gson = new Gson();
+        System.out.println(event.getType());
+        System.out.println(event.getParameters());
+        System.out.println(event.getLevel());
+        System.out.println(event.getDescription());
+        System.out.println(event.getCreateDate().toString());
+        System.out.println(event.getUuid());
+
+
         return event;
     }
 
