@@ -17,7 +17,7 @@
 
 package com.cloud.event;
 
-public class Taxononomies {
+public class Taxonomies {
 
     public static class EventType {
         public static final String MONITOR = "monitor";

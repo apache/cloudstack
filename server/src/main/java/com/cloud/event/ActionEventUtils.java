@@ -19,6 +19,7 @@ package com.cloud.event;
 
 import com.cloud.configuration.Config;
 import com.cloud.event.dao.EventDao;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.projects.Project;
 import com.cloud.projects.dao.ProjectDao;
 import com.cloud.server.ManagementService;
@@ -30,6 +31,7 @@ import com.cloud.user.dao.UserDao;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.component.ComponentContext;
 import com.cloud.utils.db.EntityManager;
+import com.google.gson.Gson;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
@@ -141,10 +143,6 @@ public class ActionEventUtils {
 
         Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Started, eventDisplayEnabled, description, startEventId);
 
-        System.out.println("ndale - onStartedActionEvent - System out");
-        s_logger.warn("ndale - onStartedActionEvent");
-
-
         return event.getId();
     }
 
@@ -198,13 +196,32 @@ public class ActionEventUtils {
         System.out.println("ndale - PersistActionEvent - System out");
         s_logger.warn("ndale - PersistActionEvent");
 
-        //Gson gson = new Gson();
-        System.out.println(event.getType());
-        System.out.println(event.getParameters());
-        System.out.println(event.getLevel());
-        System.out.println(event.getDescription());
-        System.out.println(event.getCreateDate().toString());
-        System.out.println(event.getUuid());
+
+        Gson gson = new Gson();
+        System.out.println("==========================================================================================");
+        System.out.println("event.getType() " +  event.getType());
+        System.out.println("event.getEntityType().getName() " + event.getEntityType().getName());
+        System.out.println("event.getParameters() " + event.getParameters());
+        System.out.println("event.getLevel() " + event.getLevel());
+        System.out.println("event.getDescription() " + event.getDescription());
+        //System.out.println("event.getCreateDate().toString() " +event.getCreateDate().toString());
+        System.out.println("event.getUuid() " + event.getUuid());
+        //System.out.println("event.getAccountId() " + String.valueOf(event.getAccountId()));
+        //System.out.println("event.getDomainId() " + String.valueOf(event.getDomainId()));
+        System.out.println("event.getState() " + event.getState().toString());
+        System.out.println("==========================================================================================");
+        System.out.println("======================================CADF================================================");
+
+
+        Cadf cadf = new Cadf(event);
+        try {
+            cadf.checkMandatoryFields();
+        } catch (InvalidParameterValueException e) {
+            s_logger.error(e.getMessage());
+        }
+
+        System.out.println(gson.toJson(cadf));
+        System.out.println("======================================CADF================================================");
 
 
         return event;
