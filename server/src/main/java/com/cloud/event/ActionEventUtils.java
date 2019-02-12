@@ -204,10 +204,11 @@ public class ActionEventUtils {
         System.out.println("event.getParameters() " + event.getParameters());
         System.out.println("event.getLevel() " + event.getLevel());
         System.out.println("event.getDescription() " + event.getDescription());
+        //this causes test failure/exception
         //System.out.println("event.getCreateDate().toString() " +event.getCreateDate().toString());
         System.out.println("event.getUuid() " + event.getUuid());
-        //System.out.println("event.getAccountId() " + String.valueOf(event.getAccountId()));
-        //System.out.println("event.getDomainId() " + String.valueOf(event.getDomainId()));
+        System.out.println("event.getAccountId() " + String.valueOf(event.getAccountId()));
+        System.out.println("event.getDomainId() " + String.valueOf(event.getDomainId()));
         System.out.println("event.getState() " + event.getState().toString());
         System.out.println("==========================================================================================");
         System.out.println("======================================CADF================================================");
