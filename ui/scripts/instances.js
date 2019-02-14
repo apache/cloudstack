@@ -2642,6 +2642,9 @@
                                                 required: false,
                                                 ipv4: true
                                             }
+                                        },
+                                        mtu: {
+                                            label: 'label.mtu'
                                         }
                                     }
                                 },
@@ -2898,6 +2901,9 @@
                                 converter: function(data) {
                                     return data ? _l('label.yes') : _l('label.no');
                                 }
+                            },
+                            mtu : {
+                                label: 'label.mtu'
                             }
                         }],
                         viewAll: {

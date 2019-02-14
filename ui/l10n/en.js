@@ -1140,6 +1140,7 @@ var dictionary = {
 "label.move.to.bottom":"Move to bottom",
 "label.move.to.top":"Move to top",
 "label.move.up.row":"Move up one row",
+"label.mtu":"MTU",
 "label.my.account":"My Account",
 "label.my.network":"My network",
 "label.my.templates":"My templates",
