@@ -29,7 +29,6 @@ import com.cloud.vm.Nic.State;
 import com.cloud.vm.NicVO;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
-import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;

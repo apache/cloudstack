@@ -73,6 +73,10 @@ public class NicResponse extends BaseResponse {
     @Param(description = "true if nic is default, false otherwise")
     private Boolean isDefault;
 
+    @SerializedName(ApiConstants.MTU)
+    @Param(description = "MTU size for the interface")
+    private int mtu;
+
     @SerializedName(ApiConstants.MAC_ADDRESS)
     @Param(description = "true if nic is default, false otherwise")
     private String macAddress;
@@ -163,6 +167,10 @@ public class NicResponse extends BaseResponse {
 
     public void setIsDefault(Boolean isDefault) {
         this.isDefault = isDefault;
+    }
+
+    public void setMtu(int mtu) {
+        this.mtu = mtu;
     }
 
     public void setMacAddress(String macAddress) {
