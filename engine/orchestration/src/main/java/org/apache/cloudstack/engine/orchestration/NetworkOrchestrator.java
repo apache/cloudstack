@@ -3702,7 +3702,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final DeployDestination dest = new DeployDestination(dc, null, null, host);
 
         NicProfile nic = getNicProfileForVm(network, requested, vm);
-
         //1) allocate nic (if needed) Always allocate if it is a user vm
         if (nic == null || vmProfile.getType() == VirtualMachine.Type.User) {
             final int deviceId = _nicDao.getFreeDeviceId(vm.getId());
