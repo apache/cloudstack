@@ -16,15 +16,6 @@
 // under the License.
 package com.cloud.hypervisor;
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
-import javax.inject.Inject;
-
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.to.DiskTO;
 import com.cloud.agent.api.to.NicTO;
@@ -52,6 +43,14 @@ import com.cloud.vm.dao.NicDao;
 import com.cloud.vm.dao.NicSecondaryIpDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.log4j.Logger;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import javax.inject.Inject;
 
 public abstract class HypervisorGuruBase extends AdapterBase implements HypervisorGuru {
     public static final Logger s_logger = Logger.getLogger(HypervisorGuruBase.class);
@@ -88,6 +87,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setDns2(profile.getIPv4Dns2());
         to.setGateway(profile.getIPv4Gateway());
         to.setDefaultNic(profile.isDefaultNic());
+        to.setMtu(profile.getMtu());
         to.setBroadcastUri(profile.getBroadCastUri());
         to.setIsolationuri(profile.getIsolationUri());
         to.setNetworkRateMbps(profile.getNetworkRate());

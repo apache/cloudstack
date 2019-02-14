@@ -25,20 +25,19 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
-import javax.naming.ConfigurationException;
-
-import org.junit.Before;
-import org.junit.Test;
-import org.libvirt.Connect;
-import org.libvirt.Domain;
-import org.libvirt.LibvirtException;
-
 import com.cloud.agent.api.routing.IpAssocVpcCommand;
 import com.cloud.agent.api.routing.NetworkElementCommand;
 import com.cloud.agent.api.to.IpAddressTO;
 import com.cloud.hypervisor.kvm.resource.LibvirtComputingResource;
 import com.cloud.network.Networks;
 import com.cloud.utils.ExecutionResult;
+import org.junit.Before;
+import org.junit.Test;
+import org.libvirt.Connect;
+import org.libvirt.Domain;
+import org.libvirt.LibvirtException;
+
+import javax.naming.ConfigurationException;
 
 public class LibvirtNetworkElementCommandWrapperTest {
     private static final String fullfile = "<domain type='kvm' id='143'>\n"

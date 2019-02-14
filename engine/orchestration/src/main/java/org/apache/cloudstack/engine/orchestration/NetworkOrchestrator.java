@@ -17,41 +17,6 @@
 package org.apache.cloudstack.engine.orchestration;
 
 
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import javax.inject.Inject;
-import javax.naming.ConfigurationException;
-
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
-import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
-import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
-import org.apache.cloudstack.framework.config.ConfigKey;
-import org.apache.cloudstack.framework.config.ConfigKey.Scope;
-import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.messagebus.MessageBus;
-import org.apache.cloudstack.framework.messagebus.PublishScope;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.log4j.Logger;
-
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.Listener;
 import com.cloud.agent.api.AgentControlAnswer;
@@ -221,6 +186,40 @@ import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.Strings;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.cloud.entity.api.db.VMNetworkMapVO;
+import org.apache.cloudstack.engine.cloud.entity.api.db.dao.VMNetworkMapDao;
+import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.ConfigKey.Scope;
+import org.apache.cloudstack.framework.config.Configurable;
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.framework.messagebus.MessageBus;
+import org.apache.cloudstack.framework.messagebus.PublishScope;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
+import org.apache.log4j.Logger;
+
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+import javax.naming.ConfigurationException;
 
 /**
  * NetworkManagerImpl implements NetworkManager.
@@ -859,7 +858,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         NicVO vo = new NicVO(guru.getName(), vm.getId(), network.getId(), vm.getType());
-
         deviceId = applyProfileToNic(vo, profile, deviceId);
 
         vo = _nicDao.persist(vo);
@@ -883,6 +881,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         vo.setDefaultNic(profile.isDefaultNic());
+        vo.setMtu(profile.getMtu());
 
         vo.setIPv4Address(profile.getIPv4Address());
         vo.setAddressFormat(profile.getFormat());
@@ -921,6 +920,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         if (profile.getReservationStrategy() != null) {
             vo.setReservationStrategy(profile.getReservationStrategy());
         }
+        vo.setMtu(profile.getMtu());
         vo.setBroadcastUri(profile.getBroadCastUri());
         vo.setIsolationUri(profile.getIsolationUri());
         vo.setIPv4Netmask(profile.getIPv4Netmask());
@@ -952,6 +952,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             to.setPxeDisable(true);
         }
         to.setDefaultNic(nic.isDefaultNic());
+        to.setMtu(nic.getMtu());
         to.setBroadcastUri(nic.getBroadcastUri());
         to.setIsolationuri(nic.getIsolationUri());
         if (profile != null) {
@@ -1600,6 +1601,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             nic.setMacAddress(profile.getMacAddress());
             nic.setIsolationUri(profile.getIsolationUri());
             nic.setBroadcastUri(profile.getBroadCastUri());
+            nic.setMtu(profile.getMtu());
             nic.setReserver(guru.getName());
             nic.setState(Nic.State.Reserved);
             nic.setIPv4Netmask(profile.getIPv4Netmask());
@@ -3612,7 +3614,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final DeployDestination dest = new DeployDestination(dc, null, null, host);
 
         NicProfile nic = getNicProfileForVm(network, requested, vm);
-
         //1) allocate nic (if needed) Always allocate if it is a user vm
         if (nic == null || vmProfile.getType() == VirtualMachine.Type.User) {
             final int deviceId = _nicDao.getFreeDeviceId(vm.getId());
