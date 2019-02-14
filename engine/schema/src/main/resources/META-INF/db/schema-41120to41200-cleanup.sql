@@ -25,3 +25,5 @@ DROP TABLE IF EXISTS `cloud`.`iam_group_policy_map`;
 DROP TABLE IF EXISTS `cloud`.`iam_group`;
 DROP TABLE IF EXISTS `cloud`.`iam_policy_permission`;
 DROP TABLE IF EXISTS `cloud`.`iam_policy`;
+
+ALTER TABLE `cloud`.`nics` ADD COLUMN `mtu` smallint (6) NOT NULL DEFAULT 1500 COMMENT 'MTU size for the interface';
