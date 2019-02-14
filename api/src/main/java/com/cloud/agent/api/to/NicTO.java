@@ -31,6 +31,7 @@ public class NicTO extends NetworkTO {
     List<String> nicSecIps;
     Map<NetworkOffering.Detail, String> details;
     boolean dpdkDisabled;
+    int mtu;
 
     public NicTO() {
         super();
@@ -72,6 +73,14 @@ public class NicTO extends NetworkTO {
         return pxeDisable;
     }
 
+    public void setMtu(int mtu) {
+        this.mtu = mtu;
+    }
+
+    public int getMtu() {
+        return mtu;
+    }
+
     @Override
     public String getUuid() {
         return nicUuid;
@@ -84,7 +93,7 @@ public class NicTO extends NetworkTO {
 
     @Override
     public String toString() {
-        return new StringBuilder("[Nic:").append(type).append("-").append(ip).append("-").append(broadcastUri).append("]").toString();
+        return new StringBuilder("[Nic:").append(type).append("-").append(ip).append("-").append(broadcastUri).append("-").append(mtu).append("]").toString();
     }
 
     public void setNicSecIps(List<String> secIps) {
