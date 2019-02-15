@@ -2405,7 +2405,7 @@
                                             $userDataL2.hide();
                                             $supportedServices.css('display', 'inline-block');
                                             if ($useVpcCb.is(':checked')) { //if useVpc is checked,
-                                                $useVpcCb.removeAttr("checked"); //remove "checked" attribute in useVpc
+                                                $useVpcCb.prop("checked", false); //remove "checked" attribute in useVpc
                                             }
                                             $conservemode.css('display', 'inline-block');
                                         } else if ($guestTypeField.val() == 'Isolated') { //Isolated network offering
