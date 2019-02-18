@@ -114,6 +114,14 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
         return mtu;
     }
 
+    public int getMtu () {
+        if (mtu != 0) {
+            return mtu;
+        } else {
+            return 0;
+        }
+    }
+
     public NetworkType getNetworkType() {
         Network ntwk = _entityMgr.findById(Network.class, getNetworkId());
         DataCenter dc = _entityMgr.findById(DataCenter.class, ntwk.getDataCenterId());
