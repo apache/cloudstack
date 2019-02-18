@@ -61,7 +61,7 @@ public class UpdateVmNicIpCmd extends BaseAsyncCmd {
             description = "Secondary IP Address")
             private String ipAddr;
 
-    @Parameter(name = ApiConstants.MTU, type = CommandType.STRING, required = false,
+    @Parameter(name = ApiConstants.MTU, type = CommandType.INTEGER, required = false,
             description = "MTU size")
             private int mtu;
 
