@@ -524,7 +524,7 @@ var dictionary = {
 "label.certificateid":"Certificate ID",
 "label.chain":"Chain",
 "label.change.affinity":"Change Affinity",
-"label.change.ipaddress":"Change IP address for NIC",
+"label.change.ipaddress":"Change IP address and MTU for NIC",
 "label.change.service.offering":"Change service offering",
 "label.change.value":"Change value",
 "label.character":"Character",

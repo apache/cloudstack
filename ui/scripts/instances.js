@@ -2774,12 +2774,16 @@
                                                     });
                                                 }
                                             }
-                                        }
+                                        },
+                                      mtu: {
+                                        label: 'label.mtu'
+                                      }
                                     }
                                 },
                                 action: function(args) {
                                     var dataObj = {
-                                        nicId: args.context.nics[0].id
+                                        nicId: args.context.nics[0].id,
+                                        mtu: args.data.mtu
                                     };
 
                                     if (args.data.ipaddress1) {
