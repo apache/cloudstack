@@ -16,15 +16,14 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.vm;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.cloud.event.EventTypes;
+import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.network.Network;
-import org.apache.log4j.Logger;
-
+import com.cloud.user.Account;
+import com.cloud.uservm.UserVm;
+import com.cloud.utils.net.Dhcp;
+import com.cloud.utils.net.NetUtils;
+import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
@@ -38,14 +37,13 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.NetworkResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
 import org.apache.cloudstack.context.CallContext;
+import org.apache.log4j.Logger;
 
-import com.cloud.event.EventTypes;
-import com.cloud.exception.InvalidParameterValueException;
-import com.cloud.user.Account;
-import com.cloud.uservm.UserVm;
-import com.cloud.utils.net.Dhcp;
-import com.cloud.utils.net.NetUtils;
-import com.cloud.vm.VirtualMachine;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 
 @APICommand(name = "addNicToVirtualMachine", description = "Adds VM to specified network by creating a NIC", responseObject = UserVmResponse.class, responseView = ResponseView.Restricted, entityType = {VirtualMachine.class},
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = true)
@@ -66,6 +64,9 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
 
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "IP Address for the new network")
     private String ipaddr;
+
+    @Parameter(name = ApiConstants.MTU, type = CommandType.INTEGER, description = "MTU size")
+    private int mtu;
 
     @Parameter(name = ApiConstants.MAC_ADDRESS, type = CommandType.STRING, description = "Mac Address for the new network")
     private String macaddr;
@@ -88,6 +89,14 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
 
     public String getIpAddress() {
         return ipaddr;
+    }
+
+    public int getMtu() {
+        if (mtu != 0) {
+            return mtu;
+        } else {
+            return 0;
+        }
     }
 
     public String getMacAddress() {

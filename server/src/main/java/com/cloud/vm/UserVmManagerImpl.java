@@ -1133,6 +1133,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         Long vmId = cmd.getVmId();
         Long networkId = cmd.getNetworkId();
         String ipAddress = cmd.getIpAddress();
+        int mtu = cmd.getMtu();
         String macAddress = cmd.getMacAddress();
         Account caller = CallContext.current().getCallingAccount();
 
