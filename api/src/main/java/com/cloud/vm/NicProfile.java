@@ -120,6 +120,11 @@ public class NicProfile implements InternalIdentity, Serializable {
         this.macAddress = requestedMacAddress;
     }
 
+    public NicProfile(String requestedIPv4, String requestedIPv6, String requestedMacAddress, int mtu) {
+        this(requestedIPv4, requestedIPv6, requestedMacAddress);
+        this.mtu = mtu;
+    }
+
     public NicProfile(ReservationStrategy strategy, String iPv4Address, String macAddress, String iPv4gateway, String iPv4netmask) {
         format = AddressFormat.Ip4;
         this.iPv4Address = iPv4Address;

@@ -1172,7 +1172,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new CloudRuntimeException("A NIC with this MAC address exists for network: " + network.getUuid());
         }
 
-        NicProfile profile = new NicProfile(ipAddress, null, macAddress);
+        NicProfile profile = new NicProfile(ipAddress, null, macAddress, mtu);
         if (ipAddress != null) {
             if (!(NetUtils.isValidIp4(ipAddress) || NetUtils.isValidIp6(ipAddress))) {
                 throw new InvalidParameterValueException("Invalid format for IP address parameter: " + ipAddress);
