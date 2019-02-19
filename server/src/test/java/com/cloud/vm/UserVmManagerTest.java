@@ -52,7 +52,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.command.admin.vm.AssignVMCmd;
 import org.apache.cloudstack.api.command.user.vm.RestoreVMCmd;
 import org.apache.cloudstack.api.command.user.vm.ScaleVMCmd;
-import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpMtuCmd;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
 import org.apache.cloudstack.engine.orchestration.service.VolumeOrchestrationService;
@@ -200,7 +200,7 @@ public class UserVmManagerTest {
     @Mock
     private VMSnapshotDao _vmSnapshotDao;
     @Mock
-    private UpdateVmNicIpCmd _updateVmNicIpCmd;
+    private UpdateVmNicIpMtuCmd _updateVmNicIpMtuCmd;
     @Mock
     private NicDao _nicDao;
     @Mock
@@ -730,7 +730,7 @@ public class UserVmManagerTest {
 
     @Test
     public void testUpdateVmNicIpSuccess1() throws Exception {
-        UpdateVmNicIpCmd cmd = new UpdateVmNicIpCmd();
+        UpdateVmNicIpMtuCmd cmd = new UpdateVmNicIpMtuCmd();
         Class<?> _class = cmd.getClass();
 
         Field virtualmachineIdField = _class.getDeclaredField("nicId");
@@ -779,7 +779,7 @@ public class UserVmManagerTest {
 
     @Test
     public void testUpdateVmNicIpSuccess2() throws Exception {
-        UpdateVmNicIpCmd cmd = new UpdateVmNicIpCmd();
+        UpdateVmNicIpMtuCmd cmd = new UpdateVmNicIpMtuCmd();
         Class<?> _class = cmd.getClass();
 
         Field virtualmachineIdField = _class.getDeclaredField("nicId");
@@ -836,7 +836,7 @@ public class UserVmManagerTest {
     // vm is running in network with dhcp support
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateVmNicIpFailure1() throws Exception {
-        UpdateVmNicIpCmd cmd = new UpdateVmNicIpCmd();
+        UpdateVmNicIpMtuCmd cmd = new UpdateVmNicIpMtuCmd();
         Class<?> _class = cmd.getClass();
 
         Field virtualmachineIdField = _class.getDeclaredField("nicId");
@@ -874,7 +874,7 @@ public class UserVmManagerTest {
     // vm is stopped in isolated network in advanced zone
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateVmNicIpFailure2() throws Exception {
-        UpdateVmNicIpCmd cmd = new UpdateVmNicIpCmd();
+        UpdateVmNicIpMtuCmd cmd = new UpdateVmNicIpMtuCmd();
         Class<?> _class = cmd.getClass();
 
         Field virtualmachineIdField = _class.getDeclaredField("nicId");
@@ -921,7 +921,7 @@ public class UserVmManagerTest {
     // vm is stopped in shared network in advanced zone
     @Test(expected = InvalidParameterValueException.class)
     public void testUpdateVmNicIpFailure3() throws Exception {
-        UpdateVmNicIpCmd cmd = new UpdateVmNicIpCmd();
+        UpdateVmNicIpMtuCmd cmd = new UpdateVmNicIpMtuCmd();
         Class<?> _class = cmd.getClass();
 
         Field virtualmachineIdField = _class.getDeclaredField("nicId");

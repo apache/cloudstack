@@ -29,7 +29,7 @@ import java.util.List;
 import org.apache.cloudstack.api.ResponseGenerator;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpCmd;
+import org.apache.cloudstack.api.command.user.vm.UpdateVmNicIpMtuCmd;
 import org.apache.cloudstack.api.response.UserVmResponse;
 
 import com.cloud.exception.ConcurrentOperationException;
@@ -41,7 +41,7 @@ import com.cloud.vm.UserVmService;
 
 public class UpdateVmNicIpTest extends TestCase {
 
-    private UpdateVmNicIpCmd updateVmNicIpCmd;
+    private UpdateVmNicIpMtuCmd updateVmNicIpMtuCmd;
     private ResponseGenerator responseGenerator;
 
     @Override
@@ -54,12 +54,12 @@ public class UpdateVmNicIpTest extends TestCase {
     public void testSuccess() throws ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
 
         UserVmService userVmService = Mockito.mock(UserVmService.class);
-        updateVmNicIpCmd = Mockito.mock(UpdateVmNicIpCmd.class);
+        updateVmNicIpMtuCmd = Mockito.mock(UpdateVmNicIpMtuCmd.class);
         UserVm userVm = Mockito.mock(UserVm.class);
 
-        Mockito.when(userVmService.updateNicIpForVirtualMachine(Mockito.any(UpdateVmNicIpCmd.class))).thenReturn(userVm);
+        Mockito.when(userVmService.updateNicIpForVirtualMachine(Mockito.any(UpdateVmNicIpMtuCmd.class))).thenReturn(userVm);
 
-        updateVmNicIpCmd._userVmService = userVmService;
+        updateVmNicIpMtuCmd._userVmService = userVmService;
         responseGenerator = Mockito.mock(ResponseGenerator.class);
 
         List<UserVmResponse> list = new LinkedList<UserVmResponse>();
@@ -67,22 +67,22 @@ public class UpdateVmNicIpTest extends TestCase {
         list.add(userVmResponse);
         Mockito.when(responseGenerator.createUserVmResponse(ResponseView.Restricted, "virtualmachine", userVm)).thenReturn(list);
 
-        updateVmNicIpCmd._responseGenerator = responseGenerator;
-        updateVmNicIpCmd.execute();
+        updateVmNicIpMtuCmd._responseGenerator = responseGenerator;
+        updateVmNicIpMtuCmd.execute();
     }
 
     @Test
     public void testFailure() throws ResourceAllocationException, ResourceUnavailableException, ConcurrentOperationException, InsufficientCapacityException {
         UserVmService userVmService = Mockito.mock(UserVmService.class);
-        updateVmNicIpCmd = Mockito.mock(UpdateVmNicIpCmd.class);
+        updateVmNicIpMtuCmd = Mockito.mock(UpdateVmNicIpMtuCmd.class);
 
-        Mockito.when(userVmService.updateNicIpForVirtualMachine(Mockito.any(UpdateVmNicIpCmd.class))).thenReturn(null);
+        Mockito.when(userVmService.updateNicIpForVirtualMachine(Mockito.any(UpdateVmNicIpMtuCmd.class))).thenReturn(null);
 
-        updateVmNicIpCmd._userVmService = userVmService;
+        updateVmNicIpMtuCmd._userVmService = userVmService;
 
-        updateVmNicIpCmd._responseGenerator = responseGenerator;
+        updateVmNicIpMtuCmd._responseGenerator = responseGenerator;
         try {
-            updateVmNicIpCmd.execute();
+            updateVmNicIpMtuCmd.execute();
         } catch (ServerApiException exception) {
             Assert.assertEquals("Failed to update ip address on vm NIC. Refer to server logs for details.", exception.getDescription());
         }

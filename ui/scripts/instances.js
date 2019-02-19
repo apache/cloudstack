@@ -2651,11 +2651,15 @@
                                 action: function(args) {
                                     var dataObj = {
                                         virtualmachineid: args.context.instances[0].id,
-                                        networkid: args.data.networkid,
+                                        networkid: args.data.networkid
                                     };
 
                                     if (args.data.ipaddress) {
                                         dataObj.ipaddress = args.data.ipaddress;
+                                    }
+
+                                    if (args.data.mtu) {
+                                        dataObj.mtu = args.data.mtu;
                                     }
 
                                     $.ajax({
@@ -2793,7 +2797,7 @@
                                     }
 
                                     $.ajax({
-                                        url: createURL('updateVmNicIp'),
+                                        url: createURL('updateVmNicIpMtu'),
                                         data: dataObj,
                                         success: function(json) {
                                             args.response.success({
