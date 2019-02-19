@@ -304,6 +304,7 @@ class TestISO(cloudstackTestCase):
             self.apiclient,
             id=self.iso_1.id
         )
+
         self.assertEqual(
             isinstance(list_iso_response, list),
             True,
@@ -332,6 +333,13 @@ class TestISO(cloudstackTestCase):
             self.services["ostypeid"],
             "Check OSTypeID of updated ISO"
         )
+
+        self.assertEqual(
+            iso_response.passwordenabled,
+            bool(self.services["passwordenabled"]),
+            "Check passwordenabled of updated ISO"
+        )
+
         return
 
     @attr(

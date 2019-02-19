@@ -37,6 +37,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import com.cloud.storage.ScopeType;
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.affinity.AffinityGroupProcessor;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
@@ -104,6 +105,7 @@ import org.apache.cloudstack.api.command.admin.iso.ListIsoPermissionsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.iso.RegisterIsoCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.loadbalancer.ListLoadBalancerRuleInstancesCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkDeviceCmd;
 import org.apache.cloudstack.api.command.admin.network.AddNetworkServiceProviderCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
@@ -1103,6 +1105,32 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         return new Pair<List<? extends Cluster>, Integer>(result.first(), result.second());
     }
 
+    private HypervisorType getHypervisorType(VMInstanceVO vm, StoragePool srcVolumePool, VirtualMachineProfile profile) {
+        HypervisorType type = null;
+        if (vm == null) {
+            StoragePoolVO poolVo = _poolDao.findById(srcVolumePool.getId());
+            if (ScopeType.CLUSTER.equals(poolVo.getScope())) {
+                Long clusterId = poolVo.getClusterId();
+                if (clusterId != null) {
+                    ClusterVO cluster = _clusterDao.findById(clusterId);
+                    type = cluster.getHypervisorType();
+                }
+            } else if (ScopeType.ZONE.equals(poolVo.getScope())) {
+                Long zoneId = poolVo.getDataCenterId();
+                if (zoneId != null) {
+                    DataCenterVO dc = _dcDao.findById(zoneId);
+                }
+            }
+
+            if (null == type) {
+                type = srcVolumePool.getHypervisor();
+            }
+        } else {
+            type = profile.getHypervisorType();
+        }
+        return type;
+    }
+
     @Override
     public Pair<List<? extends Host>, Integer> searchForServers(final ListHostsCmd cmd) {
 
@@ -1433,10 +1461,12 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         DataCenterDeployment plan = new DataCenterDeployment(volume.getDataCenterId(), srcVolumePool.getPodId(), srcVolumePool.getClusterId(), null, null, null);
         VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        // OfflineVmwareMigration: vm might be null here; deal!
+        HypervisorType type = getHypervisorType(vm, srcVolumePool, profile);
 
         DiskOfferingVO diskOffering = _diskOfferingDao.findById(volume.getDiskOfferingId());
         //This is an override mechanism so we can list the possible local storage pools that a volume in a shared pool might be able to be migrated to
-        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, profile.getHypervisorType());
+        DiskProfile diskProfile = new DiskProfile(volume, diskOffering, type);
         diskProfile.setUseLocalStorage(true);
 
         for (StoragePoolAllocator allocator : _storagePoolAllocators) {
@@ -3039,6 +3069,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(CreateManagementNetworkIpRangeCmd.class);
         cmdList.add(DeleteManagementNetworkIpRangeCmd.class);
         cmdList.add(UploadTemplateDirectDownloadCertificate.class);
+        cmdList.add(ListMgmtsCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);
@@ -3642,6 +3673,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
     public Pair<List<? extends SSHKeyPair>, Integer> listSSHKeyPairs(final ListSSHKeyPairsCmd cmd) {
         final String name = cmd.getName();
         final String fingerPrint = cmd.getFingerprint();
+        final String keyword = cmd.getKeyword();
 
         final Account caller = getCaller();
         final List<Long> permittedAccounts = new ArrayList<Long>();
@@ -3664,6 +3696,11 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
 
         if (fingerPrint != null) {
             sc.addAnd("fingerprint", SearchCriteria.Op.EQ, fingerPrint);
+        }
+
+        if (keyword != null) {
+            sc.addOr("name", SearchCriteria.Op.LIKE, "%" + keyword + "%");
+            sc.addOr("fingerprint", SearchCriteria.Op.LIKE, "%" + keyword + "%");
         }
 
         final Pair<List<SSHKeyPairVO>, Integer> result = _sshKeyPairDao.searchAndCount(sc, searchFilter);

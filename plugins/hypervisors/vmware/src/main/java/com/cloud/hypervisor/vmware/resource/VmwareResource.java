@@ -43,8 +43,8 @@ import java.util.UUID;
 
 import javax.naming.ConfigurationException;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 import org.joda.time.Duration;
@@ -163,6 +163,8 @@ import com.cloud.agent.api.ManageSnapshotAnswer;
 import com.cloud.agent.api.ManageSnapshotCommand;
 import com.cloud.agent.api.MigrateAnswer;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.MigrateVmToPoolAnswer;
+import com.cloud.agent.api.MigrateVmToPoolCommand;
 import com.cloud.agent.api.MigrateWithStorageAnswer;
 import com.cloud.agent.api.MigrateWithStorageCommand;
 import com.cloud.agent.api.ModifySshKeysCommand;
@@ -311,6 +313,7 @@ import com.cloud.vm.VmDetailConstants;
 
 public class VmwareResource implements StoragePoolResource, ServerResource, VmwareHostService, VirtualRouterDeployer {
     private static final Logger s_logger = Logger.getLogger(VmwareResource.class);
+    public static final String VMDK_EXTENSION = ".vmdk";
 
     private static final Random RANDOM = new Random(System.nanoTime());
 
@@ -442,6 +445,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 answer = execute((PrepareForMigrationCommand)cmd);
             } else if (clz == MigrateCommand.class) {
                 answer = execute((MigrateCommand)cmd);
+            } else if (clz == MigrateVmToPoolCommand.class) {
+                answer = execute((MigrateVmToPoolCommand)cmd);
             } else if (clz == MigrateWithStorageCommand.class) {
                 answer = execute((MigrateWithStorageCommand)cmd);
             } else if (clz == MigrateVolumeCommand.class) {
@@ -699,30 +704,38 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             if (vmName.equalsIgnoreCase("none")) {
+                // OfflineVmwareMigration: we need to refactor the worker vm creation out for use in migration methods as well as here
+                // OfflineVmwareMigration: this method is 100 lines and needs refactorring anyway
                 // we need to spawn a worker VM to attach the volume to and resize the volume.
                 useWorkerVm = true;
                 vmName = getWorkerName(getServiceContext(), cmd, 0);
 
                 String poolId = cmd.getPoolUuid();
 
+                // OfflineVmwareMigration: refactor for re-use
+                // OfflineVmwareMigration: 1. find data(store)
                 ManagedObjectReference morDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, poolId);
                 DatastoreMO dsMo = new DatastoreMO(hyperHost.getContext(), morDS);
 
                 s_logger.info("Create worker VM " + vmName);
 
+                // OfflineVmwareMigration: 2. create the worker with access to the data(store)
                 vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName);
 
                 if (vmMo == null) {
+                    // OfflineVmwareMigration: don't throw a general Exception but think of a specific one
                     throw new Exception("Unable to create a worker VM for volume resize");
                 }
 
                 synchronized (this) {
-                    vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, path + ".vmdk");
+                    // OfflineVmwareMigration: 3. attach the disk to the worker
+                    vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, path + VMDK_EXTENSION);
 
                     vmMo.attachDisk(new String[] { vmdkDataStorePath }, morDS);
                 }
             }
 
+            // OfflineVmwareMigration: 4. find the (worker-) VM
             // find VM through datacenter (VM is not at the target host yet)
             vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
 
@@ -734,6 +747,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 throw new Exception(msg);
             }
 
+            // OfflineVmwareMigration: 5. ignore/replace the rest of the try-block; It is the functional bit
             Pair<VirtualDisk, String> vdisk = vmMo.getDiskDevice(path);
 
             if (vdisk == null) {
@@ -813,6 +827,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             return new ResizeVolumeAnswer(cmd, false, error);
         } finally {
+            // OfflineVmwareMigration: 6. check if a worker was used and destroy it if needed
             try {
                 if (useWorkerVm) {
                     s_logger.info("Destroy worker VM after volume resize");
@@ -2313,7 +2328,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     private void resizeRootDiskOnVMStart(VirtualMachineMO vmMo, DiskTO rootDiskTO, VmwareHypervisorHost hyperHost, VmwareContext context) throws Exception {
-        final Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, appendFileType(rootDiskTO.getPath(), ".vmdk"));
+        final Pair<VirtualDisk, String> vdisk = getVirtualDiskInfo(vmMo, appendFileType(rootDiskTO.getPath(), VMDK_EXTENSION));
         assert(vdisk != null);
 
         Long reqSize = 0L;
@@ -2536,7 +2551,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                     vmdkPath = dsMo.getName();
                 }
 
-                datastoreDiskPath = dsMo.getDatastorePath(vmdkPath + ".vmdk");
+                datastoreDiskPath = dsMo.getDatastorePath(vmdkPath + VMDK_EXTENSION);
             }
         } else {
             datastoreDiskPath = VmwareStorageLayoutHelper.syncVolumeToVmDefaultFolder(dcMo, vmMo.getName(), dsMo, volumeTO.getPath(), VmwareManager.s_vmwareSearchExcludeFolder.value());
@@ -3061,7 +3076,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
      * Ex. "[-iqn.2010-01.com.solidfire:4nhe.vol-1.27-0] i-2-18-VM/ROOT-18.vmdk" should return "i-2-18-VM/ROOT-18"
      */
     public String getVmdkPath(String path) {
-        if (!com.cloud.utils.StringUtils.isNotBlank(path)) {
+        if (!StringUtils.isNotBlank(path)) {
             return null;
         }
 
@@ -3075,7 +3090,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
         path = path.substring(startIndex + search.length());
 
-        final String search2 = ".vmdk";
+        final String search2 = VMDK_EXTENSION;
 
         int endIndex = path.indexOf(search2);
 
@@ -3128,10 +3143,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                             final String datastoreVolumePath;
 
                             if (vmdkPath != null) {
-                                datastoreVolumePath = dsMo.getDatastorePath(vmdkPath + ".vmdk");
+                                datastoreVolumePath = dsMo.getDatastorePath(vmdkPath + VMDK_EXTENSION);
                             }
                             else {
-                                datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + ".vmdk");
+                                datastoreVolumePath = dsMo.getDatastorePath(dsMo.getName() + VMDK_EXTENSION);
                             }
 
                             volumeTO.setPath(datastoreVolumePath);
@@ -3780,10 +3795,170 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 invalidateServiceContext();
             }
 
-            String msg = "Unexcpeted exception " + VmwareHelper.getExceptionMessage(e);
+            String msg = "Unexpected exception " + VmwareHelper.getExceptionMessage(e);
             s_logger.error(msg, e);
             return new PrepareForMigrationAnswer(cmd, msg);
         }
+    }
+
+    protected Answer execute(MigrateVmToPoolCommand cmd) {
+        if (s_logger.isInfoEnabled()) {
+            s_logger.info(String.format("excuting MigrateVmToPoolCommand %s -> %s", cmd.getVmName(), cmd.getDestinationPool()));
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("MigrateVmToPoolCommand: " + _gson.toJson(cmd));
+            }
+        }
+
+        final String vmName = cmd.getVmName();
+
+        VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        try {
+            VirtualMachineMO vmMo = getVirtualMachineMO(vmName, hyperHost);
+            if (vmMo == null) {
+                String msg = "VM " + vmName + " does not exist in VMware datacenter";
+                s_logger.error(msg);
+                throw new CloudRuntimeException(msg);
+            }
+
+            String poolUuid = cmd.getDestinationPool();
+            return migrateAndAnswer(vmMo, poolUuid, hyperHost, cmd);
+        } catch (Throwable e) { // hopefully only CloudRuntimeException :/
+            if (e instanceof Exception) {
+                return new Answer(cmd, (Exception) e);
+            }
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug("problem" , e);
+            }
+            s_logger.error(e.getLocalizedMessage());
+            return new Answer(cmd, false, "unknown problem: " + e.getLocalizedMessage());
+        }
+    }
+
+    private Answer migrateAndAnswer(VirtualMachineMO vmMo, String poolUuid, VmwareHypervisorHost hyperHost, Command cmd) throws Exception {
+        ManagedObjectReference morDs = getTargetDatastoreMOReference(poolUuid, hyperHost);
+
+        try {
+            // OfflineVmwareMigration: getVolumesFromCommand(cmd);
+            Map<Integer, Long> volumeDeviceKey = getVolumesFromCommand(vmMo, cmd);
+            if (s_logger.isTraceEnabled()) {
+                for (Integer diskId: volumeDeviceKey.keySet()) {
+                    s_logger.trace(String.format("disk to migrate has disk id %d and volumeId %d", diskId, volumeDeviceKey.get(diskId)));
+                }
+            }
+            if (vmMo.changeDatastore(morDs)) {
+                // OfflineVmwareMigration: create target specification to include in answer
+                // Consolidate VM disks after successful VM migration
+                // In case of a linked clone VM, if VM's disks are not consolidated, further VM operations such as volume snapshot, VM snapshot etc. will result in DB inconsistencies.
+                if (!vmMo.consolidateVmDisks()) {
+                    s_logger.warn("VM disk consolidation failed after storage migration. Yet proceeding with VM migration.");
+                } else {
+                    s_logger.debug("Successfully consolidated disks of VM " + vmMo.getVmName() + ".");
+                }
+                return createAnswerForCmd(vmMo, poolUuid, cmd, volumeDeviceKey);
+            } else {
+                return new Answer(cmd, false, "failed to changes data store for VM" + vmMo.getVmName());
+            }
+        } catch (Exception e) {
+            String msg = "change data store for VM " + vmMo.getVmName() + " failed";
+            s_logger.error(msg + ": " + e.getLocalizedMessage());
+            throw new CloudRuntimeException(msg,e);
+        }
+    }
+
+    Answer createAnswerForCmd(VirtualMachineMO vmMo, String poolUuid, Command cmd, Map<Integer, Long> volumeDeviceKey) throws Exception {
+        List<VolumeObjectTO> volumeToList =  new ArrayList<>();
+        VirtualMachineDiskInfoBuilder diskInfoBuilder = vmMo.getDiskInfoBuilder();
+        VirtualDisk[] disks = vmMo.getAllDiskDevice();
+        Answer answer;
+        if (s_logger.isTraceEnabled()) {
+            s_logger.trace(String.format("creating answer for %s", cmd.getClass().getSimpleName()));
+        }
+        if (cmd instanceof MigrateVolumeCommand) {
+            if (disks.length == 1) {
+                String volumePath = vmMo.getVmdkFileBaseName(disks[0]);
+                return new MigrateVolumeAnswer(cmd, true, null, volumePath);
+            }
+            throw new CloudRuntimeException("not expecting more then  one disk after migrate volume command");
+        } else if (cmd instanceof MigrateVmToPoolCommand) {
+            for (VirtualDisk disk : disks) {
+                VolumeObjectTO newVol = new VolumeObjectTO();
+                String newPath = vmMo.getVmdkFileBaseName(disk);
+                VirtualMachineDiskInfo diskInfo = diskInfoBuilder.getDiskInfoByBackingFileBaseName(newPath, poolUuid);
+                newVol.setId(volumeDeviceKey.get(disk.getKey()));
+                newVol.setPath(newPath);
+                newVol.setChainInfo(_gson.toJson(diskInfo));
+                volumeToList.add(newVol);
+            }
+            return new MigrateVmToPoolAnswer((MigrateVmToPoolCommand)cmd, volumeToList);
+        }
+        return new Answer(cmd, false, null);
+    }
+
+    private Map<Integer, Long> getVolumesFromCommand(VirtualMachineMO vmMo, Command cmd) throws Exception {
+        Map<Integer, Long> volumeDeviceKey = new HashMap<Integer, Long>();
+        if (cmd instanceof MigrateVmToPoolCommand) {
+            MigrateVmToPoolCommand mcmd = (MigrateVmToPoolCommand)cmd;
+            for (VolumeTO volume : mcmd.getVolumes()) {
+                addVolumeDiskmapping(vmMo, volumeDeviceKey, volume.getPath(), volume.getId());
+            }
+        } else if (cmd instanceof MigrateVolumeCommand) {
+            MigrateVolumeCommand mcmd = (MigrateVolumeCommand)cmd;
+            addVolumeDiskmapping(vmMo, volumeDeviceKey, mcmd.getVolumePath(), mcmd.getVolumeId());
+        }
+        return volumeDeviceKey;
+    }
+
+    private void addVolumeDiskmapping(VirtualMachineMO vmMo, Map<Integer, Long> volumeDeviceKey, String volumePath, long volumeId) throws Exception {
+        if (s_logger.isDebugEnabled()) {
+            s_logger.debug(String.format("locating disk for volume (%d) using path %s", volumeId, volumePath));
+        }
+        Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, volumePath + VMDK_EXTENSION);
+        String vmdkAbsFile = getAbsoluteVmdkFile(diskInfo.first());
+        if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
+            vmMo.updateAdapterTypeIfRequired(vmdkAbsFile);
+        }
+        int diskId = diskInfo.first().getKey();
+        volumeDeviceKey.put(diskId, volumeId);
+    }
+
+    private ManagedObjectReference getTargetDatastoreMOReference(String destinationPool, VmwareHypervisorHost hyperHost) {
+        ManagedObjectReference morDs;
+        try {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("finding datastore %s", destinationPool));
+            }
+            morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, destinationPool);
+        } catch (Exception e) {
+            String msg = "exception while finding data store  " + destinationPool;
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg + ": " + e.getLocalizedMessage());
+        }
+        return morDs;
+    }
+
+    private ManagedObjectReference getDataCenterMOReference(String vmName, VmwareHypervisorHost hyperHost) {
+        ManagedObjectReference morDc;
+        try {
+            morDc = hyperHost.getHyperHostDatacenter();
+        } catch (Exception e) {
+            String msg = "exception while finding VMware datacenter to search for VM " + vmName;
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg + ": " + e.getLocalizedMessage());
+        }
+        return morDc;
+    }
+
+    private VirtualMachineMO getVirtualMachineMO(String vmName, VmwareHypervisorHost hyperHost) {
+        VirtualMachineMO vmMo = null;
+        try {
+            // find VM through datacenter (VM is not at the target host yet)
+            vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+        } catch (Exception e) {
+            String msg = "exception while searching for VM " + vmName + " in VMware datacenter";
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg + ": " + e.getLocalizedMessage());
+        }
+        return vmMo;
     }
 
     protected Answer execute(MigrateCommand cmd) {
@@ -3946,7 +4121,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
                 }
                 diskLocator = new VirtualMachineRelocateSpecDiskLocator();
                 diskLocator.setDatastore(morDsAtSource);
-                Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, appendFileType(volume.getPath(), ".vmdk"));
+                Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, appendFileType(volume.getPath(), VMDK_EXTENSION));
                 String vmdkAbsFile = getAbsoluteVmdkFile(diskInfo.first());
                 if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
                     vmMo.updateAdapterTypeIfRequired(vmdkAbsFile);
@@ -4074,6 +4249,141 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         }
     }
 
+    private Answer migrateVolume(MigrateVolumeCommand cmd) {
+        Answer answer = null;
+        String path = cmd.getVolumePath();
+
+        VmwareHypervisorHost hyperHost = getHyperHost(getServiceContext());
+        VirtualMachineMO vmMo = null;
+        DatastoreMO dsMo = null;
+        ManagedObjectReference morSourceDS = null;
+        String vmdkDataStorePath = null;
+
+        String vmName = null;
+        try {
+            // OfflineVmwareMigration: we need to refactor the worker vm creation out for use in migration methods as well as here
+            // OfflineVmwareMigration: this method is 100 lines and needs refactorring anyway
+            // we need to spawn a worker VM to attach the volume to and move it
+            vmName = getWorkerName(getServiceContext(), cmd, 0);
+
+                // OfflineVmwareMigration: refactor for re-use
+                // OfflineVmwareMigration: 1. find data(store)
+            // OfflineVmwareMigration: more robust would be to find the store given the volume as it might have been moved out of band or due to error
+// example:            DatastoreMO existingVmDsMo = new DatastoreMO(dcMo.getContext(), dcMo.findDatastore(fileInDatastore.getDatastoreName()));
+
+            morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getSourcePool().getUuid());
+            dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
+            s_logger.info("Create worker VM " + vmName);
+                // OfflineVmwareMigration: 2. create the worker with access to the data(store)
+            vmMo = HypervisorHostHelper.createWorkerVM(hyperHost, dsMo, vmName);
+            if (vmMo == null) {
+                // OfflineVmwareMigration: don't throw a general Exception but think of a specific one
+                throw new CloudRuntimeException("Unable to create a worker VM for volume operation");
+            }
+
+            synchronized (this) {
+                // OfflineVmwareMigration: 3. attach the disk to the worker
+                String vmdkFileName = path + VMDK_EXTENSION;
+                vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, vmdkFileName);
+                if (!dsMo.fileExists(vmdkDataStorePath)) {
+                    if(s_logger.isDebugEnabled()) {
+                        s_logger.debug(String.format("path not found (%s), trying under '%s'", vmdkFileName, path));
+                    }
+                    vmdkDataStorePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, path, vmdkFileName);
+                }
+                if (!dsMo.fileExists(vmdkDataStorePath)) {
+                    if(s_logger.isDebugEnabled()) {
+                        s_logger.debug(String.format("path not found (%s), trying under '%s'", vmdkFileName, vmName));
+                    }
+                    vmdkDataStorePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(dsMo, vmName, vmdkFileName);
+                }
+                if(s_logger.isDebugEnabled()) {
+                    s_logger.debug(String.format("attaching %s to %s for migration", vmdkDataStorePath, vmMo.getVmName()));
+                }
+                vmMo.attachDisk(new String[] { vmdkDataStorePath }, morSourceDS);
+            }
+
+            // OfflineVmwareMigration: 4. find the (worker-) VM
+            // find VM through datacenter (VM is not at the target host yet)
+            vmMo = hyperHost.findVmOnPeerHyperHost(vmName);
+            if (vmMo == null) {
+                String msg = "VM " + vmName + " does not exist in VMware datacenter";
+                s_logger.error(msg);
+                throw new Exception(msg);
+            }
+
+            if (s_logger.isTraceEnabled()) {
+                VirtualDisk[] disks = vmMo.getAllDiskDevice();
+                String format = "disk %d is attached as %s";
+                for (VirtualDisk disk : disks) {
+                    s_logger.trace(String.format(format,disk.getKey(),vmMo.getVmdkFileBaseName(disk)));
+                }
+            }
+
+            // OfflineVmwareMigration: 5. create a relocate spec and perform
+            Pair<VirtualDisk, String> vdisk = vmMo.getDiskDevice(path);
+            if (vdisk == null) {
+                if (s_logger.isTraceEnabled())
+                    s_logger.trace("migrate volume done (failed)");
+                throw new CloudRuntimeException("No such disk device: " + path);
+            }
+
+            VirtualDisk disk = vdisk.first();
+            String vmdkAbsFile = getAbsoluteVmdkFile(disk);
+            if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
+                vmMo.updateAdapterTypeIfRequired(vmdkAbsFile);
+            }
+
+            // OfflineVmwareMigration: this may have to be disected and executed in separate steps
+            answer = migrateAndAnswer(vmMo, cmd.getTargetPool().getUuid(), hyperHost, cmd);
+        } catch (Exception e) {
+            String msg = String.format("Migration of volume '%s' failed due to %s", cmd.getVolumePath(), e.getLocalizedMessage());
+            s_logger.error(msg, e);
+            answer = new Answer(cmd, false, msg);
+        } finally {
+            try {
+                // OfflineVmwareMigration: worker *may* have been renamed
+                vmName = vmMo.getVmName();
+                morSourceDS = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(hyperHost, cmd.getTargetPool().getUuid());
+                dsMo = new DatastoreMO(hyperHost.getContext(), morSourceDS);
+                s_logger.info("Dettaching disks before destroying worker VM '" + vmName + "' after volume migration");
+                VirtualDisk[] disks = vmMo.getAllDiskDevice();
+                String format = "disk %d was migrated to %s";
+                for (VirtualDisk disk : disks) {
+                    if (s_logger.isTraceEnabled()) {
+                        s_logger.trace(String.format(format, disk.getKey(), vmMo.getVmdkFileBaseName(disk)));
+                    }
+                    vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, vmMo.getVmdkFileBaseName(disk) + VMDK_EXTENSION);
+                    vmMo.detachDisk(vmdkDataStorePath, false);
+                }
+                s_logger.info("Destroy worker VM '" + vmName + "' after volume migration");
+                vmMo.destroy();
+            } catch (Throwable e) {
+                s_logger.info("Failed to destroy worker VM: " + vmName);
+            }
+        }
+        if (answer instanceof MigrateVolumeAnswer) {
+            String newPath = ((MigrateVolumeAnswer)answer).getVolumePath();
+            String vmdkFileName = newPath + VMDK_EXTENSION;
+            try {
+                VmwareStorageLayoutHelper.syncVolumeToRootFolder(dsMo.getOwnerDatacenter().first(), dsMo, newPath, vmName);
+                vmdkDataStorePath = VmwareStorageLayoutHelper.getLegacyDatastorePathFromVmdkFileName(dsMo, vmdkFileName);
+
+                if (!dsMo.fileExists(vmdkDataStorePath)) {
+                    String msg = String.format("Migration of volume '%s' failed; file (%s) not found as path '%s'", cmd.getVolumePath(), vmdkFileName, vmdkDataStorePath);
+                    s_logger.error(msg);
+                    answer = new Answer(cmd, false, msg);
+                }
+            } catch (Exception e) {
+                String msg = String.format("Migration of volume '%s' failed due to %s", cmd.getVolumePath(), e.getLocalizedMessage());
+                s_logger.error(msg, e);
+                answer = new Answer(cmd, false, msg);
+            }
+        }
+        return answer;
+    }
+
+    // OfflineVmwareMigration: refactor to be able to handle a detached volume
     private Answer execute(MigrateVolumeCommand cmd) {
         String volumePath = cmd.getVolumePath();
         StorageFilerTO poolTo = cmd.getPool();
@@ -4087,6 +4397,10 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
         VirtualMachineMO vmMo = null;
         VmwareHypervisorHost srcHyperHost = null;
 
+        // OfflineVmwareMigration: ifhost is null ???
+        if (org.apache.commons.lang.StringUtils.isBlank(cmd.getAttachedVmName())) {
+            return migrateVolume(cmd);
+        }
         ManagedObjectReference morDs = null;
         ManagedObjectReference morDc = null;
         VirtualMachineRelocateSpec relocateSpec = new VirtualMachineRelocateSpec();
@@ -4107,7 +4421,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             if (vmMo == null) {
                 String msg = "VM " + vmName + " does not exist in VMware datacenter " + morDc.getValue();
                 s_logger.error(msg);
-                throw new Exception(msg);
+                throw new CloudRuntimeException(msg);
             }
             vmName = vmMo.getName();
             morDs = HypervisorHostHelper.findDatastoreWithBackwardsCompatibility(srcHyperHost, tgtDsName);
@@ -4119,8 +4433,8 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
             }
 
             DatastoreMO targetDsMo = new DatastoreMO(srcHyperHost.getContext(), morDs);
-            String fullVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(targetDsMo, vmName, volumePath + ".vmdk");
-            Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, appendFileType(volumePath, ".vmdk"));
+            String fullVolumePath = VmwareStorageLayoutHelper.getVmwareDatastorePathFromVmdkFileName(targetDsMo, vmName, volumePath + VMDK_EXTENSION);
+            Pair<VirtualDisk, String> diskInfo = getVirtualDiskInfo(vmMo, appendFileType(volumePath, VMDK_EXTENSION));
             String vmdkAbsFile = getAbsoluteVmdkFile(diskInfo.first());
             if (vmdkAbsFile != null && !vmdkAbsFile.isEmpty()) {
                 vmMo.updateAdapterTypeIfRequired(vmdkAbsFile);

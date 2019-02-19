@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.cluster;
 
+import org.apache.cloudstack.management.ManagementServerHost;
+
 import java.util.List;
 
 public interface ClusterManagerListener {

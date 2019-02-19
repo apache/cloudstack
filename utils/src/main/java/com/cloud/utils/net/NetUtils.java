@@ -88,6 +88,10 @@ public class NetUtils {
     private final static Random s_rand = new Random(System.currentTimeMillis());
     private final static long prefix = 0x1e;
 
+    // RFC4291 IPv6 EUI-64
+    public final static int IPV6_EUI64_11TH_BYTE = -1;
+    public final static int IPV6_EUI64_12TH_BYTE = -2;
+
     public static long createSequenceBasedMacAddress(final long macAddress, long globalConfig) {
         /*
             Logic for generating MAC address:
@@ -109,6 +113,18 @@ public class NetUtils {
             }
         } catch (final UnknownHostException e) {
             s_logger.warn("UnknownHostException when trying to get host name. ", e);
+        }
+        return "localhost";
+    }
+
+    public static String getCanonicalHostName() {
+        try {
+            InetAddress localAddr = InetAddress.getLocalHost();
+            if (localAddr != null) {
+                return localAddr.getCanonicalHostName();
+            }
+        } catch (UnknownHostException e) {
+            s_logger.warn("UnknownHostException when trying to get canonical host name. ", e);
         }
         return "localhost";
     }
@@ -479,9 +495,23 @@ public class NetUtils {
         return validator.isValidInet4Address(ip);
     }
 
+    /**
+     * Returns true if the given IPv4 address is in the specific Ipv4 range
+     */
+    public static boolean isIpInRange(final String ipInRange, final String startIP, final String endIP) {
+        if (ipInRange == null || !validIpRange(startIP, endIP))
+            return false;
+
+        final long ipInRangeLong = NetUtils.ip2Long(ipInRange);
+        final long startIPLong = NetUtils.ip2Long(startIP);
+        final long endIPLong = NetUtils.ip2Long(endIP);
+
+        return startIPLong <= ipInRangeLong && ipInRangeLong <= endIPLong;
+    }
+
     public static boolean is31PrefixCidr(final String cidr) {
         final boolean isValidCird = isValidIp4Cidr(cidr);
-        if (isValidCird){
+        if (isValidCird) {
             final String[] cidrPair = cidr.split("\\/");
             final String cidrSize = cidrPair[1];
 
@@ -1566,6 +1596,29 @@ public class NetUtils {
 
     public static IPv6Address ipv6LinkLocal(final String macAddress) {
         return EUI64Address(IPv6Network.LINK_LOCAL_NETWORK, macAddress);
+    }
+
+    /**
+     * When using StateLess Address AutoConfiguration (SLAAC) for IPv6 the addresses
+     * choosen by hosts in a network are based on the 48-bit MAC address and this is expanded to 64-bits
+     * with EUI-64
+     * FFFE is inserted into the address and these can be identified
+     *
+     * By converting the IPv6 Address to a byte array we can check the 11th and 12th byte to see if the
+     * address is EUI064.
+     *
+     * See RFC4291 for more information
+     *
+     * @param address IPv6Address to be checked
+     * @return True if Address is EUI-64 IPv6
+     */
+    public static boolean isIPv6EUI64(final IPv6Address address) {
+        byte[] bytes = address.toByteArray();
+        return (bytes[11] == IPV6_EUI64_11TH_BYTE && bytes[12] == IPV6_EUI64_12TH_BYTE);
+    }
+
+    public static boolean isIPv6EUI64(final String address) {
+        return NetUtils.isIPv6EUI64(IPv6Address.fromString(address));
     }
 
     /**

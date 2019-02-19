@@ -31,6 +31,7 @@ import com.cloud.resource.ResourceManager;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.StoragePool;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.AdapterBase;
 import com.cloud.vm.NicProfile;
@@ -188,6 +189,7 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         to.setConfigDriveLabel(vmProfile.getConfigDriveLabel());
         to.setConfigDriveIsoRootFolder(vmProfile.getConfigDriveIsoRootFolder());
         to.setConfigDriveIsoFile(vmProfile.getConfigDriveIsoFile());
+        to.setState(vm.getState());
 
         return to;
     }
@@ -224,4 +226,8 @@ public abstract class HypervisorGuruBase extends AdapterBase implements Hypervis
         return null;
     }
 
+    @Override
+    public List<Command> finalizeMigrate(VirtualMachine vm, StoragePool destination) {
+        return null;
+    }
 }

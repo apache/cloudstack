@@ -1782,7 +1782,7 @@
                                         label: 'label.ip.address',
                                         validation: {
                                             required: false,
-                                            ipv46address: true
+                                            ipv4AndIpv6AddressValidator: true
                                         }
                                     }
                                 }
@@ -2445,7 +2445,7 @@
                                                     var $tierSelect = $(".ui-dialog-content").find('.tier-select select');
 
                                                     // if $tierSelect is not initialized, return; tierSelect() will refresh listView and come back here later
-                                                    if ($tierSelect.size() == 0) {
+                                                    if ($tierSelect.length == 0) {
                                                         args.response.success({
                                                             data: null
                                                         });

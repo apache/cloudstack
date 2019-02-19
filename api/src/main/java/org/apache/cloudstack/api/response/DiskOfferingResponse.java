@@ -92,17 +92,49 @@ public class DiskOfferingResponse extends BaseResponse {
     @Param(description = "bytes read rate of the disk offering")
     private Long bytesReadRate;
 
+    @SerializedName("diskBytesReadRateMax")
+    @Param(description = "burst bytes read rate of the disk offering")
+    private Long bytesReadRateMax;
+
+    @SerializedName("diskBytesReadRateMaxLength")
+    @Param(description = "length (in seconds) of the burst")
+    private Long bytesReadRateMaxLength;
+
     @SerializedName("diskBytesWriteRate")
     @Param(description = "bytes write rate of the disk offering")
     private Long bytesWriteRate;
+
+    @SerializedName("diskBytesWriteRateMax")
+    @Param(description = "burst bytes write rate of the disk offering")
+    private Long bytesWriteRateMax;
+
+    @SerializedName("diskBytesWriteRateMaxLength")
+    @Param(description = "length (in seconds) of the burst")
+    private Long bytesWriteRateMaxLength;
 
     @SerializedName("diskIopsReadRate")
     @Param(description = "io requests read rate of the disk offering")
     private Long iopsReadRate;
 
+    @SerializedName("diskIopsReadRateMax")
+    @Param(description = "burst io requests read rate of the disk offering")
+    private Long iopsReadRateMax;
+
+    @SerializedName("diskIopsReadRateMaxLength")
+    @Param(description = "length (in second) of the burst")
+    private Long iopsReadRateMaxLength;
+
     @SerializedName("diskIopsWriteRate")
     @Param(description = "io requests write rate of the disk offering")
     private Long iopsWriteRate;
+
+    @SerializedName("diskIopsWriteRateMax")
+    @Param(description = "burst io requests write rate of the disk offering")
+    private Long iopsWriteRateMax;
+
+    @SerializedName("diskIopsWriteRateMaxLength")
+    @Param(description = "length (in seconds) of the burst")
+    private Long iopsWriteRateMaxLength;
 
     @SerializedName("cacheMode")
     @Param(description = "the cache mode to use for this disk offering. none, writeback or writethrough", since = "4.4")
@@ -253,15 +285,47 @@ public class DiskOfferingResponse extends BaseResponse {
         this.bytesReadRate = bytesReadRate;
     }
 
+    public void setBytesReadRateMax(Long bytesReadRateMax) {
+        this.bytesReadRateMax = bytesReadRateMax;
+    }
+
+    public void setBytesReadRateMaxLength(Long bytesReadRateMaxLength) {
+        this.bytesReadRateMaxLength = bytesReadRateMaxLength;
+    }
+
     public void setBytesWriteRate(Long bytesWriteRate) {
         this.bytesWriteRate = bytesWriteRate;
+    }
+
+    public void setBytesWriteRateMax(Long bytesWriteRateMax) {
+        this.bytesWriteRateMax = bytesWriteRateMax;
+    }
+
+    public void setBytesWriteRateMaxLength(Long bytesWriteRateMaxLength) {
+        this.bytesWriteRateMaxLength = bytesWriteRateMaxLength;
     }
 
     public void setIopsReadRate(Long iopsReadRate) {
         this.iopsReadRate = iopsReadRate;
     }
 
+    public void setIopsReadRateMax(Long iopsReadRateMax) {
+        this.iopsReadRateMax = iopsReadRateMax;
+    }
+
+    public void setIopsReadRateMaxLength(Long iopsReadRateMaxLength) {
+        this.iopsReadRateMaxLength = iopsReadRateMaxLength;
+    }
+
     public void setIopsWriteRate(Long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
+    }
+
+    public void setIopsWriteRateMax(Long iopsWriteRateMax) {
+        this.iopsWriteRateMax = iopsWriteRateMax;
+    }
+
+    public void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength) {
+        this.iopsWriteRateMaxLength = iopsWriteRateMaxLength;
     }
 }

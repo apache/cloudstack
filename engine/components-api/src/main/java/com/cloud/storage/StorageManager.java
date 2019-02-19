@@ -101,12 +101,22 @@ public interface StorageManager extends StorageService {
             ConfigKey.Scope.Cluster,
             null);
 
+    ConfigKey<Integer> PRIMARY_STORAGE_DOWNLOAD_WAIT = new ConfigKey<Integer>("Storage", Integer.class, "primary.storage.download.wait", "10800",
+            "In second, timeout for download template to primary storage", false);
+
     /**
      * Returns a comma separated list of tags for the specified storage pool
      * @param poolId
      * @return comma separated list of tags
      */
-    public String getStoragePoolTags(long poolId);
+    String getStoragePoolTags(long poolId);
+
+    /**
+     * Returns a list of Strings with tags for the specified storage pool
+     * @param poolId
+     * @return comma separated list of tags
+     */
+    List<String> getStoragePoolTagList(long poolId);
 
     Answer sendToPool(long poolId, Command cmd) throws StorageUnavailableException;
 

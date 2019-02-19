@@ -44,11 +44,6 @@ public class UpdateIsoCmd extends BaseUpdateTemplateOrIsoCmd {
     }
 
     @Override
-    public Boolean getPasswordEnabled() {
-        return null;
-    }
-
-    @Override
     public String getFormat() {
         return null;
     }

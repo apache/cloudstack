@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -16,224 +16,130 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# modifyvxlan.sh -- adds and deletes VXLANs from a Routing Server
-# set -x
-
-## TODO(VXLAN): MTU, IPv6 underlying
+# modifyvxlan.sh -- Managed VXLAN devices and Bridges on Linux KVM hypervisor
 
 usage() {
-  printf "Usage: %s: -o <op>(add | delete) -v <vxlan id> -p <pif> -b <bridge name>\n" 
+    echo "Usage: $0: -o <op>(add | delete) -v <vxlan id> -p <pif> -b <bridge name> (-6)"
+}
+
+multicastGroup() {
+    local VNI=$1
+    local FAMILY=$2
+    if [[ -z "$FAMILY" || $FAMILY == "inet" ]]; then
+        echo "239.$(( (${VNI} >> 16) % 256 )).$(( (${VNI} >> 8) % 256 )).$(( ${VNI} % 256 ))"
+    fi
+
+    if [[ "$FAMILY" == "inet6" ]]; then
+        echo "ff05::$(( (${VNI} >> 16) % 256 )):$(( (${VNI} >> 8) % 256 )):$(( ${VNI} % 256 ))"
+    fi
 }
 
 addVxlan() {
-	local vxlanId=$1
-	local pif=$2
-	local vxlanDev=vxlan$vxlanId
-	local vxlanBr=$3
-	local mcastGrp="239.$(( ($vxlanId >> 16) % 256 )).$(( ($vxlanId >> 8) % 256 )).$(( $vxlanId % 256 ))"
-	
-	## TODO(VXLAN): $brif (trafficlabel) should be passed from caller because we cannot assume 1:1 mapping between pif and brif.
-	# lookup bridge interface 
-	local sysfs_dir=/sys/devices/virtual/net/
-	local brif=`find ${sysfs_dir}*/brif/ -name $pif | sed -e "s,$sysfs_dir,," | sed -e 's,/brif/.*$,,'`
-	
-	if [ "$brif " == " " ]
-	then
-		if [ -d "/sys/class/net/${pif}" ]
-		then
-			# if bridge is not found, but matches a pif, use it
-			brif=$pif
-		else
-			printf "Failed to lookup bridge interface which includes pif: $pif."
-			return 1
-		fi
-	else
-		# confirm ip address of $brif
-		ip addr show $brif | grep -w inet
-		if [ $? -gt 0 ]
-		then
-			printf "Failed to find vxlan multicast source ip address on brif: $brif."
-			return 1
-		fi
-	fi
+    local VNI=$1
+    local PIF=$2
+    local VXLAN_BR=$3
+    local FAMILY=$4
+    local VXLAN_DEV=vxlan${VNI}
+    local GROUP=$(multicastGroup ${VNI} ${FAMILY})
 
-	# mcast route
-	## TODO(VXLAN): Can we assume there're only one IP address which can be multicast src IP on the IF?
-	ip route get $mcastGrp | grep -w "dev $brif"
-	if [ $? -gt 0 ]
-	then
-		ip route add $mcastGrp/32 dev $brif
-		if [ $? -gt 0 ]
-		then
-			printf "Failed to add vxlan multicast route on brif: $brif."
-			return 1
-		fi
-	fi
-	
-	if [ ! -d /sys/class/net/$vxlanDev ]
-	then
-		ip link add $vxlanDev type vxlan id $vxlanId group $mcastGrp ttl 10 dev $brif
-		
-		if [ $? -gt 0 ]
-		then
-			# race condition that someone already creates the vxlan 
-			if [ ! -d /sys/class/net/$vxlanDev ]
-			then
-				printf "Failed to create vxlan $vxlanId on brif: $brif."
-				return 1
-			fi
-		fi
-	fi
-	
-	# is up?
-	ip link show $vxlanDev | grep -w UP > /dev/null
-	if [ $? -gt 0 ]
-	then
-		ip link set $vxlanDev up > /dev/null
-	fi
-	
-	if [ ! -d /sys/class/net/$vxlanBr ]
-	then
-		brctl addbr $vxlanBr > /dev/null
-	
-		if [ $? -gt 0 ]
-		then
-			if [ ! -d /sys/class/net/$vxlanBr ]
-			then
-				printf "Failed to create br: $vxlanBr"
-				return 2
-			fi
-		fi
+    echo "multicast ${GROUP} for VNI ${VNI} on ${PIF}"
 
-		brctl setfd $vxlanBr 0
-	fi
-	
-	#pif is eslaved into vxlanBr?
-	ls /sys/class/net/$vxlanBr/brif/ | grep -w "$vxlanDev" > /dev/null 
-	if [ $? -gt 0 ]
-	then
-		brctl addif $vxlanBr $vxlanDev > /dev/null
-		if [ $? -gt 0 ]
-		then
-			ls /sys/class/net/$vxlanBr/brif/ | grep -w "$vxlanDev" > /dev/null 
-			if [ $? -gt 0 ]
-			then
-				printf "Failed to add vxlan: $vxlanDev to $vxlanBr"
-				return 3
-			fi
-		fi
-	fi
-	
-	# is vxlanBr up?
-	ip link show $vxlanBr  | grep -w UP > /dev/null
-	if [ $? -gt 0 ]
-	then
-		ip link set $vxlanBr up
-	fi
-	
-	return 0
+    if [[ ! -d /sys/class/net/${VXLAN_DEV} ]]; then
+        ip -f ${FAMILY} link add ${VXLAN_DEV} type vxlan id ${VNI} group ${GROUP} ttl 10 dev ${PIF}
+        ip link set ${VXLAN_DEV} up
+        ip -f ${FAMILY} route add ${GROUP} dev ${PIF}
+        sysctl -qw net.ipv6.conf.${VXLAN_DEV}.disable_ipv6=1
+    fi
+
+    if [[ ! -d /sys/class/net/$VXLAN_BR ]]; then
+        ip link add name ${VXLAN_BR} type bridge
+        ip link set ${VXLAN_BR} up
+        sysctl -qw net.ipv6.conf.${VXLAN_BR}.disable_ipv6=1
+    fi
+
+    bridge link show|grep ${VXLAN_BR}|awk '{print $2}'|grep "^${VXLAN_DEV}\$" > /dev/null
+    if [[ $? -gt 0 ]]; then
+        ip link set ${VXLAN_DEV} master ${VXLAN_BR}
+    fi
 }
 
 deleteVxlan() {
-	local vxlanId=$1
-	local pif=$2
-	local vxlanDev=vxlan$vxlanId
-	local vxlanBr=$3
-	local mcastGrp="239.$(( ($vxlanId >> 16) % 256 )).$(( ($vxlanId >> 8) % 256 )).$(( $vxlanId % 256 ))"
-	
-	local sysfs_dir=/sys/devices/virtual/net/
-	local brif=`find ${sysfs_dir}*/brif/ -name $pif | sed -e "s,$sysfs_dir,," | sed -e 's,/brif/.*$,,'`
-	
-	ip route del $mcastGrp/32 dev $brif
-	
-	ip link delete $vxlanDev 
-	
-	if [ $? -gt 0 ]
-	then
-		printf "Failed to del vxlan: $vxlanId"
-		printf "Continue..."
-	fi	
-	
-	ip link set $vxlanBr down
-	
-	if [ $? -gt 0 ]
-	then
-		return 1
-	fi
-	
-	brctl delbr $vxlanBr
-	
-	if [ $? -gt 0 ]
-	then
-		printf "Failed to del bridge $vxlanBr"
-		return 1
-	fi
-	
-	return 0
+    local VNI=$1
+    local PIF=$2
+    local VXLAN_BR=$3
+    local FAMILY=$4
+    local VXLAN_DEV=vxlan${VNI}
+    local GROUP=$(multicastGroup ${VNI} ${FAMILY})
+
+    ip -f ${FAMILY} route del ${GROUP} dev ${PIF}
+
+    ip link set ${VXLAN_DEV} nomaster
+    ip link delete ${VXLAN_DEV}
+
+    ip link set ${VXLAN_BR} down
+    ip link delete ${VXLAN_BR} type bridge
 }
 
-op=
-vxlanId=
+OP=
+VNI=
+FAMILY=inet
 option=$@
 
-while getopts 'o:v:p:b:' OPTION
+while getopts 'o:v:p:b:6' OPTION
 do
   case $OPTION in
-  o)	oflag=1
-		op="$OPTARG"
-		;;
-  v)	vflag=1
-		vxlanId="$OPTARG"
-		;;
-  p)	pflag=1
-		pif="$OPTARG"
-		;;
-  b)	bflag=1
-		brName="$OPTARG"
-		;;
-  ?)	usage
-		exit 2
-		;;
+  o)    oflag=1
+        OP="$OPTARG"
+        ;;
+  v)    vflag=1
+        VNI="$OPTARG"
+        ;;
+  p)    pflag=1
+        PIF="$OPTARG"
+        ;;
+  b)    bflag=1
+        BRNAME="$OPTARG"
+        ;;
+  6)
+        FAMILY=inet6
+        ;;
+  ?)    usage
+        exit 2
+        ;;
   esac
 done
 
-# Check that all arguments were passed in
-if [ "$oflag$vflag$pflag$bflag" != "1111" ]
-then
-	usage
-	exit 2
+if [[ "$oflag$vflag$pflag$bflag" != "1111" ]]; then
+    usage
+    exit 2
 fi
 
-# Do we support Vxlan?
 lsmod|grep ^vxlan >& /dev/null
-if [ $? -gt 0 ]
-then
-   modprobe=`modprobe vxlan 2>&1`
-   if [ $? -gt 0 ]
-   then
-     printf "Failed to load vxlan kernel module: $modprobe"
-     exit 1
-   fi
+if [[ $? -gt 0 ]]; then
+    modprobe=`modprobe vxlan 2>&1`
+    if [[ $? -gt 0 ]]; then
+        echo "Failed to load vxlan kernel module: $modprobe"
+        exit 1
+    fi
 fi
 
-if [ "$op" == "add" ]
-then
-	# Add the vxlan
-	addVxlan $vxlanId $pif $brName
-	
-	# If the add fails then return failure
-	if [ $? -gt 0 ]
-	then
-		exit 1
-	fi
-else 
-	if [ "$op" == "delete" ]
-	then
-		# Delete the vxlan
-		deleteVxlan $vxlanId $pif $brName
-		
-		# Always exit with success
-		exit 0
-	fi
-fi
 
+#
+# Add a lockfile to prevent this script from running twice on the same host
+# this can cause a race condition
+#
+
+LOCKFILE=/var/run/cloud/vxlan.lock
+
+(
+    flock -x -w 10 200 || exit 1
+    if [[ "$OP" == "add" ]]; then
+        addVxlan ${VNI} ${PIF} ${BRNAME} ${FAMILY}
+
+        if [[ $? -gt 0 ]]; then
+            exit 1
+        fi
+    elif [[ "$OP" == "delete" ]]; then
+        deleteVxlan ${VNI} ${PIF} ${BRNAME} ${FAMILY}
+    fi
+) 200>${LOCKFILE}

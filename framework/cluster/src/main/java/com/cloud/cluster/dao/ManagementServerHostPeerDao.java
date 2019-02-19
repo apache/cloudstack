@@ -16,7 +16,7 @@
 // under the License.
 package com.cloud.cluster.dao;
 
-import com.cloud.cluster.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHost;
 import com.cloud.cluster.ManagementServerHostPeerVO;
 import com.cloud.utils.db.GenericDao;
 

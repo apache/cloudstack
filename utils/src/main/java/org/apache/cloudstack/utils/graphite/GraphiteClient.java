@@ -67,7 +67,7 @@ public class GraphiteClient {
      *
      * @param metrics the metrics as key-value-pairs
      */
-    public void sendMetrics(Map<String, Integer> metrics) {
+    public void sendMetrics(Map<Object, Object> metrics) {
         sendMetrics(metrics, getCurrentSystemTime());
     }
 
@@ -77,12 +77,12 @@ public class GraphiteClient {
      * @param metrics the metrics as key-value-pairs
      * @param timeStamp the timestamp
      */
-    public void sendMetrics(Map<String, Integer> metrics, long timeStamp) {
+    public void sendMetrics(Map<Object, Object> metrics, long timeStamp) {
         try (DatagramSocket sock = new DatagramSocket()){
             java.security.Security.setProperty("networkaddress.cache.ttl", "0");
             InetAddress addr = InetAddress.getByName(this.graphiteHost);
 
-            for (Map.Entry<String, Integer> metric: metrics.entrySet()) {
+            for (Map.Entry<Object, Object> metric : metrics.entrySet()) {
                 byte[] message = new String(metric.getKey() + " " + metric.getValue() + " " + timeStamp + "\n").getBytes();
                 DatagramPacket packet = new DatagramPacket(message, message.length, addr, graphitePort);
                 sock.send(packet);

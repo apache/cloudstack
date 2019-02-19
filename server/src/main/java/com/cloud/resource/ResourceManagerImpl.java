@@ -26,11 +26,17 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.vm.dao.UserVmDetailsDao;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.commons.lang.ObjectUtils;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
+
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.cluster.AddClusterCmd;
 import org.apache.cloudstack.api.command.admin.cluster.DeleteClusterCmd;
@@ -47,9 +53,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.utils.identity.ManagementServerNode;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.Answer;
@@ -269,6 +272,8 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     private GenericSearchBuilder<HostVO, String> _hypervisorsInDC;
 
     private SearchBuilder<HostGpuGroupsVO> _gpuAvailability;
+
+    private Map<Long,Integer> retryHostMaintenance = new ConcurrentHashMap<>();
 
     private void insertListener(final Integer event, final ResourceListener listener) {
         List<ResourceListener> lst = _lifeCycleListeners.get(event);
@@ -1222,6 +1227,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
         ActionEventUtils.onStartedActionEvent(CallContext.current().getCallingUserId(), CallContext.current().getCallingAccountId(), EventTypes.EVENT_MAINTENANCE_PREPARE, "starting maintenance for host " + hostId, true, 0);
         _agentMgr.pullAgentToMaintenance(hostId);
+        setHostMaintenanceRetries(host);
 
         /* TODO: move below to listener */
         if (host.getType() == Host.Type.Routing) {
@@ -1247,6 +1253,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             }
         }
         return true;
+    }
+
+    /**
+     * Set retries for transiting the host into Maintenance
+     */
+    protected void setHostMaintenanceRetries(HostVO host) {
+        Integer retries = HostMaintenanceRetries.valueIn(host.getClusterId());
+        retryHostMaintenance.put(host.getId(), retries);
+        s_logger.debug(String.format("Setting the host %s (%s) retries for Maintenance mode: %s",
+                host.getId(), host.getName(), retries));
     }
 
     @Override
@@ -1348,7 +1364,23 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             return CollectionUtils.isEmpty(failedMigrations) ?
                     setHostIntoMaintenance(host) :
                     setHostIntoErrorInMaintenance(host, failedMigrations);
+        } else if (retryHostMaintenance.containsKey(host.getId())) {
+            Integer retriesLeft = retryHostMaintenance.get(host.getId());
+            if (retriesLeft != null) {
+                if (retriesLeft <= 0) {
+                    retryHostMaintenance.remove(host.getId());
+                    s_logger.debug(String.format("No retries left while preparing KVM host %s (%s) for Maintenance, " +
+                                    "please investigate this connection.",
+                            host.getId(), host.getName()));
+                    return setHostIntoErrorInMaintenance(host, failedMigrations);
+                }
+                retriesLeft--;
+                retryHostMaintenance.put(host.getId(), retriesLeft);
+                s_logger.debug(String.format("Retries left preparing KVM host %s (%s) for Maintenance: %s",
+                        host.getId(), host.getName(), retriesLeft));
+            }
         }
+
         return false;
     }
 
@@ -2314,6 +2346,7 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
         try {
             resourceStateTransitTo(host, ResourceState.Event.AdminCancelMaintenance, _nodeId);
             _agentMgr.pullAgentOutMaintenance(hostId);
+            retryHostMaintenance.remove(hostId);
 
             // for kvm, need to log into kvm host, restart cloudstack-agent
             if ((host.getHypervisorType() == HypervisorType.KVM && !vms_migrating) || host.getHypervisorType() == HypervisorType.LXC) {
@@ -2907,5 +2940,15 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
             s_logger.error("Unable to release host reservation for host: " + hostId, t);
             return false;
         }
+    }
+
+    @Override
+    public String getConfigComponentName() {
+        return ResourceManagerImpl.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {HostMaintenanceRetries};
     }
 }

@@ -1,5 +1,3 @@
-package com.cloud.agent.api.storage;
-
 // Licensed to the Apache Software Foundation (ASF) under one
 // or more contributor license agreements.  See the NOTICE file
 // distributed with this work for additional information
@@ -16,3 +14,10 @@ package com.cloud.agent.api.storage;
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
+package org.apache.cloudstack.acl;
+
+/**
+ * Marker interface to differentiate ACL APICheckers from others (for example, a rate limit checker)
+ */
+public interface APIAclChecker extends APIChecker {
+}

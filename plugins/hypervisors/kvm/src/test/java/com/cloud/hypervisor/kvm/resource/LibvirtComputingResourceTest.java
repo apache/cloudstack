@@ -200,11 +200,11 @@ public class LibvirtComputingResourceTest {
     Random random = new Random();
 
     /**
-        This test tests if the Agent can handle a vmSpec coming
-        from a <=4.1 management server.
+     This test tests if the Agent can handle a vmSpec coming
+     from a <=4.1 management server.
 
-        The overcommit feature has not been merged in there and thus
-        only 'speed' is set.
+     The overcommit feature has not been merged in there and thus
+     only 'speed' is set.
      */
     @Test
     public void testCreateVMFromSpecLegacy() {
@@ -222,6 +222,8 @@ public class LibvirtComputingResourceTest {
         final String vncPassword = "mySuperSecretPassword";
 
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        lcr._qemuSocketsPath = new File("/var/run/qemu");
+
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, speed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
@@ -233,7 +235,7 @@ public class LibvirtComputingResourceTest {
     }
 
     /**
-        This test verifies that CPU topology is properly set for hex-core
+     This test verifies that CPU topology is properly set for hex-core
      */
     @Test
     public void testCreateVMFromSpecWithTopology6() {
@@ -252,6 +254,8 @@ public class LibvirtComputingResourceTest {
         final String vncPassword = "mySuperSecretPassword";
 
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        lcr._qemuSocketsPath = new File("/var/run/qemu");
+
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
@@ -263,7 +267,7 @@ public class LibvirtComputingResourceTest {
     }
 
     /**
-        This test verifies that CPU topology is properly set for quad-core
+     This test verifies that CPU topology is properly set for quad-core
      */
     @Test
     public void testCreateVMFromSpecWithTopology4() {
@@ -282,6 +286,8 @@ public class LibvirtComputingResourceTest {
         final String vncPassword = "mySuperSecretPassword";
 
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        lcr._qemuSocketsPath = new File("/var/run/qemu");
+
         final VirtualMachineTO to = new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
         to.setUuid("b0f0a72d-7efb-3cad-a8ff-70ebf30b3af9");
@@ -293,11 +299,11 @@ public class LibvirtComputingResourceTest {
     }
 
     /**
-        This test tests if the Agent can handle a vmSpec coming
-        from a >4.1 management server.
+     This test tests if the Agent can handle a vmSpec coming
+     from a >4.1 management server.
 
-        It tests if the Agent can handle a vmSpec with overcommit
-        data like minSpeed and maxSpeed in there
+     It tests if the Agent can handle a vmSpec with overcommit
+     data like minSpeed and maxSpeed in there
      */
     @Test
     public void testCreateVMFromSpec() {
@@ -316,6 +322,8 @@ public class LibvirtComputingResourceTest {
         final String vncPassword = "mySuperSecretPassword";
 
         final LibvirtComputingResource lcr = new LibvirtComputingResource();
+        lcr._qemuSocketsPath = new File("/var/run/qemu");
+
         final VirtualMachineTO to =
                 new VirtualMachineTO(id, name, VirtualMachine.Type.User, cpus, minSpeed, maxSpeed, minRam, maxRam, BootloaderType.HVM, os, false, false, vncPassword);
         to.setVncAddr(vncAddr);
@@ -359,7 +367,7 @@ public class LibvirtComputingResourceTest {
            Calling configure is also not possible since that looks for certain files on the system which are not present
            during testing
          */
-        assertXpath(domainDoc, "/domain/devices/channel/source/@path", "null/" + to.getName() + ".org.qemu.guest_agent.0");
+        assertXpath(domainDoc, "/domain/devices/channel/source/@path", "/var/run/qemu/" + to.getName() + ".org.qemu.guest_agent.0");
         assertXpath(domainDoc, "/domain/devices/channel/target/@name", "org.qemu.guest_agent.0");
 
         assertXpath(domainDoc, "/domain/memory/text()", String.valueOf( to.getMaxRam() / 1024 ));
@@ -402,7 +410,7 @@ public class LibvirtComputingResourceTest {
     }
 
     static void assertXpath(final Document doc, final String xPathExpr,
-            final String expected) {
+                            final String expected) {
         try {
             Assert.assertEquals(expected, XPathFactory.newInstance().newXPath()
                     .evaluate(xPathExpr, doc));
@@ -524,13 +532,6 @@ public class LibvirtComputingResourceTest {
         Assert.assertTrue(vmStat.getIntFreeMemoryKBs() >= 0);
         Assert.assertTrue(vmStat.getMemoryKBs() >= 0);
         Assert.assertTrue(vmStat.getTargetMemoryKBs() >= vmStat.getMemoryKBs());
-    }
-
-    @Test
-    public void getCpuSpeed() {
-        Assume.assumeTrue(SystemUtils.IS_OS_LINUX);
-        final NodeInfo nodeInfo = Mockito.mock(NodeInfo.class);
-        LibvirtComputingResource.getCpuSpeed(nodeInfo);
     }
 
     /*
@@ -980,8 +981,8 @@ public class LibvirtComputingResourceTest {
         when(libvirtComputingResource.getMemStat()).thenReturn(memStat);
         when(libvirtComputingResource.getNicStats(Mockito.anyString())).thenReturn(new Pair<Double, Double>(1.0d, 1.0d));
         when(cpuStat.getCpuUsedPercent()).thenReturn(0.5d);
-        when(memStat.getAvailable()).thenReturn(1500.5d);
-        when(memStat.getTotal()).thenReturn(15000d);
+        when(memStat.getAvailable()).thenReturn(1500L);
+        when(memStat.getTotal()).thenReturn(15000L);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -1757,8 +1758,7 @@ public class LibvirtComputingResourceTest {
         when(poolManager.getStoragePool(pool.getType(), pool.getUuid())).thenReturn(primary);
 
         when(primary.getPhysicalDisk(command.getTemplateUrl())).thenReturn(baseVol);
-        when(poolManager.createDiskFromTemplate(baseVol,
-                diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, 0)).thenReturn(vol);
+        when(poolManager.createDiskFromTemplate(baseVol, diskCharacteristics.getPath(), diskCharacteristics.getProvisioningType(), primary, baseVol.getSize(), 0)).thenReturn(vol);
 
         final LibvirtRequestWrapper wrapper = LibvirtRequestWrapper.getInstance();
         assertNotNull(wrapper);
@@ -5118,7 +5118,13 @@ public class LibvirtComputingResourceTest {
         final LibvirtComputingResource lvcr = new LibvirtComputingResource();
         assertFalse(lvcr.isInterface("bla"));
         assertTrue(lvcr.isInterface("p99p00"));
-        for  (final String ifNamePattern : lvcr._ifNamePatterns) {
+        assertTrue(lvcr.isInterface("lo1"));
+        assertTrue(lvcr.isInterface("lo_11"));
+        assertTrue(lvcr.isInterface("lo_public_1"));
+        assertTrue(lvcr.isInterface("dummy0"));
+        assertTrue(lvcr.isInterface("dummy_0"));
+        assertTrue(lvcr.isInterface("dummy_private_0"));
+        for  (final String ifNamePattern : lvcr.ifNamePatterns) {
             // excluding regexps as "\\\\d+" won't replace with String.replaceAll(String,String);
             if (!ifNamePattern.contains("\\")) {
                 final String ifName = ifNamePattern.replaceFirst("\\^", "") + "0";

@@ -349,8 +349,7 @@ public class IscsiAdmStorageAdaptor implements StorageAdaptor {
         String search4 = "-lun-";
 
         if (!localPath.contains(search3)) {
-            // this volume doesn't below to this adaptor, so just return true
-            return true;
+            return false;
         }
 
         int index = localPath.indexOf(search2);

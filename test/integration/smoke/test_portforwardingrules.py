@@ -16,32 +16,22 @@
 # under the License.
 
 # Import Local Modules
-from marvin.cloudstackTestCase import cloudstackTestCase, unittest
+from marvin.cloudstackTestCase import cloudstackTestCase
+from marvin.codes import PASS
 from marvin.lib.base import (PublicIPAddress,
                              NetworkOffering,
-                             Autoscale,
                              Network,
-                             NetworkServiceProvider,
-                             Template,
                              VirtualMachine,
-                             VPC,
                              VpcOffering,
-                             StaticNATRule,
-                             FireWallRule,
                              NATRule,
-                             Vpn,
-                             VpnUser,
-                             LoadBalancerRule,
                              Account,
-                             ServiceOffering,
-                             PhysicalNetwork,
-                             User)
+                             ServiceOffering)
 from marvin.lib.common import (get_domain,
                                get_zone,
                                get_test_template)
 from marvin.lib.utils import validateList, cleanup_resources
-from marvin.codes import PASS
 from nose.plugins.attrib import attr
+
 
 class TestPortForwardingRules(cloudstackTestCase):
 
@@ -121,6 +111,7 @@ class TestPortForwardingRules(cloudstackTestCase):
             cleanup_resources(cls.api_client, cls._cleanup)
         except Exception as e:
             raise Exception("Warning: Exception during cleanup : %s" % e)
+        return
 
     def __verify_values(self, expected_vals, actual_vals):
         """
@@ -152,8 +143,6 @@ class TestPortForwardingRules(cloudstackTestCase):
                     %
                     (exp_val, act_val))
         return return_flag
-
-
 
     @attr(tags=["advanced"], required_hardware="true")
     def test_01_create_delete_portforwarding_fornonvpc(self):
@@ -213,6 +202,7 @@ class TestPortForwardingRules(cloudstackTestCase):
             networkofferingid=network_offerings_list[0].id,
             zoneid=self.zone.id
         )
+
         self.assertIsNotNone(
             network,
             "Network creation failed"
@@ -227,6 +217,25 @@ class TestPortForwardingRules(cloudstackTestCase):
             list_ipaddresses_before,
             "IP Addresses listed for newly created User"
         )
+
+        service_offering = ServiceOffering.create(
+            self.apiClient,
+            self.services["service_offerings"]["tiny"],
+        )
+
+        self.services["virtual_machine"]["zoneid"] = self.zone.id
+
+        vm = VirtualMachine.create(
+            self.userapiclient,
+            self.services["virtual_machine"],
+            accountid=self.account.name,
+            domainid=self.account.domainid,
+            networkids=network.id,
+            serviceofferingid=service_offering.id
+        )
+
+        VirtualMachine.delete(vm, self.apiClient, expunge=True)
+
         # Associating an IP Addresses to Network created
         associated_ipaddress = PublicIPAddress.create(
             self.userapiclient,
@@ -248,9 +257,9 @@ class TestPortForwardingRules(cloudstackTestCase):
             status[0],
             "IP Addresses Association Failed"
         )
-        # Verifying the length of the list is 1
+        # Verifying the length of the list is 2
         self.assertEqual(
-            1,
+            2,
             len(list_ipaddresses_after),
             "Number of IP Addresses associated are not matching expected"
         )
@@ -281,9 +290,9 @@ class TestPortForwardingRules(cloudstackTestCase):
             status[0],
             "VM Created is not in Running state"
         )
-        # Verifying the length of the list is 1
+        # Verifying the length of the list is 2
         self.assertEqual(
-            1,
+            2,
             len(list_ipaddresses_after),
             "VM Created is not in Running state"
         )
@@ -370,35 +379,34 @@ class TestPortForwardingRules(cloudstackTestCase):
         # Deleting Port Forwarding Rule
         portfwd_rule.delete(self.userapiclient)
 
-
         # Creating a Port Forwarding rule with port range
         portfwd_rule = NATRule.create(
             self.userapiclient,
             virtual_machine=vm_created,
             services=self.services["natrulerange"],
             ipaddressid=associated_ipaddress.ipaddress.id,
-            )
+        )
         self.assertIsNotNone(
             portfwd_rule,
             "Failed to create Port Forwarding Rule"
         )
-        #update the private port for port forwarding rule
+        # update the private port for port forwarding rule
         updatefwd_rule = portfwd_rule.update(self.userapiclient,
-                            portfwd_rule.id,
-                            virtual_machine=vm_created,
-                            services=self.services["updatenatrulerange"],
-                            )
+                                             portfwd_rule.id,
+                                             virtual_machine=vm_created,
+                                             services=self.services["updatenatrulerange"],
+                                             )
 
         # Verifying details of Sticky Policy created
         # Creating expected and actual values dictionaries
         expected_dict = {
             "privateport": str(self.services["updatenatrulerange"]["privateport"]),
             "privateendport": str(self.services["updatenatrulerange"]["privateendport"]),
-            }
+        }
         actual_dict = {
             "privateport": str(updatefwd_rule.privateport),
             "privateendport": str(updatefwd_rule.privateendport),
-            }
+        }
         portfwd_status = self.__verify_values(
             expected_dict,
             actual_dict
@@ -425,4 +433,3 @@ class TestPortForwardingRules(cloudstackTestCase):
         vm_created.delete(self.apiClient)
         self.cleanup.append(self.account)
         return
-

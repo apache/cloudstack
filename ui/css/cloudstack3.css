@@ -4179,6 +4179,15 @@ textarea {
   float: left;
 }
 
+.ui-dialog div.form-container div.value label {
+  display: block;
+  width: 119px;
+  text-align: left;
+  font-size: 13px;
+  margin-top: 2px;
+  margin-left: -10px;
+}
+
 .ui-dialog div.form-container div.value input.hasDatepicker {
   color: #2F5D86;
   cursor: pointer;
@@ -9730,7 +9739,8 @@ div#details-tab-aclRules td.cidrlist span {
   top: 68px;
 }
 
-.system-dashboard.zone .status_box li.system-vms .icon {
+.system-dashboard.zone .status_box li.system-vms .icon,
+.system-dashboard.zone .status_box li.management-servers .icon {
   background-position: -408px -399px;
 }
 

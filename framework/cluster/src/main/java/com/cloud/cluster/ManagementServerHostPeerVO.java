@@ -29,11 +29,13 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import org.apache.cloudstack.management.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHostPeer;
 import com.cloud.utils.DateUtil;
 
 @Entity
 @Table(name = "mshost_peer")
-public class ManagementServerHostPeerVO {
+public class ManagementServerHostPeerVO implements ManagementServerHostPeer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -77,6 +79,7 @@ public class ManagementServerHostPeerVO {
         this.id = id;
     }
 
+    @Override
     public long getOwnerMshost() {
         return ownerMshost;
     }
@@ -85,6 +88,7 @@ public class ManagementServerHostPeerVO {
         this.ownerMshost = ownerMshost;
     }
 
+    @Override
     public long getPeerMshost() {
         return peerMshost;
     }
@@ -93,6 +97,7 @@ public class ManagementServerHostPeerVO {
         this.peerMshost = peerMshost;
     }
 
+    @Override
     public long getPeerRunid() {
         return peerRunid;
     }
@@ -101,6 +106,7 @@ public class ManagementServerHostPeerVO {
         this.peerRunid = peerRunid;
     }
 
+    @Override
     public ManagementServerHost.State getPeerState() {
         return peerState;
     }
@@ -109,6 +115,7 @@ public class ManagementServerHostPeerVO {
         this.peerState = peerState;
     }
 
+    @Override
     public Date getLastUpdateTime() {
         return lastUpdateTime;
     }

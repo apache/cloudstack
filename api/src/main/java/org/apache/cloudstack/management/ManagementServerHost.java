@@ -14,18 +14,22 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.cluster;
+package org.apache.cloudstack.management;
 
 public interface ManagementServerHost {
+    enum State {
+        Up, Down
+    }
+
     long getId();
 
-    public static enum State {
-        Up, Starting, Down
-    };
+    String getUuid();
 
     long getMsid();
 
     State getState();
+
+    String getName();
 
     String getVersion();
 

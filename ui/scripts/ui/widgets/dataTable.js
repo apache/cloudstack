@@ -228,9 +228,9 @@
                 $tbody.width($thead.width());
             }
 
-            if ($ths.size() > $tds.size()) {
+            if ($ths.length > $tds.length) {
                 $ths.width(
-                    $table.width() / $ths.size()
+                    $table.width() / $ths.length
                 );
                 return false;
             }
@@ -281,7 +281,7 @@
 
         var init = function() {
             var noSelect = options && options.noSelect == true ? true : false;
-            if (!$table.closest('div.data-table').size() && !$table.hasClass('no-split')) {
+            if (!$table.closest('div.data-table').length && !$table.hasClass('no-split')) {
                 reattachTable();
                 $table.find('tbody').closest('table').addClass('body');
             }
@@ -304,7 +304,7 @@
             $table.bind('click', function(event) {
                 var $tr = $(event.target).closest('tr');
 
-                if (!$tr.size() || noSelect) return true;
+                if (!$tr.length || noSelect) return true;
                 var rowIndex = $tr.index();
 
                 toggleSelectRow(rowIndex);

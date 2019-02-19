@@ -515,6 +515,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     private static final ConfigKey<Boolean> EnableAdditionalVmConfig = new ConfigKey<>("Advanced", Boolean.class, "enable.additional.vm.configuration",
             "false", "allow additional arbitrary configuration to vm", true, ConfigKey.Scope.Account);
+    private static final ConfigKey<Boolean> VmDestroyForcestop = new ConfigKey<Boolean>("Advanced", Boolean.class, "vm.destroy.forcestop", "false",
+            "On destroy, force-stop takes this value ", true);
+
 
     @Override
     public UserVmVO getVirtualMachine(long vmId) {
@@ -2757,8 +2760,13 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // check if VM exists
         UserVmVO vm = _vmDao.findById(vmId);
 
-        if (vm == null) {
+        if (vm == null || vm.getRemoved() != null) {
             throw new InvalidParameterValueException("unable to find a virtual machine with id " + vmId);
+        }
+
+        if (vm.getState() == State.Destroyed || vm.getState() == State.Expunging) {
+            s_logger.debug("Vm id=" + vmId + " is already destroyed");
+            return vm;
         }
 
         // check if there are active volume snapshots tasks
@@ -2768,6 +2776,15 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
         s_logger.debug("Found no ongoing snapshots on volume of type ROOT, for the vm with id " + vmId);
 
+        List<VolumeVO> volumes = getVolumesFromIds(cmd);
+
+        checkForUnattachedVolumes(vmId, volumes);
+        validateVolumes(volumes);
+
+        stopVirtualMachine(vmId, VmDestroyForcestop.value());
+
+        detachVolumesFromVm(volumes);
+
         UserVm destroyedVm = destroyVm(vmId, expunge);
         if (expunge) {
             if (!expunge(vm, ctx.getCallingUserId(), ctx.getCallingAccount())) {
@@ -2775,7 +2792,24 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
 
+        deleteVolumesFromVm(volumes);
+
         return destroyedVm;
+    }
+
+    private List<VolumeVO> getVolumesFromIds(DestroyVMCmd cmd) {
+        List<VolumeVO> volumes = new ArrayList<>();
+        if (cmd.getVolumeIds() != null) {
+            for (Long volId : cmd.getVolumeIds()) {
+                VolumeVO vol = _volsDao.findById(volId);
+
+                if (vol == null) {
+                    throw new InvalidParameterValueException("Unable to find volume with ID: " + volId);
+                }
+                volumes.add(vol);
+            }
+        }
+        return volumes;
     }
 
     @Override
@@ -5032,12 +5066,18 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         }
 
         if (vm.getType() != VirtualMachine.Type.User) {
+            // OffLineVmwareMigration: *WHY* ?
             throw new InvalidParameterValueException("can only do storage migration on user vm");
         }
 
         List<VolumeVO> vols = _volsDao.findByInstance(vm.getId());
         if (vols.size() > 1) {
-            throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to detach data disks first");
+            // OffLineVmwareMigration: data disks are not permitted, here!
+            if (vols.size() > 1 &&
+                    // OffLineVmwareMigration: allow multiple disks for vmware
+                    !HypervisorType.VMware.equals(vm.getHypervisorType())) {
+                throw new InvalidParameterValueException("Data disks attached to the vm, can not migrate. Need to detach data disks first");
+            }
         }
 
         // Check that Vm does not have VM Snapshots
@@ -5045,6 +5085,14 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("VM's disk cannot be migrated, please remove all the VM Snapshots for this VM");
         }
 
+        checkDestinationHypervisorType(destPool, vm);
+
+        _itMgr.storageMigration(vm.getUuid(), destPool);
+        return _vmDao.findById(vm.getId());
+
+    }
+
+    private void checkDestinationHypervisorType(StoragePool destPool, VMInstanceVO vm) {
         HypervisorType destHypervisorType = destPool.getHypervisor();
         if (destHypervisorType == null) {
             destHypervisorType = _clusterDao.findById(
@@ -5054,8 +5102,6 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         if (vm.getHypervisorType() != destHypervisorType && destHypervisorType != HypervisorType.Any) {
             throw new InvalidParameterValueException("hypervisor is not compatible: dest: " + destHypervisorType.toString() + ", vm: " + vm.getHypervisorType().toString());
         }
-        _itMgr.storageMigration(vm.getUuid(), destPool);
-        return _vmDao.findById(vm.getId());
 
     }
 
@@ -5111,12 +5157,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
         }
 
-        if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
-                && !vm.getHypervisorType().equals(HypervisorType.Ovm) && !vm.getHypervisorType().equals(HypervisorType.Hyperv)
-                && !vm.getHypervisorType().equals(HypervisorType.LXC) && !vm.getHypervisorType().equals(HypervisorType.Simulator)
-                && !vm.getHypervisorType().equals(HypervisorType.Ovm3)) {
+        if (!isOnSupportedHypevisorForMigration(vm)) {
             if (s_logger.isDebugEnabled()) {
-                s_logger.debug(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM.");
+                s_logger.debug(vm + " is not XenServer/VMware/KVM/Ovm/Hyperv, cannot migrate this VM form hypervisor type " + vm.getHypervisorType());
             }
             throw new InvalidParameterValueException("Unsupported Hypervisor Type for VM migration, we support XenServer/VMware/KVM/Ovm/Hyperv/Ovm3 only");
         }
@@ -5192,6 +5235,17 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         } else {
             return vmInstance;
         }
+    }
+
+    private boolean isOnSupportedHypevisorForMigration(VMInstanceVO vm) {
+        return (vm.getHypervisorType().equals(HypervisorType.XenServer) ||
+                vm.getHypervisorType().equals(HypervisorType.VMware) ||
+                vm.getHypervisorType().equals(HypervisorType.KVM) ||
+                vm.getHypervisorType().equals(HypervisorType.Ovm) ||
+                vm.getHypervisorType().equals(HypervisorType.Hyperv) ||
+                vm.getHypervisorType().equals(HypervisorType.LXC) ||
+                vm.getHypervisorType().equals(HypervisorType.Simulator) ||
+                vm.getHypervisorType().equals(HypervisorType.Ovm3));
     }
 
     private boolean checkIfHostIsDedicated(HostVO host) {
@@ -5436,7 +5490,9 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Unable to find the vm by id " + vmId);
         }
 
+        // OfflineVmwareMigration: this would be it ;) if multiple paths exist: unify
         if (vm.getState() != State.Running) {
+            // OfflineVmwareMigration: and not vmware
             if (s_logger.isDebugEnabled()) {
                 s_logger.debug("VM is not Running, unable to migrate the vm " + vm);
             }
@@ -5449,6 +5505,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             throw new InvalidParameterValueException("Live Migration of GPU enabled VM is not supported");
         }
 
+        // OfflineVmwareMigration: this condition is to complicated. (already a method somewhere)
         if (!vm.getHypervisorType().equals(HypervisorType.XenServer) && !vm.getHypervisorType().equals(HypervisorType.VMware) && !vm.getHypervisorType().equals(HypervisorType.KVM)
                 && !vm.getHypervisorType().equals(HypervisorType.Ovm) && !vm.getHypervisorType().equals(HypervisorType.Hyperv)
                 && !vm.getHypervisorType().equals(HypervisorType.Simulator)) {
@@ -6517,5 +6574,53 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
         }
         return false;
+    }
+
+    private void checkForUnattachedVolumes(long vmId, List<VolumeVO> volumes) {
+
+        StringBuilder sb = new StringBuilder();
+
+        for (VolumeVO volume : volumes) {
+            if (volume.getInstanceId() == null || vmId != volume.getInstanceId()) {
+                sb.append(volume.toString() + "; ");
+            }
+        }
+
+        if (!StringUtils.isEmpty(sb.toString())) {
+            throw new InvalidParameterValueException("The following supplied volumes are not attached to the VM: " + sb.toString());
+        }
+    }
+
+    private void validateVolumes(List<VolumeVO> volumes) {
+
+        for (VolumeVO volume : volumes) {
+            if (!(volume.getVolumeType() == Volume.Type.ROOT || volume.getVolumeType() == Volume.Type.DATADISK)) {
+                throw new InvalidParameterValueException("Please specify volume of type " + Volume.Type.DATADISK.toString() + " or " + Volume.Type.ROOT.toString());
+            }
+        }
+    }
+
+    private void detachVolumesFromVm(List<VolumeVO> volumes) {
+
+        for (VolumeVO volume : volumes) {
+
+            Volume detachResult = _volumeService.detachVolumeViaDestroyVM(volume.getInstanceId(), volume.getId());
+
+            if (detachResult == null) {
+                s_logger.error("DestroyVM remove volume - failed to detach and delete volume " + volume.getInstanceId() + " from instance " + volume.getId());
+            }
+        }
+    }
+
+    private void deleteVolumesFromVm(List<VolumeVO> volumes) {
+
+        for (VolumeVO volume : volumes) {
+
+            boolean deleteResult = _volumeService.deleteVolume(volume.getId(), CallContext.current().getCallingAccount());
+
+            if (!deleteResult) {
+                s_logger.error("DestroyVM remove volume - failed to delete volume " + volume.getInstanceId() + " from instance " + volume.getId());
+            }
+        }
     }
 }

@@ -25,6 +25,8 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
@@ -41,6 +43,7 @@ import org.apache.cloudstack.api.command.admin.host.ListHostTagsCmd;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.internallb.ListInternalLBVMsCmd;
 import org.apache.cloudstack.api.command.admin.iso.ListIsosCmdByAdmin;
+import org.apache.cloudstack.api.command.admin.management.ListMgmtsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListImageStoresCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListSecondaryStagingStoresCmd;
@@ -80,6 +83,7 @@ import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
 import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -153,7 +157,6 @@ import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
 import com.cloud.dc.DedicatedResourceVO;
-import com.cloud.dc.dao.DataCenterDetailsDao;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
@@ -205,6 +208,7 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
+import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -330,7 +334,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private DomainRouterDao _routerDao;
 
     @Inject
-    UserVmDetailsDao _userVmDetailDao;
+    private UserVmDetailsDao _userVmDetailDao;
 
     @Inject
     private HighAvailabilityManager _haMgr;
@@ -342,7 +346,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private TemplateJoinDao _templateJoinDao;
 
     @Inject
-    ResourceManager _resourceMgr;
+    private ResourceManager _resourceMgr;
     @Inject
     private ResourceMetaDataService _resourceMetaDataMgr;
 
@@ -350,7 +354,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private TaggedResourceService _taggedResourceMgr;
 
     @Inject
-    AffinityGroupVMMapDao _affinityGroupVMMapDao;
+    private AffinityGroupVMMapDao _affinityGroupVMMapDao;
 
     @Inject
     private AffinityGroupJoinDao _affinityGroupJoinDao;
@@ -359,22 +363,25 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private DedicatedResourceDao _dedicatedDao;
 
     @Inject
-    DataCenterDetailsDao _dcDetailsDao;
+    private DomainManager _domainMgr;
 
     @Inject
-    DomainManager _domainMgr;
+    private AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
 
     @Inject
-    AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
+    private NetworkDetailsDao _networkDetailsDao;
 
     @Inject
-    NetworkDetailsDao _networkDetailsDao;
+    private ResourceTagDao _resourceTagDao;
 
     @Inject
-    ResourceTagDao _resourceTagDao;
+    private DataStoreManager dataStoreManager;
 
     @Inject
-    DataStoreManager dataStoreManager;
+    private EntityManager _entityMgr;
+
+    @Inject
+    ManagementServerHostDao managementServerHostDao;
 
     /*
      * (non-Javadoc)
@@ -3674,7 +3681,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     protected ResourceDetailResponse createResourceDetailsResponse(ResourceDetail requestedDetail, ResourceTag.ResourceObjectType resourceType) {
         ResourceDetailResponse resourceDetailResponse = new ResourceDetailResponse();
-        resourceDetailResponse.setResourceId(String.valueOf(requestedDetail.getResourceId()));
+        resourceDetailResponse.setResourceId(_taggedResourceMgr.getUuid(String.valueOf(requestedDetail.getResourceId()), resourceType));
         resourceDetailResponse.setName(requestedDetail.getName());
         resourceDetailResponse.setValue(requestedDetail.getValue());
         resourceDetailResponse.setForDisplay(requestedDetail.isDisplay());
@@ -3682,6 +3689,23 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
         resourceDetailResponse.setObjectName("resourcedetail");
         return resourceDetailResponse;
     }
+
+    @Override
+    public ListResponse<ManagementServerResponse> listManagementServers(ListMgmtsCmd cmd) {
+        ListResponse<ManagementServerResponse> response = new ListResponse<>();
+        List<ManagementServerResponse> result = new ArrayList<>();
+        for (ManagementServerHostVO mgmt : managementServerHostDao.listAll()) {
+            ManagementServerResponse mgmtResponse = new ManagementServerResponse();
+            mgmtResponse.setId(mgmt.getUuid());
+            mgmtResponse.setName(mgmt.getName());
+            mgmtResponse.setState(mgmt.getState());
+            mgmtResponse.setVersion(mgmt.getVersion());
+            mgmtResponse.setObjectName("managementserver");
+            result.add(mgmtResponse);
+        }
+        response.setResponses(result);
+        return response;
+     }
 
     @Override
     public String getConfigComponentName() {

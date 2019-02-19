@@ -41,6 +41,9 @@ import javax.naming.ConfigurationException;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.command.admin.vm.MigrateVMCmd;
+import org.apache.cloudstack.api.command.admin.volume.MigrateVolumeCmdByAdmin;
+import org.apache.cloudstack.api.command.user.volume.MigrateVolumeCmd;
 import org.apache.cloudstack.ca.CAManager;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.orchestration.service.NetworkOrchestrationService;
@@ -86,6 +89,7 @@ import com.cloud.agent.api.ClusterVMMetaDataSyncAnswer;
 import com.cloud.agent.api.ClusterVMMetaDataSyncCommand;
 import com.cloud.agent.api.Command;
 import com.cloud.agent.api.MigrateCommand;
+import com.cloud.agent.api.MigrateVmToPoolAnswer;
 import com.cloud.agent.api.ModifyTargetsCommand;
 import com.cloud.agent.api.PingRoutingCommand;
 import com.cloud.agent.api.PlugNicAnswer;
@@ -138,10 +142,8 @@ import com.cloud.exception.AffinityConflictException;
 import com.cloud.exception.AgentUnavailableException;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.ConnectionException;
-import com.cloud.exception.InsufficientAddressCapacityException;
 import com.cloud.exception.InsufficientCapacityException;
 import com.cloud.exception.InsufficientServerCapacityException;
-import com.cloud.exception.InsufficientVirtualNetworkCapacityException;
 import com.cloud.exception.InvalidParameterValueException;
 import com.cloud.exception.OperationTimedoutException;
 import com.cloud.exception.ResourceUnavailableException;
@@ -171,10 +173,12 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
 import com.cloud.storage.Storage.ImageFormat;
+import com.cloud.storage.StorageManager;
 import com.cloud.storage.StoragePool;
 import com.cloud.storage.VMTemplateVO;
 import com.cloud.storage.Volume;
 import com.cloud.storage.Volume.Type;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.GuestOSCategoryDao;
@@ -314,6 +318,8 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private VmWorkJobDao _workJobDao;
     @Inject
     private AsyncJobManager _jobMgr;
+    @Inject
+    private StorageManager storageMgr;
 
     VmWorkJobHandlerProxy _jobHandlerProxy = new VmWorkJobHandlerProxy(this);
 
@@ -1820,14 +1826,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     protected boolean stateTransitTo(final VMInstanceVO vm, final VirtualMachine.Event e, final Long hostId, final String reservationId) throws NoTransitionException {
         // if there are active vm snapshots task, state change is not allowed
 
-        // Disable this hacking thing, VM snapshot task need to be managed by its orchestartion flow istelf instead of
-        // hacking it here at general VM manager
-        /*
-                if (_vmSnapshotMgr.hasActiveVMSnapshotTasks(vm.getId())) {
-                    s_logger.error("State transit with event: " + e + " failed due to: " + vm.getInstanceName() + " has active VM snapshots tasks");
-                    return false;
-                }
-         */
         vm.setReservationId(reservationId);
         return _stateMachine.transitTo(vm, e, new Pair<Long, Long>(vm.getHostId(), hostId), _vmDao);
     }
@@ -1835,15 +1833,6 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     @Override
     public boolean stateTransitTo(final VirtualMachine vm1, final VirtualMachine.Event e, final Long hostId) throws NoTransitionException {
         final VMInstanceVO vm = (VMInstanceVO)vm1;
-
-        /*
-         *  Remove the hacking logic here.
-                // if there are active vm snapshots task, state change is not allowed
-                if (_vmSnapshotMgr.hasActiveVMSnapshotTasks(vm.getId())) {
-                    s_logger.error("State transit with event: " + e + " failed due to: " + vm.getInstanceName() + " has active VM snapshots tasks");
-                    return false;
-                }
-         */
 
         final State oldState = vm.getState();
         if (oldState == State.Starting) {
@@ -1988,89 +1977,243 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
     private void orchestrateStorageMigration(final String vmUuid, final StoragePool destPool) {
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
+        preStorageMigrationStateCheck(destPool, vm);
+
+        try {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("Offline migration of %s vm %s with volumes",
+                                vm.getHypervisorType().toString(),
+                                vm.getInstanceName()));
+            }
+
+            migrateThroughHypervisorOrStorage(destPool, vm);
+
+        } catch (ConcurrentOperationException
+                | InsufficientCapacityException // possibly InsufficientVirtualNetworkCapacityException or InsufficientAddressCapacityException
+                | StorageUnavailableException e) {
+            String msg = String.format("Failed to migrate VM: %s", vmUuid);
+            s_logger.debug(msg);
+            throw new CloudRuntimeException(msg, e);
+        } finally {
+            try {
+                stateTransitTo(vm, Event.AgentReportStopped, null);
+            } catch (final NoTransitionException e) {
+                String anotherMEssage = String.format("failed to change vm state of VM: %s", vmUuid);
+                s_logger.debug(anotherMEssage);
+                throw new CloudRuntimeException(anotherMEssage, e);
+            }
+        }
+    }
+
+    private Answer[] attemptHypervisorMigration(StoragePool destPool, VMInstanceVO vm) {
+        final HypervisorGuru hvGuru = _hvGuruMgr.getGuru(vm.getHypervisorType());
+        // OfflineVmwareMigration: in case of vmware call vcenter to do it for us.
+        // OfflineVmwareMigration: should we check the proximity of source and destination
+        // OfflineVmwareMigration: if we are in the same cluster/datacentre/pool or whatever?
+        // OfflineVmwareMigration: we are checking on success to optionally delete an old vm if we are not
+        List<Command> commandsToSend = hvGuru.finalizeMigrate(vm, destPool);
+
+        Long hostId = vm.getHostId();
+        // OfflineVmwareMigration: probably this is null when vm is stopped
+        if(hostId == null) {
+            hostId = vm.getLastHostId();
+            if (s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("host id is null, using last host id %d", hostId) );
+            }
+        }
+
+        if(CollectionUtils.isNotEmpty(commandsToSend)) {
+            Commands commandsContainer = new Commands(Command.OnError.Stop);
+            commandsContainer.addCommands(commandsToSend);
+            try {
+                // OfflineVmwareMigration: change to the call back variety?
+                // OfflineVmwareMigration: getting a Long seq to be filled with _agentMgr.send(hostId, commandsContainer, this)
+                return  _agentMgr.send(hostId, commandsContainer);
+            } catch (AgentUnavailableException | OperationTimedoutException e) {
+                throw new CloudRuntimeException(String.format("Failed to migrate VM: %s", vm.getUuid()),e);
+            }
+        }
+        return null;
+    }
+
+    private void afterHypervisorMigrationCleanup(StoragePool destPool, VMInstanceVO vm, HostVO srcHost, Long srcClusterId, Answer[] hypervisorMigrationResults) throws InsufficientCapacityException {
+        boolean isDebugEnabled = s_logger.isDebugEnabled();
+        if(isDebugEnabled) {
+            String msg = String.format("cleaning up after hypervisor pool migration volumes for VM %s(%s) to pool %s(%s)", vm.getInstanceName(), vm.getUuid(), destPool.getName(), destPool.getUuid());
+            s_logger.debug(msg);
+        }
+        setDestinationPoolAndReallocateNetwork(destPool, vm);
+        // OfflineVmwareMigration: don't set this to null or have another way to address the command; twice migrating will lead to an NPE
+        Long destPodId = destPool.getPodId();
+        Long vmPodId = vm.getPodIdToDeployIn();
+        if (destPodId == null || ! destPodId.equals(vmPodId)) {
+            if(isDebugEnabled) {
+                String msg = String.format("resetting lasHost for VM %s(%s) as pod (%s) is no good.", vm.getInstanceName(), vm.getUuid(), destPodId);
+                s_logger.debug(msg);
+            }
+
+            vm.setLastHostId(null);
+            vm.setPodIdToDeployIn(destPodId);
+            // OfflineVmwareMigration: a consecutive migration will fail probably (no host not pod)
+        }// else keep last host set for this vm
+        markVolumesInPool(vm,destPool, hypervisorMigrationResults);
+        // OfflineVmwareMigration: deal with answers, if (hypervisorMigrationResults.length > 0)
+        // OfflineVmwareMigration: iterate over the volumes for data updates
+    }
+
+    private void markVolumesInPool(VMInstanceVO vm, StoragePool destPool, Answer[] hypervisorMigrationResults) {
+        MigrateVmToPoolAnswer relevantAnswer = null;
+        for (Answer answer : hypervisorMigrationResults) {
+            if (s_logger.isTraceEnabled()) {
+                s_logger.trace(String.format("received an %s: %s", answer.getClass().getSimpleName(), answer));
+            }
+            if (answer instanceof MigrateVmToPoolAnswer) {
+                relevantAnswer = (MigrateVmToPoolAnswer) answer;
+            }
+        }
+        if (relevantAnswer == null) {
+            throw new CloudRuntimeException("no relevant migration results found");
+        }
+        List<VolumeVO> volumes = _volsDao.findUsableVolumesForInstance(vm.getId());
+        if(s_logger.isDebugEnabled()) {
+            String msg = String.format("found %d volumes for VM %s(uuid:%s, id:%d)", volumes.size(), vm.getInstanceName(), vm.getUuid(), vm.getId());
+            s_logger.debug(msg);
+        }
+        for (VolumeObjectTO result : relevantAnswer.getVolumeTos() ) {
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug(String.format("updating volume (%d) with path '%s' on pool '%d'", result.getId(), result.getPath(), destPool.getId()));
+            }
+            VolumeVO volume = _volsDao.findById(result.getId());
+            volume.setPath(result.getPath());
+            volume.setPoolId(destPool.getId());
+            _volsDao.update(volume.getId(), volume);
+        }
+    }
+
+    private void migrateThroughHypervisorOrStorage(StoragePool destPool, VMInstanceVO vm) throws StorageUnavailableException, InsufficientCapacityException {
+        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
+        final Long srchostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
+        final HostVO srcHost = _hostDao.findById(srchostId);
+        final Long srcClusterId = srcHost.getClusterId();
+        Answer[] hypervisorMigrationResults = attemptHypervisorMigration(destPool, vm);
+        boolean migrationResult = false;
+        if (hypervisorMigrationResults == null) {
+            // OfflineVmwareMigration: if the HypervisorGuru can't do it, let the volume manager take care of it.
+            migrationResult = volumeMgr.storageMigration(profile, destPool);
+            if (migrationResult) {
+                afterStorageMigrationCleanup(destPool, vm, srcHost, srcClusterId);
+            } else {
+                s_logger.debug("Storage migration failed");
+            }
+        } else {
+            afterHypervisorMigrationCleanup(destPool, vm, srcHost, srcClusterId, hypervisorMigrationResults);
+        }
+    }
+
+    private void preStorageMigrationStateCheck(StoragePool destPool, VMInstanceVO vm) {
         if (destPool == null) {
             throw new CloudRuntimeException("Unable to migrate vm: missing destination storage pool");
         }
 
+        checkDestinationForTags(destPool, vm);
         try {
-            stateTransitTo(vm, VirtualMachine.Event.StorageMigrationRequested, null);
+            stateTransitTo(vm, Event.StorageMigrationRequested, null);
         } catch (final NoTransitionException e) {
-            s_logger.debug("Unable to migrate vm: " + e.toString());
-            throw new CloudRuntimeException("Unable to migrate vm: " + e.toString());
+            String msg = String.format("Unable to migrate vm: %s", vm.getUuid());
+            s_logger.debug(msg);
+            throw new CloudRuntimeException(msg, e);
         }
+    }
 
-        final VirtualMachineProfile profile = new VirtualMachineProfileImpl(vm);
-        boolean migrationResult = false;
+    private void checkDestinationForTags(StoragePool destPool, VMInstanceVO vm) {
+        List<VolumeVO> vols = _volsDao.findUsableVolumesForInstance(vm.getId());
+        // OfflineVmwareMigration: iterate over volumes
+        // OfflineVmwareMigration: get disk offering
+        List<String> storageTags = storageMgr.getStoragePoolTagList(destPool.getId());
+        for(Volume vol : vols) {
+            DiskOfferingVO diskOffering = _diskOfferingDao.findById(vol.getDiskOfferingId());
+            List<String> volumeTags = StringUtils.csvTagsToList(diskOffering.getTags());
+            if(! matches(volumeTags, storageTags)) {
+                String msg = String.format("destination pool '%s' with tags '%s', does not support the volume diskoffering for volume '%s' (tags: '%s') ",
+                        destPool.getName(),
+                        StringUtils.listToCsvTags(storageTags),
+                        vol.getName(),
+                        StringUtils.listToCsvTags(volumeTags)
+                );
+                throw new CloudRuntimeException(msg);
+            }
+        }
+    }
+
+    static boolean matches(List<String> volumeTags, List<String> storagePoolTags) {
+        // OfflineVmwareMigration: commons collections 4 allows for Collections.containsAll(volumeTags,storagePoolTags);
+        boolean result = true;
+        if (volumeTags != null) {
+            for (String tag : volumeTags) {
+                // there is a volume tags so
+                if (storagePoolTags == null || !storagePoolTags.contains(tag)) {
+                    result = false;
+                    break;
+                }
+            }
+        }
+        return result;
+    }
+
+
+    private void afterStorageMigrationCleanup(StoragePool destPool, VMInstanceVO vm, HostVO srcHost, Long srcClusterId) throws InsufficientCapacityException {
+        setDestinationPoolAndReallocateNetwork(destPool, vm);
+
+        //when start the vm next time, don;'t look at last_host_id, only choose the host based on volume/storage pool
+        vm.setLastHostId(null);
+        vm.setPodIdToDeployIn(destPool.getPodId());
+
+        // If VM was cold migrated between clusters belonging to two different VMware DCs,
+        // unregister the VM from the source host and cleanup the associated VM files.
+        if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
+            afterStorageMigrationVmwareVMcleanup(destPool, vm, srcHost, srcClusterId);
+        }
+    }
+
+    private void setDestinationPoolAndReallocateNetwork(StoragePool destPool, VMInstanceVO vm) throws InsufficientCapacityException {
+        //if the vm is migrated to different pod in basic mode, need to reallocate ip
+
+        if (destPool.getPodId() != null && !destPool.getPodId().equals(vm.getPodIdToDeployIn())) {
+            if (s_logger.isDebugEnabled()) {
+                String msg = String.format("as the pod for vm %s has changed we are reallocating its network", vm.getInstanceName());
+                s_logger.debug(msg);
+            }
+            final DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), destPool.getPodId(), null, null, null, null);
+            final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, null, null, null, null);
+            _networkMgr.reallocate(vmProfile, plan);
+        }
+    }
+
+    private void afterStorageMigrationVmwareVMcleanup(StoragePool destPool, VMInstanceVO vm, HostVO srcHost, Long srcClusterId) {
+        // OfflineVmwareMigration: this should only happen on storage migration, else the guru would already have issued the command
+        final Long destClusterId = destPool.getClusterId();
+        if (srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId)) {
+            final String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
+            final String destDcName = _clusterDetailsDao.getVmwareDcName(destClusterId);
+            if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {
+                removeStaleVmFromSource(vm, srcHost);
+            }
+        }
+    }
+
+    // OfflineVmwareMigration: on port forward refator this to be done in two
+    // OfflineVmwareMigration: command creation in the guru.migrat method
+    // OfflineVmwareMigration: sending up in the attemptHypevisorMigration with execute in sequence (responsibility of the guru)
+    private void removeStaleVmFromSource(VMInstanceVO vm, HostVO srcHost) {
+        s_logger.debug("Since VM's storage was successfully migrated across VMware Datacenters, unregistering VM: " + vm.getInstanceName() +
+                " from source host: " + srcHost.getId());
+        final UnregisterVMCommand uvc = new UnregisterVMCommand(vm.getInstanceName());
+        uvc.setCleanupVmFiles(true);
         try {
-            migrationResult = volumeMgr.storageMigration(profile, destPool);
-
-            if (migrationResult) {
-                //if the vm is migrated to different pod in basic mode, need to reallocate ip
-
-                if (destPool.getPodId() != null && !destPool.getPodId().equals(vm.getPodIdToDeployIn())) {
-                    final DataCenterDeployment plan = new DataCenterDeployment(vm.getDataCenterId(), destPool.getPodId(), null, null, null, null);
-                    final VirtualMachineProfileImpl vmProfile = new VirtualMachineProfileImpl(vm, null, null, null, null);
-                    _networkMgr.reallocate(vmProfile, plan);
-                }
-
-                //when start the vm next time, don;'t look at last_host_id, only choose the host based on volume/storage pool
-                vm.setLastHostId(null);
-                vm.setPodIdToDeployIn(destPool.getPodId());
-
-                // If VM was cold migrated between clusters belonging to two different VMware DCs,
-                // unregister the VM from the source host and cleanup the associated VM files.
-                if (vm.getHypervisorType().equals(HypervisorType.VMware)) {
-                    Long srcClusterId = null;
-                    Long srcHostId = vm.getHostId() != null ? vm.getHostId() : vm.getLastHostId();
-                    if (srcHostId != null) {
-                        HostVO srcHost = _hostDao.findById(srcHostId);
-                        srcClusterId = srcHost.getClusterId();
-                    }
-
-                    final Long destClusterId = destPool.getClusterId();
-                    if (srcClusterId != null && destClusterId != null && ! srcClusterId.equals(destClusterId)) {
-                        final String srcDcName = _clusterDetailsDao.getVmwareDcName(srcClusterId);
-                        final String destDcName = _clusterDetailsDao.getVmwareDcName(destClusterId);
-                        if (srcDcName != null && destDcName != null && !srcDcName.equals(destDcName)) {
-                            s_logger.debug("Since VM's storage was successfully migrated across VMware Datacenters, unregistering VM: " + vm.getInstanceName() +
-                                    " from source host: " + srcHostId);
-                            final UnregisterVMCommand uvc = new UnregisterVMCommand(vm.getInstanceName());
-                            uvc.setCleanupVmFiles(true);
-                            try {
-                                _agentMgr.send(srcHostId, uvc);
-                            } catch (final AgentUnavailableException | OperationTimedoutException e) {
-                                throw new CloudRuntimeException("Failed to unregister VM: " + vm.getInstanceName() + " from source host: " + srcHostId +
-                                        " after successfully migrating VM's storage across VMware Datacenters");
-                            }
-                        }
-                    }
-                }
-
-            } else {
-                s_logger.debug("Storage migration failed");
-            }
-        } catch (final ConcurrentOperationException e) {
-            s_logger.debug("Failed to migration: " + e.toString());
-            throw new CloudRuntimeException("Failed to migration: " + e.toString());
-        } catch (final InsufficientVirtualNetworkCapacityException e) {
-            s_logger.debug("Failed to migration: " + e.toString());
-            throw new CloudRuntimeException("Failed to migration: " + e.toString());
-        } catch (final InsufficientAddressCapacityException e) {
-            s_logger.debug("Failed to migration: " + e.toString());
-            throw new CloudRuntimeException("Failed to migration: " + e.toString());
-        } catch (final InsufficientCapacityException e) {
-            s_logger.debug("Failed to migration: " + e.toString());
-            throw new CloudRuntimeException("Failed to migration: " + e.toString());
-        } catch (final StorageUnavailableException e) {
-            s_logger.debug("Failed to migration: " + e.toString());
-            throw new CloudRuntimeException("Failed to migration: " + e.toString());
-        } finally {
-            try {
-                stateTransitTo(vm, VirtualMachine.Event.AgentReportStopped, null);
-            } catch (final NoTransitionException e) {
-                s_logger.debug("Failed to change vm state: " + e.toString());
-                throw new CloudRuntimeException("Failed to change vm state: " + e.toString());
-            }
+            _agentMgr.send(srcHost.getId(), uvc);
+        } catch (final Exception e) {
+            throw new CloudRuntimeException("Failed to unregister VM: " + vm.getInstanceName() + " from source host: " + srcHost.getId() +
+                    " after successfully migrating VM's storage across VMware Datacenters");
         }
     }
 
@@ -4577,6 +4720,13 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         final User user = context.getCallingUser();
         final Account account = context.getCallingAccount();
 
+        Map<Volume, StoragePool> volumeStorageMap = dest.getStorageForDisks();
+        if (volumeStorageMap != null) {
+            for (Volume vol : volumeStorageMap.keySet()) {
+                checkConcurrentJobsPerDatastoreThreshhold(volumeStorageMap.get(vol));
+            }
+        }
+
         final VMInstanceVO vm = _vmDao.findByUuid(vmUuid);
 
         final List<VmWorkJobVO> pendingWorkJobs = _workJobDao.listPendingWorkJobs(
@@ -4736,6 +4886,16 @@ public class VirtualMachineManagerImpl extends ManagerBase implements VirtualMac
         AsyncJobExecutionContext.getCurrentExecutionContext().joinJob(workJob.getId());
 
         return new VmJobVirtualMachineOutcome(workJob, vm.getId());
+    }
+
+    private void checkConcurrentJobsPerDatastoreThreshhold(final StoragePool destPool) {
+        final Long threshold = VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value();
+        if (threshold != null && threshold > 0) {
+            long count = _jobMgr.countPendingJobs("\"storageid\":\"" + destPool.getUuid() + "\"", MigrateVMCmd.class.getName(), MigrateVolumeCmd.class.getName(), MigrateVolumeCmdByAdmin.class.getName());
+            if (count > threshold) {
+                throw new CloudRuntimeException("Number of concurrent migration jobs per datastore exceeded the threshold: " + threshold.toString() + ". Please try again after some time.");
+            }
+        }
     }
 
     public Outcome<VirtualMachine> migrateVmStorageThroughJobQueue(

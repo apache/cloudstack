@@ -24,7 +24,7 @@ import javax.naming.ConfigurationException;
 
 import com.cloud.cluster.ClusterManager;
 import com.cloud.cluster.ClusterManagerListener;
-import com.cloud.cluster.ManagementServerHost;
+import org.apache.cloudstack.management.ManagementServerHost;
 
 public class ClusteredVirtualMachineManagerImpl extends VirtualMachineManagerImpl implements ClusterManagerListener {
 

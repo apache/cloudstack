@@ -1408,6 +1408,19 @@ public class VolumeServiceImpl implements VolumeService {
 
     @Override
     public AsyncCallFuture<VolumeApiResult> copyVolume(VolumeInfo srcVolume, DataStore destStore) {
+        if (s_logger.isDebugEnabled()) {
+            DataStore srcStore = srcVolume.getDataStore();
+            String srcRole = (srcStore != null && srcStore.getRole() != null ? srcVolume.getDataStore().getRole().toString() : "<unknown role>");
+
+            String msg = String.format("copying %s(id=%d, role=%s) to %s (id=%d, role=%s)"
+                    , srcVolume.getName()
+                    , srcVolume.getId()
+                    , srcRole
+                    , destStore.getName()
+                    , destStore.getId()
+                    , destStore.getRole());
+            s_logger.debug(msg);
+        }
 
         if (srcVolume.getState() == Volume.State.Uploaded) {
             return copyVolumeFromImageToPrimary(srcVolume, destStore);
@@ -1416,6 +1429,8 @@ public class VolumeServiceImpl implements VolumeService {
         if (destStore.getRole() == DataStoreRole.Image) {
             return copyVolumeFromPrimaryToImage(srcVolume, destStore);
         }
+
+        // OfflineVmwareMigration: aren't we missing secondary to secondary in this logic?
 
         AsyncCallFuture<VolumeApiResult> future = new AsyncCallFuture<VolumeApiResult>();
         VolumeApiResult res = new VolumeApiResult(srcVolume);
@@ -1438,7 +1453,10 @@ public class VolumeServiceImpl implements VolumeService {
             caller.setCallback(caller.getTarget().copyVolumeCallBack(null, null)).setContext(context);
             motionSrv.copyAsync(srcVolume, destVolume, caller);
         } catch (Exception e) {
-            s_logger.debug("Failed to copy volume" + e);
+            s_logger.error("Failed to copy volume:" + e);
+            if(s_logger.isDebugEnabled()) {
+                s_logger.debug("Failed to copy volume.", e);
+            }
             res.setResult(e.toString());
             future.complete(res);
         }
@@ -1461,27 +1479,25 @@ public class VolumeServiceImpl implements VolumeService {
                 AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(destVolume);
                 destroyFuture.get();
                 future.complete(res);
-                return null;
-            }
-            srcVolume.processEvent(Event.OperationSuccessed);
-            destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
-            volDao.updateUuid(srcVolume.getId(), destVolume.getId());
-            _volumeStoreDao.updateVolumeId(srcVolume.getId(), destVolume.getId());
-            try {
-                destroyVolume(srcVolume.getId());
-                srcVolume = volFactory.getVolume(srcVolume.getId());
-                AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(srcVolume);
-                // If volume destroy fails, this could be because of vdi is still in use state, so wait and retry.
-                if (destroyFuture.get().isFailed()) {
-                    Thread.sleep(5 * 1000);
-                    destroyFuture = expungeVolumeAsync(srcVolume);
-                    destroyFuture.get();
+            } else {
+                srcVolume.processEvent(Event.OperationSuccessed);
+                destVolume.processEvent(Event.MigrationCopySucceeded, result.getAnswer());
+                volDao.updateUuid(srcVolume.getId(), destVolume.getId());
+                try {
+                    destroyVolume(srcVolume.getId());
+                    srcVolume = volFactory.getVolume(srcVolume.getId());
+                    AsyncCallFuture<VolumeApiResult> destroyFuture = expungeVolumeAsync(srcVolume);
+                    // If volume destroy fails, this could be because of vdi is still in use state, so wait and retry.
+                    if (destroyFuture.get().isFailed()) {
+                        Thread.sleep(5 * 1000);
+                        destroyFuture = expungeVolumeAsync(srcVolume);
+                        destroyFuture.get();
+                    }
+                    future.complete(res);
+                } catch (Exception e) {
+                    s_logger.debug("failed to clean up volume on storage", e);
                 }
-                future.complete(res);
-            } catch (Exception e) {
-                s_logger.debug("failed to clean up volume on storage", e);
             }
-            return null;
         } catch (Exception e) {
             s_logger.debug("Failed to process copy volume callback", e);
             res.setResult(e.toString());

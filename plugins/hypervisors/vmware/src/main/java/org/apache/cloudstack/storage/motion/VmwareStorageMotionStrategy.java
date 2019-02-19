@@ -20,11 +20,39 @@
 package org.apache.cloudstack.storage.motion;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.agent.AgentManager;
+import com.cloud.agent.api.Answer;
+import com.cloud.agent.api.MigrateWithStorageAnswer;
+import com.cloud.agent.api.MigrateWithStorageCommand;
+import com.cloud.agent.api.storage.MigrateVolumeAnswer;
+import com.cloud.agent.api.storage.MigrateVolumeCommand;
+import com.cloud.agent.api.to.DataObjectType;
+import com.cloud.agent.api.to.StorageFilerTO;
+import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.agent.api.to.VolumeTO;
+import com.cloud.exception.AgentUnavailableException;
+import com.cloud.exception.OperationTimedoutException;
+import com.cloud.host.Host;
+import com.cloud.host.HostVO;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.hypervisor.Hypervisor.HypervisorType;
+import com.cloud.storage.DataStoreRole;
+import com.cloud.storage.ScopeType;
+import com.cloud.storage.StoragePool;
+import com.cloud.storage.Volume;
+import com.cloud.storage.VolumeVO;
+import com.cloud.storage.dao.VolumeDao;
+import com.cloud.utils.Pair;
+import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.engine.subsystem.api.storage.CopyCommandResult;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataMotionStrategy;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataObject;
@@ -37,25 +65,6 @@ import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import com.cloud.agent.AgentManager;
-import com.cloud.agent.api.Answer;
-import com.cloud.agent.api.MigrateWithStorageAnswer;
-import com.cloud.agent.api.MigrateWithStorageCommand;
-import com.cloud.agent.api.to.StorageFilerTO;
-import com.cloud.agent.api.to.VirtualMachineTO;
-import com.cloud.agent.api.to.VolumeTO;
-import com.cloud.exception.AgentUnavailableException;
-import com.cloud.exception.OperationTimedoutException;
-import com.cloud.host.Host;
-import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.storage.StoragePool;
-import com.cloud.storage.VolumeVO;
-import com.cloud.storage.dao.VolumeDao;
-import com.cloud.utils.Pair;
-import com.cloud.utils.exception.CloudRuntimeException;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
 public class VmwareStorageMotionStrategy implements DataMotionStrategy {
@@ -70,10 +79,75 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
     PrimaryDataStoreDao storagePoolDao;
     @Inject
     VMInstanceDao instanceDao;
+    @Inject
+    private HostDao hostDao;
 
     @Override
     public StrategyPriority canHandle(DataObject srcData, DataObject destData) {
+        // OfflineVmwareMigration: return StrategyPriority.HYPERVISOR when destData is in a storage pool in the same vmware-cluster and both are volumes
+        if (isOnVmware(srcData, destData)
+                && isOnPrimary(srcData, destData)
+                && isVolumesOnly(srcData, destData)
+                && isDettached(srcData)
+                && isIntraCluster(srcData, destData)
+                && isStoreScopeEqual(srcData, destData)) {
+            if (s_logger.isDebugEnabled()) {
+                String msg = String.format("%s can handle the request because %d(%s) and %d(%s) share the VMware cluster %s (== %s)"
+                        , this.getClass()
+                        , srcData.getId()
+                        , srcData.getUuid()
+                        , destData.getId()
+                        , destData.getUuid()
+                        , storagePoolDao.findById(srcData.getDataStore().getId()).getClusterId()
+                        , storagePoolDao.findById(destData.getDataStore().getId()).getClusterId());
+                s_logger.debug(msg);
+            }
+            return StrategyPriority.HYPERVISOR;
+        }
         return StrategyPriority.CANT_HANDLE;
+    }
+
+    private boolean isDettached(DataObject srcData) {
+        VolumeVO volume = volDao.findById(srcData.getId());
+        return volume.getInstanceId() == null;
+    }
+
+    private boolean isVolumesOnly(DataObject srcData, DataObject destData) {
+        return DataObjectType.VOLUME.equals(srcData.getType())
+                && DataObjectType.VOLUME.equals(destData.getType());
+    }
+
+    private boolean isOnPrimary(DataObject srcData, DataObject destData) {
+        return DataStoreRole.Primary.equals(srcData.getDataStore().getRole())
+                && DataStoreRole.Primary.equals(destData.getDataStore().getRole());
+    }
+
+    private boolean isOnVmware(DataObject srcData, DataObject destData) {
+        return HypervisorType.VMware.equals(srcData.getTO().getHypervisorType())
+                && HypervisorType.VMware.equals(destData.getTO().getHypervisorType());
+    }
+
+    private boolean isIntraCluster(DataObject srcData, DataObject destData) {
+        DataStore srcStore = srcData.getDataStore();
+        StoragePool srcPool = storagePoolDao.findById(srcStore.getId());
+        DataStore destStore = destData.getDataStore();
+        StoragePool destPool = storagePoolDao.findById(destStore.getId());
+        return srcPool.getClusterId().equals(destPool.getClusterId());
+    }
+
+    /**
+     * Ensure that the scope of source and destination storage pools match
+     *
+     * @param srcData
+     * @param destData
+     * @return
+     */
+    private boolean isStoreScopeEqual(DataObject srcData, DataObject destData) {
+        DataStore srcStore = srcData.getDataStore();
+        DataStore destStore = destData.getDataStore();
+        String msg = String.format("Storage scope of source pool is %s and of destination pool is %s", srcStore.getScope().toString(), destStore.getScope().toString());
+        s_logger.debug(msg);
+        return srcStore.getScope().getScopeType() == (destStore.getScope().getScopeType());
     }
 
     @Override
@@ -85,9 +159,96 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         return StrategyPriority.CANT_HANDLE;
     }
 
+    /**
+     * the Vmware storageMotion strategy allows to copy to a destination pool but not to a destination host
+     *
+     * @param srcData  volume to move
+     * @param destData volume description as intended after the move
+     * @param destHost null or else
+     * @param callback where to report completion or failure to
+     */
     @Override
     public void copyAsync(DataObject srcData, DataObject destData, Host destHost, AsyncCompletionCallback<CopyCommandResult> callback) {
-        throw new UnsupportedOperationException();
+        if (destHost != null) {
+            String format = "%s cannot target a host in moving an object from {%s}\n to {%s}";
+            String msg = String.format(format
+                    , this.getClass().getName()
+                    , srcData.toString()
+                    , destData.toString()
+            );
+            s_logger.error(msg);
+            throw new CloudRuntimeException(msg);
+        }
+        // OfflineVmwareMigration: extract the destination pool from destData and construct a migrateVolume command
+        if (!isOnPrimary(srcData, destData)) {
+            // OfflineVmwareMigration: we shouldn't be here as we would have refused in the canHandle call
+            throw new UnsupportedOperationException();
+        }
+        StoragePool sourcePool = (StoragePool) srcData.getDataStore();
+        StoragePool targetPool = (StoragePool) destData.getDataStore();
+        MigrateVolumeCommand cmd = new MigrateVolumeCommand(srcData.getId()
+                , srcData.getTO().getPath()
+                , sourcePool
+                , targetPool);
+        // OfflineVmwareMigration: should be ((StoragePool)srcData.getDataStore()).getHypervisor() but that is NULL, so hardcoding
+        Answer answer;
+        ScopeType scopeType = srcData.getDataStore().getScope().getScopeType();
+        if (ScopeType.CLUSTER == scopeType) {
+            // Find Volume source cluster and select any Vmware hypervisor host to attach worker VM
+            Long hostId = findSuitableHostIdForWorkerVmPlacement(sourcePool.getClusterId());
+            if (hostId == null) {
+                throw new CloudRuntimeException("Offline Migration failed, unable to find suitable host for worker VM placement in cluster: " + sourcePool.getName());
+            }
+            answer = agentMgr.easySend(hostId, cmd);
+        } else {
+            answer = agentMgr.sendTo(sourcePool.getDataCenterId(), HypervisorType.VMware, cmd);
+        }
+        updateVolumeAfterMigration(answer, srcData, destData);
+        CopyCommandResult result = new CopyCommandResult(null, answer);
+        callback.complete(result);
+    }
+
+    /**
+     * Selects a host from the cluster housing the source storage pool
+     * Assumption is that Primary Storage is cluster-wide
+     * <p>
+     * returns any host ID within the cluster if storage-pool is cluster-wide, and exception is thrown otherwise
+     *
+     * @param clusterId
+     * @return
+     */
+    private Long findSuitableHostIdForWorkerVmPlacement(Long clusterId) {
+        List<HostVO> hostLists = hostDao.findByClusterId(clusterId);
+        Long hostId = null;
+        for (HostVO hostVO : hostLists) {
+            if (hostVO.getHypervisorType().equals(HypervisorType.VMware) && hostVO.getStatus() == Status.Up) {
+                hostId = hostVO.getId();
+                break;
+            }
+        }
+        return hostId;
+    }
+
+    private void updateVolumeAfterMigration(Answer answer, DataObject srcData, DataObject destData) {
+        VolumeVO destinationVO = volDao.findById(destData.getId());
+        if (!(answer instanceof MigrateVolumeAnswer)) {
+            // OfflineVmwareMigration: reset states and such
+            VolumeVO sourceVO = volDao.findById(srcData.getId());
+            sourceVO.setState(Volume.State.Ready);
+            volDao.update(sourceVO.getId(), sourceVO);
+            destinationVO.setState(Volume.State.Expunged);
+            destinationVO.setRemoved(new Date());
+            volDao.update(destinationVO.getId(), destinationVO);
+            throw new CloudRuntimeException("unexpected answer from hypervisor agent: " + answer.getDetails());
+        }
+        MigrateVolumeAnswer ans = (MigrateVolumeAnswer) answer;
+        if (s_logger.isDebugEnabled()) {
+            String format = "retrieved '%s' as new path for volume(%d)";
+            s_logger.debug(String.format(format, ans.getVolumePath(), destData.getId()));
+        }
+        // OfflineVmwareMigration: update the volume with new pool/volume path
+        destinationVO.setPath(ans.getVolumePath());
+        volDao.update(destinationVO.getId(), destinationVO);
     }
 
     @Override
@@ -124,7 +285,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
                 VolumeInfo volume = entry.getKey();
                 VolumeTO volumeTo = new VolumeTO(volume, storagePoolDao.findById(volume.getPoolId()));
-                StorageFilerTO filerTo = new StorageFilerTO((StoragePool)entry.getValue());
+                StorageFilerTO filerTo = new StorageFilerTO((StoragePool) entry.getValue());
                 volumeToFilerto.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
             }
 
@@ -133,7 +294,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             //      Run validations against target!!
             // 2. Complete the process. Update the volume details.
             MigrateWithStorageCommand migrateWithStorageCmd = new MigrateWithStorageCommand(to, volumeToFilerto, destHost.getGuid());
-            MigrateWithStorageAnswer migrateWithStorageAnswer = (MigrateWithStorageAnswer)agentMgr.send(srcHost.getId(), migrateWithStorageCmd);
+            MigrateWithStorageAnswer migrateWithStorageAnswer = (MigrateWithStorageAnswer) agentMgr.send(srcHost.getId(), migrateWithStorageCmd);
             if (migrateWithStorageAnswer == null) {
                 s_logger.error("Migration with storage of vm " + vm + " to host " + destHost + " failed.");
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
@@ -162,12 +323,12 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
             for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
                 VolumeInfo volume = entry.getKey();
                 VolumeTO volumeTo = new VolumeTO(volume, storagePoolDao.findById(volume.getPoolId()));
-                StorageFilerTO filerTo = new StorageFilerTO((StoragePool)entry.getValue());
+                StorageFilerTO filerTo = new StorageFilerTO((StoragePool) entry.getValue());
                 volumeToFilerto.add(new Pair<VolumeTO, StorageFilerTO>(volumeTo, filerTo));
             }
 
             MigrateWithStorageCommand command = new MigrateWithStorageCommand(to, volumeToFilerto, destHost.getGuid());
-            MigrateWithStorageAnswer answer = (MigrateWithStorageAnswer)agentMgr.send(srcHost.getId(), command);
+            MigrateWithStorageAnswer answer = (MigrateWithStorageAnswer) agentMgr.send(srcHost.getId(), command);
             if (answer == null) {
                 s_logger.error("Migration with storage of vm " + vm + " failed.");
                 throw new CloudRuntimeException("Error while migrating the vm " + vm + " to host " + destHost);
@@ -190,7 +351,7 @@ public class VmwareStorageMotionStrategy implements DataMotionStrategy {
         for (Map.Entry<VolumeInfo, DataStore> entry : volumeToPool.entrySet()) {
             boolean updated = false;
             VolumeInfo volume = entry.getKey();
-            StoragePool pool = (StoragePool)entry.getValue();
+            StoragePool pool = (StoragePool) entry.getValue();
             for (VolumeObjectTO volumeTo : volumeTos) {
                 if (volume.getId() == volumeTo.getId()) {
                     VolumeVO volumeVO = volDao.findById(volume.getId());

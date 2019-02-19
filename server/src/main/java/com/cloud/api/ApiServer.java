@@ -19,7 +19,6 @@ package com.cloud.api;
 import com.cloud.api.dispatch.DispatchChainFactory;
 import com.cloud.api.dispatch.DispatchTask;
 import com.cloud.api.response.ApiResponseSerializer;
-import com.cloud.configuration.Config;
 import com.cloud.domain.Domain;
 import com.cloud.domain.DomainVO;
 import com.cloud.domain.dao.DomainDao;
@@ -35,6 +34,7 @@ import com.cloud.exception.RequestLimitException;
 import com.cloud.exception.ResourceAllocationException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.exception.UnavailableCommandException;
+import com.cloud.storage.VolumeApiService;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
 import com.cloud.user.DomainManager;
@@ -44,7 +44,6 @@ import com.cloud.user.UserVO;
 import com.cloud.utils.ConstantTimeComparator;
 import com.cloud.utils.DateUtil;
 import com.cloud.utils.HttpUtils;
-import com.cloud.utils.NumbersUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.ReflectUtil;
 import com.cloud.utils.StringUtils;
@@ -54,7 +53,6 @@ import com.cloud.utils.component.ManagerBase;
 import com.cloud.utils.component.PluggableService;
 import com.cloud.utils.concurrency.NamedThreadFactory;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.db.UUIDManager;
 import com.cloud.utils.exception.CloudRuntimeException;
@@ -74,14 +72,10 @@ import org.apache.cloudstack.api.ResponseObject;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.auth.APIAuthenticationManager;
-import org.apache.cloudstack.api.command.admin.account.ListAccountsCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.host.ListHostsCmd;
 import org.apache.cloudstack.api.command.admin.router.ListRoutersCmd;
 import org.apache.cloudstack.api.command.admin.storage.ListStoragePoolsCmd;
 import org.apache.cloudstack.api.command.admin.user.ListUsersCmd;
-import org.apache.cloudstack.api.command.admin.vm.ListVMsCmdByAdmin;
-import org.apache.cloudstack.api.command.admin.volume.ListVolumesCmdByAdmin;
-import org.apache.cloudstack.api.command.admin.zone.ListZonesCmdByAdmin;
 import org.apache.cloudstack.api.command.user.account.ListAccountsCmd;
 import org.apache.cloudstack.api.command.user.account.ListProjectAccountsCmd;
 import org.apache.cloudstack.api.command.user.event.ListEventsCmd;
@@ -104,8 +98,6 @@ import org.apache.cloudstack.config.ApiServiceConfiguration;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.framework.config.ConfigKey;
 import org.apache.cloudstack.framework.config.Configurable;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.framework.config.impl.ConfigurationVO;
 import org.apache.cloudstack.framework.events.EventBus;
 import org.apache.cloudstack.framework.events.EventBusException;
 import org.apache.cloudstack.framework.jobs.AsyncJob;
@@ -213,8 +205,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Inject
     private AsyncJobManager asyncMgr;
     @Inject
-    private ConfigurationDao configDao;
-    @Inject
     private EntityManager entityMgr;
     @Inject
     private APIAuthenticationManager authManager;
@@ -232,13 +222,59 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     private static ExecutorService s_executor = new ThreadPoolExecutor(10, 150, 60, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), new NamedThreadFactory(
             "ApiServer"));
 
-    static final ConfigKey<Boolean> EnableSecureSessionCookie = new ConfigKey<Boolean>("Advanced", Boolean.class, "enable.secure.session.cookie", "false",
-            "Session cookie is marked as secure if this is enabled. Secure cookies only work when HTTPS is used.", false);
-
-    static final ConfigKey<String> JSONcontentType = new ConfigKey<String>(String.class, "json.content.type", "Advanced", "application/json; charset=UTF-8",
-            "Http response content type for .js files (default is text/javascript)", false, ConfigKey.Scope.Global, null);
     @Inject
     private MessageBus messageBus;
+
+    private static final ConfigKey<Integer> IntegrationAPIPort = new ConfigKey<Integer>("Advanced"
+            , Integer.class
+            , "integration.api.port"
+            , "8096"
+            , "Default API port"
+            , false
+            , ConfigKey.Scope.Global);
+    private static final ConfigKey<Long> ConcurrentSnapshotsThresholdPerHost = new ConfigKey<Long>("Advanced"
+            , Long.class
+            , "concurrent.snapshots.threshold.perhost"
+            , null
+            , "Limits number of snapshots that can be handled by the host concurrently; default is NULL - unlimited"
+            , true // not sure if this is to be dynamic
+            , ConfigKey.Scope.Global);
+    private static final ConfigKey<Boolean> EncodeApiResponse = new ConfigKey<Boolean>("Advanced"
+            , Boolean.class
+            , "encode.api.response"
+            , "false"
+            , "Do URL encoding for the api response, false by default"
+            , false
+            , ConfigKey.Scope.Global);
+    static final ConfigKey<String> JSONcontentType = new ConfigKey<String>( "Advanced"
+            , String.class
+            , "json.content.type"
+            , "application/json; charset=UTF-8"
+            , "Http response content type for .js files (default is text/javascript)"
+            , false
+            , ConfigKey.Scope.Global);
+    static final ConfigKey<Boolean> EnableSecureSessionCookie = new ConfigKey<Boolean>("Advanced"
+            , Boolean.class
+            , "enable.secure.session.cookie"
+            , "false"
+            , "Session cookie is marked as secure if this is enabled. Secure cookies only work when HTTPS is used."
+            , false
+            , ConfigKey.Scope.Global);
+    private static final ConfigKey<String> JSONDefaultContentType = new ConfigKey<String> ("Advanced"
+            , String.class
+            , "json.content.type"
+            , "application/json; charset=UTF-8"
+            , "Http response content type for JSON"
+            , false
+            , ConfigKey.Scope.Global);
+
+    private static final ConfigKey<Boolean> UseEventAccountInfo = new ConfigKey<Boolean>( "advanced"
+            , Boolean.class
+            , "event.accountinfo"
+            , "false"
+            , "use account info in event logging"
+            , true
+            , ConfigKey.Scope.Global);
 
     @Override
     public boolean configure(final String name, final Map<String, Object> params) throws ConfigurationException {
@@ -309,8 +345,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         eventDescription.put("cmdInfo", job.getCmdInfo());
         eventDescription.put("status", "" + job.getStatus() );
         // If the event.accountinfo boolean value is set, get the human readable value for the username / domainname
-        Map<String, String> configs = configDao.getConfiguration("management-server", new HashMap<String, String>());
-        if (Boolean.valueOf(configs.get("event.accountinfo"))) {
+        if (UseEventAccountInfo.value()) {
             DomainVO domain = domainDao.findById(jobOwner.getDomainId());
             eventDescription.put("username", userJobOwner.getUsername());
             eventDescription.put("accountname", jobOwner.getAccountName());
@@ -329,27 +364,20 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
     @Override
     public boolean start() {
         Security.addProvider(new BouncyCastleProvider());
-        Integer apiPort = null; // api port, null by default
-        final SearchCriteria<ConfigurationVO> sc = configDao.createSearchCriteria();
-        sc.addAnd("name", SearchCriteria.Op.EQ, Config.IntegrationAPIPort.key());
-        final List<ConfigurationVO> values = configDao.search(sc, null);
-        if ((values != null) && (values.size() > 0)) {
-            final ConfigurationVO apiPortConfig = values.get(0);
-            if (apiPortConfig.getValue() != null) {
-                apiPort = Integer.parseInt(apiPortConfig.getValue());
-                apiPort = (apiPort <= 0) ? null : apiPort;
-            }
+        Integer apiPort = IntegrationAPIPort.value(); // api port, null by default
+
+        final Long snapshotLimit = ConcurrentSnapshotsThresholdPerHost.value();
+        if (snapshotLimit == null || snapshotLimit.longValue() <= 0) {
+            s_logger.debug("Global concurrent snapshot config parameter " + ConcurrentSnapshotsThresholdPerHost.value() + " is less or equal 0; defaulting to unlimited");
+        } else {
+            dispatcher.setCreateSnapshotQueueSizeLimit(snapshotLimit);
         }
 
-        final Map<String, String> configs = configDao.getConfiguration();
-        final String strSnapshotLimit = configs.get(Config.ConcurrentSnapshotsThresholdPerHost.key());
-        if (strSnapshotLimit != null) {
-            final Long snapshotLimit = NumbersUtil.parseLong(strSnapshotLimit, 1L);
-            if (snapshotLimit.longValue() <= 0) {
-                s_logger.debug("Global config parameter " + Config.ConcurrentSnapshotsThresholdPerHost.toString() + " is less or equal 0; defaulting to unlimited");
-            } else {
-                dispatcher.setCreateSnapshotQueueSizeLimit(snapshotLimit);
-            }
+        final Long migrationLimit = VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value();
+        if (migrationLimit == null || migrationLimit.longValue() <= 0) {
+            s_logger.debug("Global concurrent migration config parameter " + VolumeApiService.ConcurrentMigrationsThresholdPerDatastore.value() + " is less or equal 0; defaulting to unlimited");
+        } else {
+            dispatcher.setMigrateQueueSizeLimit(migrationLimit);
         }
 
         final Set<Class<?>> cmdClasses = new HashSet<Class<?>>();
@@ -376,7 +404,7 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
 
         }
 
-        setEncodeApiResponse(Boolean.valueOf(configDao.getValue(Config.EncodeApiResponse.key())));
+        setEncodeApiResponse(EncodeApiResponse.value());
 
         if (apiPort != null) {
             final ListenerThread listenerThread = new ListenerThread(this, apiPort);
@@ -732,14 +760,13 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
             // if the command is of the listXXXCommand, we will need to also return the
             // the job id and status if possible
             // For those listXXXCommand which we have already created DB views, this step is not needed since async job is joined in their db views.
-            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListVMsCmdByAdmin) && !(cmdObj instanceof ListRoutersCmd)
+            if (cmdObj instanceof BaseListCmd && !(cmdObj instanceof ListVMsCmd) && !(cmdObj instanceof ListRoutersCmd)
                     && !(cmdObj instanceof ListSecurityGroupsCmd) &&
                     !(cmdObj instanceof ListTagsCmd) && !(cmdObj instanceof ListEventsCmd) && !(cmdObj instanceof ListVMGroupsCmd) && !(cmdObj instanceof ListProjectsCmd) &&
                     !(cmdObj instanceof ListProjectAccountsCmd) && !(cmdObj instanceof ListProjectInvitationsCmd) && !(cmdObj instanceof ListHostsCmd) &&
-                    !(cmdObj instanceof ListVolumesCmd) && !(cmdObj instanceof ListVolumesCmdByAdmin) && !(cmdObj instanceof ListUsersCmd) && !(cmdObj instanceof ListAccountsCmd)
-                    && !(cmdObj instanceof ListAccountsCmdByAdmin) &&
-                    !(cmdObj instanceof ListStoragePoolsCmd) && !(cmdObj instanceof ListDiskOfferingsCmd) && !(cmdObj instanceof ListServiceOfferingsCmd) &&
-                    !(cmdObj instanceof ListZonesCmd) && !(cmdObj instanceof ListZonesCmdByAdmin)) {
+                    !(cmdObj instanceof ListVolumesCmd) && !(cmdObj instanceof ListUsersCmd) && !(cmdObj instanceof ListAccountsCmd)
+                    && !(cmdObj instanceof ListStoragePoolsCmd) && !(cmdObj instanceof ListDiskOfferingsCmd) && !(cmdObj instanceof ListServiceOfferingsCmd) &&
+                    !(cmdObj instanceof ListZonesCmd)) {
                 buildAsyncListResponse((BaseListCmd)cmdObj, caller);
             }
 
@@ -1205,16 +1232,6 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         }
     }
 
-    @Override
-    public String getConfigComponentName() {
-        return ApiServer.class.getSimpleName();
-    }
-
-    @Override
-    public ConfigKey<?>[] getConfigKeys() {
-        return new ConfigKey<?>[] { EnableSecureSessionCookie, JSONcontentType };
-    }
-
     // FIXME: the following two threads are copied from
     // http://svn.apache.org/repos/asf/httpcomponents/httpcore/trunk/httpcore/src/examples/org/apache/http/examples/ElementalHttpServer.java
     // we have to cite a license if we are using this code directly, so we need to add the appropriate citation or
@@ -1418,4 +1435,19 @@ public class ApiServer extends ManagerBase implements HttpRequestHandler, ApiSer
         ApiServer.encodeApiResponse = encodeApiResponse;
     }
 
+    @Override
+    public String getConfigComponentName() {
+        return ApiServer.class.getSimpleName();
+    }
+
+    @Override
+    public ConfigKey<?>[] getConfigKeys() {
+        return new ConfigKey<?>[] {
+                IntegrationAPIPort,
+                ConcurrentSnapshotsThresholdPerHost,
+                EncodeApiResponse,
+                EnableSecureSessionCookie,
+                JSONDefaultContentType
+        };
+    }
 }

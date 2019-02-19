@@ -439,50 +439,10 @@ public class HypervDirectConnectResource extends ServerResourceBase implements S
             return _vrResource.executeRequest((NetworkElementCommand)cmd);
         }if (clazz == CheckSshCommand.class) {
             answer = execute((CheckSshCommand)cmd);
-        } else if (clazz == GetDomRVersionCmd.class) {
-            answer = execute((GetDomRVersionCmd)cmd);
         } else if (cmd instanceof NetworkUsageCommand) {
             answer = execute((NetworkUsageCommand)cmd);
-        } else if (clazz == IpAssocCommand.class) {
-            answer = execute((IpAssocCommand)cmd);
-        } else if (clazz == DnsMasqConfigCommand.class) {
-            return execute((DnsMasqConfigCommand)cmd);
-        } else if (clazz == CreateIpAliasCommand.class) {
-            return execute((CreateIpAliasCommand)cmd);
-        } else if (clazz == DhcpEntryCommand.class) {
-            answer = execute((DhcpEntryCommand)cmd);
-        } else if (clazz == VmDataCommand.class) {
-            answer = execute((VmDataCommand)cmd);
-        } else if (clazz == SavePasswordCommand.class) {
-            answer = execute((SavePasswordCommand)cmd);
-        } else if (clazz == SetFirewallRulesCommand.class) {
-            answer = execute((SetFirewallRulesCommand)cmd);
-        } else if (clazz == LoadBalancerConfigCommand.class) {
-            answer = execute((LoadBalancerConfigCommand)cmd);
-        } else if (clazz == DeleteIpAliasCommand.class) {
-            return execute((DeleteIpAliasCommand)cmd);
         } else if (clazz == PingTestCommand.class) {
             answer = execute((PingTestCommand)cmd);
-        } else if (clazz == SetStaticNatRulesCommand.class) {
-            answer = execute((SetStaticNatRulesCommand)cmd);
-        } else if (clazz == CheckRouterCommand.class) {
-            answer = execute((CheckRouterCommand)cmd);
-        } else if (clazz == SetPortForwardingRulesCommand.class) {
-            answer = execute((SetPortForwardingRulesCommand)cmd);
-        } else if (clazz == SetSourceNatCommand.class) {
-            answer = execute((SetSourceNatCommand)cmd);
-        } else if (clazz == Site2SiteVpnCfgCommand.class) {
-            answer = execute((Site2SiteVpnCfgCommand)cmd);
-        } else if (clazz == CheckS2SVpnConnectionsCommand.class) {
-            answer = execute((CheckS2SVpnConnectionsCommand) cmd);
-        } else if (clazz == RemoteAccessVpnCfgCommand.class) {
-            answer = execute((RemoteAccessVpnCfgCommand) cmd);
-        } else if (clazz == VpnUsersCfgCommand.class) {
-            answer = execute((VpnUsersCfgCommand) cmd);
-        } else if (clazz == SetStaticRouteCommand.class) {
-            answer = execute((SetStaticRouteCommand) cmd);
-        } else if (clazz == SetMonitorServiceCommand.class) {
-            answer = execute((SetMonitorServiceCommand) cmd);
         } else if (clazz == PlugNicCommand.class) {
             answer = execute((PlugNicCommand)cmd);
         } else if (clazz == UnPlugNicCommand.class) {

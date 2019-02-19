@@ -2807,29 +2807,6 @@ public class NfsSecondaryStorageResource extends ServerResourceBase implements S
         return dir;
     }
 
-    protected void umount(String localRootPath, URI uri) {
-        ensureLocalRootPathExists(localRootPath, uri);
-
-        if (!mountExists(localRootPath, uri)) {
-            return;
-        }
-
-        Script command = new Script(!_inSystemVM, "mount", _timeout, s_logger);
-        command.add(localRootPath);
-        String result = command.execute();
-        if (result != null) {
-            // Fedora Core 12 errors out with any -o option executed from java
-            String errMsg = "Unable to umount " + localRootPath + " due to " + result;
-            s_logger.error(errMsg);
-            File file = new File(localRootPath);
-            if (file.exists()) {
-                file.delete();
-            }
-            throw new CloudRuntimeException(errMsg);
-        }
-        s_logger.debug("Successfully umounted " + localRootPath);
-    }
-
     protected void mount(String localRootPath, String remoteDevice, URI uri, Integer nfsVersion) {
         s_logger.debug("mount " + uri.toString() + " on " + localRootPath + ((nfsVersion != null) ? " nfsVersion=" + nfsVersion : ""));
         ensureLocalRootPathExists(localRootPath, uri);

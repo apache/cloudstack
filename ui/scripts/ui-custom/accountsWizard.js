@@ -94,7 +94,7 @@
 
                 $wizard.click(function(event) {
                     var $target = $(event.target);
-                    if ($target.closest('button.next').size()) {
+                    if ($target.closest('button.next').length) {
                         $form.validate();
                         if ($form.valid()) {
                             completeAction();
@@ -104,7 +104,7 @@
                         }
                     }
 
-                    if ($target.closest('button.cancel').size()) {
+                    if ($target.closest('button.cancel').length) {
                         close();
                         return false;
                     }
@@ -112,14 +112,14 @@
 
                 if (ldapStatus) {
                     var $table = $wizard.find('.ldap-account-choice tbody');
-                    $("#label_ldap_group_name").live("keypress", function(event) {
+                    $("#label_ldap_group_name").on("keypress", function(event) {
                         if ($table.find("#tr-groupname-message").length === 0) {
                             $("<tr id='tr-groupname-message'>").appendTo($table).append("<td colspan=\"4\">"+_l('message.ldap.group.import')+"</td>");
                         }
                         $table.find("tr").hide();
                         $table.find("#tr-groupname-message").show();
                     });
-                    $("#label_ldap_group_name").live("blur", function(event) {
+                    $("#label_ldap_group_name").on("blur", function(event) {
                         if (!$(this).val()) {
                             $table.find("tr").show();
                             $table.find("#tr-groupname-message").hide();

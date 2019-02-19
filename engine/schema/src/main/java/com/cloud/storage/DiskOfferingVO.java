@@ -106,16 +106,41 @@ public class DiskOfferingVO implements DiskOffering {
     int sortKey;
 
     @Column(name = "bytes_read_rate")
-    Long bytesReadRate;
+    private Long bytesReadRate;
+
+    @Column(name = "bytes_read_rate_max")
+    private Long bytesReadRateMax;
+
+    @Column(name = "bytes_read_rate_max_length")
+    private Long bytesReadRateMaxLength;
 
     @Column(name = "bytes_write_rate")
-    Long bytesWriteRate;
+    private Long bytesWriteRate;
+
+    @Column(name = "bytes_write_rate_max")
+    private Long bytesWriteRateMax;
+
+    @Column(name = "bytes_write_rate_max_length")
+    private Long bytesWriteRateMaxLength;
 
     @Column(name = "iops_read_rate")
-    Long iopsReadRate;
+    private Long iopsReadRate;
+
+    @Column(name = "iops_read_rate_max")
+    private Long iopsReadRateMax;
+
+    @Column(name = "iops_read_rate_max_length")
+    private Long iopsReadRateMaxLength;
 
     @Column(name = "iops_write_rate")
-    Long iopsWriteRate;
+    private Long iopsWriteRate;
+
+    @Column(name = "iops_write_rate_max")
+    private Long iopsWriteRateMax;
+
+    @Column(name = "iops_write_rate_max_length")
+    private Long iopsWriteRateMaxLength;
+
 
     @Column(name = "cache_mode", updatable = true, nullable = false)
     @Enumerated(value = EnumType.STRING)
@@ -472,9 +497,9 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     @Override
-    public Long getBytesReadRate() {
-        return bytesReadRate;
-    }
+    public Long getBytesReadRate() { return bytesReadRate; }
+
+
 
     @Override
     public void setBytesWriteRate(Long bytesWriteRate) {
@@ -484,6 +509,44 @@ public class DiskOfferingVO implements DiskOffering {
     @Override
     public Long getBytesWriteRate() {
         return bytesWriteRate;
+    }
+
+    @Override
+    public Long getBytesWriteRateMax() {
+        return bytesWriteRateMax;
+    }
+
+    public void setBytesWriteRateMax(Long bytesWriteRateMax) {
+        this.bytesWriteRateMax = bytesWriteRateMax;
+    }
+
+    @Override
+    public Long getBytesWriteRateMaxLength() {
+        return bytesWriteRateMaxLength;
+    }
+
+    public void setBytesWriteRateMaxLength(Long bytesWriteRateMaxLength) {
+        this.bytesWriteRateMaxLength = bytesWriteRateMaxLength;
+    }
+
+    @Override
+    public Long getBytesReadRateMax() {
+        return bytesReadRateMax;
+    }
+
+    @Override
+    public void setBytesReadRateMax(Long bytesReadRateMax) {
+        this.bytesReadRateMax = bytesReadRateMax;
+    }
+
+    @Override
+    public Long getBytesReadRateMaxLength() {
+        return bytesReadRateMaxLength;
+    }
+
+    @Override
+    public void setBytesReadRateMaxLength(Long bytesReadRateMaxLength) {
+        this.bytesReadRateMaxLength = bytesReadRateMaxLength;
     }
 
     @Override
@@ -497,6 +560,26 @@ public class DiskOfferingVO implements DiskOffering {
     }
 
     @Override
+    public Long getIopsReadRateMax() {
+        return iopsReadRateMax;
+    }
+
+    @Override
+    public void setIopsReadRateMax(Long iopsReadRateMax) {
+        this.iopsReadRateMax = iopsReadRateMax;
+    }
+
+    @Override
+    public Long getIopsReadRateMaxLength() {
+        return iopsReadRateMaxLength;
+    }
+
+    @Override
+    public void setIopsReadRateMaxLength(Long iopsReadRateMaxLength) {
+        this.iopsReadRateMaxLength = iopsReadRateMaxLength;
+    }
+
+    @Override
     public void setIopsWriteRate(Long iopsWriteRate) {
         this.iopsWriteRate = iopsWriteRate;
     }
@@ -504,6 +587,26 @@ public class DiskOfferingVO implements DiskOffering {
     @Override
     public Long getIopsWriteRate() {
         return iopsWriteRate;
+    }
+
+    @Override
+    public Long getIopsWriteRateMax() {
+        return iopsWriteRateMax;
+    }
+
+    @Override
+    public void setIopsWriteRateMax(Long iopsWriteRateMax) {
+        this.iopsWriteRateMax = iopsWriteRateMax;
+    }
+
+    @Override
+    public Long getIopsWriteRateMaxLength() {
+        return iopsWriteRateMaxLength;
+    }
+
+    @Override
+    public void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength) {
+        this.iopsWriteRateMaxLength = iopsWriteRateMaxLength;
     }
 
     @Override

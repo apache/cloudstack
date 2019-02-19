@@ -327,6 +327,7 @@ public class TemplateJoinDaoImpl extends GenericDaoBaseWithTagInformation<Templa
         isoResponse.setOsTypeId(iso.getGuestOSUuid());
         isoResponse.setOsTypeName(iso.getGuestOSName());
         isoResponse.setBits(iso.getBits());
+        isoResponse.setPasswordEnabled(iso.isEnablePassword());
 
         // populate owner.
         ApiResponseHelper.populateOwner(isoResponse, iso);

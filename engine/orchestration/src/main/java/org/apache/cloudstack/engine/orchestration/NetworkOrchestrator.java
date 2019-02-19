@@ -230,27 +230,27 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
     @Inject
     EntityManager _entityMgr;
     @Inject
-    DataCenterDao _dcDao = null;
+    DataCenterDao _dcDao;
     @Inject
-    VlanDao _vlanDao = null;
+    VlanDao _vlanDao;
     @Inject
-    IPAddressDao _ipAddressDao = null;
+    IPAddressDao _ipAddressDao;
     @Inject
-    AccountDao _accountDao = null;
+    AccountDao _accountDao;
     @Inject
     ConfigurationDao _configDao;
     @Inject
-    UserVmDao _userVmDao = null;
+    UserVmDao _userVmDao;
     @Inject
     AlertManager _alertMgr;
     @Inject
     ConfigurationManager _configMgr;
     @Inject
-    NetworkOfferingDao _networkOfferingDao = null;
+    NetworkOfferingDao _networkOfferingDao;
     @Inject
-    NetworkDao _networksDao = null;
+    NetworkDao _networksDao;
     @Inject
-    NicDao _nicDao = null;
+    NicDao _nicDao;
     @Inject
     RulesManager _rulesMgr;
     @Inject
@@ -779,7 +779,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                         }
 
                         final int devId = vmNic.getDeviceId();
-                        if (devId > deviceIds.length) {
+                        if (devId >= deviceIds.length) {
                             throw new IllegalArgumentException("Device id for nic is too large: " + vmNic);
                         }
                         if (deviceIds[devId]) {
@@ -858,6 +858,12 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         }
 
         NicVO vo = new NicVO(guru.getName(), vm.getId(), network.getId(), vm.getType());
+
+        DataCenterVO dcVo = _dcDao.findById(network.getDataCenterId());
+        if (dcVo.getNetworkType() == NetworkType.Basic) {
+            configureNicProfileBasedOnRequestedIp(requested, profile, network);
+        }
+
         deviceId = applyProfileToNic(vo, profile, deviceId);
 
         vo = _nicDao.persist(vo);
@@ -867,6 +873,85 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 _networkModel.getNetworkTag(vm.getHypervisorType(), network));
 
         return new Pair<NicProfile, Integer>(vmNic, Integer.valueOf(deviceId));
+    }
+
+    /**
+     * If the requested IPv4 address from the NicProfile was configured then it configures the IPv4 address, Netmask and Gateway to deploy the VM with the requested IP.
+     */
+    protected void configureNicProfileBasedOnRequestedIp(NicProfile requestedNicProfile, NicProfile nicProfile, Network network) {
+        if (requestedNicProfile == null) {
+            return;
+        }
+        String requestedIpv4Address = requestedNicProfile.getRequestedIPv4();
+        if (requestedIpv4Address == null) {
+            return;
+        }
+        if (!NetUtils.isValidIp4(requestedIpv4Address)) {
+            throw new InvalidParameterValueException(String.format("The requested [IPv4 address='%s'] is not a valid IP address", requestedIpv4Address));
+        }
+
+        VlanVO vlanVo = _vlanDao.findByNetworkIdAndIpv4(network.getId(), requestedIpv4Address);
+        if (vlanVo == null) {
+            throw new InvalidParameterValueException(String.format("Trying to configure a Nic with the requested [IPv4='%s'] but cannot find a Vlan for the [network id='%s']",
+                    requestedIpv4Address, network.getId()));
+        }
+
+        String ipv4Gateway = vlanVo.getVlanGateway();
+        String ipv4Netmask = vlanVo.getVlanNetmask();
+
+        if (!NetUtils.isValidIp4(ipv4Gateway)) {
+            throw new InvalidParameterValueException(String.format("The [IPv4Gateway='%s'] from [VlanId='%s'] is not valid", ipv4Gateway, vlanVo.getId()));
+        }
+        if (!NetUtils.isValidIp4Netmask(ipv4Netmask)) {
+            throw new InvalidParameterValueException(String.format("The [IPv4Netmask='%s'] from [VlanId='%s'] is not valid", ipv4Netmask, vlanVo.getId()));
+        }
+
+        acquireLockAndCheckIfIpv4IsFree(network, requestedIpv4Address);
+
+        nicProfile.setIPv4Address(requestedIpv4Address);
+        nicProfile.setIPv4Gateway(ipv4Gateway);
+        nicProfile.setIPv4Netmask(ipv4Netmask);
+
+        if (nicProfile.getMacAddress() == null) {
+            try {
+                String macAddress = _networkModel.getNextAvailableMacAddressInNetwork(network.getId());
+                nicProfile.setMacAddress(macAddress);
+            } catch (InsufficientAddressCapacityException e) {
+                throw new CloudRuntimeException(String.format("Cannot get next available mac address in [network id='%s']", network.getId()), e);
+            }
+        }
+    }
+
+    /**
+     *  Acquires lock in "user_ip_address" and checks if the requested IPv4 address is Free.
+     */
+    protected void acquireLockAndCheckIfIpv4IsFree(Network network, String requestedIpv4Address) {
+        IPAddressVO ipVO = _ipAddressDao.findByIpAndSourceNetworkId(network.getId(), requestedIpv4Address);
+        if (ipVO == null) {
+            throw new InvalidParameterValueException(
+                    String.format("Cannot find IPAddressVO for guest [IPv4 address='%s'] and [network id='%s']", requestedIpv4Address, network.getId()));
+        }
+        try {
+            IPAddressVO lockedIpVO = _ipAddressDao.acquireInLockTable(ipVO.getId());
+            validateLockedRequestedIp(ipVO, lockedIpVO);
+            lockedIpVO.setState(IPAddressVO.State.Allocated);
+            _ipAddressDao.update(lockedIpVO.getId(), lockedIpVO);
+        } finally {
+            _ipAddressDao.releaseFromLockTable(ipVO.getId());
+        }
+    }
+
+    /**
+     * Validates the locked IP, throwing an exeption if the locked IP is null or the locked IP is not in 'Free' state.
+     */
+    protected void validateLockedRequestedIp(IPAddressVO ipVO, IPAddressVO lockedIpVO) {
+        if (lockedIpVO == null) {
+            throw new InvalidParameterValueException(String.format("Cannot acquire guest [IPv4 address='%s'] as it was removed while acquiring lock", ipVO.getAddress()));
+        }
+        if (lockedIpVO.getState() != IPAddressVO.State.Free) {
+            throw new InvalidParameterValueException(
+                    String.format("Cannot acquire guest [IPv4 address='%s']; The Ip address is in [state='%s']", ipVO.getAddress(), lockedIpVO.getState().toString()));
+        }
     }
 
     protected Integer applyProfileToNic(final NicVO vo, final NicProfile profile, Integer deviceId) {
@@ -2153,9 +2238,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
 
         } else if (zone.getNetworkType() == NetworkType.Advanced) {
             if (zone.isSecurityGroupEnabled()) {
-                if (ipv6) {
-                    throw new InvalidParameterValueException("IPv6 is not supported with security group!");
-                }
                 if (isolatedPvlan != null) {
                     throw new InvalidParameterValueException("Isolated Private VLAN is not supported with security group!");
                 }
@@ -2167,9 +2249,6 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
                 if (_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SourceNat)) {
                     throw new InvalidParameterValueException("Service SourceNat is not allowed in security group enabled zone");
                 }
-                if (!_networkModel.areServicesSupportedByNetworkOffering(ntwkOff.getId(), Service.SecurityGroup)) {
-                    throw new InvalidParameterValueException("network must have SecurityGroup provider in security group enabled zone");
-                }
             }
 
             //don't allow eip/elb networks in Advance zone
@@ -2178,8 +2257,8 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
         }
 
-        if (ipv6 && !NetUtils.isValidIp6Cidr(ip6Cidr)) {
-            throw new InvalidParameterValueException("Invalid IPv6 cidr specified");
+        if (ipv6 && NetUtils.getIp6CidrSize(ip6Cidr) != 64) {
+            throw new InvalidParameterValueException("IPv6 subnet should be exactly 64-bits in size");
         }
 
         //TODO(VXLAN): Support VNI specified
@@ -2202,7 +2281,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
             }
             if (! UuidUtils.validateUUID(vlanId)){
                 // For Isolated and L2 networks, don't allow to create network with vlan that already exists in the zone
-                if (ntwkOff.getGuestType() == GuestType.Isolated || ntwkOff.getGuestType() == GuestType.L2) {
+                if (ntwkOff.getGuestType() == GuestType.Isolated || !hasGuestBypassVlanOverlapCheck(bypassVlanOverlapCheck, ntwkOff)) {
                     if (_networksDao.listByZoneAndUriAndGuestType(zoneId, uri.toString(), null).size() > 0) {
                         throw new InvalidParameterValueException("Network with vlan " + vlanId + " already exists or overlaps with other network vlans in zone " + zoneId);
                     } else {
@@ -2390,7 +2469,16 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         return network;
     }
 
-    /**
+  /**
+   * Checks bypass VLAN id/range overlap check during network creation for guest networks
+   * @param bypassVlanOverlapCheck bypass VLAN id/range overlap check
+   * @param ntwkOff network offering
+   */
+  private boolean hasGuestBypassVlanOverlapCheck(final boolean bypassVlanOverlapCheck, final NetworkOfferingVO ntwkOff) {
+    return bypassVlanOverlapCheck && ntwkOff.getGuestType() != GuestType.Isolated;
+  }
+
+  /**
      * Checks for L2 network offering services. Only 2 cases allowed:
      * - No services
      * - User Data service only, provided by ConfigDrive
@@ -3614,6 +3702,7 @@ public class NetworkOrchestrator extends ManagerBase implements NetworkOrchestra
         final DeployDestination dest = new DeployDestination(dc, null, null, host);
 
         NicProfile nic = getNicProfileForVm(network, requested, vm);
+
         //1) allocate nic (if needed) Always allocate if it is a user vm
         if (nic == null || vmProfile.getType() == VirtualMachine.Type.User) {
             final int deviceId = _nicDao.getFreeDeviceId(vm.getId());

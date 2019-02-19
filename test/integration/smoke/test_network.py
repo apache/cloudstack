@@ -110,6 +110,42 @@ class TestPublicIP(cloudstackTestCase):
             cls.user.domainid
         )
 
+        cls.service_offering = ServiceOffering.create(
+            cls.apiclient,
+            cls.services["service_offerings"]["tiny"],
+        )
+
+        cls.hypervisor = testClient.getHypervisorInfo()
+        cls.template = get_test_template(
+            cls.apiclient,
+            cls.zone.id,
+            cls.hypervisor
+        )
+        if cls.template == FAILED:
+            assert False, "get_test_template() failed to return template"
+
+        cls.services["virtual_machine"]["zoneid"] = cls.zone.id
+
+        cls.account_vm = VirtualMachine.create(
+            cls.apiclient,
+            cls.services["virtual_machine"],
+            templateid=cls.template.id,
+            accountid=cls.account.name,
+            domainid=cls.account.domainid,
+            networkids=cls.account_network.id,
+            serviceofferingid=cls.service_offering.id
+        )
+
+        cls.user_vm = VirtualMachine.create(
+            cls.apiclient,
+            cls.services["virtual_machine"],
+            templateid=cls.template.id,
+            accountid=cls.user.name,
+            domainid=cls.user.domainid,
+            networkids=cls.user_network.id,
+            serviceofferingid=cls.service_offering.id
+        )
+
         # Create Source NAT IP addresses
         PublicIPAddress.create(
             cls.apiclient,
@@ -124,6 +160,8 @@ class TestPublicIP(cloudstackTestCase):
             cls.user.domainid
         )
         cls._cleanup = [
+            cls.account_vm,
+            cls.user_vm,
             cls.account_network,
             cls.user_network,
             cls.account,

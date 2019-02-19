@@ -41,7 +41,7 @@ import com.cloud.utils.component.PluggableService;
 // This is the default API access checker that grab's the user's account
 // based on the account type, access is granted
 @Deprecated
-public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIChecker {
+public class StaticRoleBasedAPIAccessChecker extends AdapterBase implements APIAclChecker {
 
     protected static final Logger LOGGER = Logger.getLogger(StaticRoleBasedAPIAccessChecker.class);
 

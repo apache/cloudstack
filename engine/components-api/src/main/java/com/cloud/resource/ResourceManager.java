@@ -38,12 +38,20 @@ import com.cloud.host.Status;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
 import com.cloud.resource.ResourceState.Event;
 import com.cloud.utils.fsm.NoTransitionException;
+import org.apache.cloudstack.framework.config.ConfigKey;
+import org.apache.cloudstack.framework.config.Configurable;
 
 /**
  * ResourceManager manages how physical resources are organized within the
  * CloudStack. It also manages the life cycle of the physical resources.
  */
-public interface ResourceManager extends ResourceService {
+public interface ResourceManager extends ResourceService, Configurable {
+
+    ConfigKey<Integer> HostMaintenanceRetries = new ConfigKey<>("Advanced", Integer.class,
+            "host.maintenance.retries","20",
+            "Number of retries when preparing a host into Maintenance Mode is faulty before failing",
+            true, ConfigKey.Scope.Cluster);
+
     /**
      * Register a listener for different types of resource life cycle events.
      * There can only be one type of listener per type of host.
