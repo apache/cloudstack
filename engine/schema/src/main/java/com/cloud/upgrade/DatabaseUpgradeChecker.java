@@ -16,6 +16,29 @@
 // under the License.
 package com.cloud.upgrade;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import javax.inject.Inject;
+
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
+import org.flywaydb.core.Flyway;
+import org.flywaydb.core.api.FlywayException;
+
+import com.google.common.collect.ImmutableList;
+
+import org.apache.cloudstack.utils.CloudStackVersion;
+
 import com.cloud.upgrade.dao.DbUpgrade;
 import com.cloud.upgrade.dao.Upgrade217to218;
 import com.cloud.upgrade.dao.Upgrade218to22;
@@ -41,34 +64,6 @@ import com.cloud.upgrade.dao.Upgrade305to306;
 import com.cloud.upgrade.dao.Upgrade306to307;
 import com.cloud.upgrade.dao.Upgrade307to410;
 import com.cloud.upgrade.dao.Upgrade30to301;
-import com.cloud.upgrade.dao.Upgrade40to41;
-import com.cloud.upgrade.dao.Upgrade410to420;
-import com.cloud.upgrade.dao.Upgrade41100to41200;
-import com.cloud.upgrade.dao.Upgrade420to421;
-import com.cloud.upgrade.dao.Upgrade421to430;
-import com.cloud.upgrade.dao.Upgrade430to440;
-import com.cloud.upgrade.dao.Upgrade431to440;
-import com.cloud.upgrade.dao.Upgrade432to440;
-import com.cloud.upgrade.dao.Upgrade440to441;
-import com.cloud.upgrade.dao.Upgrade441to442;
-import com.cloud.upgrade.dao.Upgrade442to450;
-import com.cloud.upgrade.dao.Upgrade443to450;
-import com.cloud.upgrade.dao.Upgrade444to450;
-import com.cloud.upgrade.dao.Upgrade450to451;
-import com.cloud.upgrade.dao.Upgrade451to452;
-import com.cloud.upgrade.dao.Upgrade452to460;
-import com.cloud.upgrade.dao.Upgrade453to460;
-import com.cloud.upgrade.dao.Upgrade460to461;
-import com.cloud.upgrade.dao.Upgrade461to470;
-import com.cloud.upgrade.dao.Upgrade470to471;
-import com.cloud.upgrade.dao.Upgrade471to480;
-import com.cloud.upgrade.dao.Upgrade480to481;
-import com.cloud.upgrade.dao.Upgrade481to490;
-import com.cloud.upgrade.dao.Upgrade490to4910;
-import com.cloud.upgrade.dao.Upgrade4910to4920;
-import com.cloud.upgrade.dao.Upgrade4920to4930;
-import com.cloud.upgrade.dao.Upgrade4930to41000;
-import com.cloud.upgrade.dao.Upgrade41000to41100;
 import com.cloud.upgrade.dao.UpgradeSnapshot217to224;
 import com.cloud.upgrade.dao.UpgradeSnapshot223to224;
 import com.cloud.upgrade.dao.VersionDao;
@@ -76,30 +71,11 @@ import com.cloud.upgrade.dao.VersionDaoImpl;
 import com.cloud.upgrade.dao.VersionVO;
 import com.cloud.upgrade.dao.VersionVO.Step;
 import com.cloud.utils.component.SystemIntegrityChecker;
-import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.DbProperties;
+import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.ScriptRunner;
 import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.utils.exception.CloudRuntimeException;
-import com.google.common.collect.ImmutableList;
-import org.apache.cloudstack.utils.CloudStackVersion;
-import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
-import org.flywaydb.core.Flyway;
-import org.flywaydb.core.api.FlywayException;
-
-import javax.inject.Inject;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.Lists.newArrayList;
@@ -121,335 +97,105 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         _upgradeMap.put(CloudStackVersion.parse("2.1.7"),
             new DbUpgrade[] {new Upgrade217to218(), new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade224to225(),
                 new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(),
-                new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(),
-                new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(),
-                new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(),
-                new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(),
-                new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.1.8"),
             new DbUpgrade[] {new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade218to224DomainVlans(),
                 new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),
-                new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(),
-                new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(),
-                new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(),
-                new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(),
-                new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.1.9"),
             new DbUpgrade[] {new Upgrade218to22(), new Upgrade221to222(), new UpgradeSnapshot217to224(), new Upgrade222to224(), new Upgrade218to224DomainVlans(),
                 new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),
-                new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(),
-                new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(),
-                new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(),
-                new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(),
-                new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.1"),
             new DbUpgrade[] {new Upgrade221to222(), new UpgradeSnapshot223to224(), new Upgrade222to224(), new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(),
                 new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(),
-                new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(),
-                new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(),
-                new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(),
-                new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.2"),
             new DbUpgrade[] {new Upgrade222to224(), new UpgradeSnapshot223to224(), new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229(),
                 new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(),
-                new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(),
-                new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(),
-                new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(),
-                new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.3"),
             new DbUpgrade[] {new Upgrade222to224(), new UpgradeSnapshot223to224(), new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229(),
                 new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(),
-                new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(),
-                new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(),
-                new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(),
-                new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.4"),
             new DbUpgrade[] {new Upgrade224to225(), new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(),
-                new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(),
-                new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(),
-                new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(),
-                new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(),
-                new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.5"),
             new DbUpgrade[] {new Upgrade225to226(), new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(),
-                new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(),
-                new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(),
-                new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(),
-                new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(),
-                new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.6"),
             new DbUpgrade[] {new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(),
-                new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(),
-                new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(),
-                new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(),
-                new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.7"),
             new DbUpgrade[] {new Upgrade227to228(), new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(),
-                new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(),
-                new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(),
-                new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(),
-                new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.8"),
             new DbUpgrade[] {new Upgrade228to229(), new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(),
-                new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(),
-                new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(),
-                new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(),
-                new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.9"),
             new DbUpgrade[] {new Upgrade229to2210(), new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(),
-                new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(),
-                new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(),
-                new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(),
-                new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.10"),
             new DbUpgrade[] {new Upgrade2210to2211(), new Upgrade2211to2212(), new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(),
-                new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(),
-                new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(),
-                new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.12"),
-            new DbUpgrade[] {new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(),
-                new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(),
-                new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(),
-                new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(),
-                new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+            new DbUpgrade[] {new Upgrade2212to2213(), new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.13"),
-            new DbUpgrade[] {new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(),
-                new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(),
-                new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(),
-                new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(),
-                new Upgrade41000to41100(), new Upgrade41100to41200()});
+            new DbUpgrade[] {new Upgrade2213to2214(), new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.14"),
-            new DbUpgrade[] {new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(),
-                new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(),
-                new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(),
-                new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+            new DbUpgrade[] {new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("3.0.0"),
-            new DbUpgrade[] {new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(),
-                new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(),
-                new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(),
-                new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+            new DbUpgrade[] {new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("3.0.1"),
-            new DbUpgrade[] {new Upgrade301to302(), new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(),
-                new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(),
-                new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(),
-                new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+            new DbUpgrade[] {new Upgrade301to302(), new Upgrade302to40()});
 
         _upgradeMap.put(CloudStackVersion.parse("3.0.2"),
-            new DbUpgrade[] {new Upgrade302to40(), new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(),
-                new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(),
-                new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.0.0"),
-            new DbUpgrade[] {new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(),
-                new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(),
-                new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.0.1"),
-            new DbUpgrade[] {new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(),
-                new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(),
-                new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.0.2"),
-            new DbUpgrade[] {new Upgrade40to41(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(),
-                new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(),
-                new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.1.0"),
-            new DbUpgrade[] {new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(),
-                new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(),
-                new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(),
-                new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.1.1"),
-            new DbUpgrade[] {new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(),
-                new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(),
-                new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(),
-                new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.2.0"),
-            new DbUpgrade[] {new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(),
-                new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(),
-                new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(),
-                new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.2.1"),
-            new DbUpgrade[] {new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(),
-                new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(),
-                new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.3.0"),
-            new DbUpgrade[] {new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(),
-                new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(),
-                new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.3.1"),
-            new DbUpgrade[] {new Upgrade431to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(),
-                new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(),
-                new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.3.2"),
-            new DbUpgrade[] {new Upgrade432to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(),
-                new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(),
-                new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.4.0"),
-            new DbUpgrade[] {new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(),
-                new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(),
-                new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.4.1"),
-            new DbUpgrade[] {new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(),
-                new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.4.2"),
-            new DbUpgrade[] {new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(),
-                new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.4.3"),
-            new DbUpgrade[] {new Upgrade443to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(),
-                new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.4.4"),
-            new DbUpgrade[] {new Upgrade444to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(),
-                new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.5.0"),
-            new DbUpgrade[] {new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(),
-                new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(),
-                new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.5.1"),
-            new DbUpgrade[] {new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(),
-                new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(),
-                new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.5.2"),
-            new DbUpgrade[] {new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(),
-                new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.5.3"),
-            new DbUpgrade[] {new Upgrade453to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(),
-                new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.6.0"),
-            new DbUpgrade[] {new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(),
-                new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.6.1"),
-            new DbUpgrade[] {new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(),
-                new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.6.2"),
-            new DbUpgrade[] {new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(),
-                new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.7.0"),
-            new DbUpgrade[] {new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.7.1"),
-            new DbUpgrade[] {new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(),
-                new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.7.2"),
-            new DbUpgrade[] {new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(),
-                new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.8.0"),
-            new DbUpgrade[] {new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(),
-                new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.8.1"),
-            new DbUpgrade[] {new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.8.2.0"),
-            new DbUpgrade[] {new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.9.0"),
-            new DbUpgrade[] {new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.9.1.0"),
-            new DbUpgrade[] {new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.9.2.0"),
-            new DbUpgrade[] {new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.9.3.0"),
-            new DbUpgrade[] {new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
-
-        _upgradeMap.put(CloudStackVersion.parse("4.10.0.0"),
-            new DbUpgrade[] {new Upgrade41000to41100(), new Upgrade41100to41200()});
+            new DbUpgrade[] {new Upgrade302to40()});
 
         //CP Upgrades
         _upgradeMap.put(CloudStackVersion.parse("3.0.3"),
-            new DbUpgrade[] {new Upgrade303to304(), new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420(),
-                new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(),
-                new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(),
-                new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+            new DbUpgrade[] {new Upgrade303to304(), new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410()});
 
         _upgradeMap.put(CloudStackVersion.parse("3.0.4"),
-            new DbUpgrade[] {new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420(), new Upgrade420to421(),
-                new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(),
-                new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(),
-                new Upgrade490to4910(), new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+            new DbUpgrade[] {new Upgrade304to305(), new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410()});
 
         _upgradeMap.put(CloudStackVersion.parse("3.0.5"),
-            new DbUpgrade[] {new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(),
-                new Upgrade430to440(), new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(),
-                new Upgrade460to461(), new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(),
-                new Upgrade4910to4920(), new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+            new DbUpgrade[] {new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410()});
 
         _upgradeMap.put(CloudStackVersion.parse("3.0.6"),
-            new DbUpgrade[] {new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(),
-                new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(),
-                new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+            new DbUpgrade[] {new Upgrade306to307(), new Upgrade307to410()});
 
         _upgradeMap.put(CloudStackVersion.parse("3.0.7"),
-            new DbUpgrade[] {new Upgrade307to410(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(), new Upgrade440to441(),
-                new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(), new Upgrade461to470(),
-                new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+            new DbUpgrade[] {new Upgrade307to410()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.15"),
             new DbUpgrade[] {new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to303(), new Upgrade303to304(), new Upgrade304to305(),
-                new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(),
-                new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(),
-                new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410()});
 
         _upgradeMap.put(CloudStackVersion.parse("2.2.16"),
             new DbUpgrade[] {new Upgrade2214to30(), new Upgrade30to301(), new Upgrade301to302(), new Upgrade302to303(), new Upgrade303to304(), new Upgrade304to305(),
-                new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410(), new Upgrade410to420(), new Upgrade420to421(), new Upgrade421to430(), new Upgrade430to440(),
-                new Upgrade440to441(), new Upgrade441to442(), new Upgrade442to450(), new Upgrade450to451(), new Upgrade451to452(), new Upgrade452to460(), new Upgrade460to461(),
-                new Upgrade461to470(), new Upgrade470to471(), new Upgrade471to480(), new Upgrade480to481(), new Upgrade481to490(), new Upgrade490to4910(), new Upgrade4910to4920(),
-                new Upgrade4920to4930(), new Upgrade4930to41000(), new Upgrade41000to41100(), new Upgrade41100to41200()});
+                new Upgrade305to306(), new Upgrade306to307(), new Upgrade307to410()});
+
+        _upgradeMap.put(CloudStackVersion.parse("4.0.0"), new DbUpgrade[0]);
+        _upgradeMap.put(CloudStackVersion.parse("4.1.0"), new DbUpgrade[0]);
 
         final List<CloudStackVersion> sortedVersions = newArrayList(_upgradeMap.keySet());
         sort(sortedVersions);
@@ -501,30 +247,20 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
     }
 
     // Default visibility to support unit testing ...
-    DbUpgrade[] calculateUpgradePath(final CloudStackVersion dbVersion, final CloudStackVersion currentVersion) {
+    DbUpgrade[] calculateUpgradePath(final CloudStackVersion dbVersion) {
 
         checkArgument(dbVersion != null);
-        checkArgument(currentVersion != null);
-        checkArgument(currentVersion.compareTo(dbVersion) > 0);
 
         final DbUpgrade[] upgrades = _upgradeMap.containsKey(dbVersion) ? _upgradeMap.get(dbVersion) : findMostRecentUpgradePath(dbVersion);
-
-        // When there is no upgrade defined for the target version, we assume that there were no schema changes or
-        // data migrations required.  Based on that assumption, we add a noop DbUpgrade to the end of the list ...
-        final CloudStackVersion tailVersion = upgrades.length > 0 ? CloudStackVersion.parse(upgrades[upgrades.length - 1].getUpgradedVersion()) : dbVersion;
-
-        if (currentVersion.compareTo(tailVersion) != 0) {
-            return concat(upgrades, new NoopDbUpgrade(tailVersion, currentVersion));
-        }
 
         return upgrades;
 
     }
 
-    protected void upgrade(CloudStackVersion dbVersion, CloudStackVersion currentVersion) {
-        s_logger.info("Database upgrade must be performed from " + dbVersion + " to " + currentVersion);
+    protected void legacyUpgrade(CloudStackVersion dbVersion) {
+        s_logger.info("Database upgrade must be performed from " + dbVersion);
 
-        final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion, currentVersion);
+        final DbUpgrade[] upgrades = calculateUpgradePath(dbVersion);
 
         for (DbUpgrade upgrade : upgrades) {
             VersionVO version;
@@ -616,19 +352,12 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
                     return;
                 }
 
-                final CloudStackVersion currentVersion = CloudStackVersion.parse(currentVersionValue);
-                s_logger.info("DB version = " + dbVersion + " Code Version = " + currentVersion);
+                s_logger.info("DB version = " + dbVersion);
 
-                if (dbVersion.compareTo(currentVersion) > 0) {
-                    throw new CloudRuntimeException("Database version " + dbVersion + " is higher than management software version " + currentVersionValue);
+                if (dbVersion.getMajorRelease() < 4) {
+                    legacyUpgrade(dbVersion);
                 }
 
-                if (dbVersion.compareTo(currentVersion) == 0) {
-                    s_logger.info("DB version and code version matches so no upgrade needed.");
-                    return;
-                }
-
-                upgrade(dbVersion, currentVersion);
             } finally {
                 lock.unlock();
             }
@@ -642,18 +371,23 @@ public class DatabaseUpgradeChecker implements SystemIntegrityChecker {
         final String cloudPassword = dbProps.getProperty("db.cloud.password");
         final String cloudHost = dbProps.getProperty("db.cloud.host");
         final int cloudPort = Integer.parseInt(dbProps.getProperty("db.cloud.port"));
-        final String dbUrl = "jdbc:mysql://" + cloudHost + ":" + cloudPort + "/cloud";
+        final String driver = dbProps.getProperty("db.cloud.driver", "jdbc:mysql");
+        final String dbUrl = driver + "://" + cloudHost + ":" + cloudPort + "/cloud";
 
         try {
-            Flyway flyway = new Flyway();
-            flyway.setDataSource(dbUrl, cloudUsername, cloudPassword);
-            flyway.setTable("cloudstack_schema_version");
-            flyway.setBaselineOnMigrate(true);
-            flyway.setBaselineVersionAsString("4.11");
-            flyway.setLocations("db/csmigration");
+            Flyway flyway = new Flyway()
+                    .configure()
+                    .dataSource(dbUrl, cloudUsername, cloudPassword)
+                    .table("cloudstack_schema_version")
+                    .baselineOnMigrate(true)
+                    .baselineVersion(_dao.getCurrentVersion())
+                    .placeholderReplacement(false)
+                    .locations("META-INF/db/csmigration","com/cloud/upgrade/flyway")
+                    .load();
+
             flyway.migrate();
         } catch (FlywayException fwe) {
-            s_logger.error("Failed to run Flyway migration on Cloudstack database due to " + fwe);
+            throw new CloudRuntimeException("Failed to run Flyway migration on Cloudstack database ", fwe);
         }
 
     }
