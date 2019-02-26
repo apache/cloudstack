@@ -18,18 +18,16 @@
  */
 package org.apache.cloudstack.storage.image.manager;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-
-import org.apache.log4j.Logger;
-import org.springframework.stereotype.Component;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreProviderManager;
@@ -42,6 +40,8 @@ import org.apache.cloudstack.storage.image.ImageStoreDriver;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreEntity;
 import org.apache.cloudstack.storage.image.datastore.ImageStoreProviderManager;
 import org.apache.cloudstack.storage.image.store.ImageStoreImpl;
+import org.apache.log4j.Logger;
+import org.springframework.stereotype.Component;
 
 import com.cloud.server.StatsCollector;
 import com.cloud.storage.ScopeType;
@@ -146,7 +146,13 @@ public class ImageStoreProviderManagerImpl implements ImageStoreProviderManager 
     @Override
     public DataStore getImageStore(List<DataStore> imageStores) {
         if (imageStores.size() > 1) {
-            Collections.shuffle(imageStores); // Randomize image store list.
+            Collections.sort(imageStores, new Comparator<DataStore>() {
+                @Override
+                public int compare(DataStore o1, DataStore o2) {
+                    return Long.compare(_statsCollector.imageStoreCurrentCapacity(o1),
+                            _statsCollector.imageStoreCurrentCapacity(o2));
+                }
+            });
             Iterator<DataStore> i = imageStores.iterator();
             DataStore imageStore = null;
             while(i.hasNext()) {

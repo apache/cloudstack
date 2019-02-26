@@ -16,6 +16,8 @@
 // under the License.
 package com.cloud.server;
 
+import javax.inject.Inject;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -31,8 +33,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import javax.inject.Inject;
 
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -1362,6 +1362,12 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
             return true;
         }
         return false;
+    }
+
+    public Long imageStoreCurrentCapacity(DataStore imageStore) {
+        StorageStats imageStoreStats = _storageStats.get(imageStore.getId());
+        Long capacity = Math.max(0, imageStoreStats.getCapacityBytes() - imageStoreStats.getByteUsed());
+        return capacity;
     }
 
     /**
