@@ -54,6 +54,9 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the service offering, integer")
     private Integer sortKey;
 
+    @Parameter(name = ApiConstants.UNIQUE_NAME, type = CommandType.STRING, description = "uniqueName")
+    private String uniqueName;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -68,6 +71,10 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     public String getServiceOfferingName() {
         return serviceOfferingName;
+    }
+
+    public String getUniqueName() {
+      return uniqueName;
     }
 
     public Integer getSortKey() {

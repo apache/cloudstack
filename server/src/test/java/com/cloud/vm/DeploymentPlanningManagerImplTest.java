@@ -29,6 +29,7 @@ import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
 import com.cloud.host.Host;
+import com.cloud.storage.Storage;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -186,7 +187,7 @@ public class DeploymentPlanningManagerImplTest {
     public void dataCenterAvoidTest() throws InsufficientServerCapacityException, AffinityConflictException {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
-                    ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.User, domainId,
+                    ProvisioningType.THIN, Storage.SOUniqueName.CONSOLEPROXY.toString(), false, false, null, false, VirtualMachine.Type.User, domainId,
                 null, "FirstFitPlanner");
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
@@ -201,7 +202,7 @@ public class DeploymentPlanningManagerImplTest {
     public void plannerCannotHandleTest() throws InsufficientServerCapacityException, AffinityConflictException {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
-                    ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.User, domainId,
+                    ProvisioningType.THIN, Storage.SOUniqueName.CONSOLEPROXY.toString(), false, false, null, false, VirtualMachine.Type.User, domainId,
                 null, "UserDispersingPlanner");
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 
@@ -217,7 +218,7 @@ public class DeploymentPlanningManagerImplTest {
     public void emptyClusterListTest() throws InsufficientServerCapacityException, AffinityConflictException {
         ServiceOfferingVO svcOffering =
             new ServiceOfferingVO("testOffering", 1, 512, 500, 1, 1, false, false, false, "test dpm",
-                ProvisioningType.THIN, false, false, null, false, VirtualMachine.Type.User, domainId,
+                ProvisioningType.THIN, Storage.SOUniqueName.CONSOLEPROXY.toString(), false, false, null, false, VirtualMachine.Type.User, domainId,
                 null, "FirstFitPlanner");
         Mockito.when(vmProfile.getServiceOffering()).thenReturn(svcOffering);
 

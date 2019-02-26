@@ -323,6 +323,10 @@ cloudStack.docs = {
         desc: 'Provisioning type to create a volume. Thin and sparse is lazy allocation. fat is eager allocation.',
         externalLink: ''
     },
+    helpDiskOfferingUniqueName: {
+      desc: 'Unique name of the service offering.',
+      externalLink: ''
+    },
     helpDiskOfferingStorageType: {
         desc: 'Type of disk for the VM. Local is attached to the hypervisor host where the VM is running. Shared is storage accessible via NFS.',
         externalLink: ''

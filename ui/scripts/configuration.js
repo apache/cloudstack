@@ -21,6 +21,41 @@
     var networkServiceObjs = [],
         serviceCheckboxNames = [];
     var serviceFields = [];
+    var serviceOfferingUniqueNames = [{
+        id: null,
+        description: ' '
+      },{
+        id: 'Cloud.com-ConsoleProxy',
+        description: 'Cloud.com-ConsoleProxy'
+      },{
+        id: 'Cloud.com-ConsoleProxy-Local',
+        description: 'Cloud.com-ConsoleProxy-Local'
+      },{
+        id: 'Cloud.com-SecondaryStorage',
+        description: 'Cloud.com-SecondaryStorage'
+      },{
+        id: 'Cloud.com-SecondaryStorage-Local',
+        description: 'Cloud.com-SecondaryStorage-Local'
+      },{
+        id: 'Cloud.Com-InternalLBVm',
+        description: 'Cloud.Com-InternalLBVm'
+      },{
+        id: 'Cloud.Com-InternalLBVm-Local',
+        description: 'Cloud.Com-InternalLBVm-Local'
+      },{
+        id: 'Cloud.Com-ElasticLBVm',
+        description: 'Cloud.Com-ElasticLBVm'
+      },{
+        id: 'Cloud.Com-ElasticLBVm-Local',
+        description: 'Cloud.Com-ElasticLBVm-Local'
+      },{
+        id: 'Cloud.Com-SoftwareRouter',
+        description: 'Cloud.Com-SoftwareRouter'
+      },{
+        id: 'Cloud.Com-SoftwareRouter-Local',
+        description: 'Cloud.Com-SoftwareRouter-Local'
+      }
+    ];
 
     cloudStack.sections.configuration = {
         title: 'label.menu.service.offerings',
@@ -1010,6 +1045,9 @@
                         },
                         displaytext: {
                             label: 'label.description'
+                        },
+                        uniquename: {
+                            label: 'label.uniquename'
                         }
                     },
 
@@ -1113,6 +1151,15 @@
                                                 data: items
                                             });
                                         }
+                                    },
+                                    uniqueName: {
+                                      label: 'label.disk.uniquename',
+                                      docID: 'helpDiskOfferingUniqueName',
+                                      select: function(args) {
+                                        args.response.success({
+                                          data: serviceOfferingUniqueNames
+                                        });
+                                      }
                                     },
                                     cpuNumber: {
                                         label: 'label.num.cpu.cores',
@@ -1330,6 +1377,12 @@
                                     memory: args.data.memory
                                 };
 
+                                if (args.data.uniqueName != null && args.data.uniqueName.length > 0){
+                                    $.extend(data, {
+                                      uniquename: args.data.uniqueName
+                                    });
+                                }
+
                                 if (args.data.networkRate != null && args.data.networkRate.length > 0) {
                                     $.extend(data, {
                                         networkrate: args.data.networkRate
@@ -1417,6 +1470,7 @@
 
                             notification: {
                                 poll: function(args) {
+                                    $('.section-switcher select').val('systemServiceOfferings').trigger('change');
                                     args.complete();
                                 }
                             }
@@ -1457,6 +1511,13 @@
                                         name: args.data.name,
                                         displaytext: args.data.displaytext
                                     };
+
+                                    if (args.data.uniquename != null && args.data.uniquename.length > 0){
+                                        $.extend(data, {
+                                          uniquename: args.data.uniquename
+                                        });
+                                    }
+
                                     $.ajax({
                                         url: createURL('updateServiceOffering'),
                                         data: data,
@@ -1552,6 +1613,15 @@
                                     },
                                     provisioningtype: {
                                         label: 'label.disk.provisioningtype'
+                                    },
+                                    uniquename: {
+                                        isEditable: true,
+                                        select: function(args) {
+                                            args.response.success({
+                                              data: serviceOfferingUniqueNames
+                                            });
+                                        },
+                                        label: 'label.disk.uniquename'
                                     },
                                     cpunumber: {
                                         label: 'label.num.cpu.cores'
