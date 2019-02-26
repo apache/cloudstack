@@ -17,6 +17,8 @@
 
 package com.cloud.event;
 
+import com.cloud.exception.InvalidParameterValueException;
+
 public class Resource {
     private String _typeURI; //MANDATORY
     private String _id; //MANDATORY
@@ -28,7 +30,6 @@ public class Resource {
     private String _geolocation; //OPTIONAL //subtype
     private String _geolocationId; //OPTIONAL //subtype
     private String _attachements; //OPTIONAL //subtype
-    //private String _projectid; //OPTIONAL
     private String _userid;
 
     public static class Credential {
@@ -43,6 +44,13 @@ public class Resource {
            _authority = authority;
            _assertions = assertions;
        }
+
+        public void checkMandatoryFields() {
+            if (_token == null || _token.isEmpty()) {
+                throw new InvalidParameterValueException("Resource CREDENTIAL token field is mandatory");
+            }
+        }
+
     }
 
     private static class Addresses {
@@ -106,32 +114,56 @@ public class Resource {
             _content = content;
             _name = name;
         }
+
+        public void checkMandatoryFields() {
+            if ((_content == null || _content.isEmpty()) ||
+                    (_contentType == null || _contentType.isEmpty()) ) {
+                throw new InvalidParameterValueException("Resource ATTACHEMENTS contentType and content fields " +
+                        "are mandatory");
+            }
+        }
+
+    }
+
+    private static class Endpoint {
+        private String _url;
+        private String _name;
+        private String _port;
+
+        protected Endpoint(String url, String name, String port) {
+            _url = url;
+            _name = name;
+            _port = port;
+        }
+
+        public void checkMandatoryFields() {
+            if (_url == null || _url.isEmpty()) {
+                throw new InvalidParameterValueException("Resource ENDPOINT url field is mandatory");
+            }
+        }
+
     }
 
     public Resource(String typeURI) {
         _typeURI = typeURI;
-        _id = "empty";
-        _name = "empty";
-        _domain = "empty";
         _credential = new Credential("","","","");
-        _addresses = "empty";
-        _host = "empty";
-        _geolocation = "empty";
-        _geolocationId = "";
-        //_projectid = "empty";
-        _userid = "empty";
-    }
+       }
 
     public Resource(String typeURI, String id, String name, String host, Credential credential,
-                    String addresses, String projectid, String userid) {
+                    String addresses, String userid) {
         _typeURI = typeURI;
         _id = id;
         _name = name;
         _host = host;
         _credential = credential;
         _addresses = addresses;
-        //_projectid = projectid;
         _userid = userid;
+    }
+
+    public void checkMandatoryFields() {
+        if (_id == null || _id.isEmpty()) {
+            throw new InvalidParameterValueException("Resource " + _typeURI + " id field is mandatory");
+        }
     }
 
 }

@@ -17,56 +17,103 @@
 
 package com.cloud.event;
 
-public class Taxonomies {
+import java.util.HashMap;
 
-    public static class EventType {
-        public static final String MONITOR = "monitor";
-        public static final String ACTIVITY = "activity";
-        public static final String CONTROL = "control";
+public class Taxonomies {
+    //eventMapping maps CloudStack Event Category (substring of EventType) to CADF Target Resource
+    public static HashMap<String, String> eventMapping = new HashMap<String, String>();
+
+    public enum EventType {
+        MONITOR("monitor"),
+        ACTIVITY("activity"),
+        CONTROL("control");
+
+        private String value;
+
+        EventType(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
     }
 
-    public static class Action {
+    public enum Action {
 
         //General Resource Management
-        public static final String CREATE = "create";
-        public static final String READ = "read";
-        public static final String UPDATE = "update";
-        public static final String DELETE = "delete";
+        CREATE("create"),
+        READ("read"),
+        UPDATE("update"),
+        DELETE("delete"),
 
         //Monitoring
-        public static final String MONITOR = "monitor";
+        MONITOR("monitor"),
 
         //Workload and Data Management
-        public static final String BACKUP = "backup";
-        public static final String CAPTURE = "capture";
-        public static final String CONFIGURE = "configure";
-        public static final String DEPLOY = "deploy";
-        public static final String DISABLE = "disable";
-        public static final String ENABLE = "enable";
-        public static final String RESTORE = "restore";
-        public static final String START = "start";
-        public static final String STOP = "stop";
-        public static final String UNDEPLOY = "undeploy";
+        BACKUP("backup"),
+        CAPTURE("capture"),
+        CONFIGURE("configure"),
+        DEPLOY("deploy"),
+        DISABLE("disable"),
+        ENABLE("enable"),
+        RESTORE("restore"),
+        START("start"),
+        STOP("stop"),
+        UNDEPLOY("undeploy"),
 
         //Messaging
-        public static final String RECEIVE = "receive";
-        public static final String SEND = "send";
+        RECEIVE("receive"),
+        SEND("send"),
 
         //Security-Identity
-        public static final String AUTHENTICATE = "authenticate";
-        public static final String AUTHENTICATE_LOGIN = "authenticate/login";
-        public static final String RENEW = "RENEW";
-        public static final String REVOKE = "REVOKE";
+        AUTHENTICATE("authenticate"),
+        AUTHENTICATE_LOGIN("authenticate/login"),
+        RENEW("renew"),
+        REVOKE("revoke"),
 
         //Security, Policy, Access Control
-        public static final String ALLOW = "allow";
-        public static final String DENY = "deny";
-        public static final String EVALUATE = "evaluate";
-        public static final String NOTIFY = "notify";
+        ALLOW("allow"),
+        DENY("deny"),
+        EVALUATE("evaluate"),
+        NOTIFY("notify"),
 
-        public static final String UNKNOWN = "unknown";
+        UNKNOWN("unknown");
 
+        private String value;
 
+        Action(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+    }
+
+    public enum Outcome {
+        SUCCESS("success"),
+        FAILURE("failure"),
+        UNKNOWN("unknown"),
+        PENDING("pending");
+
+        private String value;
+
+        Outcome(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+    }
+
+    public static class Reason {
+        public static final String REASON_TYPE = "reasonType";
+        public static final String REASON_CODE = "reasonCode";
+        public static final String POLICY_TYPE = "policyType";
+        public static final String POLICY_CODE = "policyCode";
 
     }
 
@@ -162,6 +209,7 @@ public class Taxonomies {
         public static final String SERVICE_OSS_CONFIGURATION = "service/oss/configuration";
         public static final String SERVICE_OSS_LOGGING = "service/oss/logging";
         public static final String SERVICE_OSS_MONITORING = "service/oss/monitoring";
+        public static final String SERVICE_OSS_PERFORMANCE = "service/oss/performance";
         public static final String SERVICE_OSS_VIRTUALIZATION = "service/oss/virtualization";
         public static final String SERVICE_SECURITY = "service/security";
         public static final String SERVICE_STORAGE = "service/storage";
@@ -170,20 +218,187 @@ public class Taxonomies {
 
         public static final String SYSTEM = "system";
 
-    }
-
-    public static class Outcome {
-        public static final String SUCCESS = "success";
-        public static final String FAILURE = "failure";
         public static final String UNKNOWN = "unknown";
-        public static final String PENDING = "pending";
-    }
-
-    public static class Reason {
-        public static final String REASON_TYPE = "reasonType";
-        public static final String REASON_CODE = "reasonCode";
-        public static final String POLICY_TYPE = "policyType";
-        public static final String POLICY_CODE = "policyCode";
 
     }
+
+    static {
+        eventMapping.put("VM", Taxonomies.Resource.COMPUTE_MACHINE_VM);
+        eventMapping.put("ROUTER", Taxonomies.Resource.NETWORK_NODE_ROUTER); //needs check
+        eventMapping.put("PROXY", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("VNC", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("NET", Taxonomies.Resource.NETWORK);
+        eventMapping.put("PORTABLE", Taxonomies.Resource.NETWORK);
+        eventMapping.put("NETWORK", Taxonomies.Resource.NETWORK);
+        eventMapping.put("FIREWALL", Taxonomies.Resource.NETWORK);
+        eventMapping.put("FIREWALL.EGRESS", Taxonomies.Resource.NETWORK);
+
+        eventMapping.put("NIC", Taxonomies.Resource.NETWORK_NODE);
+        eventMapping.put("NIC.DETAIL", Taxonomies.Resource.NETWORK_NODE);
+
+        eventMapping.put("LB", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+        eventMapping.put("LB.ASSIGN.TO", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+        eventMapping.put("LB.REMOVE.FROM", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+        eventMapping.put("LB.STICKINESSPOLICY", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+        eventMapping.put("LB.HEALTHCHECKPOLICY", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+        eventMapping.put("LB.CERT", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+
+        eventMapping.put("GLOBAL.LB", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+
+        eventMapping.put("ROLE", Taxonomies.Resource.DATA_SECURITY_GROUP);
+        eventMapping.put("ROLE.PERMISSION", Taxonomies.Resource.DATA_SECURITY_GROUP);
+
+        eventMapping.put("CA.CERTIFICATE", Taxonomies.Resource.DATA_SECURITY_CREDENTIAL);
+
+        eventMapping.put("ACCOUNT", Taxonomies.Resource.DATA_SECURITY_ACCOUNT);
+        eventMapping.put("ACCOUNT.MARK.DEFAULT", Taxonomies.Resource.DATA_SECURITY_ACCOUNT);
+
+        eventMapping.put("USER", Taxonomies.Resource.DATA_SECURITY_ACCOUNT_USER);
+
+        eventMapping.put("REGISTER.SSH", Taxonomies.Resource.DATA_SECURITY_KEY);
+        eventMapping.put("REGISTER.USER", Taxonomies.Resource.DATA_SECURITY_KEY);
+
+        eventMapping.put("TEMPLATE", Taxonomies.Resource.DATA_TEMPLATE);
+        eventMapping.put("TEMPLATE.DOWNLOAD", Taxonomies.Resource.DATA_TEMPLATE);
+
+        eventMapping.put("VOLUME", Taxonomies.Resource.STORAGE_VOLUME);
+        eventMapping.put("VOLUME.DETAIL", Taxonomies.Resource.STORAGE_VOLUME);
+
+        eventMapping.put("DOMAIN", Taxonomies.Resource.NETWORK_DOMAIN);
+
+        eventMapping.put("SNAPSHOT", Taxonomies.Resource.SERVICE_IMAGE);
+        eventMapping.put("SNAPSHOTPOLICY", Taxonomies.Resource.SERVICE_IMAGE);
+
+        eventMapping.put("ISO", Taxonomies.Resource.DATA_IMAGE);
+
+        eventMapping.put("SSVM", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("SERVICE.OFFERING", Taxonomies.Resource.SYSTEM);
+        eventMapping.put("DISK.OFFERING", Taxonomies.Resource.SYSTEM);
+        eventMapping.put("NETWORK.OFFERING", Taxonomies.Resource.SYSTEM);
+
+        eventMapping.put("POD", Taxonomies.Resource.DATA_SECURITY_GROUP);
+
+        eventMapping.put("ZONE", Taxonomies.Resource.DATA_SECURITY_GROUP);
+
+        eventMapping.put("VLAN.IP.RANGE", Taxonomies.Resource.SERVICE_NETWORK);
+        eventMapping.put("MANAGEMENT.IP.RANGE", Taxonomies.Resource.SERVICE_NETWORK);
+        eventMapping.put("STORAGE.IP.RANGE", Taxonomies.Resource.SERVICE_NETWORK);
+
+        eventMapping.put("CONFIGURATION.VALUE", Taxonomies.Resource.SYSTEM);
+
+        eventMapping.put("SG", Taxonomies.Resource.DATA_SECURITY_GROUP);
+        eventMapping.put("SG.AUTH", Taxonomies.Resource.DATA_SECURITY_GROUP);
+        eventMapping.put("SG.REVOKE", Taxonomies.Resource.DATA_SECURITY_GROUP);
+
+        eventMapping.put("HOST", Taxonomies.Resource.NETWORK_NODE_HOST);
+        eventMapping.put("HOST.OOBM", Taxonomies.Resource.NETWORK_NODE_HOST);
+
+        eventMapping.put("HA.RESOURCE", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("HA.STATE", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("MAINT", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("MAINT.CANCEL", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("MAINT.PREPARE", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("VPN", Taxonomies.Resource.NETWORK_CLUSTER);
+        eventMapping.put("VPN.REMOTE.ACCESS", Taxonomies.Resource.NETWORK_CLUSTER);
+        eventMapping.put("VPN.USER", Taxonomies.Resource.NETWORK_CLUSTER);
+        eventMapping.put("VPN.S2S.VPN.GATEWAY", Taxonomies.Resource.NETWORK_CLUSTER);
+        eventMapping.put("VPN.S2S.CUSTOMER.GATEWAY", Taxonomies.Resource.NETWORK_CLUSTER);
+        eventMapping.put("VPN.S2S.CONNECTION", Taxonomies.Resource.NETWORK_CLUSTER);
+
+        eventMapping.put("UPLOAD.CUSTOM", Taxonomies.Resource.DATA_SECURITY_CREDENTIAL);
+
+        eventMapping.put("STATICNAT", Taxonomies.Resource.NETWORK_CLUSTER);
+        eventMapping.put("ZONE.VLAN", Taxonomies.Resource.NETWORK_CLUSTER);
+
+        eventMapping.put("PROJECT", Taxonomies.Resource.SERVICE_COMPOSITION);
+        eventMapping.put("PROJECT.ACCOUNT", Taxonomies.Resource.SERVICE_COMPOSITION);
+        eventMapping.put("PROJECT.INVITATION", Taxonomies.Resource.SERVICE_COMPOSITION);
+
+        eventMapping.put("NETWORK.ELEMENT", Taxonomies.Resource.SERVICE_NETWORK);
+
+        eventMapping.put("PHYSICAL.NETWORK", Taxonomies.Resource.NETWORK_DOMAIN);
+
+        eventMapping.put("SERVICE.PROVIDER", Taxonomies.Resource.NETWORK_DOMAIN);
+
+        eventMapping.put("TRAFFIC.TYPE", Taxonomies.Resource.NETWORK_DOMAIN);
+
+        eventMapping.put("PHYSICAL.LOADBALANCER", Taxonomies.Resource.NETWORK_NODE);
+
+        eventMapping.put("PHYSICAL.NCC", Taxonomies.Resource.NETWORK_NODE);
+
+        eventMapping.put("SWITCH.MGMT", Taxonomies.Resource.NETWORK_NODE);
+        eventMapping.put("PHYSICAL.FIREWALL", Taxonomies.Resource.NETWORK_NODE);
+
+        eventMapping.put("VPC", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("NETWORK.ACL", Taxonomies.Resource.DATA_SECURITY_ROLE);
+
+        eventMapping.put("VPC.OFFERING", Taxonomies.Resource.SYSTEM);
+
+        eventMapping.put("PRIVATE.GATEWAY", Taxonomies.Resource.NETWORK_NODE);
+
+        eventMapping.put("STATIC.ROUTE", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("CREATE_TAGS", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("DELETE_TAGS", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("CREATE_RESOURCE_DETAILS", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("DELETE_RESOURCE_DETAILS", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("VMSNAPSHOT", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("PHYSICAL", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("PHYSICAL.NVPCONTROLLER", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("PHYSICAL.OVSCONTROLLER", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("PHYSICAL.NUAGE.VSD", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("COUNTER", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("CONDITION", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("AUTOSCALEPOLICY", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("AUTOSCALEVMPROFILE", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("AUTOSCALEVMGROUP", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("PHYSICAL.DHCP", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("PHYSICAL.PXE", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("BAREMETAL.RCT", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("BAREMETAL.PROVISION", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("AG", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("VM.AG", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("INTERNALLBVM", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("HOST.RESERVATION", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("GUESTVLANRANGE", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("PORTABLE.IP.RANGE", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("PORTABLE.IP", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("DEDICATE", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("DEDICATE.RESOURCE", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("VM.RESERVATION", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("UCS", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("MIGRATE.PREPARE", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("ALERT", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("PHYSICAL.ODLCONTROLLER", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("GUEST.OS", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("GUEST.OS.MAPPING", Taxonomies.Resource.UNKNOWN);
+
+        eventMapping.put("NIC.SECONDARY.IP", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("EXTERNAL.DHCP.VM.IP", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("USAGE.REMOVE.USAGE", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("NETSCALER.SERVICEPACKAGE", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("NETSCALERVM", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("ANNOTATION", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("TEMPLATE.DIRECT.DOWNLOAD", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("ISO.DIRECT.DOWNLOAD", Taxonomies.Resource.UNKNOWN);
+        eventMapping.put("SYSTEM.VM", Taxonomies.Resource.UNKNOWN);
+
+    }
+
 }

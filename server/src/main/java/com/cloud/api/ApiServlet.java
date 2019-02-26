@@ -16,25 +16,13 @@
 // under the License.
 package com.cloud.api;
 
-import java.io.UnsupportedEncodingException;
-import java.net.InetAddress;
-import java.net.URLDecoder;
-import java.net.UnknownHostException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
+import com.cloud.user.Account;
+import com.cloud.user.AccountService;
+import com.cloud.user.User;
+import com.cloud.utils.HttpUtils;
+import com.cloud.utils.StringUtils;
+import com.cloud.utils.db.EntityManager;
+import com.cloud.utils.net.NetUtils;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiServerService;
 import org.apache.cloudstack.api.ServerApiException;
@@ -47,14 +35,24 @@ import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.support.SpringBeanAutowiringSupport;
 
-import com.cloud.user.Account;
-import com.cloud.user.AccountService;
-import com.cloud.user.User;
-
-import com.cloud.utils.HttpUtils;
-import com.cloud.utils.StringUtils;
-import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.net.NetUtils;
+import javax.inject.Inject;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.URLDecoder;
+import java.net.UnknownHostException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component("apiServlet")
 @SuppressWarnings("serial")
@@ -136,6 +134,10 @@ public class ApiServlet extends HttpServlet {
         InetAddress remoteAddress = null;
         try {
             remoteAddress = getClientAddress(req);
+            System.out.println("************************************************************");
+            System.out.println("ndale - Entry point 0.0 - ApiServlet - ProcessRequestInContext");
+            System.out.println(remoteAddress.toString());
+            System.out.println("************************************************************");
         } catch (UnknownHostException e) {
             s_logger.warn("UnknownHostException when trying to lookup remote IP-Address. This should never happen. Blocking request.", e);
             final String response = apiServer.getSerializedApiError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
@@ -145,6 +147,26 @@ public class ApiServlet extends HttpServlet {
                     HttpUtils.RESPONSE_TYPE_XML, ApiServer.JSONcontentType.value());
             return;
         }
+
+        System.out.println("************************************************************");
+        System.out.println("ndale - Entry point 0.1 - ApiServlet - ProcessRequestInContext");
+        System.out.println("User-Agent :" + req.getHeader("User-Agent"));
+        System.out.println("************************************************************");
+        Enumeration<String> headernames = req.getHeaderNames();
+        String h_name;
+        if (headernames != null) {
+            while (headernames.hasMoreElements()) {
+                System.out.println("-----------------------------------------------------");
+                h_name = headernames.nextElement();
+                System.out.println(h_name);
+                System.out.println(req.getHeader(h_name));
+                System.out.println("-----------------------------------------------------");
+
+            }
+        }
+        System.out.println("************************************************************");
+
+
 
         final StringBuilder auditTrailSb = new StringBuilder(128);
         auditTrailSb.append(" ").append(remoteAddress.getHostAddress());
