@@ -49,6 +49,7 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     @Inject
     protected UserVmDetailsDao userVmDetailsDao;
 
+    protected final SearchBuilder<ServiceOfferingVO> IdSearch;
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByDomainIdSearch;
     protected final SearchBuilder<ServiceOfferingVO> SystemServiceOffering;
@@ -57,6 +58,10 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
     public ServiceOfferingDaoImpl() {
         super();
+
+        IdSearch = createSearchBuilder();
+        IdSearch.and("id", IdSearch.entity().getId(), SearchCriteria.Op.EQ);
+        IdSearch.done();
 
         UniqueNameSearch = createSearchBuilder();
         UniqueNameSearch.and("name", UniqueNameSearch.entity().getUniqueName(), SearchCriteria.Op.EQ);
@@ -288,5 +293,32 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             throw new CloudRuntimeException(message);
         }
         return serviceOffering;
+    }
+
+    @Override
+    public long removeUniqueName(String uniqueName){
+      SearchCriteria<ServiceOfferingVO> sc = UniqueNameSearch.create();
+      sc.setParameters("name", uniqueName);
+      List<ServiceOfferingVO> vos = search(sc, null, null, false);
+      if (vos.size() != 0) {
+        ServiceOfferingVO seVo = vos.get(0);
+        seVo.setUniqueName(null);
+        update(seVo.getId(), seVo);
+        return seVo.getId();
+      } else {
+        return 0;
+      }
+    }
+
+    @Override
+    public void resetUniqueName(long id, String uniqueName){
+      SearchCriteria<ServiceOfferingVO> sc = IdSearch.create();
+      sc.setParameters("id", id);
+      List<ServiceOfferingVO> vos = search(sc, null, null, false);
+      if (vos.size() != 0) {
+        ServiceOfferingVO seVo = vos.get(0);
+        seVo.setUniqueName(uniqueName);
+        update(seVo.getId(), seVo);
+      }
     }
 }

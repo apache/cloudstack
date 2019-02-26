@@ -192,6 +192,7 @@ import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.Storage.ProvisioningType;
+import com.cloud.storage.Storage.SOUniqueName;
 import com.cloud.storage.StorageManager;
 import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.storage.dao.VolumeDao;
@@ -2329,7 +2330,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
-                cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(),
+                cmd.getProvisioningType(), cmd.getUniqueName(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(),
                 cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
                 cmd.getBytesReadRate(), cmd.getBytesReadRateMax(), cmd.getBytesReadRateMaxLength(),
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
@@ -2339,7 +2340,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     }
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
-            final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
+            final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, String uniqueName, final boolean localStorageRequired,
             final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm,  String tags, final Long domainId, final String hostTag,
             final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, final Boolean isCustomizedIops, Long minIops, Long maxIops,
             Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
@@ -2369,11 +2370,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final ProvisioningType typedProvisioningType = ProvisioningType.getProvisioningType(provisioningType);
+        String typedUniqueName = uniqueName;
+        if(uniqueName != null) {
+          typedUniqueName = SOUniqueName.getUniqueName(uniqueName).toString();
+        }
 
         tags = StringUtils.cleanupTags(tags);
 
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
-                limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
+                limitResourceUse, volatileVm, displayText, typedProvisioningType, typedUniqueName, localStorageRequired, false, tags, isSystem, vmType,
                 domainId, hostTag, deploymentPlanner);
 
         if (Boolean.TRUE.equals(isCustomizedIops)) {
@@ -2471,6 +2476,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
+        long removedServiceOfferingId = _serviceOfferingDao.removeUniqueName(uniqueName);
+
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             if (detailsVO != null && !detailsVO.isEmpty()) {
                 for (int index = 0; index < detailsVO.size(); index++) {
@@ -2481,6 +2488,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             CallContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;
         } else {
+            _serviceOfferingDao.resetUniqueName(removedServiceOfferingId, uniqueName);
             return null;
         }
     }
@@ -2564,11 +2572,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // }
         // }
 
+        String uniqueName = cmd.getUniqueName();
+        boolean uniqueNameChanged = false;
+        if (uniqueName != null) {
+          uniqueName = SOUniqueName.getUniqueName(uniqueName).toString();
+          uniqueNameChanged = offering.getUniqueName() != uniqueName;
+        }
+        offering.setUniqueName(uniqueName);
+
+        long removedServiceOfferingId = 0;
+        if(uniqueNameChanged){
+          removedServiceOfferingId = _serviceOfferingDao.removeUniqueName(uniqueName);
+        }
+
         if (_serviceOfferingDao.update(id, offering)) {
             offering = _serviceOfferingDao.findById(id);
             CallContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;
         } else {
+            if(uniqueNameChanged){
+              _serviceOfferingDao.resetUniqueName(removedServiceOfferingId, uniqueName);
+            }
             return null;
         }
     }

@@ -48,6 +48,10 @@ public interface ServiceOfferingDao extends GenericDao<ServiceOfferingVO, Long> 
 
     void saveDetails(ServiceOfferingVO serviceOffering);
 
+    long removeUniqueName(String uniqueName);
+
+    void resetUniqueName(long id, String uniqueName);
+
     ServiceOfferingVO findById(Long vmId, long serviceOfferingId);
 
     ServiceOfferingVO findByIdIncludingRemoved(Long vmId, long serviceOfferingId);

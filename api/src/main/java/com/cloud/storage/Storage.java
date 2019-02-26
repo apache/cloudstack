@@ -104,6 +104,56 @@ public class Storage {
         }
     }
 
+    public static enum SOUniqueName {
+      CONSOLEPROXY("Cloud.com-ConsoleProxy"),
+      CONSOLEPROXY_LOCAL("Cloud.com-ConsoleProxy-Local"),
+      SECONDARYSTORAGE("Cloud.com-SecondaryStorage"),
+      SECONDARYSTORAGE_LOCAL("Cloud.com-SecondaryStorage-Local"),
+      INTERNALLBVM("Cloud.Com-InternalLBVm"),
+      INTERNALLBVM_LOCAL("Cloud.Com-InternalLBVm-Local"),
+      ELASTICLBVM("Cloud.Com-ElasticLBVm"),
+      ELASTICLBVM_LOCAL("Cloud.Com-ElasticLBVm-Local"),
+      SOFTWAREROUTER("Cloud.Com-SoftwareRouter"),
+      SOFTWAREROUTER_LOCAL("Cloud.Com-SoftwareRouter-Local");
+
+      private final String uniqueName;
+
+      private SOUniqueName(String uniqueName){
+        this.uniqueName = uniqueName;
+      }
+
+      public String toString(){
+        return this.uniqueName;
+      }
+
+      public static SOUniqueName getUniqueName(String uniqueName){
+
+        if(uniqueName.equals(CONSOLEPROXY.uniqueName)){
+          return SOUniqueName.CONSOLEPROXY;
+        } else if(uniqueName.equals(CONSOLEPROXY_LOCAL.uniqueName)){
+          return SOUniqueName.CONSOLEPROXY_LOCAL;
+        } else if(uniqueName.equals(SECONDARYSTORAGE.uniqueName)){
+          return SOUniqueName.SECONDARYSTORAGE;
+        } else if(uniqueName.equals(SECONDARYSTORAGE_LOCAL.uniqueName)){
+          return SOUniqueName.SECONDARYSTORAGE_LOCAL;
+        } else if(uniqueName.equals(INTERNALLBVM.uniqueName)){
+          return SOUniqueName.INTERNALLBVM;
+        } else if(uniqueName.equals(INTERNALLBVM_LOCAL.uniqueName)){
+          return SOUniqueName.INTERNALLBVM_LOCAL;
+        } else if(uniqueName.equals(ELASTICLBVM.uniqueName)){
+          return SOUniqueName.ELASTICLBVM;
+        } else if(uniqueName.equals(ELASTICLBVM_LOCAL.uniqueName)){
+          return SOUniqueName.ELASTICLBVM_LOCAL;
+        } else if(uniqueName.equals(SOFTWAREROUTER.uniqueName)){
+          return SOUniqueName.SOFTWAREROUTER;
+        } else if(uniqueName.equals(SOFTWAREROUTER_LOCAL.uniqueName)){
+          return SOUniqueName.SOFTWAREROUTER_LOCAL;
+        } else{
+          throw new NotImplementedException();
+        }
+      }
+    }
+
     public static enum FileSystem {
         Unknown, ext3, ntfs, fat, fat32, ext2, ext4, cdfs, hpfs, ufs, hfs, hfsp
     }

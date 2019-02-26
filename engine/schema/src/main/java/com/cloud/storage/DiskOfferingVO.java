@@ -163,6 +163,26 @@ public class DiskOfferingVO implements DiskOffering {
         uuid = UUID.randomUUID().toString();
     }
 
+    public DiskOfferingVO(Long domainId, String name, String displayText, Storage.ProvisioningType provisioningType, String uniqueName, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,
+        Long minIops, Long maxIops, DiskCacheMode cacheMode) {
+        this.domainId = domainId;
+        this.name = name;
+        this.displayText = displayText;
+        this.provisioningType = provisioningType;
+        this.uniqueName = uniqueName;
+        this.diskSize = diskSize;
+        this.tags = tags;
+        recreatable = false;
+        type = Type.Disk;
+        useLocalStorage = false;
+        customized = isCustomized;
+        uuid = UUID.randomUUID().toString();
+        customizedIops = isCustomizedIops;
+        this.minIops = minIops;
+        this.maxIops = maxIops;
+        this.cacheMode = cacheMode;
+    }
+
     public DiskOfferingVO(Long domainId, String name, String displayText, Storage.ProvisioningType provisioningType, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,
             Long minIops, Long maxIops, DiskCacheMode cacheMode) {
         this.domainId = domainId;
@@ -231,6 +251,23 @@ public class DiskOfferingVO implements DiskOffering {
         this.systemUse = systemUse;
         this.customized = customized;
         this.domainId = domainId;
+        uuid = UUID.randomUUID().toString();
+        state = State.Active;
+    }
+
+    public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, String uniqueName, boolean mirrored, String tags, boolean recreatable, boolean useLocalStorage, boolean systemUse,
+        boolean customized, Long domainId) {
+        type = Type.Service;
+        this.name = name;
+        this.displayText = displayText;
+        this.provisioningType = provisioningType;
+        this.tags = tags;
+        this.recreatable = recreatable;
+        this.useLocalStorage = useLocalStorage;
+        this.systemUse = systemUse;
+        this.customized = customized;
+        this.domainId = domainId;
+        this.uniqueName = uniqueName;
         uuid = UUID.randomUUID().toString();
         state = State.Active;
     }

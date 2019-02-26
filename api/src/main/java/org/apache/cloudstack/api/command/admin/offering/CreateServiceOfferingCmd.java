@@ -57,6 +57,9 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.PROVISIONINGTYPE, type = CommandType.STRING, description = "provisioning type used to create volumes. Valid values are thin, sparse, fat.")
     private String provisioningType = Storage.ProvisioningType.THIN.toString();
 
+    @Parameter(name = ApiConstants.UNIQUE_NAME, type = CommandType.STRING, required = false, description = "the unique name of the service offering")
+    private String uniqueName;
+
     @Parameter(name = ApiConstants.MEMORY, type = CommandType.INTEGER, required = false, description = "the total memory of the service offering in MB")
     private Integer memory;
 
@@ -310,6 +313,10 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Long getMaxIops() {
         return maxIops;
+    }
+
+    public String getUniqueName() {
+      return uniqueName;
     }
 
     public Integer getHypervisorSnapshotReserve() {

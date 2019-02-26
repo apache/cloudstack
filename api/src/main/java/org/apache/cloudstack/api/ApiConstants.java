@@ -248,6 +248,7 @@ public class ApiConstants {
     public static final String PRIVATE_ZONE = "privatezone";
     public static final String PROTOCOL = "protocol";
     public static final String PROVISIONINGTYPE = "provisioningtype";
+    public static final String UNIQUE_NAME = "uniquename";
     public static final String PUBLIC_INTERFACE = "publicinterface";
     public static final String PUBLIC_IP_ID = "publicipid";
     public static final String PUBLIC_IP = "publicip";

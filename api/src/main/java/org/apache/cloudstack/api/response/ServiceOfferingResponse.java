@@ -65,6 +65,9 @@ public class ServiceOfferingResponse extends BaseResponse {
     @SerializedName("provisioningtype") @Param(description="provisioning type used to create volumes. Valid values are thin, sparse, fat.", since = "4.4.0")
     private String provisioningType;
 
+    @SerializedName("uniquename")
+    private String uniqueName;
+
     @SerializedName("offerha")
     @Param(description = "the ha support in the service offering")
     private Boolean offerHa;
@@ -282,6 +285,14 @@ public class ServiceOfferingResponse extends BaseResponse {
 
     public void setProvisioningType(String provisioningType){
         this.provisioningType = provisioningType;
+    }
+
+    public String getUniqueName(){
+    return uniqueName;
+  }
+
+    public void setUniqueName(String uniqueName){
+      this.uniqueName = uniqueName;
     }
 
     public Boolean getOfferHa() {

@@ -105,8 +105,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     }
 
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitCpuUse,
-            boolean volatileVm, String displayText, ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vmType, Long domainId) {
-        super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true, domainId);
+            boolean volatileVm, String displayText, ProvisioningType provisioningType, String uniqueName, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse, VirtualMachine.Type vmType, Long domainId) {
+        super(name, displayText, provisioningType, uniqueName, false, tags, recreatable, useLocalStorage, systemUse, true, domainId);
         this.cpu = cpu;
         this.ramSize = ramSize;
         this.speed = speed;
@@ -119,7 +119,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     }
 
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA,
-            boolean limitResourceUse, boolean volatileVm, String displayText, ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse,
+            boolean limitResourceUse, boolean volatileVm, String displayText, ProvisioningType provisioningType, String uniqueName, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse,
             VirtualMachine.Type vmType, Long domainId, String hostTag) {
         this(name,
             cpu,
@@ -132,6 +132,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
             volatileVm,
             displayText,
             provisioningType,
+            uniqueName,
             useLocalStorage,
             recreatable,
             tags,
@@ -142,7 +143,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     }
 
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA,
-            boolean limitResourceUse, boolean volatileVm, String displayText, ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse,
+            boolean limitResourceUse, boolean volatileVm, String displayText, ProvisioningType provisioningType, String uniqueName, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse,
             VirtualMachine.Type vmType, Long domainId, String hostTag, String deploymentPlanner) {
         this(name,
             cpu,
@@ -155,6 +156,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
             volatileVm,
             displayText,
             provisioningType,
+            uniqueName,
             useLocalStorage,
             recreatable,
             tags,
