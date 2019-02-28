@@ -2574,23 +2574,36 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         String uniqueName = cmd.getUniqueName();
         boolean uniqueNameChanged = false;
-        if (uniqueName != null) {
-          uniqueName = SOUniqueName.getUniqueName(uniqueName).toString();
-          uniqueNameChanged = offering.getUniqueName() != uniqueName;
+        boolean setEmptyUniqueName = false;
+        // when unique name parameter is null do not change it
+        if(uniqueName != null) {
+          // when empty string set unique name to null
+          if (uniqueName.isEmpty()){
+            setEmptyUniqueName = true;
+            uniqueNameChanged = uniqueName != null;
+            uniqueName = null;
+            // when string length > 0 then set new unique name
+          } else if (uniqueName.length() > 0){
+            uniqueNameChanged = offering.getUniqueName() == null || !offering.getUniqueName().equals(uniqueName);
+            uniqueName = SOUniqueName.getUniqueName(uniqueName).toString();
+          }
         }
-        offering.setUniqueName(uniqueName);
 
-        long removedServiceOfferingId = 0;
-        if(uniqueNameChanged){
-          removedServiceOfferingId = _serviceOfferingDao.removeUniqueName(uniqueName);
+      // only remove unique name in other entry when changed and not set to null
+      long removedServiceOfferingId = 0;
+      if(uniqueNameChanged){
+          offering.setUniqueName(uniqueName);
+          if(!setEmptyUniqueName){
+            removedServiceOfferingId = _serviceOfferingDao.removeUniqueName(uniqueName);
+          }
         }
 
-        if (_serviceOfferingDao.update(id, offering)) {
+      if (_serviceOfferingDao.update(id, offering)) {
             offering = _serviceOfferingDao.findById(id);
             CallContext.current().setEventDetails("Service offering id=" + offering.getId());
             return offering;
         } else {
-            if(uniqueNameChanged){
+            if(uniqueNameChanged && !setEmptyUniqueName){
               _serviceOfferingDao.resetUniqueName(removedServiceOfferingId, uniqueName);
             }
             return null;
