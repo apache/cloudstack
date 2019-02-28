@@ -165,9 +165,9 @@
             var stateComparator = function(a,b) {
                 return a.attr('title').localeCompare(b.attr('title'));
             };
-            var ipAddressCIDRComparator = function(a,b) {
-                a = a.children().html().split(/[.:/]/gm);
-                b = b.children().html().split(/[.:/]/gm);
+            var ipV4AddressCIDRComparator = function(a,b) {
+                a = a.children().html().split(/[./]/gm);
+                b = b.children().html().split(/[./]/gm);
                 for( var i = 0; i < a.length; i++ )
                 {
                   if( ( a[i] = parseInt( a[i] ) ) < ( b[i] = parseInt( b[i] ) ) )
@@ -176,6 +176,18 @@
                     return 1;
                 }
                 return 0;
+            };
+            var ipV6AddressCIDRComparator = function(a,b) {
+              a = a.children().html().split(/[:/]/gm);
+              b = b.children().html().split(/[:/]/gm);
+              for( var i = 0; i < a.length; i++ )
+              {
+                if((a[i] = parseInt("0x" + a[i] , 16)) < ( b[i] = parseInt( "0x" + b[i], 16)))
+                  return -1;
+                else if( a[i] > b[i] )
+                  return 1;
+              }
+              return 0;
             };
             var isIpV4Address = function(obj) {
               return !$.isArray(obj) && (/^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$/gm).test(obj);
@@ -244,8 +256,11 @@
                   if (numericDataCount > relevantElementsBorder) {
                     comparator = numericComparator;
                   }
-                  if (ipV4AddressDataCount + ipV4CIDRDataCount + ipV6AddressDataCount + ipV6AddressDataCount > relevantElementsBorder){
-                    comparator = ipAddressCIDRComparator;
+                  if (ipV4AddressDataCount + ipV4CIDRDataCount > relevantElementsBorder){
+                    comparator = ipV4AddressCIDRComparator;
+                  }
+                  if (ipV6AddressDataCount + ipV6AddressDataCount > relevantElementsBorder){
+                    comparator = ipV6AddressCIDRComparator;
                   }
                 }
 
