@@ -22,7 +22,7 @@
         serviceCheckboxNames = [];
     var serviceFields = [];
     var serviceOfferingUniqueNames = [{
-        id: null,
+        id: '',
         description: ' '
       },{
         id: 'Cloud.com-ConsoleProxy',
@@ -1377,7 +1377,7 @@
                                     memory: args.data.memory
                                 };
 
-                                if (args.data.uniqueName != null && args.data.uniqueName.length > 0){
+                                if (args.data.uniqueName.length > 0){
                                     $.extend(data, {
                                       uniquename: args.data.uniqueName
                                     });
@@ -1509,14 +1509,9 @@
                                     var data = {
                                         id: args.context.systemServiceOfferings[0].id,
                                         name: args.data.name,
-                                        displaytext: args.data.displaytext
+                                        displaytext: args.data.displaytext,
+                                        uniquename: args.data.uniquename
                                     };
-
-                                    if (args.data.uniquename != null && args.data.uniquename.length > 0){
-                                        $.extend(data, {
-                                          uniquename: args.data.uniquename
-                                        });
-                                    }
 
                                     $.ajax({
                                         url: createURL('updateServiceOffering'),
@@ -1526,6 +1521,7 @@
                                             args.response.success({
                                                 data: item
                                             });
+                                            $('.section-switcher select').val('systemServiceOfferings').trigger('change');
                                         },
                                         error: function(data) {
                                             args.response.error(parseXMLHttpResponse(data));
