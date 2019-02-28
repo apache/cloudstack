@@ -2615,6 +2615,19 @@ $.validator.addMethod("ipv4cidr", function(value, element) {
     return true;
 }, "The specified IPv4 CIDR is invalid.");
 
+$.validator.addMethod("ipv46cidrs", function(value, element) {
+    var result = true;
+    if (value) {
+        var validatorThis = this;
+        value.split(',').forEach(function(item){
+            if (result && !$.validator.methods.ipv46cidr.call(validatorThis, item.trim(), element)) {
+                result = false;
+            }
+        })
+    }
+    return result;
+}, "The specified IPv4/IPv6 CIDR input is invalid.");
+
 $.validator.addMethod("ipv46cidr", function(value, element) {
     if (this.optional(element) && value.length == 0)
         return true;
