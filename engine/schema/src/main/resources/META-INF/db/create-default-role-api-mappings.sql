@@ -332,7 +332,7 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`,
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 2, 'updateVMAffinityGroup', 'ALLOW', 309) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 2, 'updateVPC', 'ALLOW', 310) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 2, 'updateVirtualMachine', 'ALLOW', 311) ON DUPLICATE KEY UPDATE rule=rule;
-INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 2, 'updateVmNicIp', 'ALLOW', 312) ON DUPLICATE KEY UPDATE rule=rule;
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 2, 'updateVmNicIpMtu', 'ALLOW', 312) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 2, 'updateVpnConnection', 'ALLOW', 313) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 2, 'updateVpnCustomerGateway', 'ALLOW', 314) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 2, 'updateVpnGateway', 'ALLOW', 315) ON DUPLICATE KEY UPDATE rule=rule;
@@ -634,7 +634,7 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`,
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'updateVMAffinityGroup', 'ALLOW', 293) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'updateVPC', 'ALLOW', 294) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'updateVirtualMachine', 'ALLOW', 295) ON DUPLICATE KEY UPDATE rule=rule;
-INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'updateVmNicIp', 'ALLOW', 296) ON DUPLICATE KEY UPDATE rule=rule;
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'updateVmNicIpMtu', 'ALLOW', 296) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'updateVpnConnection', 'ALLOW', 297) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'updateVpnCustomerGateway', 'ALLOW', 298) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 3, 'updateVpnGateway', 'ALLOW', 299) ON DUPLICATE KEY UPDATE rule=rule;
@@ -894,7 +894,7 @@ INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`,
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'updateVMAffinityGroup', 'ALLOW', 251) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'updateVPC', 'ALLOW', 252) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'updateVirtualMachine', 'ALLOW', 253) ON DUPLICATE KEY UPDATE rule=rule;
-INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'updateVmNicIp', 'ALLOW', 254) ON DUPLICATE KEY UPDATE rule=rule;
+INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'updateVmNicIpMtu', 'ALLOW', 254) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'updateVpnConnection', 'ALLOW', 255) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'updateVpnCustomerGateway', 'ALLOW', 256) ON DUPLICATE KEY UPDATE rule=rule;
 INSERT INTO `cloud`.`role_permissions` (`uuid`, `role_id`, `rule`, `permission`, `sort_order`) values (UUID(), 4, 'updateVpnGateway', 'ALLOW', 257) ON DUPLICATE KEY UPDATE rule=rule;
