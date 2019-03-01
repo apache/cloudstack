@@ -27,6 +27,7 @@ import com.cloud.vm.VirtualMachine;
 import org.apache.cloudstack.acl.SecurityChecker.AccessType;
 import org.apache.cloudstack.api.ACL;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -65,7 +66,8 @@ public class AddNicToVMCmd extends BaseAsyncCmd {
     @Parameter(name = ApiConstants.IP_ADDRESS, type = CommandType.STRING, description = "IP Address for the new network")
     private String ipaddr;
 
-    @Parameter(name = ApiConstants.MTU, type = CommandType.INTEGER, description = "MTU size")
+    @Parameter(name = ApiConstants.MTU, type = CommandType.INTEGER, description = "MTU size", validations = {
+        ApiArgValidator.PositiveNumber})
     private int mtu;
 
     @Parameter(name = ApiConstants.MAC_ADDRESS, type = CommandType.STRING, description = "Mac Address for the new network")

@@ -29,6 +29,7 @@ import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
 import org.apache.cloudstack.api.APICommand;
+import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiCommandJobType;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -62,7 +63,7 @@ public class UpdateVmNicIpMtuCmd extends BaseAsyncCmd {
             private String ipAddr;
 
     @Parameter(name = ApiConstants.MTU, type = CommandType.INTEGER, required = false,
-            description = "MTU size")
+            description = "MTU size", validations = {ApiArgValidator.PositiveNumber})
             private int mtu;
 
     /////////////////////////////////////////////////////

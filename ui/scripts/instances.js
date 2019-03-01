@@ -2693,7 +2693,12 @@
                                             }
                                         },
                                         mtu: {
-                                            label: 'label.mtu'
+                                            label: 'label.mtu',
+                                            validation: {
+                                                number: true,
+                                                min: 1280,
+                                                max: 9216
+                                            }
                                         }
                                     }
                                 },
@@ -2829,7 +2834,12 @@
                                             }
                                         },
                                       mtu: {
-                                        label: 'label.mtu'
+                                        label: 'label.mtu',
+                                          validation: {
+                                              number: true,
+                                              min: 1280,
+                                              max: 9216
+                                          }
                                       }
                                     }
                                 },
