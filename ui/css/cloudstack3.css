@@ -8532,19 +8532,8 @@ div#details-tab-aclRules td.cidrlist span {
 }
 
 .recurring-snapshots .schedule p {
-  float: left;
   font-size: 13px;
-  padding: 0;
-  margin: 5px 0 0 14px;
-}
-
-.recurring-snapshots .schedule .forms {
-  width: 436px;
-  float: left;
-  /*+placement:shift 24px 2px;*/
-  position: relative;
-  left: 24px;
-  top: 2px;
+  margin: 0;
 }
 
 .recurring-snapshots .schedule .forms form {
@@ -8612,10 +8601,7 @@ div#details-tab-aclRules td.cidrlist span {
 
 .recurring-snapshots .scheduled-snapshots {
   clear: both;
-  display: inline-block;
-  /*+placement:shift 0px -26px;*/
   position: relative;
-  left: 0px;
   top: -26px;
 }
 
@@ -8627,17 +8613,15 @@ div#details-tab-aclRules td.cidrlist span {
   -webkit-text-shadow: 0px 2px 2px #FFFFFF;
   -o-text-shadow: 0px 2px 2px #FFFFFF;
   text-shadow: 0px 2px 2px #FFFFFF;
-  text-indent: 12px;
-  padding-bottom: 8px;
 }
 
 .recurring-snapshots .scheduled-snapshots table {
   border: none;
   /*+placement:shift 0px -14px;*/
   position: relative;
-  left: 0px;
   top: -14px;
-  width: 564px;
+  width: 100%;
+  margin: 0;
 }
 
 .recurring-snapshots .scheduled-snapshots table td.actions div.action span.icon {
@@ -8659,7 +8643,6 @@ div#details-tab-aclRules td.cidrlist span {
 
 .recurring-snapshots .scheduled-snapshots tr td {
   border: none;
-  min-width: 102px;
   padding: 5px 0px 0 14px;
   font-size: 12px;
   word-break: keep-all;
@@ -8682,7 +8665,7 @@ div#details-tab-aclRules td.cidrlist span {
 
 .recurring-snapshots .scheduled-snapshots table tbody tr td.actions {
   max-width: 22px !important;
-  min-width: 22px;
+  min-width: 22px !important;
 }
 
 .recurring-snapshots .scheduled-snapshots tr td.time {
@@ -8730,11 +8713,7 @@ div#details-tab-aclRules td.cidrlist span {
 
 .recurring-snapshots .ui-tabs ul li a {
   width: 76px;
-  text-indent: 28px;
-  margin: 0 14px 0 0;
-  padding: 8px 0 5px;
-  background: url(../images/sprites.png) no-repeat -521px -540px;
-  border: none;
+  background: url(../images/sprites.png) no-repeat -521px -533px;
 }
 
 .recurring-snapshots .ui-tabs ul li.disabled a {
@@ -8763,46 +8742,23 @@ div#details-tab-aclRules td.cidrlist span {
   cursor: default;
 }
 
-.recurring-snapshots .ui-tabs ul li.ui-state-active a,
-.recurring-snapshots .ui-tabs ul li:hover a {
-  background-color: #DFDFDF;
-  /*+border-radius:8px;*/
-  -moz-border-radius: 8px;
-  -webkit-border-radius: 8px;
-  -khtml-border-radius: 8px;
-  border-radius: 8px;
-  border-radius: 8px 8px 8px 8px;
-  /*+box-shadow:inset 0px 1px 2px #4E4E4E;*/
-  -moz-box-shadow: inset 0px 1px 2px #4E4E4E;
-  -webkit-box-shadow: inset 0px 1px 2px #4E4E4E;
-  -o-box-shadow: inset 0px 1px 2px #4E4E4E;
-  box-shadow: inset 0px 1px 2px #4E4E4E;
-}
-
 .recurring-snapshots .ui-tabs ul li.daily a {
-  background-position: -522px -577px;
+  background-position: -522px -570px;
 }
 
 .recurring-snapshots .ui-tabs ul li.weekly a {
-  background-position: -526px -612px;
+  background-position: -526px -605px;
 }
 
 .recurring-snapshots .ui-tabs ul li.monthly a {
-  background-position: -528px -656px;
+  background-position: -528px -649px;
 }
 
 .recurring-snapshots .ui-tabs div.ui-tabs-panel {
   height: 144px;
-  width: 576px;
+  width: 100%;
   border: none;
-  border-bottom: 1px solid #C3C3C3;
   background: #E9E9E9;
-  margin: 0;
-  padding: 0;
-  /*+placement:shift -89px 0px;*/
-  position: relative;
-  left: -89px;
-  top: 0px;
 }
 
 .recurring-snapshots .ui-tabs div.ui-tabs-panel.ui-tabs-hide {
