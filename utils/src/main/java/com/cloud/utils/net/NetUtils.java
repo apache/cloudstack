@@ -92,6 +92,9 @@ public class NetUtils {
     public final static int IPV6_EUI64_11TH_BYTE = -1;
     public final static int IPV6_EUI64_12TH_BYTE = -2;
 
+    public final static int MTU_MIN_SIZE = 1280;
+    public final static int MTU_MAX_SIZE = 9216;
+
     public static long createSequenceBasedMacAddress(final long macAddress, long globalConfig) {
         /*
             Logic for generating MAC address:
@@ -485,6 +488,10 @@ public class NetUtils {
         final long startIPLong = NetUtils.ip2Long(startIP);
         final long endIPLong = NetUtils.ip2Long(endIP);
         return startIPLong <= endIPLong;
+    }
+
+    public static boolean isValidMtu(final int mtu) {
+        return MTU_MIN_SIZE <= mtu && mtu <= MTU_MAX_SIZE;
     }
 
     public static boolean isValidIp4(final String ip) {

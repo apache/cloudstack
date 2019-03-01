@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.hypervisor.kvm.resource;
 
+import com.cloud.utils.net.NetUtils;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
@@ -1196,7 +1197,7 @@ public class LibvirtVMDef {
             if (_networkName != null) {
                 netBuilder.append("<target dev='" + _networkName + "'/>\n");
             }
-            if (_mtu > 0 && _mtu <= 9000) {
+            if (NetUtils.isValidMtu(_mtu)) {
                 netBuilder.append("<mtu size='" + _mtu + "'/>\n");
             }
             if (_macAddr != null) {
