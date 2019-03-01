@@ -51,6 +51,8 @@ import java.util.Map;
 public class ActionEventUtils {
     private static final Logger s_logger = Logger.getLogger(ActionEventUtils.class);
 
+    private String _resourceUuid;
+
     private static EventDao s_eventDao;
     private static AccountDao s_accountDao;
     private static ProjectDao s_projectDao;
@@ -224,6 +226,7 @@ public class ActionEventUtils {
         System.out.println("event.getAccountId() " + String.valueOf(event.getAccountId()));
         System.out.println("event.getDomainId() " + String.valueOf(event.getDomainId()));
         System.out.println("event.getState() " + event.getState().toString());
+
         System.out.println("==========================================================================================");
         System.out.println("======================================CADF================================================");
         System.out.println(gson.toJson(cadf));
@@ -247,6 +250,7 @@ public class ActionEventUtils {
         // get the entity details for which ActionEvent is generated
         String entityType = null;
         String entityUuid = null;
+
         CallContext context = CallContext.current();
         //Get entity Class(Example - VirtualMachine.class) from the event Type eg. - VM.CREATE
         Class<?> entityClass = EventTypes.getEntityClassForEvent(eventType);
@@ -262,6 +266,9 @@ public class ActionEventUtils {
                 }
             }
         }
+
+        System.out.println("Reached publish on event bus");
+
 
         org.apache.cloudstack.framework.events.Event event =
             new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, EventTypes.getEntityForEvent(eventType), entityUuid);
