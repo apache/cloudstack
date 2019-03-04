@@ -81,6 +81,13 @@ public final class CitrixMigrateCommandWrapper extends CommandWrapper<MigrateCom
                 }
                 citrixResourceBase.migrateVM(conn, dsthost, vm, vmName);
                 vm.setAffinity(conn, dsthost);
+
+                final String result = citrixResourceBase.callHostPlugin(conn, "vmops", "destroy_network_rules_for_vm", "vmName", command.getVmName());
+                if (result == null || result.isEmpty() || !Boolean.parseBoolean(result)) {
+                    s_logger.warn(String.format("Failed to remove network rulesfrom source host [%s] for migrated vm [%s]", dsthost.getHostname(conn), command.getVmName()));
+                } else {
+                    s_logger.debug(String.format("Removed network rules from source host [%s] for migrated vm [%s]", dsthost.getHostname(conn), command.getVmName()));
+                }
             }
 
             // The iso can be attached to vm only once the vm is (present in the host) migrated.

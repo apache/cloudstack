@@ -824,7 +824,7 @@ def default_network_rules(session, args):
        logging.debug(" failed to add vm " + vm_ip + " ip to set ")
        return 'false'
 
-    #add secodnary nic ips to ipset
+    #add secondary nic ips to ipset
     secIpSet = "1"
     ips = sec_ips.split(';')
     ips.pop()
