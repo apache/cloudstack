@@ -114,8 +114,7 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
         cmd = updateConfiguration.updateConfigurationCmd()
         cmd.name = name
         cmd.value = value
-        return self.apiclient.updateConfigurationCmd(cmd)
-
+        return self.apiclient.updateConfiguration(cmd)
 
     # Compare XML Element objects
     def elements_equal(self, e1, e2):
@@ -187,12 +186,114 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
         return uuid_str[i + 1:].strip()
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_deploy_vm__with_extraconfig_kvm(self):
+    def test_01_deploy_vm__with_extraconfig_throws_exception_kvm(self):
+        '''
+        Test that extra config is not added when element tag is not added on the allowed list global config on KVM hosts
+        '''
+
+        hypervisor = self.hypervisor.lower()
+        if hypervisor != 'kvm':
+            raise self.skipTest("Skipping test case for non-kvm hypervisor")
+
+        '''
+        The following extraconfig is required for enabling hugepages on kvm
+        <memoryBacking>
+            <hugepages/>
+        </memoryBacking>
+        url encoded extra_config = '%3CmemoryBacking%3E%0D%0A++%3Chugepages%2F%3E%0D%0A%3C%2FmemoryBacking%3E'
+        '''
+        extraconfig = "%3CmemoryBacking%3E%0D%0A++%3Chugepages%2F%3E%0D%0A%3C%2FmemoryBacking%3E"
+
+        try:
+            # Clear KVM allow list to show that code throws exception when command is not included in the list
+            name = 'allow.additional.vm.configuration.list.kvm'
+
+            self.add_global_config(name, "")
+            self.assertRaises(Exception,
+                              self.deploy_vm(hypervisor, extraconfig),
+                              "Exception was not thrown, check kvm global configuration")
+        except Exception as e:
+            logging.debug(e)
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    def test_02_deploy_vm__with_extraconfig_kvm(self):
         '''
         Test that extra config is added on KVM hosts
         '''
 
-        if self.hypervisor.lower() != 'kvm':
+        hypervisor = self.hypervisor.lower()
+        if hypervisor != 'kvm':
+            raise self.skipTest("Skipping test case for non-kvm hypervisor")
+
+        name = 'allow.additional.vm.configuration.list.kvm'
+        value = 'memoryBacking'
+
+        add_config_response = self.add_global_config(name, value)
+
+        if add_config_response.name:
+            try:
+                '''
+                The following extraconfig is required for enabling hugepages on kvm
+                <memoryBacking>
+                    <hugepages/>
+                </memoryBacking>
+                url encoded extra_config = '%3CmemoryBacking%3E%0D%0A++%3Chugepages%2F%3E%0D%0A%3C%2FmemoryBacking%3E'
+                '''
+                extraconfig = "%3CmemoryBacking%3E%0D%0A++%3Chugepages%2F%3E%0D%0A%3C%2FmemoryBacking%3E"
+
+                response = self.deploy_vm(hypervisor, extraconfig)
+
+                host_id = response.hostid
+                host = list_hosts(
+                    self.apiclient,
+                    id=host_id,
+                    hypervisor=hypervisor)
+
+                instance_name = response.instancename
+                host_ipaddress = host[0].ipaddress
+
+                ssh_client = SshClient(host_ipaddress, port=22,
+                                       user=self.hostConfig['username'],
+                                       passwd=self.hostConfig['password'])
+                virsh_cmd = 'virsh dumpxml %s' % instance_name
+                xml_res = ssh_client.execute(virsh_cmd)
+                xml_as_str = ''.join(xml_res)
+
+                extraconfig_decoded_xml = '<config>' + urllib.unquote(extraconfig) + '</config>'
+
+                # Root XML Elements
+                parser = etree.XMLParser(remove_blank_text=True)
+                domain_xml_root = ET.fromstring(xml_as_str, parser=parser)
+                decoded_xml_root = ET.fromstring(extraconfig_decoded_xml, parser=parser)
+                for child in decoded_xml_root:
+                    find_element_in_domain_xml = domain_xml_root.find(child.tag)
+
+                    # Fail if extra config is not found in domain xml
+                    self.assertNotEquals(
+                        0,
+                        len(find_element_in_domain_xml),
+                        'Element tag from extra config not added to VM'
+                    )
+
+                    # Compare found XML node with extra config node
+                    is_a_match = self.elements_equal(child, find_element_in_domain_xml)
+                    self.assertEquals(
+                        True,
+                        is_a_match,
+                        'The element from tags from extra config do not match with those found in domain xml'
+                    )
+            finally:
+                self.destroy_vm(response.id)
+                self.add_global_config(name, "")
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    def test_03_update_vm__with_extraconfig_kvm(self):
+        '''
+        Test that extra config is added on KVM hosts
+        '''
+
+        hypervisor = self.hypervisor.lower()
+        if hypervisor != 'kvm':
             raise self.skipTest("Skipping test case for non-kvm hypervisor")
 
         name = 'allow.additional.vm.configuration.list.kvm'
@@ -200,153 +301,104 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
 
         add_config_response = self.add_global_config(name, value)
 
-        self.assertTrue(
-            name,
-            add_config_response.name,
-            "Failed to set global setting " + name + "on KVM"
-        )
+        if add_config_response.name:
+            try:
+                '''
+                The following extraconfig is required for enabling hugepages on kvm
+                <memoryBacking>
+                    <hugepages/>
+                </memoryBacking>
+                url encoded extra_config = '%3CmemoryBacking%3E%0D%0A++%3Chugepages%2F%3E%0D%0A%3C%2FmemoryBacking%3E'
+                '''
+                extraconfig = "%3CmemoryBacking%3E%0D%0A++%3Chugepages%2F%3E%0D%0A%3C%2FmemoryBacking%3E"
 
-        try:
-            '''
-            The following extraconfig is required for enabling hugepages on kvm
-            <memoryBacking>
-                <hugepages/>
-            </memoryBacking>
-            url encoded extra_config = '%3CmemoryBacking%3E%0D%0A++%3Chugepages%2F%3E%0D%0A%3C%2FmemoryBacking%3E'
-            '''
-            extraconfig = "%3CmemoryBacking%3E%0D%0A++%3Chugepages%2F%3E%0D%0A%3C%2FmemoryBacking%3E"
+                response = self.deploy_vm(hypervisor)
+                vm_id = response.id
 
-            response = self.deploy_vm('kvm', extraconfig)
+                '''
+                For updateVirtualMachineCmd, the VM must be stopped and restarted for changes to take effect
+                '''
+                self.stop_vm(vm_id)
+                self.update_vm(vm_id, extraconfig)
+                start_resp = self.start_vm(vm_id)
 
-            host_id = response.hostid
-            host = list_hosts(
-                self.apiclient,
-                id=host_id,
-                hypervisor='kvm')
+                host_id = start_resp.hostid
+                host = list_hosts(
+                    self.apiclient,
+                    id=host_id,
+                    hypervisor=hypervisor)
 
-            instance_name = response.instancename
-            host_ipaddress = host[0].ipaddress
+                instance_name = response.instancename
+                host_ipaddress = host[0].ipaddress
 
-            ssh_client = SshClient(host_ipaddress, port=22,
-                                   user=self.hostConfig['username'],
-                                   passwd=self.hostConfig['password'])
-            virsh_cmd = 'virsh dumpxml %s' % instance_name
-            xml_res = ssh_client.execute(virsh_cmd)
-            xml_as_str = ''.join(xml_res)
+                ssh_client = SshClient(host_ipaddress, port=22,
+                                       user=self.hostConfig['username'],
+                                       passwd=self.hostConfig['password'])
+                virsh_cmd = 'virsh dumpxml %s' % instance_name
+                xml_res = ssh_client.execute(virsh_cmd)
+                xml_as_str = ''.join(xml_res)
 
-            extraconfig_decoded_xml = '<config>' + urllib.unquote(extraconfig) + '</config>'
+                extraconfig_decoded_xml = '<config>' + urllib.unquote(extraconfig) + '</config>'
 
-            # Root XML Elements
-            parser = etree.XMLParser(remove_blank_text=True)
-            domain_xml_root = ET.fromstring(xml_as_str, parser=parser)
-            decoded_xml_root = ET.fromstring(extraconfig_decoded_xml, parser=parser)
-            for child in decoded_xml_root:
-                find_element_in_domain_xml = domain_xml_root.find(child.tag)
+                # Root XML Elements
+                parser = etree.XMLParser(remove_blank_text=True)
+                domain_xml_root = ET.fromstring(xml_as_str, parser=parser)
+                decoded_xml_root = ET.fromstring(extraconfig_decoded_xml, parser=parser)
+                for child in decoded_xml_root:
+                    find_element_in_domain_xml = domain_xml_root.find(child.tag)
 
-                # Fail if extra config is not found in domain xml
-                self.assertNotEquals(
-                    0,
-                    len(find_element_in_domain_xml),
-                    'Element tag from extra config not added to VM'
-                )
+                    # Fail if extra config is not found in domain xml
+                    self.assertNotEquals(
+                        0,
+                        len(find_element_in_domain_xml),
+                        'Element tag from extra config not added to VM'
+                    )
 
-                # Compare found XML node with extra config node
-                is_a_match = self.elements_equal(child, find_element_in_domain_xml)
-                self.assertEquals(
-                    True,
-                    is_a_match,
-                    'The element from tags from extra config do not match with those found in domain xml'
-                )
-        finally:
-            self.destroy_vm(response.id)
-
-    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_update_vm__with_extraconfig_kvm(self):
-        '''
-        Test that extra config is added on KVM hosts
-        '''
-        if self.hypervisor.lower() != 'kvm':
-            raise self.skipTest("Skipping test case for non-kvm hypervisor")
-
-        name = 'allow.additional.vm.configuration.list.kvm'
-        value = 'memoryBacking, hugepages'
-
-        add_config_response = self.add_global_config(name, value)
-
-        self.assertTrue(
-            name,
-            add_config_response.name,
-            "Failed to set global setting " + name + "on KVM"
-        )
-
-        try:
-            '''
-            The following extraconfig is required for enabling hugepages on kvm
-            <memoryBacking>
-                <hugepages/>
-            </memoryBacking>
-            url encoded extra_config = '%3CmemoryBacking%3E%0D%0A++%3Chugepages%2F%3E%0D%0A%3C%2FmemoryBacking%3E'
-            '''
-            extraconfig = "%3CmemoryBacking%3E%0D%0A++%3Chugepages%2F%3E%0D%0A%3C%2FmemoryBacking%3E"
-
-            response = self.deploy_vm('kvm')
-            vm_id = response.id
-
-            '''
-            For updateVirtualMachineCmd, the VM must be stopped and restarted for changes to take effect
-            '''
-            self.stop_vm(vm_id)
-            self.update_vm(vm_id, extraconfig)
-            start_resp = self.start_vm(vm_id)
-
-            host_id = start_resp.hostid
-            host = list_hosts(
-                self.apiclient,
-                id=host_id,
-                hypervisor='kvm')
-
-            instance_name = response.instancename
-            host_ipaddress = host[0].ipaddress
-
-            ssh_client = SshClient(host_ipaddress, port=22,
-                                   user=self.hostConfig['username'],
-                                   passwd=self.hostConfig['password'])
-            virsh_cmd = 'virsh dumpxml %s' % instance_name
-            xml_res = ssh_client.execute(virsh_cmd)
-            xml_as_str = ''.join(xml_res)
-
-            extraconfig_decoded_xml = '<config>' + urllib.unquote(extraconfig) + '</config>'
-
-            # Root XML Elements
-            parser = etree.XMLParser(remove_blank_text=True)
-            domain_xml_root = ET.fromstring(xml_as_str, parser=parser)
-            decoded_xml_root = ET.fromstring(extraconfig_decoded_xml, parser=parser)
-            for child in decoded_xml_root:
-                find_element_in_domain_xml = domain_xml_root.find(child.tag)
-
-                # Fail if extra config is not found in domain xml
-                self.assertNotEquals(
-                    0,
-                    len(find_element_in_domain_xml),
-                    'Element tag from extra config not added to VM'
-                )
-
-                # Compare found XML node with extra config node
-                is_a_match = self.elements_equal(child, find_element_in_domain_xml)
-                self.assertEquals(
-                    True,
-                    is_a_match,
-                    'The element from tags from extra config do not match with those found in domain xml'
-                )
-        finally:
-            self.destroy_vm(vm_id)
+                    # Compare found XML node with extra config node
+                    is_a_match = self.elements_equal(child, find_element_in_domain_xml)
+                    self.assertEquals(
+                        True,
+                        is_a_match,
+                        'The element from tags from extra config do not match with those found in domain xml'
+                    )
+            finally:
+                self.destroy_vm(vm_id)
+                self.add_global_config(name, "")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_deploy_vm__with_extraconfig_vmware(self):
+    def test_05_deploy_vm__with_extraconfig_throws_exception_vmware(self):
+        '''
+        Test that extra config is not added when configuration key is not added on the allowed list global config for VMWARE hosts
+        '''
+
+        hypervisor = self.hypervisor.lower()
+        if hypervisor != 'vmware':
+            raise self.skipTest("Skipping test case for non-vmware hypervisor")
+
+        '''
+        The following extra configuration is used to set Hyper-V instance to run on ESXi host
+        hypervisor.cpuid.v0 = FALSE
+        '''
+        extraconfig = 'hypervisor.cpuid.v0%3DFALSE'
+
+        try:
+            # Clear VMWARE allow list to show that code throws exception when command is not included in the list
+            name = 'allow.additional.vm.configuration.list.vmware'
+
+            self.add_global_config(name, "")
+            self.assertRaises(Exception,
+                              self.deploy_vm(hypervisor, extraconfig),
+                              "Exception was not thrown, check VMWARE global configuration")
+        except Exception as e:
+            logging.debug(e)
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    def test_06_deploy_vm__with_extraconfig_vmware(self):
         '''
         Test that extra config is added on VMware hosts
         '''
-        if self.hypervisor.lower() != 'vmware':
+        hypervisor = self.hypervisor.lower()
+        if hypervisor != 'vmware':
             raise self.skipTest("Skipping test case for non-vmware hypervisor")
 
         name = 'allow.additional.vm.configuration.list.vmware'
@@ -354,52 +406,80 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
 
         add_config_response = self.add_global_config(name, value)
 
-        self.assertTrue(
-            name,
-            add_config_response.name,
-            "Failed to set global setting " + name + "on VMware"
-        )
+        if add_config_response.name:
 
-        '''
-        The following extra configuration is used to set Hyper-V instance to run on ESXi host
+            '''
+            The following extra configuration is used to set Hyper-V instance to run on ESXi host
+            hypervisor.cpuid.v0 = FALSE
+            '''
+            extraconfig = 'hypervisor.cpuid.v0%3DFALSE'
+            try:
+                response = self.deploy_vm(hypervisor, extraconfig)
+                host_id = response.hostid
+                host = list_hosts(
+                    self.apiclient,
+                    id=host_id)
 
-        '''
-        extraconfig = 'hypervisor.cpuid.v0%3DFALSE'
-        try:
-            response = self.deploy_vm('vmware', extraconfig)
-            host_id = response.hostid
-            host = list_hosts(
-                self.apiclient,
-                id=host_id)
+                instance_name = response.instancename
+                host_ipaddress = host[0].ipaddress
 
-            instance_name = response.instancename
-            host_ipaddress = host[0].ipaddress
+                ssh_client = SshClient(host_ipaddress, port=22,
+                                       user=self.hostConfig['username'],
+                                       passwd=self.hostConfig['password'])
 
-            ssh_client = SshClient(host_ipaddress, port=22,
-                                   user=self.hostConfig['username'],
-                                   passwd=self.hostConfig['password'])
+                extraconfig_decoded = urllib.unquote(extraconfig)
+                config_arr = extraconfig_decoded.splitlines()
 
-            extraconfig_decoded = urllib.unquote(extraconfig)
-            config_arr = extraconfig_decoded.splitlines()
-
-            for config in config_arr:
-                vmx_config = self.prepare_vmware_config(config)
-                vmx_file_name = "\"$(esxcli vm process list | grep %s | tail -1 | awk '{print $3}')\"" % instance_name
-                # parse vm instance vmx file to see if extraconfig has been added
-                grep_config = "cat %s | grep -w '%s'" % (vmx_file_name, vmx_config)
-                result = ssh_client.execute(grep_config)
-                # Match exact configuration from vmx file, return empty result array if configuration is not found
-                self.assertNotEquals(
-                    0,
-                    len(result),
-                    'Extra  configuration not found in instance vmx file'
-                )
-        finally:
-            self.destroy_vm(response.id)
+                for config in config_arr:
+                    vmx_config = self.prepare_vmware_config(config)
+                    vmx_file_name = "\"$(esxcli vm process list | grep %s | tail -1 | awk '{print $3}')\"" % instance_name
+                    # parse vm instance vmx file to see if extraconfig has been added
+                    grep_config = "cat %s | grep -w '%s'" % (vmx_file_name, vmx_config)
+                    result = ssh_client.execute(grep_config)
+                    # Match exact configuration from vmx file, return empty result array if configuration is not found
+                    self.assertNotEquals(
+                        0,
+                        len(result),
+                        'Extra  configuration not found in instance vmx file'
+                    )
+            finally:
+                self.destroy_vm(response.id)
+                self.add_global_config(name, "")
 
     @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
-    def test_deploy_vm__with_extraconfig_xenserver(self):
-        if self.hypervisor.lower() != 'xenserver':
+    def test_07_deploy_vm__with_extraconfig_throws_exception_xenserver(self):
+        '''
+        Test that extra config is not added when configuration key is not added on the allowed list global config for XenServer hosts
+        '''
+
+        hypervisor = self.hypervisor.lower()
+        if hypervisor != 'xenserver':
+            raise self.skipTest("Skipping test case for non-xenserver hypervisor")
+
+        '''
+        Following commands are used to convert a VM from HVM to PV and set using vm-param-set
+        HVM-boot-policy=
+        PV-bootloader=pygrub
+        PV-args=hvc0
+        '''
+
+        extraconfig = 'HVM-boot-policy%3D%0APV-bootloader%3Dpygrub%0APV-args%3Dhvc0'
+
+        try:
+            # Clear VMWARE allow list to show that code throws exception when command is not included in the list
+            name = 'allow.additional.vm.configuration.list.xenserver'
+
+            self.add_global_config(name, "")
+            self.assertRaises(Exception,
+                              self.deploy_vm(hypervisor, extraconfig),
+                              "Exception was not thrown, check XenServer global configuration")
+        except Exception as e:
+            logging.debug(e)
+
+    @attr(tags=["devcloud", "advanced", "advancedns", "smoke", "basic", "sg"], required_hardware="true")
+    def test_08_deploy_vm__with_extraconfig_xenserver(self):
+        hypervisor = self.hypervisor.lower()
+        if hypervisor != 'xenserver':
             raise self.skipTest("Skipping test case for non-xenserver hypervisor")
         """
         Following commands are used to convert a VM from HVM to PV and set using vm-param-set
@@ -413,41 +493,38 @@ class TestAddConfigtoDeployVM(cloudstackTestCase):
 
         add_config_response = self.add_global_config(name, value)
 
-        self.assertTrue(
-            name,
-            add_config_response.name,
-            "Failed to set global setting " + name + "on Xenserver"
-        )
-        extraconfig = 'HVM-boot-policy%3D%0APV-bootloader%3Dpygrub%0APV-args%3Dhvc0'
-        try:
-            response = self.deploy_vm('xenserver', extraconfig)
-            host_id = response.hostid
-            host = list_hosts(
-                self.apiclient,
-                id=host_id)
+        if add_config_response.name:
+            extraconfig = 'HVM-boot-policy%3D%0APV-bootloader%3Dpygrub%0APV-args%3Dhvc0'
+            try:
+                response = self.deploy_vm(hypervisor, extraconfig)
+                host_id = response.hostid
+                host = list_hosts(
+                    self.apiclient,
+                    id=host_id)
 
-            host_ipaddress = host[0].ipaddress
+                host_ipaddress = host[0].ipaddress
 
-            ssh_client = SshClient(host_ipaddress, port=22,
-                                   user=self.hostConfig['username'],
-                                   passwd=self.hostConfig['password'])
+                ssh_client = SshClient(host_ipaddress, port=22,
+                                       user=self.hostConfig['username'],
+                                       passwd=self.hostConfig['password'])
 
-            extraconfig_decoded = urllib.unquote(extraconfig)
-            config_arr = extraconfig_decoded.splitlines()
+                extraconfig_decoded = urllib.unquote(extraconfig)
+                config_arr = extraconfig_decoded.splitlines()
 
-            # Get vm instance uuid
-            instance_uuid = self.get_vm_uuid(response.instancename, ssh_client)
-            for config in config_arr:
-                config_tuple = self.get_xen_param_values(config)
-                # Log on to XenServer host and check the vm-param-get
-                vm_config_check = 'xe vm-param-get param-name={} uuid={}'.format(config_tuple[0], instance_uuid)
-                result = ssh_client.execute(vm_config_check)
-                param_value = config_tuple[1].strip()
-                # Check if each configuration command has set the configuration as sent with extraconfig
-                self.assertEquals(
-                    param_value,
-                    result[0],
-                    'Extra  configuration not found in VM param list'
-                )
-        finally:
-            self.destroy_vm(response.id)
+                # Get vm instance uuid
+                instance_uuid = self.get_vm_uuid(response.instancename, ssh_client)
+                for config in config_arr:
+                    config_tuple = self.get_xen_param_values(config)
+                    # Log on to XenServer host and check the vm-param-get
+                    vm_config_check = 'xe vm-param-get param-name={} uuid={}'.format(config_tuple[0], instance_uuid)
+                    result = ssh_client.execute(vm_config_check)
+                    param_value = config_tuple[1].strip()
+                    # Check if each configuration command has set the configuration as sent with extraconfig
+                    self.assertEquals(
+                        param_value,
+                        result[0],
+                        'Extra  configuration not found in VM param list'
+                    )
+            finally:
+                self.destroy_vm(response.id)
+                self.add_global_config(name, "")
