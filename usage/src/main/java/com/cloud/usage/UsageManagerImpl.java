@@ -16,7 +16,10 @@
 // under the License.
 package com.cloud.usage;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.InetAddress;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -33,15 +36,17 @@ import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
+import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
+import org.apache.cloudstack.managed.context.ManagedContextRunnable;
 import org.apache.cloudstack.quota.QuotaAlertManager;
 import org.apache.cloudstack.quota.QuotaManager;
 import org.apache.cloudstack.quota.QuotaStatement;
+import org.apache.cloudstack.usage.UsageTypes;
 import org.apache.cloudstack.utils.usage.UsageUtils;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-import org.apache.cloudstack.framework.config.dao.ConfigurationDao;
-import org.apache.cloudstack.managed.context.ManagedContextRunnable;
-import org.apache.cloudstack.usage.UsageTypes;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.event.EventTypes;
@@ -57,10 +62,10 @@ import com.cloud.usage.dao.UsageNetworkDao;
 import com.cloud.usage.dao.UsageNetworkOfferingDao;
 import com.cloud.usage.dao.UsagePortForwardingRuleDao;
 import com.cloud.usage.dao.UsageSecurityGroupDao;
-import com.cloud.usage.dao.UsageVMSnapshotOnPrimaryDao;
 import com.cloud.usage.dao.UsageStorageDao;
 import com.cloud.usage.dao.UsageVMInstanceDao;
 import com.cloud.usage.dao.UsageVMSnapshotDao;
+import com.cloud.usage.dao.UsageVMSnapshotOnPrimaryDao;
 import com.cloud.usage.dao.UsageVPNUserDao;
 import com.cloud.usage.dao.UsageVmDiskDao;
 import com.cloud.usage.dao.UsageVolumeDao;
@@ -72,11 +77,11 @@ import com.cloud.usage.parser.PortForwardingUsageParser;
 import com.cloud.usage.parser.SecurityGroupUsageParser;
 import com.cloud.usage.parser.StorageUsageParser;
 import com.cloud.usage.parser.VMInstanceUsageParser;
+import com.cloud.usage.parser.VMSanpshotOnPrimaryParser;
 import com.cloud.usage.parser.VMSnapshotUsageParser;
 import com.cloud.usage.parser.VPNUserUsageParser;
 import com.cloud.usage.parser.VmDiskUsageParser;
 import com.cloud.usage.parser.VolumeUsageParser;
-import com.cloud.usage.parser.VMSanpshotOnPrimaryParser;
 import com.cloud.user.Account;
 import com.cloud.user.AccountVO;
 import com.cloud.user.UserStatisticsVO;
@@ -92,6 +97,7 @@ import com.cloud.utils.db.GlobalLock;
 import com.cloud.utils.db.QueryBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.TransactionLegacy;
+import com.cloud.utils.exception.CloudRuntimeException;
 
 @Component
 public class UsageManagerImpl extends ManagerBase implements UsageManager, Runnable {
@@ -175,6 +181,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private Future _heartbeat = null;
     private Future _sanity = null;
     private boolean  usageSnapshotSelection = false;
+
+    /**
+     * File that stores a string corresponding to the cloudstack-usage.service process id (pid).
+     */
+    private static final String CLOUDSTACK_USAGE_SERVER_SERVICE_PID_FILE = "/etc/cloudstack/usage/cloudstack-usage.service.pid";
 
     public UsageManagerImpl() {
     }
@@ -271,8 +282,29 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             s_logger.error("Unhandled exception configuring UsageManger", e);
             throw new ConfigurationException("Unhandled exception configuring UsageManager " + e.toString());
         }
-        _pid = Integer.parseInt(System.getProperty("pid"));
+
+        configureUsageManagerServicePid();
         return true;
+    }
+
+    /**
+     * Sets the '_pid' variable based on the cloudstack-usage.service process id (pid).
+     */
+    protected void configureUsageManagerServicePid() {
+        File usageServicePid = new File(CLOUDSTACK_USAGE_SERVER_SERVICE_PID_FILE);
+        if (!usageServicePid.exists()) {
+            throw new CloudRuntimeException(String.format("Cannot find file [%s].", CLOUDSTACK_USAGE_SERVER_SERVICE_PID_FILE));
+        }
+        if (!usageServicePid.canRead()) {
+            throw new CloudRuntimeException(String.format("Cannot read file [%s].", CLOUDSTACK_USAGE_SERVER_SERVICE_PID_FILE));
+        }
+        try {
+            String pidAsString = FileUtils.readFileToString(usageServicePid, Charset.defaultCharset());
+            String pidAsStringWithoutLineSeparator = pidAsString.replace(System.getProperty("line.separator"), "");
+            _pid = NumberUtils.toInt(pidAsStringWithoutLineSeparator);
+        } catch (IOException e) {
+            throw new CloudRuntimeException(e);
+        }
     }
 
     @Override

@@ -24,7 +24,9 @@ After=network.target network-online.target
 [Service]
 Type=simple
 EnvironmentFile=/etc/default/cloudstack-usage
-ExecStart=/usr/bin/java $JAVA_OPTS -cp $CLASSPATH $JAVA_CLASS
+ExecStart=/usr/bin/java $JAVA_DEBUG $JAVA_OPTS -cp $CLASSPATH $JAVA_CLASS
+ExecStartPost=/bin/sh -c "systemctl show -p MainPID cloudstack-usage.service 2>/dev/null | cut -d= -f2 > /etc/cloudstack/usage/cloudstack-usage.service.pid"
+
 Restart=always
 RestartSec=10s
 
