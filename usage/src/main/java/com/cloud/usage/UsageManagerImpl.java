@@ -183,9 +183,9 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private boolean  usageSnapshotSelection = false;
 
     /**
-     * File that stores a string corresponding to the cloudstack-usage.service process id (pid).
+     * File "/var/run/cloudstack-usage.service.pid" that stores a string corresponding to the cloudstack-usage.service process id (pid).
      */
-    private static final String CLOUDSTACK_USAGE_SERVER_SERVICE_PID_FILE = "/etc/cloudstack/usage/cloudstack-usage.service.pid";
+    private static final String CLOUDSTACK_USAGE_SERVER_SERVICE_PID_FILE = "/var/run/cloudstack-usage.service.pid";
 
     public UsageManagerImpl() {
     }
@@ -288,7 +288,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     }
 
     /**
-     * Sets the '_pid' variable based on the cloudstack-usage.service process id (pid).
+     * Sets the '_pid' variable based on the cloudstack-usage.service process id (pid) according to the file /var/run/cloudstack-usage.service.pid. </br>
+     * It thorws a CloudRuntimeException in the following cases:
+     * <ul>
+     *  <li>Cannot find the pid file</li>
+     *  <li>Cannot read the pid file</li>
+     *  <li>NumberUtils.toInt returns 0 (zero) if the conversion fails (pid is null or "")</li>  
+     * </ul>
      */
     protected void configureUsageManagerServicePid() {
         File usageServicePid = new File(CLOUDSTACK_USAGE_SERVER_SERVICE_PID_FILE);
@@ -302,6 +308,10 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             String pidAsString = FileUtils.readFileToString(usageServicePid, Charset.defaultCharset());
             String pidAsStringWithoutLineSeparator = pidAsString.replace(System.getProperty("line.separator"), "");
             _pid = NumberUtils.toInt(pidAsStringWithoutLineSeparator);
+            if (_pid == 0) {
+                throw new CloudRuntimeException(
+                        String.format("Failed to retrieve a valid cloudstack-usage.service pid [file:%s, pid at file:%s]", CLOUDSTACK_USAGE_SERVER_SERVICE_PID_FILE, pidAsString));
+            }
         } catch (IOException e) {
             throw new CloudRuntimeException(e);
         }
