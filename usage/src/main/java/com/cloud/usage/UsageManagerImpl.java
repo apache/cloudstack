@@ -183,7 +183,7 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
     private boolean  usageSnapshotSelection = false;
 
     /**
-     * File "/var/run/cloudstack-usage.service.pid" that stores a string corresponding to the cloudstack-usage.service process id (pid).
+     * File "/var/run/cloudstack-usage.service.pid" that stores a string corresponding to the cloudstack-usage.service process identified (PID).
      */
     private static final String CLOUDSTACK_USAGE_SERVER_SERVICE_PID_FILE = "/var/run/cloudstack-usage.service.pid";
 
@@ -283,20 +283,20 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
             throw new ConfigurationException("Unhandled exception configuring UsageManager " + e.toString());
         }
 
-        configureUsageManagerServicePid();
+        _pid = retrieveUsageManagerServicePid();
         return true;
     }
 
     /**
-     * Sets the '_pid' variable based on the cloudstack-usage.service process id (pid) according to the file /var/run/cloudstack-usage.service.pid. </br>
+     * Retrieves the cloudstack-usage.service PID according to the file /var/run/cloudstack-usage.service.pid.</br>
      * It throws a CloudRuntimeException in the following cases:
      * <ul>
-     *  <li>Cannot find the pid file</li>
-     *  <li>Cannot read the pid file</li>
-     *  <li>NumberUtils.toInt returns 0 (zero) if the conversion fails (pid is null or "")</li>
+     *  <li>Cannot find the PID file</li>
+     *  <li>Cannot read the PID file</li>
+     *  <li>NumberUtils.toInt returns 0 (zero) if the conversion fails (PID is null or "")</li>
      * </ul>
      */
-    protected void configureUsageManagerServicePid() {
+    protected int retrieveUsageManagerServicePid() {
         File usageServicePid = new File(CLOUDSTACK_USAGE_SERVER_SERVICE_PID_FILE);
         if (!usageServicePid.exists()) {
             throw new CloudRuntimeException(String.format("Cannot find file [%s].", CLOUDSTACK_USAGE_SERVER_SERVICE_PID_FILE));
@@ -306,12 +306,13 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
         }
         try {
             String pidAsString = FileUtils.readFileToString(usageServicePid, Charset.defaultCharset());
-            String pidAsStringWithoutLineSeparator = pidAsString.replace(System.getProperty("line.separator"), "");
-            _pid = NumberUtils.toInt(pidAsStringWithoutLineSeparator);
-            if (_pid == 0) {
+            String pidAsStringWithoutLineSeparator = pidAsString.trim();
+            int pid = NumberUtils.toInt(pidAsStringWithoutLineSeparator);
+            if (pid == 0) {
                 throw new CloudRuntimeException(
                         String.format("Failed to retrieve a valid cloudstack-usage.service pid [file:%s, pid at file:%s]", CLOUDSTACK_USAGE_SERVER_SERVICE_PID_FILE, pidAsString));
             }
+            return pid;
         } catch (IOException e) {
             throw new CloudRuntimeException(e);
         }
