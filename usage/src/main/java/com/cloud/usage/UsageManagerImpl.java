@@ -289,11 +289,11 @@ public class UsageManagerImpl extends ManagerBase implements UsageManager, Runna
 
     /**
      * Sets the '_pid' variable based on the cloudstack-usage.service process id (pid) according to the file /var/run/cloudstack-usage.service.pid. </br>
-     * It thorws a CloudRuntimeException in the following cases:
+     * It throws a CloudRuntimeException in the following cases:
      * <ul>
      *  <li>Cannot find the pid file</li>
      *  <li>Cannot read the pid file</li>
-     *  <li>NumberUtils.toInt returns 0 (zero) if the conversion fails (pid is null or "")</li>  
+     *  <li>NumberUtils.toInt returns 0 (zero) if the conversion fails (pid is null or "")</li>
      * </ul>
      */
     protected void configureUsageManagerServicePid() {
