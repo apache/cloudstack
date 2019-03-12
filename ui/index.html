@@ -1804,8 +1804,8 @@
 
             // Inject translated keyboard options
             var keyboardDropdown = $($.find('#keyboard-options'));
-            for (var key in keyboardOptions) {
-                keyboardDropdown.append($('<option>', {value: key, text: translate(keyboardOptions[key])}));
+            for (var key in cloudStackOptions.keyboardOptions) {
+                keyboardDropdown.append($('<option>', {value: key, text: translate(cloudStackOptions.keyboardOptions[key])}));
             }
         </script>
 

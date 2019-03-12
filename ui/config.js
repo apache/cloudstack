@@ -15,11 +15,17 @@
 // specific language governing permissions and limitations
 // under the License.
 
-// Define Keyboard Options for the UI
-var keyboardOptions = {
-    "us": "label.standard.us.keyboard",
-    "uk": "label.uk.keyboard",
-    "fr": "label.french.azerty.keyboard",
-    "jp": "label.japanese.keyboard",
-    "sc": "label.simplified.chinese.keyboard"
-}
+// Define custom options configurable by admins for UI
+cloudStackOptions = {
+    aboutText: "label.app.name",
+    aboutTitle: "label.about.app",
+    docTitle: "label.app.name",
+    helpURL: "http://docs.cloudstack.apache.org/",
+    keyboardOptions: {
+        "us": "label.standard.us.keyboard",
+        "uk": "label.uk.keyboard",
+        "fr": "label.french.azerty.keyboard",
+        "jp": "label.japanese.keyboard",
+        "sc": "label.simplified.chinese.keyboard"
+    }
+};

@@ -449,10 +449,10 @@
                                                 id: "",
                                                 description: ""
                                             });
-                                            for (var key in keyboardOptions) {
+                                            for (var key in cloudStackOptions.keyboardOptions) {
                                                 items.push({
                                                     id: key,
-                                                    description: _l(keyboardOptions[key])
+                                                    description: _l(cloudStackOptions.keyboardOptions[key])
                                                 });
                                             }
                                             args.response.success({
