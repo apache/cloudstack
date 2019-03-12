@@ -137,12 +137,15 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
                 inSeq = false;
             }
             c.setExecuteInSequence(inSeq);
+            if (c.getSrcTO().getHypervisorType() == HypervisorType.KVM) {
+                return new Pair<>(true, hostId);
+            }
         }
         if (cmd instanceof StorageSubSystemCommand) {
             StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
             c.setExecuteInSequence(false);
         }
-        return new Pair<Boolean, Long>(false, new Long(hostId));
+        return new Pair<>(false, hostId);
     }
 
     @Override
