@@ -126,6 +126,10 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
 
     @Override
     public Pair<Boolean, Long> getCommandHostDelegation(long hostId, Command cmd) {
+        if (cmd instanceof StorageSubSystemCommand) {
+            StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
+            c.setExecuteInSequence(false);
+        }
         if (cmd instanceof CopyCommand) {
             CopyCommand c = (CopyCommand) cmd;
             boolean inSeq = true;
@@ -140,10 +144,6 @@ public class KVMGuru extends HypervisorGuruBase implements HypervisorGuru {
             if (c.getSrcTO().getHypervisorType() == HypervisorType.KVM) {
                 return new Pair<>(true, hostId);
             }
-        }
-        if (cmd instanceof StorageSubSystemCommand) {
-            StorageSubSystemCommand c = (StorageSubSystemCommand)cmd;
-            c.setExecuteInSequence(false);
         }
         return new Pair<>(false, hostId);
     }
