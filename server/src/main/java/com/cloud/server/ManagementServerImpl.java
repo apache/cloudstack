@@ -338,6 +338,7 @@ import org.apache.cloudstack.api.command.user.iso.CopyIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.DeleteIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.DetachIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ExtractIsoCmd;
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsoPermissionsCmd;
 import org.apache.cloudstack.api.command.user.iso.ListIsosCmd;
 import org.apache.cloudstack.api.command.user.iso.RegisterIsoCmd;
@@ -3070,6 +3071,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteManagementNetworkIpRangeCmd.class);
         cmdList.add(UploadTemplateDirectDownloadCertificate.class);
         cmdList.add(ListMgmtsCmd.class);
+        cmdList.add(GetUploadParamsForIsoCmd.class);
 
         // Out-of-band management APIs for admins
         cmdList.add(EnableOutOfBandManagementForHostCmd.class);

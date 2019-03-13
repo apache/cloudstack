@@ -23,6 +23,7 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
@@ -284,17 +285,26 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
 
     }
 
-    @Override
-    public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
+    /**
+     * Prepare upload parameters internal method for templates and ISOs local upload
+     */
+    private TemplateProfile prepareUploadParamsInternal(boolean isIso, long userId, String name, String displayText,
+                                                        Integer bits, Boolean passwordEnabled, Boolean requiresHVM,
+                                                        String url, Boolean isPublic, Boolean featured,
+                                                        Boolean isExtractable, String format, Long guestOSId,
+                                                        Long zoneId, HypervisorType hypervisorType, String chksum,
+                                                        Boolean bootable, String templateTag, long templateOwnerId,
+                                                        Map details, Boolean sshkeyEnabled, String imageStoreUuid,
+                                                        Boolean isDynamicallyScalable, Boolean isRoutingType,
+                                                        boolean directDownload) throws ResourceAllocationException {
         //check if the caller can operate with the template owner
         Account caller = CallContext.current().getCallingAccount();
-        Account owner = _accountMgr.getAccount(cmd.getEntityOwnerId());
+        Account owner = _accountMgr.getAccount(templateOwnerId);
         _accountMgr.checkAccess(caller, null, true, owner);
 
-        boolean isRouting = (cmd.isRoutingType() == null) ? false : cmd.isRoutingType();
+        boolean isRouting = (isRoutingType == null) ? false : isRoutingType;
 
         List<Long> zoneList = null;
-        Long zoneId = cmd.getZoneId();
         // ignore passed zoneId if we are using region wide image store
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
         if (!(stores != null && stores.size() > 0)) {
@@ -302,17 +312,35 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
             zoneList.add(zoneId);
         }
 
-        HypervisorType hypervisorType = HypervisorType.getType(cmd.getHypervisor());
-        if(hypervisorType == HypervisorType.None) {
-            throw new InvalidParameterValueException("Hypervisor Type: " + cmd.getHypervisor() + " is invalid. Supported Hypervisor types are "
-                                                         + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
+        if(!isIso && hypervisorType == HypervisorType.None) {
+            throw new InvalidParameterValueException("Hypervisor Type: " + hypervisorType + " is invalid. Supported Hypervisor types are "
+                    + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
         }
 
-        return prepare(false, CallContext.current().getCallingUserId(), cmd.getName(), cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(),
-                       cmd.getRequiresHvm(), null, cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(), zoneList,
-                       hypervisorType, cmd.getChecksum(), true, cmd.getTemplateTag(), owner, cmd.getDetails(), cmd.isSshKeyEnabled(), null,
-                       cmd.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER, false);
+        return prepare(isIso, userId, name, displayText, bits, passwordEnabled,
+                requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneList,
+                hypervisorType, chksum, bootable, templateTag, owner, details, sshkeyEnabled, imageStoreUuid,
+                isDynamicallyScalable, isRouting ? TemplateType.ROUTING : TemplateType.USER, directDownload);
+    }
 
+    @Override
+    public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
+        return prepareUploadParamsInternal(false, CallContext.current().getCallingUserId(), cmd.getName(),
+                cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(), null,
+                cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(),
+                cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(), true,
+                cmd.getTemplateTag(), cmd.getEntityOwnerId(), cmd.getDetails(), cmd.isSshKeyEnabled(),
+                null, cmd.isDynamicallyScalable(), cmd.isRoutingType(), false);
+    }
+
+    @Override
+    public TemplateProfile prepare(GetUploadParamsForIsoCmd cmd) throws ResourceAllocationException {
+        return prepareUploadParamsInternal(true, CallContext.current().getCallingUserId(), cmd.getName(),
+                cmd.getDisplayText(), 64, false, true, null,
+                cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),
+                cmd.getZoneId(), HypervisorType.None, null, cmd.isBootable(),
+                null, cmd.getEntityOwnerId(), null, false,
+                null, false, false, false);
     }
 
     @Override
