@@ -16,14 +16,9 @@
 // under the License.
 package org.apache.cloudstack.engine.datacenter.entity.api.db;
 
-import com.cloud.network.Network.Provider;
-import com.cloud.org.Grouping;
-import com.cloud.utils.NumbersUtil;
-import com.cloud.utils.db.GenericDao;
-import com.cloud.utils.db.StateMachine;
-import org.apache.cloudstack.api.Identity;
-import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
-import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
+import java.util.Date;
+import java.util.Map;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -37,9 +32,16 @@ import javax.persistence.TableGenerator;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
-import java.util.Date;
-import java.util.Map;
-import java.util.UUID;
+
+import org.apache.cloudstack.api.Identity;
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State;
+import org.apache.cloudstack.engine.datacenter.entity.api.DataCenterResourceEntity.State.Event;
+
+import com.cloud.network.Network.Provider;
+import com.cloud.org.Grouping;
+import com.cloud.utils.NumbersUtil;
+import com.cloud.utils.db.GenericDao;
+import com.cloud.utils.db.StateMachine;
 
 @Entity
 @Table(name = "data_center")
@@ -139,6 +141,9 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
 
     @Column(name = "is_local_storage_enabled")
     boolean localStorageEnabled;
+
+    @Column(name = "sort_key")
+    int sortKey;
 
     //orchestration
     @Column(name = "owner")
@@ -387,6 +392,10 @@ public class EngineDataCenterVO implements EngineDataCenter, Identity {
 
     public void setLocalStorageEnabled(boolean enabled) {
         this.localStorageEnabled = enabled;
+    }
+
+    public int getSortKey() {
+        return sortKey;
     }
 
     @Override
