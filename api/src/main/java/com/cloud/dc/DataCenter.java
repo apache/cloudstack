@@ -16,11 +16,12 @@
 // under the License.
 package com.cloud.dc;
 
-import com.cloud.org.Grouping;
+import java.util.Map;
+
 import org.apache.cloudstack.acl.InfrastructureEntity;
 import org.apache.cloudstack.kernel.Partition;
 
-import java.util.Map;
+import com.cloud.org.Grouping;
 
 /**
  *
@@ -80,4 +81,6 @@ public interface DataCenter extends InfrastructureEntity, Grouping, Partition {
     String getZoneToken();
 
     boolean isLocalStorageEnabled();
+
+    int getSortKey();
 }

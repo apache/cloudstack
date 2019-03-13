@@ -35,8 +35,6 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.google.common.collect.Sets;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
@@ -232,6 +230,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -1920,6 +1919,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             guestCidr = zone.getGuestNetworkCidr();
         }
 
+        int sortKey = cmd.getSortKey() != null ? cmd.getSortKey() : zone.getSortKey();
+
         // validate network domain
         if (networkDomain != null && !networkDomain.isEmpty()) {
             if (!NetUtils.verifyDomainName(networkDomain)) {
@@ -1942,6 +1943,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         zone.setInternalDns1(internalDns1);
         zone.setInternalDns2(internalDns2);
         zone.setGuestNetworkCidr(guestCidr);
+        zone.setSortKey(sortKey);
         if (localStorageEnabled != null) {
             zone.setLocalStorageEnabled(localStorageEnabled.booleanValue());
         }

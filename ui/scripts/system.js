@@ -7883,6 +7883,8 @@
                                 }
                             },
 
+                            reorder: cloudStack.api.actions.sort('updateZone', 'physicalResources'),
+
                             dataProvider: function (args) {
                                 var array1 =[];
                                 if (args.filterBy != null) {

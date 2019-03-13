@@ -85,8 +85,11 @@ import com.cloud.exception.PermissionDeniedException;
 public interface QueryService {
 
     // Config keys
-    static final ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<Boolean>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
+    ConfigKey<Boolean> AllowUserViewDestroyedVM = new ConfigKey<>("Advanced", Boolean.class, "allow.user.view.destroyed.vm", "false",
             "Determines whether users can view their destroyed or expunging vm ", true, ConfigKey.Scope.Account);
+
+    ConfigKey<Boolean> SortKeyAscending = new ConfigKey<>("Advanced", Boolean.class, "sortkey.algorithm", "true",
+            "Sort algorithm for those who use sort key(template, disk offering, service offering, network offering, zones), true means ascending sort while false means descending sort", true, ConfigKey.Scope.Global);
 
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
 
