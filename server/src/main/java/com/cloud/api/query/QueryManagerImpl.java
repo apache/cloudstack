@@ -167,7 +167,6 @@ import com.cloud.exception.PermissionDeniedException;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.hypervisor.Hypervisor;
 import com.cloud.hypervisor.Hypervisor.HypervisorType;
-import com.cloud.network.dao.NetworkDetailsDao;
 import com.cloud.network.security.SecurityGroupVMMapVO;
 import com.cloud.network.security.dao.SecurityGroupVMMapDao;
 import com.cloud.org.Grouping;
@@ -207,7 +206,6 @@ import com.cloud.utils.DateUtil;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
 import com.cloud.utils.Ternary;
-import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.JoinBuilder;
 import com.cloud.utils.db.SearchBuilder;
@@ -220,7 +218,6 @@ import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
-import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 
 @Component
@@ -333,9 +330,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private DomainRouterDao _routerDao;
 
     @Inject
-    private UserVmDetailsDao _userVmDetailDao;
-
-    @Inject
     private HighAvailabilityManager _haMgr;
 
     @Inject
@@ -368,16 +362,10 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
     private AffinityGroupDomainMapDao _affinityGroupDomainMapDao;
 
     @Inject
-    private NetworkDetailsDao _networkDetailsDao;
-
-    @Inject
     private ResourceTagDao _resourceTagDao;
 
     @Inject
     private DataStoreManager dataStoreManager;
-
-    @Inject
-    private EntityManager _entityMgr;
 
     @Inject
     ManagementServerHostDao managementServerHostDao;
