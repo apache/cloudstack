@@ -95,7 +95,8 @@ public interface QueryService {
     static final ConfigKey<String> UserVMReadOnlyUIDetails = new ConfigKey<String>("Advanced", String.class,
             "user.vm.readonly.ui.details", "dataDiskController, rootDiskController",
             "List of UI read-only VM settings/details as comma separated string", true);
-    static final ConfigKey<Boolean> SortKeyAscending = new ConfigKey<>("Advanced", Boolean.class, "sortkey.algorithm", "true",
+
+    ConfigKey<Boolean> SortKeyAscending = new ConfigKey<>("Advanced", Boolean.class, "sortkey.algorithm", "true",
             "Sort algorithm for those who use sort key(template, disk offering, service offering, network offering, zones), true means ascending sort while false means descending sort", true, ConfigKey.Scope.Global);
 
     ListResponse<UserResponse> searchForUsers(ListUsersCmd cmd) throws PermissionDeniedException;
