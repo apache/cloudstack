@@ -1017,6 +1017,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
 
     @Override
     public void validateCustomParameters(ServiceOfferingVO serviceOffering, Map<String, String> customParameters) {
+        //TODO need to validate custom cpu, and memory against min/max CPU/Memory ranges from service_offering_details table
         if (customParameters.size() != 0) {
             if (serviceOffering.getCpu() == null) {
                 String cpuNumber = customParameters.get(UsageEventVO.DynamicParameters.cpuNumber.name());
@@ -1033,7 +1034,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
                 if ((cpuSpeed == null) || (NumbersUtil.parseInt(cpuSpeed, -1) <= 0)) {
                     throw new InvalidParameterValueException("Invalid cpu speed value, specify a value between 1 and " + Integer.MAX_VALUE);
                 }
-            } else if (customParameters.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
+            } else if (!serviceOffering.isCustomCpuSpeedSupported() && customParameters.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
                 throw new InvalidParameterValueException("The cpu speed of this offering id:" + serviceOffering.getId()
                 + " is not customizable. This is predefined in the template.");
             }
@@ -3388,7 +3389,29 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
             }
             size += _diskOfferingDao.findById(diskOfferingId).getDiskSize();
         }
-        resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+
+        // Check Limits from new parameters here
+        // Get custom offerring cpu and memory ranges frm service_offering_details Table;
+        Map<String, String> details = serviceOfferingDetailsDao.listDetailsKeyPairs(offering.getId());
+
+        if (details.containsKey(ApiConstants.MAX_CPU_NUMBER) && details.containsKey(ApiConstants.MIN_CPU_NUMBER)
+                && details.containsKey(ApiConstants.MIN_MEMORY) && details.containsKey(ApiConstants.MAX_MEMORY)){
+
+            int cpu = NumbersUtil.parseInt(customParameters.get(UsageEventVO.DynamicParameters.cpuNumber.name()), -1);
+
+            if (cpu < NumbersUtil.parseInt(details.get(ApiConstants.MIN_CPU_NUMBER), -1) && cpu > NumbersUtil.parseInt(details.get(ApiConstants.MAX_CPU_NUMBER), -1)) {
+                throw new InvalidParameterValueException("The provided cpu value: " + cpu + "is out of the range supported by this custom offering");
+            }
+
+            int memory = NumbersUtil.parseInt(customParameters.get(UsageEventVO.DynamicParameters.memory.name()), -1);
+
+            if (memory < NumbersUtil.parseInt(details.get(ApiConstants.MIN_MEMORY), -1) && memory > NumbersUtil.parseInt(details.get(ApiConstants.MAX_MEMORY), -1)) {
+                throw new InvalidParameterValueException("The provided memory value: " + memory + "is out of the range supported by this custom offering");
+            }
+
+        } else {
+            resourceLimitCheck(owner, isDisplayVm, new Long(offering.getCpu()), new Long(offering.getRamSize()));
+        }
 
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.volume, (isIso || diskOfferingId == null ? 1 : 2));
         _resourceLimitMgr.checkResourceLimit(owner, ResourceType.primary_storage, size);
