@@ -15,8 +15,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-JAVA_OPTS="-Dpid=$$ -Xms256m -Xmx2048m"
+JAVA_OPTS="-Xms256m -Xmx2048m"
 
 CLASSPATH="/usr/share/cloudstack-usage/*:/usr/share/cloudstack-usage/lib/*:/usr/share/cloudstack-mysql-ha/lib/*:/etc/cloudstack/usage:/usr/share/java/mysql-connector-java.jar"
 
 JAVA_CLASS=com.cloud.usage.UsageServer
+
+# Enable the following to enable remote socket based debugging:
+#JAVA_DEBUG="-agentlib:jdwp=transport=dt_socket,address=8001,server=y,suspend=n"
