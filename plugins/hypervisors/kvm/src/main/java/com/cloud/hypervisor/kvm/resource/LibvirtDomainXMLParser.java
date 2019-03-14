@@ -203,7 +203,7 @@ public class LibvirtDomainXMLParser {
                 String slot = StringUtils.removeStart(getAttrValue("address", "slot", nic), "0x");
 
                 String mtuAttrValue = getAttrValue("mtu", "size", nic);
-                int mtu = 1500;
+                Integer mtu = null;
                 if (mtuAttrValue != null) {
                     mtu = Integer.parseInt(mtuAttrValue);
                 }

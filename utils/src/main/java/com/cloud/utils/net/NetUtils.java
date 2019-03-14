@@ -490,7 +490,11 @@ public class NetUtils {
         return startIPLong <= endIPLong;
     }
 
-    public static boolean isValidMtu(final int mtu) {
+    public static boolean isValidMtu(final Integer mtu) {
+        if (mtu == null) {
+            return false;
+        }
+
         return MTU_MIN_SIZE <= mtu && mtu <= MTU_MAX_SIZE;
     }
 
