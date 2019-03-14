@@ -24,7 +24,8 @@ After=network.target network-online.target
 [Service]
 Type=simple
 EnvironmentFile=/etc/default/cloudstack-usage
-ExecStart=/usr/bin/java $JAVA_OPTS -cp $CLASSPATH $JAVA_CLASS
+Environment=JAVA_PID=$$
+ExecStart=/bin/sh -ec '/usr/bin/java -Dpid=${JAVA_PID} $JAVA_OPTS $JAVA_DEBUG -cp $CLASSPATH $JAVA_CLASS'
 Restart=always
 RestartSec=10s
 
