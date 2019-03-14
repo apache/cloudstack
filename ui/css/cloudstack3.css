@@ -6032,7 +6032,8 @@ label.error {
   margin: 12px 0 15px 8px;
 }
 
-.multi-wizard.instance-wizard .data-disk-offering .select-container {
+.multi-wizard.instance-wizard .data-disk-offering .select-container,
+.multi-wizard.instance-wizard .sshkeyPairs .select-container {
   height: 300px;
   margin: -7px 6px 0 8px;
   /*+border-radius:6px;*/
@@ -8125,7 +8126,6 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   position: relative;
   left: 506px;
   top: -18px;
-  height: 23px;
 }
 
 .multi-edit-add-list .ui-button.cancel {
