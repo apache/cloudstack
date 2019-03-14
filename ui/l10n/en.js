@@ -1944,6 +1944,8 @@ var dictionary = {
 "message.action.restore.instance":"Please confirm that you want to restore this instance.",
 "message.action.revert.snapshot":"Please confirm that you want to revert the owning volume to this snapshot.",
 "message.action.secure.host":"This will restart the host agent and libvirtd process after applying new X509 certificates, please confirm?",
+"message.action.settings.warning.vm.running":"Please stop the virtual machine to access settings",
+"message.action.settings.warning.vm.started":"Virtual machine has been started. It needs to be stopped to access settings",
 "message.action.start.instance":"Please confirm that you want to start this instance.",
 "message.action.start.router":"Please confirm that you want to start this router.",
 "message.action.start.systemvm":"Please confirm that you want to start this system VM.",
