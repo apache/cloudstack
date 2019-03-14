@@ -16,18 +16,20 @@
 // under the License.
 package org.apache.cloudstack.api.response;
 
-import com.google.gson.annotations.SerializedName;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.ApiConstants;
-import org.apache.cloudstack.api.BaseResponse;
+import org.apache.cloudstack.api.BaseResponseWithTagInformation;
 import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.serializer.Param;
 import com.cloud.storage.snapshot.SnapshotPolicy;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = SnapshotPolicy.class)
-public class SnapshotPolicyResponse extends BaseResponse {
+public class SnapshotPolicyResponse extends BaseResponseWithTagInformation {
     @SerializedName("id")
     @Param(description = "the ID of the snapshot policy")
     private String id;
@@ -55,6 +57,10 @@ public class SnapshotPolicyResponse extends BaseResponse {
     @SerializedName(ApiConstants.FOR_DISPLAY)
     @Param(description = "is this policy for display to the regular user", since = "4.4", authorized = {RoleType.Admin})
     private Boolean forDisplay;
+
+    public SnapshotPolicyResponse() {
+        tags = new LinkedHashSet<ResourceTagResponse>();
+    }
 
     public String getId() {
         return id;
@@ -110,5 +116,9 @@ public class SnapshotPolicyResponse extends BaseResponse {
 
     public void setForDisplay(Boolean forDisplay) {
         this.forDisplay = forDisplay;
+    }
+
+    public void setTags(Set<ResourceTagResponse> tags) {
+        this.tags = tags;
     }
 }

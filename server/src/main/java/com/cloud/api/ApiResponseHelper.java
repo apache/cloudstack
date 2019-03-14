@@ -552,7 +552,7 @@ public class ApiResponseHelper implements ResponseGenerator {
             ResourceTagResponse tagResponse = createResourceTagResponse(tag, true);
             CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
         }
-        snapshotResponse.setTags(tagResponses);
+        snapshotResponse.setTags(new HashSet<>(tagResponses));
 
         snapshotResponse.setObjectName("snapshot");
         return snapshotResponse;
@@ -653,6 +653,14 @@ public class ApiResponseHelper implements ResponseGenerator {
         policyResponse.setTimezone(policy.getTimezone());
         policyResponse.setForDisplay(policy.isDisplay());
         policyResponse.setObjectName("snapshotpolicy");
+
+        List<? extends ResourceTag> tags = _resourceTagDao.listBy(policy.getId(), ResourceObjectType.SnapshotPolicy);
+        List<ResourceTagResponse> tagResponses = new ArrayList<ResourceTagResponse>();
+        for (ResourceTag tag : tags) {
+            ResourceTagResponse tagResponse = createResourceTagResponse(tag, false);
+            CollectionUtils.addIgnoreNull(tagResponses, tagResponse);
+        }
+        policyResponse.setTags(new HashSet<>(tagResponses));
 
         return policyResponse;
     }
