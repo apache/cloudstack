@@ -28,6 +28,7 @@ import com.cloud.network.Network;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.Nic;
+import com.google.common.base.Strings;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiCommandJobType;
@@ -104,7 +105,7 @@ public class UpdateVmNicIpMtuCmd extends BaseAsyncCmd {
     }
 
     public String getIpaddress () {
-        if (ipAddr.isEmpty()) {
+        if (Strings.isNullOrEmpty(ipAddr)) {
             return null;
         }
         return ipAddr;
