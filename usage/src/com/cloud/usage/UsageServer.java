@@ -51,11 +51,7 @@ public class UsageServer implements Daemon {
 
         appContext = new ClassPathXmlApplicationContext("usageApplicationContext.xml");
 
-        try {
-            ComponentContext.initComponentsLifeCycle();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        ComponentContext.initComponentsLifeCycle();
 
         mgr = appContext.getBean(UsageManager.class);
 
