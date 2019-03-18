@@ -2351,13 +2351,6 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
 
             // for kvm, need to log into kvm host, restart cloudstack-agent
             if ((host.getHypervisorType() == HypervisorType.KVM && !vms_migrating) || host.getHypervisorType() == HypervisorType.LXC) {
-
-                final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(Config.KvmSshToAgentEnabled.key()));
-                if (!sshToAgent) {
-                    s_logger.info("Configuration tells us not to SSH into Agents. Please restart the Agent (" + hostId + ")  manually");
-                    return true;
-                }
-
                 _hostDao.loadDetails(host);
                 final String password = host.getDetail("password");
                 final String username = host.getDetail("username");
@@ -2365,17 +2358,25 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
                     s_logger.debug("Can't find password/username");
                     return false;
                 }
-                final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(host.getPrivateIpAddress(), 22, username, password);
-                if (connection == null) {
-                    s_logger.debug("Failed to connect to host: " + host.getPrivateIpAddress());
-                    return false;
-                }
 
-                try {
-                    SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart");
-                    s_logger.debug("cloudstack-agent restart result: " + result.toString());
-                } catch (final SshException e) {
-                    return false;
+                if (host.getStatus() != Status.Up) {
+                    final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(Config.KvmSshToAgentEnabled.key()));
+                    if (sshToAgent) {
+                        final com.trilead.ssh2.Connection connection = SSHCmdHelper.acquireAuthorizedConnection(host.getPrivateIpAddress(), 22, username, password);
+                        if (connection == null) {
+                            s_logger.debug("Failed to connect to host: " + host.getPrivateIpAddress());
+                            return false;
+                        }
+                        try {
+                            SSHCmdHelper.SSHCmdResult result = SSHCmdHelper.sshExecuteCmdOneShot(connection, "service cloudstack-agent restart");
+                            s_logger.debug("cloudstack-agent restart result: " + result.toString());
+                        } catch (final SshException e) {
+                            return false;
+                        }
+                    } else {
+                        s_logger.debug("Host must be connected before cancelling maintenance mode");
+                        return false;
+                    }
                 }
             }
 
