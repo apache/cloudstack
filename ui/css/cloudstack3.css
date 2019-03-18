@@ -13015,6 +13015,29 @@ div.gpugroups div.list-view {
   background: transparent url("../images/icons.png") no-repeat -626px -209px;
 }
 
+ul.ui-autocomplete.ui-menu {
+  width: 250px;
+  max-height: 100px;
+  background: #eee;
+  padding: 5px;
+  text-align: left;
+  overflow-y: auto;
+  overflow-x: hidden;
+  z-index: 100;
+}
+
+.ui-menu .ui-menu-item {
+  cursor: pointer;
+}
+
+.ui-menu .ui-menu-item .ui-state-active {
+  background: #CBDDF3;
+}
+
+.ui-helper-hidden-accessible {
+  display: none;
+}
+
 .copy-template-destination-list div.text-search {
   right: 5px;
 }

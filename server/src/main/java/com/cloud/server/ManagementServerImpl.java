@@ -409,6 +409,7 @@ import org.apache.cloudstack.api.command.user.region.ha.gslb.ListGlobalLoadBalan
 import org.apache.cloudstack.api.command.user.region.ha.gslb.RemoveFromGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.region.ha.gslb.UpdateGlobalLoadBalancerRuleCmd;
 import org.apache.cloudstack.api.command.user.resource.GetCloudIdentifierCmd;
+import org.apache.cloudstack.api.command.user.resource.ListDetailOptionsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListHypervisorsCmd;
 import org.apache.cloudstack.api.command.user.resource.ListResourceLimitsCmd;
 import org.apache.cloudstack.api.command.user.resource.UpdateResourceCountCmd;
@@ -2878,6 +2879,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(ExtractTemplateCmd.class);
         cmdList.add(ListTemplatePermissionsCmd.class);
         cmdList.add(ListTemplatesCmd.class);
+        cmdList.add(ListDetailOptionsCmd.class);
         cmdList.add(RegisterTemplateCmd.class);
         cmdList.add(UpdateTemplateCmd.class);
         cmdList.add(UpdateTemplatePermissionsCmd.class);

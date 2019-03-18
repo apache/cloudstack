@@ -327,31 +327,24 @@
                                             });
                                         }
                                     });
-                                    var setupAutocompletion = function() {
-                                        var $target = $($.find('input[name="rule"]'));
-                                        if ($target.hasClass('ui-autocomplete')) {
-                                            $target.autocomplete('destroy');
+                                    $.ajax({
+                                        url: createURL("listApis"),
+                                        dataType: "json",
+                                        success: function(json) {
+                                            var apis = [];
+                                            var response = json.listapisresponse.api;
+                                            $.each(response, function(idx, api) {
+                                                apis.push(api.name);
+                                            });
+                                            $($.find('input[name="rule"]')).autocomplete({
+                                                minLength: 0,
+                                                delay: 0,
+                                                source: apis.sort()
+                                            }).focus(function() {
+                                                $(this).data("uiAutocomplete").search($(this).val());
+                                            });
                                         }
-                                        $($.find('input[name="rule"]')).autocomplete({
-                                            source: apiList,
-                                            autoFocus:true
-                                        });
-                                    };
-                                    if (apiList.length == 0) {
-                                        $.ajax({
-                                            url: createURL("listApis"),
-                                            dataType: "json",
-                                            success: function(json) {
-                                                var response = json.listapisresponse.api;
-                                                $.each(response, function(idx, api) {
-                                                    apiList.push(api.name);
-                                                });
-                                                setupAutocompletion();
-                                            }
-                                        });
-                                    } else {
-                                        setupAutocompletion();
-                                    }
+                                    });
                                 }
                             });
                         }

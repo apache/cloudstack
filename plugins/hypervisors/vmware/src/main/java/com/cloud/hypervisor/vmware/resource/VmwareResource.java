@@ -1874,7 +1874,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
 
             // Check for multi-cores per socket settings
             int numCoresPerSocket = 1;
-            String coresPerSocket = vmSpec.getDetails().get("cpu.corespersocket");
+            String coresPerSocket = vmSpec.getDetails().get(VmDetailConstants.CPU_CORE_PER_SOCKET);
             if (coresPerSocket != null) {
                 String apiVersion = HypervisorHostHelper.getVcenterApiVersion(vmMo.getContext());
                 // Property 'numCoresPerSocket' is supported since vSphere API 5.0

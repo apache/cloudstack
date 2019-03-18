@@ -168,7 +168,6 @@
                                 }],
                                 dataProvider: function(args) {
                                     var items = [];
-                                    console.log(args);
                                     $.ajax({
                                         url: createURL("listLdapConfigurations&hostname=" + args.context.ldapConfiguration[0].hostname),
                                         dataType: "json",
