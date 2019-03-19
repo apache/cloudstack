@@ -678,6 +678,19 @@ public class NetUtilsTest {
         assertFalse(NetUtils.isValidPort(-1));
         assertFalse(NetUtils.isValidPort(65536));
     }
+    @Test
+    public void testIsValidMtu() {
+        assertTrue(NetUtils.isValidMtu(1280));
+        assertTrue(NetUtils.isValidMtu(1500));
+        assertTrue(NetUtils.isValidMtu(9000));
+        assertTrue(NetUtils.isValidMtu(9216));
+        assertFalse(NetUtils.isValidMtu(0));
+        assertFalse(NetUtils.isValidMtu(1279));
+        assertFalse(NetUtils.isValidMtu(9217));
+        assertFalse(NetUtils.isValidMtu(65535));
+        assertFalse(NetUtils.isValidMtu(-1));
+        assertFalse(NetUtils.isValidMtu(null));
+    }
 
     @Test
     public void testIsIpv4() {
