@@ -18,161 +18,246 @@
 package com.cloud.event;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.google.gson.annotations.Expose;
+import org.apache.log4j.Logger;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.UUID;
 
 public class Cadf {
 
-    /* _typeURI should be static but Gson won't render it */
-    private String _typeURI = "http://schemas.dmtf.org/cloud/audit/1.0/event";
-    private String _id;
-    private String _eventType;
-    private Taxonomies.EventType _tmpEventType;
-    private String _action;
+    //private class variables have no underscore prefix (as instructed in Coding conventions document -
+    // Naming Conventions - Instruction 6) because the whole class is being logged and is more readable
+    // without underscores
+    @Expose (serialize = false)
+    private static final Logger s_logger = Logger.getLogger(Cadf.class);
+
+    @Expose
+    private String typeURI;
+    @Expose
+    private String id;
+    @Expose
+    private String eventType;
+    @Expose
+    private String action;
+    @Expose (serialize = false)
     private Taxonomies.Action _tmpAction;
 
-    private String _csaction; //CloudStack original Action
-    private String _outcome;
-    private String _eventTime;
+    @Expose (serialize = false)
+    private String csaction; //CloudStack original Action
+    @Expose
+    private String outcome;
+    @Expose
+    private String eventTime;
 
-    private Resource _observer;
-    private Resource _initiator;
-    private Resource _target;
-    private String _tmpTarget;
+    @Expose
+    private Resource observer;
+    @Expose
+    private Resource initiator;
+    @Expose
+    private Resource target;
 
     //TODO
-    private String _measurement;
-    private String _reason;
+    private String measurement;
+    private String reason;
 
+
+    /**
+     * @param event is the generic CS event
+     */
     public Cadf(EventVO event) {
+        String eventtarget;
+        String eventaction;
+
+        typeURI = "http://schemas.dmtf.org/cloud/audit/1.0/event";
+
         //Event unique identifier
-        _id = event.getUuid();
+        id = event.getUuid();
+
+        if (!event.getType().contains(".")) {
+            eventaction = Taxonomies.Action.UNKNOWN.getValue();
+            eventtarget = Taxonomies.Resource.UNKNOWN;
+        } else {
+            //Substrings "VM" from VM.CREATE, "ROLE.PERMISSION" from ROLE.PERMISSION.CREATE etc
+            eventtarget = new String(event.getType().substring(0, event.getType().lastIndexOf(".")));
+
+            //Substrings "CREATE" from VM.CREATE, "CREATE" from ROLE.PERMISSION.CREATE etc.
+            // +1 is used to ignore the "." before substring
+            eventaction = new String(event.getType().substring(event.getType().lastIndexOf(".") + 1));
+
+            //eventtarget is event's Target
+            //eventaction is event's Action
+        }
 
         //sets EventType, Action and Target
-        mapEventTypeToCADFTaxonomy(event.getType());
+        //Answers to WHAT, ONWHAT, TOWHERE
+        setCADFAction(eventaction);
+        setCADFEventType();
 
         //Answers to ONWHAT and TOWHERE
-        _target = new Resource(_tmpTarget);
+        setCADFTarget(eventtarget);
 
-        _outcome = Taxonomies.Outcome.FAILURE.getValue();
+        //sets Outcome
+        //Answers to WHAT
+        mapEventStateToCADFTaxonomy(event.getState().toString());
+
         //must add reason
 
         //Answers to WHEN
         //_eventTime must be in UTC format
         if (event.getCreateDate() != null) {
-            _eventTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.Z").format(event.getCreateDate());
+            eventTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.Z").format(event.getCreateDate());
         } else {
-            _eventTime="";
+            eventTime="";
         }
 
         //Answers to WHO and FROMWHERE
-        _initiator = new Resource(Taxonomies.Resource.SERVICE_SECURITY);
+        //"USER" CS Resource corresponds to Taxonomies.Resource.DATA_SECURITY_ACCOUNT_USER CADF Resource
+        setCADFInitiator("USER");
 
         //Answers to WHERE
-        _observer = new Resource(Taxonomies.Resource.DATA_SECURITY);
-
-    }
-
-    //TODO
-    //turn this into private
-    public void mapEventTypeToCADFTaxonomy(String type) {
-        String eventtarget;
-        String eventaction;
-
-        System.out.println("EventType " + type);
-
-        if (!type.contains(".")) {
-            eventaction = Taxonomies.Action.UNKNOWN.getValue();
-            eventtarget = Taxonomies.Resource.UNKNOWN;
-        } else {
-            //Substrings "VM" from VM.CREATE, "ROLE.PERMISSION" from ROLE.PERMISSION.CREATE etc
-            eventtarget = new String(type.substring(0, type.lastIndexOf(".")));
-            //Substrings "CREATE" from VM.CREATE, "CREATE" from ROLE.PERMISSION.CREATE etc.
-            // +1 is used to ignore the "." before substring
-            eventaction = new String(type.substring(type.lastIndexOf(".") + 1));
-            //eventtarget is event's Target
-            //eventaction is event's Action
-        }
-
-        System.out.println("type " + type);
-        System.out.println("part1 " + eventtarget);
-        System.out.println("part2 " + eventaction);
-
-
-        setCADFAction(eventaction);
-        setCADFEventType();
-        setCADFTarget(eventtarget);
+        setCADFObserver("SYSTEM.MONITOR");
     }
 
     /**
-     * Maps eventaction to a CADF Action and sets _action to a CADF compatible value
+     * @param event is the generic CS event
+     * @param eventExtraInfo is a HashMap containing extra information with field names
+     *                       "initiator_host", "initiator_method", "initiator_user-agent", "initiator_auth-type"
+     *
+     */
+    public Cadf(EventVO event, HashMap<String, String> eventExtraInfo) {
+        this(event);
+        if (eventExtraInfo != null && !eventExtraInfo.get("initiator_host").isEmpty()) {
+            initiator.host = new Resource.Host(UUID.nameUUIDFromBytes(eventExtraInfo.get("initiator_host").getBytes()).toString(),
+                    eventExtraInfo.get("initiator_host"), eventExtraInfo.get("initiator_user-agent"), null);
+        }
+    }
+
+
+    /**
+     * Maps event state to CADF Outcome Taxonomy and sets outcome
+     * to a CADF compatible value
+     *
+     * @param eventstate is the String value of CS Event State
+     *                   use event.getState().asString
+     */
+    private void mapEventStateToCADFTaxonomy(String eventstate) {
+        switch (eventstate) {
+            case "Completed" :
+                outcome = Taxonomies.Outcome.SUCCESS.getValue();
+                break;
+            case "Created" :
+            case "Scheduled" :
+                outcome = Taxonomies.Outcome.UNKNOWN.getValue();
+                break;
+            case "Started" :
+                outcome = Taxonomies.Outcome.PENDING.getValue();
+                break;
+            default :
+                outcome = Taxonomies.Outcome.FAILURE.getValue();
+                break;
+        }
+    }
+
+
+    /**
+     * Maps eventaction to a CADF Action and sets action to a CADF compatible value
      *
      * @param eventaction CloudStack's action for every event type. eg for eventType
      *                    ROLE.PERMISSION.CREATE action is CREATE.
      */
     private void setCADFAction(String eventaction) {
-        Boolean found_match = false;
+        Boolean isFound = false;
         for (Taxonomies.Action ta : Taxonomies.Action.values() ) {
             if (ta.getValue().equalsIgnoreCase(eventaction)) { //exact match
                 _tmpAction = ta;
-                _action = ta.getValue();
-                _csaction = ta.getValue();
-                found_match = true;
+                action = ta.getValue();
+                csaction = ta.getValue();
+                isFound = true;
                 break;
             } else if (ta.getValue().contains(eventaction.toLowerCase())) { //partial match
                 _tmpAction = ta;
-                _action = ta.getValue();
-                _csaction = ta.getValue() + " - Original Cloudstack actions is " + eventaction;
-                found_match = true;
+                action = ta.getValue();
+                csaction = ta.getValue() + " - Original Cloudstack actions is " + eventaction;
+                isFound = true;
                 break;
             }
         }
-        if (!found_match) {
+        if (!isFound) {
             _tmpAction = Taxonomies.Action.UNKNOWN;
-            _action = Taxonomies.Action.UNKNOWN.getValue();
-            _csaction = Taxonomies.Action.UNKNOWN.getValue() + " - Original Cloudstack action is " + eventaction;
+            action = Taxonomies.Action.UNKNOWN.getValue();
+            csaction = Taxonomies.Action.UNKNOWN.getValue() + " - Original Cloudstack action is " + eventaction;
         }
     }
 
     /**
      * Maps eventType to a CADF compatible value based on the events Action
      */
-    public void setCADFEventType() {
-        if (_tmpAction == Taxonomies.Action.CREATE || _tmpAction == Taxonomies.Action.UPDATE ||
-                _tmpAction == Taxonomies.Action.DELETE ||_tmpAction == Taxonomies.Action.BACKUP ||
-                _tmpAction == Taxonomies.Action.CAPTURE || _tmpAction == Taxonomies.Action.CONFIGURE ||
-                _tmpAction == Taxonomies.Action.DEPLOY || _tmpAction == Taxonomies.Action.RESTORE ||
-                _tmpAction == Taxonomies.Action.START || _tmpAction == Taxonomies.Action.STOP ||
-                _tmpAction == Taxonomies.Action.UNDEPLOY || _tmpAction == Taxonomies.Action.RECEIVE ||
-                _tmpAction == Taxonomies.Action.SEND) {
-            _tmpEventType = Taxonomies.EventType.ACTIVITY;
-            _eventType = Taxonomies.EventType.ACTIVITY.getValue();
-        } else if (_tmpAction == Taxonomies.Action.DISABLE || _tmpAction == Taxonomies.Action.ENABLE ||
-                _tmpAction == Taxonomies.Action.AUTHENTICATE || _tmpAction == Taxonomies.Action.AUTHENTICATE_LOGIN ||
-                _tmpAction == Taxonomies.Action.RENEW || _tmpAction == Taxonomies.Action.REVOKE ||
-                _tmpAction == Taxonomies.Action.ALLOW || _tmpAction == Taxonomies.Action.DENY ||
-                _tmpAction == Taxonomies.Action.EVALUATE || _tmpAction == Taxonomies.Action.NOTIFY) {
-            _tmpEventType = Taxonomies.EventType.CONTROL;
-            _eventType = Taxonomies.EventType.CONTROL.getValue();
-        }
-        else if (_tmpAction == Taxonomies.Action.MONITOR || _tmpAction == Taxonomies.Action.READ ||
-                _tmpAction == Taxonomies.Action.UNKNOWN) {
+    private void setCADFEventType() {
+        Taxonomies.EventType _tmpEventType;
+        _tmpEventType = Taxonomies.eventActionToTypeMapping.get(_tmpAction);
+        if (_tmpEventType == null) {
             _tmpEventType = Taxonomies.EventType.MONITOR;
-            _eventType = Taxonomies.EventType.MONITOR.getValue();
         }
+        eventType = _tmpEventType.getValue();
     }
 
 
     /**
-     * Maps eventtarget to a CADF compatible value
+     * Maps eventtarget to a CADF compatible value and creates the target Resource
      *
      * @param eventtarget is a substring of CS EventType
      *                    eg for eventType ROLE.PERMISSION.CREATE target is ROLE.PERMISSION
      */
-    public void setCADFTarget(String eventtarget) {
-        _tmpTarget = Taxonomies.eventMapping.get(eventtarget);
-        if (_tmpTarget == null || _tmpTarget.isEmpty()) {
-            _tmpTarget = Taxonomies.Resource.UNKNOWN;
+    private void setCADFTarget(String eventtarget) {
+        String tmpTarget = Taxonomies.cstoCadfResourceMapping.get(eventtarget);
+        if (tmpTarget == null || tmpTarget.isEmpty()) {
+            tmpTarget = Taxonomies.Resource.UNKNOWN;
+        }
+
+        String tmpTargetID = Taxonomies.eventResourcetoUuidMapping.get(eventtarget);
+        if (tmpTargetID == null || tmpTargetID.isEmpty()) {
+            tmpTarget = UUID.nameUUIDFromBytes("UNKNOWN".getBytes()).toString();
+        }
+        target = new Resource(tmpTarget, tmpTargetID);
+    }
+
+    /**
+     * Maps eventobserver to a CADF compatible value and creates the initiator Resource
+     *
+     * @param eventinitiator  is a String representation of CS Resource that started the event
+     */
+    private void setCADFInitiator(String eventinitiator) {
+        String tmpInitiatorID = Taxonomies.eventResourcetoUuidMapping.get(eventinitiator);
+        if (tmpInitiatorID == null || tmpInitiatorID.isEmpty()) {
+            tmpInitiatorID = UUID.nameUUIDFromBytes("UNKNOWN".getBytes()).toString();
+        }
+    initiator = new Resource(Taxonomies.Resource.DATA_SECURITY_ACCOUNT_USER, tmpInitiatorID);
+    }
+
+
+    /**
+     * Maps eventobserver to a CADF compatible value and creates the observer Resource
+     *
+     * @param eventobserver is a String representation of CS Resource that detected/observed the event
+     */
+    private void setCADFObserver(String eventobserver) {
+        String tmpObserverID = Taxonomies.eventResourcetoUuidMapping.get(eventobserver);
+        if (tmpObserverID == null || tmpObserverID.isEmpty()) {
+            tmpObserverID = UUID.nameUUIDFromBytes("UNKNOWN".getBytes()).toString();
+        }
+        observer = new Resource(Taxonomies.Resource.DATA_SECURITY, tmpObserverID);
+        try {
+            InetAddress inetAddress = InetAddress.getLocalHost();
+            observer.host = new Resource.Host();
+            observer.host = new Resource.Host(UUID.nameUUIDFromBytes(inetAddress.getHostName().getBytes()).toString(),
+                    inetAddress.getHostAddress(), null , null);
+
+        } catch (UnknownHostException e) {
+            s_logger.error(e.getMessage());
         }
     }
 
@@ -182,26 +267,25 @@ public class Cadf {
      * @throws InvalidParameterValueException
      */
     public void checkMandatoryFields() {
-        switch (_tmpEventType) {
-            case MONITOR:
-                if ((_initiator == null) || (_action == null) || (_target == null) || (_outcome == null) ||
-                        (_measurement == null)) {
-                    throw new InvalidParameterValueException("Initiator, Action, Target, Outcome, Measurement " +
-                            "fields are mandatory for MONITOR events");
-                }
-            case CONTROL:
-                if ((_initiator == null) || (_action == null) || (_target == null) || (_outcome == null) ||
-                        (_reason == null) || (_measurement == null)) {
-                    throw new InvalidParameterValueException("Initiator, Action, Target, Outcome, Reason, Measurement " +
-                            "fields are mandatory for CONTROL events");
-                }
-            case ACTIVITY :
-                if ((_initiator == null) || (_action == null) || (_target == null) || (_outcome == null) ||
-                        (_measurement == null)) {
+        if (eventType.equals(Taxonomies.EventType.MONITOR.getValue())) {
+            if ((initiator == null) || (action == null) || (target == null) || (outcome == null) ||
+                    (measurement == null)) {
+                throw new InvalidParameterValueException("Initiator, Action, Target, Outcome, Measurement " +
+                        "fields are mandatory for MONITOR events");
+            }
+        } else if (eventType.equals(Taxonomies.EventType.CONTROL.getValue())) {
+            if ((initiator == null) || (action == null) || (target == null) || (outcome == null) ||
+                    (reason == null) || (measurement == null)) {
+                throw new InvalidParameterValueException("Initiator, Action, Target, Outcome, Reason, Measurement " +
+                        "fields are mandatory for CONTROL events");
+            }
+        } else {
+            //if (eventType.equals(Taxonomies.EventType.ACTIVITY.getValue())) {
+                if ((initiator == null) || (action == null) || (target == null) || (outcome == null) ||
+                        (measurement == null)) {
                     throw new InvalidParameterValueException("Initiator, Action, Target, Outcome, Measurement " +
                             "fields are mandatory for ACTIVITY events");
                 }
         }
     }
-
 }

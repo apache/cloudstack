@@ -1,0 +1,5 @@
+2019-03-15 01:40:20,386 INFO  [a.c.c.a.ApiServer] (qtp1589231485-29:ctx-1c6cfe2d) (logid:12869026)  127.0.0.1 -- POST command=login domain=/ unknown exception writing api response
+2019-03-15 01:40:32,036 INFO  [a.c.c.a.ApiServer] (qtp1589231485-28:ctx-81fe7be7) (logid:84c9cfd0)  127.0.0.1 -- GET command=createRole&description=xaxa+xaxa&name=test&response=json&sessionkey=&type=Admin 401 unable to verify user credentials
+2019-03-15 01:41:46,621 INFO  [a.c.c.a.ApiServer] (qtp1589231485-24:ctx-37c0c469) (logid:941ffa13)  127.0.0.1 -- POST command=login domain=/ unknown exception writing api response
+2019-03-15 01:41:49,361 INFO  [a.c.c.a.ApiServer] (qtp1589231485-24:ctx-1d6c5de8) (logid:a916bfba)  127.0.0.1 -- GET command=createRole&description=xaxa+xaxa&name=test&response=json&sessionkey=&type=Admin 401 unable to verify user credentials
+2019-03-15 01:42:37,762 INFO  [a.c.c.a.ApiServer] (qtp1589231485-29:ctx-e34f7e56) (logid:cea374a2)  127.0.0.1 -- POST command=login domain=/ unknown exception writing api response

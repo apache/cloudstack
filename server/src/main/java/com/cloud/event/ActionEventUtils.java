@@ -50,6 +50,7 @@ import java.util.Map;
 
 public class ActionEventUtils {
     private static final Logger s_logger = Logger.getLogger(ActionEventUtils.class);
+    private static final Logger s_el_logger = Logger.getLogger("com.cadf.el"); //el stands for event_logger
 
     private String _resourceUuid;
 
@@ -67,6 +68,7 @@ public class ActionEventUtils {
     public static final String EntityUuid = "entity_uuid";
     public static final String EntityDetails = "entity_details";
 
+    public
     @Inject
     EventDao eventDao;
     @Inject
@@ -99,10 +101,6 @@ public class ActionEventUtils {
 
         Event event = persistActionEvent(userId, accountId, domainId, null, type, Event.State.Completed, true, description, null);
 
-        //these work fine here
-        System.out.println(" ndale - Entry point 0.4.1 - ActionEventUtils - onActionEvent");
-        System.out.println("==========================================================================================");
-        System.out.println(type);
         return event.getId();
     }
 
@@ -114,9 +112,6 @@ public class ActionEventUtils {
         publishOnEventBus(userId, accountId, EventCategory.ACTION_EVENT.getName(), type, com.cloud.event.Event.State.Scheduled, description);
 
         Event event = persistActionEvent(userId, accountId, null, null, type, Event.State.Scheduled, eventDisplayEnabled, description, startEventId);
-
-        System.out.println(" ndale - Entry point 0.4.2 - ActionEventUtils - onScheduledActionEvent");
-        System.out.println("==========================================================================================");
 
         return event.getId();
     }
@@ -193,44 +188,9 @@ public class ActionEventUtils {
             event.setStartId(startEventId);
         }
 
-        Gson gson = new GsonBuilder()
-                .setPrettyPrinting()
-                .create();
-        Cadf cadf = new Cadf(event);
-        try {
-            cadf.checkMandatoryFields();
-        } catch (InvalidParameterValueException e) {
-            s_logger.error(e.getMessage());
-        }
-
         event = s_eventDao.persist(event);
 
-
-        System.out.println(" ndale - Entry point 0.3 - ActionEventUtils - PersistActionEvent");
-        System.out.println("==========================================================================================");
-        System.out.println("CallContext.current().getEventDetails() " + CallContext.current().getEventDetails());
-        System.out.println("==========================================================================================");
-        System.out.println("CallContext.current().getEventDetails() " + CallContext.current().getEventDetails());
-        System.out.println("event.getType() " +  event.getType());
-        System.out.println("event.getEntityType().getName() " + event.getEntityType().getName());
-
-        System.out.println("event.getParameters() " + event.getParameters());
-        System.out.println("event.getLevel() " + event.getLevel());
-        System.out.println("event.getDescription() " + event.getDescription());
-        if (event.getCreateDate() != null) {
-            System.out.println("event.getCreateDate().toString() " + event.getCreateDate().toString());
-        } else {
-            System.out.println("event.getCreateDate().toString()  is empty");
-        }
-        System.out.println("event.getUuid() " + event.getUuid());
-        System.out.println("event.getAccountId() " + String.valueOf(event.getAccountId()));
-        System.out.println("event.getDomainId() " + String.valueOf(event.getDomainId()));
-        System.out.println("event.getState() " + event.getState().toString());
-
-        System.out.println("==========================================================================================");
-        System.out.println("======================================CADF================================================");
-        System.out.println(gson.toJson(cadf));
-        System.out.println("======================================CADF================================================");
+        createCadfRecord(event);
 
         return event;
     }
@@ -239,7 +199,7 @@ public class ActionEventUtils {
         String configKey = Config.PublishActionEvent.key();
         String value = s_configDao.getValue(configKey);
         boolean configValue = Boolean.parseBoolean(value);
-        if(!configValue)
+        if (!configValue)
             return;
         try {
             s_eventBus = ComponentContext.getComponent(EventBus.class);
@@ -254,24 +214,21 @@ public class ActionEventUtils {
         CallContext context = CallContext.current();
         //Get entity Class(Example - VirtualMachine.class) from the event Type eg. - VM.CREATE
         Class<?> entityClass = EventTypes.getEntityClassForEvent(eventType);
-        if (entityClass != null){
+        if (entityClass != null) {
             //Get uuid from id
             Object param = context.getContextParameter(entityClass);
-            if(param != null){
+            if (param != null) {
                 try {
                     entityUuid = getEntityUuid(entityClass, param);
                     entityType = entityClass.getName();
-                } catch (Exception e){
+                } catch (Exception e) {
                     s_logger.debug("Caught exception while finding entityUUID, moving on");
                 }
             }
         }
 
-        System.out.println("Reached publish on event bus");
-
-
         org.apache.cloudstack.framework.events.Event event =
-            new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, EventTypes.getEntityForEvent(eventType), entityUuid);
+                new org.apache.cloudstack.framework.events.Event(ManagementService.Name, eventCategory, eventType, EventTypes.getEntityForEvent(eventType), entityUuid);
 
         Map<String, String> eventDescription = new HashMap<String, String>();
         Project project = s_projectDao.findByProjectAccountId(accountId);
@@ -306,23 +263,23 @@ public class ActionEventUtils {
         }
     }
 
-    private static String getEntityUuid(Class<?> entityType, Object entityId){
+    private static String getEntityUuid(Class<?> entityType, Object entityId) {
 
         // entityId can be internal db id or UUID so accordingly call findbyId or return uuid directly
 
-        if (entityId instanceof Long){
+        if (entityId instanceof Long) {
             // Its internal db id - use findById
-            final Object objVO = s_entityMgr.findById(entityType, (Long)entityId);
-            return ((Identity)objVO).getUuid();
-        } else if(entityId instanceof String){
-            try{
+            final Object objVO = s_entityMgr.findById(entityType, (Long) entityId);
+            return ((Identity) objVO).getUuid();
+        } else if (entityId instanceof String) {
+            try {
                 // In case its an async job the internal db id would be a string because of json deserialization
                 Long internalId = Long.valueOf((String) entityId);
                 final Object objVO = s_entityMgr.findById(entityType, internalId);
-                return ((Identity)objVO).getUuid();
-            } catch (NumberFormatException e){
+                return ((Identity) objVO).getUuid();
+            } catch (NumberFormatException e) {
                 // It is uuid - so return it
-                return (String)entityId;
+                return (String) entityId;
             }
         }
 
@@ -338,23 +295,76 @@ public class ActionEventUtils {
         return account.getDomainId();
     }
 
-    private static void populateFirstClassEntities(Map<String, String> eventDescription){
+    private static void populateFirstClassEntities(Map<String, String> eventDescription) {
 
         CallContext context = CallContext.current();
         Map<Object, Object> contextMap = context.getContextParameters();
 
-        for(Map.Entry<Object, Object> entry : contextMap.entrySet()){
-            try{
-                Class<?> clz = (Class<?>)entry.getKey();
-                if(clz != null && Identity.class.isAssignableFrom(clz)){
+        for (Map.Entry<Object, Object> entry : contextMap.entrySet()) {
+            try {
+                Class<?> clz = (Class<?>) entry.getKey();
+                if (clz != null && Identity.class.isAssignableFrom(clz)) {
                     String uuid = getEntityUuid(clz, entry.getValue());
                     eventDescription.put(ReflectUtil.getEntityName(clz), uuid);
                 }
-            } catch (Exception e){
+            } catch (Exception e) {
                 s_logger.trace("Caught exception while populating first class entities for event bus, moving on");
             }
         }
 
     }
 
+    private static void createCadfRecord(EventVO event) {
+        HashMap<String, String> eventExtraInformation = new HashMap<String, String>();
+        //System.out.println("======================================CADF START================================================");
+        eventExtraInformation = getEventExtraFromContext();
+
+        /*for (Map.Entry <String, String> entry : eventExtraInformation.entrySet()) {
+            System.out.println("key " + entry.getKey());
+            System.out.println("value " + entry.getValue());
+        }*/
+
+        Gson gson = new GsonBuilder()
+                .excludeFieldsWithoutExposeAnnotation()
+                //.setPrettyPrinting()
+                .create();
+
+        Cadf cadf = new Cadf(event, eventExtraInformation);
+
+
+        try {
+            cadf.checkMandatoryFields();
+        } catch (InvalidParameterValueException e) {
+            s_logger.error(e.getMessage());
+        }
+
+        s_el_logger.info(gson.toJson(cadf));
+
+        //System.out.println(gson.toJson(cadf));
+        //System.out.println("======================================CADF END=================================================");
+    }
+
+    private static HashMap<String, String> getEventExtraFromContext() {
+        HashMap<String, String> contextParams = new HashMap<String, String>();
+        CallContext context = CallContext.current();
+        //System.out.println("getEventExtraFromContext()");
+        //System.out.println("context.getContextParameters().size() " + context.getContextParameters().size());
+        //System.out.println(context.toString());
+
+        Object params = context.getContextParameter(User.class);
+        if (params != null) {
+            //System.out.println("params.getClass().getName() " + params.getClass().getName());
+
+            for (HashMap.Entry<String, String> entry : ((HashMap<String, String>) params).entrySet()) {
+                //System.out.println("getEventExtraFromContext()============ entry.getKey() " + entry.getKey());
+                //System.out.println("getEventExtraFromContext()============ entry.getValue() " + entry.getValue());
+                contextParams.put(entry.getKey(), entry.getValue());
+            }
+            return contextParams;
+        } else {
+            return null;
+        }
+
+
+    }
 }

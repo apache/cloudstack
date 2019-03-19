@@ -18,10 +18,18 @@
 package com.cloud.event;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 public class Taxonomies {
     //eventMapping maps CloudStack Event Category (substring of EventType) to CADF Target Resource
-    public static HashMap<String, String> eventMapping = new HashMap<String, String>();
+    public static HashMap<String, String> cstoCadfResourceMapping = new HashMap<String, String>();
+    public static HashMap<Taxonomies.Action, Taxonomies.EventType> eventActionToTypeMapping = new HashMap<Taxonomies.Action,
+            Taxonomies.EventType>();
+    public static HashMap<String, String> eventResourcetoUuidMapping = new HashMap<String, String>();
+
+    public Taxonomies() {
+
+    }
 
     public enum EventType {
         MONITOR("monitor"),
@@ -223,182 +231,219 @@ public class Taxonomies {
     }
 
     static {
-        eventMapping.put("VM", Taxonomies.Resource.COMPUTE_MACHINE_VM);
-        eventMapping.put("ROUTER", Taxonomies.Resource.NETWORK_NODE_ROUTER); //needs check
-        eventMapping.put("PROXY", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("VNC", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("NET", Taxonomies.Resource.NETWORK);
-        eventMapping.put("PORTABLE", Taxonomies.Resource.NETWORK);
-        eventMapping.put("NETWORK", Taxonomies.Resource.NETWORK);
-        eventMapping.put("FIREWALL", Taxonomies.Resource.NETWORK);
-        eventMapping.put("FIREWALL.EGRESS", Taxonomies.Resource.NETWORK);
+        //Mapping CS Resources (Categories) to CADF Resources
 
-        eventMapping.put("NIC", Taxonomies.Resource.NETWORK_NODE);
-        eventMapping.put("NIC.DETAIL", Taxonomies.Resource.NETWORK_NODE);
+        cstoCadfResourceMapping.put("VM", Taxonomies.Resource.COMPUTE_MACHINE_VM);
+        cstoCadfResourceMapping.put("ROUTER", Taxonomies.Resource.NETWORK_NODE_ROUTER); //needs check
+        cstoCadfResourceMapping.put("PROXY", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("VNC", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("NET", Taxonomies.Resource.NETWORK);
+        cstoCadfResourceMapping.put("PORTABLE", Taxonomies.Resource.NETWORK);
+        cstoCadfResourceMapping.put("NETWORK", Taxonomies.Resource.NETWORK);
+        cstoCadfResourceMapping.put("FIREWALL", Taxonomies.Resource.NETWORK);
+        cstoCadfResourceMapping.put("FIREWALL.EGRESS", Taxonomies.Resource.NETWORK);
 
-        eventMapping.put("LB", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
-        eventMapping.put("LB.ASSIGN.TO", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
-        eventMapping.put("LB.REMOVE.FROM", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
-        eventMapping.put("LB.STICKINESSPOLICY", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
-        eventMapping.put("LB.HEALTHCHECKPOLICY", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
-        eventMapping.put("LB.CERT", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+        cstoCadfResourceMapping.put("NIC", Taxonomies.Resource.NETWORK_NODE);
+        cstoCadfResourceMapping.put("NIC.DETAIL", Taxonomies.Resource.NETWORK_NODE);
 
-        eventMapping.put("GLOBAL.LB", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+        cstoCadfResourceMapping.put("LB", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+        cstoCadfResourceMapping.put("LB.ASSIGN.TO", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+        cstoCadfResourceMapping.put("LB.REMOVE.FROM", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+        cstoCadfResourceMapping.put("LB.STICKINESSPOLICY", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+        cstoCadfResourceMapping.put("LB.HEALTHCHECKPOLICY", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
+        cstoCadfResourceMapping.put("LB.CERT", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
 
-        eventMapping.put("ROLE", Taxonomies.Resource.DATA_SECURITY_GROUP);
-        eventMapping.put("ROLE.PERMISSION", Taxonomies.Resource.DATA_SECURITY_GROUP);
+        cstoCadfResourceMapping.put("GLOBAL.LB", Taxonomies.Resource.SERVICE_OSS_PERFORMANCE);
 
-        eventMapping.put("CA.CERTIFICATE", Taxonomies.Resource.DATA_SECURITY_CREDENTIAL);
+        cstoCadfResourceMapping.put("ROLE", Taxonomies.Resource.DATA_SECURITY_GROUP);
+        cstoCadfResourceMapping.put("ROLE.PERMISSION", Taxonomies.Resource.DATA_SECURITY_GROUP);
 
-        eventMapping.put("ACCOUNT", Taxonomies.Resource.DATA_SECURITY_ACCOUNT);
-        eventMapping.put("ACCOUNT.MARK.DEFAULT", Taxonomies.Resource.DATA_SECURITY_ACCOUNT);
+        cstoCadfResourceMapping.put("CA.CERTIFICATE", Taxonomies.Resource.DATA_SECURITY_CREDENTIAL);
 
-        eventMapping.put("USER", Taxonomies.Resource.DATA_SECURITY_ACCOUNT_USER);
+        cstoCadfResourceMapping.put("ACCOUNT", Taxonomies.Resource.DATA_SECURITY_ACCOUNT);
+        cstoCadfResourceMapping.put("ACCOUNT.MARK.DEFAULT", Taxonomies.Resource.DATA_SECURITY_ACCOUNT);
 
-        eventMapping.put("REGISTER.SSH", Taxonomies.Resource.DATA_SECURITY_KEY);
-        eventMapping.put("REGISTER.USER", Taxonomies.Resource.DATA_SECURITY_KEY);
+        cstoCadfResourceMapping.put("USER", Taxonomies.Resource.DATA_SECURITY_ACCOUNT_USER);
 
-        eventMapping.put("TEMPLATE", Taxonomies.Resource.DATA_TEMPLATE);
-        eventMapping.put("TEMPLATE.DOWNLOAD", Taxonomies.Resource.DATA_TEMPLATE);
+        cstoCadfResourceMapping.put("REGISTER.SSH", Taxonomies.Resource.DATA_SECURITY_KEY);
+        cstoCadfResourceMapping.put("REGISTER.USER", Taxonomies.Resource.DATA_SECURITY_KEY);
 
-        eventMapping.put("VOLUME", Taxonomies.Resource.STORAGE_VOLUME);
-        eventMapping.put("VOLUME.DETAIL", Taxonomies.Resource.STORAGE_VOLUME);
+        cstoCadfResourceMapping.put("TEMPLATE", Taxonomies.Resource.DATA_TEMPLATE);
+        cstoCadfResourceMapping.put("TEMPLATE.DOWNLOAD", Taxonomies.Resource.DATA_TEMPLATE);
 
-        eventMapping.put("DOMAIN", Taxonomies.Resource.NETWORK_DOMAIN);
+        cstoCadfResourceMapping.put("VOLUME", Taxonomies.Resource.STORAGE_VOLUME);
+        cstoCadfResourceMapping.put("VOLUME.DETAIL", Taxonomies.Resource.STORAGE_VOLUME);
 
-        eventMapping.put("SNAPSHOT", Taxonomies.Resource.SERVICE_IMAGE);
-        eventMapping.put("SNAPSHOTPOLICY", Taxonomies.Resource.SERVICE_IMAGE);
+        cstoCadfResourceMapping.put("DOMAIN", Taxonomies.Resource.NETWORK_DOMAIN);
 
-        eventMapping.put("ISO", Taxonomies.Resource.DATA_IMAGE);
+        cstoCadfResourceMapping.put("SNAPSHOT", Taxonomies.Resource.SERVICE_IMAGE);
+        cstoCadfResourceMapping.put("SNAPSHOTPOLICY", Taxonomies.Resource.SERVICE_IMAGE);
 
-        eventMapping.put("SSVM", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("ISO", Taxonomies.Resource.DATA_IMAGE);
 
-        eventMapping.put("SERVICE.OFFERING", Taxonomies.Resource.SYSTEM);
-        eventMapping.put("DISK.OFFERING", Taxonomies.Resource.SYSTEM);
-        eventMapping.put("NETWORK.OFFERING", Taxonomies.Resource.SYSTEM);
+        cstoCadfResourceMapping.put("SSVM", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("POD", Taxonomies.Resource.DATA_SECURITY_GROUP);
+        cstoCadfResourceMapping.put("SERVICE.OFFERING", Taxonomies.Resource.SYSTEM);
+        cstoCadfResourceMapping.put("DISK.OFFERING", Taxonomies.Resource.SYSTEM);
+        cstoCadfResourceMapping.put("NETWORK.OFFERING", Taxonomies.Resource.SYSTEM);
 
-        eventMapping.put("ZONE", Taxonomies.Resource.DATA_SECURITY_GROUP);
+        cstoCadfResourceMapping.put("POD", Taxonomies.Resource.DATA_SECURITY_GROUP);
 
-        eventMapping.put("VLAN.IP.RANGE", Taxonomies.Resource.SERVICE_NETWORK);
-        eventMapping.put("MANAGEMENT.IP.RANGE", Taxonomies.Resource.SERVICE_NETWORK);
-        eventMapping.put("STORAGE.IP.RANGE", Taxonomies.Resource.SERVICE_NETWORK);
+        cstoCadfResourceMapping.put("ZONE", Taxonomies.Resource.DATA_SECURITY_GROUP);
 
-        eventMapping.put("CONFIGURATION.VALUE", Taxonomies.Resource.SYSTEM);
+        cstoCadfResourceMapping.put("VLAN.IP.RANGE", Taxonomies.Resource.SERVICE_NETWORK);
+        cstoCadfResourceMapping.put("MANAGEMENT.IP.RANGE", Taxonomies.Resource.SERVICE_NETWORK);
+        cstoCadfResourceMapping.put("STORAGE.IP.RANGE", Taxonomies.Resource.SERVICE_NETWORK);
 
-        eventMapping.put("SG", Taxonomies.Resource.DATA_SECURITY_GROUP);
-        eventMapping.put("SG.AUTH", Taxonomies.Resource.DATA_SECURITY_GROUP);
-        eventMapping.put("SG.REVOKE", Taxonomies.Resource.DATA_SECURITY_GROUP);
+        cstoCadfResourceMapping.put("CONFIGURATION.VALUE", Taxonomies.Resource.SYSTEM);
 
-        eventMapping.put("HOST", Taxonomies.Resource.NETWORK_NODE_HOST);
-        eventMapping.put("HOST.OOBM", Taxonomies.Resource.NETWORK_NODE_HOST);
+        cstoCadfResourceMapping.put("SG", Taxonomies.Resource.DATA_SECURITY_GROUP);
+        cstoCadfResourceMapping.put("SG.AUTH", Taxonomies.Resource.DATA_SECURITY_GROUP);
+        cstoCadfResourceMapping.put("SG.REVOKE", Taxonomies.Resource.DATA_SECURITY_GROUP);
 
-        eventMapping.put("HA.RESOURCE", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("HA.STATE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("HOST", Taxonomies.Resource.NETWORK_NODE_HOST);
+        cstoCadfResourceMapping.put("HOST.OOBM", Taxonomies.Resource.NETWORK_NODE_HOST);
 
-        eventMapping.put("MAINT", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("MAINT.CANCEL", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("MAINT.PREPARE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("HA.RESOURCE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("HA.STATE", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("VPN", Taxonomies.Resource.NETWORK_CLUSTER);
-        eventMapping.put("VPN.REMOTE.ACCESS", Taxonomies.Resource.NETWORK_CLUSTER);
-        eventMapping.put("VPN.USER", Taxonomies.Resource.NETWORK_CLUSTER);
-        eventMapping.put("VPN.S2S.VPN.GATEWAY", Taxonomies.Resource.NETWORK_CLUSTER);
-        eventMapping.put("VPN.S2S.CUSTOMER.GATEWAY", Taxonomies.Resource.NETWORK_CLUSTER);
-        eventMapping.put("VPN.S2S.CONNECTION", Taxonomies.Resource.NETWORK_CLUSTER);
+        cstoCadfResourceMapping.put("MAINT", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("MAINT.CANCEL", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("MAINT.PREPARE", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("UPLOAD.CUSTOM", Taxonomies.Resource.DATA_SECURITY_CREDENTIAL);
+        cstoCadfResourceMapping.put("VPN", Taxonomies.Resource.NETWORK_CLUSTER);
+        cstoCadfResourceMapping.put("VPN.REMOTE.ACCESS", Taxonomies.Resource.NETWORK_CLUSTER);
+        cstoCadfResourceMapping.put("VPN.USER", Taxonomies.Resource.NETWORK_CLUSTER);
+        cstoCadfResourceMapping.put("VPN.S2S.VPN.GATEWAY", Taxonomies.Resource.NETWORK_CLUSTER);
+        cstoCadfResourceMapping.put("VPN.S2S.CUSTOMER.GATEWAY", Taxonomies.Resource.NETWORK_CLUSTER);
+        cstoCadfResourceMapping.put("VPN.S2S.CONNECTION", Taxonomies.Resource.NETWORK_CLUSTER);
 
-        eventMapping.put("STATICNAT", Taxonomies.Resource.NETWORK_CLUSTER);
-        eventMapping.put("ZONE.VLAN", Taxonomies.Resource.NETWORK_CLUSTER);
+        cstoCadfResourceMapping.put("UPLOAD.CUSTOM", Taxonomies.Resource.DATA_SECURITY_CREDENTIAL);
 
-        eventMapping.put("PROJECT", Taxonomies.Resource.SERVICE_COMPOSITION);
-        eventMapping.put("PROJECT.ACCOUNT", Taxonomies.Resource.SERVICE_COMPOSITION);
-        eventMapping.put("PROJECT.INVITATION", Taxonomies.Resource.SERVICE_COMPOSITION);
+        cstoCadfResourceMapping.put("STATICNAT", Taxonomies.Resource.NETWORK_CLUSTER);
+        cstoCadfResourceMapping.put("ZONE.VLAN", Taxonomies.Resource.NETWORK_CLUSTER);
 
-        eventMapping.put("NETWORK.ELEMENT", Taxonomies.Resource.SERVICE_NETWORK);
+        cstoCadfResourceMapping.put("PROJECT", Taxonomies.Resource.SERVICE_COMPOSITION);
+        cstoCadfResourceMapping.put("PROJECT.ACCOUNT", Taxonomies.Resource.SERVICE_COMPOSITION);
+        cstoCadfResourceMapping.put("PROJECT.INVITATION", Taxonomies.Resource.SERVICE_COMPOSITION);
 
-        eventMapping.put("PHYSICAL.NETWORK", Taxonomies.Resource.NETWORK_DOMAIN);
+        cstoCadfResourceMapping.put("NETWORK.ELEMENT", Taxonomies.Resource.SERVICE_NETWORK);
 
-        eventMapping.put("SERVICE.PROVIDER", Taxonomies.Resource.NETWORK_DOMAIN);
+        cstoCadfResourceMapping.put("PHYSICAL.NETWORK", Taxonomies.Resource.NETWORK_DOMAIN);
 
-        eventMapping.put("TRAFFIC.TYPE", Taxonomies.Resource.NETWORK_DOMAIN);
+        cstoCadfResourceMapping.put("SERVICE.PROVIDER", Taxonomies.Resource.NETWORK_DOMAIN);
 
-        eventMapping.put("PHYSICAL.LOADBALANCER", Taxonomies.Resource.NETWORK_NODE);
+        cstoCadfResourceMapping.put("TRAFFIC.TYPE", Taxonomies.Resource.NETWORK_DOMAIN);
 
-        eventMapping.put("PHYSICAL.NCC", Taxonomies.Resource.NETWORK_NODE);
+        cstoCadfResourceMapping.put("PHYSICAL.LOADBALANCER", Taxonomies.Resource.NETWORK_NODE);
 
-        eventMapping.put("SWITCH.MGMT", Taxonomies.Resource.NETWORK_NODE);
-        eventMapping.put("PHYSICAL.FIREWALL", Taxonomies.Resource.NETWORK_NODE);
+        cstoCadfResourceMapping.put("PHYSICAL.NCC", Taxonomies.Resource.NETWORK_NODE);
 
-        eventMapping.put("VPC", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("SWITCH.MGMT", Taxonomies.Resource.NETWORK_NODE);
+        cstoCadfResourceMapping.put("PHYSICAL.FIREWALL", Taxonomies.Resource.NETWORK_NODE);
 
-        eventMapping.put("NETWORK.ACL", Taxonomies.Resource.DATA_SECURITY_ROLE);
+        cstoCadfResourceMapping.put("VPC", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("VPC.OFFERING", Taxonomies.Resource.SYSTEM);
+        cstoCadfResourceMapping.put("NETWORK.ACL", Taxonomies.Resource.DATA_SECURITY_ROLE);
 
-        eventMapping.put("PRIVATE.GATEWAY", Taxonomies.Resource.NETWORK_NODE);
+        cstoCadfResourceMapping.put("VPC.OFFERING", Taxonomies.Resource.SYSTEM);
 
-        eventMapping.put("STATIC.ROUTE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("PRIVATE.GATEWAY", Taxonomies.Resource.NETWORK_NODE);
 
-        eventMapping.put("CREATE_TAGS", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("DELETE_TAGS", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("STATIC.ROUTE", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("CREATE_RESOURCE_DETAILS", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("DELETE_RESOURCE_DETAILS", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("CREATE_TAGS", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("DELETE_TAGS", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("VMSNAPSHOT", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("CREATE_RESOURCE_DETAILS", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("DELETE_RESOURCE_DETAILS", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("PHYSICAL", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("PHYSICAL.NVPCONTROLLER", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("PHYSICAL.OVSCONTROLLER", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("PHYSICAL.NUAGE.VSD", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("VMSNAPSHOT", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("COUNTER", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("PHYSICAL", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("PHYSICAL.NVPCONTROLLER", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("PHYSICAL.OVSCONTROLLER", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("PHYSICAL.NUAGE.VSD", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("CONDITION", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("COUNTER", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("AUTOSCALEPOLICY", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("AUTOSCALEVMPROFILE", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("AUTOSCALEVMGROUP", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("CONDITION", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("PHYSICAL.DHCP", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("PHYSICAL.PXE", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("BAREMETAL.RCT", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("BAREMETAL.PROVISION", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("AUTOSCALEPOLICY", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("AUTOSCALEVMPROFILE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("AUTOSCALEVMGROUP", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("AG", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("VM.AG", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("INTERNALLBVM", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("HOST.RESERVATION", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("GUESTVLANRANGE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("PHYSICAL.DHCP", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("PHYSICAL.PXE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("BAREMETAL.RCT", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("BAREMETAL.PROVISION", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("PORTABLE.IP.RANGE", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("PORTABLE.IP", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("AG", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("VM.AG", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("INTERNALLBVM", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("HOST.RESERVATION", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("GUESTVLANRANGE", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("DEDICATE", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("DEDICATE.RESOURCE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("PORTABLE.IP.RANGE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("PORTABLE.IP", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("VM.RESERVATION", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("UCS", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("MIGRATE.PREPARE", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("ALERT", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("PHYSICAL.ODLCONTROLLER", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("DEDICATE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("DEDICATE.RESOURCE", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("GUEST.OS", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("GUEST.OS.MAPPING", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("VM.RESERVATION", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("UCS", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("MIGRATE.PREPARE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("ALERT", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("PHYSICAL.ODLCONTROLLER", Taxonomies.Resource.UNKNOWN);
 
-        eventMapping.put("NIC.SECONDARY.IP", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("EXTERNAL.DHCP.VM.IP", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("USAGE.REMOVE.USAGE", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("NETSCALER.SERVICEPACKAGE", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("NETSCALERVM", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("ANNOTATION", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("TEMPLATE.DIRECT.DOWNLOAD", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("ISO.DIRECT.DOWNLOAD", Taxonomies.Resource.UNKNOWN);
-        eventMapping.put("SYSTEM.VM", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("GUEST.OS", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("GUEST.OS.MAPPING", Taxonomies.Resource.UNKNOWN);
 
+        cstoCadfResourceMapping.put("NIC.SECONDARY.IP", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("EXTERNAL.DHCP.VM.IP", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("USAGE.REMOVE.USAGE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("NETSCALER.SERVICEPACKAGE", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("NETSCALERVM", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("ANNOTATION", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("TEMPLATE.DIRECT.DOWNLOAD", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("ISO.DIRECT.DOWNLOAD", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("SYSTEM.VM", Taxonomies.Resource.UNKNOWN);
+        cstoCadfResourceMapping.put("SYSTEM.MONITOR", Taxonomies.Resource.DATA_SECURITY);
+        cstoCadfResourceMapping.put("EVENT", Resource.DATA_LOG);
+
+        eventActionToTypeMapping.put(Action.CREATE, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.UPDATE, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.DELETE, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.BACKUP, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.CAPTURE, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.CONFIGURE, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.DEPLOY, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.RESTORE, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.START, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.STOP, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.UNDEPLOY, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.RECEIVE, EventType.ACTIVITY);
+        eventActionToTypeMapping.put(Action.SEND, EventType.ACTIVITY);
+
+        eventActionToTypeMapping.put(Action.DISABLE, EventType.CONTROL);
+        eventActionToTypeMapping.put(Action.ENABLE, EventType.CONTROL);
+        eventActionToTypeMapping.put(Action.AUTHENTICATE, EventType.CONTROL);
+        eventActionToTypeMapping.put(Action.AUTHENTICATE_LOGIN, EventType.CONTROL);
+        eventActionToTypeMapping.put(Action.RENEW, EventType.CONTROL);
+        eventActionToTypeMapping.put(Action.REVOKE, EventType.CONTROL);
+        eventActionToTypeMapping.put(Action.ALLOW, EventType.CONTROL);
+        eventActionToTypeMapping.put(Action.DENY, EventType.CONTROL);
+        eventActionToTypeMapping.put(Action.EVALUATE, EventType.CONTROL);
+        eventActionToTypeMapping.put(Action.NOTIFY, EventType.CONTROL);
+
+        eventActionToTypeMapping.put(Action.MONITOR, EventType.MONITOR);
+        eventActionToTypeMapping.put(Action.READ, EventType.MONITOR);
+        eventActionToTypeMapping.put(Action.UNKNOWN, EventType.MONITOR);
+
+        //Mapping CS Resources (Categories) to UUIDS
+        for (HashMap.Entry he : cstoCadfResourceMapping.entrySet()) {
+            eventResourcetoUuidMapping.put(he.getKey().toString(),
+                    UUID.nameUUIDFromBytes(he.getKey().toString().getBytes()).toString());
+        }
     }
-
 }

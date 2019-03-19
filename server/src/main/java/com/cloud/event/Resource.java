@@ -18,35 +18,51 @@
 package com.cloud.event;
 
 import com.cloud.exception.InvalidParameterValueException;
+import com.google.gson.annotations.Expose;
 
 public class Resource {
-    private String _typeURI; //MANDATORY
-    private String _id; //MANDATORY
-    private String _name; //OPTIONAL
-    private String _domain; //OPTIONAL
-    private Credential _credential; //OPTIONAL //subtype
-    private String _addresses; //OPTIONAL //subtype
-    private String _host; //OPTIONAL //subtype
-    private String _geolocation; //OPTIONAL //subtype
-    private String _geolocationId; //OPTIONAL //subtype
-    private String _attachements; //OPTIONAL //subtype
-    private String _userid;
+    @Expose
+    private String typeURI; //MANDATORY
+    @Expose
+    private String id; //MANDATORY
+    @Expose
+    private String name; //OPTIONAL
+    @Expose
+    private String domain; //OPTIONAL
+    @Expose
+    private Credential credential; //OPTIONAL //subtype
+    @Expose
+    private String addresses; //OPTIONAL //subtype
+    @Expose
+    protected Host host; //OPTIONAL //subtype
+    @Expose
+    private String geolocation; //OPTIONAL //subtype
+    @Expose
+    private String geolocationId; //OPTIONAL //subtype
+    @Expose
+    private String attachements; //OPTIONAL //subtype
+    @Expose
+    private String userid;
 
     public static class Credential {
-       private String _type;
-       private String _token;
-       private String _authority;
-       private String _assertions;
+        @Expose
+        private String type;
+        @Expose
+        private String token;
+        @Expose
+        private String authority;
+        @Expose
+        private String assertions;
 
-       protected Credential(String type, String token, String authority, String assertions) {
-           _type = type;
-           _token = _token;
-           _authority = authority;
-           _assertions = assertions;
-       }
+        protected Credential(String type, String token, String authority, String assertions) {
+           this.type = type;
+           this.token = token;
+           this.authority = authority;
+           this.assertions = assertions;
+        }
 
         public void checkMandatoryFields() {
-            if (_token == null || _token.isEmpty()) {
+            if (token == null || token.isEmpty()) {
                 throw new InvalidParameterValueException("Resource CREDENTIAL token field is mandatory");
             }
         }
@@ -54,70 +70,94 @@ public class Resource {
     }
 
     private static class Addresses {
-        private String _url;
-        private String _name;
-        private String _port;
+        @Expose
+        private String url;
+        @Expose
+        private String name;
+        @Expose
+        private String port;
 
         protected Addresses(String url, String name, String port) {
-            _url = url;
-            _name = name;
-            _port = port;
+            this.url = url;
+            this.name = name;
+            this.port = port;
         }
     }
 
-    private static class Host {
-        private String _id;
-        private String _address;
-        private String _agent;
-        private String _platform;
+    public static class Host {
+        @Expose
+        private String id;
+        @Expose
+        private String address;
+        @Expose
+        private String agent;
+        @Expose
+        private String platform;
+
+        protected Host() {
+            //
+        }
 
         protected Host(String id, String address, String agent, String platform) {
-            _id = id;
-            _address = address;
-            _agent = agent;
-            _platform = platform;
+            this();
+            this.id = id;
+            this.address = address;
+            this.agent = agent;
+            this.platform = platform;
         }
     }
 
     private static class Geolocation {
-        private String _id;
-        private String _latitude;
-        private String _longtitude;
-        private String _elevation;
-        private String _accurance;
-        private String _city;
-        private String _state;
-        private String _regionICANN;
-        private String _annotations;
+        @Expose
+        private String id;
+        @Expose
+        private String latitude;
+        @Expose
+        private String longtitude;
+        @Expose
+        private String elevation;
+        @Expose
+        private String accurance;
+        @Expose
+        private String city;
+        @Expose
+        private String state;
+        @Expose
+        private String regionICANN;
+        @Expose
+        private String annotations;
 
         protected Geolocation(String id, String latittude, String longtitude, String elevation, String accurance,
                               String city, String state, String regionICANN, String annotations) {
-            _id = id;
-            _latitude = latittude;
-            _longtitude = longtitude;
-            _elevation = elevation;
-            _accurance = accurance;
-            _city = city;
-            _state = state;
-            _regionICANN = regionICANN;
-            _annotations = annotations;
+            this.id = id;
+            this.latitude = latittude;
+            this.longtitude = longtitude;
+            this.elevation = elevation;
+            this.accurance = accurance;
+            this.city = city;
+            this.state = state;
+            this.regionICANN = regionICANN;
+            this.annotations = annotations;
         }
     }
 
     private static class Attachements {
-        private String _contentType;
-        private String _content;
-        private String _name;
+        @Expose
+        private String contentType;
+        @Expose
+        private String content;
+        @Expose
+        private String name;
 
         protected Attachements(String contentType, String content, String name) {
-            _contentType = contentType;
-            _content = content;
-            _name = name;
+            this.contentType = contentType;
+            this.content = content;
+            this.name = name;
         }
 
         public void checkMandatoryFields() {
-            if ((_content == null || _content.isEmpty()) ||
-                    (_contentType == null || _contentType.isEmpty()) ) {
+            if ((content == null || content.isEmpty()) ||
+                    (contentType == null || contentType.isEmpty()) ) {
                 throw new InvalidParameterValueException("Resource ATTACHEMENTS contentType and content fields " +
                         "are mandatory");
             }
@@ -126,18 +166,21 @@ public class Resource {
     }
 
     private static class Endpoint {
-        private String _url;
-        private String _name;
-        private String _port;
+        @Expose
+        private String url;
+        @Expose
+        private String name;
+        @Expose
+        private String port;
 
         protected Endpoint(String url, String name, String port) {
-            _url = url;
-            _name = name;
-            _port = port;
+            this.url = url;
+            this.name = name;
+            this.port = port;
         }
 
         public void checkMandatoryFields() {
-            if (_url == null || _url.isEmpty()) {
+            if (url == null || url.isEmpty()) {
                 throw new InvalidParameterValueException("Resource ENDPOINT url field is mandatory");
             }
         }
@@ -145,24 +188,30 @@ public class Resource {
     }
 
     public Resource(String typeURI) {
-        _typeURI = typeURI;
-        _credential = new Credential("","","","");
+        this.typeURI = typeURI;
+        this.credential = new Credential("","","","");
+    }
+
+    public Resource(String typeURI, String id) {
+        this.typeURI = typeURI;
+        this.id = id;
+        this.credential = new Credential("","","","");
        }
 
     public Resource(String typeURI, String id, String name, String host, Credential credential,
                     String addresses, String userid) {
-        _typeURI = typeURI;
-        _id = id;
-        _name = name;
-        _host = host;
-        _credential = credential;
-        _addresses = addresses;
-        _userid = userid;
+        this.typeURI = typeURI;
+        this.id = id;
+        this.name = name;
+        //_host = host;
+        this.credential = credential;
+        this.addresses = addresses;
+        this.userid = userid;
     }
 
     public void checkMandatoryFields() {
-        if (_id == null || _id.isEmpty()) {
-            throw new InvalidParameterValueException("Resource " + _typeURI + " id field is mandatory");
+        if (id == null || id.isEmpty()) {
+            throw new InvalidParameterValueException("Resource " + typeURI + " id field is mandatory");
         }
     }
 

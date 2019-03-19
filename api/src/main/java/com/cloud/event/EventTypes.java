@@ -90,7 +90,9 @@ public class EventTypes {
     public static final String EVENT_VM_UPDATE = "VM.UPDATE";
     public static final String EVENT_VM_UPGRADE = "VM.UPGRADE";
     public static final String EVENT_VM_DYNAMIC_SCALE = "VM.DYNAMIC.SCALE";
+    //TODO change value to VM.PASSWORD.RESET
     public static final String EVENT_VM_RESETPASSWORD = "VM.RESETPASSWORD";
+    //TODO change value to VM.SSHKEY.RESET
     public static final String EVENT_VM_RESETSSHKEY = "VM.RESETSSHKEY";
     public static final String EVENT_VM_MIGRATE = "VM.MIGRATE";
     public static final String EVENT_VM_MOVE = "VM.MOVE";
@@ -105,7 +107,7 @@ public class EventTypes {
     public static final String EVENT_ROUTER_REBOOT = "ROUTER.REBOOT";
     public static final String EVENT_ROUTER_HA = "ROUTER.HA";
     public static final String EVENT_ROUTER_UPGRADE = "ROUTER.UPGRADE";
-    //TODO ndale change value (noun to verb)
+    //TODO change value to ROUTER.DIAGNOSTICS.START
     public static final String EVENT_ROUTER_DIAGNOSTICS = "ROUTER.DIAGNOSTICS";
 
     // Console proxy
@@ -114,9 +116,9 @@ public class EventTypes {
     public static final String EVENT_PROXY_START = "PROXY.START";
     public static final String EVENT_PROXY_STOP = "PROXY.STOP";
     public static final String EVENT_PROXY_REBOOT = "PROXY.REBOOT";
-    //TODO ndale change value (noun to verb)
+    //TODO change value PROXY.HA.UNKNOWN
     public static final String EVENT_PROXY_HA = "PROXY.HA";
-    //TODO ndale change value (noun to verb)
+    //TODO change value to PROXY.DIAGNOSTICS.START
     public static final String EVENT_PROXY_DIAGNOSTICS = "PROXY.DIAGNOSTICS";
 
     // VNC Console Events
@@ -153,9 +155,9 @@ public class EventTypes {
     public static final String EVENT_NIC_DETAIL_REMOVE = "NIC.DETAIL.REMOVE";
 
     // Load Balancers
-    //TODO ndale change value (noun to verb)
+    //TODO change value to LB.RULE.CREATE
     public static final String EVENT_ASSIGN_TO_LOAD_BALANCER_RULE = "LB.ASSIGN.TO.RULE";
-    //TODO ndale change value (noun to verb)
+    //TODO change value to LB.RULE.DELETE
     public static final String EVENT_REMOVE_FROM_LOAD_BALANCER_RULE = "LB.REMOVE.FROM.RULE";
     public static final String EVENT_LOAD_BALANCER_CREATE = "LB.CREATE";
     public static final String EVENT_LOAD_BALANCER_DELETE = "LB.DELETE";
@@ -197,7 +199,7 @@ public class EventTypes {
     public static final String EVENT_ACCOUNT_CREATE = "ACCOUNT.CREATE";
     public static final String EVENT_ACCOUNT_DELETE = "ACCOUNT.DELETE";
     public static final String EVENT_ACCOUNT_UPDATE = "ACCOUNT.UPDATE";
-    //TODO ndale change value (noun to verb)
+    //TODO change value to ACCOUNT.ZONE.DEFAULT.UPDATE
     public static final String EVENT_ACCOUNT_MARK_DEFAULT_ZONE = "ACCOUNT.MARK.DEFAULT.ZONE";
 
     // UserVO Events
@@ -212,11 +214,11 @@ public class EventTypes {
     public static final String EVENT_USER_LOCK = "USER.LOCK";
 
     //registering SSH keypair events
-    //TODO ndale change value (noun to verb)
+    //TODO change value to SSH.KEYPAIR.EVALUATE or SSH.KEYPAIR.ENABLE
     public static final String EVENT_REGISTER_SSH_KEYPAIR = "REGISTER.SSH.KEYPAIR";
 
     //register for user API and secret keys
-    //TODO ndale change value (noun to verb)
+    //TODO change value to SSH.SECRET_API_KEY.EVALUATE or SSH.SECRET_API_KEY.ENABLE
     public static final String EVENT_REGISTER_FOR_SECRET_API_KEY = "REGISTER.USER.KEY";
 
     // Template Events
@@ -252,8 +254,9 @@ public class EventTypes {
 
     // Snapshots
     public static final String EVENT_SNAPSHOT_CREATE = "SNAPSHOT.CREATE";
-    //TODO ndale change value (noun to verb)
+    //TODO change value PRIMARY.SNAPSHOT.ENABLE
     public static final String EVENT_SNAPSHOT_ON_PRIMARY = "SNAPSHOT.ON_PRIMARY";
+    //TODO change value PRIMARY.SNAPSHOT.DISABLE
     public static final String EVENT_SNAPSHOT_OFF_PRIMARY = "SNAPSHOT.OFF_PRIMARY";
     public static final String EVENT_SNAPSHOT_DELETE = "SNAPSHOT.DELETE";
     public static final String EVENT_SNAPSHOT_REVERT = "SNAPSHOT.REVERT";
@@ -276,9 +279,9 @@ public class EventTypes {
     public static final String EVENT_SSVM_START = "SSVM.START";
     public static final String EVENT_SSVM_STOP = "SSVM.STOP";
     public static final String EVENT_SSVM_REBOOT = "SSVM.REBOOT";
-    //TODO ndale change value (noun to verb)
+    //TODO change value to SSVM.HA.UNKNOWN
     public static final String EVENT_SSVM_HA = "SSVM.HA";
-    //TODO ndale change value (noun to verb)
+    //TODO change value to SSVM.DIAGNOSTICS.START
     public static final String EVENT_SSVM_DIAGNOSTICS = "SSVM.DIAGNOSTICS";
 
     // Service Offerings
@@ -353,15 +356,17 @@ public class EventTypes {
 
     // Maintenance
     public static final String EVENT_MAINTENANCE_CANCEL = "MAINT.CANCEL";
-    //TODO ndale change value (noun to verb)
+    //TODO change value to MAINTENANCE.PS.STOP
     public static final String EVENT_MAINTENANCE_CANCEL_PRIMARY_STORAGE = "MAINT.CANCEL.PS";
+    //TODO change value to MAINTENANCE.CONFIGURE
     public static final String EVENT_MAINTENANCE_PREPARE = "MAINT.PREPARE";
-    //TODO ndale change value (noun to verb)
+    //TODO change value to MAINTENANCE.PS.CONFIGURE
     public static final String EVENT_MAINTENANCE_PREPARE_PRIMARY_STORAGE = "MAINT.PREPARE.PS";
 
     // Primary storage pool
-    //TODO ndale change value (noun to verb)
+    //TODO change value to PS.ENABLE
     public static final String EVENT_ENABLE_PRIMARY_STORAGE = "ENABLE.PS";
+    //TODO change value to PS.DISABLE
     public static final String EVENT_DISABLE_PRIMARY_STORAGE = "DISABLE.PS";
 
     // VPN
@@ -385,7 +390,7 @@ public class EventTypes {
     public static final String EVENT_NETWORK_RESTART = "NETWORK.RESTART";
 
     // Custom certificates
-    //TODO ndale change value (noun to verb)
+    //TODO change value TO CUSTOM.CERTIFICATE.NOTIFY
     public static final String EVENT_UPLOAD_CUSTOM_CERTIFICATE = "UPLOAD.CUSTOM.CERTIFICATE";
 
     // OneToOnenat
@@ -473,21 +478,25 @@ public class EventTypes {
     public static final String EVENT_STATIC_ROUTE_DELETE = "STATIC.ROUTE.DELETE";
 
     // tag related events
-    //TODO ndale change value (noun to verb)
+    //TODO change value to TAGS.CREATE
     public static final String EVENT_TAGS_CREATE = "CREATE_TAGS";
+    //TODO change value to TAGS.DELETE
     public static final String EVENT_TAGS_DELETE = "DELETE_TAGS";
 
     // meta data related events
-    //TODO ndale change value (noun to verb)
+    //TODO change value RESOURCE_DETAILS.CREATE
     public static final String EVENT_RESOURCE_DETAILS_CREATE = "CREATE_RESOURCE_DETAILS";
+    //TODO change value RESOURCE_DETAILS.DELETE
     public static final String EVENT_RESOURCE_DETAILS_DELETE = "DELETE_RESOURCE_DETAILS";
 
     // vm snapshot events
     public static final String EVENT_VM_SNAPSHOT_CREATE = "VMSNAPSHOT.CREATE";
     public static final String EVENT_VM_SNAPSHOT_DELETE = "VMSNAPSHOT.DELETE";
-    //TODO ndale change value (noun to verb)
+    //TODO change value to VMSNAPSHOT.PRIMARY.ENABLE
     public static final String EVENT_VM_SNAPSHOT_ON_PRIMARY = "VMSNAPSHOT.ON_PRIMARY";
+    //TODO change value to VMSNAPSHOT.PRIMARY.DISABLE
     public static final String EVENT_VM_SNAPSHOT_OFF_PRIMARY = "VMSNAPSHOT.OFF_PRIMARY";
+    //TODO change value to VMSNAPSHOT.REVOKE or VMSNAPSHOT.UNKNOWN
     public static final String EVENT_VM_SNAPSHOT_REVERT = "VMSNAPSHOT.REVERTTO";
 
     // external network device events
@@ -545,8 +554,9 @@ public class EventTypes {
     public static final String EVENT_PORTABLE_IP_TRANSFER = "PORTABLE.IP.TRANSFER";
 
     // Dedicated Resources
-    //TODO ndale change value (noun to verb)
+    //TODO change value to RESOURCE.DEDICATE.CREATE
     public static final String EVENT_DEDICATE_RESOURCE = "DEDICATE.RESOURCE";
+    //TODO change value to RESOURCE.DEDICATE.DELETE
     public static final String EVENT_DEDICATE_RESOURCE_RELEASE = "DEDICATE.RESOURCE.RELEASE";
 
     public static final String EVENT_CLEANUP_VM_RESERVATION = "VM.RESERVATION.CLEANUP";
@@ -554,7 +564,7 @@ public class EventTypes {
     public static final String EVENT_UCS_ASSOCIATED_PROFILE = "UCS.ASSOCIATEPROFILE";
 
     // Object store migration
-    //TODO ndale change value (noun to verb)
+    //TODO change value to SECONDARY.MIGRATE.CONFIGURE
     public static final String EVENT_MIGRATE_PREPARE_SECONDARY_STORAGE = "MIGRATE.PREPARE.SS";
 
     //Alert generation
@@ -579,7 +589,7 @@ public class EventTypes {
     public static final String EVENT_NETWORK_EXTERNAL_DHCP_VM_IPFETCH = "EXTERNAL.DHCP.VM.IP.FETCH";
 
     //Usage related events
-    //TODO ndale change value (noun to verb)
+    //TODO change value to USAGE.RECORDS.DELETE
     public static final String EVENT_USAGE_REMOVE_USAGE_RECORDS = "USAGE.REMOVE.USAGE.RECORDS";
 
     // Netscaler Service Package events
@@ -598,6 +608,8 @@ public class EventTypes {
     // Diagnostics Events
     public static final String EVENT_SYSTEM_VM_DIAGNOSTICS = "SYSTEM.VM.DIAGNOSTICS";
 
+    // Event operations Events
+    public static final String EVENT_EVENTS_CLEAR = "EVENT.DELETE";
     static {
 
         // TODO: need a way to force author adding event types to declare the entity details as well, with out braking
@@ -995,6 +1007,9 @@ public class EventTypes {
         entityEventDetails.put(EVENT_TEMPLATE_DIRECT_DOWNLOAD_FAILURE, VirtualMachineTemplate.class);
         entityEventDetails.put(EVENT_ISO_DIRECT_DOWNLOAD_FAILURE, "Iso");
         entityEventDetails.put(EVENT_SYSTEM_VM_DIAGNOSTICS, VirtualMachine.class);
+
+        //Event operations events
+        entityEventDetails.put(EVENT_EVENTS_CLEAR, Event.class);
     }
 
     public static String getEntityForEvent(String eventName) {

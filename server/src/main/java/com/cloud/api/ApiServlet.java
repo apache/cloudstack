@@ -49,7 +49,6 @@ import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,13 +130,12 @@ public class ApiServlet extends HttpServlet {
     }
 
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
+        HashMap<String, String> eventExtraInformation = new HashMap<String, String>();
+
         InetAddress remoteAddress = null;
+
         try {
             remoteAddress = getClientAddress(req);
-            System.out.println("************************************************************");
-            System.out.println("ndale - Entry point 0.0 - ApiServlet - ProcessRequestInContext");
-            System.out.println(remoteAddress.toString());
-            System.out.println("************************************************************");
         } catch (UnknownHostException e) {
             s_logger.warn("UnknownHostException when trying to lookup remote IP-Address. This should never happen. Blocking request.", e);
             final String response = apiServer.getSerializedApiError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
@@ -148,26 +146,6 @@ public class ApiServlet extends HttpServlet {
             return;
         }
 
-        System.out.println("************************************************************");
-        System.out.println("ndale - Entry point 0.1 - ApiServlet - ProcessRequestInContext");
-        System.out.println("User-Agent :" + req.getHeader("User-Agent"));
-        System.out.println("************************************************************");
-        Enumeration<String> headernames = req.getHeaderNames();
-        String h_name;
-        if (headernames != null) {
-            while (headernames.hasMoreElements()) {
-                System.out.println("-----------------------------------------------------");
-                h_name = headernames.nextElement();
-                System.out.println(h_name);
-                System.out.println(req.getHeader(h_name));
-                System.out.println("-----------------------------------------------------");
-
-            }
-        }
-        System.out.println("************************************************************");
-
-
-
         final StringBuilder auditTrailSb = new StringBuilder(128);
         auditTrailSb.append(" ").append(remoteAddress.getHostAddress());
         auditTrailSb.append(" -- ").append(req.getMethod()).append(' ');
@@ -175,6 +153,12 @@ public class ApiServlet extends HttpServlet {
         String responseType = HttpUtils.RESPONSE_TYPE_XML;
         final Map<String, Object[]> params = new HashMap<String, Object[]>();
         params.putAll(req.getParameterMap());
+
+        eventExtraInformation.clear();
+        eventExtraInformation.put("initiator_host", remoteAddress.getHostAddress());
+        eventExtraInformation.put("initiator_method", req.getMethod());
+        eventExtraInformation.put("initiator_user-agent", req.getHeader("user-agent"));
+        eventExtraInformation.put("initiator_auth-type", req.getAuthType());
 
         // For HTTP GET requests, it seems that HttpServletRequest.getParameterMap() actually tries
         // to unwrap URL encoded content from ISO-9959-1.
@@ -304,7 +288,10 @@ public class ApiServlet extends HttpServlet {
                         return;
                     }
                     final User user = entityMgr.findById(User.class, userId);
+
                     CallContext.register(user, (Account)accountObj);
+                    CallContext.current().putContextParameter(User.class, eventExtraInformation);
+
                 } else {
                     // Invalidate the session to ensure we won't allow a request across management server
                     // restarts if the userId was serialized to the stored session
@@ -321,6 +308,7 @@ public class ApiServlet extends HttpServlet {
                 }
             } else {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
+                CallContext.current().putContextParameter(User.class, eventExtraInformation);
             }
 
             if (apiServer.verifyRequest(params, userId, remoteAddress)) {
@@ -330,6 +318,7 @@ public class ApiServlet extends HttpServlet {
                 // Add the HTTP method (GET/POST/PUT/DELETE) as well into the params map.
                 params.put("httpmethod", new String[]{req.getMethod()});
                 final String response = apiServer.handleRequest(params, responseType, auditTrailSb);
+
                 HttpUtils.writeHttpResponse(resp, response != null ? response : "", HttpServletResponse.SC_OK, responseType, ApiServer.JSONcontentType.value());
             } else {
                 if (session != null) {
@@ -393,4 +382,5 @@ public class ApiServlet extends HttpServlet {
         }
         return null;
     }
+
 }

@@ -51,6 +51,20 @@ under the License.
       </layout>
    </appender>
 
+
+   <appender name="EVENTLOGGER" class="org.apache.log4j.rolling.RollingFileAppender">
+         <param name="Append" value="true"/>
+         <param name="Threshold" value="INFO"/>
+         <rollingPolicy class="org.apache.log4j.rolling.TimeBasedRollingPolicy">
+           <param name="FileNamePattern" value="@EVENTLOG@.%d{yyyy-MM-dd}.gz"/>
+           <param name="ActiveFileName" value="@EVENTLOG@"/>
+         </rollingPolicy>
+         <layout class="org.apache.log4j.EnhancedPatternLayout">
+            <param name="ConversionPattern" value="%d{ISO8601} %-5p [%c{1.}] (%t:%x) (logid:%X{logcontextid}) %m%n"/>
+         </layout>
+   </appender>
+
+
    <!-- ============================== -->
    <!-- Append warnings+ to the syslog if it is listening on UDP port FIXME make sysloghost configurable! -->
    <!-- ============================== -->
@@ -183,6 +197,11 @@ under the License.
       <appender-ref ref="FILE"/>
       <appender-ref ref="SNMP"/>
       <appender-ref ref="ALERTSYSLOG"/>
+   </logger>
+
+   <logger name="com.cadf.el" additivity="false">
+      <level value="INFO" />
+      <appender-ref ref="EVENTLOGGER" />
    </logger>
 
    <!-- ======================= -->
