@@ -51,7 +51,7 @@ public class DiskOfferingVO implements DiskOffering {
     long id;
 
     @Column(name = "domain_id")
-    Long domainId;
+    Long domainId = null;
 
     @Column(name = "unique_name")
     private String uniqueName;
@@ -180,6 +180,24 @@ public class DiskOfferingVO implements DiskOffering {
         this.minIops = minIops;
         this.maxIops = maxIops;
         this.cacheMode = cacheMode;
+    }
+
+    public DiskOfferingVO(String name, String displayText, Storage.ProvisioningType provisioningType, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,
+                          Long minIops, Long maxIops) {
+        this.name = name;
+        this.displayText = displayText;
+        this.provisioningType = provisioningType;
+        this.diskSize = diskSize;
+        this.tags = tags;
+        recreatable = false;
+        type = Type.Disk;
+        useLocalStorage = false;
+        customized = isCustomized;
+        uuid = UUID.randomUUID().toString();
+        customizedIops = isCustomizedIops;
+        this.minIops = minIops;
+        this.maxIops = maxIops;
+        state = State.Active;
     }
 
     public DiskOfferingVO(Long domainId, String name, String displayText, Storage.ProvisioningType provisioningType, long diskSize, String tags, boolean isCustomized, Boolean isCustomizedIops,

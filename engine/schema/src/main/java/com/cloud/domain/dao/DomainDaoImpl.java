@@ -291,4 +291,11 @@ public class DomainDaoImpl extends GenericDaoBase<DomainVO, Long> implements Dom
         return parentDomains;
     }
 
+    @Override
+    public List<DomainVO> list(Object[] ids) {
+        SearchBuilder<DomainVO> sb = createSearchBuilder();
+        SearchCriteria<DomainVO> sc = sb.create();
+        sc.addAnd("id", SearchCriteria.Op.IN, ids);
+        return listBy(sc);
+    }
 }

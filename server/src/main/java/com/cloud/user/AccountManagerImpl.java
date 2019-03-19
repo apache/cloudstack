@@ -77,6 +77,7 @@ import com.cloud.configuration.ResourceCountVO;
 import com.cloud.configuration.ResourceLimit;
 import com.cloud.configuration.dao.ResourceCountDao;
 import com.cloud.configuration.dao.ResourceLimitDao;
+import com.cloud.dc.DataCenter;
 import com.cloud.dc.DataCenterVO;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DataCenterDao;
@@ -2844,13 +2845,15 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException {
+    public void checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
-            if (checker.checkAccess(account, dof)) {
+            if (checker.checkAccess(account, dof, zone)) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Access granted to " + account + " to " + dof + " by " + checker.getName());
                 }
                 return;
+            } else {
+                throw new PermissionDeniedException(String.format("Access denied to %s for disk offering: %s, zone: %s by %s", account, dof.getUuid(), zone.getUuid(), checker.getName()));
             }
         }
 

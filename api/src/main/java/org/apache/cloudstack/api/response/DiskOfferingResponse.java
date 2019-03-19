@@ -17,8 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-
-import com.google.gson.annotations.SerializedName;
+import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -26,6 +25,7 @@ import org.apache.cloudstack.api.EntityReference;
 
 import com.cloud.offering.DiskOffering;
 import com.cloud.serializer.Param;
+import com.google.gson.annotations.SerializedName;
 
 @EntityReference(value = DiskOffering.class)
 public class DiskOfferingResponse extends BaseResponse {
@@ -143,6 +143,10 @@ public class DiskOfferingResponse extends BaseResponse {
     @SerializedName("displayoffering")
     @Param(description = "whether to display the offering to the end user or not.")
     private Boolean displayOffering;
+
+    @SerializedName(ApiConstants.DETAILS)
+    @Param(description = "the details of the disk offering", since = "4.13.0")
+    private Map<String, String> details;
 
     public Boolean getDisplayOffering() {
         return displayOffering;
@@ -327,5 +331,13 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength) {
         this.iopsWriteRateMaxLength = iopsWriteRateMaxLength;
+    }
+
+    public Map<String, String> getDetails() {
+        return details;
+    }
+
+    public void setDetails(Map<String, String> details) {
+        this.details = details;
     }
 }

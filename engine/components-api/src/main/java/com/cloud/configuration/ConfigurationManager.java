@@ -177,7 +177,7 @@ public interface ConfigurationManager {
 
     void checkZoneAccess(Account caller, DataCenter zone);
 
-    void checkDiskOfferingAccess(Account caller, DiskOffering dof);
+    void checkDiskOfferingAccess(Account caller, DiskOffering dof, DataCenter zone);
 
     /**
      * Creates a new network offering

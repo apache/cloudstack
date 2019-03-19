@@ -1825,8 +1825,9 @@
                                 preFilter: function(args) {
                                     if (isAdmin()) {
                                     } else {
+                                        args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                         args.$form.find('.form-item[rel=isPublic]').hide();
-                                        args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                        args.$form.find('.form-item[rel=domain]').css('display', 'inline-block'); //shown
                                         args.$form.find('.form-item[rel=tags]').hide();
                                     }
                                 },
@@ -2105,10 +2106,11 @@
                                         isChecked: false,
                                         docID: 'helpDiskOfferingPublic'
                                     },
-                                    domainId: {
+                                    domain: {
                                         label: 'label.domain',
                                         docID: 'helpDiskOfferingDomain',
                                         dependsOn: 'isPublic',
+                                        isMultiple: true,
                                         select: function(args) {
                                             $.ajax({
                                                 url: createURL('listDomains'),
@@ -2137,6 +2139,42 @@
                                             });
                                         },
                                         isHidden: true
+                                    },
+                                    zone: {
+                                        label: 'label.zone',
+                                        docID: 'helpDiskOfferingZone',
+                                        isMultiple: true,
+                                        validation: {
+                                            allzonesonly: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones&available=true"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var zoneObjs = [];
+                                                    var items = json.listzonesresponse.zone;
+                                                    if (items != null) {
+                                                        for (var i = 0; i < items.length; i++) {
+                                                            zoneObjs.push({
+                                                                id: items[i].id,
+                                                                description: items[i].name
+                                                            });
+                                                        }
+                                                    }
+                                                    if (isAdmin()) {
+                                                        zoneObjs.unshift({
+                                                            id: -1,
+                                                            description: "All Zones"
+                                                        });
+                                                    }
+                                                    args.response.success({
+                                                        data: zoneObjs
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             },
@@ -2217,8 +2255,41 @@
                                 }
 
                                 if (args.data.isPublic != "on") {
+                                    var domains = "";
+                                    if (Object.prototype.toString.call(args.data.domain) === '[object Array]') {
+                                        domains = args.data.domain.join(",");
+                                    } else {
+                                        if (args.data.domain != null) {
+                                            domains = args.data.domain;
+                                        }
+                                    }
+                                    if (domains != "") {
+                                        $.extend(data, {
+                                            domainids: domains
+                                        });
+                                    }
+                                }
+
+                                var zones = "";
+                                if (Object.prototype.toString.call(args.data.zone) === '[object Array]') {
+                                    var allZonesSelected = false;
+                                    args.data.zone.forEach(function (zone) {
+                                        if (zone === null) {
+                                            allZonesSelected = true;
+                                            break;
+                                        }
+                                    });
+                                    if(!allZonesSelected) {
+                                        zones = args.data.zone.join(",");
+                                    }
+                                } else {
+                                    if (args.data.zone != null) {
+                                        zones = args.data.zone;
+                                    }
+                                }
+                                if (zones != "") {
                                     $.extend(data, {
-                                        domainid: args.data.domainId
+                                        zoneids: zones
                                     });
                                 }
 
@@ -2390,8 +2461,11 @@
                                     tags: {
                                         label: 'label.storage.tags'
                                     },
-                                    domain: {
-                                        label: 'label.domain'
+                                    domains: {
+                                        label: 'label.domains'
+                                    },
+                                    zones: {
+                                        label: 'label.zones'
                                     },
                                     storagetype: {
                                         label: 'label.storage.type'
@@ -2410,6 +2484,19 @@
                                         data: data
                                     };
                                     var diskOfferings = cloudStack.listDiskOfferings(listDiskOfferingsOptions);
+                                    var diskOffering = diskOfferings[0]
+                                    if(diskOffering.details) {
+                                        if(diskOffering.details.domainnames) {
+                                            $.extend(diskOffering, {
+                                                domains: diskOffering.details.domainnames
+                                            });
+                                        }
+                                        if(diskOffering.details.zonenames) {
+                                            $.extend(diskOffering, {
+                                                zones: diskOffering.details.zonenames
+                                            });
+                                        }
+                                    }
                                     args.response.success({
                                         actionFilter: diskOfferingActionfilter,
                                         data: diskOfferings[0]

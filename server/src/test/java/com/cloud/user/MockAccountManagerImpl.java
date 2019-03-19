@@ -36,6 +36,7 @@ import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
 import com.cloud.api.query.vo.ControlledViewEntity;
+import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
@@ -217,7 +218,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException {
+    public void checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException {
         // TODO Auto-generated method stub
     }
 

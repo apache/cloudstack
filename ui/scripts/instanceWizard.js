@@ -377,6 +377,7 @@
             // Step 4: Data disk offering
             function(args) {
                 var isRequired = (args.currentData["select-template"] == "select-iso" ? true : false);
+                var zoneid = args.currentData["zoneid"]
                 var templateFilter = 'executable'
                 if (isAdmin()) {
                     templateFilter = 'all'
@@ -384,6 +385,9 @@
                 $.ajax({
                     url: createURL("listDiskOfferings"),
                     dataType: "json",
+                    data: {
+                        zoneid: zoneid
+                    },
                     async: true,
                     success: function(json) {
                         diskOfferingObjs = json.listdiskofferingsresponse.diskoffering;

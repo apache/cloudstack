@@ -438,7 +438,7 @@ public class MockConfigurationManagerImpl extends ManagerBase implements Configu
      * @see com.cloud.configuration.ConfigurationManager#checkDiskOfferingAccess(com.cloud.user.Account, com.cloud.offering.DiskOffering)
      */
     @Override
-    public void checkDiskOfferingAccess(Account caller, DiskOffering dof) {
+    public void checkDiskOfferingAccess(Account caller, DiskOffering dof, DataCenter zone) {
         // TODO Auto-generated method stub
 
     }

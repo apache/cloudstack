@@ -168,7 +168,7 @@
         });
     }
 
-    var selectedDiskOfferingObj = null;
+    var diskOfferingsObjList, selectedDiskOfferingObj = null;
 
     cloudStack.sections.storage = {
         title: 'label.storage',
@@ -274,6 +274,21 @@
                                                     });
                                                 }
                                             });
+                                            args.$select.change(function() {
+                                                var diskOfferingSelect = $(this).closest('form').find('select[name=diskOffering]');
+                                                if(diskOfferingSelect) {
+                                                    $(diskOfferingSelect).find('option').remove().end();
+                                                    var data = {
+                                                        zoneid: $(this).val(),
+                                                    };
+                                                    console.log(data);
+                                                    var diskOfferings = cloudStack.listDiskOfferings({ data: data });
+                                                    diskOfferingsObjList = diskOfferings;
+                                                    $(diskOfferings).each(function() {
+                                                        $(diskOfferingSelect).append(new Option(this.displaytext, this.id));
+                                                    });
+                                                }
+                                            });
                                         }
                                     },
                                     diskOffering: {
@@ -281,6 +296,7 @@
                                         docID: 'helpVolumeDiskOffering',
                                         select: function(args) {
                                             var diskOfferings = cloudStack.listDiskOfferings({});
+                                            diskOfferingsObjList = diskOfferings;
                                             var items = [];
                                             $(diskOfferings).each(function() {
                                                 items.push({
@@ -293,7 +309,7 @@
                                             });
                                             args.$select.change(function() {
                                                 var diskOfferingId = $(this).val();
-                                                $(diskOfferings).each(function() {
+                                                $(diskOfferingsObjList).each(function() {
                                                     if (this.id == diskOfferingId) {
                                                         selectedDiskOfferingObj = this;
                                                         return false; //break the $.each() loop

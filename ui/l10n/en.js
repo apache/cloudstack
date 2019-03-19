@@ -707,6 +707,7 @@ var dictionary = {
 "label.dns.1":"DNS 1",
 "label.dns.2":"DNS 2",
 "label.domain":"Domain",
+"label.domains":"Domains",
 "label.domain.admin":"Domain Admin",
 "label.domain.details":"Domain details",
 "label.domain.id":"Domain ID",

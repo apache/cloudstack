@@ -16,42 +16,45 @@
 // under the License.
 package com.cloud.storage.dao;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
+import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.springframework.stereotype.Component;
 
-import com.cloud.storage.DiskOfferingVO;
 import com.cloud.offering.DiskOffering.Type;
+import com.cloud.storage.DiskOfferingVO;
 import com.cloud.utils.db.Attribute;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
+import com.google.common.base.Strings;
 
 @Component
 public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> implements DiskOfferingDao {
-    private final SearchBuilder<DiskOfferingVO> DomainIdSearch;
+
+    @Inject
+    protected DiskOfferingDetailsDao detailsDao;
+
     private final SearchBuilder<DiskOfferingVO> PrivateDiskOfferingSearch;
     private final SearchBuilder<DiskOfferingVO> PublicDiskOfferingSearch;
     protected final SearchBuilder<DiskOfferingVO> UniqueNameSearch;
     private final Attribute _typeAttr;
 
     protected DiskOfferingDaoImpl() {
-        DomainIdSearch = createSearchBuilder();
-        DomainIdSearch.and("domainId", DomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        DomainIdSearch.and("removed", DomainIdSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
-        DomainIdSearch.done();
-
         PrivateDiskOfferingSearch = createSearchBuilder();
         PrivateDiskOfferingSearch.and("diskSize", PrivateDiskOfferingSearch.entity().getDiskSize(), SearchCriteria.Op.EQ);
         PrivateDiskOfferingSearch.done();
 
         PublicDiskOfferingSearch = createSearchBuilder();
-        PublicDiskOfferingSearch.and("domainId", PublicDiskOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
         PublicDiskOfferingSearch.and("system", PublicDiskOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
         PublicDiskOfferingSearch.and("removed", PublicDiskOfferingSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         PublicDiskOfferingSearch.done();
@@ -65,11 +68,7 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
 
     @Override
     public List<DiskOfferingVO> listByDomainId(long domainId) {
-        SearchCriteria<DiskOfferingVO> sc = DomainIdSearch.create();
-        sc.setParameters("domainId", domainId);
-        // FIXME: this should not be exact match, but instead should find all
-        // available disk offerings from parent domains
-        return listBy(sc);
+        return filterOfferingsForDomain(listAll(), domainId);
     }
 
     @Override
@@ -108,7 +107,19 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     public List<DiskOfferingVO> findPublicDiskOfferings() {
         SearchCriteria<DiskOfferingVO> sc = PublicDiskOfferingSearch.create();
         sc.setParameters("system", false);
-        return listBy(sc);
+        List<DiskOfferingVO> offerings = listBy(sc);
+
+        if(offerings!=null) {
+            for (int i = offerings.size() - 1; i >= 0; i--) {
+                DiskOfferingVO offering = offerings.get(i);
+                Map<String, String> offeringDetails = detailsDao.listDetailsKeyPairs(offering.getId());
+                if (!Strings.isNullOrEmpty(offeringDetails.get(ApiConstants.DOMAIN_ID_LIST))) {
+                    // TODO: For ROOT domainId?
+                    offerings.remove(i);
+                }
+            }
+        }
+        return offerings;
     }
 
     @Override
@@ -144,5 +155,27 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         diskOffering.setRemoved(new Date());
 
         return update(id, diskOffering);
+    }
+
+    private List<DiskOfferingVO> filterOfferingsForDomain(final List<DiskOfferingVO> offerings, Long domainId) {
+        List<DiskOfferingVO> filteredOfferings = null;
+        if (offerings != null && !offerings.isEmpty() && domainId != null) {
+            filteredOfferings = new ArrayList<>(offerings);
+            for (int i = filteredOfferings.size() - 1; i >= 0; i--) {
+                DiskOfferingVO offering = offerings.get(i);
+                Map<String, String> offeringDetails = detailsDao.listDetailsKeyPairs(offering.getId());
+                if (!Strings.isNullOrEmpty(offeringDetails.get(ApiConstants.DOMAIN_ID_LIST))) {
+                    String[] domainIdsArray = offeringDetails.get(ApiConstants.DOMAIN_ID_LIST).split(",");
+                    List<Long> domainIds = new ArrayList<>();
+                    for (String dIdStr : domainIdsArray) {
+                        domainIds.add(Long.valueOf(dIdStr.trim()));
+                    }
+                    if (!domainIds.contains(domainId)) {
+                        filteredOfferings.remove(i);
+                    }
+                }
+            }
+        }
+        return filteredOfferings;
     }
 }

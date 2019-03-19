@@ -25,6 +25,7 @@ import org.apache.cloudstack.api.command.admin.user.GetUserKeysCmd;
 import org.apache.cloudstack.api.command.admin.user.RegisterCmd;
 import org.apache.cloudstack.api.command.admin.user.UpdateUserCmd;
 
+import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.offering.DiskOffering;
@@ -98,7 +99,7 @@ public interface AccountService {
 
     void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException;
 
-    void checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException;
+    void checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException;
 
     void checkAccess(User user, ControlledEntity entity);
 

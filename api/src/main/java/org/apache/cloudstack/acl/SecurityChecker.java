@@ -138,5 +138,5 @@ public interface SecurityChecker extends Adapter {
 
     public boolean checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException;
 
-    boolean checkAccess(Account account, DiskOffering dof) throws PermissionDeniedException;
+    boolean checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException;
 }
