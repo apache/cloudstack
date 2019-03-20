@@ -18,7 +18,7 @@
 FROM centos:6
 
 MAINTAINER "Apache CloudStack" <dev@cloudstack.apache.org>
-LABEL Vendor="Apache.org" License="ApacheV2" Version="4.12.0.0"
+LABEL Vendor="Apache.org" License="ApacheV2" Version="4.13.0.0-SNAPSHOT"
 
 ENV PKG_URL=https://builds.cloudstack.org/job/package-master-rhel63/lastSuccessfulBuild/artifact/dist/rpmbuild/RPMS/x86_64
 
@@ -26,8 +26,8 @@ ENV PKG_URL=https://builds.cloudstack.org/job/package-master-rhel63/lastSuccessf
 RUN rpm -i http://dev.mysql.com/get/Downloads/Connector-Python/mysql-connector-python-2.1.3-1.el6.x86_64.rpm
 
 RUN yum install -y nc wget \
-    ${PKG_URL}/cloudstack-common-4.12.0.0.el6.x86_64.rpm \
-    ${PKG_URL}/cloudstack-management-4.12.0.0.el6.x86_64.rpm
+    ${PKG_URL}/cloudstack-common-4.13.0.0-SNAPSHOT.el6.x86_64.rpm \
+    ${PKG_URL}/cloudstack-management-4.13.0.0-SNAPSHOT.el6.x86_64.rpm
 
 RUN cd /etc/cloudstack/management; \
     ln -s tomcat6-nonssl.conf tomcat6.conf; \
