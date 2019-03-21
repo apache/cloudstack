@@ -64,6 +64,7 @@ public class NoVncConsoleProxyEncryptor {
 
             final StringBuilder data = new StringBuilder();
             data.append(host).append(":").append(port).append(":").append(clientIp).append(":").append(timestamp);
+            data.append(":").append(password);
             String dataHash = hash(key + data.toString());
             data.append("|").append(dataHash);
 
@@ -72,7 +73,6 @@ public class NoVncConsoleProxyEncryptor {
             Map<String, String> input = new HashMap<String, String>();
             input.put("port", String.valueOf(ConsoleProxyManager.DEFAULT_NOVNC_PORT));
             input.put("host", proxy);
-            input.put("password", password);
             input.put("path", encryptedText);
             input.put("displayName", vmName);
 
