@@ -795,7 +795,7 @@
                             isHeader: true
                         }),
 
-                        rootAdminAddL2Network: $.extend({}, addL2GuestNetwork.def, {
+                        AddL2Network: $.extend({}, addL2GuestNetwork.def, {
                             isHeader: true
                         })
 
