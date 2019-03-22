@@ -316,8 +316,15 @@ public class ActionEventUtils {
 
     private static void createCadfRecord(EventVO event) {
         HashMap<String, String> eventExtraInformation = new HashMap<String, String>();
-        //System.out.println("======================================CADF START================================================");
+
         eventExtraInformation = getEventExtraFromContext();
+
+        Account account = s_accountDao.findById(event.getAccountId());
+
+        if (eventExtraInformation !=null && account != null ) {
+            eventExtraInformation.put("initiator_account",
+                    account.getAccountName());
+        }
 
         /*for (Map.Entry <String, String> entry : eventExtraInformation.entrySet()) {
             System.out.println("key " + entry.getKey());
@@ -341,7 +348,6 @@ public class ActionEventUtils {
         s_el_logger.info(gson.toJson(cadf));
 
         //System.out.println(gson.toJson(cadf));
-        //System.out.println("======================================CADF END=================================================");
     }
 
     private static HashMap<String, String> getEventExtraFromContext() {

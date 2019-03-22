@@ -43,6 +43,8 @@ public class Resource {
     private String attachements; //OPTIONAL //subtype
     @Expose
     private String userid;
+    @Expose
+    protected String csAccountName;
 
     public static class Credential {
         @Expose
@@ -197,6 +199,13 @@ public class Resource {
         this.id = id;
         this.credential = new Credential("","","","");
        }
+
+    public Resource(String typeURI, String id, String csAccountName) {
+        this.typeURI = typeURI;
+        this.id = id;
+        this.csAccountName = csAccountName;
+        this.credential = new Credential("","","","");
+    }
 
     public Resource(String typeURI, String id, String name, String host, Credential credential,
                     String addresses, String userid) {

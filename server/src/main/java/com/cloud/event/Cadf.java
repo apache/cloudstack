@@ -77,6 +77,8 @@ public class Cadf {
         //Event unique identifier
         id = event.getUuid();
 
+
+
         if (!event.getType().contains(".")) {
             eventaction = Taxonomies.Action.UNKNOWN.getValue();
             eventtarget = Taxonomies.Resource.UNKNOWN;
@@ -95,10 +97,13 @@ public class Cadf {
         //sets EventType, Action and Target
         //Answers to WHAT, ONWHAT, TOWHERE
         setCADFAction(eventaction);
-        setCADFEventType();
+
+        eventType = getCADFEventType();
+
 
         //Answers to ONWHAT and TOWHERE
-        setCADFTarget(eventtarget);
+        target = new Resource(getCADFResourceName(eventtarget), getCADFResourceUUID(eventtarget));
+
 
         //sets Outcome
         //Answers to WHAT
@@ -116,23 +121,45 @@ public class Cadf {
 
         //Answers to WHO and FROMWHERE
         //"USER" CS Resource corresponds to Taxonomies.Resource.DATA_SECURITY_ACCOUNT_USER CADF Resource
-        setCADFInitiator("USER");
+
+        initiator = new Resource(Taxonomies.Resource.DATA_SECURITY_ACCOUNT_USER,
+                getCADFResourceUUID("USER"));
+
 
         //Answers to WHERE
-        setCADFObserver("SYSTEM.MONITOR");
+
+        observer = new Resource(Taxonomies.Resource.DATA_SECURITY,
+                getCADFResourceUUID("SYSTEM.MONITOR"));
+
+        try {
+            InetAddress inetAddress = InetAddress.getLocalHost();
+            observer.host = new Resource.Host();
+            observer.host = new Resource.Host(UUID.nameUUIDFromBytes(inetAddress.getHostName().getBytes()).toString(),
+                    inetAddress.getHostAddress(), null , null);
+
+        } catch (UnknownHostException e) {
+            s_logger.error(e.getMessage());
+        }
+
     }
 
     /**
      * @param event is the generic CS event
      * @param eventExtraInfo is a HashMap containing extra information with field names
-     *                       "initiator_host", "initiator_method", "initiator_user-agent", "initiator_auth-type"
+     *                       "initiator_host", "initiator_method", "initiator_user-agent",
+     *                       "initiator_auth-type", "initiator_account"
      *
      */
     public Cadf(EventVO event, HashMap<String, String> eventExtraInfo) {
         this(event);
         if (eventExtraInfo != null && !eventExtraInfo.get("initiator_host").isEmpty()) {
             initiator.host = new Resource.Host(UUID.nameUUIDFromBytes(eventExtraInfo.get("initiator_host").getBytes()).toString(),
-                    eventExtraInfo.get("initiator_host"), eventExtraInfo.get("initiator_user-agent"), null);
+                    eventExtraInfo.get("initiator_host"),
+                    eventExtraInfo.get("initiator_user-agent"),
+                    null);
+        }
+        if (eventExtraInfo != null && !eventExtraInfo.get("initiator_account").isEmpty()) {
+            initiator.csAccountName = eventExtraInfo.get("initiator_account");
         }
     }
 
@@ -196,71 +223,41 @@ public class Cadf {
     /**
      * Maps eventType to a CADF compatible value based on the events Action
      */
-    private void setCADFEventType() {
+    private String getCADFEventType() {
         Taxonomies.EventType _tmpEventType;
         _tmpEventType = Taxonomies.eventActionToTypeMapping.get(_tmpAction);
         if (_tmpEventType == null) {
             _tmpEventType = Taxonomies.EventType.MONITOR;
         }
-        eventType = _tmpEventType.getValue();
-    }
-
-
-    /**
-     * Maps eventtarget to a CADF compatible value and creates the target Resource
-     *
-     * @param eventtarget is a substring of CS EventType
-     *                    eg for eventType ROLE.PERMISSION.CREATE target is ROLE.PERMISSION
-     */
-    private void setCADFTarget(String eventtarget) {
-        String tmpTarget = Taxonomies.cstoCadfResourceMapping.get(eventtarget);
-        if (tmpTarget == null || tmpTarget.isEmpty()) {
-            tmpTarget = Taxonomies.Resource.UNKNOWN;
-        }
-
-        String tmpTargetID = Taxonomies.eventResourcetoUuidMapping.get(eventtarget);
-        if (tmpTargetID == null || tmpTargetID.isEmpty()) {
-            tmpTarget = UUID.nameUUIDFromBytes("UNKNOWN".getBytes()).toString();
-        }
-        target = new Resource(tmpTarget, tmpTargetID);
+        return _tmpEventType.getValue();
     }
 
     /**
-     * Maps eventobserver to a CADF compatible value and creates the initiator Resource
+     * Maps CloudStack Resource to a CADF compatible value and returns the name of the resource
      *
-     * @param eventinitiator  is a String representation of CS Resource that started the event
+     * @param csResource is a String representation of CS Resource that started the event
+     *                   eg for eventType ROLE.PERMISSION.CREATE csResource is ROLE.PERMISSION
      */
-    private void setCADFInitiator(String eventinitiator) {
-        String tmpInitiatorID = Taxonomies.eventResourcetoUuidMapping.get(eventinitiator);
-        if (tmpInitiatorID == null || tmpInitiatorID.isEmpty()) {
-            tmpInitiatorID = UUID.nameUUIDFromBytes("UNKNOWN".getBytes()).toString();
+    private String getCADFResourceName(String csResource) {
+        String tmpResourceName = Taxonomies.cstoCadfResourceMapping.get(csResource);
+        if (tmpResourceName == null || tmpResourceName.isEmpty()) {
+            tmpResourceName = Taxonomies.Resource.UNKNOWN;
         }
-    initiator = new Resource(Taxonomies.Resource.DATA_SECURITY_ACCOUNT_USER, tmpInitiatorID);
+        return tmpResourceName;
     }
-
 
     /**
-     * Maps eventobserver to a CADF compatible value and creates the observer Resource
+     * Maps CloudStack Resource to a CADF compatible value and returns the UUID value
      *
-     * @param eventobserver is a String representation of CS Resource that detected/observed the event
+     * @param csResource is a String representation of CS Resource that started the event
      */
-    private void setCADFObserver(String eventobserver) {
-        String tmpObserverID = Taxonomies.eventResourcetoUuidMapping.get(eventobserver);
-        if (tmpObserverID == null || tmpObserverID.isEmpty()) {
-            tmpObserverID = UUID.nameUUIDFromBytes("UNKNOWN".getBytes()).toString();
+    private String getCADFResourceUUID(String csResource) {
+        String tmpResourceUUID = Taxonomies.eventResourcetoUuidMapping.get(csResource);
+        if (tmpResourceUUID == null || tmpResourceUUID.isEmpty()) {
+            tmpResourceUUID = UUID.nameUUIDFromBytes("UNKNOWN".getBytes()).toString();
         }
-        observer = new Resource(Taxonomies.Resource.DATA_SECURITY, tmpObserverID);
-        try {
-            InetAddress inetAddress = InetAddress.getLocalHost();
-            observer.host = new Resource.Host();
-            observer.host = new Resource.Host(UUID.nameUUIDFromBytes(inetAddress.getHostName().getBytes()).toString(),
-                    inetAddress.getHostAddress(), null , null);
-
-        } catch (UnknownHostException e) {
-            s_logger.error(e.getMessage());
-        }
+        return tmpResourceUUID;
     }
-
 
     /**
      * Checks the number and name of mandatory fields differs depending on the EventType .
