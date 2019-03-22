@@ -18,7 +18,6 @@
 * under the License.
 */
 div.toolbar:after,
-.multi-wizard .progress ul li:after,
 .multi-wizard.zone-wizard .select-container .field .select-array-item:after {
   content: ".";
   display: block;
@@ -29,13 +28,11 @@ div.toolbar:after,
 }
 
 div.toolbar,
-.multi-wizard .progress ul li,
 .multi-wizard.zone-wizard .select-container .field .select-array-item {
   display: inline-block;
 }
 
 div.toolbar,
-.multi-wizard .progress ul li,
 .multi-wizard.zone-wizard .select-container .field .select-array-item {
   display: block;
   height: 1px;
@@ -5478,18 +5475,20 @@ label.error {
 }
 
 .multi-wizard .progress ul {
-  width: 900px;
   height: 40px;
   float: left;
   clear: both;
 }
 
-/*[clearfix]*/.multi-wizard .progress ul li {
+/*[clearfix]*/
+.multi-wizard .progress ul li {
   float: left;
   width: 128px;
   height: 40px;
-  padding: 0 0px;
   position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .multi-wizard.instance-wizard .progress ul li {
@@ -5497,18 +5496,8 @@ label.error {
   margin-left: 8px;
 }
 
-.multi-wizard .progress ul li.first {
-  /*+border-radius:5px;*/
-  -moz-border-radius: 5px;
-  -webkit-border-radius: 5px;
-  -khtml-border-radius: 5px;
-  border-radius: 5px;
-}
-
 .multi-wizard .progress ul li.active {
   background: url(../images/bg-gradients.png) 0px -221px;
-  height: 40px;
-  /*+border-radius:5px;*/
   -moz-border-radius: 5px;
   -webkit-border-radius: 5px;
   -khtml-border-radius: 5px;
@@ -5516,32 +5505,14 @@ label.error {
 }
 
 .multi-wizard .progress ul li span {
-  display: block;
-  /*+placement:shift 46px 17px;*/
   position: relative;
-  left: 46px;
-  top: 17px;
-  text-align: left;
   color: #000000;
-  /*+text-shadow:0px 1px 1px #FFFFFF;*/
   -moz-text-shadow: 0px 1px 1px #FFFFFF;
   -webkit-text-shadow: 0px 1px 1px #FFFFFF;
   -o-text-shadow: 0px 1px 1px #FFFFFF;
   text-shadow: 0px 1px 1px #FFFFFF;
-  float: right;
-  position: absolute;
   width: 62px;
   text-align: center;
-}
-
-.multi-wizard.instance-wizard .progress ul li span {
-  left: 26px;
-  top: 16px;
-}
-
-.multi-wizard .progress ul li span.multiline {
-  width: 71px;
-  top: 12px;
 }
 
 .multi-wizard .progress ul li span.arrow {
@@ -5566,22 +5537,10 @@ label.error {
 
 .multi-wizard .progress ul li span.number {
   width: auto;
-  position: absolute;
-  top: 7px;
-  left: 26px;
   font-size: 27px;
   font-weight: bold;
   color: #BBBBBB;
   background: transparent;
-}
-
-.multi-wizard.instance-wizard .progress ul li span.number {
-  left: 8px;
-}
-
-.multi-wizard.instance-wizard .progress ul li span.multiline {
-  width: 79px;
-  left: 26px;
 }
 
 .multi-wizard .progress ul li.active span {
@@ -5603,6 +5562,12 @@ label.error {
   left: 3px;
   top: 25px;
   line-height: 17px;
+}
+
+.multi-wizard .review .main-desc,
+.multi-wizard .select-template .main-desc {
+  margin-left: 10px;
+  left: 0;
 }
 
 .multi-wizard .content {
@@ -5678,7 +5643,8 @@ label.error {
   float: left;
 }
 
-.multi-wizard .content .section .select-area input[type=radio] {
+.multi-wizard .content .section .select-area input[type=radio],
+.multi-wizard.instance-wizard .content .section.select-template input[type=radio] {
   margin: 14px 16px 0;
 }
 
@@ -5820,8 +5786,13 @@ label.error {
   width: 136px;
   padding: 0;
   margin: 8px -2px 3px;
-  background: url(../images/bg-gradients.png) 0px -307px;
+  background: url(../images/bg-gradients.png) 0px -307px !important;
   float: left;
+}
+
+.multi-wizard.instance-wizard .ui-slider {
+  padding: 7px 0 0 8px;
+  margin: 8px 0px 0px 2px;
 }
 
 .multi-wizard .ui-slider .ui-slider-handle {
@@ -5831,6 +5802,9 @@ label.error {
   height: 18px;
   position: relative;
   outline: none;
+  border: none;
+  top: -0.5rem;
+  margin-left: -0.9rem;
 }
 
 /*** Select container*/
@@ -6032,6 +6006,11 @@ label.error {
   margin: 12px 0 15px 8px;
 }
 
+.multi-wizard.instance-wizard .content .section.no-thanks {
+  box-sizing: border-box;
+  width: 426px;
+}
+
 .multi-wizard.instance-wizard .data-disk-offering .select-container,
 .multi-wizard.instance-wizard .sshkeyPairs .select-container {
   height: 300px;
@@ -6167,6 +6146,10 @@ label.error {
   margin: 10px 7px 7px;
 }
 
+.multi-wizard.instance-wizard .content .section .select-area label {
+  margin: 12px 0px 0px;
+}
+
 .multi-wizard.instance-wizard .content .section label.size {
   color: #647A8E;
   font-weight: bold;
@@ -6182,6 +6165,14 @@ label.error {
   background: #F4F4F4;
   padding: 7px;
   border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 12px 0;
+}
+
+.multi-wizard.instance-wizard .section.custom-size.custom-disk-size {
+  width: 426px;
+  margin-left: 8px;
 }
 
 .multi-wizard.instance-wizard .section.custom-iops {
@@ -6196,6 +6187,8 @@ label.error {
   background: #F4F4F4;
   padding: 7px;
   border-radius: 4px;
+  box-sizing: border-box;
+  width: 426px;
 }
 
 .multi-wizard.instance-wizard .section.custom-size input[type=radio] {
@@ -6906,10 +6899,6 @@ label.error {
   font-weight: bold;
 }
 
-.multi-wizard.zone-wizard .progress ul {
-  width: 776px;
-}
-
 .multi-wizard.zone-wizard .progress ul li {
   width: 107px;
   margin-left: 7px;
@@ -6918,11 +6907,6 @@ label.error {
 
 .multi-wizard.zone-wizard .progress ul li span {
   width: 102px;
-  left: 28px;
-}
-
-.multi-wizard.zone-wizard .progress ul li span.number {
-  left: -28px;
 }
 
 .multi-wizard.zone-wizard .progress ul li span.arrow {
