@@ -46,7 +46,7 @@ public class Cadf {
     @Expose (serialize = false)
     private Taxonomies.Action _tmpAction;
 
-    @Expose (serialize = false)
+    @Expose
     private String csaction; //CloudStack original Action
     @Expose
     private String outcome;
@@ -202,7 +202,7 @@ public class Cadf {
             if (ta.getValue().equalsIgnoreCase(eventaction)) { //exact match
                 _tmpAction = ta;
                 action = ta.getValue();
-                csaction = ta.getValue();
+                csaction = ta.getValue() + " - Original Cloudstack actions is " + eventaction;
                 isFound = true;
                 break;
             } else if (ta.getValue().contains(eventaction.toLowerCase())) { //partial match
