@@ -42,7 +42,7 @@ public class Resource {
     @Expose
     private String attachements; //OPTIONAL //subtype
     @Expose
-    private String userid;
+    protected String userid;
     @Expose
     protected String csAccountName;
 
@@ -200,10 +200,10 @@ public class Resource {
         this.credential = new Credential("","","","");
        }
 
-    public Resource(String typeURI, String id, String csAccountName) {
+    public Resource(String typeURI, String id, String userid) {
         this.typeURI = typeURI;
         this.id = id;
-        this.csAccountName = csAccountName;
+        this.userid= userid;
         this.credential = new Credential("","","","");
     }
 

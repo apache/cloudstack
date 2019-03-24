@@ -315,16 +315,6 @@ public class ActionEventUtils {
     }
 
     private static void createCadfRecord(EventVO event) {
-        HashMap<String, String> eventExtraInformation = new HashMap<String, String>();
-
-        eventExtraInformation = getEventExtraFromContext();
-
-        Account account = s_accountDao.findById(event.getAccountId());
-
-        if (eventExtraInformation !=null && account != null ) {
-            eventExtraInformation.put("initiator_account",
-                    account.getAccountName());
-        }
 
         /*for (Map.Entry <String, String> entry : eventExtraInformation.entrySet()) {
             System.out.println("key " + entry.getKey());
@@ -336,7 +326,7 @@ public class ActionEventUtils {
                 //.setPrettyPrinting()
                 .create();
 
-        Cadf cadf = new Cadf(event, eventExtraInformation);
+        Cadf cadf = new Cadf(event);
 
 
         try {
@@ -350,27 +340,27 @@ public class ActionEventUtils {
         //System.out.println(gson.toJson(cadf));
     }
 
+    /*
     private static HashMap<String, String> getEventExtraFromContext() {
         HashMap<String, String> contextParams = new HashMap<String, String>();
         CallContext context = CallContext.current();
-        //System.out.println("getEventExtraFromContext()");
-        //System.out.println("context.getContextParameters().size() " + context.getContextParameters().size());
-        //System.out.println(context.toString());
+        System.out.println("getEventExtraFromContext()");
+        System.out.println("context.getContextParameters().size() " + context.getContextParameters().size());
+        System.out.println(context.toString());
 
-        Object params = context.getContextParameter(User.class);
+        //Object params = context.getContextParameter(User.class);
+        Object params = context.getContextParameter(HashMap.class);
         if (params != null) {
-            //System.out.println("params.getClass().getName() " + params.getClass().getName());
+            System.out.println("params.getClass().getName() " + params.getClass().getName());
 
             for (HashMap.Entry<String, String> entry : ((HashMap<String, String>) params).entrySet()) {
-                //System.out.println("getEventExtraFromContext()============ entry.getKey() " + entry.getKey());
-                //System.out.println("getEventExtraFromContext()============ entry.getValue() " + entry.getValue());
+                System.out.println("getEventExtraFromContext()============ entry.getKey() " + entry.getKey());
+                System.out.println("getEventExtraFromContext()============ entry.getValue() " + entry.getValue());
                 contextParams.put(entry.getKey(), entry.getValue());
             }
             return contextParams;
         } else {
             return null;
         }
-
-
-    }
+    }*/
 }

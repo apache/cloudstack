@@ -27,6 +27,8 @@ public class Taxonomies {
             Taxonomies.EventType>();
     public static HashMap<String, String> eventResourcetoUuidMapping = new HashMap<String, String>();
 
+
+
     public Taxonomies() {
 
     }

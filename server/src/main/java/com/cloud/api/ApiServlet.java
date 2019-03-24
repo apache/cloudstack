@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.api;
 
+import com.cloud.event.Cadf;
 import com.cloud.user.Account;
 import com.cloud.user.AccountService;
 import com.cloud.user.User;
@@ -130,7 +131,6 @@ public class ApiServlet extends HttpServlet {
     }
 
     void processRequestInContext(final HttpServletRequest req, final HttpServletResponse resp) {
-        HashMap<String, String> eventExtraInformation = new HashMap<String, String>();
 
         InetAddress remoteAddress = null;
 
@@ -154,11 +154,11 @@ public class ApiServlet extends HttpServlet {
         final Map<String, Object[]> params = new HashMap<String, Object[]>();
         params.putAll(req.getParameterMap());
 
-        eventExtraInformation.clear();
-        eventExtraInformation.put("initiator_host", remoteAddress.getHostAddress());
-        eventExtraInformation.put("initiator_method", req.getMethod());
-        eventExtraInformation.put("initiator_user-agent", req.getHeader("user-agent"));
-        eventExtraInformation.put("initiator_auth-type", req.getAuthType());
+        Cadf.eventExtraInformation.clear();
+        Cadf.eventExtraInformation.put("initiator_host", remoteAddress.getHostAddress());
+        Cadf.eventExtraInformation.put("initiator_method", req.getMethod());
+        Cadf.eventExtraInformation.put("initiator_user-agent", req.getHeader("user-agent"));
+        Cadf.eventExtraInformation.put("initiator_auth-type", req.getAuthType());
 
         // For HTTP GET requests, it seems that HttpServletRequest.getParameterMap() actually tries
         // to unwrap URL encoded content from ISO-9959-1.
@@ -288,10 +288,9 @@ public class ApiServlet extends HttpServlet {
                         return;
                     }
                     final User user = entityMgr.findById(User.class, userId);
-
                     CallContext.register(user, (Account)accountObj);
-                    CallContext.current().putContextParameter(User.class, eventExtraInformation);
-
+                    Cadf.eventExtraInformation.put("initiator_userid", userId.toString());
+                    Cadf.eventExtraInformation.put("initiator_csAccountName", ((Account) accountObj).getAccountName());
                 } else {
                     // Invalidate the session to ensure we won't allow a request across management server
                     // restarts if the userId was serialized to the stored session
@@ -308,7 +307,8 @@ public class ApiServlet extends HttpServlet {
                 }
             } else {
                 CallContext.register(accountMgr.getSystemUser(), accountMgr.getSystemAccount());
-                CallContext.current().putContextParameter(User.class, eventExtraInformation);
+                Cadf.eventExtraInformation.put("initiator_userid", String.valueOf(accountMgr.getSystemUser().getId()));
+                Cadf.eventExtraInformation.put("initiator_csAccountName", accountMgr.getSystemAccount().getAccountName());
             }
 
             if (apiServer.verifyRequest(params, userId, remoteAddress)) {
@@ -333,7 +333,6 @@ public class ApiServlet extends HttpServlet {
                         apiServer.getSerializedApiError(HttpServletResponse.SC_UNAUTHORIZED, "unable to verify user credentials and/or request signature", params,
                                 responseType);
                 HttpUtils.writeHttpResponse(resp, serializedResponse, HttpServletResponse.SC_UNAUTHORIZED, responseType, ApiServer.JSONcontentType.value());
-
             }
         } catch (final ServerApiException se) {
             final String serializedResponseText = apiServer.getSerializedApiError(se, params, responseType);

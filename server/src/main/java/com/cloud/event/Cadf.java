@@ -64,6 +64,8 @@ public class Cadf {
     private String measurement;
     private String reason;
 
+    @Expose (serialize = false)
+    public static HashMap<String, String> eventExtraInformation = new HashMap<String, String>();
 
     /**
      * @param event is the generic CS event
@@ -76,8 +78,6 @@ public class Cadf {
 
         //Event unique identifier
         id = event.getUuid();
-
-
 
         if (!event.getType().contains(".")) {
             eventaction = Taxonomies.Action.UNKNOWN.getValue();
@@ -140,26 +140,24 @@ public class Cadf {
         } catch (UnknownHostException e) {
             s_logger.error(e.getMessage());
         }
-
-    }
-
-    /**
-     * @param event is the generic CS event
-     * @param eventExtraInfo is a HashMap containing extra information with field names
-     *                       "initiator_host", "initiator_method", "initiator_user-agent",
-     *                       "initiator_auth-type", "initiator_account"
-     *
-     */
-    public Cadf(EventVO event, HashMap<String, String> eventExtraInfo) {
-        this(event);
-        if (eventExtraInfo != null && !eventExtraInfo.get("initiator_host").isEmpty()) {
-            initiator.host = new Resource.Host(UUID.nameUUIDFromBytes(eventExtraInfo.get("initiator_host").getBytes()).toString(),
-                    eventExtraInfo.get("initiator_host"),
-                    eventExtraInfo.get("initiator_user-agent"),
+        if (eventExtraInformation != null &&
+                eventExtraInformation.get("initiator_host") != null &&
+                eventExtraInformation.get("initiator_user-agent") != null &&
+                !eventExtraInformation.get("initiator_host").isEmpty()) {
+            initiator.host = new Resource.Host(UUID.nameUUIDFromBytes(eventExtraInformation.get("initiator_host").getBytes()).toString(),
+                    eventExtraInformation.get("initiator_host"),
+                    eventExtraInformation.get("initiator_user-agent"),
                     null);
         }
-        if (eventExtraInfo != null && !eventExtraInfo.get("initiator_account").isEmpty()) {
-            initiator.csAccountName = eventExtraInfo.get("initiator_account");
+        if (eventExtraInformation != null &&
+                eventExtraInformation.get("initiator_userid") != null &&
+                !eventExtraInformation.get("initiator_userid").isEmpty()) {
+            initiator.userid = eventExtraInformation.get("initiator_userid");
+        }
+        if (eventExtraInformation != null &&
+                eventExtraInformation.get("initiator_csAccountName") != null &&
+                !eventExtraInformation.get("initiator_csAccountName").isEmpty()) {
+            initiator.csAccountName = eventExtraInformation.get("initiator_csAccountName");
         }
     }
 
