@@ -22,28 +22,27 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.log4j.Logger;
-
+import com.cloud.utils.Pair;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.BaseListCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.AccountResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.UsageRecordResponse;
 import org.apache.cloudstack.usage.Usage;
 
-import com.cloud.utils.Pair;
-
-@APICommand(name = "listUsageRecords", description = "Lists usage records for accounts", responseObject = UsageRecordResponse.class,
-        requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
-public class GetUsageRecordsCmd extends BaseListCmd {
-    public static final Logger s_logger = Logger.getLogger(GetUsageRecordsCmd.class.getName());
-
-    private static final String s_name = "listusagerecordsresponse";
+@APICommand(name = ListUsageRecordsCmd.APINAME,
+        description = "Lists usage records for accounts",
+        responseObject = UsageRecordResponse.class,
+        requestHasSensitiveInfo = false,
+        responseHasSensitiveInfo = false)
+public class ListUsageRecordsCmd extends BaseListCmd {
+    public static final String APINAME = "listUsageRecords";
 
     /////////////////////////////////////////////////////
     //////////////// API parameters /////////////////////
@@ -56,15 +55,15 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     private Long domainId;
 
     @Parameter(name = ApiConstants.END_DATE,
-               type = CommandType.DATE,
-               required = true,
-               description = "End date range for usage record query (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\", e.g. startDate=2015-01-01 or startdate=2015-01-01 10:30:00).")
+            type = CommandType.DATE,
+            required = true,
+            description = "End date range for usage record query (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\", e.g. startDate=2015-01-01 or startdate=2015-01-01 10:30:00).")
     private Date endDate;
 
     @Parameter(name = ApiConstants.START_DATE,
-               type = CommandType.DATE,
-               required = true,
-               description = "Start date range for usage record query (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\", e.g. startDate=2015-01-01 or startdate=2015-01-01 11:00:00).")
+            type = CommandType.DATE,
+            required = true,
+            description = "Start date range for usage record query (use format \"yyyy-MM-dd\" or the new format \"yyyy-MM-dd HH:mm:ss\", e.g. startDate=2015-01-01 or startdate=2015-01-01 11:00:00).")
     private Date startDate;
 
     @Parameter(name = ApiConstants.ACCOUNT_ID, type = CommandType.UUID, entityType = AccountResponse.class, description = "List usage records for the specified account")
@@ -117,6 +116,7 @@ public class GetUsageRecordsCmd extends BaseListCmd {
     public String getUsageId() {
         return usageId;
     }
+
     public void setAccountName(String accountName) {
         this.accountName = accountName;
     }
@@ -152,7 +152,7 @@ public class GetUsageRecordsCmd extends BaseListCmd {
 
     @Override
     public String getCommandName() {
-        return s_name;
+        return APINAME.toLowerCase() + BaseCmd.RESPONSE_SUFFIX;
     }
 
     @Override
@@ -163,8 +163,8 @@ public class GetUsageRecordsCmd extends BaseListCmd {
         Map<String, Set<ResourceTagResponse>> resourceTagResponseMap = null;
         if (usageRecords != null) {
             //read the resource tags details for all the resources in usage data and store in Map
-            if(null != includeTags && includeTags) {
-                resourceTagResponseMap =  _responseGenerator.getUsageResourceTags();
+            if (null != includeTags && includeTags) {
+                resourceTagResponseMap = _responseGenerator.getUsageResourceTags();
             }
             for (Usage usageRecord : usageRecords.first()) {
                 UsageRecordResponse usageResponse = _responseGenerator.createUsageResponse(usageRecord, resourceTagResponseMap);

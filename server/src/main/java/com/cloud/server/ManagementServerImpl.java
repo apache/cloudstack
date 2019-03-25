@@ -217,7 +217,7 @@ import org.apache.cloudstack.api.command.admin.usage.AddTrafficTypeCmd;
 import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficMonitorCmd;
 import org.apache.cloudstack.api.command.admin.usage.DeleteTrafficTypeCmd;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
-import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficMonitorsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypesCmd;
@@ -2703,7 +2703,7 @@ public class ManagementServerImpl extends ManagerBase implements ManagementServe
         cmdList.add(DeleteTrafficMonitorCmd.class);
         cmdList.add(DeleteTrafficTypeCmd.class);
         cmdList.add(GenerateUsageRecordsCmd.class);
-        cmdList.add(GetUsageRecordsCmd.class);
+        cmdList.add(ListUsageRecordsCmd.class);
         cmdList.add(RemoveRawUsageRecordsCmd.class);
         cmdList.add(ListTrafficMonitorsCmd.class);
         cmdList.add(ListTrafficTypeImplementorsCmd.class);
