@@ -149,6 +149,7 @@ public class ApiConstants {
     public static final String HA_PROVIDER = "haprovider";
     public static final String HA_STATE = "hastate";
     public static final String HEALTH = "health";
+    public static final String HIDE_IP_ADDRESS_USAGE = "hideipaddressusage";
     public static final String HOST_ID = "hostid";
     public static final String HOST_NAME = "hostname";
     public static final String HYPERVISOR = "hypervisor";

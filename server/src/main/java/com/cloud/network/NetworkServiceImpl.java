@@ -45,10 +45,12 @@ import org.apache.cloudstack.api.command.admin.address.ReleasePodIpCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.network.DedicateGuestVlanRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.ListDedicatedGuestVlanRangesCmd;
+import org.apache.cloudstack.api.command.admin.network.UpdateNetworkCmdByAdmin;
 import org.apache.cloudstack.api.command.admin.usage.ListTrafficTypeImplementorsCmd;
 import org.apache.cloudstack.api.command.user.network.CreateNetworkCmd;
 import org.apache.cloudstack.api.command.user.network.ListNetworksCmd;
 import org.apache.cloudstack.api.command.user.network.RestartNetworkCmd;
+import org.apache.cloudstack.api.command.user.network.UpdateNetworkCmd;
 import org.apache.cloudstack.api.command.user.vm.ListNicsCmd;
 import org.apache.cloudstack.api.response.AcquirePodIpCmdResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -1023,11 +1025,11 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         String networkDomain = cmd.getNetworkDomain();
         String vlanId = null;
         boolean bypassVlanOverlapCheck = false;
+        boolean hideIpAddressUsage = false;
         if (cmd instanceof CreateNetworkCmdByAdmin) {
             vlanId = ((CreateNetworkCmdByAdmin)cmd).getVlan();
-        }
-        if (cmd instanceof CreateNetworkCmdByAdmin) {
             bypassVlanOverlapCheck = ((CreateNetworkCmdByAdmin)cmd).getBypassVlanOverlapCheck();
+            hideIpAddressUsage = ((CreateNetworkCmdByAdmin)cmd).getHideIpAddressUsage();
         }
 
         String name = cmd.getNetworkName();
@@ -1308,6 +1310,10 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         Network network = commitNetwork(networkOfferingId, gateway, startIP, endIP, netmask, networkDomain, vlanId, bypassVlanOverlapCheck, name, displayText, caller, physicalNetworkId, zoneId,
                 domainId, isDomainSpecific, subdomainAccess, vpcId, startIPv6, endIPv6, ip6Gateway, ip6Cidr, displayNetwork, aclId, isolatedPvlan, ntwkOff, pNtwk, aclType, owner, cidr, createVlan,
                 externalId);
+
+        if (hideIpAddressUsage) {
+            _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, String.valueOf(hideIpAddressUsage), false));
+        }
 
         // if the network offering has persistent set to true, implement the network
         if (ntwkOff.isPersistent()) {
@@ -1981,8 +1987,21 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
     @Override
     @DB
     @ActionEvent(eventType = EventTypes.EVENT_NETWORK_UPDATE, eventDescription = "updating network", async = true)
-    public Network updateGuestNetwork(final long networkId, String name, String displayText, Account callerAccount, User callerUser, String domainSuffix, final Long networkOfferingId,
-            Boolean changeCidr, String guestVmCidr, Boolean displayNetwork, String customId, boolean updateInSequence, boolean forced) {
+    public Network updateGuestNetwork(final UpdateNetworkCmd cmd) {
+        User callerUser = _accountService.getActiveUser(CallContext.current().getCallingUserId());
+        Account callerAccount = _accountService.getActiveAccountById(callerUser.getAccountId());
+        final long networkId = cmd.getId();
+        String name = cmd.getNetworkName();
+        String displayText = cmd.getDisplayText();
+        String domainSuffix = cmd.getNetworkDomain();
+        final Long networkOfferingId = cmd.getNetworkOfferingId();
+        Boolean changeCidr = cmd.getChangeCidr();
+        String guestVmCidr = cmd.getGuestVmCidr();
+        Boolean displayNetwork = cmd.getDisplayNetwork();
+        String customId = cmd.getCustomId();
+        boolean updateInSequence = cmd.getUpdateInSequence();
+        boolean forced = cmd.getForced();
+
         boolean restartNetwork = false;
 
         // verify input parameters
@@ -2015,6 +2034,19 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         }
 
         _accountMgr.checkAccess(callerAccount, null, true, network);
+
+        if (cmd instanceof UpdateNetworkCmdByAdmin) {
+            final Boolean hideIpAddressUsage = ((UpdateNetworkCmdByAdmin) cmd).getHideIpAddressUsage();
+            if (hideIpAddressUsage != null) {
+                final NetworkDetailVO detail = _networkDetailsDao.findDetail(network.getId(), Network.hideIpAddressUsage);
+                if (detail != null) {
+                    detail.setValue(hideIpAddressUsage.toString());
+                    _networkDetailsDao.update(detail.getId(), detail);
+                } else {
+                    _networkDetailsDao.persist(new NetworkDetailVO(network.getId(), Network.hideIpAddressUsage, hideIpAddressUsage.toString(), false));
+                }
+            }
+        }
 
         if (name != null) {
             network.setName(name);
