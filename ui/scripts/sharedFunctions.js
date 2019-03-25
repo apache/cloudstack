@@ -831,13 +831,6 @@ var addL2GuestNetwork = {
             }
         },
 
-        preFilter: function(args) {
-            if (isAdmin())
-                return true;
-            else
-                return false;
-        },
-
         createForm: {
             title: 'label.add.l2.guest.network',
             fields: {
@@ -867,7 +860,7 @@ var addL2GuestNetwork = {
                             url: createURL('listZones'),
                             success: function(json) {
                                 var zones = $.grep(json.listzonesresponse.zone, function(zone) {
-                                    return (zone.networktype == 'Advanced' && zone.securitygroupsenabled != true); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
+                                    return (zone.networktype == 'Advanced'); //Isolated networks can only be created in Advanced SG-disabled zone (but not in Basic zone nor Advanced SG-enabled zone)
                                 });
 
                                 args.response.success({
