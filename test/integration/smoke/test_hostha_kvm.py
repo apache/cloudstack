@@ -274,9 +274,12 @@ class TestHAKVM(cloudstackTestCase):
             Tests Enable HA when host is in Maintenance mode, should be Ineligible
         """
         self.logger.debug("Starting test_hostha_enable_ha_when_host_in_maintenance")
-
+        self.logger.debug("Pausing to wait for VMs to have finished starting")
+        time.sleep(300)
+        
         # Enable HA
         self.configureAndEnableHostHa()
+        
 
         # Prepare for maintenance Host
         self.setHostToMaintanance(self.host.id)
