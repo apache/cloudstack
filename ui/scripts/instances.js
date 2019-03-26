@@ -17,6 +17,118 @@
 (function($, cloudStack) {
     var vmMigrationHostObjs, ostypeObjs;
 
+    var vmStartAction = function(args) {
+      var action = {
+        messages: {
+          confirm: function() {
+            return 'message.action.start.instance';
+          },
+          notification: function() {
+            return 'label.action.start.instance';
+          }
+        },
+        label: 'label.action.start.instance',
+        compactLabel: 'label.start',
+        addRow: 'false',
+        createForm: {
+          title: 'notification.start.instance',
+          desc: 'message.action.start.instance',
+          fields: {
+            hostId: {
+              label: 'label.host',
+              isHidden: function() {
+                return !isAdmin();
+              },
+              select: function(args) {
+                if (isAdmin()) {
+                  $.ajax({
+                    url: createURL("listHosts&state=Up&type=Routing&zoneid=" + args.context.instances[0].zoneid),
+                    dataType: "json",
+                    async: true,
+                    success: function(json) {
+                      if (json.listhostsresponse.host != undefined) {
+                        hostObjs = json.listhostsresponse.host;
+                        var items = [{
+                          id: -1,
+                          description: 'Default'
+                        }];
+                        $(hostObjs).each(function() {
+                          items.push({
+                            id: this.id,
+                            description: this.name
+                          });
+                        });
+                        args.response.success({
+                          data: items
+                        });
+                      } else {
+                        cloudStack.dialog.notice({
+                          message: _l('No Hosts are avaialble')
+                        });
+                      }
+                    }
+                  });
+                } else {
+                  args.response.success({
+                    data: null
+                  });
+                }
+              }
+            }
+          }
+        },
+        action: function(args) {
+          var instances = args.context.instances;
+          $(instances).map(function(index, instance) {
+            var data = {
+              id: instance.id
+            };
+            if (args.$form.find('.form-item[rel=hostId]').css("display") != "none" && args.data.hostId != -1) {
+              $.extend(data, {
+                hostid: args.data.hostId
+              });
+            }
+            $.ajax({
+              url: createURL("startVirtualMachine"),
+              data: data,
+              dataType: "json",
+              async: true,
+              success: function(json) {
+                var jid = json.startvirtualmachineresponse.jobid;
+                args.response.success({
+                  _custom: {
+                    jobId: jid,
+                    getUpdatedItem: function(json) {
+                      return json.queryasyncjobresultresponse.jobresult.virtualmachine;
+                    },
+                    getActionFilter: function() {
+                      return cloudStack.actionFilter.vmActionFilter;
+                    }
+                  }
+                });
+              },
+              error: function(json) {
+                args.response.error(parseXMLHttpResponse(json));
+              }
+            });
+          });
+        },
+        notification: {
+          poll: pollAsyncJobResult
+        }
+      };
+
+
+      if (args && args.listView) {
+        $.extend(action, {
+          isHeader: true,
+          isMultiSelectAction: true
+        });
+      }
+
+      return action;
+    };
+
     var vmStopAction = function(args) {
         var action = {
             messages: {
@@ -504,8 +616,9 @@
                         poll: pollAsyncJobResult
                     }
                 },
-                stop: vmStopAction({ listView: true}),
                 destroy: vmDestroyAction({ listView: true }),
+                stop: vmStopAction({ listView: true }),
+                start: vmStartAction({ listView: true }),
                 snapshot: vmSnapshotAction({ listView: true }),
                 viewMetrics: {
                     label: 'label.metrics',
