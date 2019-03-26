@@ -88,7 +88,9 @@
 
                 // Make sure the master checkbox is unselected
                 if (multiSelect) {
-                    $instanceRow.closest('.list-view').find('input.multiSelectMasterCheckbox').attr('checked', false);
+                    var $listView = $instanceRow.closest('.list-view');
+                    $listView.find('input.multiSelectMasterCheckbox').prop('checked', false);
+                    toggleMultiSelectActions($listView, false);
                 }
 
                 var externalLinkAction = action.externalLink;
@@ -882,15 +884,15 @@
 
         if (multiSelect) {
             var $th = $('<th>').addClass('multiselect').appendTo($tr);
-            var content = $('<input>')
+            var $multiSelectMaster = $('<input>')
                 .attr('type', 'checkbox')
-                .addClass('multiSelectMasterCheckbox')
-                .appendTo($th);
+                .addClass('multiSelectMasterCheckbox');
+            $multiSelectMaster.appendTo($th);
 
-            content.click(function() {
-                var checked = $(this).is(':checked');
-                $('.multiSelectCheckbox').attr('checked', checked);
-                toggleMultiSelectActions($table.closest('.list-view'), checked);
+            $multiSelectMaster.click(function() {
+                var isMasterChecked = $(this).prop('checked');
+                $('.multiSelectCheckbox').prop('checked', isMasterChecked);
+                toggleMultiSelectActions($table.closest('.list-view'), isMasterChecked);
             });
         }
 
