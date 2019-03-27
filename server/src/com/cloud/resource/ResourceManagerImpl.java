@@ -2370,17 +2370,16 @@ public class ResourceManagerImpl extends ManagerBase implements ResourceManager,
     protected void handleAgentIfNotConnected(HostVO host, boolean vmsMigrating) {
         final boolean isAgentOnHost = host.getHypervisorType() == HypervisorType.KVM ||
                 host.getHypervisorType() == HypervisorType.LXC;
-        if (isAgentOnHost) {
-            final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(Config.KvmSshToAgentEnabled.key()));
-            if (!vmsMigrating && host.getStatus() != Status.Up) {
-                if (sshToAgent) {
-                    Pair<String, String> credentials = getHostCredentials(host);
-                    connectAndRestartAgentOnHost(host, credentials.first(), credentials.second());
-                } else {
-                    throw new CloudRuntimeException("SSH access is disabled, cannot cancel maintenance mode as " +
-                            "host agent is not connected");
-                }
-            }
+        if (!isAgentOnHost || vmsMigrating || host.getStatus() == Status.Up) {
+            return;
+        }
+        final boolean sshToAgent = Boolean.parseBoolean(_configDao.getValue(KvmSshToAgentEnabled.key()));
+        if (sshToAgent) {
+            Pair<String, String> credentials = getHostCredentials(host);
+            connectAndRestartAgentOnHost(host, credentials.first(), credentials.second());
+        } else {
+            throw new CloudRuntimeException("SSH access is disabled, cannot cancel maintenance mode as " +
+                    "host agent is not connected");
         }
     }
 

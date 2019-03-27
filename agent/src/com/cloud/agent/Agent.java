@@ -607,7 +607,6 @@ public class Agent implements HandlerFactory, IAgentControl {
                         return;
                     } else if (cmd instanceof MaintainCommand) {
                         s_logger.debug("Received maintainCommand, do not cancel current tasks");
-                        _reconnectAllowed = true;
                         answer = new MaintainAnswer((MaintainCommand)cmd);
                     } else if (cmd instanceof AgentControlCommand) {
                         answer = null;

@@ -70,7 +70,7 @@ class TestHostMaintenance(cloudstackTestCase):
                 
         self.service_offering = ServiceOffering.create(
             self.apiclient,
-            self.services["service_offering"]
+            self.services["service_offerings"]["tiny"]
         )
         self.logger.debug("Using service offering %s " % self.service_offering.id)
         self.network_offering = NetworkOffering.create(
@@ -308,7 +308,7 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
             cls.services["virtual_machine"]["hypervisor"] = cls.hypervisor
             cls.service_offering = ServiceOffering.create(
                 cls.apiclient,
-                cls.services["service_offering"]
+                cls.services["service_offerings"]["tiny"]
             )
             cls._cleanup.append(cls.service_offering)
             cls.network_offering = NetworkOffering.create(
@@ -498,7 +498,7 @@ class TestHostMaintenanceAgents(cloudstackTestCase):
         return ssh_client
 
     @skipTestIf("hypervisorNotSupported")
-    @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg", "NICO"], required_hardware="true")
+    @attr(tags=["advanced", "advancedns", "smoke", "basic", "eip", "sg"], required_hardware="true")
     def test_02_cancel_host_maintenance_ssh_enabled_agent_disconnected(self):
         """
         Test cancel maintenance when: 'kvm.ssh.to.agent' = true, agent state != 'Up'

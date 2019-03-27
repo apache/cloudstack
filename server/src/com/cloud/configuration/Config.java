@@ -1211,14 +1211,6 @@ public enum Config {
     KvmPublicNetwork("Hidden", ManagementServer.class, String.class, "kvm.public.network.device", null, "Specify the public bridge on host for public network", null),
     KvmPrivateNetwork("Hidden", ManagementServer.class, String.class, "kvm.private.network.device", null, "Specify the private bridge on host for private network", null),
     KvmGuestNetwork("Hidden", ManagementServer.class, String.class, "kvm.guest.network.device", null, "Specify the private bridge on host for private network", null),
-    KvmSshToAgentEnabled(
-            "Advanced",
-            ManagementServer.class,
-            Boolean.class,
-            "kvm.ssh.to.agent",
-            "true",
-            "Specify whether or not the management server is allowed to SSH into KVM Agents",
-            null),
 
     // Hyperv
     HypervPublicNetwork(

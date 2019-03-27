@@ -21,7 +21,6 @@ import com.cloud.agent.AgentManager;
 import com.cloud.agent.api.GetVncPortAnswer;
 import com.cloud.agent.api.GetVncPortCommand;
 import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.configuration.Config;
 import com.cloud.event.ActionEventUtils;
 import com.cloud.ha.HighAvailabilityManager;
 import com.cloud.host.Host;
@@ -167,7 +166,7 @@ public class ResourceManagerImplTest {
                 eq("service cloudstack-agent restart"))).
                 willReturn(new SSHCmdHelper.SSHCmdResult(0,"",""));
 
-        when(configurationDao.getValue(Config.KvmSshToAgentEnabled.key())).thenReturn("true");
+        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("true");
     }
 
     @Test
@@ -289,14 +288,14 @@ public class ResourceManagerImplTest {
     @Test(expected = CloudRuntimeException.class)
     public void testHandleAgentSSHDisabledNotConnectedAgent() {
         when(host.getStatus()).thenReturn(Status.Disconnected);
-        when(configurationDao.getValue(Config.KvmSshToAgentEnabled.key())).thenReturn("false");
+        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("false");
         resourceManager.handleAgentIfNotConnected(host, false);
     }
 
     @Test
     public void testHandleAgentSSHDisabledConnectedAgent() {
         when(host.getStatus()).thenReturn(Status.Up);
-        when(configurationDao.getValue(Config.KvmSshToAgentEnabled.key())).thenReturn("false");
+        when(configurationDao.getValue(ResourceManager.KvmSshToAgentEnabled.key())).thenReturn("false");
         resourceManager.handleAgentIfNotConnected(host, false);
         verify(resourceManager, never()).getHostCredentials(eq(host));
         verify(resourceManager, never()).connectAndRestartAgentOnHost(eq(host), eq(hostUsername), eq(hostPassword));
