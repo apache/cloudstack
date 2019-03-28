@@ -51,7 +51,6 @@ version="1.0">
              	
                 <div class="inside_apileftpanel">
                 	<div class="inside_contentpanel" style="width:930px;">
-              		  	<!-- Modify this line for the release version -->
                       <h1>Apache CloudStack API Documentation (%ACS_RELEASE%)</h1>
                       <a class="api_backbutton" href="http://cloudstack.apache.org/docs/api/"></a>
                         <div class="apiannouncement_box">
