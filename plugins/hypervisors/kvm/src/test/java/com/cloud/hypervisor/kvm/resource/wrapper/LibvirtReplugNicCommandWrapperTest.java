@@ -29,9 +29,9 @@ import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Scanner;
 
-import javax.naming.ConfigurationException;
-
+import org.apache.cloudstack.utils.linux.MemStat;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,8 +52,9 @@ import com.cloud.hypervisor.kvm.resource.OvsVifDriver;
 import com.cloud.network.Networks;
 import com.cloud.utils.script.Script;
 import com.cloud.vm.VirtualMachine;
+
 @RunWith(PowerMockRunner.class)
-@PrepareForTest(Script.class)
+@PrepareForTest(value = {Script.class, MemStat.class})
 public class LibvirtReplugNicCommandWrapperTest {
     private static final String part_1 =
             "<domain type='kvm' id='143'>\n"
@@ -183,8 +184,19 @@ public class LibvirtReplugNicCommandWrapperTest {
     private LibvirtComputingResource res;
     private final Domain _domain = mock(Domain.class);
 
+    final String memInfo = "MemTotal:        5830236 kB\n" +
+            "MemFree:          156752 kB\n" +
+            "Buffers:          326836 kB\n" +
+            "Cached:          2606764 kB\n" +
+            "SwapCached:            0 kB\n" +
+            "Active:          4260808 kB\n" +
+            "Inactive:         949392 kB\n";
+
     @Before
-    public void setUp() throws LibvirtException, ConfigurationException {
+    public void setUp() throws Exception {
+        Scanner scanner = new Scanner(memInfo);
+        PowerMockito.whenNew(Scanner.class).withAnyArguments().thenReturn(scanner);
+
         // Use a spy because we only want to override getVifDriverClass
         LibvirtComputingResource resReal = new LibvirtComputingResource();
         res = spy(resReal);
