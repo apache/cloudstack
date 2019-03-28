@@ -56,7 +56,7 @@ import com.cloud.utils.db.TransactionLegacy;
 import com.cloud.vm.VMInstanceVO;
 import com.cloud.vm.dao.VMInstanceDao;
 import org.apache.cloudstack.api.command.admin.usage.GenerateUsageRecordsCmd;
-import org.apache.cloudstack.api.command.admin.usage.GetUsageRecordsCmd;
+import org.apache.cloudstack.api.command.admin.usage.ListUsageRecordsCmd;
 import org.apache.cloudstack.api.command.admin.usage.RemoveRawUsageRecordsCmd;
 import org.apache.cloudstack.api.response.UsageTypeResponse;
 import org.apache.cloudstack.context.CallContext;
@@ -159,7 +159,7 @@ public class UsageServiceImpl extends ManagerBase implements UsageService, Manag
     }
 
     @Override
-    public Pair<List<? extends Usage>, Integer> getUsageRecords(GetUsageRecordsCmd cmd) {
+    public Pair<List<? extends Usage>, Integer> getUsageRecords(ListUsageRecordsCmd cmd) {
         Long accountId = cmd.getAccountId();
         Long domainId = cmd.getDomainId();
         String accountName = cmd.getAccountName();

@@ -1117,8 +1117,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
         }
 
         // Only Admin can create Shared networks
-        if ((ntwkOff.getGuestType() == GuestType.Shared || ntwkOff.getGuestType() == GuestType.L2) && !_accountMgr.isAdmin(caller.getId())) {
-            throw new InvalidParameterValueException("Only Admins can create network with guest type " + GuestType.Shared + " or " + GuestType.L2);
+        if ((ntwkOff.getGuestType() == GuestType.Shared) && !_accountMgr.isAdmin(caller.getId())) {
+            throw new InvalidParameterValueException("Only Admins can create network with guest type " + GuestType.Shared);
         }
 
         // Check if the network is domain specific
@@ -1829,8 +1829,8 @@ public class NetworkServiceImpl extends ManagerBase implements NetworkService {
 
         Account owner = _accountMgr.getAccount(network.getAccountId());
 
-        // Only Admin can delete Shared and L2 networks
-        if ((network.getGuestType() == GuestType.Shared || network.getGuestType() == GuestType.L2) && !_accountMgr.isAdmin(caller.getId())) {
+        // Only Admin can delete Shared networks
+        if ((network.getGuestType() == GuestType.Shared) && !_accountMgr.isAdmin(caller.getId())) {
             throw new InvalidParameterValueException("Only Admins can delete network with guest type " + network.getGuestType());
         }
 
