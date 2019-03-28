@@ -20,12 +20,12 @@ package org.apache.cloudstack.agent.directdownload;
 
 import com.cloud.agent.api.Command;
 
-public class SetupDirectDownloadCertificate extends Command {
+public class SetupDirectDownloadCertificateCommand extends Command {
 
     private String certificate;
     private String certificateName;
 
-    public SetupDirectDownloadCertificate(String certificate, String name) {
+    public SetupDirectDownloadCertificateCommand(String certificate, String name) {
         this.certificate = certificate;
         this.certificateName = name;
     }

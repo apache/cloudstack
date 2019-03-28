@@ -62,7 +62,7 @@ import org.apache.cloudstack.agent.directdownload.HttpDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.MetalinkDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.NfsDirectDownloadCommand;
 import org.apache.cloudstack.agent.directdownload.HttpsDirectDownloadCommand;
-import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificate;
+import org.apache.cloudstack.agent.directdownload.SetupDirectDownloadCertificateCommand;
 import org.apache.cloudstack.context.CallContext;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
@@ -387,7 +387,7 @@ public class DirectDownloadManagerImpl extends ManagerBase implements DirectDown
      * Upload and import certificate to hostId on keystore
      */
     protected boolean uploadCertificate(String certificate, String certificateName, long hostId) {
-        SetupDirectDownloadCertificate cmd = new SetupDirectDownloadCertificate(certificate, certificateName);
+        SetupDirectDownloadCertificateCommand cmd = new SetupDirectDownloadCertificateCommand(certificate, certificateName);
         Answer answer = agentManager.easySend(hostId, cmd);
         if (answer == null || !answer.getResult()) {
             String msg = "Certificate " + certificateName + " could not be added to host " + hostId;
