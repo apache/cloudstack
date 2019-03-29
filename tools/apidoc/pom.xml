@@ -63,6 +63,7 @@
                             <executable>bash</executable>
                             <arguments>
                                 <argument>./build-apidoc.sh</argument>
+                                <armument>${project.version}</armument>
                                 <argument>${client.config.jars}</argument>
                                 <argument>${client.config.jars}</argument>
                                 <argument>./target</argument>
