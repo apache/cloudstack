@@ -35,12 +35,11 @@ import java.util.UUID;
 import javax.inject.Inject;
 import javax.naming.ConfigurationException;
 
-import com.google.common.collect.Sets;
-
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupService;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.command.admin.config.UpdateCfgCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateManagementNetworkIpRangeCmd;
 import org.apache.cloudstack.api.command.admin.network.CreateNetworkOfferingCmd;
@@ -232,6 +231,7 @@ import com.cloud.vm.dao.VMInstanceDao;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
+import com.google.common.collect.Sets;
 
 public class ConfigurationManagerImpl extends ManagerBase implements ConfigurationManager, ConfigurationService, Configurable {
     public static final Logger s_logger = Logger.getLogger(ConfigurationManagerImpl.class);
@@ -2329,7 +2329,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
-                cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(),
+                cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
                 cmd.getNetworkRate(), cmd.getDeploymentPlanner(), cmd.getDetails(), isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
                 cmd.getBytesReadRate(), cmd.getBytesReadRateMax(), cmd.getBytesReadRateMaxLength(),
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
@@ -2340,7 +2340,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
             final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
-            final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm,  String tags, final Long domainId, final String hostTag,
+            final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm,  String tags, final List<Long> domainIds, final List<Long> zoneIds, final String hostTag,
             final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, final Boolean isCustomizedIops, Long minIops, Long maxIops,
             Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
@@ -2353,19 +2353,30 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (user == null || user.getRemoved() != null) {
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
         }
+        // Filter child domains when both parent and child domains are present
+        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
         final Account account = _accountDao.findById(user.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            if (domainId == null) {
+            if (filteredDomainIds.isEmpty()) {
                 throw new InvalidParameterValueException("Unable to create public service offering by id " + userId + " because it is domain-admin");
             }
             if (tags != null || hostTag != null) {
                 throw new InvalidParameterValueException("Unable to create service offering with storage tags or host tags by id " + userId + " because it is domain-admin");
             }
-            if (! _domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                throw new InvalidParameterValueException("Unable to create service offering by another domain admin with id " + userId);
+            for (Long domainId : filteredDomainIds) {
+                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new InvalidParameterValueException("Unable to create service offering by another domain admin with id " + userId);
+                }
             }
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             throw new InvalidParameterValueException("Unable to create service offering by id " + userId + " because it is not root-admin or domain-admin");
+        }
+
+        if (zoneIds != null) {
+            for (Long zoneId : zoneIds) {
+                if (_zoneDao.findById(zoneId) == null)
+                    throw new InvalidParameterValueException("Unable to create disk offering associated with invalid zone, " + zoneId);
+            }
         }
 
         final ProvisioningType typedProvisioningType = ProvisioningType.getProvisioningType(provisioningType);
@@ -2373,8 +2384,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         tags = StringUtils.cleanupTags(tags);
 
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
-                limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
-                domainId, hostTag, deploymentPlanner);
+                limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType, hostTag, deploymentPlanner);
 
         if (Boolean.TRUE.equals(isCustomizedIops)) {
                 minIops = null;
@@ -2470,6 +2480,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), detailEntry.getKey(), detailEntry.getValue(), true));
             }
         }
+        if(!filteredDomainIds.isEmpty()) {
+            List<String> domainIdsStringList = new ArrayList<>();
+            for(Long domainId : filteredDomainIds)
+                domainIdsStringList.add(String.valueOf(domainId));
+            if(detailsVO==null)
+                detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
+            detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.DOMAIN_ID_LIST, String.join(",", domainIdsStringList), true));
+        }
+        if(zoneIds!=null && !zoneIds.isEmpty()) {
+            List<String> zoneIdsStringList = new ArrayList<>();
+            for(Long zoneId : zoneIds)
+                zoneIdsStringList.add(String.valueOf(zoneId));
+            if(detailsVO==null)
+                detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
+            detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.ZONE_ID_LIST, String.join(",", zoneIdsStringList), true));
+        }
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             if (detailsVO != null && !detailsVO.isEmpty()) {
@@ -2500,6 +2526,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Verify input parameters
         final ServiceOffering offeringHandle = _entityMgr.findById(ServiceOffering.class, id);
+        List<Long> existingDomainIds = new ArrayList<>();
+        Map<String, String> details = _serviceOfferingDetailsDao.listDetailsKeyPairs(id);
+        if (details.containsKey(ApiConstants.DOMAIN_ID_LIST) &&
+                !Strings.isNullOrEmpty(details.get(ApiConstants.DOMAIN_ID_LIST))) {
+            String[] domainIdsArray = details.get(ApiConstants.DOMAIN_ID_LIST).split(",");
+            for (String dIdStr : domainIdsArray) {
+                existingDomainIds.add(Long.valueOf(dIdStr.trim()));
+            }
+        }
 
         if (offeringHandle == null) {
             throw new InvalidParameterValueException("unable to find service offering " + id);
@@ -2510,12 +2545,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
         }
         final Account account = _accountDao.findById(user.getAccountId());
+
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            if (offeringHandle.getDomainId() == null) {
+
+            if (existingDomainIds.isEmpty()) {
                 throw new InvalidParameterValueException("Unable to update public service offering by id " + userId + " because it is domain-admin");
             }
-            if (! _domainDao.isChildDomain(account.getDomainId(), offeringHandle.getDomainId() )) {
-                throw new InvalidParameterValueException("Unable to update service offering by another domain admin with id " + userId);
+            for (Long domainId : existingDomainIds) {
+                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new InvalidParameterValueException("Unable to update service offering by another domain admin with id " + userId);
+                }
             }
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             throw new InvalidParameterValueException("Unable to update service offering by id " + userId + " because it is not root-admin or domain-admin");
@@ -2919,11 +2958,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final Account account = _accountDao.findById(user.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            if (offering.getDomainId() == null) {
+            List<Long> existingDomainIds = new ArrayList<>();
+            Map<String, String> details = _serviceOfferingDetailsDao.listDetailsKeyPairs(offeringId);
+            if (details.containsKey(ApiConstants.DOMAIN_ID_LIST) &&
+                    !Strings.isNullOrEmpty(details.get(ApiConstants.DOMAIN_ID_LIST))) {
+                String[] domainIdsArray = details.get(ApiConstants.DOMAIN_ID_LIST).split(",");
+                for (String dIdStr : domainIdsArray) {
+                    existingDomainIds.add(Long.valueOf(dIdStr.trim()));
+                }
+            }
+            if (existingDomainIds.isEmpty()) {
                 throw new InvalidParameterValueException("Unable to delete public service offering by id " + userId + " because it is domain-admin");
             }
-            if (! _domainDao.isChildDomain(account.getDomainId(), offering.getDomainId() )) {
-                throw new InvalidParameterValueException("Unable to delete service offering by another domain admin with id " + userId);
+            for (Long domainId : existingDomainIds) {
+                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new InvalidParameterValueException("Unable to delete service offering by another domain admin with id " + userId);
+                }
             }
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             throw new InvalidParameterValueException("Unable to delete service offering by id " + userId + " because it is not root-admin or domain-admin");
@@ -5721,6 +5771,30 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
         return false;
+    }
+
+    private List<Long> filterChildSubDomains(final List<Long> domainIds) {
+        List<Long> filteredDomainIds = new ArrayList<>();
+        if (domainIds != null) {
+            filteredDomainIds.addAll(domainIds);
+        }
+        if (filteredDomainIds.size() > 1) {
+            for (int i = filteredDomainIds.size() - 1; i >= 1; i--) {
+                long first = filteredDomainIds.get(i);
+                for (int j = i - 1; j >= 0; j--) {
+                    long second = filteredDomainIds.get(j);
+                    if (_domainDao.isChildDomain(filteredDomainIds.get(i), filteredDomainIds.get(j))) {
+                        filteredDomainIds.remove(j);
+                        i--;
+                    }
+                    if (_domainDao.isChildDomain(filteredDomainIds.get(j), filteredDomainIds.get(i))) {
+                        filteredDomainIds.remove(i);
+                        break;
+                    }
+                }
+            }
+        }
+        return filteredDomainIds;
     }
 
     public List<SecurityChecker> getSecChecker() {

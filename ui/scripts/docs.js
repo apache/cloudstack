@@ -298,7 +298,12 @@ cloudStack.docs = {
         externalLink: ''
     },
     helpComputeOfferingDomain: {
-        desc: 'The domain to associate this compute offering with'
+        desc: 'Select domain(s) to associate this compute offering with (Tip: Use Ctrl to choose multiple domains)',
+        externalLink: ''
+    },
+    helpComputeOfferingZone: {
+        desc: 'Select zone(s) to associate this compute offering with (Tip: Use Ctrl to choose multiple zones)',
+        externalLink: ''
     },
     // Create Instance Snapshot
     helpCreateInstanceSnapshotName: {

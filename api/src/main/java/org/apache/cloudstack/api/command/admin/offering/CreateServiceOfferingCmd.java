@@ -16,12 +16,13 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiErrorCode;
@@ -30,9 +31,11 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.log4j.Logger;
 
 import com.cloud.offering.ServiceOffering;
+import com.cloud.storage.Storage;
 import com.cloud.user.Account;
 
 @APICommand(name = "createServiceOffering", description = "Creates a service offering.", responseObject = ServiceOfferingResponse.class,
@@ -85,6 +88,24 @@ public class CreateServiceOfferingCmd extends BaseCmd {
                entityType = DomainResponse.class,
                description = "the ID of the containing domain, null for public offerings")
     private Long domainId;
+
+    @Parameter(name = ApiConstants.DOMAIN_ID_LIST,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = DomainResponse.class,
+            required = false,
+            description = "the ID of the domains offering is associated with, null for all domain offerings",
+            since = "4.13")
+    private List<Long> domainIds;
+
+    @Parameter(name = ApiConstants.ZONE_ID_LIST,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            required = false,
+            description = "the ID of the zones offering is associated with, null for all zone offerings",
+            since = "4.13")
+    private List<Long> zoneIds;
 
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.STRING, description = "the host tag for this service offering.")
     private String hostTag;
@@ -212,6 +233,20 @@ public class CreateServiceOfferingCmd extends BaseCmd {
 
     public Long getDomainId() {
         return domainId;
+    }
+
+    public List<Long> getDomainIds() {
+        if (domainId != null) {
+            if (domainIds == null) {
+                domainIds = new ArrayList<>();
+            }
+            domainIds.add(domainId);
+        }
+        return domainIds;
+    }
+
+    public List<Long> getZoneIds() {
+        return zoneIds;
     }
 
     public String getHostTag() {

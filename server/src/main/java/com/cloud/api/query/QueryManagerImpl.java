@@ -25,14 +25,13 @@ import java.util.Set;
 
 import javax.inject.Inject;
 
-import com.cloud.cluster.ManagementServerHostVO;
-import com.cloud.cluster.dao.ManagementServerHostDao;
 import org.apache.cloudstack.acl.ControlledEntity.ACLType;
 import org.apache.cloudstack.affinity.AffinityGroupDomainMapVO;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.AffinityGroupVMMapVO;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDomainMapDao;
 import org.apache.cloudstack.affinity.dao.AffinityGroupVMMapDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListProjectAndAccountResourcesCmd;
 import org.apache.cloudstack.api.ResourceDetail;
 import org.apache.cloudstack.api.ResponseObject.ResponseView;
@@ -156,6 +155,8 @@ import com.cloud.api.query.vo.TemplateJoinVO;
 import com.cloud.api.query.vo.UserAccountJoinVO;
 import com.cloud.api.query.vo.UserVmJoinVO;
 import com.cloud.api.query.vo.VolumeJoinVO;
+import com.cloud.cluster.ManagementServerHostVO;
+import com.cloud.cluster.dao.ManagementServerHostDao;
 import com.cloud.dc.DedicatedResourceVO;
 import com.cloud.dc.dao.DedicatedResourceDao;
 import com.cloud.domain.Domain;
@@ -185,6 +186,7 @@ import com.cloud.server.ResourceTag.ResourceObjectType;
 import com.cloud.server.TaggedResourceService;
 import com.cloud.service.ServiceOfferingVO;
 import com.cloud.service.dao.ServiceOfferingDao;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.DataStoreRole;
 import com.cloud.storage.DiskOfferingVO;
 import com.cloud.storage.ScopeType;
@@ -223,6 +225,7 @@ import com.cloud.vm.dao.DomainRouterDao;
 import com.cloud.vm.dao.UserVmDao;
 import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
+import com.google.common.base.Strings;
 
 @Component
 public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements QueryService, Configurable {
@@ -326,6 +329,9 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
     @Inject
     private ServiceOfferingDao _srvOfferingDao;
+
+    @Inject
+    private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
 
     @Inject
     private DataCenterJoinDao _dcJoinDao;
@@ -2715,36 +2721,6 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
                 if (caller.getType() == Account.ACCOUNT_TYPE_NORMAL) {
                     throw new InvalidParameterValueException("Only ROOT admins and Domain admins can list service offerings with isrecursive=true");
                 }
-                DomainVO domainRecord = _domainDao.findById(caller.getDomainId());
-                sc.addAnd("domainPath", SearchCriteria.Op.LIKE, domainRecord.getPath() + "%");
-            } else { // domain + all ancestors
-                // find all domain Id up to root domain for this account
-                List<Long> domainIds = new ArrayList<Long>();
-                DomainVO domainRecord;
-                if (vmId != null) {
-                    UserVmVO vmInstance = _userVmDao.findById(vmId);
-                    domainRecord = _domainDao.findById(vmInstance.getDomainId());
-                    if (domainRecord == null) {
-                        s_logger.error("Could not find the domainId for vmId:" + vmId);
-                        throw new CloudAuthenticationException("Could not find the domainId for vmId:" + vmId);
-                    }
-                } else {
-                    domainRecord = _domainDao.findById(caller.getDomainId());
-                    if (domainRecord == null) {
-                        s_logger.error("Could not find the domainId for account:" + caller.getAccountName());
-                        throw new CloudAuthenticationException("Could not find the domainId for account:" + caller.getAccountName());
-                    }
-                }
-                domainIds.add(domainRecord.getId());
-                while (domainRecord.getParent() != null) {
-                    domainRecord = _domainDao.findById(domainRecord.getParent());
-                    domainIds.add(domainRecord.getId());
-                }
-
-                SearchCriteria<ServiceOfferingJoinVO> spc = _srvOfferingJoinDao.createSearchCriteria();
-                spc.addOr("domainId", SearchCriteria.Op.IN, domainIds.toArray());
-                spc.addOr("domainId", SearchCriteria.Op.NULL); // include public offering as well
-                sc.addAnd("domainId", SearchCriteria.Op.SC, spc);
             }
         } else {
             // for root users
@@ -2786,7 +2762,58 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
 
         //Couldn't figure out a smart way to filter offerings based on tags in sql so doing it in Java.
         List<ServiceOfferingJoinVO> filteredOfferings = filterOfferingsOnCurrentTags(result.first(), currentVmOffering);
-        return new Pair<>(filteredOfferings, result.second());
+        result = new Pair<>(filteredOfferings, result.second());
+
+        // Remove offerings that are not associated with caller's domain and passed zone
+        // TODO: Better approach
+        if (result.first() != null && !result.first().isEmpty()) {
+            List<ServiceOfferingJoinVO> offerings = result.first();
+            for (int i = offerings.size() - 1; i >= 0; i--) {
+                ServiceOfferingJoinVO offering = offerings.get(i);
+                Map<String, String> details = serviceOfferingDetailsDao.listDetailsKeyPairs(offering.getId());
+                boolean toRemove = caller.getType() == Account.ACCOUNT_TYPE_ADMIN ? false : isRecursive;
+                if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN &&
+                        details.containsKey(ApiConstants.DOMAIN_ID_LIST) &&
+                        !Strings.isNullOrEmpty(details.get(ApiConstants.DOMAIN_ID_LIST))) {
+                    toRemove = true;
+                    String[] domainIdsArray = details.get(ApiConstants.DOMAIN_ID_LIST).split(",");
+                    for (String dIdStr : domainIdsArray) {
+                        Long dId = Long.valueOf(dIdStr.trim());
+                        if(isRecursive) {
+                            if (_domainDao.isChildDomain(caller.getDomainId(), dId)) {
+                                toRemove = false;
+                                break;
+                            }
+                        } else {
+                            if (_domainDao.isChildDomain(dId, caller.getDomainId())) {
+                                toRemove = false;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (toRemove) {
+                    offerings.remove(i);
+                } else {
+                    // If zoneid is passed remove offerings that are not associated with the zone
+                    if (cmd.getZoneId() != null) {
+                        final Long zoneId = cmd.getZoneId();
+                        if (details.containsKey(ApiConstants.ZONE_ID_LIST) &&
+                                !Strings.isNullOrEmpty(details.get(ApiConstants.ZONE_ID_LIST))) {
+                            String[] zoneIdsArray = details.get(ApiConstants.ZONE_ID_LIST).split(",");
+                            List<Long> zoneIds = new ArrayList<>();
+                            for (String zId : zoneIdsArray)
+                                zoneIds.add(Long.valueOf(zId.trim()));
+                            if (!zoneIds.contains(zoneId)) {
+                                offerings.remove(i);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 
     @Override

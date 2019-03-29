@@ -24,6 +24,7 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
 
@@ -38,6 +39,7 @@ import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.dao.UserVmDetailsDao;
+import com.google.common.base.Strings;
 
 @Component
 @DB()
@@ -50,7 +52,6 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
     protected UserVmDetailsDao userVmDetailsDao;
 
     protected final SearchBuilder<ServiceOfferingVO> UniqueNameSearch;
-    protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByDomainIdSearch;
     protected final SearchBuilder<ServiceOfferingVO> SystemServiceOffering;
     protected final SearchBuilder<ServiceOfferingVO> ServiceOfferingsByKeywordSearch;
     protected final SearchBuilder<ServiceOfferingVO> PublicServiceOfferingSearch;
@@ -63,19 +64,13 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
         UniqueNameSearch.and("system", UniqueNameSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
         UniqueNameSearch.done();
 
-        ServiceOfferingsByDomainIdSearch = createSearchBuilder();
-        ServiceOfferingsByDomainIdSearch.and("domainId", ServiceOfferingsByDomainIdSearch.entity().getDomainId(), SearchCriteria.Op.EQ);
-        ServiceOfferingsByDomainIdSearch.done();
-
         SystemServiceOffering = createSearchBuilder();
-        SystemServiceOffering.and("domainId", SystemServiceOffering.entity().getDomainId(), SearchCriteria.Op.EQ);
         SystemServiceOffering.and("system", SystemServiceOffering.entity().isSystemUse(), SearchCriteria.Op.EQ);
         SystemServiceOffering.and("vm_type", SystemServiceOffering.entity().getSpeed(), SearchCriteria.Op.EQ);
         SystemServiceOffering.and("removed", SystemServiceOffering.entity().getRemoved(), SearchCriteria.Op.NULL);
         SystemServiceOffering.done();
 
         PublicServiceOfferingSearch = createSearchBuilder();
-        PublicServiceOfferingSearch.and("domainId", PublicServiceOfferingSearch.entity().getDomainId(), SearchCriteria.Op.NULL);
         PublicServiceOfferingSearch.and("system", PublicServiceOfferingSearch.entity().isSystemUse(), SearchCriteria.Op.EQ);
         PublicServiceOfferingSearch.and("removed", PublicServiceOfferingSearch.entity().getRemoved(), SearchCriteria.Op.NULL);
         PublicServiceOfferingSearch.done();
@@ -129,25 +124,34 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
 
     @Override
     public List<ServiceOfferingVO> findServiceOfferingByDomainId(Long domainId) {
-        SearchCriteria<ServiceOfferingVO> sc = ServiceOfferingsByDomainIdSearch.create();
-        sc.setParameters("domainId", domainId);
-        return listBy(sc);
+        return filterOfferingsForDomain(listAll(), domainId);
     }
 
     @Override
     public List<ServiceOfferingVO> findSystemOffering(Long domainId, Boolean isSystem, String vmType) {
         SearchCriteria<ServiceOfferingVO> sc = SystemServiceOffering.create();
-        sc.setParameters("domainId", domainId);
         sc.setParameters("system", isSystem);
         sc.setParameters("vm_type", vmType);
-        return listBy(sc);
+        return filterOfferingsForDomain(listBy(sc), domainId);
     }
 
     @Override
     public List<ServiceOfferingVO> findPublicServiceOfferings() {
         SearchCriteria<ServiceOfferingVO> sc = PublicServiceOfferingSearch.create();
         sc.setParameters("system", false);
-        return listBy(sc);
+        List<ServiceOfferingVO> offerings = listBy(sc);
+
+        if(offerings!=null) {
+            for (int i = offerings.size() - 1; i >= 0; i--) {
+                ServiceOfferingVO offering = offerings.get(i);
+                Map<String, String> offeringDetails = detailsDao.listDetailsKeyPairs(offering.getId());
+                if (!Strings.isNullOrEmpty(offeringDetails.get(ApiConstants.DOMAIN_ID_LIST))) {
+                    // TODO: For ROOT domainId?
+                    offerings.remove(i);
+                }
+            }
+        }
+        return offerings;
     }
 
     @Override
@@ -288,5 +292,27 @@ public class ServiceOfferingDaoImpl extends GenericDaoBase<ServiceOfferingVO, Lo
             throw new CloudRuntimeException(message);
         }
         return serviceOffering;
+    }
+
+    private List<ServiceOfferingVO> filterOfferingsForDomain(final List<ServiceOfferingVO> offerings, Long domainId) {
+        List<ServiceOfferingVO> filteredOfferings = null;
+        if (offerings != null && !offerings.isEmpty() && domainId != null) {
+            filteredOfferings = new ArrayList<>(offerings);
+            for (int i = filteredOfferings.size() - 1; i >= 0; i--) {
+                ServiceOfferingVO offering = offerings.get(i);
+                Map<String, String> offeringDetails = detailsDao.listDetailsKeyPairs(offering.getId());
+                if (!Strings.isNullOrEmpty(offeringDetails.get(ApiConstants.DOMAIN_ID_LIST))) {
+                    String[] domainIdsArray = offeringDetails.get(ApiConstants.DOMAIN_ID_LIST).split(",");
+                    List<Long> domainIds = new ArrayList<>();
+                    for (String dIdStr : domainIdsArray) {
+                        domainIds.add(Long.valueOf(dIdStr.trim()));
+                    }
+                    if (!domainIds.contains(domainId)) {
+                        filteredOfferings.remove(i);
+                    }
+                }
+            }
+        }
+        return filteredOfferings;
     }
 }

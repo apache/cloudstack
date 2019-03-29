@@ -133,7 +133,7 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
     public ServiceOfferingVO(ServiceOfferingVO offering) {
         super(offering.getId(), offering.getName(), offering.getDisplayText(), offering.getProvisioningType(), false, offering.getTags(), offering.isRecreatable(),
-                offering.isUseLocalStorage(), offering.isSystemUse(), true, offering.isCustomizedIops() == null ? false : offering.isCustomizedIops(), offering.getDomainId(),
+                offering.isUseLocalStorage(), offering.isSystemUse(), true, offering.isCustomizedIops() == null ? false : offering.isCustomizedIops(), null,
                 offering.getMinIops(), offering.getMaxIops());
         cpu = offering.getCpu();
         ramSize = offering.getRamSize();

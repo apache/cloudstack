@@ -33,6 +33,7 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiCommandJobType;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -185,6 +186,7 @@ import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.FirewallRulesDcidrsDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -277,6 +279,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
@@ -312,8 +315,7 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.cloud.user.AccountManager;
-import com.cloud.network.dao.FirewallRulesDcidrsDao;
+import com.google.common.base.Strings;
 
 public class ApiDBUtils {
     private static ManagementServer s_ms;
@@ -1914,7 +1916,40 @@ public class ApiDBUtils {
     }
 
     public static ServiceOfferingResponse newServiceOfferingResponse(ServiceOfferingJoinVO offering) {
-        return s_serviceOfferingJoinDao.newServiceOfferingResponse(offering);
+        ServiceOfferingResponse serviceOfferingResponse =  s_serviceOfferingJoinDao.newServiceOfferingResponse(offering);
+        if(serviceOfferingResponse!=null) {
+            Map<String, String> details = serviceOfferingResponse.getDetails();
+            if (details != null && !details.isEmpty()) {
+                if(details.containsKey(ApiConstants.DOMAIN_ID_LIST) &&
+                        !Strings.isNullOrEmpty(details.get(ApiConstants.DOMAIN_ID_LIST))) {
+                    String[] domainIdsArray = details.get(ApiConstants.DOMAIN_ID_LIST).split(",");
+                    List<DomainVO> domains = s_domainDao.list(domainIdsArray);
+                    List<String> domainIdsList = new ArrayList<>();
+                    List<String> domainNamesList = new ArrayList<>();
+                    for (DomainVO domain : domains) {
+                        domainIdsList.add(domain.getUuid());
+                        domainNamesList.add(domain.getName());
+                    }
+                    details.put(ApiConstants.DOMAIN_ID_LIST, String.join(",", domainIdsList));
+                    details.put(ApiConstants.DOMAIN_NAME_LIST, String.join(", ", domainNamesList));
+                }
+                if(details.containsKey(ApiConstants.ZONE_ID_LIST) &&
+                        !Strings.isNullOrEmpty(details.get(ApiConstants.ZONE_ID_LIST))) {
+                    String[] zoneIdsArray = details.get(ApiConstants.ZONE_ID_LIST).split(",");
+                    List<DataCenterVO> zones = s_zoneDao.list(zoneIdsArray);
+                    List<String> zoneIdsList = new ArrayList<>();
+                    List<String> zoneNamesList = new ArrayList<>();
+                    for (DataCenterVO zone : zones) {
+                        zoneIdsList.add(zone.getUuid());
+                        zoneNamesList.add(zone.getName());
+                    }
+                    details.put(ApiConstants.ZONE_ID_LIST, String.join(",", zoneIdsList));
+                    details.put(ApiConstants.ZONE_NAME_LIST, String.join(", ", zoneNamesList));
+                }
+                serviceOfferingResponse.setDetails(details);
+            }
+        }
+        return serviceOfferingResponse;
     }
 
     public static ServiceOfferingJoinVO newServiceOfferingView(ServiceOffering offering) {

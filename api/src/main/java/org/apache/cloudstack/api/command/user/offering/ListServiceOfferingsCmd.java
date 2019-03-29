@@ -16,8 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.offering;
 
-import org.apache.log4j.Logger;
-
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseListDomainResourcesCmd;
@@ -25,6 +23,8 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.response.ListResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.log4j.Logger;
 
 @APICommand(name = "listServiceOfferings", description = "Lists all available service offerings.", responseObject = ServiceOfferingResponse.class,
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
@@ -57,6 +57,13 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
                description = "the system VM type. Possible types are \"consoleproxy\", \"secondarystoragevm\" or \"domainrouter\".")
     private String systemVmType;
 
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "id of zone disk offering is associated with",
+            since = "4.13")
+    private Long zoneId;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -80,6 +87,8 @@ public class ListServiceOfferingsCmd extends BaseListDomainResourcesCmd {
     public String getSystemVmType() {
         return systemVmType;
     }
+
+    public Long getZoneId() { return zoneId; }
 
     /////////////////////////////////////////////////////
     /////////////// API Implementation///////////////////

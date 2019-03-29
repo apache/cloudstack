@@ -291,6 +291,7 @@
             // Step 3: Service offering
             function(args) {
                 selectedTemplateObj = null; //reset
+                var zoneid = args.currentData["zoneid"]
                 if (args.currentData["select-template"] == "select-template") {
                     if (featuredTemplateObjs != null && featuredTemplateObjs.length > 0) {
                         for (var i = 0; i < featuredTemplateObjs.length; i++) {
@@ -353,6 +354,9 @@
                     $.ajax({
                         url: createURL("listServiceOfferings&issystem=false"),
                         dataType: "json",
+                        data: {
+                            zoneid: zoneid
+                        },
                         async: false,
                         success: function(json) {
                             serviceOfferingObjs = json.listserviceofferingsresponse.serviceoffering;

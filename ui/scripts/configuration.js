@@ -73,8 +73,9 @@
                                 preFilter: function(args) {
                                     if (isAdmin()) {
                                     } else {
+                                        args.$form.find('.form-item[rel=isPublic]').find('input[name=isPublic]').prop('checked', false);
                                         args.$form.find('.form-item[rel=isPublic]').hide();
-                                        args.$form.find('.form-item[rel=domainId]').css('display', 'inline-block'); //shown
+                                        args.$form.find('.form-item[rel=domain]').css('display', 'inline-block'); //shown
                                         args.$form.find('.form-item[rel=deploymentPlanner]').hide();
                                         args.$form.find('.form-item[rel=plannerMode]').hide();
                                         args.$form.find('.form-item[rel=storageTags]').hide();
@@ -555,10 +556,11 @@
                                         }
                                     },
 
-                                    domainId: {
+                                    domain: {
                                         label: 'label.domain',
                                         docID: 'helpComputeOfferingDomain',
                                         dependsOn: 'isPublic',
+                                        isMultiple: true,
                                         select: function(args) {
                                             $.ajax({
                                                 url: createURL("listDomains&listAll=true"),
@@ -583,6 +585,43 @@
                                             });
                                         },
                                         isHidden: true
+                                    },
+
+                                    zone: {
+                                        label: 'label.zone',
+                                        docID: 'helpComputeOfferingZone',
+                                        isMultiple: true,
+                                        validation: {
+                                            allzonesonly: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones&available=true"),
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var zoneObjs = [];
+                                                    var items = json.listzonesresponse.zone;
+                                                    if (items != null) {
+                                                        for (var i = 0; i < items.length; i++) {
+                                                            zoneObjs.push({
+                                                                id: items[i].id,
+                                                                description: items[i].name
+                                                            });
+                                                        }
+                                                    }
+                                                    if (isAdmin()) {
+                                                        zoneObjs.unshift({
+                                                            id: -1,
+                                                            description: "All Zones"
+                                                        });
+                                                    }
+                                                    args.response.success({
+                                                        data: zoneObjs
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             },
@@ -716,8 +755,41 @@
                                 });
 
                                 if (args.data.isPublic != "on") {
+                                    var domains = "";
+                                    if (Object.prototype.toString.call(args.data.domain) === '[object Array]') {
+                                        domains = args.data.domain.join(",");
+                                    } else {
+                                        if (args.data.domain != null) {
+                                            domains = args.data.domain;
+                                        }
+                                    }
+                                    if (domains != "") {
+                                        $.extend(data, {
+                                            domainids: domains
+                                        });
+                                    }
+                                }
+
+                                var zones = "";
+                                if (Object.prototype.toString.call(args.data.zone) === '[object Array]') {
+                                    var allZonesSelected = false;
+                                    args.data.zone.forEach(function (zone) {
+                                        if (zone === null) {
+                                            allZonesSelected = true;
+                                            break;
+                                        }
+                                    });
+                                    if(!allZonesSelected) {
+                                        zones = args.data.zone.join(",");
+                                    }
+                                } else {
+                                    if (args.data.zone != null) {
+                                        zones = args.data.zone;
+                                    }
+                                }
+                                if (zones != "") {
                                     $.extend(data, {
-                                        domainid: args.data.domainId
+                                        zoneids: zones
                                     });
                                 }
 
@@ -952,8 +1024,11 @@
                                     hosttags: {
                                         label: 'label.host.tag'
                                     },
-                                    domain: {
-                                        label: 'label.domain'
+                                    domains: {
+                                        label: 'label.domains'
+                                    },
+                                    zones: {
+                                        label: 'label.zones'
                                     },
                                     created: {
                                         label: 'label.created',
@@ -982,6 +1057,16 @@
                                             if (item.serviceofferingdetails != null) {
                                                 item.pciDevice = item.serviceofferingdetails.pciDevice;
                                                 item.vgpuType = item.serviceofferingdetails.vgpuType;
+                                                if(item.serviceofferingdetails.domainnames) {
+                                                    $.extend(item, {
+                                                        domains: item.serviceofferingdetails.domainnames
+                                                    });
+                                                }
+                                                if(item.serviceofferingdetails.zonenames) {
+                                                    $.extend(item, {
+                                                        zones: item.serviceofferingdetails.zonenames
+                                                    });
+                                                }
                                             }
 
                                             args.response.success({
