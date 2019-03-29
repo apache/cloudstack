@@ -928,7 +928,11 @@ public class StatsCollector extends ManagerBase implements ComponentMethodInterc
                     List<String> volumeLocators = new ArrayList<String>();
                     for (VolumeVO volume : volumes) {
                         if (volume.getFormat() == ImageFormat.QCOW2) {
-                            volumeLocators.add(volume.getUuid());
+                            if (pool.isManaged()) {
+                                volumeLocators.add(volume.getPath());
+                            } else {
+                                volumeLocators.add(volume.getUuid());
+                            }
                         } else if (volume.getFormat() == ImageFormat.VHD) {
                             volumeLocators.add(volume.getPath());
                         } else if (volume.getFormat() == ImageFormat.OVA) {
