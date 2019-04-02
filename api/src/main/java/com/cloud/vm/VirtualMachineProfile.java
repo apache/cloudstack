@@ -60,6 +60,7 @@ public interface VirtualMachineProfile {
         public static final Param PxeSeverType = new Param("PxeSeverType");
         public static final Param HaTag = new Param("HaTag");
         public static final Param HaOperation = new Param("HaOperation");
+        public static final Param StoragePools = new Param("StoragePools");
 
         private String name;
 

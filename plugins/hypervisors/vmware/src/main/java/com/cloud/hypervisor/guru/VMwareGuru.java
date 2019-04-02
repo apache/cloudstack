@@ -31,6 +31,10 @@ import com.cloud.agent.api.UnregisterVMCommand;
 import com.cloud.agent.api.to.VolumeTO;
 import com.cloud.dc.ClusterDetailsDao;
 import com.cloud.storage.StoragePool;
+import com.cloud.storage.VMTemplateStoragePoolVO;
+import com.cloud.storage.VMTemplateStorageResourceAssoc;
+import com.cloud.storage.dao.VMTemplatePoolDao;
+import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.engine.subsystem.api.storage.PrimaryDataStore;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeDataFactory;
 import org.apache.cloudstack.engine.subsystem.api.storage.VolumeInfo;
@@ -43,6 +47,7 @@ import org.apache.cloudstack.storage.command.StorageSubSystemCommand;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
 import org.apache.cloudstack.storage.to.VolumeObjectTO;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.log4j.Logger;
 
@@ -151,6 +156,8 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
     PrimaryDataStoreDao _storagePoolDao;
     @Inject
     VolumeDataFactory _volFactory;
+    @Inject
+    private VMTemplatePoolDao templateSpoolDao;
 
     protected VMwareGuru() {
         super();
@@ -354,6 +361,29 @@ public class VMwareGuru extends HypervisorGuruBase implements HypervisorGuru, Co
         } else {
             to.setPlatformEmulator(guestOsMapping.getGuestOsName());
         }
+
+        Map<String, String> ovfProperties = new HashMap<>();
+        for (String detailKey : details.keySet()) {
+            if (detailKey.startsWith(ApiConstants.OVF_PROPERTIES)) {
+                String ovfProp = detailKey.replace(ApiConstants.OVF_PROPERTIES + "-", "");
+                ovfProperties.put(ovfProp, details.get(detailKey));
+            }
+        }
+
+        if (MapUtils.isNotEmpty(ovfProperties)) {
+            List<Long> pools = (List<Long>) vm.getParameter(VirtualMachineProfile.Param.StoragePools);
+            String templateInstallPath = null;
+            for (Long pool : pools) {
+                VMTemplateStoragePoolVO ref = templateSpoolDao.findByPoolTemplate(pool, vm.getTemplateId());
+                if (ref != null && ref.getDownloadState() == VMTemplateStorageResourceAssoc.Status.DOWNLOADED) {
+                    templateInstallPath = ref.getInstallPath();
+                    break;
+                }
+            }
+            Pair<String, Map<String, String>> pair = new Pair<>(templateInstallPath, ovfProperties);
+            to.setOvfProperties(pair);
+        }
+
         return to;
     }
 

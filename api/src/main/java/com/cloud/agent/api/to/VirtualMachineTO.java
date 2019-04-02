@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 import com.cloud.template.VirtualMachineTemplate.BootloaderType;
+import com.cloud.utils.Pair;
 import com.cloud.vm.VirtualMachine;
 import com.cloud.vm.VirtualMachine.Type;
 
@@ -75,6 +76,7 @@ public class VirtualMachineTO {
 
     Map<String, String> guestOsDetails = new HashMap<String, String>();
     Map<String, String> extraConfig = new HashMap<>();
+    Pair<String, Map<String, String>> ovfProperties;
 
     public VirtualMachineTO(long id, String instanceName, VirtualMachine.Type type, int cpus, Integer speed, long minRam, long maxRam, BootloaderType bootloader,
             String os, boolean enableHA, boolean limitCpuUse, String vncPassword) {
@@ -366,5 +368,13 @@ public class VirtualMachineTO {
     }
     public Map<String, String> getExtraConfig() {
         return extraConfig;
+    }
+
+    public Pair<String, Map<String, String>> getOvfProperties() {
+        return ovfProperties;
+    }
+
+    public void setOvfProperties(Pair<String, Map<String, String>> ovfProperties) {
+        this.ovfProperties = ovfProperties;
     }
 }

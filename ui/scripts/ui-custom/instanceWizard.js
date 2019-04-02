@@ -123,6 +123,67 @@
                     });
                 };
 
+                var makeSelectsOvfProperties = function (data, fields) {
+                    var $selects = $('<div>');
+
+                    $(data).each(function() {
+                        var item = this;
+                        var key = item[fields.key];
+                        var type = item[fields.type];
+                        var value = item[fields.value];
+                        var qualifiers = item[fields.qualifiers];
+                        var label = item[fields.label];
+                        var description = item[fields.description];
+
+                        var qualifiersField;
+                        if (qualifiers) {
+                            qualifiersField = $('<select id=ovf-property-'+key+'>')
+                            if (qualifiers.startsWith("ValueMap")) {
+                                var possibleValues = qualifiers.replace("ValueMap","").substr(1).slice(0, -1).split(",");
+                                $(possibleValues).each(function() {
+                                    var qualifier = this.substr(1).slice(0, -1); //remove first and last quotes
+                                    var option = $('<option>')
+                                        .attr({
+                                            value: qualifier
+                                        })
+                                        .html(qualifier)
+                                    qualifiersField.append(option);
+                                });
+                            }
+                        } else if (type && type.toUpperCase() == "BOOLEAN") {
+                            qualifiersField = $('<select id=ovf-property-'+key+'>')
+                                .append($('<option>').attr({value: "True"}).html("True"))
+                                .append($('<option>').attr({value: "False"}).html("False"));
+                        } else {
+                            qualifiersField = $('<input id=ovf-property-'+key+'>').addClass('name').val(_s(this[fields.value]))
+                        }
+
+                        var $select = $('<div>')
+                            .addClass('select')
+                            .append(
+                                $('<div>')
+                                    .addClass('select-desc')
+                                    .addClass('ovf-property')
+                                    .append($('<div>').addClass('name').html(_s(this[fields.label])))
+                                    .append(qualifiersField)
+                                    .append($('<div>').addClass('desc').html(_s(this[fields.description])))
+                                    .data('json-obj', this)
+                            );
+                        $selects.append($select);
+                    });
+
+                    cloudStack.evenOdd($selects, 'div.select', {
+                        even: function($elem) {
+                            $elem.addClass('even');
+                        },
+                        odd: function($elem) {
+                            $elem.addClass('odd');
+                        }
+                    });
+
+                    return $selects.children();
+                };
+
                 var makeSelects = function(name, data, fields, options, selectedObj, selectedObjNonEditable) {
                     var $selects = $('<div>');
                     options = options ? options : {};
@@ -1231,10 +1292,30 @@
                         };
                     },
 
+                    'ovfProperties': function($step, formData) {
+                        return {
+                            response: {
+                                success: function(args) {
+                                    $step.find('.content .select-container').append(
+                                        makeSelectsOvfProperties(args.data.ovfProperties, {
+                                            key: 'key',
+                                            type: 'type',
+                                            value: 'value',
+                                            qualifiers: 'qualifiers',
+                                            label: 'label',
+                                            description : 'description'
+                                        })
+                                    );
+                                }
+                            }
+                        };
+                    },
+
                     'review': function($step, formData) {
                         $step.find('[wizard-field]').each(function() {
                             var field = $(this).attr('wizard-field');
                             var fieldName;
+
                             var $input = $wizard.find('[wizard-field=' + field + ']').filter(function() {
                                 return ($(this).is(':selected') ||
                                     $(this).is(':checked') ||
@@ -1423,6 +1504,33 @@
                             }
                         }
 
+                        // Step 7 - Skip OVF properties tab if there are no OVF properties for the template
+                        if ($activeStep.hasClass('sshkeyPairs')) {
+                            if ($activeStep.hasClass('next-skip-ovf-properties')) {
+                                showStep(8);
+                            }
+                        }
+
+                        // Optional Step - Pre-step 8
+                        if ($activeStep.hasClass('ovf-properties')) {
+                            var ok = true;
+                            if ($activeStep.find('input').length > 0) { //if no checkbox is checked
+                                $.each($activeStep.find('input'), function(index, item) {
+                                    var item = $activeStep.find('input#' + item.id);
+                                    if (item.val().length == 0) {
+                                        ok = false;
+                                        return;
+                                    }
+                                });
+                            }
+                            if (!ok) {
+                                cloudStack.dialog.notice({
+                                    message: 'Please complete every configuration item'
+                                });
+                                return false;
+                            }
+                        }
+
                         if (!$form.valid()) {
                             if ($form.find('input.error:visible, select.error:visible').length) {
                                 return false;
@@ -1454,6 +1562,12 @@
                                 showStep(5);
                             } else {
                                 showStep(index);
+                            }
+                        }
+
+                        if ($activeStep.hasClass('review')) {
+                            if ($activeStep.hasClass('previous-skip-ovf-properties')) {
+                                showStep(7);
                             }
                         }
 

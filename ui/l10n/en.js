@@ -2253,6 +2253,7 @@ var dictionary = {
 "message.outofbandmanagement.disable":"Disable Out-of-band Management",
 "message.outofbandmanagement.enable":"Enable Out-of-band Management",
 "message.outofbandmanagement.issue":"Issue Out-of-band Management Power Action",
+"message.ovf.properties.available":"There are OVF properties available for customizing the selected appliance. Please edit the values accordingly.",
 "message.password.has.been.reset.to":"Password has been reset to",
 "message.password.of.the.vm.has.been.reset.to":"Password of the VM has been reset to",
 "message.pending.projects.1":"You have pending project invitations:",
