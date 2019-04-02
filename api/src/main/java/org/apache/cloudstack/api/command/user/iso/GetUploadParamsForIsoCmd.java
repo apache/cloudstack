@@ -37,7 +37,7 @@ import java.net.MalformedURLException;
 
 @APICommand(name = GetUploadParamsForIsoCmd.APINAME,
         description = "upload an existing ISO into the CloudStack cloud.",
-        responseObject = GetUploadParamsResponse.class, since = "4.11.2",
+        responseObject = GetUploadParamsResponse.class, since = "4.13",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class GetUploadParamsForIsoCmd extends AbstractGetUploadParamsCmd {
 
