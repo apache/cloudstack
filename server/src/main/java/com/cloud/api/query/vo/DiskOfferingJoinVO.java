@@ -23,11 +23,11 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.storage.Storage;
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
 import com.cloud.offering.DiskOffering.Type;
+import com.cloud.storage.Storage;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -128,18 +128,6 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
     @Column(name = GenericDao.REMOVED_COLUMN)
     private Date removed;
 
-    @Column(name = "domain_id")
-    private long domainId;
-
-    @Column(name = "domain_uuid")
-    private String domainUuid;
-
-    @Column(name = "domain_name")
-    private String domainName = null;
-
-    @Column(name = "domain_path")
-    private String domainPath = null;
-
     @Column(name = "display_offering")
     boolean displayOffering;
 
@@ -222,22 +210,6 @@ public class DiskOfferingJoinVO extends BaseViewVO implements InternalIdentity, 
 
     public Date getRemoved() {
         return removed;
-    }
-
-    public long getDomainId() {
-        return domainId;
-    }
-
-    public String getDomainUuid() {
-        return domainUuid;
-    }
-
-    public String getDomainName() {
-        return domainName;
-    }
-
-    public String getDomainPath() {
-        return domainPath;
     }
 
     public int getSortKey() {

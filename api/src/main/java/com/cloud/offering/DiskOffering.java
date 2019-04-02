@@ -59,8 +59,6 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     boolean isUseLocalStorage();
 
-    Long getDomainId();
-
     String getName();
 
     boolean isSystemUse();

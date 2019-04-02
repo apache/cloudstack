@@ -17,8 +17,6 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.BaseResponse;
@@ -35,12 +33,20 @@ public class DiskOfferingResponse extends BaseResponse {
     private String id;
 
     @SerializedName(ApiConstants.DOMAIN_ID)
-    @Param(description = "the domain ID this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    @Param(description = "the domain ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private String domainId;
 
     @SerializedName(ApiConstants.DOMAIN)
-    @Param(description = "the domain name this disk offering belongs to. Ignore this information as it is not currently applicable.")
+    @Param(description = "the domain name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.")
     private String domain;
+
+    @SerializedName(ApiConstants.ZONE_ID)
+    @Param(description = "the zone ID(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
+    private String zoneId;
+
+    @SerializedName(ApiConstants.ZONE)
+    @Param(description = "the zone name(s) this disk offering belongs to. Ignore this information as it is not currently applicable.", since = "4.13.0")
+    private String zone;
 
     @SerializedName(ApiConstants.NAME)
     @Param(description = "the name of the disk offering")
@@ -145,10 +151,6 @@ public class DiskOfferingResponse extends BaseResponse {
     @Param(description = "whether to display the offering to the end user or not.")
     private Boolean displayOffering;
 
-    @SerializedName(ApiConstants.DETAILS)
-    @Param(description = "the details of the disk offering", since = "4.13.0")
-    private Map<String, Object> details = new HashMap<>();
-
     public Boolean getDisplayOffering() {
         return displayOffering;
     }
@@ -180,6 +182,22 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setDomain(String domain) {
         this.domain = domain;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public void setZoneId(String zoneId) {
+        this.zoneId = zoneId;
+    }
+
+    public String getZone() {
+        return zone;
+    }
+
+    public void setZone(String zone) {
+        this.zone = zone;
     }
 
     public String getName() {
@@ -332,17 +350,5 @@ public class DiskOfferingResponse extends BaseResponse {
 
     public void setIopsWriteRateMaxLength(Long iopsWriteRateMaxLength) {
         this.iopsWriteRateMaxLength = iopsWriteRateMaxLength;
-    }
-
-    public Map<String, Object> getDetails() {
-        return details;
-    }
-
-    public void putDetail(String key, Object value) {
-        this.details.put(key, value);
-    }
-
-    public void setDetails(Map<String, Object> details) {
-        this.details = details;
     }
 }

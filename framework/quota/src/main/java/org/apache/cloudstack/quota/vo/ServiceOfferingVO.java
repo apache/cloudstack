@@ -36,6 +36,9 @@ import com.cloud.vm.VirtualMachine;
 @DiscriminatorValue(value = "Service")
 @PrimaryKeyJoinColumn(name = "id")
 public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering {
+    @Column(name = "domain_id")
+    Long domainId;
+
     @Column(name = "cpu")
     private Integer cpu;
 
@@ -103,7 +106,8 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     public ServiceOfferingVO(String name, Integer cpu, Integer ramSize, Integer speed, Integer rateMbps, Integer multicastRateMbps, boolean offerHA, boolean limitCpuUse,
             boolean volatileVm, String displayText, ProvisioningType provisioningType, boolean useLocalStorage, boolean recreatable, String tags, boolean systemUse,
             VirtualMachine.Type vmType, Long domainId) {
-        super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true, domainId);
+        super(name, displayText, provisioningType, false, tags, recreatable, useLocalStorage, systemUse, true);
+        this.domainId = domainId;
         this.cpu = cpu;
         this.ramSize = ramSize;
         this.speed = speed;
@@ -133,8 +137,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
     public ServiceOfferingVO(ServiceOfferingVO offering) {
         super(offering.getId(), offering.getName(), offering.getDisplayText(), offering.getProvisioningType(), false, offering.getTags(), offering.isRecreatable(),
-                offering.isUseLocalStorage(), offering.isSystemUse(), true, offering.isCustomizedIops() == null ? false : offering.isCustomizedIops(), offering.getDomainId(),
+                offering.isUseLocalStorage(), offering.isSystemUse(), true, offering.isCustomizedIops() == null ? false : offering.isCustomizedIops(),
                 offering.getMinIops(), offering.getMaxIops());
+        domainId = offering.getDomainId();
         cpu = offering.getCpu();
         ramSize = offering.getRamSize();
         speed = offering.getSpeed();
@@ -224,6 +229,11 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Override
     public Integer getMulticastRateMbps() {
         return multicastRateMbps;
+    }
+
+    @Override
+    public Long getDomainId() {
+        return domainId;
     }
 
     public void setHostTag(String hostTag) {

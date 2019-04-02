@@ -2438,11 +2438,11 @@
                                     tags: {
                                         label: 'label.storage.tags'
                                     },
-                                    domains: {
-                                        label: 'label.domains'
+                                    domain: {
+                                        label: 'label.domain'
                                     },
-                                    zones: {
-                                        label: 'label.zones'
+                                    zone: {
+                                        label: 'label.zone'
                                     },
                                     storagetype: {
                                         label: 'label.storage.type'
@@ -2461,18 +2461,6 @@
                                         data: data
                                     };
                                     var diskOffering = cloudStack.listDiskOfferings(listDiskOfferingsOptions)[0];
-                                    if (diskOffering.details) {
-                                        if (diskOffering.details.domain) {
-                                            $.extend(diskOffering, {
-                                                domains: Object.keys(diskOffering.details.domain).join(', ')
-                                            });
-                                        }
-                                        if (diskOffering.details.zone) {
-                                            $.extend(diskOffering, {
-                                                zones: Object.keys(diskOffering.details.zone).join(', ')
-                                            });
-                                        }
-                                    }
                                     args.response.success({
                                         actionFilter: diskOfferingActionfilter,
                                         data: diskOffering
