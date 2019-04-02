@@ -1915,7 +1915,7 @@ public class ApiDBUtils {
     public static DiskOfferingResponse newDiskOfferingResponse(DiskOfferingJoinVO offering) {
         DiskOfferingResponse diskOfferingResponse = s_diskOfferingJoinDao.newDiskOfferingResponse(offering);
         if (diskOfferingResponse != null) {
-            Map<String, String> details = s_diskOfferingDetailsDao.listDetailsKeyPairs(offering.getId(), false);
+            Map<String, String> details = s_diskOfferingDetailsDao.listDetailsKeyPairs(offering.getId(), true);
             if (MapUtils.isNotEmpty(details)) {
                 // Domains
                 String[] domainIds = details.getOrDefault(ApiConstants.DOMAIN_ID_LIST, "").split(",");
@@ -1928,7 +1928,7 @@ public class ApiDBUtils {
                 String[] zoneIds = details.getOrDefault(ApiConstants.ZONE_ID_LIST, "").split(",");
                 final Map<String, String> zones = new HashMap<>();
                 for (DataCenterVO zone : s_zoneDao.list(zoneIds)) {
-                    domains.put(zone.getName(), zone.getUuid());
+                    zones.put(zone.getName(), zone.getUuid());
                 }
                 diskOfferingResponse.putDetail(ApiConstants.ZONE, zones);
             }

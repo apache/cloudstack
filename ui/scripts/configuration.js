@@ -2149,28 +2149,28 @@
                                         },
                                         select: function(args) {
                                             $.ajax({
-                                                url: createURL("listZones&available=true"),
+                                                url: createURL("listZones"),
+                                                data: {available: 'true'},
                                                 dataType: "json",
                                                 async: true,
                                                 success: function(json) {
-                                                    var zoneObjs = [];
-                                                    var items = json.listzonesresponse.zone;
-                                                    if (items != null) {
-                                                        for (var i = 0; i < items.length; i++) {
-                                                            zoneObjs.push({
-                                                                id: items[i].id,
-                                                                description: items[i].name
-                                                            });
-                                                        }
-                                                    }
-                                                    if (isAdmin()) {
-                                                        zoneObjs.unshift({
-                                                            id: -1,
-                                                            description: "All Zones"
+                                                    var items = [];
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    $(zoneObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.name
                                                         });
-                                                    }
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    items.unshift({
+                                                        id: -1,
+                                                        description: "All Zones"
+                                                    });
                                                     args.response.success({
-                                                        data: zoneObjs
+                                                        data: items
                                                     });
                                                 }
                                             });
@@ -2255,39 +2255,16 @@
                                 }
 
                                 if (args.data.isPublic != "on") {
-                                    var domains = "";
-                                    if (Object.prototype.toString.call(args.data.domain) === '[object Array]') {
-                                        domains = args.data.domain.join(",");
-                                    } else {
-                                        if (args.data.domain != null) {
-                                            domains = args.data.domain;
-                                        }
-                                    }
-                                    if (domains != "") {
+                                    var domains = (args.data.domain && Array.isArray(args.data.domain)) ? args.data.domain.join(',') : args.data.domain;
+                                    if (domains) {
                                         $.extend(data, {
                                             domainids: domains
                                         });
                                     }
                                 }
 
-                                var zones = "";
-                                if (Object.prototype.toString.call(args.data.zone) === '[object Array]') {
-                                    var allZonesSelected = false;
-                                    args.data.zone.forEach(function (zone) {
-                                        if (zone === null) {
-                                            allZonesSelected = true;
-                                            break;
-                                        }
-                                    });
-                                    if(!allZonesSelected) {
-                                        zones = args.data.zone.join(",");
-                                    }
-                                } else {
-                                    if (args.data.zone != null) {
-                                        zones = args.data.zone;
-                                    }
-                                }
-                                if (zones != "") {
+                                var zones = (args.data.zone && Array.isArray(args.data.zone)) ? args.data.zone.join(',') : args.data.zone;
+                                if (zones) {
                                     $.extend(data, {
                                         zoneids: zones
                                     });
@@ -2483,23 +2460,22 @@
                                         isRecursive: true,
                                         data: data
                                     };
-                                    var diskOfferings = cloudStack.listDiskOfferings(listDiskOfferingsOptions);
-                                    var diskOffering = diskOfferings[0]
-                                    if(diskOffering.details) {
-                                        if(diskOffering.details.domainnames) {
+                                    var diskOffering = cloudStack.listDiskOfferings(listDiskOfferingsOptions)[0];
+                                    if (diskOffering.details) {
+                                        if (diskOffering.details.domain) {
                                             $.extend(diskOffering, {
-                                                domains: diskOffering.details.domainnames
+                                                domains: Object.keys(diskOffering.details.domain).join(', ')
                                             });
                                         }
-                                        if(diskOffering.details.zonenames) {
+                                        if (diskOffering.details.zone) {
                                             $.extend(diskOffering, {
-                                                zones: diskOffering.details.zonenames
+                                                zones: Object.keys(diskOffering.details.zone).join(', ')
                                             });
                                         }
                                     }
                                     args.response.success({
                                         actionFilter: diskOfferingActionfilter,
-                                        data: diskOfferings[0]
+                                        data: diskOffering
                                     });
                                 }
                             }

@@ -19,3 +19,6 @@
 -- Schema upgrade from 4.12.0.0 to 4.13.0.0
 --;
 
+-- Move domain_id to disk offering details and drop the domain_id column
+INSERT INTO `cloud`.`disk_offering_details` (offering_id, name, value) SELECT id, 'domainids', domain_id FROM `cloud`.`disk_offering` WHERE domain_id IS NOT NULL;
+ALTER TABLE `cloud`.`disk_offering` DROP COLUMN `domain_id`;
