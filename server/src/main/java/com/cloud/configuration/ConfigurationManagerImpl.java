@@ -2768,12 +2768,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Long numGibibytes = cmd.getDiskSize();
         final boolean isDisplayOfferingEnabled = cmd.getDisplayOffering() != null ? cmd.getDisplayOffering() : true;
         final boolean isCustomized = cmd.isCustomized() != null ? cmd.isCustomized() : false; // false
-        // by
-        // default
         final String tags = cmd.getTags();
-
         final List<Long> domainIds = cmd.getDomainIds();
-
         final List<Long> zoneIds = cmd.getZoneIds();
 
         if (!isCustomized && numGibibytes == null) {

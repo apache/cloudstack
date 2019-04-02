@@ -17,6 +17,7 @@
 package org.apache.cloudstack.api.response;
 
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -146,7 +147,7 @@ public class DiskOfferingResponse extends BaseResponse {
 
     @SerializedName(ApiConstants.DETAILS)
     @Param(description = "the details of the disk offering", since = "4.13.0")
-    private Map<String, String> details;
+    private Map<String, Object> details = new HashMap<>();
 
     public Boolean getDisplayOffering() {
         return displayOffering;
@@ -333,11 +334,15 @@ public class DiskOfferingResponse extends BaseResponse {
         this.iopsWriteRateMaxLength = iopsWriteRateMaxLength;
     }
 
-    public Map<String, String> getDetails() {
+    public Map<String, Object> getDetails() {
         return details;
     }
 
-    public void setDetails(Map<String, String> details) {
+    public void putDetail(String key, Object value) {
+        this.details.put(key, value);
+    }
+
+    public void setDetails(Map<String, Object> details) {
         this.details = details;
     }
 }

@@ -71,7 +71,6 @@ public class CreateDiskOfferingCmd extends BaseCmd {
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = DomainResponse.class,
-            required = false,
             description = "the ID of the domains offering is associated with, null for all domain offerings",
             since = "4.13")
     private List<Long> domainIds;
@@ -80,7 +79,6 @@ public class CreateDiskOfferingCmd extends BaseCmd {
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = ZoneResponse.class,
-            required = false,
             description = "the ID of the zones offering is associated with, null for all zone offerings",
             since = "4.13")
     private List<Long> zoneIds;
@@ -187,15 +185,11 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         return maxIops;
     }
 
-    public Long getDomainId() {
-        return domainId;
-    }
-
     public List<Long> getDomainIds() {
+        if (domainIds == null) {
+            domainIds = new ArrayList<>();
+        }
         if (domainId != null) {
-            if (domainIds == null) {
-                domainIds = new ArrayList<>();
-            }
             domainIds.add(domainId);
         }
         return domainIds;

@@ -50,6 +50,7 @@ public class DiskOfferingVO implements DiskOffering {
     @Column(name = "id")
     long id;
 
+    // TODO: remove me
     @Column(name = "domain_id")
     Long domainId = null;
 

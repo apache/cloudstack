@@ -114,7 +114,6 @@ public class ApiConstants {
     public static final String DOMAIN_ID = "domainid";
     public static final String DOMAIN__ID = "domainId";
     public static final String DOMAIN_ID_LIST = "domainids";
-    public static final String DOMAIN_NAME_LIST = "domainnames";
     public static final String DURATION = "duration";
     public static final String ELIGIBLE = "eligible";
     public static final String EMAIL = "email";
@@ -352,6 +351,7 @@ public class ApiConstants {
     public static final String VNET = "vnet";
     public static final String IS_VOLATILE = "isvolatile";
     public static final String VOLUME_ID = "volumeid";
+    public static final String ZONE = "zone";
     public static final String ZONE_ID = "zoneid";
     public static final String ZONE_NAME = "zonename";
     public static final String NETWORK_TYPE = "networktype";
@@ -713,7 +713,6 @@ public class ApiConstants {
     public static final String NETSCALER_SERVICEPACKAGE_ID = "netscalerservicepackageid";
 
     public static final String ZONE_ID_LIST = "zoneids";
-    public static final String ZONE_NAME_LIST = "zonenames";
     public static final String DESTINATION_ZONE_ID_LIST = "destzoneids";
     public static final String ADMIN = "admin";
     public static final String CHECKSUM_PARAMETER_PREFIX_DESCRIPTION = "The parameter containing the checksum will be considered a MD5sum if it is not prefixed\n"

@@ -72,6 +72,7 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.commons.collections.MapUtils;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
@@ -187,6 +188,7 @@ import com.cloud.network.dao.AccountGuestVlanMapDao;
 import com.cloud.network.dao.AccountGuestVlanMapVO;
 import com.cloud.network.dao.FirewallRulesCidrsDao;
 import com.cloud.network.dao.FirewallRulesDao;
+import com.cloud.network.dao.FirewallRulesDcidrsDao;
 import com.cloud.network.dao.IPAddressDao;
 import com.cloud.network.dao.IPAddressVO;
 import com.cloud.network.dao.LoadBalancerDao;
@@ -279,6 +281,7 @@ import com.cloud.template.TemplateManager;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountDetailsDao;
+import com.cloud.user.AccountManager;
 import com.cloud.user.AccountService;
 import com.cloud.user.AccountVO;
 import com.cloud.user.ResourceLimitService;
@@ -314,9 +317,6 @@ import com.cloud.vm.dao.UserVmDetailsDao;
 import com.cloud.vm.dao.VMInstanceDao;
 import com.cloud.vm.snapshot.VMSnapshot;
 import com.cloud.vm.snapshot.dao.VMSnapshotDao;
-import com.cloud.user.AccountManager;
-import com.cloud.network.dao.FirewallRulesDcidrsDao;
-import com.google.common.base.Strings;
 
 public class ApiDBUtils {
     private static ManagementServer s_ms;
@@ -1914,36 +1914,23 @@ public class ApiDBUtils {
 
     public static DiskOfferingResponse newDiskOfferingResponse(DiskOfferingJoinVO offering) {
         DiskOfferingResponse diskOfferingResponse = s_diskOfferingJoinDao.newDiskOfferingResponse(offering);
-        if(diskOfferingResponse!=null) {
-            Map<String, String> details = s_diskOfferingDetailsDao.listDetailsKeyPairs(offering.getId());
-            if (details != null && !details.isEmpty()) {
-                if(details.containsKey(ApiConstants.DOMAIN_ID_LIST) &&
-                        !Strings.isNullOrEmpty(details.get(ApiConstants.DOMAIN_ID_LIST))) {
-                    String[] domainIdsArray = details.get(ApiConstants.DOMAIN_ID_LIST).split(",");
-                    List<DomainVO> domains = s_domainDao.list(domainIdsArray);
-                    List<String> domainIdsList = new ArrayList<>();
-                    List<String> domainNamesList = new ArrayList<>();
-                    for (DomainVO domain : domains) {
-                        domainIdsList.add(domain.getUuid());
-                        domainNamesList.add(domain.getName());
-                    }
-                    details.put(ApiConstants.DOMAIN_ID_LIST, String.join(",", domainIdsList));
-                    details.put(ApiConstants.DOMAIN_NAME_LIST, String.join(", ", domainNamesList));
+        if (diskOfferingResponse != null) {
+            Map<String, String> details = s_diskOfferingDetailsDao.listDetailsKeyPairs(offering.getId(), false);
+            if (MapUtils.isNotEmpty(details)) {
+                // Domains
+                String[] domainIds = details.getOrDefault(ApiConstants.DOMAIN_ID_LIST, "").split(",");
+                final Map<String, String> domains = new HashMap<>();
+                for (DomainVO domain : s_domainDao.list(domainIds)) {
+                    domains.put(domain.getName(), domain.getUuid());
                 }
-                if(details.containsKey(ApiConstants.ZONE_ID_LIST) &&
-                        !Strings.isNullOrEmpty(details.get(ApiConstants.ZONE_ID_LIST))) {
-                    String[] zoneIdsArray = details.get(ApiConstants.ZONE_ID_LIST).split(",");
-                    List<DataCenterVO> zones = s_zoneDao.list(zoneIdsArray);
-                    List<String> zoneIdsList = new ArrayList<>();
-                    List<String> zoneNamesList = new ArrayList<>();
-                    for (DataCenterVO zone : zones) {
-                        zoneIdsList.add(zone.getUuid());
-                        zoneNamesList.add(zone.getName());
-                    }
-                    details.put(ApiConstants.ZONE_ID_LIST, String.join(",", zoneIdsList));
-                    details.put(ApiConstants.ZONE_NAME_LIST, String.join(", ", zoneNamesList));
+                diskOfferingResponse.putDetail(ApiConstants.DOMAIN, domains);
+                // Zones
+                String[] zoneIds = details.getOrDefault(ApiConstants.ZONE_ID_LIST, "").split(",");
+                final Map<String, String> zones = new HashMap<>();
+                for (DataCenterVO zone : s_zoneDao.list(zoneIds)) {
+                    domains.put(zone.getName(), zone.getUuid());
                 }
-                diskOfferingResponse.setDetails(details);
+                diskOfferingResponse.putDetail(ApiConstants.ZONE, zones);
             }
         }
         return diskOfferingResponse;

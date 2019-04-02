@@ -34,13 +34,13 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
         Inactive, Active,
     }
 
-    public enum Type {
+    enum Type {
         Disk, Service
     };
 
     State getState();
 
-    public enum DiskCacheMode {
+    enum DiskCacheMode {
         NONE("none"), WRITEBACK("writeback"), WRITETHROUGH("writethrough");
 
         private final String _diskCacheMode;
@@ -67,11 +67,11 @@ public interface DiskOffering extends InfrastructureEntity, Identity, InternalId
 
     String getDisplayText();
 
-    public ProvisioningType getProvisioningType();
+    ProvisioningType getProvisioningType();
 
-    public String getTags();
+    String getTags();
 
-    public String[] getTagsArray();
+    String[] getTagsArray();
 
     Date getCreated();
 
