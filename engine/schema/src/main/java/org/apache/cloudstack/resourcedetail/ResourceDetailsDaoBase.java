@@ -50,6 +50,13 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         return findOneBy(sc);
     }
 
+    public List<R> findDetails(long resourceId, String key) {
+        SearchCriteria<R> sc = AllFieldsSearch.create();
+        sc.setParameters("resourceId", resourceId);
+        sc.setParameters("name", key);
+        return listBy(sc);
+    }
+
     public List<R> findDetails(String name, String value, Boolean display) {
         SearchCriteria<R> sc = AllFieldsSearch.create();
 
@@ -105,6 +112,16 @@ public abstract class ResourceDetailsDaoBase<R extends ResourceDetail> extends G
         SearchCriteria<R> sc = AllFieldsSearch.create();
         sc.setParameters("resourceId", resourceId);
         remove(sc);
+    }
+
+    public void removeDetail(long resourceId, String key, String value) {
+        if (key != null) {
+            SearchCriteria<R> sc = AllFieldsSearch.create();
+            sc.setParameters("resourceId", resourceId);
+            sc.setParameters("name", key);
+            sc.setParameters("value", value);
+            remove(sc);
+        }
     }
 
     public void removeDetail(long resourceId, String key) {

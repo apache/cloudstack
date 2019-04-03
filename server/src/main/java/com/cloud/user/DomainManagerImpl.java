@@ -63,7 +63,9 @@ import com.cloud.network.dao.NetworkDomainDao;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.ProjectVO;
 import com.cloud.projects.dao.ProjectDao;
+import com.cloud.service.dao.ServiceOfferingDao;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
+import com.cloud.storage.dao.DiskOfferingDao;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.Pair;
 import com.cloud.utils.component.ManagerBase;
@@ -97,9 +99,13 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
     @Inject
     private DiskOfferingJoinDao diskOfferingJoinDao;
     @Inject
+    private DiskOfferingDao diskOfferingDao;
+    @Inject
     private DiskOfferingDetailsDao diskOfferingDetailsDao;
     @Inject
     private ServiceOfferingJoinDao serviceOfferingJoinDao;
+    @Inject
+    private ServiceOfferingDao serviceOfferingDao;
     @Inject
     private ServiceOfferingDetailsDao serviceOfferingDetailsDao;
     @Inject
@@ -446,22 +452,23 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
             return;
         }
 
+        String domainIdString = String.valueOf(domainId);
         List<Long> diskOfferingsDetailsToRemove = new ArrayList<>();
         List<Long> serviceOfferingsDetailsToRemove = new ArrayList<>();
 
         // delete the service and disk offerings associated with this domain
         List<DiskOfferingJoinVO> diskOfferingsForThisDomain = diskOfferingJoinDao.findByDomainId(domainId);
         for (DiskOfferingJoinVO diskOffering : diskOfferingsForThisDomain) {
-            if (String.valueOf(domainId).equals(diskOffering.getDomainId())) {
-                diskOfferingJoinDao.remove(diskOffering.getId());
+            if (domainIdString.equals(diskOffering.getDomainId())) {
+                diskOfferingDao.remove(diskOffering.getId());
             } else {
                 diskOfferingsDetailsToRemove.add(diskOffering.getId());
             }
         }
         List<ServiceOfferingJoinVO> serviceOfferingsForThisDomain = serviceOfferingJoinDao.findByDomainId(domainId);
         for (ServiceOfferingJoinVO serviceOffering : serviceOfferingsForThisDomain) {
-            if (String.valueOf(domainId).equals(serviceOffering.getDomainId())) {
-                serviceOfferingJoinDao.remove(serviceOffering.getId());
+            if (domainIdString.equals(serviceOffering.getDomainId())) {
+                serviceOfferingDao.remove(serviceOffering.getId());
             } else {
                 serviceOfferingsDetailsToRemove.add(serviceOffering.getId());
             }
@@ -469,10 +476,10 @@ public class DomainManagerImpl extends ManagerBase implements DomainManager, Dom
 
         // Remove domain IDs for offerings which may be multi-domain
         for (final Long diskOfferingId : diskOfferingsDetailsToRemove) {
-            diskOfferingDetailsDao.removeDetail(diskOfferingId, ApiConstants.DOMAIN_ID);
+            diskOfferingDetailsDao.removeDetail(diskOfferingId, ApiConstants.DOMAIN_ID, domainIdString);
         }
         for (final Long serviceOfferingId : serviceOfferingsDetailsToRemove) {
-            serviceOfferingDetailsDao.removeDetail(serviceOfferingId, ApiConstants.DOMAIN_ID);
+            serviceOfferingDetailsDao.removeDetail(serviceOfferingId, ApiConstants.DOMAIN_ID, domainIdString);
         }
     }
 

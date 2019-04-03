@@ -18,6 +18,7 @@ package org.apache.cloudstack.api.command.admin.offering;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.cloudstack.api.APICommand;
@@ -83,10 +84,11 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private String tags;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
-               type = CommandType.UUID,
-               entityType = DomainResponse.class,
-               description = "the ID of the containing domain, null for public offerings")
-    private Long domainId;
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the ID of the containing domain(s), null for public offerings")
+    private List<Long> domainIds;
 
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.STRING, description = "the host tag for this service offering.")
     private String hostTag;
@@ -249,8 +251,8 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return tags;
     }
 
-    public Long getDomainId() {
-        return domainId;
+    public List<Long> getDomainId() {
+        return domainIds;
     }
 
     public String getHostTag() {

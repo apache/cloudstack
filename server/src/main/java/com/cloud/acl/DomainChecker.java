@@ -16,6 +16,7 @@
 // under the License.
 package com.cloud.acl;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,8 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
+import com.cloud.service.ServiceOfferingDetailsVO;
+import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
 import com.cloud.template.VirtualMachineTemplate;
@@ -72,6 +75,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     AccountService _accountService;
     @Inject
     DiskOfferingDetailsDao diskOfferingDetailsDao;
+    @Inject
+    ServiceOfferingDetailsDao serviceOfferingDetailsDao;
 
     protected DomainChecker() {
         super();
@@ -222,7 +227,11 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 
     @Override
     public boolean checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
-        if (account == null || so.getDomainId() == null) {//public offering
+        final List<Long> soDomainIds = new ArrayList<>();
+        for (final ServiceOfferingDetailsVO detail: serviceOfferingDetailsDao.findDetails(so.getId(), ApiConstants.DOMAIN_ID)) {
+            soDomainIds.add(Long.valueOf(detail.getValue()));
+        }
+        if (account == null || soDomainIds.isEmpty()) { //public offering
             return true;
         } else {
             //admin has all permissions
@@ -235,13 +244,13 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                     || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                if (account.getDomainId() == so.getDomainId()) {
+                if (soDomainIds.contains(account.getDomainId())) {
                     return true; //service offering and account at exact node
                 } else {
                     Domain domainRecord = _domainDao.findById(account.getDomainId());
                     if (domainRecord != null) {
                         while (true) {
-                            if (domainRecord.getId() == so.getDomainId()) {
+                            if (soDomainIds.contains(domainRecord.getId())) {
                                 //found as a child
                                 return true;
                             }

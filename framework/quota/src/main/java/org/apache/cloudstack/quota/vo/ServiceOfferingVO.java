@@ -284,10 +284,4 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     public void setDynamicFlag(boolean isdynamic) {
         isDynamic = isdynamic;
     }
-
-    @Override
-    public Long getDomainId() {
-        // TODO: get rid of me
-        return null;
-    }
 }

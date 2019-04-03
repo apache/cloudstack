@@ -2289,8 +2289,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // check if valid domain
-        if (cmd.getDomainId() != null && _domainDao.findById(cmd.getDomainId()) == null) {
-            throw new InvalidParameterValueException("Please specify a valid domain id");
+        if (cmd.getDomainId() != null && !cmd.getDomainId().isEmpty()) {
+            for (final Long domainId: cmd.getDomainId()) {
+                if (_domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+            }
         }
 
         final Boolean offerHA = cmd.isOfferHa();
@@ -2378,7 +2382,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
             final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
-            final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm,  String tags, final Long domainId, final String hostTag,
+            final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm,  String tags, final List<Long> domainIds, final String hostTag,
             final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, final Boolean isCustomizedIops, Long minIops, Long maxIops,
             Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
@@ -2393,14 +2397,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final Account account = _accountDao.findById(user.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            if (domainId == null) {
+            if (domainIds == null || domainIds.isEmpty()) {
                 throw new InvalidParameterValueException("Unable to create public service offering by id " + userId + " because it is domain-admin");
             }
             if (tags != null || hostTag != null) {
                 throw new InvalidParameterValueException("Unable to create service offering with storage tags or host tags by id " + userId + " because it is domain-admin");
             }
-            if (! _domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                throw new InvalidParameterValueException("Unable to create service offering by another domain admin with id " + userId);
+            for (Long domainId: domainIds) {
+                if (! _domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new InvalidParameterValueException("Unable to create service offering by another domain admin with id " + userId);
+                }
             }
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             throw new InvalidParameterValueException("Unable to create service offering by id " + userId + " because it is not root-admin or domain-admin");
@@ -2412,7 +2418,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         ServiceOfferingVO offering = new ServiceOfferingVO(name, cpu, ramSize, speed, networkRate, null, offerHA,
                 limitResourceUse, volatileVm, displayText, typedProvisioningType, localStorageRequired, false, tags, isSystem, vmType,
-                domainId, hostTag, deploymentPlanner);
+                hostTag, deploymentPlanner);
 
         if (Boolean.TRUE.equals(isCustomizedIops) || isCustomizedIops == null) {
                 minIops = null;
@@ -2484,7 +2490,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         offering.setHypervisorSnapshotReserve(hypervisorSnapshotReserve);
 
-        List<ServiceOfferingDetailsVO> detailsVO = null;
+        List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
         if (details != null) {
             // To have correct input, either both gpu card name and VGPU type should be passed or nothing should be passed.
             // Use XOR condition to verify that.
@@ -2493,7 +2499,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             if ((entry1 || entry2) && !(entry1 && entry2)) {
                 throw new InvalidParameterValueException("Please specify the pciDevice and vgpuType correctly.");
             }
-            detailsVO = new ArrayList<ServiceOfferingDetailsVO>();
             for (final Entry<String, String> detailEntry : details.entrySet()) {
                 if (detailEntry.getKey().equals(GPU.Keys.pciDevice.toString())) {
                     if (detailEntry.getValue() == null) {
@@ -2510,9 +2515,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
-            if (detailsVO != null && !detailsVO.isEmpty()) {
-                for (int index = 0; index < detailsVO.size(); index++) {
-                    detailsVO.get(index).setResourceId(offering.getId());
+            if (domainIds != null && !domainIds.isEmpty()) {
+                for (Long domainId: domainIds) {
+                    detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), true));
+                }
+            }
+            if (!detailsVO.isEmpty()) {
+                for (ServiceOfferingDetailsVO detail: detailsVO) {
+                    detail.setResourceId(offering.getId());
                 }
                 _serviceOfferingDetailsDao.saveDetails(detailsVO);
             }
@@ -2549,11 +2559,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final Account account = _accountDao.findById(user.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            if (offeringHandle.getDomainId() == null) {
+            final List<ServiceOfferingDetailsVO> details = _serviceOfferingDetailsDao.findDetails(offeringHandle.getId(), ApiConstants.DOMAIN_ID);
+            if (details.isEmpty()) {
                 throw new InvalidParameterValueException("Unable to update public service offering by id " + userId + " because it is domain-admin");
             }
-            if (! _domainDao.isChildDomain(account.getDomainId(), offeringHandle.getDomainId() )) {
-                throw new InvalidParameterValueException("Unable to update service offering by another domain admin with id " + userId);
+            for (final ServiceOfferingDetailsVO detail : details) {
+                final Long domainId = Long.valueOf(detail.getValue(), 0);
+                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new InvalidParameterValueException("Unable to update service offering by another domain admin with id " + userId);
+                }
             }
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             throw new InvalidParameterValueException("Unable to update service offering by id " + userId + " because it is not root-admin or domain-admin");
@@ -2997,11 +3011,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final Account account = _accountDao.findById(user.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            if (offering.getDomainId() == null) {
+            final List<ServiceOfferingDetailsVO> details = _serviceOfferingDetailsDao.findDetails(offering.getId(), ApiConstants.DOMAIN_ID);
+            if (details.isEmpty()) {
                 throw new InvalidParameterValueException("Unable to delete public service offering by id " + userId + " because it is domain-admin");
             }
-            if (! _domainDao.isChildDomain(account.getDomainId(), offering.getDomainId() )) {
-                throw new InvalidParameterValueException("Unable to delete service offering by another domain admin with id " + userId);
+            for (final ServiceOfferingDetailsVO detail : details) {
+                final Long domainId = Long.valueOf(detail.getValue(), 0);
+                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new InvalidParameterValueException("Unable to delete service offering by another domain admin with id " + userId);
+                }
             }
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             throw new InvalidParameterValueException("Unable to delete service offering by id " + userId + " because it is not root-admin or domain-admin");

@@ -47,11 +47,13 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
 
     @Override
     public List<ServiceOfferingJoinVO> findByDomainId(long domainId) {
-        SearchBuilder<ServiceOfferingJoinVO> ServiceOfferingsByDomainIdSearch = createSearchBuilder();
-        ServiceOfferingsByDomainIdSearch.select("domainId", SearchCriteria.Func.FIND_IN_SET, ServiceOfferingsByDomainIdSearch.entity().getDomainId(), String.valueOf(domainId));
-        ServiceOfferingsByDomainIdSearch.done();
+        SearchBuilder<ServiceOfferingJoinVO> sb = createSearchBuilder();
+        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.FIND_IN_SET);
+        sb.done();
 
-        return listBy(ServiceOfferingsByDomainIdSearch.create());
+        SearchCriteria<ServiceOfferingJoinVO> sc = sb.create();
+        sc.setParameters("domainId", String.valueOf(domainId));
+        return listBy(sc);
     }
 
     @Override

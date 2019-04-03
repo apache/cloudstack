@@ -50,12 +50,13 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
 
     @Override
     public List<DiskOfferingJoinVO> findByDomainId(long domainId) {
-        SearchBuilder<DiskOfferingJoinVO> DiskOfferingsByDomainIdSearch = createSearchBuilder();
-        DiskOfferingsByDomainIdSearch.and("domainId", DiskOfferingsByDomainIdSearch.entity().getDomainId(), SearchCriteria.Op.NNULL);
-        DiskOfferingsByDomainIdSearch.select("domainId", SearchCriteria.Func.FIND_IN_SET, DiskOfferingsByDomainIdSearch.entity().getDomainId(), String.valueOf(domainId));
-        DiskOfferingsByDomainIdSearch.done();
+        SearchBuilder<DiskOfferingJoinVO> sb = createSearchBuilder();
+        sb.and("domainId", sb.entity().getDomainId(), SearchCriteria.Op.FIND_IN_SET);
+        sb.done();
 
-        return listBy(DiskOfferingsByDomainIdSearch.create());
+        SearchCriteria<DiskOfferingJoinVO> sc = sb.create();
+        sc.setParameters("domainId", String.valueOf(domainId));
+        return listBy(sc);
     }
 
     @Override

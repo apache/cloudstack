@@ -16,7 +16,6 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.cloudstack.api.APICommand;
@@ -62,24 +61,17 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     private Boolean customized;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
-               type = CommandType.UUID,
-               entityType = DomainResponse.class,
-               description = "the ID of the containing domain, null for public offerings")
-    private Long domainId;
-
-    @Parameter(name = ApiConstants.DOMAIN_ID_LIST,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = DomainResponse.class,
-            description = "the ID of the domains offering is associated with, null for all domain offerings",
-            since = "4.13")
+            description = "the ID of the containing domain(s), null for public offerings")
     private List<Long> domainIds;
 
-    @Parameter(name = ApiConstants.ZONE_ID_LIST,
+    @Parameter(name = ApiConstants.ZONE_ID,
             type = CommandType.LIST,
             collectionType = CommandType.UUID,
             entityType = ZoneResponse.class,
-            description = "the ID of the zones offering is associated with, null for all zone offerings",
+            description = "the ID of the containing zone(s), null for public offerings",
             since = "4.13")
     private List<Long> zoneIds;
 
@@ -186,12 +178,6 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getDomainIds() {
-        if (domainIds == null) {
-            domainIds = new ArrayList<>();
-        }
-        if (domainId != null) {
-            domainIds.add(domainId);
-        }
         return domainIds;
     }
 

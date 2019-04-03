@@ -26,7 +26,7 @@ ALTER TABLE `cloud`.`disk_offering` DROP COLUMN `domain_id`;
 -- Disk offering with multi-domains and multi-zones
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
 CREATE VIEW `cloud`.`disk_offering_view` AS
-    select
+    SELECT
         `disk_offering`.`id` AS `id`,
         `disk_offering`.`uuid` AS `uuid`,
         `disk_offering`.`name` AS `name`,
@@ -60,25 +60,27 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
         `disk_offering`.`type` AS `type`,
         `disk_offering`.`display_offering` AS `display_offering`,
         `disk_offering`.`state`  AS `state`,
-        GROUP_CONCAT(domain.id) AS domain_id,
-        GROUP_CONCAT(domain.uuid) AS domain_uuid,
-        GROUP_CONCAT(domain.name) AS domain_name,
-        GROUP_CONCAT(domain.path) AS domain_path,
-        GROUP_CONCAT(zone.id) AS zone_id,
-        GROUP_CONCAT(zone.uuid) AS zone_uuid,
-        GROUP_CONCAT(zone.name) AS zone_name
-    from
+        GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
+        GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
+        GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
+        GROUP_CONCAT(DISTINCT(domain.path)) AS domain_path,
+        GROUP_CONCAT(DISTINCT(zone.id)) AS zone_id,
+        GROUP_CONCAT(DISTINCT(zone.uuid)) AS zone_uuid,
+        GROUP_CONCAT(DISTINCT(zone.name)) AS zone_name
+    FROM
         `cloud`.`disk_offering`
-            left join
+            LEFT JOIN
         `cloud`.`disk_offering_details` AS `domain_details` ON `domain_details`.`offering_id` = `disk_offering`.`id` AND `domain_details`.`name`='domainid'
-            left join
-        `cloud`.`domain` AS `domain` ON `domain`.`id` = `domain_details`.`value`
-            left join
+            LEFT JOIN
+        `cloud`.`domain` AS `domain` ON FIND_IN_SET(`domain`.`id`, `domain_details`.`value`)
+            LEFT JOIN
         `cloud`.`disk_offering_details` AS `zone_details` ON `zone_details`.`offering_id` = `disk_offering`.`id` AND `zone_details`.`name`='zoneid'
-            left join
-        `cloud`.`data_center` AS `zone` ON `zone`.`id` = `zone_details`.`value`
-    where
-        disk_offering.state='ACTIVE' GROUP BY id;
+            LEFT JOIN
+        `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
+    WHERE
+        `disk_offering`.`state`='ACTIVE'
+    GROUP BY
+        `disk_offering`.`id`;
 
 -- Service offering with multi-domains and multi-zones
 DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
