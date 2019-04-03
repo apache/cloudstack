@@ -23,11 +23,10 @@ import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
-import com.cloud.storage.Storage;
-
 import org.apache.cloudstack.api.Identity;
 import org.apache.cloudstack.api.InternalIdentity;
 
+import com.cloud.storage.Storage;
 import com.cloud.utils.db.GenericDao;
 
 @Entity
@@ -219,10 +218,6 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public String getDomainName() {
         return domainName;
-    }
-
-    public String getDomainPath() {
-        return domainPath;
     }
 
     public Boolean isCustomizedIops() {

@@ -33,7 +33,6 @@ import org.apache.cloudstack.affinity.AffinityGroup;
 import org.apache.cloudstack.affinity.AffinityGroupResponse;
 import org.apache.cloudstack.affinity.dao.AffinityGroupDao;
 import org.apache.cloudstack.api.ApiCommandJobType;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.api.ApiConstants.DomainDetails;
 import org.apache.cloudstack.api.ApiConstants.HostDetails;
 import org.apache.cloudstack.api.ApiConstants.VMDetails;
@@ -72,7 +71,6 @@ import org.apache.cloudstack.framework.jobs.dao.AsyncJobDao;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.commons.collections.MapUtils;
 
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.dao.AccountJoinDao;
@@ -1913,29 +1911,7 @@ public class ApiDBUtils {
     }
 
     public static DiskOfferingResponse newDiskOfferingResponse(DiskOfferingJoinVO offering) {
-        DiskOfferingResponse diskOfferingResponse = s_diskOfferingJoinDao.newDiskOfferingResponse(offering);
-        if (diskOfferingResponse != null) {
-            Map<String, String> details = s_diskOfferingDetailsDao.listDetailsKeyPairs(offering.getId());
-            if (MapUtils.isNotEmpty(details)) {
-                // Domains
-                String[] domainIds = details.getOrDefault(ApiConstants.DOMAIN_ID_LIST, "").split(",");
-                final Map<String, String> domains = new HashMap<>();
-                for (DomainVO domain : s_domainDao.list(domainIds)) {
-                    domains.put(domain.getName(), domain.getUuid());
-                }
-                diskOfferingResponse.setDomain(String.join(", ", domains.keySet()));
-                diskOfferingResponse.setDomainId(String.join(", ", domains.values()));
-                // Zones
-                String[] zoneIds = details.getOrDefault(ApiConstants.ZONE_ID_LIST, "").split(",");
-                final Map<String, String> zones = new HashMap<>();
-                for (DataCenterVO zone : s_zoneDao.list(zoneIds)) {
-                    zones.put(zone.getName(), zone.getUuid());
-                }
-                diskOfferingResponse.setZone(String.join(", ", zones.keySet()));
-                diskOfferingResponse.setZoneId(String.join(", ", zones.values()));
-            }
-        }
-        return diskOfferingResponse;
+        return s_diskOfferingJoinDao.newDiskOfferingResponse(offering);
     }
 
     public static DiskOfferingJoinVO newDiskOfferingView(DiskOffering offering) {

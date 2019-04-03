@@ -64,6 +64,10 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         diskOfferingResponse.setMaxIops(offering.getMaxIops());
 
         diskOfferingResponse.setDisplayOffering(offering.isDisplayOffering());
+        diskOfferingResponse.setDomainId(offering.getDomainUuid());
+        diskOfferingResponse.setDomain(offering.getDomainPath());
+        diskOfferingResponse.setZoneId(offering.getZoneUuid());
+        diskOfferingResponse.setZone(offering.getZoneName());
 
         diskOfferingResponse.setTags(offering.getTags());
         diskOfferingResponse.setCustomized(offering.isCustomized());
