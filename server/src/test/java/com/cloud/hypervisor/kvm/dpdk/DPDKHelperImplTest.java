@@ -17,6 +17,7 @@
 package com.cloud.hypervisor.kvm.dpdk;
 
 import com.cloud.agent.api.to.VirtualMachineTO;
+import com.cloud.offering.ServiceOffering;
 import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.vm.VirtualMachineProfile;
@@ -54,6 +55,8 @@ public class DPDKHelperImplTest {
     ServiceOfferingDetailsVO dpdkNumaDetailVO;
     @Mock
     ServiceOfferingDetailsVO dpdkHugePagesDetailVO;
+    @Mock
+    ServiceOffering serviceOffering;
 
     private String dpdkVhostMode = DPDKHelper.VHostUserMode.SERVER.toString();
 
@@ -88,10 +91,14 @@ public class DPDKHelperImplTest {
 
         Mockito.when(serviceOfferingDetailsDao.listDetails(offeringId)).thenReturn(
                 Arrays.asList(dpdkNumaDetailVO, dpdkHugePagesDetailVO, dpdkVhostUserModeDetailVO));
+        Mockito.when(vmProfile.getServiceOffering()).thenReturn(serviceOffering);
+        Mockito.when(serviceOffering.getId()).thenReturn(offeringId);
     }
 
     @Test
     public void testSetDpdkVhostUserModeValidDetail() {
+        Mockito.when(serviceOfferingDetailsDao.findDetail(offeringId, DPDKHelper.DPDK_VHOST_USER_MODE)).
+                thenReturn(dpdkVhostUserModeDetailVO);
         dpdkHelper.setDpdkVhostUserMode(vmTO, vmProfile);
         Mockito.verify(vmTO).addExtraConfig(DPDKHelper.DPDK_VHOST_USER_MODE, dpdkVhostMode);
     }
