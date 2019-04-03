@@ -2266,7 +2266,9 @@
                     },
 
 		    dataProvider: function(args) {
-                        var data = {};
+                var data = {
+                    listAll: true
+                };
                         listViewDataProvider(args, data);
 
 		        if (args.context != null) {
@@ -2277,7 +2279,7 @@
 		            }
 		        }
 		        $.ajax({
-		            url: createURL('listVMSnapshot&listAll=true'),
+		            url: createURL('listVMSnapshot'),
                             data: data,
 		            dataType: "json",
 		            async: true,
