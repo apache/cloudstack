@@ -20,7 +20,9 @@
 --;
 
 -- Move domain_id to disk offering details and drop the domain_id column
-INSERT INTO `cloud`.`disk_offering_details` (offering_id, name, value) SELECT id, 'domainid', domain_id FROM `cloud`.`disk_offering` WHERE domain_id IS NOT NULL;
+INSERT INTO `cloud`.`disk_offering_details` (offering_id, name, value) SELECT id, 'domainid', domain_id FROM `cloud`.`disk_offering` WHERE domain_id IS NOT NULL AND type='Disk';
+INSERT INTO `cloud`.`service_offering_details` (offering_id, name, value) SELECT id, 'domainid', domain_id FROM `cloud`.`disk_offering` WHERE domain_id IS NOT NULL AND type='Service';
+
 ALTER TABLE `cloud`.`disk_offering` DROP COLUMN `domain_id`;
 
 -- Disk offering with multi-domains and multi-zones
@@ -78,14 +80,14 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
             LEFT JOIN
         `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
     WHERE
-        `disk_offering`.`state`='ACTIVE'
+        `disk_offering`.`state`='Active'
     GROUP BY
         `disk_offering`.`id`;
 
 -- Service offering with multi-domains and multi-zones
 DROP VIEW IF EXISTS `cloud`.`service_offering_view`;
 CREATE VIEW `cloud`.`service_offering_view` AS
-    select
+    SELECT
         `service_offering`.`id` AS `id`,
         `disk_offering`.`uuid` AS `uuid`,
         `disk_offering`.`name` AS `name`,
@@ -126,16 +128,26 @@ CREATE VIEW `cloud`.`service_offering_view` AS
         `service_offering`.`sort_key` AS `sort_key`,
         `service_offering`.`is_volatile` AS `is_volatile`,
         `service_offering`.`deployment_planner` AS `deployment_planner`,
-        `disk_offering`.`domain_id` AS `domain_id`,
-        `disk_offering`.`domain_uuid` AS `domain_uuid`,
-        `disk_offering`.`domain_name` AS `domain_name`,
-        `disk_offering`.`domain_path` AS `domain_path`,
-        `disk_offering`.`zone_id` AS `zone_id`,
-        `disk_offering`.`zone_uuid` AS `zone_uuid`,
-        `disk_offering`.`zone_name` AS `zone_name`
-    from
+        GROUP_CONCAT(DISTINCT(domain.id)) AS domain_id,
+        GROUP_CONCAT(DISTINCT(domain.uuid)) AS domain_uuid,
+        GROUP_CONCAT(DISTINCT(domain.name)) AS domain_name,
+        GROUP_CONCAT(DISTINCT(domain.path)) AS domain_path,
+        GROUP_CONCAT(DISTINCT(zone.id)) AS zone_id,
+        GROUP_CONCAT(DISTINCT(zone.uuid)) AS zone_uuid,
+        GROUP_CONCAT(DISTINCT(zone.name)) AS zone_name
+    FROM
         `cloud`.`service_offering`
-            inner join
+            INNER JOIN
         `cloud`.`disk_offering_view` AS `disk_offering` ON service_offering.id = disk_offering.id
-    where
-        disk_offering.state='Active';
+            LEFT JOIN
+        `cloud`.`service_offering_details` AS `domain_details` ON `domain_details`.`service_offering_id` = `disk_offering`.`id` AND `domain_details`.`name`='domainid'
+            LEFT JOIN
+        `cloud`.`domain` AS `domain` ON FIND_IN_SET(`domain`.`id`, `domain_details`.`value`)
+            LEFT JOIN
+        `cloud`.`service_offering_details` AS `zone_details` ON `zone_details`.`service_offering_id` = `disk_offering`.`id` AND `zone_details`.`name`='zoneid'
+            LEFT JOIN
+        `cloud`.`data_center` AS `zone` ON FIND_IN_SET(`zone`.`id`, `zone_details`.`value`)
+    WHERE
+        `disk_offering`.`state`='Active'
+    GROUP BY
+        `service_offering`.`id`;
