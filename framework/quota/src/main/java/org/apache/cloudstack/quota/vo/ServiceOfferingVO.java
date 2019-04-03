@@ -76,6 +76,10 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     private String deploymentPlanner = null;
 
     @Transient
+    @Column(name = "domain_id")
+    Long domainId;
+
+    @Transient
     Map<String, String> details = new HashMap<String, String>();
 
     @Transient
@@ -226,11 +230,6 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
         return multicastRateMbps;
     }
 
-    @Override
-    public Long getDomainId() {
-        return null;
-    }
-
     public void setHostTag(String hostTag) {
         this.hostTag = hostTag;
     }
@@ -288,5 +287,11 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
 
     public void setDynamicFlag(boolean isdynamic) {
         isDynamic = isdynamic;
+    }
+
+    @Override
+    public Long getDomainId() {
+        // TODO: get rid of me
+        return domainId;
     }
 }

@@ -160,6 +160,15 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     @Column(name = "domain_path")
     private String domainPath = null;
 
+    @Column(name = "zone_id")
+    private String zoneId = null;
+
+    @Column(name = "zone_uuid")
+    private String zoneUuid = null;
+
+    @Column(name = "zone_name")
+    private String zoneName = null;
+
     @Column(name = "deployment_planner")
     private String deploymentPlanner;
 
@@ -218,6 +227,22 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
 
     public String getDomainName() {
         return domainName;
+    }
+
+    public String getDomainPath() {
+        return domainPath;
+    }
+
+    public String getZoneId() {
+        return zoneId;
+    }
+
+    public String getZoneUuid() {
+        return zoneUuid;
+    }
+
+    public String getZoneName() {
+        return zoneName;
     }
 
     public Boolean isCustomizedIops() {

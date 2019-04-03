@@ -90,7 +90,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
                 Field staticField = UsageEventUtils.class.getDeclaredField("s_" + fieldName);
                 staticField.setAccessible(true);
                 oldFields.put(f.getName(), staticField.get(null));
-                f.set(utils, this.getClass().getSuperclass().getDeclaredField("_" + fieldName).get(this));
+                f.set(utils, this.getClass().getSuperclass().getDeclaredField(fieldName).get(this));
             } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
                 e.printStackTrace();
             }

@@ -75,8 +75,9 @@ public class ServiceOfferingVO extends DiskOfferingVO implements ServiceOffering
     @Column(name = "deployment_planner")
     private String deploymentPlanner = null;
 
+    @Transient
     @Column(name = "domain_id")
-    private Long domainId = null;
+    Long domainId;
 
     // This is a delayed load value.  If the value is null,
     // then this field has not been loaded yet.

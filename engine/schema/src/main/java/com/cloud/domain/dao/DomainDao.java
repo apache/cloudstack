@@ -40,6 +40,4 @@ public interface DomainDao extends GenericDao<DomainVO, Long> {
     Set<Long> getDomainParentIds(long domainId);
 
     List<Long> getDomainChildrenIds(String path);
-
-    List<DomainVO> list(Object[] ids);
 }

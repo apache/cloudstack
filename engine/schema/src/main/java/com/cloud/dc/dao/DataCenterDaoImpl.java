@@ -437,12 +437,4 @@ public class DataCenterDaoImpl extends GenericDaoBase<DataCenterVO, Long> implem
 
         return dcs;
     }
-
-    @Override
-    public List<DataCenterVO> list(Object[] ids) {
-        SearchBuilder<DataCenterVO> sb = createSearchBuilder();
-        SearchCriteria<DataCenterVO> sc = sb.create();
-        sc.addAnd("id", SearchCriteria.Op.IN, ids);
-        return listBy(sc);
-    }
 }
