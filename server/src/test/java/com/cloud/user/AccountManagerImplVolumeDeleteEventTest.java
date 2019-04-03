@@ -90,7 +90,7 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
                 Field staticField = UsageEventUtils.class.getDeclaredField("s_" + fieldName);
                 staticField.setAccessible(true);
                 oldFields.put(f.getName(), staticField.get(null));
-                f.set(utils, this.getClass().getSuperclass().getDeclaredField(fieldName).get(this));
+                f.set(utils, this.getClass().getSuperclass().getDeclaredField("_" + fieldName).get(this));
             } catch (IllegalArgumentException | IllegalAccessException | NoSuchFieldException | SecurityException e) {
                 e.printStackTrace();
             }
@@ -106,8 +106,8 @@ public class AccountManagerImplVolumeDeleteEventTest extends AccountManagetImplT
 
         AccountVO account = new AccountVO();
         account.setId(ACCOUNT_ID);
-        when(accountDaoMock.remove(ACCOUNT_ID)).thenReturn(true);
-        when(accountDaoMock.findById(ACCOUNT_ID)).thenReturn(account);
+        when(_accountDao.remove(ACCOUNT_ID)).thenReturn(true);
+        when(_accountDao.findById(ACCOUNT_ID)).thenReturn(account);
 
         DomainVO domain = new DomainVO();
         VirtualMachineEntity vmEntity = mock(VirtualMachineEntity.class);
