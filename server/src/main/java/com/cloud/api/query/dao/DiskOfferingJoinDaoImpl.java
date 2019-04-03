@@ -18,11 +18,9 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
-
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
 
 import com.cloud.api.query.vo.DiskOfferingJoinVO;
 import com.cloud.offering.DiskOffering;
@@ -48,6 +46,15 @@ public class DiskOfferingJoinDaoImpl extends GenericDaoBase<DiskOfferingJoinVO, 
         _typeAttr = _allAttributes.get("type");
 
         _count = "select count(distinct id) from disk_offering_view WHERE ";
+    }
+
+    @Override
+    public List<DiskOfferingJoinVO> findByDomainId(long domainId) {
+        SearchBuilder<DiskOfferingJoinVO> DiskOfferingsByDomainIdSearch = createSearchBuilder();
+        DiskOfferingsByDomainIdSearch.select("domainId", SearchCriteria.Func.FIND_IN_SET, DiskOfferingsByDomainIdSearch.entity().getDomainId(), String.valueOf(domainId));
+        DiskOfferingsByDomainIdSearch.done();
+
+        return listBy(DiskOfferingsByDomainIdSearch.create());
     }
 
     @Override

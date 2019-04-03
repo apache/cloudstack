@@ -52,11 +52,11 @@ CREATE VIEW `cloud`.`disk_offering_view` AS
         disk_offering.type,
         disk_offering.display_offering,
         disk_offering.state,
-        GROUP_CONCAT(domain_details.value) AS domain_id,
+        GROUP_CONCAT(domain.id) AS domain_id,
         GROUP_CONCAT(domain.uuid) AS domain_uuid,
         GROUP_CONCAT(domain.name) AS domain_name,
         GROUP_CONCAT(domain.path) AS domain_path,
-        GROUP_CONCAT(zone_details.value) AS zone_id,
+        GROUP_CONCAT(zone.id) AS zone_id,
         GROUP_CONCAT(zone.uuid) AS zone_uuid,
         GROUP_CONCAT(zone.name) AS zone_name
     from

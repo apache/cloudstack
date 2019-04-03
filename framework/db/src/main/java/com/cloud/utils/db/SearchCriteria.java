@@ -57,7 +57,7 @@ public class SearchCriteria<K> {
     }
 
     public enum Func {
-        NATIVE("@", 1), MAX("MAX(@)", 1), MIN("MIN(@)", 1), FIRST("FIRST(@)", 1), LAST("LAST(@)", 1), SUM("SUM(@)", 1), COUNT("COUNT(@)", 1), DISTINCT("DISTINCT(@)", 1);
+        NATIVE("@", 1), MAX("MAX(@)", 1), MIN("MIN(@)", 1), FIRST("FIRST(@)", 1), LAST("LAST(@)", 1), SUM("SUM(@)", 1), COUNT("COUNT(@)", 1), DISTINCT("DISTINCT(@)", 1), FIND_IN_SET("FIND_IN_SET(@, @)", 2);
 
         private String func;
         private int count;

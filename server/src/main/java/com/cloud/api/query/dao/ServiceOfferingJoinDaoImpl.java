@@ -18,11 +18,9 @@ package com.cloud.api.query.dao;
 
 import java.util.List;
 
-
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 import org.apache.log4j.Logger;
 import org.springframework.stereotype.Component;
-
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
 
 import com.cloud.api.ApiDBUtils;
 import com.cloud.api.query.vo.ServiceOfferingJoinVO;
@@ -45,6 +43,15 @@ public class ServiceOfferingJoinDaoImpl extends GenericDaoBase<ServiceOfferingJo
         sofIdSearch.done();
 
         this._count = "select count(distinct service_offering_view.id) from service_offering_view WHERE ";
+    }
+
+    @Override
+    public List<ServiceOfferingJoinVO> findByDomainId(long domainId) {
+        SearchBuilder<ServiceOfferingJoinVO> ServiceOfferingsByDomainIdSearch = createSearchBuilder();
+        ServiceOfferingsByDomainIdSearch.select("domainId", SearchCriteria.Func.FIND_IN_SET, ServiceOfferingsByDomainIdSearch.entity().getDomainId(), String.valueOf(domainId));
+        ServiceOfferingsByDomainIdSearch.done();
+
+        return listBy(ServiceOfferingsByDomainIdSearch.create());
     }
 
     @Override

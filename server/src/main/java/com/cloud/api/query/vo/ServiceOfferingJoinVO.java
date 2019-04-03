@@ -149,7 +149,7 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
     private Date removed;
 
     @Column(name = "domain_id")
-    private long domainId;
+    private String domainId;
 
     @Column(name = "domain_uuid")
     private String domainUuid;
@@ -217,7 +217,7 @@ public class ServiceOfferingJoinVO extends BaseViewVO implements InternalIdentit
         return removed;
     }
 
-    public long getDomainId() {
+    public String getDomainId() {
         return domainId;
     }
 

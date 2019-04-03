@@ -67,11 +67,6 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
     }
 
     @Override
-    public List<DiskOfferingVO> listByDomainId(long domainId) {
-        return filterOfferingsForDomain(listAll(), domainId);
-    }
-
-    @Override
     public List<DiskOfferingVO> findPrivateDiskOffering() {
         SearchCriteria<DiskOfferingVO> sc = PrivateDiskOfferingSearch.create();
         sc.setParameters("diskSize", 0);
