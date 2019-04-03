@@ -23,6 +23,9 @@ import java.util.Map;
 
 import javax.inject.Inject;
 
+import com.cloud.storage.upload.params.IsoUploadParams;
+import com.cloud.storage.upload.params.TemplateUploadParams;
+import com.cloud.storage.upload.params.UploadParams;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.commons.collections.CollectionUtils;
@@ -288,59 +291,52 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
     /**
      * Prepare upload parameters internal method for templates and ISOs local upload
      */
-    private TemplateProfile prepareUploadParamsInternal(boolean isIso, long userId, String name, String displayText,
-                                                        Integer bits, Boolean passwordEnabled, Boolean requiresHVM,
-                                                        String url, Boolean isPublic, Boolean featured,
-                                                        Boolean isExtractable, String format, Long guestOSId,
-                                                        Long zoneId, HypervisorType hypervisorType, String chksum,
-                                                        Boolean bootable, String templateTag, long templateOwnerId,
-                                                        Map details, Boolean sshkeyEnabled, String imageStoreUuid,
-                                                        Boolean isDynamicallyScalable, Boolean isRoutingType,
-                                                        boolean directDownload) throws ResourceAllocationException {
+    private TemplateProfile prepareUploadParamsInternal(UploadParams params) throws ResourceAllocationException {
         //check if the caller can operate with the template owner
         Account caller = CallContext.current().getCallingAccount();
-        Account owner = _accountMgr.getAccount(templateOwnerId);
+        Account owner = _accountMgr.getAccount(params.getTemplateOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
 
-        boolean isRouting = (isRoutingType == null) ? false : isRoutingType;
+        boolean isRouting = (params.isRoutingType() == null) ? false : params.isRoutingType();
 
         List<Long> zoneList = null;
         // ignore passed zoneId if we are using region wide image store
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
         if (!(stores != null && stores.size() > 0)) {
             zoneList = new ArrayList<>();
-            zoneList.add(zoneId);
+            zoneList.add(params.getZoneId());
         }
 
-        if(!isIso && hypervisorType == HypervisorType.None) {
-            throw new InvalidParameterValueException("Hypervisor Type: " + hypervisorType + " is invalid. Supported Hypervisor types are "
+        if(!params.isIso() && params.getHypervisorType() == HypervisorType.None) {
+            throw new InvalidParameterValueException("Hypervisor Type: " + params.getHypervisorType() + " is invalid. Supported Hypervisor types are "
                     + EnumUtils.listValues(HypervisorType.values()).replace("None, ", ""));
         }
 
-        return prepare(isIso, userId, name, displayText, bits, passwordEnabled,
-                requiresHVM, url, isPublic, featured, isExtractable, format, guestOSId, zoneList,
-                hypervisorType, chksum, bootable, templateTag, owner, details, sshkeyEnabled, imageStoreUuid,
-                isDynamicallyScalable, isRouting ? TemplateType.ROUTING : TemplateType.USER, directDownload);
+        return prepare(params.isIso(), params.getUserId(), params.getName(), params.getDisplayText(), params.getBits(),
+                params.isPasswordEnabled(), params.requiresHVM(), params.getUrl(), params.isPublic(), params.isFeatured(),
+                params.isExtractable(), params.getFormat(), params.getGuestOSId(), zoneList,
+                params.getHypervisorType(), params.getChecksum(), params.isBootable(), params.getTemplateTag(), owner,
+                params.getDetails(), params.isSshKeyEnabled(), params.getImageStoreUuid(),
+                params.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload());
     }
 
     @Override
     public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
-        return prepareUploadParamsInternal(false, CallContext.current().getCallingUserId(), cmd.getName(),
-                cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(), null,
+        UploadParams params = new TemplateUploadParams(CallContext.current().getCallingUserId(), cmd.getName(),
+                cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
                 cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(),
-                cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(), true,
+                cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(),
                 cmd.getTemplateTag(), cmd.getEntityOwnerId(), cmd.getDetails(), cmd.isSshKeyEnabled(),
-                null, cmd.isDynamicallyScalable(), cmd.isRoutingType(), false);
+                cmd.isDynamicallyScalable(), cmd.isRoutingType());
+        return prepareUploadParamsInternal(params);
     }
 
     @Override
     public TemplateProfile prepare(GetUploadParamsForIsoCmd cmd) throws ResourceAllocationException {
-        return prepareUploadParamsInternal(true, CallContext.current().getCallingUserId(), cmd.getName(),
-                cmd.getDisplayText(), 64, false, true, null,
-                cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), ImageFormat.ISO.toString(), cmd.getOsTypeId(),
-                cmd.getZoneId(), HypervisorType.None, null, cmd.isBootable(),
-                null, cmd.getEntityOwnerId(), null, false,
-                null, false, false, false);
+        UploadParams params = new IsoUploadParams(CallContext.current().getCallingUserId(), cmd.getName(),
+                cmd.getDisplayText(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getOsTypeId(),
+                cmd.getZoneId(), cmd.isBootable(), cmd.getEntityOwnerId());
+        return prepareUploadParamsInternal(params);
     }
 
     @Override
