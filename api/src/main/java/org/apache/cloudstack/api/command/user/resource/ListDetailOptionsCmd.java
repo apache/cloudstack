@@ -16,6 +16,7 @@
 // under the License.
 package org.apache.cloudstack.api.command.user.resource;
 
+import org.apache.cloudstack.acl.RoleType;
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiArgValidator;
 import org.apache.cloudstack.api.ApiConstants;
@@ -32,7 +33,8 @@ import com.google.common.base.Strings;
         responseObject = DetailOptionsResponse.class,
         since = "4.13",
         requestHasSensitiveInfo = false,
-        responseHasSensitiveInfo = false)
+        responseHasSensitiveInfo = false,
+        authorized = {RoleType.Admin, RoleType.ResourceAdmin, RoleType.DomainAdmin, RoleType.User})
 public class ListDetailOptionsCmd extends BaseCmd {
     public final static String APINAME = "listDetailOptions";
 
