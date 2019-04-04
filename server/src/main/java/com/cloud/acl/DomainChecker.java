@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.acl;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +41,6 @@ import com.cloud.offering.DiskOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.ProjectManager;
 import com.cloud.projects.dao.ProjectAccountDao;
-import com.cloud.service.ServiceOfferingDetailsVO;
 import com.cloud.service.dao.ServiceOfferingDetailsDao;
 import com.cloud.storage.LaunchPermissionVO;
 import com.cloud.storage.dao.LaunchPermissionDao;
@@ -227,10 +225,7 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
 
     @Override
     public boolean checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
-        final List<Long> soDomainIds = new ArrayList<>();
-        for (final ServiceOfferingDetailsVO detail: serviceOfferingDetailsDao.findDetails(so.getId(), ApiConstants.DOMAIN_ID)) {
-            soDomainIds.add(Long.valueOf(detail.getValue()));
-        }
+        final List<Long> soDomainIds = serviceOfferingDetailsDao.findDomainIds(so.getId());
         if (account == null || soDomainIds.isEmpty()) { //public offering
             return true;
         } else {

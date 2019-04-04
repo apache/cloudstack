@@ -16,7 +16,6 @@
 // under the License.
 package com.cloud.storage.dao;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -150,27 +149,5 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         diskOffering.setRemoved(new Date());
 
         return update(id, diskOffering);
-    }
-
-    private List<DiskOfferingVO> filterOfferingsForDomain(final List<DiskOfferingVO> offerings, Long domainId) {
-        List<DiskOfferingVO> filteredOfferings = null;
-        if (offerings != null && !offerings.isEmpty() && domainId != null) {
-            filteredOfferings = new ArrayList<>(offerings);
-            for (int i = filteredOfferings.size() - 1; i >= 0; i--) {
-                DiskOfferingVO offering = offerings.get(i);
-                Map<String, String> offeringDetails = detailsDao.listDetailsKeyPairs(offering.getId());
-                if (!Strings.isNullOrEmpty(offeringDetails.get(ApiConstants.DOMAIN_ID_LIST))) {
-                    String[] domainIdsArray = offeringDetails.get(ApiConstants.DOMAIN_ID_LIST).split(",");
-                    List<Long> domainIds = new ArrayList<>();
-                    for (String dIdStr : domainIdsArray) {
-                        domainIds.add(Long.valueOf(dIdStr.trim()));
-                    }
-                    if (!domainIds.contains(domainId)) {
-                        filteredOfferings.remove(i);
-                    }
-                }
-            }
-        }
-        return filteredOfferings;
     }
 }
