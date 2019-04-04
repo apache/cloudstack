@@ -188,11 +188,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the outgoing network traffic on the host")
     private Long networkKbsWrite;
 
-    @SerializedName("diskkbsread")
+    @SerializedName(ApiConstants.DISK_KBS_READ)
     @Param(description = "the read (bytes) of disk on the vm")
     private Long diskKbsRead;
 
-    @SerializedName("diskkbswrite")
+    @SerializedName(ApiConstants.DISK_KBS_WRITE)
     @Param(description = "the write (bytes) of disk on the vm")
     private Long diskKbsWrite;
 
@@ -208,11 +208,11 @@ public class UserVmResponse extends BaseResponseWithTagInformation implements Co
     @Param(description = "the target memory in vm")
     private Long memoryTargetKBs;
 
-    @SerializedName("diskioread")
+    @SerializedName(ApiConstants.DISK_IO_READ)
     @Param(description = "the read (io) of disk on the vm")
     private Long diskIORead;
 
-    @SerializedName("diskiowrite")
+    @SerializedName(ApiConstants.DISK_IO_WRITE)
     @Param(description = "the write (io) of disk on the vm")
     private Long diskIOWrite;
 

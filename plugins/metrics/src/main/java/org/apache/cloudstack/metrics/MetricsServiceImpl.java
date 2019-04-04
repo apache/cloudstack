@@ -17,32 +17,12 @@
 
 package org.apache.cloudstack.metrics;
 
-import com.cloud.alert.AlertManager;
-import com.cloud.api.ApiDBUtils;
-import com.cloud.api.query.dao.HostJoinDao;
-import com.cloud.api.query.vo.HostJoinVO;
-import com.cloud.capacity.Capacity;
-import com.cloud.capacity.CapacityManager;
-import com.cloud.capacity.dao.CapacityDao;
-import com.cloud.capacity.dao.CapacityDaoImpl;
-import com.cloud.cluster.dao.ManagementServerHostDao;
-import com.cloud.dc.DataCenter;
-import com.cloud.dc.dao.ClusterDao;
-import com.cloud.dc.dao.DataCenterDao;
-import com.cloud.dc.dao.HostPodDao;
-import com.cloud.deploy.DeploymentClusterPlanner;
-import com.cloud.host.Host;
-import com.cloud.host.HostStats;
-import com.cloud.host.Status;
-import com.cloud.host.dao.HostDao;
-import com.cloud.org.Cluster;
-import com.cloud.org.Grouping;
-import com.cloud.org.Managed;
-import com.cloud.utils.component.ComponentLifecycleBase;
-import com.cloud.vm.VMInstanceVO;
-import com.cloud.vm.VirtualMachine;
-import com.cloud.vm.dao.DomainRouterDao;
-import com.cloud.vm.dao.VMInstanceDao;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.inject.Inject;
+
 import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.ListClustersMetricsCmd;
 import org.apache.cloudstack.api.ListHostsMetricsCmd;
@@ -69,10 +49,32 @@ import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
 import org.apache.commons.beanutils.BeanUtils;
 
-import javax.inject.Inject;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
+import com.cloud.alert.AlertManager;
+import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.HostJoinDao;
+import com.cloud.api.query.vo.HostJoinVO;
+import com.cloud.capacity.Capacity;
+import com.cloud.capacity.CapacityManager;
+import com.cloud.capacity.dao.CapacityDao;
+import com.cloud.capacity.dao.CapacityDaoImpl;
+import com.cloud.cluster.dao.ManagementServerHostDao;
+import com.cloud.dc.DataCenter;
+import com.cloud.dc.dao.ClusterDao;
+import com.cloud.dc.dao.DataCenterDao;
+import com.cloud.dc.dao.HostPodDao;
+import com.cloud.deploy.DeploymentClusterPlanner;
+import com.cloud.host.Host;
+import com.cloud.host.HostStats;
+import com.cloud.host.Status;
+import com.cloud.host.dao.HostDao;
+import com.cloud.org.Cluster;
+import com.cloud.org.Grouping;
+import com.cloud.org.Managed;
+import com.cloud.utils.component.ComponentLifecycleBase;
+import com.cloud.vm.VMInstanceVO;
+import com.cloud.vm.VirtualMachine;
+import com.cloud.vm.dao.DomainRouterDao;
+import com.cloud.vm.dao.VMInstanceDao;
 
 public class MetricsServiceImpl extends ComponentLifecycleBase implements MetricsService {
 
@@ -159,6 +161,7 @@ public class MetricsServiceImpl extends ComponentLifecycleBase implements Metric
 
             metricsResponse.setDiskSizeGB(volumeResponse.getSize());
             metricsResponse.setStorageType(volumeResponse.getStorageType(), volumeResponse.getVolumeType());
+            metricsResponse.setDiskIopsTotal(volumeResponse.getDiskIORead(), volumeResponse.getDiskIOWrite());
             metricsResponses.add(metricsResponse);
         }
         return metricsResponses;

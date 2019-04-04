@@ -3496,6 +3496,7 @@ public class VmwareResource implements StoragePoolResource, ServerResource, Vmwa
     }
 
     protected Answer execute(GetVmDiskStatsCommand cmd) {
+        // TODO: implement for Vmware
         return new GetVmDiskStatsAnswer(cmd, null, null, null);
     }
 

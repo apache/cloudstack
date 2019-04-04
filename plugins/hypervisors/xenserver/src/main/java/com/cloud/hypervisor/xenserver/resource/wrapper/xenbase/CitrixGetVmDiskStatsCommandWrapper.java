@@ -31,6 +31,7 @@ public final class CitrixGetVmDiskStatsCommandWrapper extends CommandWrapper<Get
 
     @Override
     public Answer execute(final GetVmDiskStatsCommand command, final CitrixResourceBase citrixResourceBase) {
+        //TODO: implement for XenServer?
         return new GetVmDiskStatsAnswer(command, null, null, null);
     }
 }
