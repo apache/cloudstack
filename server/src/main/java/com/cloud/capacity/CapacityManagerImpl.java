@@ -612,9 +612,15 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                 usedMemory +=
                     ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.memory.name())) * 1024L * 1024L) / ramOvercommitRatio) *
                         clusterRamOvercommitRatio;
-                usedCpu +=
-                    ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
-                        clusterCpuOvercommitRatio;
+                if(vmDetails.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
+                    usedCpu +=
+                            ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
+                                    clusterCpuOvercommitRatio;
+                } else {
+                    usedCpu +=
+                            ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * so.getSpeed()) / cpuOvercommitRatio) *
+                                    clusterCpuOvercommitRatio;
+                }
                 usedCpuCore += Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name()));
             } else {
                 usedMemory += ((so.getRamSize() * 1024L * 1024L) / ramOvercommitRatio) * clusterRamOvercommitRatio;
@@ -645,9 +651,15 @@ public class CapacityManagerImpl extends ManagerBase implements CapacityManager,
                     reservedMemory +=
                         ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.memory.name())) * 1024L * 1024L) / ramOvercommitRatio) *
                             clusterRamOvercommitRatio;
-                    reservedCpu +=
-                        ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
-                            clusterCpuOvercommitRatio;
+                    if(vmDetails.containsKey(UsageEventVO.DynamicParameters.cpuSpeed.name())) {
+                        reservedCpu +=
+                                ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuSpeed.name()))) / cpuOvercommitRatio) *
+                                        clusterCpuOvercommitRatio;
+                    } else {
+                        reservedCpu +=
+                                ((Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name())) * so.getSpeed()) / cpuOvercommitRatio) *
+                                        clusterCpuOvercommitRatio;
+                    }
                     reservedCpuCore += Integer.parseInt(vmDetails.get(UsageEventVO.DynamicParameters.cpuNumber.name()));
                 } else {
                     reservedMemory += ((so.getRamSize() * 1024L * 1024L) / ramOvercommitRatio) * clusterRamOvercommitRatio;
