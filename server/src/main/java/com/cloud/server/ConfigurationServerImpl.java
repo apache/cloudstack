@@ -730,7 +730,7 @@ public class ConfigurationServerImpl extends ManagerBase implements Configuratio
         Boolean devel = Boolean.valueOf(_configDao.getValue("developer"));
         if (!keyDir.isDirectory()) {
             s_logger.warn("Failed to create " + homeDir + "/.ssh for storing the SSH keypars");
-            keyDir.mkdir();
+            keyDir.mkdirs();
         }
         String pubKey = _configDao.getValue("ssh.publickey");
         String prvKey = _configDao.getValue("ssh.privatekey");
