@@ -3437,7 +3437,6 @@ div.toolbar div.section-switcher div.section-select {
 }
 
 div.toolbar div.section-switcher div.section-select select {
-  width: 100px;
   height: 21px;
   margin-right: 13px;
   font-size: 12px;
@@ -4160,6 +4159,10 @@ textarea {
   padding: 0;
 }
 
+.ui-dialog.create-form .ui-dialog-buttonpane {
+  margin-left: 25px;
+}
+
 .ui-dialog.create-form .ui-button.ok {
   margin-left: 0;
   float: right;
@@ -4181,6 +4184,10 @@ textarea {
 .ui-dialog.create-form .ui-button.cancel:hover {
   background-position: -4px -426px;
   border-color: #878787;
+}
+
+.ui-dialog.create-form div.form-container div.value div.dynamic-input div.name label {
+  margin-left: 0;
 }
 
 /**** Dynamic input*/
@@ -5847,7 +5854,7 @@ label.error {
 
 .multi-wizard .select-container .select input {
   float: left;
-  margin: 24px 24px 0;
+  margin: 21px 24px 0;
 }
 
 .multi-wizard .select-container .select .select-desc {
@@ -8103,6 +8110,24 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   text-shadow: 0px 1px 1px #000000;
 }
 
+.ui-dialog.multi-edit-add-list {
+  width: initial !important;
+}
+
+.ui-dialog.multi-edit-add-list .ui-dialog-buttonpane {
+  display: block;
+}
+
+.ui-dialog.multi-edit-add-list .ui-dialog-buttonpane .ui-dialog-buttonset {
+  width: initial;
+  padding-right: 15px;
+}
+
+.ui-dialog.multi-edit-add-list .ui-dialog-buttonpane .ui-dialog-buttonset button {
+  top: 0;
+  left: 0;
+}
+
 .multi-edit-add-list .ui-button.ok,
 .multi-edit-add-list .ui-button.cancel {
   float: right;
@@ -8116,7 +8141,6 @@ div.container div.panel div#details-tab-addloadBalancer.detail-group div.loadBal
   /*+placement:shift 492px -18px;*/
   position: relative;
   left: 492px;
-  top: -18px;
   border: none;
   background: transparent;
   color: #808B95;
