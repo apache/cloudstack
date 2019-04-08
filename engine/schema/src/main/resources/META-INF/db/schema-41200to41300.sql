@@ -21,9 +21,12 @@
 
 -- Move domain_id to disk offering details and drop the domain_id column
 INSERT INTO `cloud`.`disk_offering_details` (offering_id, name, value) SELECT id, 'domainid', domain_id FROM `cloud`.`disk_offering` WHERE domain_id IS NOT NULL AND type='Disk';
-INSERT INTO `cloud`.`service_offering_details` (offering_id, name, value) SELECT id, 'domainid', domain_id FROM `cloud`.`disk_offering` WHERE domain_id IS NOT NULL AND type='Service';
+INSERT INTO `cloud`.`service_offering_details` (service_offering_id, name, value) SELECT id, 'domainid', domain_id FROM `cloud`.`disk_offering` WHERE domain_id IS NOT NULL AND type='Service';
 
 ALTER TABLE `cloud`.`disk_offering` DROP COLUMN `domain_id`;
+
+ALTER TABLE `cloud`.`service_offering_details` DROP FOREIGN KEY `fk_service_offering_details__service_offering_id`, DROP KEY `uk_service_offering_id_name`;
+ALTER TABLE `cloud`.`service_offering_details` ADD CONSTRAINT `fk_service_offering_details__service_offering_id` FOREIGN KEY (`service_offering_id`) REFERENCES `service_offering`(`id`) ON DELETE CASCADE;
 
 -- Disk offering with multi-domains and multi-zones
 DROP VIEW IF EXISTS `cloud`.`disk_offering_view`;
