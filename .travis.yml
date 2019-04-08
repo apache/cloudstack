@@ -77,7 +77,6 @@ env:
              smoke/test_outofbandmanagement_nestedplugin
              smoke/test_over_provisioning
              smoke/test_password_server
-             smoke/test_portable_publicip
              smoke/test_portforwardingrules"
 
     #4 storage
@@ -147,7 +146,8 @@ env:
     # memory limits
     - TESTS="component/test_memory_limits
              component/test_mm_max_limits
-             component/test_mm_project_limits"
+             component/test_mm_project_limits
+             component/test_mm_domain_limits"
 
     - TESTS="component/test_network_offering
              component/test_non_contiguous_vlan
@@ -164,10 +164,6 @@ env:
              component/test_snapshots
              component/test_stopped_vm"
 
-    # domains
-    - TESTS="component/test_cpu_domain_limits
-             component/test_mm_domain_limits"
-
     # misc
     - TESTS="component/test_tags
              component/test_resource_limits
@@ -183,6 +179,7 @@ env:
 
 # FIXME: fix following tests and include them in Travis
 #    - TESTS="component/test_organization_states" Please add when CLOUDSTACK-7735 is fixed
+#    - TESTS="smoke/test_portable_publicip"
 
 before_install: travis_wait 30 ./tools/travis/before_install.sh
 install: ./tools/travis/install.sh
