@@ -4186,14 +4186,10 @@ textarea {
   border-color: #878787;
 }
 
-.ui-dialog.create-form div.form-container div.value div.dynamic-input div.name label {
-  margin-left: 0;
-}
-
 /**** Dynamic input*/
 .ui-dialog div.form-container div.value .dynamic-input {
   background: #FFFFFF;
-  width: 98%;
+  width: calc(100% + 4px);
   min-height: 50px;
   clear: both;
   max-height: 211px;
@@ -4206,11 +4202,6 @@ textarea {
   -khtml-border-radius: 4px;
   border-radius: 4px;
   border-radius: 4px 4px 4px 4px;
-  /*+box-shadow:inset -1px 1px 1px #636363;*/
-  -moz-box-shadow: inset -1px 1px 1px #636363;
-  -webkit-box-shadow: inset -1px 1px 1px #636363;
-  -o-box-shadow: inset -1px 1px 1px #636363;
-  box-shadow: inset -1px 1px 1px #636363;
 }
 
 .ui-dialog div.form-container div.value .dynamic-input .form-item {
@@ -4225,6 +4216,7 @@ textarea {
 .ui-dialog div.form-container div.value .dynamic-input .name label {
   width: inherit;
   font-size: 12px;
+  margin-left: 0;
 }
 
 .ui-dialog div.form-container div.value .dynamic-input .value {
