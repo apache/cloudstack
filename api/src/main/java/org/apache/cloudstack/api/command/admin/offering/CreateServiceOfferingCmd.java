@@ -29,6 +29,7 @@ import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
 import org.apache.commons.collections.MapUtils;
 import org.apache.log4j.Logger;
 
@@ -89,6 +90,14 @@ public class CreateServiceOfferingCmd extends BaseCmd {
             entityType = DomainResponse.class,
             description = "the ID of the containing domain(s), null for public offerings")
     private List<Long> domainIds;
+
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "the ID of the containing zone(s), null for public offerings",
+            since = "4.13")
+    private List<Long> zoneIds;
 
     @Parameter(name = ApiConstants.HOST_TAGS, type = CommandType.STRING, description = "the host tag for this service offering.")
     private String hostTag;
@@ -251,8 +260,12 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return tags;
     }
 
-    public List<Long> getDomainId() {
+    public List<Long> getDomainIds() {
         return domainIds;
+    }
+
+    public List<Long> getZoneIds() {
+        return zoneIds;
     }
 
     public String getHostTag() {

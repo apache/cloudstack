@@ -213,7 +213,7 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
     }
 
     @Override
-    public void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
+    public void checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException {
         // TODO Auto-generated method stub
     }
 

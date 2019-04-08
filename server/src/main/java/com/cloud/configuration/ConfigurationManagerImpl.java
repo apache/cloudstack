@@ -86,6 +86,7 @@ import org.apache.cloudstack.region.PortableIpVO;
 import org.apache.cloudstack.region.Region;
 import org.apache.cloudstack.region.RegionVO;
 import org.apache.cloudstack.region.dao.RegionDao;
+import org.apache.cloudstack.resourcedetail.DiskOfferingDetailVO;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDao;
 import org.apache.cloudstack.storage.datastore.db.ImageStoreDetailsDao;
@@ -2289,11 +2290,19 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         // check if valid domain
-        if (cmd.getDomainId() != null && !cmd.getDomainId().isEmpty()) {
-            for (final Long domainId: cmd.getDomainId()) {
+        if (CollectionUtils.isNotEmpty(cmd.getDomainIds())) {
+            for (final Long domainId: cmd.getDomainIds()) {
                 if (_domainDao.findById(domainId) == null) {
                     throw new InvalidParameterValueException("Please specify a valid domain id");
                 }
+            }
+        }
+
+        // check if valid zone
+        if (CollectionUtils.isNotEmpty(cmd.getZoneIds())) {
+            for (Long zoneId : cmd.getZoneIds()) {
+                if (_zoneDao.findById(zoneId) == null)
+                    throw new InvalidParameterValueException("Please specify a valid zone id");
             }
         }
 
@@ -2371,7 +2380,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         return createServiceOffering(userId, cmd.isSystem(), vmType, cmd.getServiceOfferingName(), cpuNumber, memory, cpuSpeed, cmd.getDisplayText(),
-                cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainId(), cmd.getHostTag(),
+                cmd.getProvisioningType(), localStorageRequired, offerHA, limitCpuUse, volatileVm, cmd.getTags(), cmd.getDomainIds(), cmd.getZoneIds(), cmd.getHostTag(),
                 cmd.getNetworkRate(), cmd.getDeploymentPlanner(), details, isCustomizedIops, cmd.getMinIops(), cmd.getMaxIops(),
                 cmd.getBytesReadRate(), cmd.getBytesReadRateMax(), cmd.getBytesReadRateMaxLength(),
                 cmd.getBytesWriteRate(), cmd.getBytesWriteRateMax(), cmd.getBytesWriteRateMaxLength(),
@@ -2382,13 +2391,15 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
     protected ServiceOfferingVO createServiceOffering(final long userId, final boolean isSystem, final VirtualMachine.Type vmType,
             final String name, final Integer cpu, final Integer ramSize, final Integer speed, final String displayText, final String provisioningType, final boolean localStorageRequired,
-            final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm,  String tags, final List<Long> domainIds, final String hostTag,
+            final boolean offerHA, final boolean limitResourceUse, final boolean volatileVm, String tags, final List<Long> domainIds, List<Long> zoneIds, final String hostTag,
             final Integer networkRate, final String deploymentPlanner, final Map<String, String> details, final Boolean isCustomizedIops, Long minIops, Long maxIops,
             Long bytesReadRate, Long bytesReadRateMax, Long bytesReadRateMaxLength,
             Long bytesWriteRate, Long bytesWriteRateMax, Long bytesWriteRateMaxLength,
             Long iopsReadRate, Long iopsReadRateMax, Long iopsReadRateMaxLength,
             Long iopsWriteRate, Long iopsWriteRateMax, Long iopsWriteRateMaxLength,
             final Integer hypervisorSnapshotReserve) {
+        // Filter child domains when both parent and child domains are present
+        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
 
         // Check if user exists in the system
         final User user = _userDao.findById(userId);
@@ -2397,14 +2408,14 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final Account account = _accountDao.findById(user.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            if (domainIds == null || domainIds.isEmpty()) {
+            if (filteredDomainIds.isEmpty()) {
                 throw new InvalidParameterValueException("Unable to create public service offering by id " + userId + " because it is domain-admin");
             }
             if (tags != null || hostTag != null) {
                 throw new InvalidParameterValueException("Unable to create service offering with storage tags or host tags by id " + userId + " because it is domain-admin");
             }
-            for (Long domainId: domainIds) {
-                if (! _domainDao.isChildDomain(account.getDomainId(), domainId)) {
+            for (Long domainId : filteredDomainIds) {
+                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
                     throw new InvalidParameterValueException("Unable to create service offering by another domain admin with id " + userId);
                 }
             }
@@ -2515,13 +2526,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
-            if (domainIds != null && !domainIds.isEmpty()) {
-                for (Long domainId: domainIds) {
-                    detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), true));
+            for (Long domainId : filteredDomainIds) {
+                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), true));
+            }
+            if (CollectionUtils.isNotEmpty(zoneIds)) {
+                for (Long zoneId : zoneIds) {
+                    detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), true));
                 }
             }
             if (!detailsVO.isEmpty()) {
-                for (ServiceOfferingDetailsVO detail: detailsVO) {
+                for (ServiceOfferingDetailsVO detail : detailsVO) {
                     detail.setResourceId(offering.getId());
                 }
                 _serviceOfferingDetailsDao.saveDetails(detailsVO);
@@ -2696,13 +2710,6 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to create disk offering by id " + userId + " because it is not root-admin or domain-admin");
         }
 
-        if (zoneIds != null) {
-            for (Long zoneId : zoneIds) {
-                if (_zoneDao.findById(zoneId) == null)
-                    throw new InvalidParameterValueException("Unable to create disk offering associated with invalid zone, " + zoneId);
-            }
-        }
-
         tags = StringUtils.cleanupTags(tags);
         final DiskOfferingVO newDiskOffering = new DiskOfferingVO(name, description, typedProvisioningType, diskSize, tags, isCustomized,
                 isCustomizedIops, minIops, maxIops);
@@ -2755,17 +2762,17 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         CallContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
         final DiskOfferingVO offering = _diskOfferingDao.persist(newDiskOffering);
         if (offering != null) {
-            if(!filteredDomainIds.isEmpty()) {
-                List<String> domainIdsStringList = new ArrayList<>();
-                for(Long domainId : filteredDomainIds)
-                    domainIdsStringList.add(String.valueOf(domainId));
-                diskOfferingDetailsDao.addDetail(offering.getId(), ApiConstants.DOMAIN_ID_LIST, String.join(",", domainIdsStringList), true);
+            List<DiskOfferingDetailVO> detailsVO = new ArrayList<>();
+            for (Long domainId : filteredDomainIds) {
+                detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), true));
             }
-            if(zoneIds!=null && !zoneIds.isEmpty()) {
-                List<String> zoneIdsStringList = new ArrayList<>();
-                for(Long zoneId : zoneIds)
-                    zoneIdsStringList.add(String.valueOf(zoneId));
-                diskOfferingDetailsDao.addDetail(offering.getId(), ApiConstants.ZONE_ID_LIST, String.join(",", zoneIdsStringList), true);
+            if (CollectionUtils.isNotEmpty(zoneIds)) {
+                for (Long zoneId : zoneIds) {
+                    detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), true));
+                }
+            }
+            if (!detailsVO.isEmpty()) {
+                diskOfferingDetailsDao.saveDetails(detailsVO);
             }
             CallContext.current().setEventDetails("Disk offering id=" + newDiskOffering.getId());
             return offering;
@@ -2785,6 +2792,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String tags = cmd.getTags();
         final List<Long> domainIds = cmd.getDomainIds();
         final List<Long> zoneIds = cmd.getZoneIds();
+
+        // check if valid domain
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            for (final Long domainId: domainIds) {
+                if (_domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+            }
+        }
+
+        // check if valid zone
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            for (Long zoneId : zoneIds) {
+                if (_zoneDao.findById(zoneId) == null)
+                    throw new InvalidParameterValueException("Please specify a valid zone id");
+            }
+        }
 
         if (!isCustomized && numGibibytes == null) {
             throw new InvalidParameterValueException("Disksize is required for a non-customized disk offering");
@@ -2840,15 +2864,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Check if diskOffering exists
         final DiskOffering diskOfferingHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
-        List<Long> existingDomainIds = new ArrayList<>();
-        Map<String, String> details = diskOfferingDetailsDao.listDetailsKeyPairs(diskOfferingId);
-        if (details.containsKey(ApiConstants.DOMAIN_ID_LIST) &&
-                !Strings.isNullOrEmpty(details.get(ApiConstants.DOMAIN_ID_LIST))) {
-            String[] domainIdsArray = details.get(ApiConstants.DOMAIN_ID_LIST).split(",");
-            for (String dIdStr : domainIdsArray) {
-                existingDomainIds.add(Long.valueOf(dIdStr.trim()));
-            }
-        }
+        List<Long> existingDomainIds = diskOfferingDetailsDao.findDomainIds(diskOfferingId);
 
         if (diskOfferingHandle == null) {
             throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
@@ -2954,15 +2970,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final Account account = _accountDao.findById(user.getAccountId());
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            List<Long> existingDomainIds = new ArrayList<>();
-            Map<String, String> details = diskOfferingDetailsDao.listDetailsKeyPairs(diskOfferingId);
-            if (details.containsKey(ApiConstants.DOMAIN_ID_LIST) &&
-                    !Strings.isNullOrEmpty(details.get(ApiConstants.DOMAIN_ID_LIST))) {
-                String[] domainIdsArray = details.get(ApiConstants.DOMAIN_ID_LIST).split(",");
-                for (String dIdStr : domainIdsArray) {
-                    existingDomainIds.add(Long.valueOf(dIdStr.trim()));
-                }
-            }
+            List<Long> existingDomainIds = diskOfferingDetailsDao.findDomainIds(diskOfferingId);
             if (existingDomainIds.isEmpty()) {
                 throw new InvalidParameterValueException("Unable to delete public disk offering by id " + userId + " because it is domain-admin");
             }

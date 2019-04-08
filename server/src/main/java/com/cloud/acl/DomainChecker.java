@@ -16,16 +16,13 @@
 // under the License.
 package com.cloud.acl;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Inject;
 
 import org.apache.cloudstack.acl.ControlledEntity;
 import org.apache.cloudstack.acl.SecurityChecker;
 import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.springframework.stereotype.Component;
 
@@ -50,7 +47,6 @@ import com.cloud.user.AccountService;
 import com.cloud.user.User;
 import com.cloud.user.dao.AccountDao;
 import com.cloud.utils.component.AdapterBase;
-import com.google.common.base.Strings;
 
 @Component
 public class DomainChecker extends AdapterBase implements SecurityChecker {
@@ -180,8 +176,8 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
     @Override
     public boolean checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException {
         boolean isAccess = false;
-        Map<String, String> details = null;
-        if (account == null || dof == null) {//public offering
+        // Check fo domains
+        if (account == null || dof == null) {
             isAccess = true;
         } else {
             //admin has all permissions
@@ -189,78 +185,68 @@ public class DomainChecker extends AdapterBase implements SecurityChecker {
                 isAccess = true;
             }
             //if account is normal user or domain admin
-            //check if account's domain is a child of zone's domain (Note: This is made consistent with the list command for disk offering)
+            //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for disk offering)
             else if (_accountService.isNormalUser(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                details = diskOfferingDetailsDao.listDetailsKeyPairs(dof.getId());
-                isAccess = true;
-                if (details.containsKey(ApiConstants.DOMAIN_ID_LIST) &&
-                        !Strings.isNullOrEmpty(details.get(ApiConstants.DOMAIN_ID_LIST))) {
-                    List<String> domainIds = Arrays.asList(details.get(ApiConstants.DOMAIN_ID_LIST).split(","));
-                    for (String domainId : domainIds) {
-                        if (!_domainDao.isChildDomain(Long.valueOf(domainId), account.getDomainId())) {
-                            isAccess = false;
+                final List<Long> doDomainIds = diskOfferingDetailsDao.findDomainIds(dof.getId());
+                if (doDomainIds.isEmpty()) {
+                    isAccess = true;
+                } else {
+                    for (Long domainId : doDomainIds) {
+                        if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
+                            isAccess = true;
                             break;
                         }
                     }
                 }
             }
         }
-
         // Check for zones
         if (isAccess && dof != null && zone != null) {
-            if (details == null)
-                details = diskOfferingDetailsDao.listDetailsKeyPairs(dof.getId());
-            if (details.containsKey(ApiConstants.ZONE_ID_LIST) &&
-                    !Strings.isNullOrEmpty(details.get(ApiConstants.ZONE_ID_LIST))) {
-                List<String> zoneIds = Arrays.asList(details.get(ApiConstants.ZONE_ID_LIST).split(","));
-                isAccess = zoneIds.contains(String.valueOf(zone.getId()));
-            }
+            final List<Long> doZoneIds = diskOfferingDetailsDao.findZoneIds(dof.getId());
+            isAccess = doZoneIds.isEmpty() || doZoneIds.contains(zone.getId());
         }
-        //not found
         return isAccess;
     }
 
     @Override
-    public boolean checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
-        final List<Long> soDomainIds = serviceOfferingDetailsDao.findDomainIds(so.getId());
-        if (account == null || soDomainIds.isEmpty()) { //public offering
-            return true;
+    public boolean checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException {
+        boolean isAccess = false;
+        // Check fo domains
+        if (account == null || so == null) {
+            isAccess = true;
         } else {
             //admin has all permissions
             if (_accountService.isRootAdmin(account.getId())) {
-                return true;
+                isAccess = true;
             }
             //if account is normal user or domain admin
-            //check if account's domain is a child of zone's domain (Note: This is made consistent with the list command for service offering)
+            //check if account's domain is a child of offering's domain (Note: This is made consistent with the list command for service offering)
             else if (_accountService.isNormalUser(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_RESOURCE_DOMAIN_ADMIN
                     || _accountService.isDomainAdmin(account.getId())
                     || account.getType() == Account.ACCOUNT_TYPE_PROJECT) {
-                if (soDomainIds.contains(account.getDomainId())) {
-                    return true; //service offering and account at exact node
+                final List<Long> soDomainIds = serviceOfferingDetailsDao.findDomainIds(so.getId());
+                if (soDomainIds.isEmpty()) {
+                    isAccess = true;
                 } else {
-                    Domain domainRecord = _domainDao.findById(account.getDomainId());
-                    if (domainRecord != null) {
-                        while (true) {
-                            if (soDomainIds.contains(domainRecord.getId())) {
-                                //found as a child
-                                return true;
-                            }
-                            if (domainRecord.getParent() != null) {
-                                domainRecord = _domainDao.findById(domainRecord.getParent());
-                            } else {
-                                break;
-                            }
+                    for (Long domainId : soDomainIds) {
+                        if (_domainDao.isChildDomain(domainId, account.getDomainId())) {
+                            isAccess = true;
+                            break;
                         }
                     }
                 }
             }
         }
-        //not found
-        return false;
+        // Check for zones
+        if (isAccess && so != null && zone != null) {
+            final List<Long> soZoneIds = serviceOfferingDetailsDao.findZoneIds(so.getId());
+            isAccess = soZoneIds.isEmpty() || soZoneIds.contains(zone.getId());
+        }
+        return isAccess;
     }
 
     @Override

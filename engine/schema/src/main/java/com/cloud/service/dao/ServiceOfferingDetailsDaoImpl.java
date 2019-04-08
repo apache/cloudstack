@@ -38,8 +38,8 @@ public class ServiceOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<Servic
     public List<Long> findDomainIds(long resourceId) {
         final List<Long> domainIds = new ArrayList<>();
         for (final ServiceOfferingDetailsVO detail: findDetails(resourceId, ApiConstants.DOMAIN_ID)) {
-            final Long domainId = Long.valueOf(detail.getValue(), -1);
-            if (domainId != -1) {
+            final Long domainId = Long.valueOf(detail.getValue());
+            if (domainId > 0) {
                 domainIds.add(domainId);
             }
         }
@@ -50,8 +50,8 @@ public class ServiceOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<Servic
     public List<Long> findZoneIds(long resourceId) {
         final List<Long> zoneIds = new ArrayList<>();
         for (final ServiceOfferingDetailsVO detail: findDetails(resourceId, ApiConstants.ZONE_ID)) {
-            final Long zoneId = Long.valueOf(detail.getValue(), -1);
-            if (zoneId != -1) {
+            final Long zoneId = Long.valueOf(detail.getValue());
+            if (zoneId > 0) {
                 zoneIds.add(zoneId);
             }
         }

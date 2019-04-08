@@ -97,7 +97,7 @@ public interface AccountService {
 
     void checkAccess(Account account, AccessType accessType, boolean sameOwner, ControlledEntity... entities) throws PermissionDeniedException;
 
-    void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException;
+    void checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException;
 
     void checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException;
 

@@ -1110,7 +1110,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         // Check if the new service offering can be applied to vm instance
         ServiceOffering newSvcOffering = _offeringDao.findById(svcOffId);
         Account owner = _accountMgr.getActiveAccountById(vmInstance.getAccountId());
-        _accountMgr.checkAccess(owner, newSvcOffering);
+        _accountMgr.checkAccess(owner, newSvcOffering, _dcDao.findById(vmInstance.getDataCenterId()));
 
         _itMgr.upgradeVmDb(vmId, svcOffId);
         if (newServiceOffering.isDynamic()) {
@@ -3014,7 +3014,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(caller, null, true, owner);
 
         // Verify that owner can use the service offering
-        _accountMgr.checkAccess(owner, serviceOffering);
+        _accountMgr.checkAccess(owner, serviceOffering, zone);
         _accountMgr.checkAccess(owner, _diskOfferingDao.findById(diskOfferingId), zone);
 
         // Get default guest network in Basic zone
@@ -3073,7 +3073,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(caller, null, true, owner);
 
         // Verify that owner can use the service offering
-        _accountMgr.checkAccess(owner, serviceOffering);
+        _accountMgr.checkAccess(owner, serviceOffering, zone);
         _accountMgr.checkAccess(owner, _diskOfferingDao.findById(diskOfferingId), zone);
 
         // If no network is specified, find system security group enabled network
@@ -3181,7 +3181,7 @@ public class UserVmManagerImpl extends ManagerBase implements UserVmManager, Vir
         _accountMgr.checkAccess(caller, null, true, owner);
 
         // Verify that owner can use the service offering
-        _accountMgr.checkAccess(owner, serviceOffering);
+        _accountMgr.checkAccess(owner, serviceOffering, zone);
         _accountMgr.checkAccess(owner, _diskOfferingDao.findById(diskOfferingId), zone);
 
         List<HypervisorType> vpcSupportedHTypes = _vpcMgr.getSupportedVpcHypervisors();

@@ -18,12 +18,10 @@ package com.cloud.storage.dao;
 
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
-import org.apache.cloudstack.api.ApiConstants;
 import org.apache.cloudstack.resourcedetail.dao.DiskOfferingDetailsDao;
 import org.springframework.stereotype.Component;
 
@@ -35,7 +33,6 @@ import com.cloud.utils.db.GenericDaoBase;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.SearchCriteria.Op;
-import com.google.common.base.Strings;
 
 @Component
 public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> implements DiskOfferingDao {
@@ -102,16 +99,8 @@ public class DiskOfferingDaoImpl extends GenericDaoBase<DiskOfferingVO, Long> im
         SearchCriteria<DiskOfferingVO> sc = PublicDiskOfferingSearch.create();
         sc.setParameters("system", false);
         List<DiskOfferingVO> offerings = listBy(sc);
-
         if(offerings!=null) {
-            for (int i = offerings.size() - 1; i >= 0; i--) {
-                DiskOfferingVO offering = offerings.get(i);
-                Map<String, String> offeringDetails = detailsDao.listDetailsKeyPairs(offering.getId());
-                if (!Strings.isNullOrEmpty(offeringDetails.get(ApiConstants.DOMAIN_ID_LIST))) {
-                    // TODO: For ROOT domainId?
-                    offerings.remove(i);
-                }
-            }
+            offerings.removeIf(o -> (!detailsDao.findDomainIds(o.getId()).isEmpty()));
         }
         return offerings;
     }

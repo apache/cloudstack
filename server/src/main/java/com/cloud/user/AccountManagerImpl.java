@@ -2830,9 +2830,9 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
     }
 
     @Override
-    public void checkAccess(Account account, ServiceOffering so) throws PermissionDeniedException {
+    public void checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException {
         for (SecurityChecker checker : _securityCheckers) {
-            if (checker.checkAccess(account, so)) {
+            if (checker.checkAccess(account, so, zone)) {
                 if (s_logger.isDebugEnabled()) {
                     s_logger.debug("Access granted to " + account + " to " + so + " by " + checker.getName());
                 }
@@ -2852,8 +2852,6 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
                     s_logger.debug("Access granted to " + account + " to " + dof + " by " + checker.getName());
                 }
                 return;
-            } else {
-                throw new PermissionDeniedException(String.format("Access denied to %s for disk offering: %s, zone: %s by %s", account, dof.getUuid(), zone.getUuid(), checker.getName()));
             }
         }
 

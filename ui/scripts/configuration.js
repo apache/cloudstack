@@ -646,14 +646,18 @@
                                             });
                                         }
                                     },
-
                                     domainId: {
                                         label: 'label.domain',
-                                        docID: 'helpComputeOfferingDomain',
+                                        docID: 'helpDiskOfferingDomain',
                                         dependsOn: 'isPublic',
+                                        isMultiple: true,
                                         select: function(args) {
                                             $.ajax({
-                                                url: createURL("listDomains&listAll=true"),
+                                                url: createURL('listDomains'),
+                                                data: {
+                                                    listAll: true,
+                                                    details: 'min'
+                                                },
                                                 dataType: "json",
                                                 async: false,
                                                 success: function(json) {
@@ -675,6 +679,42 @@
                                             });
                                         },
                                         isHidden: true
+                                    },
+                                    zoneId: {
+                                        label: 'label.zone',
+                                        docID: 'helpDiskOfferingZone',
+                                        isMultiple: true,
+                                        validation: {
+                                            allzonesonly: true
+                                        },
+                                        select: function(args) {
+                                            $.ajax({
+                                                url: createURL("listZones"),
+                                                data: {available: 'true'},
+                                                dataType: "json",
+                                                async: true,
+                                                success: function(json) {
+                                                    var items = [];
+                                                    var zoneObjs = json.listzonesresponse.zone;
+                                                    $(zoneObjs).each(function() {
+                                                        items.push({
+                                                            id: this.id,
+                                                            description: this.name
+                                                        });
+                                                    });
+                                                    items.sort(function(a, b) {
+                                                        return a.description.localeCompare(b.description);
+                                                    });
+                                                    items.unshift({
+                                                        id: -1,
+                                                        description: "All Zones"
+                                                    });
+                                                    args.response.success({
+                                                        data: items
+                                                    });
+                                                }
+                                            });
+                                        }
                                     }
                                 }
                             },
@@ -829,6 +869,22 @@
                                 if (args.data.isPublic != "on") {
                                     $.extend(data, {
                                         domainid: args.data.domainId
+                                    });
+                                }
+
+                                if (args.data.isPublic != "on") {
+                                    var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                    if (domainId) {
+                                        $.extend(data, {
+                                            domainid: domainId
+                                        });
+                                    }
+                                }
+
+                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId;
+                                if (zoneId) {
+                                    $.extend(data, {
+                                        zoneid: zoneId
                                     });
                                 }
 
@@ -1065,6 +1121,9 @@
                                     },
                                     domain: {
                                         label: 'label.domain'
+                                    },
+                                    zone: {
+                                        label: 'label.zone'
                                     },
                                     created: {
                                         label: 'label.created',
@@ -2106,7 +2165,7 @@
                                         isChecked: false,
                                         docID: 'helpDiskOfferingPublic'
                                     },
-                                    domain: {
+                                    domainId: {
                                         label: 'label.domain',
                                         docID: 'helpDiskOfferingDomain',
                                         dependsOn: 'isPublic',
@@ -2140,7 +2199,7 @@
                                         },
                                         isHidden: true
                                     },
-                                    zone: {
+                                    zoneId: {
                                         label: 'label.zone',
                                         docID: 'helpDiskOfferingZone',
                                         isMultiple: true,
@@ -2255,18 +2314,18 @@
                                 }
 
                                 if (args.data.isPublic != "on") {
-                                    var domains = (args.data.domain && Array.isArray(args.data.domain)) ? args.data.domain.join(',') : args.data.domain;
-                                    if (domains) {
+                                    var domainId = (args.data.domainId && Array.isArray(args.data.domainId)) ? args.data.domainId.join(',') : args.data.domainId;
+                                    if (domainId) {
                                         $.extend(data, {
-                                            domainids: domains
+                                            domainid: domainId
                                         });
                                     }
                                 }
 
-                                var zones = (args.data.zone && Array.isArray(args.data.zone)) ? args.data.zone.join(',') : args.data.zone;
-                                if (zones) {
+                                var zoneId = (args.data.zone && Array.isArray(args.data.zoneId)) ? args.data.zoneId.join(',') : args.data.zoneId;
+                                if (zoneId) {
                                     $.extend(data, {
-                                        zoneids: zones
+                                        zoneid: zoneId
                                     });
                                 }
 

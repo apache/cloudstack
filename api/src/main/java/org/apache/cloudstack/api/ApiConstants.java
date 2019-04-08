@@ -113,7 +113,6 @@ public class ApiConstants {
     public static final String DOMAIN_PATH = "domainpath";
     public static final String DOMAIN_ID = "domainid";
     public static final String DOMAIN__ID = "domainId";
-    public static final String DOMAIN_ID_LIST = "domainids";
     public static final String DURATION = "duration";
     public static final String ELIGIBLE = "eligible";
     public static final String EMAIL = "email";
