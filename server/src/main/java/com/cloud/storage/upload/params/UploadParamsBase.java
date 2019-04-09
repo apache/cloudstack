@@ -27,32 +27,32 @@ public abstract class UploadParamsBase implements UploadParams {
     private String name;
     private String displayText;
     private Integer bits;
-    private Boolean passwordEnabled;
-    private Boolean requiresHVM;
-    private Boolean isPublic;
-    private Boolean featured;
-    private Boolean isExtractable;
+    private boolean passwordEnabled;
+    private boolean requiresHVM;
+    private boolean isPublic;
+    private boolean featured;
+    private boolean isExtractable;
     private String format;
     private Long guestOSId;
     private Long zoneId;
     private Hypervisor.HypervisorType hypervisorType;
     private String checksum;
-    private Boolean bootable;
+    private boolean bootable;
     private String templateTag;
     private long templateOwnerId;
     private Map details;
-    private Boolean sshkeyEnabled;
-    private Boolean isDynamicallyScalable;
-    private Boolean isRoutingType;
+    private boolean sshkeyEnabled;
+    private boolean isDynamicallyScalable;
+    private boolean isRoutingType;
 
     UploadParamsBase(long userId, String name, String displayText,
-                               Integer bits, Boolean passwordEnabled, Boolean requiresHVM,
-                               Boolean isPublic, Boolean featured,
-                               Boolean isExtractable, String format, Long guestOSId,
+                               Integer bits, boolean passwordEnabled, boolean requiresHVM,
+                               boolean isPublic, boolean featured,
+                               boolean isExtractable, String format, Long guestOSId,
                                Long zoneId, Hypervisor.HypervisorType hypervisorType, String checksum,
                                String templateTag, long templateOwnerId,
-                               Map details, Boolean sshkeyEnabled,
-                               Boolean isDynamicallyScalable, Boolean isRoutingType) {
+                               Map details, boolean sshkeyEnabled,
+                               boolean isDynamicallyScalable, boolean isRoutingType) {
         this.userId = userId;
         this.name = name;
         this.displayText = displayText;
@@ -75,8 +75,8 @@ public abstract class UploadParamsBase implements UploadParams {
         this.isRoutingType = isRoutingType;
     }
 
-    UploadParamsBase(long userId, String name, String displayText, Boolean isPublic, Boolean isFeatured,
-                               Boolean isExtractable, Long osTypeId, Long zoneId, Boolean bootable, long ownerId) {
+    UploadParamsBase(long userId, String name, String displayText, boolean isPublic, boolean isFeatured,
+                               boolean isExtractable, Long osTypeId, Long zoneId, boolean bootable, long ownerId) {
         this.userId = userId;
         this.name = name;
         this.displayText = displayText;
@@ -115,12 +115,12 @@ public abstract class UploadParamsBase implements UploadParams {
     }
 
     @Override
-    public Boolean isPasswordEnabled() {
+    public boolean isPasswordEnabled() {
         return passwordEnabled;
     }
 
     @Override
-    public Boolean requiresHVM() {
+    public boolean requiresHVM() {
         return requiresHVM;
     }
 
@@ -130,17 +130,17 @@ public abstract class UploadParamsBase implements UploadParams {
     }
 
     @Override
-    public Boolean isPublic() {
+    public boolean isPublic() {
         return isPublic;
     }
 
     @Override
-    public Boolean isFeatured() {
+    public boolean isFeatured() {
         return featured;
     }
 
     @Override
-    public Boolean isExtractable() {
+    public boolean isExtractable() {
         return isExtractable;
     }
 
@@ -170,7 +170,7 @@ public abstract class UploadParamsBase implements UploadParams {
     }
 
     @Override
-    public Boolean isBootable() {
+    public boolean isBootable() {
         return bootable;
     }
 
@@ -190,7 +190,7 @@ public abstract class UploadParamsBase implements UploadParams {
     }
 
     @Override
-    public Boolean isSshKeyEnabled() {
+    public boolean isSshKeyEnabled() {
         return sshkeyEnabled;
     }
 
@@ -200,12 +200,12 @@ public abstract class UploadParamsBase implements UploadParams {
     }
 
     @Override
-    public Boolean isDynamicallyScalable() {
+    public boolean isDynamicallyScalable() {
         return isDynamicallyScalable;
     }
 
     @Override
-    public Boolean isRoutingType() {
+    public boolean isRoutingType() {
         return isRoutingType;
     }
 
@@ -218,7 +218,7 @@ public abstract class UploadParamsBase implements UploadParams {
         isIso = iso;
     }
 
-    void setBootable(Boolean bootable) {
+    void setBootable(boolean bootable) {
         this.bootable = bootable;
     }
 
@@ -230,7 +230,7 @@ public abstract class UploadParamsBase implements UploadParams {
         this.format = format;
     }
 
-    void setRequiresHVM(Boolean requiresHVM) {
+    void setRequiresHVM(boolean requiresHVM) {
         this.requiresHVM = requiresHVM;
     }
 

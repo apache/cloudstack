@@ -29,6 +29,7 @@ import com.cloud.storage.upload.params.UploadParams;
 import org.apache.cloudstack.api.command.user.iso.GetUploadParamsForIsoCmd;
 import org.apache.cloudstack.api.command.user.template.GetUploadParamsForTemplateCmd;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.log4j.Logger;
 
 import org.apache.cloudstack.api.ApiConstants;
@@ -297,8 +298,6 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
         Account owner = _accountMgr.getAccount(params.getTemplateOwnerId());
         _accountMgr.checkAccess(caller, null, true, owner);
 
-        boolean isRouting = (params.isRoutingType() == null) ? false : params.isRoutingType();
-
         List<Long> zoneList = null;
         // ignore passed zoneId if we are using region wide image store
         List<ImageStoreVO> stores = _imgStoreDao.findRegionImageStores();
@@ -317,25 +316,27 @@ public abstract class TemplateAdapterBase extends AdapterBase implements Templat
                 params.isExtractable(), params.getFormat(), params.getGuestOSId(), zoneList,
                 params.getHypervisorType(), params.getChecksum(), params.isBootable(), params.getTemplateTag(), owner,
                 params.getDetails(), params.isSshKeyEnabled(), params.getImageStoreUuid(),
-                params.isDynamicallyScalable(), isRouting ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload());
+                params.isDynamicallyScalable(), params.isRoutingType() ? TemplateType.ROUTING : TemplateType.USER, params.isDirectDownload());
     }
 
     @Override
     public TemplateProfile prepare(GetUploadParamsForTemplateCmd cmd) throws ResourceAllocationException {
         UploadParams params = new TemplateUploadParams(CallContext.current().getCallingUserId(), cmd.getName(),
-                cmd.getDisplayText(), cmd.getBits(), cmd.isPasswordEnabled(), cmd.getRequiresHvm(),
-                cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getFormat(), cmd.getOsTypeId(),
+                cmd.getDisplayText(), cmd.getBits(), BooleanUtils.toBoolean(cmd.isPasswordEnabled()),
+                BooleanUtils.toBoolean(cmd.getRequiresHvm()), BooleanUtils.toBoolean(cmd.isPublic()),
+                BooleanUtils.toBoolean(cmd.isFeatured()), BooleanUtils.toBoolean(cmd.isExtractable()), cmd.getFormat(), cmd.getOsTypeId(),
                 cmd.getZoneId(), HypervisorType.getType(cmd.getHypervisor()), cmd.getChecksum(),
-                cmd.getTemplateTag(), cmd.getEntityOwnerId(), cmd.getDetails(), cmd.isSshKeyEnabled(),
-                cmd.isDynamicallyScalable(), cmd.isRoutingType());
+                cmd.getTemplateTag(), cmd.getEntityOwnerId(), cmd.getDetails(), BooleanUtils.toBoolean(cmd.isSshKeyEnabled()),
+                BooleanUtils.toBoolean(cmd.isDynamicallyScalable()), BooleanUtils.toBoolean(cmd.isRoutingType()));
         return prepareUploadParamsInternal(params);
     }
 
     @Override
     public TemplateProfile prepare(GetUploadParamsForIsoCmd cmd) throws ResourceAllocationException {
         UploadParams params = new IsoUploadParams(CallContext.current().getCallingUserId(), cmd.getName(),
-                cmd.getDisplayText(), cmd.isPublic(), cmd.isFeatured(), cmd.isExtractable(), cmd.getOsTypeId(),
-                cmd.getZoneId(), cmd.isBootable(), cmd.getEntityOwnerId());
+                cmd.getDisplayText(), BooleanUtils.toBoolean(cmd.isPublic()), BooleanUtils.toBoolean(cmd.isFeatured()),
+                BooleanUtils.toBoolean(cmd.isExtractable()), cmd.getOsTypeId(),
+                cmd.getZoneId(), BooleanUtils.toBoolean(cmd.isBootable()), cmd.getEntityOwnerId());
         return prepareUploadParamsInternal(params);
     }
 
