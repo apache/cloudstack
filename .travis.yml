@@ -79,7 +79,7 @@ env:
              smoke/test_password_server
              smoke/test_portforwardingrules"
 
-    #4 storage
+    # storage
     - TESTS="smoke/test_primary_storage
              smoke/test_secondary_storage
              smoke/test_snapshots
@@ -125,7 +125,6 @@ env:
     - TESTS="component/test_acl_listvm
              component/test_acl_listvolume"
 
-    #7
     - TESTS="component/test_affinity_groups_projects
              component/test_allocation_states
              component/test_acl_sharednetwork
@@ -163,6 +162,12 @@ env:
              component/test_routers
              component/test_snapshots
              component/test_stopped_vm"
+
+
+    # domains
+    - TESTS="component/test_cpu_domain_limits
+             component/test_mm_domain_limits
+             component/test_resource_limits"
 
     # misc
     - TESTS="component/test_tags
