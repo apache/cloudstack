@@ -62,26 +62,25 @@ public class LdapAuthenticator extends AdapterBase implements UserAuthenticator 
         Pair<Boolean, ActionOnFailedAuthentication> rc = new Pair<Boolean, ActionOnFailedAuthentication>(false, null);
 
         // TODO not allowing an empty password is a policy we shouldn't decide on. A private cloud may well want to allow this.
-        if (StringUtils.isEmpty(username) || StringUtils.isEmpty(password)) {
-            s_logger.debug("Username or Password cannot be empty");
-            return rc;
-        }
-
-        if (_ldapManager.isLdapEnabled()) {
-            final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
-            List<LdapTrustMapVO> ldapTrustMapVOs = _ldapManager.getDomainLinkage(domainId);
-            if(ldapTrustMapVOs != null && ldapTrustMapVOs.size() > 0) {
-                if(ldapTrustMapVOs.size() == 1 && ldapTrustMapVOs.get(0).getAccountId() == 0) {
-                    // We have a single mapping of a domain to an ldap group or ou
-                    return authenticate(username, password, domainId, user, ldapTrustMapVOs.get(0));
+        if (!StringUtils.isEmpty(username) && !StringUtils.isEmpty(password)) {
+            if (_ldapManager.isLdapEnabled()) {
+                final UserAccount user = _userAccountDao.getUserAccount(username, domainId);
+                List<LdapTrustMapVO> ldapTrustMapVOs = _ldapManager.getDomainLinkage(domainId);
+                if(ldapTrustMapVOs != null && ldapTrustMapVOs.size() > 0) {
+                    if(ldapTrustMapVOs.size() == 1 && ldapTrustMapVOs.get(0).getAccountId() == 0) {
+                        // We have a single mapping of a domain to an ldap group or ou
+                        rc = authenticate(username, password, domainId, user, ldapTrustMapVOs.get(0));
+                    } else {
+                        // we are dealing with mapping of accounts in a domain to ldap groups
+                        rc = authenticate(username, password, domainId, user, ldapTrustMapVOs);
+                    }
                 } else {
-                    // we are dealing with mapping of accounts in a domain to ldap groups
-                    return authenticate(username, password, domainId, user, ldapTrustMapVOs);
+                    //domain is not linked to ldap follow normal authentication
+                    rc = authenticate(username, password, domainId, user);
                 }
-            } else {
-                //domain is not linked to ldap follow normal authentication
-                return authenticate(username, password, domainId, user);
             }
+        } else {
+            s_logger.debug("Username or Password cannot be empty");
         }
 
         return rc;

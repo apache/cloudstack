@@ -52,17 +52,18 @@ import com.cloud.user.Account;
  * endif
  * :get ldap users\n using trust domain;
  * if (filter == 'NoFilter') then (pass as is)
- * elseif (filter == 'PotentialConflict') then (address account\nsynchronisation\nconfigurations)
+ * elseif (filter == 'AnyDomain') then (anydomain)
+ *   :filterList = all\n\t\tcloudstack\n\t\tusers;
+ * elseif (filter == 'LocalDomain')
+ *   :filterList = local users\n\t\tfor domain;
+ * elseif (filter == 'PotentialImport') then (address account\nsynchronisation\nconfigurations)
  *   :query\n the account\n bindings;
- *   :check and remove\n ldap users\n for bound OUs;
- * else (filter existing users)
- *   if (filter == 'AnyDomain') then (anydomain)
- *     :filterList = all\n\t\tcloudstack\n\t\tusers;
- *   else ('LocalDomain')
- *     :filterList = local users\n\t\tfor domain;
- *   endif
- *   :remove users in filterList\nfrom ldap users list;
+ *   :check and markup\n ldap users\n for bound OUs\n with usersource;
+ * else ( unknown value for filter )
+ *   :throw invalid parameter;
+ *   stop
  * endif
+ *   :remove users in filterList\nfrom ldap users list;
  * :return remaining;
  * stop
  * @enduml
