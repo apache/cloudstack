@@ -2555,6 +2555,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String name = cmd.getServiceOfferingName();
         final Integer sortKey = cmd.getSortKey();
         Long userId = CallContext.current().getCallingUserId();
+        final List<Long> domainIds = cmd.getDomainIds();
+        final List<Long> zoneIds = cmd.getZoneIds();
 
         if (userId == null) {
             userId = Long.valueOf(User.UID_SYSTEM);
@@ -2562,9 +2564,27 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         // Verify input parameters
         final ServiceOffering offeringHandle = _entityMgr.findById(ServiceOffering.class, id);
+        List<Long> existingDomainIds = _serviceOfferingDetailsDao.findDomainIds(id);
 
         if (offeringHandle == null) {
             throw new InvalidParameterValueException("unable to find service offering " + id);
+        }
+
+        // check if valid domain
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            for (final Long domainId: domainIds) {
+                if (_domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+            }
+        }
+
+        // check if valid zone
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            for (Long zoneId : zoneIds) {
+                if (_zoneDao.findById(zoneId) == null)
+                    throw new InvalidParameterValueException("Please specify a valid zone id");
+            }
         }
 
         final User user = _userDao.findById(userId);
@@ -2572,15 +2592,41 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Unable to find active user by id " + userId);
         }
         final Account account = _accountDao.findById(user.getAccountId());
+
+        // Filter child domains when both parent and child domains are present
+        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        if (CollectionUtils.isNotEmpty(existingDomainIds) && CollectionUtils.isNotEmpty(filteredDomainIds)) {
+            filteredDomainIds.removeIf(existingDomainIds::contains);
+            for (Long domainId : filteredDomainIds) {
+                for (Long existingDomainId : existingDomainIds) {
+                    if (_domainDao.isChildDomain(existingDomainId, domainId)) {
+                        throw new InvalidParameterValueException("Unable to update service offering for domain " + _domainDao.findById(domainId).getUuid() + " as offering is already available for parent domain");
+                    }
+                }
+            }
+        }
+
+        List<Long> filteredZoneIds = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            filteredZoneIds.addAll(zoneIds);
+            List<Long> existingZoneIds = _serviceOfferingDetailsDao.findZoneIds(id);
+            if (CollectionUtils.isNotEmpty(existingZoneIds)) {
+                filteredZoneIds.removeIf(existingZoneIds::contains);
+            }
+        }
+
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
-            final List<ServiceOfferingDetailsVO> details = _serviceOfferingDetailsDao.findDetails(offeringHandle.getId(), ApiConstants.DOMAIN_ID);
-            if (details.isEmpty()) {
+            if (existingDomainIds.isEmpty()) {
                 throw new InvalidParameterValueException("Unable to update public service offering by id " + userId + " because it is domain-admin");
             }
-            for (final ServiceOfferingDetailsVO detail : details) {
-                final Long domainId = Long.valueOf(detail.getValue(), 0);
+            for (Long domainId : existingDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException("Unable to update service offering by another domain admin with id " + userId);
+                    throw new InvalidParameterValueException("Unable to update disk service by another domain admin with id " + userId);
+                }
+            }
+            for (Long domainId : filteredDomainIds) {
+                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new InvalidParameterValueException("Unable to update disk service by another domain admin with id " + userId);
                 }
             }
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -2588,7 +2634,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final boolean updateNeeded = name != null || displayText != null || sortKey != null;
-        if (!updateNeeded) {
+        final boolean detailsUpdateNeeded = !filteredDomainIds.isEmpty() || !filteredZoneIds.isEmpty();
+        if (!updateNeeded && !detailsUpdateNeeded) {
             return _serviceOfferingDao.findById(id);
         }
 
@@ -2630,13 +2677,24 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // }
         // }
 
-        if (_serviceOfferingDao.update(id, offering)) {
-            offering = _serviceOfferingDao.findById(id);
-            CallContext.current().setEventDetails("Service offering id=" + offering.getId());
-            return offering;
-        } else {
+        if (updateNeeded && !_serviceOfferingDao.update(id, offering)) {
             return null;
         }
+        List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<>();
+        for (Long domainId : filteredDomainIds) {
+            detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.DOMAIN_ID, String.valueOf(domainId), true));
+        }
+        for (Long zoneId : filteredZoneIds) {
+            detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.ZONE_ID, String.valueOf(zoneId), true));
+        }
+        if (!detailsVO.isEmpty()) {
+            for (ServiceOfferingDetailsVO detailVO : detailsVO) {
+                _serviceOfferingDetailsDao.persist(detailVO);
+            }
+        }
+        offering = _serviceOfferingDao.findById(id);
+        CallContext.current().setEventDetails("Service offering id=" + offering.getId());
+        return offering;
     }
 
     protected DiskOfferingVO createDiskOffering(final Long userId, final List<Long> domainIds, final List<Long> zoneIds, final String name, final String description, final String provisioningType,
@@ -2861,6 +2919,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final String displayText = cmd.getDisplayText();
         final Integer sortKey = cmd.getSortKey();
         final Boolean displayDiskOffering = cmd.getDisplayOffering();
+        final List<Long> domainIds = cmd.getDomainIds();
+        final List<Long> zoneIds = cmd.getZoneIds();
 
         // Check if diskOffering exists
         final DiskOffering diskOfferingHandle = _entityMgr.findById(DiskOffering.class, diskOfferingId);
@@ -2868,6 +2928,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if (diskOfferingHandle == null) {
             throw new InvalidParameterValueException("Unable to find disk offering by id " + diskOfferingId);
+        }
+
+        // check if valid domain
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            for (final Long domainId: domainIds) {
+                if (_domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+            }
+        }
+
+        // check if valid zone
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            for (Long zoneId : zoneIds) {
+                if (_zoneDao.findById(zoneId) == null)
+                    throw new InvalidParameterValueException("Please specify a valid zone id");
+            }
         }
 
         Long userId = CallContext.current().getCallingUserId();
@@ -2880,6 +2957,28 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         final Account account = _accountDao.findById(user.getAccountId());
 
+        // Filter child domains when both parent and child domains are present
+        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        if (CollectionUtils.isNotEmpty(existingDomainIds) && CollectionUtils.isNotEmpty(filteredDomainIds)) {
+            filteredDomainIds.removeIf(existingDomainIds::contains);
+            for (Long domainId : filteredDomainIds) {
+                for (Long existingDomainId : existingDomainIds) {
+                    if (_domainDao.isChildDomain(existingDomainId, domainId)) {
+                        throw new InvalidParameterValueException("Unable to update disk offering for domain " + _domainDao.findById(domainId).getUuid() + " as offering is already available for parent domain");
+                    }
+                }
+            }
+        }
+
+        List<Long> filteredZoneIds = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            filteredZoneIds.addAll(zoneIds);
+            List<Long> existingZoneIds = _serviceOfferingDetailsDao.findZoneIds(diskOfferingId);
+            if (CollectionUtils.isNotEmpty(existingZoneIds)) {
+                filteredZoneIds.removeIf(existingZoneIds::contains);
+            }
+        }
+
         if (account.getType() == Account.ACCOUNT_TYPE_DOMAIN_ADMIN) {
             if (existingDomainIds.isEmpty()) {
                 throw new InvalidParameterValueException("Unable to update public disk offering by id " + userId + " because it is domain-admin");
@@ -2889,12 +2988,18 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                     throw new InvalidParameterValueException("Unable to update disk offering by another domain admin with id " + userId);
                 }
             }
+            for (Long domainId : filteredDomainIds) {
+                if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
+                    throw new InvalidParameterValueException("Unable to update disk offering by another domain admin with id " + userId);
+                }
+            }
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
             throw new InvalidParameterValueException("Unable to update disk offering by id " + userId + " because it is not root-admin or domain-admin");
         }
 
         final boolean updateNeeded = name != null || displayText != null || sortKey != null || displayDiskOffering != null;
-        if (!updateNeeded) {
+        final boolean detailsUpdateNeeded = !filteredDomainIds.isEmpty() || !filteredZoneIds.isEmpty();
+        if (!updateNeeded && !detailsUpdateNeeded) {
             return _diskOfferingDao.findById(diskOfferingId);
         }
 
@@ -2941,12 +3046,23 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         // }
         // }
 
-        if (_diskOfferingDao.update(diskOfferingId, diskOffering)) {
-            CallContext.current().setEventDetails("Disk offering id=" + diskOffering.getId());
-            return _diskOfferingDao.findById(diskOfferingId);
-        } else {
+        if (updateNeeded && !_diskOfferingDao.update(diskOfferingId, diskOffering)) {
             return null;
         }
+        List<DiskOfferingDetailVO> detailsVO = new ArrayList<>();
+        for (Long domainId : filteredDomainIds) {
+            detailsVO.add(new DiskOfferingDetailVO(diskOfferingId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), true));
+        }
+        for (Long zoneId : filteredZoneIds) {
+            detailsVO.add(new DiskOfferingDetailVO(diskOfferingId, ApiConstants.ZONE_ID, String.valueOf(zoneId), true));
+        }
+        if (!detailsVO.isEmpty()) {
+            for (DiskOfferingDetailVO detailVO : detailsVO) {
+                diskOfferingDetailsDao.persist(detailVO);
+            }
+        }
+        CallContext.current().setEventDetails("Disk offering id=" + diskOffering.getId());
+        return _diskOfferingDao.findById(diskOfferingId);
     }
 
     @Override

@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -27,6 +29,7 @@ import org.apache.cloudstack.api.ServerApiException;
 import org.apache.cloudstack.api.response.DiskOfferingResponse;
 import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.log4j.Logger;
 
 import com.cloud.offering.DiskOffering;
@@ -178,10 +181,20 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getDomainIds() {
+        if(CollectionUtils.isNotEmpty(domainIds)) {
+            Set<Long> set = new LinkedHashSet<>(domainIds);
+            domainIds.clear();
+            domainIds.addAll(set);
+        }
         return domainIds;
     }
 
     public List<Long> getZoneIds() {
+        if(CollectionUtils.isNotEmpty(zoneIds)) {
+            Set<Long> set = new LinkedHashSet<>(zoneIds);
+            zoneIds.clear();
+            zoneIds.addAll(set);
+        }
         return zoneIds;
     }
 

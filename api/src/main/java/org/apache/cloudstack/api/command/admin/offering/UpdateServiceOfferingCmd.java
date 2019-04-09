@@ -16,7 +16,9 @@
 // under the License.
 package org.apache.cloudstack.api.command.admin.offering;
 
-import org.apache.log4j.Logger;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.cloudstack.api.APICommand;
 import org.apache.cloudstack.api.ApiConstants;
@@ -24,7 +26,11 @@ import org.apache.cloudstack.api.ApiErrorCode;
 import org.apache.cloudstack.api.BaseCmd;
 import org.apache.cloudstack.api.Parameter;
 import org.apache.cloudstack.api.ServerApiException;
+import org.apache.cloudstack.api.response.DomainResponse;
 import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
 
 import com.cloud.offering.ServiceOffering;
 import com.cloud.user.Account;
@@ -54,6 +60,21 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     @Parameter(name = ApiConstants.SORT_KEY, type = CommandType.INTEGER, description = "sort key of the service offering, integer")
     private Integer sortKey;
 
+    @Parameter(name = ApiConstants.DOMAIN_ID,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = DomainResponse.class,
+            description = "the ID of the containing domain(s), null for public offerings")
+    private List<Long> domainIds;
+
+    @Parameter(name = ApiConstants.ZONE_ID,
+            type = CommandType.LIST,
+            collectionType = CommandType.UUID,
+            entityType = ZoneResponse.class,
+            description = "the ID of the containing zone(s), null for public offerings",
+            since = "4.13")
+    private List<Long> zoneIds;
+
     /////////////////////////////////////////////////////
     /////////////////// Accessors ///////////////////////
     /////////////////////////////////////////////////////
@@ -72,6 +93,24 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
 
     public Integer getSortKey() {
         return sortKey;
+    }
+
+    public List<Long> getDomainIds() {
+        if(CollectionUtils.isNotEmpty(domainIds)) {
+            Set<Long> set = new LinkedHashSet<>(domainIds);
+            domainIds.clear();
+            domainIds.addAll(set);
+        }
+        return domainIds;
+    }
+
+    public List<Long> getZoneIds() {
+        if(CollectionUtils.isNotEmpty(zoneIds)) {
+            Set<Long> set = new LinkedHashSet<>(zoneIds);
+            zoneIds.clear();
+            zoneIds.addAll(set);
+        }
+        return zoneIds;
     }
 
     /////////////////////////////////////////////////////
