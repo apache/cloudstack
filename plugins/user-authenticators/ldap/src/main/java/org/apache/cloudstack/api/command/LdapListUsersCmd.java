@@ -38,6 +38,33 @@ import org.apache.cloudstack.query.QueryService;
 
 import com.cloud.user.Account;
 
+/**
+ * @startuml
+ * start
+ * :list ldap users request;
+ * :get ldap binding;
+ * if (domain == null) then (true)
+ *   :get global trust domain;
+ * else (false)
+ *   :get trustdomain for domain;
+ * endif
+ * :get ldap users\n using trust domain;
+ * if (filter == 'NoFilter') then (pass as is)
+ * elseif (filter == 'PotentialConflict') then (address account\nsynchronisation\nconfigurations)
+ *   :query\n the account\n bindings;
+ *   :check and remove\n ldap users\n for bound OUs;
+ * else (filter existing users)
+ *   if (filter == 'AnyDomain') then (anydomain)
+ *     :filterList = all\n\t\tcloudstack\n\t\tusers;
+ *   else ('LocalDomain')
+ *     :filterList = local users\n\t\tfor domain;
+ *   endif
+ *   :remove users in filterList\nfrom ldap users list;
+ * endif
+ * :return remaining;
+ * stop
+ * @enduml
+ */
 @APICommand(name = "listLdapUsers", responseObject = LdapUserResponse.class, description = "Lists all LDAP Users", since = "4.2.0",
         requestHasSensitiveInfo = false, responseHasSensitiveInfo = false)
 public class LdapListUsersCmd extends BaseListCmd {
