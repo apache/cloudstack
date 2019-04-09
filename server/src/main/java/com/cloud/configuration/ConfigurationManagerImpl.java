@@ -2527,11 +2527,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
 
         if ((offering = _serviceOfferingDao.persist(offering)) != null) {
             for (Long domainId : filteredDomainIds) {
-                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), true));
+                detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
             }
             if (CollectionUtils.isNotEmpty(zoneIds)) {
                 for (Long zoneId : zoneIds) {
-                    detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), true));
+                    detailsVO.add(new ServiceOfferingDetailsVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
                 }
             }
             if (!detailsVO.isEmpty()) {
@@ -2682,10 +2682,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         List<ServiceOfferingDetailsVO> detailsVO = new ArrayList<>();
         for (Long domainId : filteredDomainIds) {
-            detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.DOMAIN_ID, String.valueOf(domainId), true));
+            detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
         }
         for (Long zoneId : filteredZoneIds) {
-            detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.ZONE_ID, String.valueOf(zoneId), true));
+            detailsVO.add(new ServiceOfferingDetailsVO(id, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
         }
         if (!detailsVO.isEmpty()) {
             for (ServiceOfferingDetailsVO detailVO : detailsVO) {
@@ -2822,11 +2822,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         if (offering != null) {
             List<DiskOfferingDetailVO> detailsVO = new ArrayList<>();
             for (Long domainId : filteredDomainIds) {
-                detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), true));
+                detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
             }
             if (CollectionUtils.isNotEmpty(zoneIds)) {
                 for (Long zoneId : zoneIds) {
-                    detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), true));
+                    detailsVO.add(new DiskOfferingDetailVO(offering.getId(), ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
                 }
             }
             if (!detailsVO.isEmpty()) {
@@ -3051,10 +3051,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
         List<DiskOfferingDetailVO> detailsVO = new ArrayList<>();
         for (Long domainId : filteredDomainIds) {
-            detailsVO.add(new DiskOfferingDetailVO(diskOfferingId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), true));
+            detailsVO.add(new DiskOfferingDetailVO(diskOfferingId, ApiConstants.DOMAIN_ID, String.valueOf(domainId), false));
         }
         for (Long zoneId : filteredZoneIds) {
-            detailsVO.add(new DiskOfferingDetailVO(diskOfferingId, ApiConstants.ZONE_ID, String.valueOf(zoneId), true));
+            detailsVO.add(new DiskOfferingDetailVO(diskOfferingId, ApiConstants.ZONE_ID, String.valueOf(zoneId), false));
         }
         if (!detailsVO.isEmpty()) {
             for (DiskOfferingDetailVO detailVO : detailsVO) {
