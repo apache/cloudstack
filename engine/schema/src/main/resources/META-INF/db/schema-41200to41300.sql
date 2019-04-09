@@ -19,19 +19,7 @@
 -- Schema upgrade from 4.12.0.0 to 4.13.0.0
 --;
 
-DROP PROCEDURE IF EXISTS `cloud`.`IDEMPOTENT_ADD_COLUMN`;
-
-CREATE PROCEDURE `cloud`.`IDEMPOTENT_ADD_COLUMN` (
-		IN in_table_name VARCHAR(200)
-    , IN in_column_name VARCHAR(200)
-    , IN in_column_definition VARCHAR(1000)
-)
-BEGIN
-
-    DECLARE CONTINUE HANDLER FOR 1091 BEGIN END; SET @ddl = CONCAT('DROP INDEX ', in_index_name); SET @ddl = CONCAT(@ddl, ' ', ' ON ') ; SET @ddl = CONCAT(@ddl, ' ', in_table_name); PREPARE stmt FROM @ddl; EXECUTE stmt; DEALLOCATE PREPARE stmt; END;
-
--- Add For VPC flag
-CALL `cloud`.`IDEMPOTENT_ADD_COLUMN`('cloud.vpc_offerings','sort_key', 'INT(32) NOT NULL DEFAULT 0');
-
 -- DPDK client and server mode support
 ALTER TABLE `cloud`.`service_offering_details` CHANGE COLUMN `value` `value` TEXT NOT NULL;
+
+ALTER TABLE `cloud`.`vpc_offerings` ADD COLUMN `sort_key` int(32) NOT NULL default 0 COMMENT 'sort key used for customising sort method';
