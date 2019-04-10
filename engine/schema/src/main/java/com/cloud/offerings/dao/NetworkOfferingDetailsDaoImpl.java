@@ -16,11 +16,13 @@
 // under the License.
 package com.cloud.offerings.dao;
 
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
-
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.cloudstack.api.ApiConstants;
+import org.apache.cloudstack.resourcedetail.ResourceDetailsDaoBase;
 
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
@@ -77,7 +79,32 @@ public class NetworkOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<Networ
         }
     }
 
-    @Override public void addDetail(long resourceId, String key, String value, boolean display) {
+    @Override
+    public void addDetail(long resourceId, String key, String value, boolean display) {
         persist(new NetworkOfferingDetailsVO(resourceId, Detail.valueOf(key), value));
+    }
+
+    @Override
+    public List<Long> findDomainIds(long resourceId) {
+        final List<Long> domainIds = new ArrayList<>();
+        for (final NetworkOfferingDetailsVO detail: findDetails(resourceId, ApiConstants.DOMAIN_ID)) {
+            final Long domainId = Long.valueOf(detail.getValue());
+            if (domainId > 0) {
+                domainIds.add(domainId);
+            }
+        }
+        return domainIds;
+    }
+
+    @Override
+    public List<Long> findZoneIds(long resourceId) {
+        final List<Long> zoneIds = new ArrayList<>();
+        for (final NetworkOfferingDetailsVO detail: findDetails(resourceId, ApiConstants.ZONE_ID)) {
+            final Long zoneId = Long.valueOf(detail.getValue());
+            if (zoneId > 0) {
+                zoneIds.add(zoneId);
+            }
+        }
+        return zoneIds;
     }
 }

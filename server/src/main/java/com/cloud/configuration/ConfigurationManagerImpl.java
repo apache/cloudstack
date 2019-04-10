@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -100,6 +101,8 @@ import org.apache.log4j.Logger;
 
 import com.cloud.alert.AlertManager;
 import com.cloud.api.ApiDBUtils;
+import com.cloud.api.query.dao.NetworkOfferingJoinDao;
+import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.capacity.CapacityManager;
 import com.cloud.capacity.dao.CapacityDao;
 import com.cloud.configuration.Resource.ResourceType;
@@ -177,9 +180,11 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offering.ServiceOffering;
+import com.cloud.offerings.NetworkOfferingDetailsVO;
 import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
+import com.cloud.offerings.dao.NetworkOfferingDetailsDao;
 import com.cloud.offerings.dao.NetworkOfferingServiceMapDao;
 import com.cloud.org.Grouping;
 import com.cloud.org.Grouping.AllocationState;
@@ -215,6 +220,7 @@ import com.cloud.utils.db.DB;
 import com.cloud.utils.db.EntityManager;
 import com.cloud.utils.db.Filter;
 import com.cloud.utils.db.GlobalLock;
+import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.db.Transaction;
 import com.cloud.utils.db.TransactionCallback;
@@ -272,6 +278,10 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     DiskOfferingDetailsDao diskOfferingDetailsDao;
     @Inject
     NetworkOfferingDao _networkOfferingDao;
+    @Inject
+    NetworkOfferingJoinDao networkOfferingJoinDao;
+    @Inject
+    NetworkOfferingDetailsDao networkOfferingDetailsDao;
     @Inject
     VlanDao _vlanDao;
     @Inject
@@ -4466,10 +4476,29 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final Map<String, String> detailsStr = cmd.getDetails();
         final Boolean egressDefaultPolicy = cmd.getEgressDefaultPolicy();
         Boolean forVpc = cmd.getForVpc();
-
         Integer maxconn = null;
         boolean enableKeepAlive = false;
         String servicePackageuuid = cmd.getServicePackageId();
+        final List<Long> domainIds = cmd.getDomainIds();
+        final List<Long> zoneIds = cmd.getZoneIds();
+
+        // check if valid domain
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            for (final Long domainId: domainIds) {
+                if (_domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+            }
+        }
+
+        // check if valid zone
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            for (Long zoneId : zoneIds) {
+                if (_zoneDao.findById(zoneId) == null)
+                    throw new InvalidParameterValueException("Please specify a valid zone id");
+            }
+        }
+
         // Verify traffic type
         for (final TrafficType tType : TrafficType.values()) {
             if (tType.name().equalsIgnoreCase(trafficTypeString)) {
@@ -4726,7 +4755,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         }
 
         final NetworkOffering offering = createNetworkOffering(name, displayText, trafficType, tags, specifyVlan, availability, networkRate, serviceProviderMap, false, guestType, false,
-                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc);
+                serviceOfferingId, conserveMode, serviceCapabilityMap, specifyIpRanges, isPersistent, details, egressDefaultPolicy, maxconn, enableKeepAlive, forVpc, domainIds, zoneIds);
         CallContext.current().setEventDetails(" Id: " + offering.getId() + " Name: " + name);
         return offering;
     }
@@ -4863,7 +4892,8 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             final Integer networkRate, final Map<Service, Set<Provider>> serviceProviderMap, final boolean isDefault, final GuestType type, final boolean systemOnly,
             final Long serviceOfferingId,
             final boolean conserveMode, final Map<Service, Map<Capability, String>> serviceCapabilityMap, final boolean specifyIpRanges, final boolean isPersistent,
-            final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc) {
+            final Map<Detail, String> details, final boolean egressDefaultPolicy, final Integer maxconn, final boolean enableKeepAlive, Boolean forVpc,
+            final List<Long> domainIds, final List<Long> zoneIds) {
 
         String servicePackageUuid;
         String spDescription = null;
@@ -5100,6 +5130,22 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                             s_logger.trace("Added service for the network offering: " + offService + " with null provider");
                         }
                     }
+                    if (offering != null) {
+                        // Filter child domains when both parent and child domains are present
+                        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+                        List<NetworkOfferingDetailsVO> detailsVO = new ArrayList<>();
+                        for (Long domainId : filteredDomainIds) {
+                            detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.domainid, String.valueOf(domainId)));
+                        }
+                        if (CollectionUtils.isNotEmpty(zoneIds)) {
+                            for (Long zoneId : zoneIds) {
+                                detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.zoneid, String.valueOf(zoneId)));
+                            }
+                        }
+                        if (!detailsVO.isEmpty()) {
+                            networkOfferingDetailsDao.saveDetails(detailsVO);
+                        }
+                    }
                 }
 
                 return offering;
@@ -5148,9 +5194,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
     public Pair<List<? extends NetworkOffering>, Integer> searchForNetworkOfferings(final ListNetworkOfferingsCmd cmd) {
         Boolean isAscending = Boolean.parseBoolean(_configDao.getValue("sortkey.algorithm"));
         isAscending = isAscending == null ? Boolean.TRUE : isAscending;
-        final Filter searchFilter = new Filter(NetworkOfferingVO.class, "sortKey", isAscending, null, null);
+        final Filter searchFilter = new Filter(NetworkOfferingJoinVO.class, "sortKey", isAscending, null, null);
         final Account caller = CallContext.current().getCallingAccount();
-        final SearchCriteria<NetworkOfferingVO> sc = _networkOfferingDao.createSearchCriteria();
+        final SearchCriteria<NetworkOfferingJoinVO> sc = networkOfferingJoinDao.createSearchCriteria();
 
         final Long id = cmd.getId();
         final Object name = cmd.getNetworkOfferingName();
@@ -5277,7 +5323,39 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
         }
 
-        final List<NetworkOfferingVO> offerings = _networkOfferingDao.search(sc, searchFilter);
+        if (zoneId != null) {
+            SearchBuilder<NetworkOfferingJoinVO> sb = networkOfferingJoinDao.createSearchBuilder();
+            sb.and("zoneId", sb.entity().getZoneId(), SearchCriteria.Op.FIND_IN_SET);
+            sb.or("zId", sb.entity().getZoneId(), SearchCriteria.Op.NULL);
+            sb.done();
+            SearchCriteria<NetworkOfferingJoinVO> zoneSC = sb.create();
+            zoneSC.setParameters("zoneId", String.valueOf(zoneId));
+            sc.addAnd("zoneId", SearchCriteria.Op.SC, zoneSC);
+        }
+
+        final List<NetworkOfferingJoinVO> offerings = networkOfferingJoinDao.search(sc, searchFilter);
+        // Remove offerings that are not associated with caller's domain
+        // TODO: Better approach
+        if (caller.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(offerings)) {
+            ListIterator<NetworkOfferingJoinVO> it = offerings.listIterator();
+            while (it.hasNext()) {
+                NetworkOfferingJoinVO offering = it.next();
+                if(!Strings.isNullOrEmpty(offering.getDomainId())) {
+                    boolean toRemove = true;
+                    String[] domainIdsArray = offering.getDomainId().split(",");
+                    for (String domainIdString : domainIdsArray) {
+                        Long dId = Long.valueOf(domainIdString.trim());
+                        if (_domainDao.isChildDomain(caller.getDomainId(), dId)) {
+                            toRemove = false;
+                            break;
+                        }
+                    }
+                    if (toRemove) {
+                        it.remove();
+                    }
+                }
+            }
+        }
         final Boolean sourceNatSupported = cmd.getSourceNatSupported();
         final List<String> pNtwkTags = new ArrayList<String>();
         boolean checkForTags = false;
@@ -5302,7 +5380,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         final boolean parseOfferings = listBySupportedServices || sourceNatSupported != null || checkIfProvidersAreEnabled || forVpc != null || network != null;
 
         if (parseOfferings) {
-            final List<NetworkOfferingVO> supportedOfferings = new ArrayList<NetworkOfferingVO>();
+            final List<NetworkOfferingJoinVO> supportedOfferings = new ArrayList<>();
             Service[] supportedServices = null;
 
             if (listBySupportedServices) {
@@ -5319,7 +5397,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
             }
 
-            for (final NetworkOfferingVO offering : offerings) {
+            for (final NetworkOfferingJoinVO offering : offerings) {
                 boolean addOffering = true;
                 List<Service> checkForProviders = new ArrayList<Service>();
 
@@ -5348,9 +5426,9 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
 
                 if (forVpc != null) {
-                    addOffering = addOffering && isOfferingForVpc(offering) == forVpc.booleanValue();
+                    addOffering = addOffering && offering.isForVpc() == forVpc.booleanValue();
                 } else if (network != null) {
-                    addOffering = addOffering && isOfferingForVpc(offering) == (network.getVpcId() != null);
+                    addOffering = addOffering && offering.isForVpc() == (network.getVpcId() != null);
                 }
 
                 if (addOffering) {
@@ -5360,16 +5438,16 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
 
             // Now apply pagination
-            final List<? extends NetworkOffering> wPagination = StringUtils.applyPagination(supportedOfferings, cmd.getStartIndex(), cmd.getPageSizeVal());
+            final List<NetworkOfferingJoinVO> wPagination = StringUtils.applyPagination(supportedOfferings, cmd.getStartIndex(), cmd.getPageSizeVal());
             if (wPagination != null) {
                 final Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<List<? extends NetworkOffering>, Integer>(wPagination, supportedOfferings.size());
                 return listWPagination;
             }
             return new Pair<List<? extends NetworkOffering>, Integer>(supportedOfferings, supportedOfferings.size());
         } else {
-            final List<? extends NetworkOffering> wPagination = StringUtils.applyPagination(offerings, cmd.getStartIndex(), cmd.getPageSizeVal());
+            final List<NetworkOfferingJoinVO> wPagination = StringUtils.applyPagination(offerings, cmd.getStartIndex(), cmd.getPageSizeVal());
             if (wPagination != null) {
-                final Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<List<? extends NetworkOffering>, Integer>(wPagination, offerings.size());
+                final Pair<List<? extends NetworkOffering>, Integer> listWPagination = new Pair<>(wPagination, offerings.size());
                 return listWPagination;
             }
             return new Pair<List<? extends NetworkOffering>, Integer>(offerings, offerings.size());

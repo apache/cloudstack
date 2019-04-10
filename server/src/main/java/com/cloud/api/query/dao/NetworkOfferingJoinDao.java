@@ -14,20 +14,24 @@
 // KIND, either express or implied.  See the License for the
 // specific language governing permissions and limitations
 // under the License.
-package com.cloud.offerings.dao;
+
+package com.cloud.api.query.dao;
 
 import java.util.List;
-import java.util.Map;
 
-import org.apache.cloudstack.resourcedetail.ResourceDetailsDao;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 
+import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.offering.NetworkOffering;
-import com.cloud.offering.NetworkOffering.Detail;
-import com.cloud.offerings.NetworkOfferingDetailsVO;
+import com.cloud.utils.db.GenericDao;
 
-public interface NetworkOfferingDetailsDao extends ResourceDetailsDao<NetworkOfferingDetailsVO> {
-    Map<NetworkOffering.Detail, String> getNtwkOffDetails(long offeringId);
-    String getDetail(long offeringId, Detail detailName);
-    List<Long> findDomainIds(final long resourceId);
-    List<Long> findZoneIds(final long resourceId);
+public interface NetworkOfferingJoinDao extends GenericDao<NetworkOfferingJoinVO, Long> {
+
+    List<NetworkOfferingJoinVO> findByDomainId(long domainId);
+
+    List<NetworkOfferingJoinVO> findByZoneId(long zoneId);
+
+    NetworkOfferingResponse newNetworkOfferingResponse(NetworkOffering nof);
+
+    NetworkOfferingJoinVO newNetworkOfferingView(NetworkOffering nof);
 }

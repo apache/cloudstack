@@ -25,9 +25,10 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.Table;
 
+import org.apache.cloudstack.api.ResourceDetail;
+
 import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Detail;
-import org.apache.cloudstack.api.ResourceDetail;
 
 @Entity
 @Table(name = "network_offering_details")
@@ -47,6 +48,9 @@ public class NetworkOfferingDetailsVO implements ResourceDetail {
     @Column(name = "value", length = 1024)
     private String value;
 
+    @Column(name = "display")
+    private boolean display;
+
     public NetworkOfferingDetailsVO() {
     }
 
@@ -54,6 +58,7 @@ public class NetworkOfferingDetailsVO implements ResourceDetail {
         this.resourceId = resourceId;
         this.name = detailName;
         this.value = value;
+        this.display = false;
     }
 
     @Override
@@ -84,7 +89,7 @@ public class NetworkOfferingDetailsVO implements ResourceDetail {
 
     @Override
     public boolean isDisplay() {
-        return false;
+        return display;
     }
 
     public void setId(long id) {

@@ -16,9 +16,153 @@
 // under the License.
 package com.cloud.api;
 
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.stream.Collectors;
+
+import javax.inject.Inject;
+
+import org.apache.cloudstack.acl.ControlledEntity;
+import org.apache.cloudstack.acl.ControlledEntity.ACLType;
+import org.apache.cloudstack.affinity.AffinityGroup;
+import org.apache.cloudstack.affinity.AffinityGroupResponse;
+import org.apache.cloudstack.api.ApiConstants.HostDetails;
+import org.apache.cloudstack.api.ApiConstants.VMDetails;
+import org.apache.cloudstack.api.ResponseGenerator;
+import org.apache.cloudstack.api.ResponseObject.ResponseView;
+import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
+import org.apache.cloudstack.api.response.AccountResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
+import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
+import org.apache.cloudstack.api.response.AsyncJobResponse;
+import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
+import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
+import org.apache.cloudstack.api.response.CapabilityResponse;
+import org.apache.cloudstack.api.response.CapacityResponse;
+import org.apache.cloudstack.api.response.ClusterResponse;
+import org.apache.cloudstack.api.response.ConditionResponse;
+import org.apache.cloudstack.api.response.ConfigurationResponse;
+import org.apache.cloudstack.api.response.ControlledEntityResponse;
+import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
+import org.apache.cloudstack.api.response.CounterResponse;
+import org.apache.cloudstack.api.response.CreateCmdResponse;
+import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
+import org.apache.cloudstack.api.response.DiskOfferingResponse;
+import org.apache.cloudstack.api.response.DomainResponse;
+import org.apache.cloudstack.api.response.DomainRouterResponse;
+import org.apache.cloudstack.api.response.EventResponse;
+import org.apache.cloudstack.api.response.ExtractResponse;
+import org.apache.cloudstack.api.response.FirewallResponse;
+import org.apache.cloudstack.api.response.FirewallRuleResponse;
+import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
+import org.apache.cloudstack.api.response.GuestOSResponse;
+import org.apache.cloudstack.api.response.GuestOsMappingResponse;
+import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
+import org.apache.cloudstack.api.response.HostForMigrationResponse;
+import org.apache.cloudstack.api.response.HostResponse;
+import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
+import org.apache.cloudstack.api.response.IPAddressResponse;
+import org.apache.cloudstack.api.response.ImageStoreResponse;
+import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
+import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
+import org.apache.cloudstack.api.response.IsolationMethodResponse;
+import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
+import org.apache.cloudstack.api.response.LBHealthCheckResponse;
+import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
+import org.apache.cloudstack.api.response.LBStickinessResponse;
+import org.apache.cloudstack.api.response.ListResponse;
+import org.apache.cloudstack.api.response.LoadBalancerResponse;
+import org.apache.cloudstack.api.response.ManagementServerResponse;
+import org.apache.cloudstack.api.response.NetworkACLItemResponse;
+import org.apache.cloudstack.api.response.NetworkACLResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
+import org.apache.cloudstack.api.response.NetworkResponse;
+import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
+import org.apache.cloudstack.api.response.NicResponse;
+import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
+import org.apache.cloudstack.api.response.OvsProviderResponse;
+import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
+import org.apache.cloudstack.api.response.PodResponse;
+import org.apache.cloudstack.api.response.PortableIpRangeResponse;
+import org.apache.cloudstack.api.response.PortableIpResponse;
+import org.apache.cloudstack.api.response.PrivateGatewayResponse;
+import org.apache.cloudstack.api.response.ProjectAccountResponse;
+import org.apache.cloudstack.api.response.ProjectInvitationResponse;
+import org.apache.cloudstack.api.response.ProjectResponse;
+import org.apache.cloudstack.api.response.ProviderResponse;
+import org.apache.cloudstack.api.response.RegionResponse;
+import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
+import org.apache.cloudstack.api.response.ResourceCountResponse;
+import org.apache.cloudstack.api.response.ResourceLimitResponse;
+import org.apache.cloudstack.api.response.ResourceTagResponse;
+import org.apache.cloudstack.api.response.SSHKeyPairResponse;
+import org.apache.cloudstack.api.response.SecurityGroupResponse;
+import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
+import org.apache.cloudstack.api.response.ServiceOfferingResponse;
+import org.apache.cloudstack.api.response.ServiceResponse;
+import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
+import org.apache.cloudstack.api.response.Site2SiteVpnConnectionResponse;
+import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
+import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
+import org.apache.cloudstack.api.response.SnapshotResponse;
+import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
+import org.apache.cloudstack.api.response.StaticRouteResponse;
+import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
+import org.apache.cloudstack.api.response.StoragePoolResponse;
+import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
+import org.apache.cloudstack.api.response.SystemVmResponse;
+import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
+import org.apache.cloudstack.api.response.TemplateResponse;
+import org.apache.cloudstack.api.response.TrafficMonitorResponse;
+import org.apache.cloudstack.api.response.TrafficTypeResponse;
+import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
+import org.apache.cloudstack.api.response.UsageRecordResponse;
+import org.apache.cloudstack.api.response.UserResponse;
+import org.apache.cloudstack.api.response.UserVmResponse;
+import org.apache.cloudstack.api.response.VMSnapshotResponse;
+import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
+import org.apache.cloudstack.api.response.VlanIpRangeResponse;
+import org.apache.cloudstack.api.response.VolumeResponse;
+import org.apache.cloudstack.api.response.VpcOfferingResponse;
+import org.apache.cloudstack.api.response.VpcResponse;
+import org.apache.cloudstack.api.response.VpnUsersResponse;
+import org.apache.cloudstack.api.response.ZoneResponse;
+import org.apache.cloudstack.config.Configuration;
+import org.apache.cloudstack.context.CallContext;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
+import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
+import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
+import org.apache.cloudstack.framework.jobs.AsyncJob;
+import org.apache.cloudstack.framework.jobs.AsyncJobManager;
 import org.apache.cloudstack.management.ManagementServerHost;
-import com.cloud.utils.crypt.DBEncryptionUtil;
-import com.cloud.tags.dao.ResourceTagDao;
+import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
+import org.apache.cloudstack.region.PortableIp;
+import org.apache.cloudstack.region.PortableIpRange;
+import org.apache.cloudstack.region.Region;
+import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
+import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
+import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
+import org.apache.cloudstack.usage.Usage;
+import org.apache.cloudstack.usage.UsageService;
+import org.apache.cloudstack.usage.UsageTypes;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.log4j.Logger;
+
 import com.cloud.agent.api.VgpuTypesInfo;
 import com.cloud.api.query.ViewResponseHelper;
 import com.cloud.api.query.vo.AccountJoinVO;
@@ -154,6 +298,7 @@ import com.cloud.storage.VolumeVO;
 import com.cloud.storage.dao.VolumeDao;
 import com.cloud.storage.snapshot.SnapshotPolicy;
 import com.cloud.storage.snapshot.SnapshotSchedule;
+import com.cloud.tags.dao.ResourceTagDao;
 import com.cloud.template.VirtualMachineTemplate;
 import com.cloud.user.Account;
 import com.cloud.user.AccountManager;
@@ -163,11 +308,12 @@ import com.cloud.user.UserAccount;
 import com.cloud.uservm.UserVm;
 import com.cloud.utils.Pair;
 import com.cloud.utils.StringUtils;
+import com.cloud.utils.crypt.DBEncryptionUtil;
 import com.cloud.utils.db.EntityManager;
-import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.db.SearchBuilder;
 import com.cloud.utils.db.SearchCriteria;
 import com.cloud.utils.exception.CloudRuntimeException;
+import com.cloud.utils.net.Dhcp;
 import com.cloud.utils.net.Ip;
 import com.cloud.utils.net.NetUtils;
 import com.cloud.vm.ConsoleProxyVO;
@@ -183,150 +329,6 @@ import com.cloud.vm.VirtualMachine.Type;
 import com.cloud.vm.dao.NicExtraDhcpOptionDao;
 import com.cloud.vm.dao.NicSecondaryIpVO;
 import com.cloud.vm.snapshot.VMSnapshot;
-import org.apache.cloudstack.acl.ControlledEntity;
-import org.apache.cloudstack.acl.ControlledEntity.ACLType;
-import org.apache.cloudstack.affinity.AffinityGroup;
-import org.apache.cloudstack.affinity.AffinityGroupResponse;
-import org.apache.cloudstack.api.ApiConstants.HostDetails;
-import org.apache.cloudstack.api.ApiConstants.VMDetails;
-import org.apache.cloudstack.api.ResponseGenerator;
-import org.apache.cloudstack.api.ResponseObject.ResponseView;
-import org.apache.cloudstack.api.command.user.job.QueryAsyncJobResultCmd;
-import org.apache.cloudstack.api.response.AccountResponse;
-import org.apache.cloudstack.api.response.ApplicationLoadBalancerInstanceResponse;
-import org.apache.cloudstack.api.response.ApplicationLoadBalancerResponse;
-import org.apache.cloudstack.api.response.ApplicationLoadBalancerRuleResponse;
-import org.apache.cloudstack.api.response.AsyncJobResponse;
-import org.apache.cloudstack.api.response.AutoScalePolicyResponse;
-import org.apache.cloudstack.api.response.AutoScaleVmGroupResponse;
-import org.apache.cloudstack.api.response.AutoScaleVmProfileResponse;
-import org.apache.cloudstack.api.response.CapabilityResponse;
-import org.apache.cloudstack.api.response.CapacityResponse;
-import org.apache.cloudstack.api.response.ClusterResponse;
-import org.apache.cloudstack.api.response.ConditionResponse;
-import org.apache.cloudstack.api.response.ConfigurationResponse;
-import org.apache.cloudstack.api.response.ControlledEntityResponse;
-import org.apache.cloudstack.api.response.ControlledViewEntityResponse;
-import org.apache.cloudstack.api.response.CounterResponse;
-import org.apache.cloudstack.api.response.CreateCmdResponse;
-import org.apache.cloudstack.api.response.CreateSSHKeyPairResponse;
-import org.apache.cloudstack.api.response.DiskOfferingResponse;
-import org.apache.cloudstack.api.response.DomainResponse;
-import org.apache.cloudstack.api.response.DomainRouterResponse;
-import org.apache.cloudstack.api.response.EventResponse;
-import org.apache.cloudstack.api.response.ExtractResponse;
-import org.apache.cloudstack.api.response.FirewallResponse;
-import org.apache.cloudstack.api.response.FirewallRuleResponse;
-import org.apache.cloudstack.api.response.GlobalLoadBalancerResponse;
-import org.apache.cloudstack.api.response.GuestOSResponse;
-import org.apache.cloudstack.api.response.GuestOsMappingResponse;
-import org.apache.cloudstack.api.response.GuestVlanRangeResponse;
-import org.apache.cloudstack.api.response.HostForMigrationResponse;
-import org.apache.cloudstack.api.response.HostResponse;
-import org.apache.cloudstack.api.response.HypervisorCapabilitiesResponse;
-import org.apache.cloudstack.api.response.IPAddressResponse;
-import org.apache.cloudstack.api.response.ImageStoreResponse;
-import org.apache.cloudstack.api.response.InstanceGroupResponse;
-import org.apache.cloudstack.api.response.InternalLoadBalancerElementResponse;
-import org.apache.cloudstack.api.response.IpForwardingRuleResponse;
-import org.apache.cloudstack.api.response.IsolationMethodResponse;
-import org.apache.cloudstack.api.response.LBHealthCheckPolicyResponse;
-import org.apache.cloudstack.api.response.LBHealthCheckResponse;
-import org.apache.cloudstack.api.response.LBStickinessPolicyResponse;
-import org.apache.cloudstack.api.response.LBStickinessResponse;
-import org.apache.cloudstack.api.response.ListResponse;
-import org.apache.cloudstack.api.response.LoadBalancerResponse;
-import org.apache.cloudstack.api.response.ManagementServerResponse;
-import org.apache.cloudstack.api.response.NetworkACLItemResponse;
-import org.apache.cloudstack.api.response.NetworkACLResponse;
-import org.apache.cloudstack.api.response.NetworkOfferingResponse;
-import org.apache.cloudstack.api.response.NetworkResponse;
-import org.apache.cloudstack.api.response.NicExtraDhcpOptionResponse;
-import org.apache.cloudstack.api.response.NicResponse;
-import org.apache.cloudstack.api.response.NicSecondaryIpResponse;
-import org.apache.cloudstack.api.response.OvsProviderResponse;
-import org.apache.cloudstack.api.response.PhysicalNetworkResponse;
-import org.apache.cloudstack.api.response.PodResponse;
-import org.apache.cloudstack.api.response.PortableIpRangeResponse;
-import org.apache.cloudstack.api.response.PortableIpResponse;
-import org.apache.cloudstack.api.response.PrivateGatewayResponse;
-import org.apache.cloudstack.api.response.ProjectAccountResponse;
-import org.apache.cloudstack.api.response.ProjectInvitationResponse;
-import org.apache.cloudstack.api.response.ProjectResponse;
-import org.apache.cloudstack.api.response.ProviderResponse;
-import org.apache.cloudstack.api.response.RegionResponse;
-import org.apache.cloudstack.api.response.RemoteAccessVpnResponse;
-import org.apache.cloudstack.api.response.ResourceCountResponse;
-import org.apache.cloudstack.api.response.ResourceLimitResponse;
-import org.apache.cloudstack.api.response.ResourceTagResponse;
-import org.apache.cloudstack.api.response.SSHKeyPairResponse;
-import org.apache.cloudstack.api.response.SecurityGroupResponse;
-import org.apache.cloudstack.api.response.SecurityGroupRuleResponse;
-import org.apache.cloudstack.api.response.ServiceOfferingResponse;
-import org.apache.cloudstack.api.response.ServiceResponse;
-import org.apache.cloudstack.api.response.Site2SiteCustomerGatewayResponse;
-import org.apache.cloudstack.api.response.Site2SiteVpnConnectionResponse;
-import org.apache.cloudstack.api.response.Site2SiteVpnGatewayResponse;
-import org.apache.cloudstack.api.response.SnapshotPolicyResponse;
-import org.apache.cloudstack.api.response.SnapshotResponse;
-import org.apache.cloudstack.api.response.SnapshotScheduleResponse;
-import org.apache.cloudstack.api.response.StaticRouteResponse;
-import org.apache.cloudstack.api.response.StorageNetworkIpRangeResponse;
-import org.apache.cloudstack.api.response.StoragePoolResponse;
-import org.apache.cloudstack.api.response.SystemVmInstanceResponse;
-import org.apache.cloudstack.api.response.SystemVmResponse;
-import org.apache.cloudstack.api.response.TemplatePermissionsResponse;
-import org.apache.cloudstack.api.response.TemplateResponse;
-import org.apache.cloudstack.api.response.TrafficMonitorResponse;
-import org.apache.cloudstack.api.response.TrafficTypeResponse;
-import org.apache.cloudstack.api.response.UpgradeRouterTemplateResponse;
-import org.apache.cloudstack.api.response.UsageRecordResponse;
-import org.apache.cloudstack.api.response.UserResponse;
-import org.apache.cloudstack.api.response.UserVmResponse;
-import org.apache.cloudstack.api.response.VMSnapshotResponse;
-import org.apache.cloudstack.api.response.VirtualRouterProviderResponse;
-import org.apache.cloudstack.api.response.VlanIpRangeResponse;
-import org.apache.cloudstack.api.response.VolumeResponse;
-import org.apache.cloudstack.api.response.VpcOfferingResponse;
-import org.apache.cloudstack.api.response.VpcResponse;
-import org.apache.cloudstack.api.response.VpnUsersResponse;
-import org.apache.cloudstack.api.response.ZoneResponse;
-import org.apache.cloudstack.config.Configuration;
-import org.apache.cloudstack.context.CallContext;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStore;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreCapabilities;
-import org.apache.cloudstack.engine.subsystem.api.storage.DataStoreManager;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotDataFactory;
-import org.apache.cloudstack.engine.subsystem.api.storage.SnapshotInfo;
-import org.apache.cloudstack.framework.jobs.AsyncJob;
-import org.apache.cloudstack.framework.jobs.AsyncJobManager;
-import org.apache.cloudstack.network.lb.ApplicationLoadBalancerRule;
-import org.apache.cloudstack.region.PortableIp;
-import org.apache.cloudstack.region.PortableIpRange;
-import org.apache.cloudstack.region.Region;
-import org.apache.cloudstack.storage.datastore.db.PrimaryDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreDao;
-import org.apache.cloudstack.storage.datastore.db.SnapshotDataStoreVO;
-import org.apache.cloudstack.storage.datastore.db.StoragePoolVO;
-import org.apache.cloudstack.usage.Usage;
-import org.apache.cloudstack.usage.UsageService;
-import org.apache.cloudstack.usage.UsageTypes;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.log4j.Logger;
-
-import javax.inject.Inject;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.stream.Collectors;
 
 public class ApiResponseHelper implements ResponseGenerator {
 
@@ -1911,23 +1913,8 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public NetworkOfferingResponse createNetworkOfferingResponse(NetworkOffering offering) {
-        NetworkOfferingResponse response = new NetworkOfferingResponse();
-        response.setId(offering.getUuid());
-        response.setName(offering.getName());
-        response.setDisplayText(offering.getDisplayText());
-        response.setTags(offering.getTags());
-        response.setTrafficType(offering.getTrafficType().toString());
-        response.setIsDefault(offering.isDefault());
-        response.setSpecifyVlan(offering.isSpecifyVlan());
-        response.setConserveMode(offering.isConserveMode());
-        response.setSpecifyIpRanges(offering.isSpecifyIpRanges());
-        response.setAvailability(offering.getAvailability().toString());
-        response.setIsPersistent(offering.isPersistent());
+        NetworkOfferingResponse response = ApiDBUtils.newNetworkOfferingResponse(offering);
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
-        response.setEgressDefaultPolicy(offering.isEgressDefaultPolicy());
-        response.setConcurrentConnections(offering.getConcurrentConnections());
-        response.setSupportsStrechedL2Subnet(offering.isSupportingStrechedL2());
-        response.setSupportsPublicAccess(offering.isSupportingPublicAccess());
         Long so = null;
         if (offering.getServiceOfferingId() != null) {
             so = offering.getServiceOfferingId();
@@ -1940,13 +1927,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 response.setServiceOfferingId(soffering.getUuid());
             }
         }
-
-        if (offering.getGuestType() != null) {
-            response.setGuestIpType(offering.getGuestType().toString());
-        }
-
-        response.setState(offering.getState().name());
-
         Map<Service, Set<Provider>> serviceProviderMap = ApiDBUtils.listNetworkOfferingServices(offering.getId());
         List<ServiceResponse> serviceResponses = new ArrayList<ServiceResponse>();
         for (Map.Entry<Service,Set<Provider>> entry : serviceProviderMap.entrySet()) {
@@ -1967,7 +1947,6 @@ public class ApiResponseHelper implements ResponseGenerator {
                 }
             }
             svcRsp.setProviders(providers);
-
             if (Service.Lb == service) {
                 List<CapabilityResponse> lbCapResponse = new ArrayList<CapabilityResponse>();
 
@@ -2015,20 +1994,15 @@ public class ApiResponseHelper implements ResponseGenerator {
 
                 svcRsp.setCapabilities(staticNatCapResponse);
             }
-
             serviceResponses.add(svcRsp);
         }
         response.setForVpc(_configMgr.isOfferingForVpc(offering));
-
         response.setServices(serviceResponses);
-
         //set network offering details
         Map<Detail, String> details = _ntwkModel.getNtwkOffDetails(offering.getId());
         if (details != null && !details.isEmpty()) {
             response.setDetails(details);
         }
-
-        response.setObjectName("networkoffering");
         return response;
     }
 

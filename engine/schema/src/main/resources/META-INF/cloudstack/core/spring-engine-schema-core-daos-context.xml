@@ -210,6 +210,7 @@
   <bean id="networkExternalFirewallDaoImpl" class="com.cloud.network.dao.NetworkExternalFirewallDaoImpl" />
   <bean id="networkExternalLoadBalancerDaoImpl" class="com.cloud.network.dao.NetworkExternalLoadBalancerDaoImpl" />
   <bean id="networkOfferingDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingDaoImpl" />
+  <bean id="networkOfferingJoinDaoImpl" class="com.cloud.api.query.dao.NetworkOfferingJoinDaoImpl" />
   <bean id="networkOfferingServiceMapDaoImpl" class="com.cloud.offerings.dao.NetworkOfferingServiceMapDaoImpl" />
   <bean id="networkOpDaoImpl" class="com.cloud.network.dao.NetworkOpDaoImpl" />
   <bean id="networkRuleConfigDaoImpl" class="com.cloud.network.dao.NetworkRuleConfigDaoImpl" />

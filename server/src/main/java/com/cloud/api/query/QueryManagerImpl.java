@@ -2608,7 +2608,7 @@ public class QueryManagerImpl extends MutualExclusiveIdsManagerBase implements Q
          */
 
         Pair<List<DiskOfferingJoinVO>, Integer> result = _diskOfferingJoinDao.searchAndCount(sc, searchFilter);
-        // Remove offerings that are not associated with caller's domain and passed zone
+        // Remove offerings that are not associated with caller's domain
         // TODO: Better approach
         if (account.getType() != Account.ACCOUNT_TYPE_ADMIN && CollectionUtils.isNotEmpty(result.first())) {
             ListIterator<DiskOfferingJoinVO> it = result.first().listIterator();

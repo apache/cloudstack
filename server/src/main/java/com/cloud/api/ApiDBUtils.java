@@ -48,6 +48,7 @@ import org.apache.cloudstack.api.response.HostResponse;
 import org.apache.cloudstack.api.response.HostTagResponse;
 import org.apache.cloudstack.api.response.ImageStoreResponse;
 import org.apache.cloudstack.api.response.InstanceGroupResponse;
+import org.apache.cloudstack.api.response.NetworkOfferingResponse;
 import org.apache.cloudstack.api.response.ProjectAccountResponse;
 import org.apache.cloudstack.api.response.ProjectInvitationResponse;
 import org.apache.cloudstack.api.response.ProjectResponse;
@@ -84,6 +85,7 @@ import com.cloud.api.query.dao.HostJoinDao;
 import com.cloud.api.query.dao.HostTagDao;
 import com.cloud.api.query.dao.ImageStoreJoinDao;
 import com.cloud.api.query.dao.InstanceGroupJoinDao;
+import com.cloud.api.query.dao.NetworkOfferingJoinDao;
 import com.cloud.api.query.dao.ProjectAccountJoinDao;
 import com.cloud.api.query.dao.ProjectInvitationJoinDao;
 import com.cloud.api.query.dao.ProjectJoinDao;
@@ -107,6 +109,7 @@ import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.HostTagVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
+import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
@@ -227,6 +230,7 @@ import com.cloud.network.vpc.dao.VpcDao;
 import com.cloud.network.vpc.dao.VpcGatewayDao;
 import com.cloud.network.vpc.dao.VpcOfferingDao;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.offerings.dao.NetworkOfferingDao;
@@ -370,6 +374,7 @@ public class ApiDBUtils {
     static Site2SiteCustomerGatewayDao s_site2SiteCustomerGatewayDao;
     static DataCenterDao s_zoneDao;
     static NetworkOfferingDao s_networkOfferingDao;
+    static NetworkOfferingJoinDao s_networkOfferingJoinDao;
     static NetworkDao s_networkDao;
     static PhysicalNetworkDao s_physicalNetworkDao;
     static ConfigurationService s_configSvc;
@@ -538,6 +543,8 @@ public class ApiDBUtils {
     private DataCenterDao zoneDao;
     @Inject
     private NetworkOfferingDao networkOfferingDao;
+    @Inject
+    private NetworkOfferingJoinDao networkOfferingJoinDao;
     @Inject
     private NetworkDao networkDao;
     @Inject
@@ -724,6 +731,7 @@ public class ApiDBUtils {
         s_securityGroupDao = securityGroupDao;
         s_securityGroupJoinDao = securityGroupJoinDao;
         s_networkOfferingDao = networkOfferingDao;
+        s_networkOfferingJoinDao = networkOfferingJoinDao;
         s_networkDao = networkDao;
         s_physicalNetworkDao = physicalNetworkDao;
         s_configDao = configDao;
@@ -1240,6 +1248,14 @@ public class ApiDBUtils {
 
     public static NetworkProfile getNetworkProfile(long networkId) {
         return s_networkMgr.convertNetworkToNetworkProfile(networkId);
+    }
+
+    public static NetworkOfferingResponse newNetworkOfferingResponse(NetworkOffering offering) {
+        return s_networkOfferingJoinDao.newNetworkOfferingResponse(offering);
+    }
+
+    public static NetworkOfferingJoinVO newNetworkOfferingView(NetworkOffering offering) {
+        return s_networkOfferingJoinDao.newNetworkOfferingView(offering);
     }
 
     public static NetworkOfferingVO findNetworkOfferingById(long networkOfferingId) {
