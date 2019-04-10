@@ -423,6 +423,12 @@ public class DefaultVMSnapshotStrategy extends ManagerBase implements VMSnapshot
             s_logger.debug("Failed to change vm snapshot state with event ExpungeRequested");
             throw new CloudRuntimeException("Failed to change vm snapshot state with event ExpungeRequested: " + e.getMessage());
         }
+        UserVm userVm = userVmDao.findById(vmSnapshot.getVmId());
+        List<VolumeObjectTO> volumeTOs = vmSnapshotHelper.getVolumeTOList(userVm.getId());
+        for (VolumeObjectTO volumeTo: volumeTOs) {
+            volumeTo.setSize(0);
+            publishUsageEvent(EventTypes.EVENT_VM_SNAPSHOT_DELETE, vmSnapshot, userVm, volumeTo);
+        }
         return vmSnapshotDao.remove(vmSnapshot.getId());
     }
 }
