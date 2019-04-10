@@ -46,9 +46,9 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
     /////////////////////////////////////////////////////
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT,
-               type = CommandType.STRING,
-               description = "updates alternate display text of the disk offering with this value",
-               length = 4096)
+            type = CommandType.STRING,
+            description = "updates alternate display text of the disk offering with this value",
+            length = 4096)
     private String displayText;
 
     @Parameter(name = ApiConstants.ID, type = CommandType.UUID, entityType = DiskOfferingResponse.class, required = true, description = "ID of the disk offering")
@@ -61,8 +61,8 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
     private Integer sortKey;
 
     @Parameter(name = ApiConstants.DISPLAY_OFFERING,
-               type = CommandType.BOOLEAN,
-               description = "an optional field, whether to display the offering to the end user or not.")
+            type = CommandType.BOOLEAN,
+            description = "an optional field, whether to display the offering to the end user or not.")
     private Boolean displayOffering;
 
     @Parameter(name = ApiConstants.DOMAIN_ID,
@@ -105,7 +105,7 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getDomainIds() {
-        if(CollectionUtils.isNotEmpty(domainIds)) {
+        if (CollectionUtils.isNotEmpty(domainIds)) {
             Set<Long> set = new LinkedHashSet<>(domainIds);
             domainIds.clear();
             domainIds.addAll(set);
@@ -114,7 +114,7 @@ public class UpdateDiskOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getZoneIds() {
-        if(CollectionUtils.isNotEmpty(zoneIds)) {
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
             Set<Long> set = new LinkedHashSet<>(zoneIds);
             zoneIds.clear();
             zoneIds.addAll(set);

@@ -181,7 +181,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getDomainIds() {
-        if(CollectionUtils.isNotEmpty(domainIds)) {
+        if (CollectionUtils.isNotEmpty(domainIds)) {
             Set<Long> set = new LinkedHashSet<>(domainIds);
             domainIds.clear();
             domainIds.addAll(set);
@@ -190,7 +190,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getZoneIds() {
-        if(CollectionUtils.isNotEmpty(zoneIds)) {
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
             Set<Long> set = new LinkedHashSet<>(zoneIds);
             zoneIds.clear();
             zoneIds.addAll(set);
@@ -250,7 +250,7 @@ public class CreateDiskOfferingCmd extends BaseCmd {
         return storageType;
     }
 
-    public String getProvisioningType(){
+    public String getProvisioningType() {
         return provisioningType;
     }
 

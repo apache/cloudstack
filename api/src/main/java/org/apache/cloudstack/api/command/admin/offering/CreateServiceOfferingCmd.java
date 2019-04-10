@@ -77,8 +77,8 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private Boolean limitCpuUse;
 
     @Parameter(name = ApiConstants.IS_VOLATILE,
-               type = CommandType.BOOLEAN,
-               description = "true if the virtual machine needs to be volatile so that on every reboot of VM, original root disk is dettached then destroyed and a fresh root disk is created and attached to VM")
+            type = CommandType.BOOLEAN,
+            description = "true if the virtual machine needs to be volatile so that on every reboot of VM, original root disk is dettached then destroyed and a fresh root disk is created and attached to VM")
     private Boolean isVolatile;
 
     @Parameter(name = ApiConstants.STORAGE_TYPE, type = CommandType.STRING, description = "the storage type of the service offering. Values are local and shared.")
@@ -109,18 +109,18 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     private Boolean isSystem;
 
     @Parameter(name = ApiConstants.SYSTEM_VM_TYPE,
-               type = CommandType.STRING,
-               description = "the system VM type. Possible types are \"domainrouter\", \"consoleproxy\" and \"secondarystoragevm\".")
+            type = CommandType.STRING,
+            description = "the system VM type. Possible types are \"domainrouter\", \"consoleproxy\" and \"secondarystoragevm\".")
     private String systemVmType;
 
     @Parameter(name = ApiConstants.NETWORKRATE,
-               type = CommandType.INTEGER,
-               description = "data transfer rate in megabits per second allowed. Supported only for non-System offering and system offerings having \"domainrouter\" systemvmtype")
+            type = CommandType.INTEGER,
+            description = "data transfer rate in megabits per second allowed. Supported only for non-System offering and system offerings having \"domainrouter\" systemvmtype")
     private Integer networkRate;
 
     @Parameter(name = ApiConstants.DEPLOYMENT_PLANNER,
-               type = CommandType.STRING,
-               description = "The deployment planner heuristics used to deploy a VM of this offering. If null, value of global config vm.deployment.planner is used")
+            type = CommandType.STRING,
+            description = "The deployment planner heuristics used to deploy a VM of this offering. If null, value of global config vm.deployment.planner is used")
     private String deploymentPlanner;
 
     @Parameter(name = ApiConstants.SERVICE_OFFERING_DETAILS, type = CommandType.MAP, description = "details for planner, used to store specific parameters")
@@ -228,7 +228,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
         return displayText;
     }
 
-    public String getProvisioningType(){
+    public String getProvisioningType() {
         return provisioningType;
     }
 
@@ -264,7 +264,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getDomainIds() {
-        if(CollectionUtils.isNotEmpty(domainIds)) {
+        if (CollectionUtils.isNotEmpty(domainIds)) {
             Set<Long> set = new LinkedHashSet<>(domainIds);
             domainIds.clear();
             domainIds.addAll(set);
@@ -273,7 +273,7 @@ public class CreateServiceOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getZoneIds() {
-        if(CollectionUtils.isNotEmpty(zoneIds)) {
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
             Set<Long> set = new LinkedHashSet<>(zoneIds);
             zoneIds.clear();
             zoneIds.addAll(set);

@@ -45,10 +45,10 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     //////////////// API parameters /////////////////////
     /////////////////////////////////////////////////////
     @Parameter(name = ApiConstants.ID,
-               type = CommandType.UUID,
-               entityType = ServiceOfferingResponse.class,
-               required = true,
-               description = "the ID of the service offering to be updated")
+            type = CommandType.UUID,
+            entityType = ServiceOfferingResponse.class,
+            required = true,
+            description = "the ID of the service offering to be updated")
     private Long id;
 
     @Parameter(name = ApiConstants.DISPLAY_TEXT, type = CommandType.STRING, description = "the display text of the service offering to be updated")
@@ -96,7 +96,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getDomainIds() {
-        if(CollectionUtils.isNotEmpty(domainIds)) {
+        if (CollectionUtils.isNotEmpty(domainIds)) {
             Set<Long> set = new LinkedHashSet<>(domainIds);
             domainIds.clear();
             domainIds.addAll(set);
@@ -105,7 +105,7 @@ public class UpdateServiceOfferingCmd extends BaseCmd {
     }
 
     public List<Long> getZoneIds() {
-        if(CollectionUtils.isNotEmpty(zoneIds)) {
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
             Set<Long> set = new LinkedHashSet<>(zoneIds);
             zoneIds.clear();
             zoneIds.addAll(set);
