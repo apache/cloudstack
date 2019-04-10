@@ -556,7 +556,7 @@ var dictionary = {
 "label.compute.offering":"Compute offering",
 "label.compute.offering.type":"Compute offering type",
 "label.compute.offering.custom.constrained":"Custom Constrained",
-"label.compute.offering.custom.unconstrained":"Custom Unsconstrained",
+"label.compute.offering.custom.unconstrained":"Custom Unconstrained",
 "label.compute.offering.fixed":"Fixed Offering",
 "label.compute.offerings":"Compute Offerings",
 "label.configuration":"Configuration",
