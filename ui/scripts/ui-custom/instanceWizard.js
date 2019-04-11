@@ -551,8 +551,16 @@
                                                     });
 
                                                     $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').bind('change', function() {
-                                                        var old = $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val();
-                                                        $step.find('span.custom-slider-container .' + sliderClassName).html(_s(old));
+                                                        var val = $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val();
+                                                        if (val < minVal) {
+                                                            val = minVal;
+                                                            $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(val);
+                                                        }
+                                                        if(val > maxVal) {
+                                                            val = maxVal;
+                                                            $step.find('.custom-slider-container .' + sliderClassName + ' input[type=text]').val(val);
+                                                        }
+                                                        $step.find('span.custom-slider-container .' + sliderClassName).html(_s(val));
                                                     });
                                                 }
                                                 setupSlider('slider-cpu-cores', minCpuNumber, maxCpuNumber);
