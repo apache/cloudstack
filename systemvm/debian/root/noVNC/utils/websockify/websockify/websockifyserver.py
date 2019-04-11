@@ -12,7 +12,7 @@ as taken from http://docs.python.org/dev/library/ssl.html#certificates
 
 '''
 
-import os, sys, time, errno, signal, socket, select, logging
+import os, sys, time, errno, signal, socket, select, logging, re
 import multiprocessing
 
 # Imports that vary by python version
@@ -270,7 +270,12 @@ class WebSockifyRequestHandler(WebSocketRequestHandlerMixIn, SimpleHTTPRequestHa
         if self.only_upgrade:
             self.send_error(405, "Method Not Allowed")
         else:
-            SimpleHTTPRequestHandler.do_GET(self)
+            if not re.match('^\/((images|core|vendor)\/)?[a-zA-Z0-9_\/]+\.[a-zA-Z0-9_]+(\?.*)?$', self.path):
+                self.last_code = 400
+                self.last_message = "400 Bad Request"
+                SimpleHTTPRequestHandler.send_response(self,self.last_code,self.last_message)
+            else:
+                SimpleHTTPRequestHandler.do_GET(self)
 
     def list_directory(self, path):
         if self.file_only:

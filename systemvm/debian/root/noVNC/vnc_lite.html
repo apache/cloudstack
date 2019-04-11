@@ -85,7 +85,7 @@
         // When this function is called we have
         // successfully connected to a server
         function connectedToServer(e) {
-            status("Connected to " + desktopName);
+            status("Connected to " + displayName);
         }
 
         // This function is called when we are disconnected
@@ -153,6 +153,7 @@
         let port = readQueryVariable('port', window.location.port);
         const password = readQueryVariable('password', '');
         const path = readQueryVariable('path', 'websockify');
+        const displayName = readQueryVariable('displayName', '');
 
         // | | |         | | |
         // | | | Connect | | |

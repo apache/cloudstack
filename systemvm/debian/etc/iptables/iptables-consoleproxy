@@ -35,4 +35,6 @@ COMMIT
 -A INPUT -i eth1 -p tcp -m state --state NEW -m tcp --dport 8001 -j ACCEPT
 -A INPUT -i eth2 -p tcp -m state --state NEW -m tcp --dport 443 -j ACCEPT
 -A INPUT -i eth2 -p tcp -m state --state NEW -m tcp --dport 80 -j ACCEPT
+-A INPUT -i eth2 -p tcp -m state --state NEW -m tcp --dport 8080 -j ACCEPT
+-A INPUT -i eth2 -p tcp -m state --state NEW -m tcp --dport 843 -j ACCEPT
 COMMIT
