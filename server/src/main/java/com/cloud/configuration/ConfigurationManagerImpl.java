@@ -541,7 +541,7 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                 }
                 if(name.equals(CapacityManager.StorageOverprovisioningFactor.key())) {
                     if(!pool.getPoolType().supportsOverProvisioning() ) {
-                        throw new InvalidParameterValueException("Unable to update  storage pool with id " + resourceId + ". Overprovision not supported for " + pool.getPoolType());
+                        throw new InvalidParameterValueException("Unable to update storage pool with id " + resourceId + ". Overprovision not supported for " + pool.getPoolType());
                     }
                 }
 
@@ -2631,12 +2631,12 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             }
             for (Long domainId : existingDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException("Unable to update disk service by another domain admin with id " + userId);
+                    throw new InvalidParameterValueException("Unable to update service by another domain admin with id " + userId);
                 }
             }
             for (Long domainId : filteredDomainIds) {
                 if (!_domainDao.isChildDomain(account.getDomainId(), domainId)) {
-                    throw new InvalidParameterValueException("Unable to update disk service by another domain admin with id " + userId);
+                    throw new InvalidParameterValueException("Unable to update service by another domain admin with id " + userId);
                 }
             }
         } else if (account.getType() != Account.ACCOUNT_TYPE_ADMIN) {
@@ -5135,11 +5135,11 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
                         List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
                         List<NetworkOfferingDetailsVO> detailsVO = new ArrayList<>();
                         for (Long domainId : filteredDomainIds) {
-                            detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.domainid, String.valueOf(domainId)));
+                            detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.domainid, String.valueOf(domainId), false));
                         }
                         if (CollectionUtils.isNotEmpty(zoneIds)) {
                             for (Long zoneId : zoneIds) {
-                                detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.zoneid, String.valueOf(zoneId)));
+                                detailsVO.add(new NetworkOfferingDetailsVO(offering.getId(), Detail.zoneid, String.valueOf(zoneId), false));
                             }
                         }
                         if (!detailsVO.isEmpty()) {
@@ -5507,10 +5507,13 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
         Availability availability = null;
         final String state = cmd.getState();
         final String tags = cmd.getTags();
+        final List<Long> domainIds = cmd.getDomainIds();
+        final List<Long> zoneIds = cmd.getZoneIds();
         CallContext.current().setEventDetails(" Id: " + id);
 
         // Verify input parameters
         final NetworkOfferingVO offeringToUpdate = _networkOfferingDao.findById(id);
+        List<Long> existingDomainIds = networkOfferingDetailsDao.findDomainIds(id);
         if (offeringToUpdate == null) {
             throw new InvalidParameterValueException("unable to find network offering " + id);
         }
@@ -5520,91 +5523,148 @@ public class ConfigurationManagerImpl extends ManagerBase implements Configurati
             throw new InvalidParameterValueException("Can't update system network offerings");
         }
 
+        // check if valid domain
+        if (CollectionUtils.isNotEmpty(domainIds)) {
+            for (final Long domainId: domainIds) {
+                if (_domainDao.findById(domainId) == null) {
+                    throw new InvalidParameterValueException("Please specify a valid domain id");
+                }
+            }
+        }
+
+        // check if valid zone
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            for (Long zoneId : zoneIds) {
+                if (_zoneDao.findById(zoneId) == null)
+                    throw new InvalidParameterValueException("Please specify a valid zone id");
+            }
+        }
+
+        // Filter child domains when both parent and child domains are present
+        List<Long> filteredDomainIds = filterChildSubDomains(domainIds);
+        if (CollectionUtils.isNotEmpty(existingDomainIds) && CollectionUtils.isNotEmpty(filteredDomainIds)) {
+            filteredDomainIds.removeIf(existingDomainIds::contains);
+            for (Long domainId : filteredDomainIds) {
+                for (Long existingDomainId : existingDomainIds) {
+                    if (_domainDao.isChildDomain(existingDomainId, domainId)) {
+                        throw new InvalidParameterValueException("Unable to update network offering for domain " + _domainDao.findById(domainId).getUuid() + " as offering is already available for parent domain");
+                    }
+                }
+            }
+        }
+
+        List<Long> filteredZoneIds = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(zoneIds)) {
+            filteredZoneIds.addAll(zoneIds);
+            List<Long> existingZoneIds = networkOfferingDetailsDao.findZoneIds(id);
+            if (CollectionUtils.isNotEmpty(existingZoneIds)) {
+                filteredZoneIds.removeIf(existingZoneIds::contains);
+            }
+        }
+
         final NetworkOfferingVO offering = _networkOfferingDao.createForUpdate(id);
 
-        if (name != null) {
-            offering.setName(name);
-        }
+        boolean updateNeeded = name != null || displayText != null || sortKey != null ||
+                state != null || tags != null || availabilityStr != null || maxconn != null;
 
-        if (displayText != null) {
-            offering.setDisplayText(displayText);
-        }
-
-        if (sortKey != null) {
-            offering.setSortKey(sortKey);
-        }
-
-        if (state != null) {
-            boolean validState = false;
-            for (final NetworkOffering.State st : NetworkOffering.State.values()) {
-                if (st.name().equalsIgnoreCase(state)) {
-                    validState = true;
-                    offering.setState(st);
-                }
+        if(updateNeeded) {
+            if (name != null) {
+                offering.setName(name);
             }
-            if (!validState) {
-                throw new InvalidParameterValueException("Incorrect state value: " + state);
+
+            if (displayText != null) {
+                offering.setDisplayText(displayText);
             }
-        }
 
-        if (tags != null) {
-            List<DataCenterVO> dataCenters = _zoneDao.listAll();
-            TrafficType trafficType = offeringToUpdate.getTrafficType();
-            String oldTags = offeringToUpdate.getTags();
+            if (sortKey != null) {
+                offering.setSortKey(sortKey);
+            }
 
-            for (DataCenterVO dataCenter : dataCenters) {
-                long zoneId = dataCenter.getId();
-                long newPhysicalNetworkId = _networkModel.findPhysicalNetworkId(zoneId, tags, trafficType);
-                if (oldTags != null) {
-                    long oldPhysicalNetworkId = _networkModel.findPhysicalNetworkId(zoneId, oldTags, trafficType);
-                    if (newPhysicalNetworkId != oldPhysicalNetworkId) {
-                        throw new InvalidParameterValueException("New tags: selects different physical network for zone " + zoneId);
+            if (state != null) {
+                boolean validState = false;
+                for (final NetworkOffering.State st : NetworkOffering.State.values()) {
+                    if (st.name().equalsIgnoreCase(state)) {
+                        validState = true;
+                        offering.setState(st);
                     }
                 }
-            }
-
-            offering.setTags(tags);
-        }
-
-        // Verify availability
-        if (availabilityStr != null) {
-            for (final Availability avlb : Availability.values()) {
-                if (avlb.name().equalsIgnoreCase(availabilityStr)) {
-                    availability = avlb;
+                if (!validState) {
+                    throw new InvalidParameterValueException("Incorrect state value: " + state);
                 }
             }
-            if (availability == null) {
-                throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional);
-            } else {
-                if (availability == NetworkOffering.Availability.Required) {
-                    final boolean canOffBeRequired = offeringToUpdate.getGuestType() == GuestType.Isolated && _networkModel.areServicesSupportedByNetworkOffering(
-                            offeringToUpdate.getId(), Service.SourceNat);
-                    if (!canOffBeRequired) {
-                        throw new InvalidParameterValueException("Availability can be " + NetworkOffering.Availability.Required + " only for networkOfferings of type "
-                                + GuestType.Isolated + " and with " + Service.SourceNat.getName() + " enabled");
-                    }
 
-                    // only one network offering in the system can be Required
-                    final List<NetworkOfferingVO> offerings = _networkOfferingDao.listByAvailability(Availability.Required, false);
-                    if (!offerings.isEmpty() && offerings.get(0).getId() != offeringToUpdate.getId()) {
-                        throw new InvalidParameterValueException("System already has network offering id=" + offerings.get(0).getId() + " with availability "
-                                + Availability.Required);
+            if (tags != null) {
+                List<DataCenterVO> dataCenters = _zoneDao.listAll();
+                TrafficType trafficType = offeringToUpdate.getTrafficType();
+                String oldTags = offeringToUpdate.getTags();
+
+                for (DataCenterVO dataCenter : dataCenters) {
+                    long zoneId = dataCenter.getId();
+                    long newPhysicalNetworkId = _networkModel.findPhysicalNetworkId(zoneId, tags, trafficType);
+                    if (oldTags != null) {
+                        long oldPhysicalNetworkId = _networkModel.findPhysicalNetworkId(zoneId, oldTags, trafficType);
+                        if (newPhysicalNetworkId != oldPhysicalNetworkId) {
+                            throw new InvalidParameterValueException("New tags: selects different physical network for zone " + zoneId);
+                        }
                     }
                 }
-                offering.setAvailability(availability);
+
+                offering.setTags(tags);
             }
-        }
-        if (_ntwkOffServiceMapDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.Lb)) {
-            if (maxconn != null) {
-                offering.setConcurrentConnections(maxconn);
+
+            // Verify availability
+            if (availabilityStr != null) {
+                for (final Availability avlb : Availability.values()) {
+                    if (avlb.name().equalsIgnoreCase(availabilityStr)) {
+                        availability = avlb;
+                    }
+                }
+                if (availability == null) {
+                    throw new InvalidParameterValueException("Invalid value for Availability. Supported types: " + Availability.Required + ", " + Availability.Optional);
+                } else {
+                    if (availability == NetworkOffering.Availability.Required) {
+                        final boolean canOffBeRequired = offeringToUpdate.getGuestType() == GuestType.Isolated && _networkModel.areServicesSupportedByNetworkOffering(
+                                offeringToUpdate.getId(), Service.SourceNat);
+                        if (!canOffBeRequired) {
+                            throw new InvalidParameterValueException("Availability can be " + NetworkOffering.Availability.Required + " only for networkOfferings of type "
+                                    + GuestType.Isolated + " and with " + Service.SourceNat.getName() + " enabled");
+                        }
+
+                        // only one network offering in the system can be Required
+                        final List<NetworkOfferingVO> offerings = _networkOfferingDao.listByAvailability(Availability.Required, false);
+                        if (!offerings.isEmpty() && offerings.get(0).getId() != offeringToUpdate.getId()) {
+                            throw new InvalidParameterValueException("System already has network offering id=" + offerings.get(0).getId() + " with availability "
+                                    + Availability.Required);
+                        }
+                    }
+                    offering.setAvailability(availability);
+                }
+            }
+            if (_ntwkOffServiceMapDao.areServicesSupportedByNetworkOffering(offering.getId(), Service.Lb)) {
+                if (maxconn != null) {
+                    offering.setConcurrentConnections(maxconn);
+                }
+            }
+
+            if (!_networkOfferingDao.update(id, offering)) {
+                return null;
             }
         }
 
-        if (_networkOfferingDao.update(id, offering)) {
-            return _networkOfferingDao.findById(id);
-        } else {
-            return null;
+        List<NetworkOfferingDetailsVO> detailsVO = new ArrayList<>();
+        for (Long domainId : filteredDomainIds) {
+            detailsVO.add(new NetworkOfferingDetailsVO(id, Detail.domainid, String.valueOf(domainId), false));
         }
+        for (Long zoneId : filteredZoneIds) {
+            detailsVO.add(new NetworkOfferingDetailsVO(id, Detail.zoneid, String.valueOf(zoneId), false));
+        }
+        if (!detailsVO.isEmpty()) {
+            for (NetworkOfferingDetailsVO detailVO : detailsVO) {
+                networkOfferingDetailsDao.persist(detailVO);
+            }
+        }
+
+        return _networkOfferingDao.findById(id);
     }
 
     @Override

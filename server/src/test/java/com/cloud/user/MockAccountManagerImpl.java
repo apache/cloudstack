@@ -42,6 +42,7 @@ import com.cloud.exception.ConcurrentOperationException;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.exception.ResourceUnavailableException;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
 import com.cloud.utils.Pair;
@@ -219,6 +220,11 @@ public class MockAccountManagerImpl extends ManagerBase implements Manager, Acco
 
     @Override
     public void checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException {
+        // TODO Auto-generated method stub
+    }
+
+    @Override
+    public void checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException {
         // TODO Auto-generated method stub
     }
 

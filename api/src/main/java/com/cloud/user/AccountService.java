@@ -29,6 +29,7 @@ import com.cloud.dc.DataCenter;
 import com.cloud.domain.Domain;
 import com.cloud.exception.PermissionDeniedException;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 
 public interface AccountService {
@@ -100,6 +101,8 @@ public interface AccountService {
     void checkAccess(Account account, ServiceOffering so, DataCenter zone) throws PermissionDeniedException;
 
     void checkAccess(Account account, DiskOffering dof, DataCenter zone) throws PermissionDeniedException;
+
+    void checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException;
 
     void checkAccess(User user, ControlledEntity entity);
 

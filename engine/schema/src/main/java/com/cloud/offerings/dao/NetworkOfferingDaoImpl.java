@@ -23,7 +23,6 @@ import java.util.Map;
 import javax.inject.Inject;
 import javax.persistence.EntityExistsException;
 
-import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.stereotype.Component;
 
@@ -33,6 +32,7 @@ import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.NetworkOffering.Availability;
 import com.cloud.offering.NetworkOffering.Detail;
 import com.cloud.offerings.NetworkOfferingDetailsVO;
+import com.cloud.offerings.NetworkOfferingServiceMapVO;
 import com.cloud.offerings.NetworkOfferingVO;
 import com.cloud.utils.db.DB;
 import com.cloud.utils.db.Filter;
@@ -187,7 +187,7 @@ public class NetworkOfferingDaoImpl extends GenericDaoBase<NetworkOfferingVO, Lo
         //2) persist the details
         if (details != null && !details.isEmpty()) {
             for (NetworkOffering.Detail detail : details.keySet()) {
-                _detailsDao.persist(new NetworkOfferingDetailsVO(off.getId(), detail, details.get(detail)));
+                _detailsDao.persist(new NetworkOfferingDetailsVO(off.getId(), detail, details.get(detail), true));
             }
         }
 

@@ -175,6 +175,7 @@ import com.cloud.api.query.vo.EventJoinVO;
 import com.cloud.api.query.vo.HostJoinVO;
 import com.cloud.api.query.vo.ImageStoreJoinVO;
 import com.cloud.api.query.vo.InstanceGroupJoinVO;
+import com.cloud.api.query.vo.NetworkOfferingJoinVO;
 import com.cloud.api.query.vo.ProjectAccountJoinVO;
 import com.cloud.api.query.vo.ProjectInvitationJoinVO;
 import com.cloud.api.query.vo.ProjectJoinVO;
@@ -1913,6 +1914,9 @@ public class ApiResponseHelper implements ResponseGenerator {
 
     @Override
     public NetworkOfferingResponse createNetworkOfferingResponse(NetworkOffering offering) {
+        if (!(offering instanceof NetworkOfferingJoinVO)) {
+            offering = ApiDBUtils.newNetworkOfferingView(offering);
+        }
         NetworkOfferingResponse response = ApiDBUtils.newNetworkOfferingResponse(offering);
         response.setNetworkRate(ApiDBUtils.getNetworkRate(offering.getId()));
         Long so = null;

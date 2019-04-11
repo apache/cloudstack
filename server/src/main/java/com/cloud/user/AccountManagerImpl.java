@@ -118,6 +118,7 @@ import com.cloud.network.vpc.VpcManager;
 import com.cloud.network.vpn.RemoteAccessVpnService;
 import com.cloud.network.vpn.Site2SiteVpnManager;
 import com.cloud.offering.DiskOffering;
+import com.cloud.offering.NetworkOffering;
 import com.cloud.offering.ServiceOffering;
 import com.cloud.projects.Project;
 import com.cloud.projects.Project.ListProjectResourcesCriteria;
@@ -2857,6 +2858,21 @@ public class AccountManagerImpl extends ManagerBase implements AccountManager, M
 
         assert false : "How can all of the security checkers pass on checking this caller?";
         throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + dof);
+    }
+
+    @Override
+    public void checkAccess(Account account, NetworkOffering nof, DataCenter zone) throws PermissionDeniedException {
+        for (SecurityChecker checker : _securityCheckers) {
+            if (checker.checkAccess(account, nof, zone)) {
+                if (s_logger.isDebugEnabled()) {
+                    s_logger.debug("Access granted to " + account + " to " + nof + " by " + checker.getName());
+                }
+                return;
+            }
+        }
+
+        assert false : "How can all of the security checkers pass on checking this caller?";
+        throw new PermissionDeniedException("There's no way to confirm " + account + " has access to " + nof);
     }
 
     @Override

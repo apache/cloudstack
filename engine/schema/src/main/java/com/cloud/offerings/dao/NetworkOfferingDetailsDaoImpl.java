@@ -43,12 +43,14 @@ public class NetworkOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<Networ
         DetailSearch.and("resourceId", DetailSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         DetailSearch.and("name", DetailSearch.entity().getName(), SearchCriteria.Op.EQ);
         DetailSearch.and("value", DetailSearch.entity().getValue(), SearchCriteria.Op.EQ);
+        DetailSearch.and("display", DetailSearch.entity().isDisplay(), SearchCriteria.Op.EQ);
         DetailSearch.done();
 
         ValueSearch = createSearchBuilder(String.class);
         ValueSearch.select(null, Func.DISTINCT, ValueSearch.entity().getValue());
         ValueSearch.and("resourceId", ValueSearch.entity().getResourceId(), SearchCriteria.Op.EQ);
         ValueSearch.and("name", ValueSearch.entity().getName(), Op.EQ);
+        ValueSearch.and("display", ValueSearch.entity().isDisplay(), SearchCriteria.Op.EQ);
         ValueSearch.done();
     }
 
@@ -56,6 +58,7 @@ public class NetworkOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<Networ
     public Map<NetworkOffering.Detail, String> getNtwkOffDetails(long offeringId) {
         SearchCriteria<NetworkOfferingDetailsVO> sc = DetailSearch.create();
         sc.setParameters("resourceId", offeringId);
+        sc.setParameters("display", true);
 
         List<NetworkOfferingDetailsVO> results = search(sc, null);
         Map<NetworkOffering.Detail, String> details = new HashMap<NetworkOffering.Detail, String>(results.size());
@@ -81,7 +84,7 @@ public class NetworkOfferingDetailsDaoImpl extends ResourceDetailsDaoBase<Networ
 
     @Override
     public void addDetail(long resourceId, String key, String value, boolean display) {
-        persist(new NetworkOfferingDetailsVO(resourceId, Detail.valueOf(key), value));
+        persist(new NetworkOfferingDetailsVO(resourceId, Detail.valueOf(key), value, display));
     }
 
     @Override
