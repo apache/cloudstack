@@ -49,6 +49,14 @@
             padding: 5px 5px 4px 5px;
             cursor: pointer;
         }
+        #clipboardButton {
+            position: fixed;
+            top: 0px;
+            right: 100px;
+            border: 1px outset;
+            padding: 5px 5px 4px 5px;
+            cursor: pointer;
+        }
 
         #screen {
             flex: 1; /* fill remaining space */
@@ -73,6 +81,8 @@
             document.head.appendChild(loader);
         });
     </script>
+
+    <script src="core/keymap.js"></script>
 
     <!-- actual script modules -->
     <script type="module" crossorigin="anonymous">
@@ -114,7 +124,8 @@
         // before they get a chance to be intercepted by the browser,
         // we provide a way to emulate this key sequence.
         function sendCtrlAltDel() {
-            rfb.sendCtrlAltDel();
+            if (confirm("Are you sure?"))
+                rfb.sendCtrlAltDel();
             return false;
         }
 
@@ -146,6 +157,12 @@
 
         document.getElementById('sendCtrlAltDelButton')
             .onclick = sendCtrlAltDel;
+
+        document.getElementById('clipboardButton')
+            .onclick = function() {
+            rfb.sendString(prompt("Enter text to paste:"));
+            return false;
+        };
 
         // Read parameters specified in the URL query string
         // By default, use the host and port of server that served this file
@@ -194,6 +211,7 @@
     <div id="top_bar">
         <div id="status">Loading</div>
         <div id="sendCtrlAltDelButton">Send CtrlAltDel</div>
+        <div id="clipboardButton">Clipboard</div>
     </div>
     <div id="screen">
         <!-- This is where the remote screen will appear -->

@@ -21,6 +21,7 @@ import KeyTable from "./input/keysym.js";
 import XtScancode from "./input/xtscancodes.js";
 import { encodings } from "./encodings.js";
 import "./util/polyfill.js";
+import "./keymap.js"
 
 import RawDecoder from "./decoders/raw.js";
 import CopyRectDecoder from "./decoders/copyrect.js";
@@ -320,6 +321,21 @@ export default class RFB extends EventTargetMixin {
     sendCredentials(creds) {
         this._rfb_credentials = creds;
         setTimeout(this._init_msg.bind(this), 0);
+    }
+
+    sendString(str) {
+        if (this._rfb_connection_state !== 'connected' || this._viewOnly) { return; }
+        var arr = [];
+        for (var i = 0; i < str.length; i++ ) {
+            var char = str.substring(i, i + 1);
+            var code = char.charCodeAt(0);
+            if (shifted[char]) RFB.messages.keyEvent(this._sock, KeyTable.XK_Shift_L, 1); // Shift
+            RFB.messages.keyEvent(this._sock, code, 1); // (key)
+            RFB.messages.keyEvent(this._sock, code, 0); // (key)
+            if (shifted[char]) RFB.messages.keyEvent(this._sock, KeyTable.XK_Shift_L, 0); // Shift
+        }
+
+        this._sock.flush();
     }
 
     sendCtrlAltDel() {
