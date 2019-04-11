@@ -23,13 +23,22 @@ except ImportError:
     from BaseHTTPServer import HTTPServer
 
 import select
+
+import sys
+sys.path.insert(0, r'/root/noVNC/utils')
+sys.path.insert(1, r'/root/noVNC/utils/websockify')
 from websockify import websockifyserver
 from websockify import auth_plugins as auth
+
 try:
     from urllib.parse import parse_qs, urlparse
 except ImportError:
     from cgi import parse_qs
     from urlparse import urlparse
+
+from rijndael_cs import decrypt
+from hashlib import sha256
+from time import time
 
 class ProxyRequestHandler(websockifyserver.WebSockifyRequestHandler):
 
@@ -97,6 +106,30 @@ Traffic Legend:
         """
         Called after a new WebSocket connection has been established.
         """
+
+        self.novnc_key = 'default.novnc.encryption.key'
+        try:
+            arguments = decrypt(self.novnc_key.ljust(32, '\0'), self.path.lstrip('/'))
+            arguments, signature = arguments.split('|')
+            self.target_host, self.target_port, self.client_ip, self.timestamp = arguments.rsplit(':', 3)
+        except Exception, e:
+            arguments = decrypt(self.novnc_key[:32], self.path.lstrip('/'))
+            arguments, signature = arguments.split('|')
+            self.target_host, self.target_port, self.client_ip, self.timestamp = arguments.rsplit(':', 3)
+
+        # Check signature
+        if sha256(self.novnc_key+arguments).hexdigest() != signature:
+            self.send_close()
+            raise self.server.EClose('Not accepted: Invalid signature')
+        # Check client ip address
+        if self.client_ip != self.client_address[0]:
+            self.send_close()
+            raise self.server.EClose('Not accepted: Invalid client ip address')
+        # Check timestamp
+        if int(self.timestamp) < time()-300:
+            self.send_close()
+            raise self.server.EClose('Not accepted: Timestamp older than 5 minutes')
+
         # Checking for a token is done in validate_connection()
 
         # Connect to the target
@@ -106,21 +139,21 @@ Traffic Legend:
             msg = "connecting to unix socket: %s" % self.server.unix_target
         else:
             msg = "connecting to: %s:%s" % (
-                                    self.server.target_host, self.server.target_port)
+                                    self.target_host, self.target_port)
 
         if self.server.ssl_target:
             msg += " (using SSL)"
         self.log_message(msg)
 
         try:
-            tsock = websockifyserver.WebSockifyServer.socket(self.server.target_host,
-                                                           self.server.target_port,
+            tsock = websockifyserver.WebSockifyServer.socket(self.target_host,
+                                                           self.target_port,
                                                            connect=True,
                                                            use_ssl=self.server.ssl_target,
                                                            unix_socket=self.server.unix_target)
         except Exception:
             self.log_message("Failed to connect to %s:%s",
-                             self.server.target_host, self.server.target_port)
+                             self.target_host, self.target_port)
             raise self.CClose(1011, "Failed to connect to downstream server")
 
         self.request.setsockopt(socket.SOL_TCP, socket.TCP_NODELAY, 1)
@@ -668,9 +701,7 @@ def websockify_init():
     if opts.wrap_cmd or opts.unix_target or opts.token_plugin:
         opts.target_host = None
         opts.target_port = None
-    else:
-        if len(args) < 1:
-            parser.error("Too few arguments")
+    elif len(args) >= 1:
         arg = args.pop(0)
         if arg.count(':') > 0:
             opts.target_host, opts.target_port = arg.rsplit(':', 1)
@@ -683,7 +714,7 @@ def websockify_init():
         except ValueError:
             parser.error("Error parsing target port")
 
-    if len(args) > 0 and opts.wrap_cmd == None:
+    if len(args) > 1 and opts.wrap_cmd == None:
         parser.error("Too many arguments")
 
     if opts.token_plugin is not None:
